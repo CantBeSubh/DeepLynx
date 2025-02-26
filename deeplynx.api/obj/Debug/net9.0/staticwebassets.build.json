@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "xl9n/XYFUbaXlsr63vo7ae2vk7ZYjLKTKTWbVU4hzrU=",
+  "Source": "deeplynx.api",
+  "BasePath": "_content/deeplynx.api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.api", "deeplynx.api\deeplynx.api.csproj", "{9D93F4E6-B36E-424F-BD7B-F1EE82BC521F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.business", "deeplynx.business\deeplynx.business.csproj", "{FFFD6C88-4FC7-4CFF-9F48-B18043627AE1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.datalayer", "deeplynx.datalayer\deeplynx.datalayer.csproj", "{37538003-9F88-4E4C-9D54-9E708D808494}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.interfaces", "deeplynx.interfaces\deeplynx.interfaces.csproj", "{34F33889-987F-40C1-981F-F734137EA467}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.models", "deeplynx.models\deeplynx.models.csproj", "{8B052384-BCC6-4A55-BA38-1539ED5A7567}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.helpers", "deeplynx.helpers\deeplynx.helpers.csproj", "{FA5FF7A1-3BD4-47D6-8814-8263DCB65BDD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9D93F4E6-B36E-424F-BD7B-F1EE82BC521F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D93F4E6-B36E-424F-BD7B-F1EE82BC521F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D93F4E6-B36E-424F-BD7B-F1EE82BC521F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D93F4E6-B36E-424F-BD7B-F1EE82BC521F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFFD6C88-4FC7-4CFF-9F48-B18043627AE1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFFD6C88-4FC7-4CFF-9F48-B18043627AE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFFD6C88-4FC7-4CFF-9F48-B18043627AE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFFD6C88-4FC7-4CFF-9F48-B18043627AE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37538003-9F88-4E4C-9D54-9E708D808494}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37538003-9F88-4E4C-9D54-9E708D808494}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37538003-9F88-4E4C-9D54-9E708D808494}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37538003-9F88-4E4C-9D54-9E708D808494}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34F33889-987F-40C1-981F-F734137EA467}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34F33889-987F-40C1-981F-F734137EA467}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34F33889-987F-40C1-981F-F734137EA467}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34F33889-987F-40C1-981F-F734137EA467}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B052384-BCC6-4A55-BA38-1539ED5A7567}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B052384-BCC6-4A55-BA38-1539ED5A7567}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B052384-BCC6-4A55-BA38-1539ED5A7567}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B052384-BCC6-4A55-BA38-1539ED5A7567}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FA5FF7A1-3BD4-47D6-8814-8263DCB65BDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FA5FF7A1-3BD4-47D6-8814-8263DCB65BDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FA5FF7A1-3BD4-47D6-8814-8263DCB65BDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FA5FF7A1-3BD4-47D6-8814-8263DCB65BDD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
