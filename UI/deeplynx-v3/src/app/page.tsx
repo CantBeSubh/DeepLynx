@@ -5,7 +5,7 @@ import Layout from "./components/Layout";
 
 function Home({ Component, pageProps }: AppProps) {
   return (
-    <div className="p-4 text-black">
+    <div className="p-4">
       DeepLynx HomePage!
     </div>
   );
