@@ -1,0 +1,85 @@
+import React, { useEffect, useRef, useState } from "react";
+
+interface SidebarProps {
+  isOpen: boolean;
+  toggleSidebar: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
+  const sidebarRef = useRef<HTMLDivElement>(null);
+  const [buttonPosition, setButtonPosition] = useState(0);
+
+  useEffect(() => {
+    if (sidebarRef.current) {
+      const sidebarWidth = sidebarRef.current.offsetWidth;
+      setButtonPosition(isOpen ? sidebarWidth : 0);
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={sidebarRef}
+        className={`fixed top-16 left-0 h-[calc(100%-64px)] bg-neutral-content shadow-lg transform ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        } transition-transform duration-300 ease-in-out z-40`}
+        style={{ width: isOpen ? "30%" : "0" }}
+      >
+        {isOpen && (
+          <div className="p-10">
+            <div className="card-body p-4">
+              <h2 className="card-title text-neutral">Welcome to DeepLynx v3!</h2>
+              <p className="pt-5 text-neutral">
+                DeepLynx is a unique datawarehouse designed to provide easy
+                collaboration on large projects. DeepLynx allows users to define
+                an ontology and then store data under it. Find more information
+                on our wiki by clicking here.
+              </p>
+            </div>
+            <h2 className="card-title pb-4 text-neutral">FAQ's</h2>
+            <div className="collapse collapse-plus bg-neutral-content border border-neutral">
+              <input type="radio" name="my-accordion-3" defaultChecked />
+              <div className="collapse-title font-semibold">
+                How do I create an account?
+              </div>
+              <div className="collapse-content text-sm">
+                Click the "Sign Up" button in the top right corner and follow
+                the registration process.
+              </div>
+            </div>
+            <div className="collapse collapse-plus bg-neutral-content border border-neutral">
+              <input type="radio" name="my-accordion-3" />
+              <div className="collapse-title font-semibold">
+                I forgot my password. What should I do?
+              </div>
+              <div className="collapse-content text-sm">
+                Click on "Forgot Password" on the login page and follow the
+                instructions sent to your email.
+              </div>
+            </div>
+            <div className="collapse collapse-plus bg-neutral-content border border-neutral">
+              <input type="radio" name="my-accordion-3" />
+              <div className="collapse-title font-semibold">
+                How do I update my profile information?
+              </div>
+              <div className="collapse-content text-sm">
+                Go to "My Account" settings and select "Edit Profile" to make
+                changes.
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <button
+        className="fixed top-20 bg-primary text-white px-4 py-2 rounded-r-full shadow-md transition-transform duration-300 ease-in-out z-50"
+        style={{ left: `${buttonPosition}px` }}
+        onClick={toggleSidebar}
+      >
+        {isOpen ? "<" : ">"}
+      </button>
+    </div>
+  );
+};
+
+export default Sidebar;
