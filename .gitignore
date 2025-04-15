@@ -6,74 +6,41 @@ dist
 
 ## Mac OS ##
 .DS_Store
+.idea
 
 ## VS Code ##
 .vscode
 
 ## Web ##
-/CSETWebApi/CSETWeb_Api/.DS_Store
-/CSETWebApi/.DS_Store
+/deeplynx.api/.DS_Store
+/deeplynx.api/.idea
 
 
 ## Web ##
-/CSETWebApi/CSETWeb_Api/DataLayerCore/bin/Release
-/CSETWebApi/CSETWeb_Api/DataLayerCore/bin/Debug
-/CSETWebApi/CSETWeb_Api/AddCSETUser/publish
-/CSETWebApi/CSETWeb_Api/AddCSETUser/bin/Debug
-/CSETWebApi/CSETWeb_Api/AddCSETUser/bin/Release
-/CSETWebApi/CSETWeb_Api/DataLayerCore/bin/Debug
-/CSETWebApi/CSETWeb_Api/DataLayer2/bin/Debug
-/CSETWebApi/CSETWeb_Api/DataLayerCore/bin
+/deeplynx.api/bin/Release
+/deeplynx.api/bin/Debug
+/deeplynx.api/bin/Publish
+/deeplynx.business/bin/Publish
+/deeplynx.business/bin/Release
+/deeplynx.business/bin/Debug
+
+/deeplynx.datalayer/bin/Release
+/deeplynx.datalayer/bin/Debug
+/deeplynx.datalayer/bin/Publish
+/deeplynx.helpers/bin/Publish
+/deeplynx.helpers/bin/Release
+/deeplynx.helpers/bin/Debug
+/deeplynx.interfaces/bin/Release
+/deeplynx.interfaces/bin/Debug
+/deeplynx.interfaces/bin/Publish
+/deeplynx.modesls/bin/Publish
+/deeplynx.models/bin/Release
+/deeplynx.models/bin/Debug
+
+
 bin
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Properties/PublishProfiles/runlocal.pubxml.user
-/diagram/obj
+
+package-lock.json
 
 
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js/extensions.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js/shapes.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js/stencils.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js/atlas.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js/app.min.js.bak
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/etc/build/base-viewer.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/etc/build/base.min.js
-
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/etc/build/base-viewer.min.js
-
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/etc/build/base-viewer.min.js
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/etc/build/base.min.js
-/CSETWebApi/CSETWeb_Api/package-lock.json
-
-LOCAL-INSTALLATION
-/CSETWebNg/.snyk
-obj/
-v15/
-DesignTimeBuild/
-/CSET_10.0.0-Binary.zip
-/Database Images/CSETWeb_log.ldf
-/Database Images/CSETWeb.mdf
-/CSETWebNg/node_modules_bak
-/CSETWebNg/src/assets/NCUA/images
-/CSETWebNg/src/assets/images/ACET/NCUA_logo.png
-.vs/
-/CSETWebNg/branches.txt
-/CSETWebApi/CSETWeb_Api/DataLayerCore/Model2
-/zip_binaries
-/CSETWebApi/CSETWeb_Api/CSETWebCore.Reports/Resources/secrets.json
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/node_modules
-/CSETWebApi/CSETWeb_Api/CSETWeb_Api/Diagram/src/main/webapp/js
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/CSETWebCore.Api.csproj.user
-/CSETWebApi/CSETWeb_Api/CSETWebCore.UpgradeLibrary/CSETWebCore.UpgradeLibrary.csproj.user
-CSETWebApi/CSETWeb_Api/CSETWebCore.UpgradeLibrary/Properties/PublishProfiles/FolderProfile.pubxml
-CSETWebApi/CSETWeb_Api/CSETWebCore.UpgradeLibrary/Properties/PublishProfiles/FolderProfile.pubxml.user
-CSETWebApi/CSETWeb_Api/CSETWebCore.Reports/CSETWebCore.Reports.csproj.user
-CSETWebApi/NCUA-EXAMINER-TOOL
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/WebApp
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/Properties/PublishProfiles/FolderProfile.pubxml.user
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/Properties/PublishProfiles/FolderProfile.pubxml
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/.config/dotnet-tools.json
-/CSETWebApi/CSETWeb_Api/CSETWebCore.DatabaseManagerTests1/Data/CSETWeb.mdf
-/CSETWebApi/CSETWeb_Api/CSETWebCore.DatabaseManagerTests1/Data/CSETWeb_log.ldf
-/CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/Diagram-orig
-/gallery-editor
-
-CSETWebApi/CSETWeb_Api/CSETWeb_ApiCore/appsettings.Development.json
+/deeplynx.api/appsettings.Development.json
