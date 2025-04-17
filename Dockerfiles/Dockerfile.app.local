@@ -1,0 +1,56 @@
+FROM node:20-alpine AS frontend-build
+WORKDIR /app
+
+# Copy package.json and package-lock.json
+COPY UI/deeplynx-v3/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the frontend source code
+COPY UI/deeplynx-v3/ ./
+
+# Build the frontend
+RUN npm run build
+
+# Stage 2: Build the C# backend
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20 AS backend-build
+WORKDIR /source
+
+# Add missing packages
+RUN apk --no-check-certificate add wget ca-certificates
+
+# Configure INL certs and environment variables
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+# Copy the solution file and restore dependencies
+COPY . ./Backend
+RUN dotnet restore ./Backend/deeplynx.sln
+
+
+# Build the backend
+WORKDIR /source/Backend
+RUN dotnet build -c Release -o /app/build
+
+# Publish the backend
+FROM backend-build AS publish
+RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
+
+# Stage 3: Create the final image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine3.20 AS final
+WORKDIR /app
+
+# Copy the published backend code
+COPY --from=publish /app/publish .
+
+# Copy the built frontend code
+COPY --from=frontend-build /app/.next /app/wwwroot
+
+# Set the entry point to run the backend application
+ENTRYPOINT ["dotnet", "deeplynx.dll"]
