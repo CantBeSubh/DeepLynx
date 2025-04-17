@@ -1,6 +1,8 @@
 using deeplynx.business;
+using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -37,8 +39,14 @@ builder.Services.AddHttpContextAccessor();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+// Add DbContext with connection string from appsettings.json
+builder.Services.AddDbContext<DeeplynxContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+
 //serves for Dependency Injection
 builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>();
+
 
 var app = builder.Build();
 
