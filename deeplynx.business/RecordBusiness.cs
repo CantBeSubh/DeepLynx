@@ -1,0 +1,84 @@
+using System.Text.Json;
+using deeplynx.interfaces;
+using deeplynx.datalayer.Models;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
+
+namespace deeplynx.business;
+
+public class RecordBusiness : IRecordBusiness
+{
+    private readonly DeeplynxContext _context;
+
+    public RecordBusiness(DeeplynxContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<Record> GetRecord(long projectId, long dataSourceId, long recordId)
+    {
+        return await _context.Records
+                   .FirstOrDefaultAsync(r =>
+                       r.ProjectId == projectId && r.DataSourceId == dataSourceId && r.Id == recordId)
+               ?? throw new KeyNotFoundException("Record not found.");
+    }
+
+    public async Task<Record> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
+    {
+        var record = new Record
+        {
+            ProjectId = projectId,
+            DataSourceId = dataSourceId,
+            Properties = dto.Properties.ToString()!,
+            Name = ExtractStringOrJson(dto.Name),
+            OriginalId = ExtractStringOrJson(dto.OriginalId),
+            ClassName = dto.ClassName,
+            CreatedAt = DateTime.UtcNow,
+            ModifiedAt = DateTime.UtcNow
+        };
+
+        _context.Records.Add(record);
+        await _context.SaveChangesAsync();
+
+        return record;
+    }
+
+    public async Task<Record> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
+    {
+        var record = await GetRecord(projectId, dataSourceId, recordId);
+
+        record.Properties = dto.Properties.ToString()!;
+        record.Name = ExtractStringOrJson(dto.Name);
+        record.OriginalId = ExtractStringOrJson(dto.OriginalId);
+        record.ClassName = dto.ClassName;
+        record.ModifiedAt = DateTime.UtcNow;
+
+        _context.Records.Update(record);
+        await _context.SaveChangesAsync();
+
+        return record;
+    }
+
+    public async Task<bool> DeleteRecord(long projectId, long dataSourceId, long recordId)
+    {
+        var record = await GetRecord(projectId, dataSourceId, recordId);
+
+        _context.Records.Remove(record);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    private static string? ExtractStringOrJson(object? input)
+    {
+        return input switch
+        {
+            null => null,
+            JsonElement element => element.ValueKind switch
+            {
+                JsonValueKind.String => element.GetString(),
+                _ => element.ToString()
+            },
+            _ => input.ToString()
+        };
+    }
+}
