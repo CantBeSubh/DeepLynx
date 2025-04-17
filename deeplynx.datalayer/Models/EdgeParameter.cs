@@ -1,0 +1,64 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace deeplynx.datalayer.Models;
+
+[Table("edge_parameters", Schema = "deeplynx")]
+public partial class EdgeParameter
+{
+    [Key]
+    [Column("id")]
+    public long Id { get; set; }
+
+    [Column("origin_params", TypeName = "jsonb")]
+    public string OriginParams { get; set; } = null!;
+
+    [Column("destination_params", TypeName = "jsonb")]
+    public string DestinationParams { get; set; } = null!;
+
+    [Column("relationship_id")]
+    public long RelationshipId { get; set; }
+
+    [Column("origin_id")]
+    public long OriginId { get; set; }
+
+    [Column("destination_id")]
+    public long DestinationId { get; set; }
+
+    [Column("project_id")]
+    public long ProjectId { get; set; }
+
+    [Column("created_by")]
+    public string? CreatedBy { get; set; }
+
+    [Column("created_at", TypeName = "timestamp without time zone")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("modified_by")]
+    public string? ModifiedBy { get; set; }
+
+    [Column("modified_at", TypeName = "timestamp without time zone")]
+    public DateTime ModifiedAt { get; set; }
+
+    [Column("deleted_at", TypeName = "timestamp without time zone")]
+    public DateTime? DeletedAt { get; set; }
+
+    [ForeignKey("DestinationId")]
+    [InverseProperty("EdgeParameterDestinations")]
+    public virtual Class Destination { get; set; } = null!;
+
+    [ForeignKey("OriginId")]
+    [InverseProperty("EdgeParameterOrigins")]
+    public virtual Class Origin { get; set; } = null!;
+
+    [ForeignKey("ProjectId")]
+    [InverseProperty("EdgeParameters")]
+    public virtual Project Project { get; set; } = null!;
+
+    [ForeignKey("RelationshipId")]
+    [InverseProperty("EdgeParameters")]
+    public virtual Relationship Relationship { get; set; } = null!;
+}

@@ -4,6 +4,7 @@
 *.zip
 dist
 
+
 ## Mac OS ##
 .DS_Store
 .idea
@@ -17,30 +18,8 @@ dist
 
 
 ## Web ##
-/deeplynx.api/bin/Release
-/deeplynx.api/bin/Debug
-/deeplynx.api/bin/Publish
-/deeplynx.business/bin/Publish
-/deeplynx.business/bin/Release
-/deeplynx.business/bin/Debug
+/**/obj/
+/**/bin/
 
-/deeplynx.datalayer/bin/Release
-/deeplynx.datalayer/bin/Debug
-/deeplynx.datalayer/bin/Publish
-/deeplynx.helpers/bin/Publish
-/deeplynx.helpers/bin/Release
-/deeplynx.helpers/bin/Debug
-/deeplynx.interfaces/bin/Release
-/deeplynx.interfaces/bin/Debug
-/deeplynx.interfaces/bin/Publish
-/deeplynx.modesls/bin/Publish
-/deeplynx.models/bin/Release
-/deeplynx.models/bin/Debug
-
-
-bin
 
 package-lock.json
-
-
-/deeplynx.api/appsettings.Development.json
