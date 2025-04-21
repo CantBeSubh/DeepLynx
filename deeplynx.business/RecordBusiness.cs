@@ -14,7 +14,12 @@ public class RecordBusiness : IRecordBusiness
     {
         _context = context;
     }
-
+    public async Task<IEnumerable<Record>> GetAllRecords(long projectId, long dataSourceId)
+    {
+        return await _context.Records
+            .Where(r => r.ProjectId == projectId && r.DataSourceId == dataSourceId)
+            .ToListAsync();
+    }
     public async Task<Record> GetRecord(long projectId, long dataSourceId, long recordId)
     {
         return await _context.Records
@@ -31,10 +36,10 @@ public class RecordBusiness : IRecordBusiness
             DataSourceId = dataSourceId,
             Properties = dto.Properties.ToString()!,
             Name = ExtractStringOrJson(dto.Name),
-            OriginalId = ExtractStringOrJson(dto.OriginalId),
+            OriginalId = ExtractStringOrJson(dto.original_id),
             ClassName = dto.ClassName,
-            CreatedAt = DateTime.UtcNow,
-            ModifiedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow.ToLocalTime(),
+            ModifiedAt = DateTime.UtcNow.ToLocalTime()
         };
 
         _context.Records.Add(record);
@@ -49,9 +54,9 @@ public class RecordBusiness : IRecordBusiness
 
         record.Properties = dto.Properties.ToString()!;
         record.Name = ExtractStringOrJson(dto.Name);
-        record.OriginalId = ExtractStringOrJson(dto.OriginalId);
+        record.OriginalId = ExtractStringOrJson(dto.original_id);
         record.ClassName = dto.ClassName;
-        record.ModifiedAt = DateTime.UtcNow;
+        record.ModifiedAt = DateTime.UtcNow.ToLocalTime();
 
         _context.Records.Update(record);
         await _context.SaveChangesAsync();

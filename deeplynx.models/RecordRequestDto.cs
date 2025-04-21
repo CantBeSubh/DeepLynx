@@ -12,7 +12,7 @@ public class RecordRequestDto
 
     public object? Name { get; set; }
 
-    public object? OriginalId { get; set; }
+    public object? original_id { get; set; }
 
     public string? ClassName { get; set; }
 }

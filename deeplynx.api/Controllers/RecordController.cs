@@ -8,7 +8,6 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("projects/{projectId}/datasources/{dataSourceId}/records")]
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordService;
@@ -17,23 +16,29 @@ namespace deeplynx.api.Controllers
         {
             _recordService = recordService;
         }
-
-        [HttpGet("{recordId}")]
+        [HttpGet("projects/{projectId}/datasources/{dataSourceId}/records")]
+        public async Task<IActionResult> GetAllRecords(long projectId, long dataSourceId)
+        {
+            var records = await _recordService.GetAllRecords(projectId, dataSourceId);
+            return Ok(records);
+        }
+        [HttpGet("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
         public async Task<IActionResult> GetRecord(long projectId, long dataSourceId, long recordId)
         {
             var record = await _recordService.GetRecord(projectId, dataSourceId, recordId);
             return Ok(record);
         }
 
-        [HttpPost]
+        [HttpPost("projects/{projectId}/datasources/{dataSourceId}/records")]
         public async Task<IActionResult> CreateRecord(long projectId, long dataSourceId,
             [FromBody] RecordRequestDto dto)
         {
             var record = await _recordService.CreateRecord(projectId, dataSourceId, dto);
-            return CreatedAtAction(nameof(GetRecord), new { projectId, dataSourceId, recordId = record.Id }, record);
+            return Ok(record);
+            // return CreatedAtAction(nameof(GetRecord), new { projectId, dataSourceId, recordId = record.Id }, record);
         }
 
-        [HttpPut("{recordId}")]
+        [HttpPut("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
         public async Task<IActionResult> UpdateRecord(long projectId, long dataSourceId, long recordId,
             [FromBody] RecordRequestDto dto)
         {
@@ -41,7 +46,7 @@ namespace deeplynx.api.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("{recordId}")]
+        [HttpDelete("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
         public async Task<IActionResult> DeleteRecord(long projectId, long dataSourceId, long recordId)
         {
             await _recordService.DeleteRecord(projectId, dataSourceId, recordId);
