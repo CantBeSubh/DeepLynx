@@ -2,11 +2,9 @@
 
 import { useParams } from 'next/navigation'
 import Sidebar from "@/app/components/SideMenu";
-import { useState } from "react";
 
 export default function ProjectDetailPage() {
   const { projectId } = useParams();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-base-100 text-base-content">
@@ -41,7 +39,7 @@ export default function ProjectDetailPage() {
               <div className="bg-white p-4 rounded shadow flex flex-col">
                 <h3 className="font-semibold mb-2">File Viewer</h3>
                 <div className="flex-grow">
-                  {/* Other content can go here */}
+                  {/* What other content do we want? */}
                 </div>
                 <button className="btn btn-primary btn-sm w-full">Go to viewer</button>
               </div>
@@ -50,7 +48,7 @@ export default function ProjectDetailPage() {
               <div className="bg-white p-4 rounded shadow flex flex-col">
                 <h3 className="font-semibold mb-2">2D/3D Model Viewer</h3>
                 <div className="flex-grow">
-                  {/* Other content can go here */}
+                  {/* What other content do we want? */}
                 </div>
                 <button className="btn btn-primary btn-sm w-full">Go to Viewer</button>
               </div>
@@ -68,14 +66,14 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
                 <div className="flex-grow">
-                  {/* Other content can go here */}
+                   {/* What other content do we want? */}
                 </div>
                 <button className="btn btn-primary btn-sm mt-4">Go to Data Viewer</button>
               </div>
             </div>
           </div>
 
-          {/* Optional: Data Management section, etc */}
+          {/* TODO: Data Management? */}
         </div>
       </div>
     </div>
