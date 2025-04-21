@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
 import CreateProject from "./CreateProjectsWidget";
+import { useRouter } from 'next/navigation'
 
 export default function Projects() {
+  const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -14,6 +16,50 @@ export default function Projects() {
     setIsSidebarOpen(!isSidebarOpen);
   };
   // ---------- Sidebar toggel effects ends ----------
+
+  /* Added sample data to pass to project detail */
+  const sampleProjectData = [
+    {
+      name: "Muzak",
+      id: "56231",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Admin",
+      id: "87122",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Library",
+      id: "34903",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Other Project",
+      id: "22014",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Other Other Project",
+      id: "45375",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Yet Another Project",
+      id: "63456",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Yet Again",
+      id: "78897",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    },
+    {
+      name: "Final One",
+      id: "91238",
+      description: "Here is a short description of this project and the things that you might find inside of it. Max 150 char."
+    }]
+
 
   // TODO: When page gets smaller, change the grid layout of the cards to keep formatting
   return (
@@ -67,22 +113,20 @@ export default function Projects() {
               </p>
             </div>
 
-            {/* Example Project Cards */}
-            {Array.from({ length: 8 }).map((_, index) => (
+            {sampleProjectData.map((project, index) => (
               <div
                 key={index}
                 className="card bg-neutral-content shadow-md p-4"
               >
-                <h3 className="font-bold text-neutral">admin</h3>
+                <h3 className="font-bold text-neutral">{project.name}</h3>
                 <p className="text-sm text-neutral">
-                  Here is a short description of this project and the things
-                  that you might find inside of it. Max 150 char.
+                  {project.description}
                 </p>
                 <div className="mt-4 flex justify-between">
                   <button className="btn btn-outline btn-sm text-neutral">
                     more info
                   </button>
-                  <button className="btn bg-primary btn-sm text-neutral-content">
+                  <button className="btn bg-primary btn-sm text-neutral-content" onClick={() => router.push(`/pages/projects/${project.id}`)}>
                     enter project
                   </button>
                 </div>
