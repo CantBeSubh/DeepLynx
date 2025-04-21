@@ -38,13 +38,13 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<User> Users { get; set; }
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        if (!optionsBuilder.IsConfigured)
-        {
-            // This fallback connection string is used only if no external configuration is provided.
-            // It is recommended to supply the connection string via DI in production (from appsettings.json).
-            string fallbackConnectionString = "Host=localhost;Port=5434;Database=mydb;Username=root;Password=root";
-            optionsBuilder.UseNpgsql(fallbackConnectionString);
-        }
+        // if (!optionsBuilder.IsConfigured)
+        // {
+        //     // This fallback connection string is used only if no external configuration is provided.
+        //     // It is recommended to supply the connection string via DI in production (from appsettings.json).
+        //     string fallbackConnectionString = "Host=localhost;Port=5434;Database=mydb;Username=root;Password=root";
+        //     optionsBuilder.UseNpgsql(fallbackConnectionString);
+        // }
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
