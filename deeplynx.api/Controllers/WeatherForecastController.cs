@@ -1,3 +1,4 @@
+using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -10,10 +11,13 @@ public class WeatherForecastController : ControllerBase
 {
     private readonly ILogger<WeatherForecastController> _logger;
     private readonly IWeatherForecastBusiness _weatherForecast;
-    public WeatherForecastController(ILogger<WeatherForecastController> logger, IWeatherForecastBusiness weatherForecast)
+    private readonly DeeplynxContext _context;
+
+    public WeatherForecastController(ILogger<WeatherForecastController> logger, IWeatherForecastBusiness weatherForecast, DeeplynxContext context)
     {
         _logger = logger;
         _weatherForecast = weatherForecast;
+        _context = context;
     }
 
     [HttpGet(Name = "GetWeatherForecast")]
