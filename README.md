@@ -10,6 +10,10 @@
     * Install and launch PostgreSQL.
     * Create a PostgreSQL server. 
     * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. 
+#### Running postgres from docker 
+``` 
+docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres 
+```
 
 2. .NET SDK Setup:
 
@@ -21,12 +25,12 @@
 dotnet tool install --global dotnet-ef
 ```
 ## Load the Database
-1. Navigate to the datalayer folder in your project directory.
+1. Navigate to the root folder in your project directory.
 
 2. Run the following command to apply the latest migrations and update the database:
 
 ```
-dotnet ef database update -c DeeplynxContext
+ dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer   --startup-project deeplynx.api
 ```
 ## Development
 ### Create Migration
