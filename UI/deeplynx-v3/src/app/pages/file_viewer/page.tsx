@@ -155,11 +155,9 @@ const FileViewer = () => {
   return (
     <div className="flex bg-base-100">
       <SideMenu />
-      <div className="ml-64 flex-1">
-        <div className="bg-neutral-content p-4 flex justify-between">
-          <h1 className="text-xl font-bold text-secondary-content">
-            File Viewer
-          </h1>
+      <div className="ml-64 flex-1 p-6 text-base-content">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">Files</h1>
           <i className="text-sm">User</i>
         </div>
         <div className="p-4">
