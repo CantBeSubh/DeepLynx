@@ -6,9 +6,6 @@ namespace deeplynx.datalayer.Models;
 
 public partial class DeeplynxContext : DbContext
 {
-    public DeeplynxContext()
-    {
-    }
 
     public DeeplynxContext(DbContextOptions<DeeplynxContext> options)
         : base(options)
