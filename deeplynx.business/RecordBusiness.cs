@@ -3,6 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using YourProjectNamespace.Helpers;
 
 namespace deeplynx.business;
 
@@ -35,8 +36,8 @@ public class RecordBusiness : IRecordBusiness
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             Properties = dto.Properties.ToString()!,
-            Name = ExtractStringOrJson(dto.Name),
-            OriginalId = ExtractStringOrJson(dto.original_id),
+            Name = JsonHelper.ExtractStringOrJson(dto.Name),
+            OriginalId = JsonHelper.ExtractStringOrJson(dto.original_id),
             ClassName = dto.ClassName,
             CreatedAt = DateTime.UtcNow.ToLocalTime(),
             ModifiedAt = DateTime.UtcNow.ToLocalTime()
@@ -53,8 +54,8 @@ public class RecordBusiness : IRecordBusiness
         var record = await GetRecord(projectId, dataSourceId, recordId);
 
         record.Properties = dto.Properties.ToString()!;
-        record.Name = ExtractStringOrJson(dto.Name);
-        record.OriginalId = ExtractStringOrJson(dto.original_id);
+        record.Name = JsonHelper.ExtractStringOrJson(dto.Name);
+        record.OriginalId = JsonHelper.ExtractStringOrJson(dto.original_id);
         record.ClassName = dto.ClassName;
         record.ModifiedAt = DateTime.UtcNow.ToLocalTime();
 
@@ -71,19 +72,5 @@ public class RecordBusiness : IRecordBusiness
         _context.Records.Remove(record);
         await _context.SaveChangesAsync();
         return true;
-    }
-
-    private static string? ExtractStringOrJson(object? input)
-    {
-        return input switch
-        {
-            null => null,
-            JsonElement element => element.ValueKind switch
-            {
-                JsonValueKind.String => element.GetString(),
-                _ => element.ToString()
-            },
-            _ => input.ToString()
-        };
     }
 }
