@@ -2,7 +2,7 @@ name: Build Development
 on:
   workflow_dispatch:
   push:
-    branches: ["develop"]
+    branches: ["DL-114"]
 
 jobs:
   build:
@@ -13,7 +13,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: develop
+          ref: DL-114
 
       # Builds the required image
       - shell: bash
@@ -41,7 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: develop
+          ref: DL-114
 
       #Download kubectl
       - uses: azure/setup-kubectl@v3
