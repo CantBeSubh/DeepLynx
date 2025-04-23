@@ -739,3 +739,55 @@ export const fileTableData = [
       select: false,
     },
   ];
+
+   /* Added sample data to pass to project detail */
+  export const sampleProjectData = [
+    {
+      name: "Muzak",
+      id: "56231",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Admin",
+      id: "87122",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Library",
+      id: "34903",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Other Project",
+      id: "22014",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Other Other Project",
+      id: "45375",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Yet Another Project",
+      id: "63456",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Yet Again",
+      id: "78897",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+    {
+      name: "Final One",
+      id: "91238",
+      description:
+        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+    },
+  ];
