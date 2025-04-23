@@ -12,7 +12,6 @@
       <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
       <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
     </ItemGroup>
-
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
         <PrivateAssets>all</PrivateAssets>
