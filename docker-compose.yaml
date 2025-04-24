@@ -1,0 +1,29 @@
+services:
+    app:
+        env_file:
+            - .env
+        build:
+            context: ./
+            dockerfile: Dockerfiles/Dockerfile.app.local
+        ports:
+            - 3000:3000
+        environment:
+           NODE_ENV: production
+           DATABASE_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+        depends_on:
+            postgres:
+                condition: service_healthy
+    postgres:
+        env_file:
+            - .env
+        build:
+            context: ./database
+            dockerfile: Dockerfiles/Dockerfile.db.local
+        ports:
+            - "5432:5432"
+        healthcheck:
+            test: |
+                while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
+                    echo "$(date) - waiting for database to start"
+                    sleep 5
+                done

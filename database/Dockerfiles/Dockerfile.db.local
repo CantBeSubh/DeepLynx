@@ -1,0 +1,55 @@
+FROM postgres:16-alpine3.20 AS deeplynx-db
+
+WORKDIR /var/lib/postgresql/data
+
+# Add missing packages
+RUN apk --no-check-certificate add wget ca-certificates
+
+# Configure INL certs and environment variables
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+
+
+RUN apk update && apk upgrade
+
+## Below is config for hardening Postgres for production release
+
+# # Install build dependencies
+# RUN apk add --virtual build-dependencies \
+#  git \
+#  build-base \
+#  krb5-dev \
+#  postgresql16-dev \
+#  gcc \
+#  clang15 \
+#  llvm15
+
+# # Install pgaudit
+# WORKDIR /tmp
+# RUN git clone https://github.com/pgaudit/pgaudit.git && cd pgaudit && git checkout REL_16_STABLE
+# RUN cd /tmp/pgaudit && make install USE_PGXS=1
+
+# # Install set_user
+# RUN git clone https://github.com/pgaudit/set_user && cd set_user
+# WORKDIR /tmp/set_user
+# RUN make
+# RUN make install
+
+# # Delete build dependencies
+# RUN apk del build-dependencies
+
+# COPY --from=build /usr/cert /etc/certs/
+# COPY ./data/postgresql.conf /etc/
+
+# RUN chown -R postgres /etc/certs
+# RUN chmod 740 /etc/certs
+
+# CMD ["postgres", "-c", "config_file=/etc/postgresql.conf"]
+
+CMD ["postgres"]

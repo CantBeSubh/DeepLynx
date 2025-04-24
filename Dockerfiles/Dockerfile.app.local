@@ -1,0 +1,62 @@
+# Stage 1: Build the C# backend
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20 AS backend-build
+WORKDIR /source
+
+# Add missing packages
+RUN apk --no-check-certificate add wget ca-certificates
+
+# Configure INL certs and environment variables
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+# Copy the solution file and restore dependencies
+COPY . ./Backend
+RUN dotnet restore ./Backend/deeplynx.sln
+
+
+# Build the backend
+WORKDIR /source/Backend
+RUN dotnet build -c Release -o /app/build
+
+# Publish the backend
+FROM backend-build AS publish
+RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
+
+# Stage 2: Create the final image
+FROM node:lts-alpine3.20 AS final
+
+# ENV NODE_ENV=production
+
+WORKDIR /app/backend
+
+# Copy the published backend code
+COPY --from=publish /app/publish .
+
+WORKDIR /app/frontend
+# Add missing packages
+RUN apk --no-check-certificate add wget ca-certificates
+
+# Configure INL certs and environment variables
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+COPY UI/deeplynx-v3/ ./
+
+# Install dependencies
+RUN rm -rf node_modules package-lock.json
+
+RUN yarn
+RUN npm run build
+
+# Set the command point to run the application
+CMD [ "npm", "start" ]
