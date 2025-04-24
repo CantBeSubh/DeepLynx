@@ -6,10 +6,28 @@
 2. .NET SDK: Ensure .NET SDK version 9.0 is installed on your system. Download [.NET 9.0](https://dotnet.microsoft.com/en-us/).
 
 ### Install
+#### Docker Setup
+1. Environment variables:
+    * Create a .env file in the root directory
+    * Copy the contents of .env_sample to .env
+    * Make any necessary changes
+
+2. Docker:
+This application can be run from docker using the following docker commands:
+```
+docker compose -f docker-compose.yaml build
+docker compose -f docker-compose.yaml up
+```
+
+#### Local Setup
 1. PostgreSQL Setup:
     * Install and launch PostgreSQL.
     * Create a PostgreSQL server. 
     * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. 
+##### Running postgres from docker 
+``` 
+docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres 
+```
 
 2. .NET SDK Setup:
 
@@ -21,12 +39,12 @@
 dotnet tool install --global dotnet-ef
 ```
 ## Load the Database
-1. Navigate to the datalayer folder in your project directory.
+1. Navigate to the root folder in your project directory.
 
 2. Run the following command to apply the latest migrations and update the database:
 
 ```
-dotnet ef database update -c DeeplynxContext
+ dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer   --startup-project deeplynx.api
 ```
 ## Development
 ### Create Migration
