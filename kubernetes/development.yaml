@@ -23,6 +23,9 @@ spec:
         - name: deeplynxv3
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
+          env:
+            - name: DATABASE_CONNECTION_STRING
+              value: ${DATABASE_CONNECTION_STRING}
           resources:
             limits:
               memory: "4Gi"

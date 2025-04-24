@@ -53,6 +53,7 @@ jobs:
           CI_REGISTRY: ${{ secrets.CI_REGISTRY }}
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
+          DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
