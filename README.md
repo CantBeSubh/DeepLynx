@@ -24,6 +24,7 @@ docker compose -f docker-compose.yaml up
     * Install and launch PostgreSQL.
     * Create a PostgreSQL server. 
     * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. 
+
 ##### Running postgres from docker 
 ``` 
 docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres 

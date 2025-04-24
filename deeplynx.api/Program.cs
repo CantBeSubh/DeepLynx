@@ -40,13 +40,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddOpenApi();
 
 // Add DbContext with connection string from appsettings.json
-builder.Services.AddDbContext<DeeplynxContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string"
+                                           + "'DefaultConnection' not found.");
 
+builder.Services.AddDbContext<DeeplynxContext>(options =>
+    options.UseNpgsql(connectionString));
 
 //serves for Dependency Injection
 builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>();
-
+builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 
 var app = builder.Build();
 
