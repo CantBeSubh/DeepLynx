@@ -1,10 +1,11 @@
-using deeplynx.business;
-using deeplynx.datalayer.Models;
-using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+
+using deeplynx.datalayer.Models;
+using deeplynx.business;
+using deeplynx.interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
