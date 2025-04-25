@@ -1,4 +1,4 @@
-namespace YourProjectNamespace.Helpers
+namespace deeplynx.helpers
 {
     using System.Text.Json;
 
