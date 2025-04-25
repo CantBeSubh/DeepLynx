@@ -5,6 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
+    [Route("api/[controller]")]
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordService;
