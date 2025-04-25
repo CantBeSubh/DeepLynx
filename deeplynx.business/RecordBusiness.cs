@@ -3,7 +3,7 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using deeplynx.Helpers;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 
