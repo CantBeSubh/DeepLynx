@@ -1,7 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using deeplynx.datalayer;
-using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 
