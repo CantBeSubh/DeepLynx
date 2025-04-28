@@ -8,6 +8,11 @@ namespace deeplynx.datalayer.Models;
 
 [PrimaryKey("OriginId", "DestinationId")]
 [Table("edges", Schema = "deeplynx")]
+[Index("DestinationId", Name = "IX_edges_destination_id")]
+[Index("RelationshipId", Name = "IX_edges_relationship_id")]
+[Index("DestinationId", Name = "idx_edges_destination_id")]
+[Index("OriginId", Name = "idx_edges_origin_id")]
+[Index("RelationshipId", Name = "idx_edges_relationship_id")]
 public partial class Edge
 {
     [Key]

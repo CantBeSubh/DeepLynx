@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("projects", Schema = "deeplynx")]
+[Index("Id", Name = "idx_projects_id")]
 public partial class Project
 {
     [Key]
@@ -44,6 +45,9 @@ public partial class Project
     public virtual ICollection<EdgeParameter> EdgeParameters { get; set; } = new List<EdgeParameter>();
 
     [InverseProperty("Project")]
+    public virtual ICollection<RecordParameter> RecordParameters { get; set; } = new List<RecordParameter>();
+
+    [InverseProperty("Project")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
 
     [InverseProperty("Project")]
@@ -52,7 +56,9 @@ public partial class Project
     [InverseProperty("Project")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 
-    [ForeignKey("ProjectId")]
-    [InverseProperty("Projects")]
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    [InverseProperty("Project")]
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+
+    [InverseProperty("Project")]
+    public virtual ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();
 }
