@@ -27,7 +27,12 @@ docker compose -f docker-compose.yaml up
 
 ##### Running postgres from docker 
 ``` 
-docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -d -p 5432:5432 postgres 
+docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres
+```
+
+This change will also changes to your appsettings.json file connection string:
+```
+"User ID=postgres;Database=deeplynx;Password=postgres;Server=localhost;Port=5432;"
 ```
 
 2. .NET SDK Setup:
@@ -45,13 +50,13 @@ dotnet tool install --global dotnet-ef
 2. Run the following command to apply the latest migrations and update the database:
 
 ```
- dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer   --startup-project deeplynx.api
+dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 ## Development
 ### Create Migration
-If you make changes to the database schema, create a new database migration with a descriptive name. For example, to add a migration for updating the users table, run:
+If you make changes to the datalayer, create a new database migration with a descriptive name. For example, to add a migration for updating the users table, run:
 ```
-dotnet ef migrations add UpdateUsersExample -c DeeplynxContext
+dotnet ef migrations add UpdateUsersExample -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 ### Additional Notes
 * Ensure that your PostgreSQL server is running before attempting to update the database or create migrations.
