@@ -6,11 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("data_sources", Schema = "deeplynx")]
-[Index("ProjectId", Name = "IX_data_sources_project_id")]
-[Index("Id", Name = "idx_data_sources_id")]
-[Index("ProjectId", Name = "idx_data_sources_project_id")]
-public partial class DataSource
+[Table("tags", Schema = "deeplynx")]
+[Index("Id", Name = "idx_tags_id")]
+[Index("ProjectId", Name = "idx_tags_project_id")]
+public partial class Tag
 {
     [Key]
     [Column("id")]
@@ -18,18 +17,6 @@ public partial class DataSource
 
     [Column("name")]
     public string Name { get; set; } = null!;
-
-    [Column("abbreviation")]
-    public string? Abbreviation { get; set; }
-
-    [Column("type")]
-    public string? Type { get; set; }
-
-    [Column("base_uri")]
-    public string? BaseUri { get; set; }
-
-    [Column("config", TypeName = "jsonb")]
-    public string? Config { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
@@ -44,18 +31,19 @@ public partial class DataSource
     public string? ModifiedBy { get; set; }
 
     [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
 
     [ForeignKey("ProjectId")]
-    [InverseProperty("DataSources")]
+    [InverseProperty("Tags")]
     public virtual Project Project { get; set; } = null!;
 
-    [InverseProperty("DataSource")]
-    public virtual ICollection<Record> Records { get; set; } = new List<Record>();
-
-    [InverseProperty("DataSource")]
+    [InverseProperty("Tag")]
     public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
+
+    [ForeignKey("TagId")]
+    [InverseProperty("Tags")]
+    public virtual ICollection<Record> Records { get; set; } = new List<Record>();
 }

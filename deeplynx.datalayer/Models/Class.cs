@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("classes", Schema = "deeplynx")]
+[Index("ProjectId", Name = "IX_classes_project_id")]
+[Index("Id", Name = "idx_classes_id")]
+[Index("ProjectId", Name = "idx_classes_project_id")]
+[Index("Uuid", Name = "idx_classes_uuid")]
 public partial class Class
 {
     [Key]

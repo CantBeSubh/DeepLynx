@@ -7,6 +7,15 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("edge_parameters", Schema = "deeplynx")]
+[Index("DestinationId", Name = "IX_edge_parameters_destination_id")]
+[Index("OriginId", Name = "IX_edge_parameters_origin_id")]
+[Index("ProjectId", Name = "IX_edge_parameters_project_id")]
+[Index("RelationshipId", Name = "IX_edge_parameters_relationship_id")]
+[Index("DestinationId", Name = "idx_edge_parameters_destination_id")]
+[Index("Id", Name = "idx_edge_parameters_id")]
+[Index("OriginId", Name = "idx_edge_parameters_origin_id")]
+[Index("ProjectId", Name = "idx_edge_parameters_project_id")]
+[Index("RelationshipId", Name = "idx_edge_parameters_relationship_id")]
 public partial class EdgeParameter
 {
     [Key]

@@ -7,6 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("record_parameters", Schema = "deeplynx")]
+[Index("ClassId", Name = "IX_record_parameters_class_id")]
+[Index("ClassId", Name = "idx_record_parameters_class_id")]
+[Index("Id", Name = "idx_record_parameters_id")]
+[Index("ProjectId", Name = "idx_record_parameters_project_id")]
 public partial class RecordParameter
 {
     [Key]
@@ -34,7 +38,14 @@ public partial class RecordParameter
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
 
+    [Column("project_id")]
+    public long ProjectId { get; set; }
+
     [ForeignKey("ClassId")]
     [InverseProperty("RecordParameters")]
     public virtual Class Class { get; set; } = null!;
+
+    [ForeignKey("ProjectId")]
+    [InverseProperty("RecordParameters")]
+    public virtual Project Project { get; set; } = null!;
 }

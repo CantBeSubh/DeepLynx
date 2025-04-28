@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("users", Schema = "deeplynx")]
+[Index("Id", Name = "idx_users_id")]
 public partial class User
 {
     [Key]
@@ -37,11 +38,6 @@ public partial class User
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
 
-    [ForeignKey("UserId")]
-    [InverseProperty("Users")]
-    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
-
-    [ForeignKey("UserId")]
-    [InverseProperty("Users")]
-    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+    [InverseProperty("User")]
+    public virtual ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();
 }
