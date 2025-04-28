@@ -7,9 +7,10 @@
 * Ensure your code is well-documented and includes necessary comments.
 * Maintain consistency with the existing codebase.
 ### Testing
-* Write unit tests for any new functionality.
+* Write unit tests for any new functionality within the Testing folder.
 * Ensure all existing and new tests pass before submitting your pull request.
-* Run the tests using the following command:
+* Run the tests using the following command from the root folder:
+
 ```
 dotnet test
 ```
