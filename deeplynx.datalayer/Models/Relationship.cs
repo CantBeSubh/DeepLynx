@@ -7,6 +7,14 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("relationships", Schema = "deeplynx")]
+[Index("DestinationId", Name = "IX_relationships_destination_id")]
+[Index("OriginId", Name = "IX_relationships_origin_id")]
+[Index("ProjectId", Name = "IX_relationships_project_id")]
+[Index("DestinationId", Name = "idx_relationships_destination_id")]
+[Index("Id", Name = "idx_relationships_id")]
+[Index("OriginId", Name = "idx_relationships_origin_id")]
+[Index("ProjectId", Name = "idx_relationships_project_id")]
+[Index("Uuid", Name = "idx_relationships_uuid")]
 public partial class Relationship
 {
     [Key]

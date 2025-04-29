@@ -6,6 +6,9 @@ namespace deeplynx.datalayer.Models;
 
 public partial class DeeplynxContext : DbContext
 {
+    public DeeplynxContext()
+    {
+    }
 
     public DeeplynxContext(DbContextOptions<DeeplynxContext> options)
         : base(options)
@@ -32,8 +35,18 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<RolePermission> RolePermissions { get; set; }
+
+    public virtual DbSet<RoleResource> RoleResources { get; set; }
+
+    public virtual DbSet<Tag> Tags { get; set; }
+
     public virtual DbSet<User> Users { get; set; }
-    
+
+    public virtual DbSet<UserProject> UserProjects { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DefaultConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -42,7 +55,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("classes_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Classes).HasConstraintName("classes_project_id_fkey");
         });
@@ -52,7 +64,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("data_sources_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Project).WithMany(p => p.DataSources).HasConstraintName("data_sources_project_id_fkey");
         });
@@ -75,7 +86,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("edge_parameters_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Destination).WithMany(p => p.EdgeParameterDestinations).HasConstraintName("edge_parameters_destination_id_fkey");
 
@@ -91,17 +101,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("permissions_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.Permissions)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("permissions_data_source_id_fkey");
-
-            entity.HasOne(d => d.Record).WithMany(p => p.Permissions)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("permissions_record_id_fkey");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Permissions).HasConstraintName("permissions_role_id_fkey");
         });
 
         modelBuilder.Entity<Project>(entity =>
@@ -109,15 +108,15 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("projects_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
         });
 
         modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("records_pkey");
 
+            entity.HasIndex(e => e.Properties, "idx_records_properties").HasMethod("gin");
+
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Records)
                 .OnDelete(DeleteBehavior.Cascade)
@@ -126,6 +125,25 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Records).HasConstraintName("records_project_id_fkey");
+
+            entity.HasMany(d => d.Tags).WithMany(p => p.Records)
+                .UsingEntity<Dictionary<string, object>>(
+                    "RecordTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .HasConstraintName("record_tags_tag_id_fkey"),
+                    l => l.HasOne<Record>().WithMany()
+                        .HasForeignKey("RecordId")
+                        .HasConstraintName("record_tags_record_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("RecordId", "TagId").HasName("record_tags_pkey");
+                        j.ToTable("record_tags", "deeplynx");
+                        j.HasIndex(new[] { "RecordId" }, "idx_record_tags_record_id");
+                        j.HasIndex(new[] { "TagId" }, "idx_record_tags_tag_id");
+                        j.IndexerProperty<long>("RecordId").HasColumnName("record_id");
+                        j.IndexerProperty<long>("TagId").HasColumnName("tag_id");
+                    });
         });
 
         modelBuilder.Entity<RecordParameter>(entity =>
@@ -133,9 +151,10 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("record_parameters_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Class).WithMany(p => p.RecordParameters).HasConstraintName("record_parameters_class_id_fkey");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.RecordParameters).HasConstraintName("record_parameters_project_id_fkey");
         });
 
         modelBuilder.Entity<Relationship>(entity =>
@@ -143,7 +162,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("relationships_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Destination).WithMany(p => p.RelationshipDestinations).HasConstraintName("relationships_destination_id_fkey");
 
@@ -160,23 +178,45 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Roles).HasConstraintName("roles_project_id_fkey");
+        });
 
-            entity.HasMany(d => d.Users).WithMany(p => p.Roles)
-                .UsingEntity<Dictionary<string, object>>(
-                    "UserRole",
-                    r => r.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("user_roles_user_id_fkey"),
-                    l => l.HasOne<Role>().WithMany()
-                        .HasForeignKey("RoleId")
-                        .HasConstraintName("user_roles_role_id_fkey"),
-                    j =>
-                    {
-                        j.HasKey("RoleId", "UserId").HasName("user_roles_pkey");
-                        j.ToTable("user_roles", "deeplynx");
-                        j.IndexerProperty<long>("RoleId").HasColumnName("role_id");
-                        j.IndexerProperty<long>("UserId").HasColumnName("user_id");
-                    });
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("role_permissions_pkey");
+
+            entity.HasOne(d => d.Permission).WithMany(p => p.RolePermissions).HasConstraintName("role_permissions_permission_id_fkey");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.RolePermissions).HasConstraintName("role_permissions_role_id_fkey");
+        });
+
+        modelBuilder.Entity<RoleResource>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("role_resources_pkey");
+
+            entity.Property(e => e.HasAccess).HasDefaultValue(true);
+
+            entity.HasOne(d => d.DataSource).WithMany(p => p.RoleResources)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("role_resources_data_source_id_fkey");
+
+            entity.HasOne(d => d.Record).WithMany(p => p.RoleResources)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("role_resources_record_id_fkey");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.RoleResources).HasConstraintName("role_resources_role_id_fkey");
+
+            entity.HasOne(d => d.Tag).WithMany(p => p.RoleResources)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("role_resources_tag_id_fkey");
+        });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("tags_pkey");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -184,24 +224,19 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("users_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+        });
 
-            entity.HasMany(d => d.Projects).WithMany(p => p.Users)
-                .UsingEntity<Dictionary<string, object>>(
-                    "UserProject",
-                    r => r.HasOne<Project>().WithMany()
-                        .HasForeignKey("ProjectId")
-                        .HasConstraintName("user_projects_project_id_fkey"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("user_projects_user_id_fkey"),
-                    j =>
-                    {
-                        j.HasKey("UserId", "ProjectId").HasName("user_projects_pkey");
-                        j.ToTable("user_projects", "deeplynx");
-                        j.IndexerProperty<long>("UserId").HasColumnName("user_id");
-                        j.IndexerProperty<long>("ProjectId").HasColumnName("project_id");
-                    });
+        modelBuilder.Entity<UserProject>(entity =>
+        {
+            entity.HasKey(e => new { e.UserId, e.ProjectId }).HasName("user_projects_pkey");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.UserProjects).HasConstraintName("user_projects_project_id_fkey");
+
+            entity.HasOne(d => d.Role).WithMany(p => p.UserProjects)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("user_projects_role_id_fkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserProjects).HasConstraintName("user_projects_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

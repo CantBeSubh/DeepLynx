@@ -1,8 +1,9 @@
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using deeplynx.helpers;
+
 
 namespace deeplynx.business;
 
@@ -30,16 +31,23 @@ public class RecordBusiness : IRecordBusiness
 
     public async Task<Record> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
+        var maxDepth = CalculateJsonMaxDepth(dto.Properties);
+        if (maxDepth > 3)
+        {
+            throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
+        }
+            
         var record = new Record
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
+            Uri = dto.Uri,
             Properties = dto.Properties.ToString()!,
-            Name = JsonHelper.ExtractStringOrJson(dto.Name),
-            OriginalId = JsonHelper.ExtractStringOrJson(dto.original_id),
+            OriginalId = dto.OriginalId,
+            Name = dto.Name,
             ClassName = dto.ClassName,
-            CreatedAt = DateTime.UtcNow.ToLocalTime(),
-            ModifiedAt = DateTime.UtcNow.ToLocalTime()
+            CreatedAt = DateTime.UtcNow,
+            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Records.Add(record);
@@ -52,11 +60,13 @@ public class RecordBusiness : IRecordBusiness
     {
         var record = await GetRecord(projectId, dataSourceId, recordId);
 
+        record.Uri = dto.Uri;
         record.Properties = dto.Properties.ToString()!;
-        record.Name = JsonHelper.ExtractStringOrJson(dto.Name);
-        record.OriginalId = JsonHelper.ExtractStringOrJson(dto.original_id);
+        record.OriginalId = dto.OriginalId;
+        record.Name = dto.Name;
         record.ClassName = dto.ClassName;
-        record.ModifiedAt = DateTime.UtcNow.ToLocalTime();
+        record.ModifiedAt = DateTime.UtcNow;
+        record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
 
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
@@ -71,5 +81,33 @@ public class RecordBusiness : IRecordBusiness
         _context.Records.Remove(record);
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public int CalculateJsonMaxDepth(JsonNode node)
+    {
+        if (node is not JsonObject && node is not JsonArray)
+            return 0;
+
+        int maxDepth = 0;
+        if (node is JsonObject jsonObject)
+        {
+            foreach (var prop in jsonObject)
+            {
+                int depth = CalculateJsonMaxDepth(prop.Value);
+                if (depth > maxDepth)
+                    maxDepth = depth;
+            }
+        }
+        else if (node is JsonArray jsonArray)
+        {
+            foreach (JsonNode item in jsonArray)
+            {
+                int depth = CalculateJsonMaxDepth(item);
+                if (depth > maxDepth)
+                    maxDepth = depth;
+            }
+        }
+
+        return maxDepth + 1;
     }
 }
