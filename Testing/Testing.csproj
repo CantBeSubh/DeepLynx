@@ -11,13 +11,26 @@
 
     <ItemGroup>
         <PackageReference Include="coverlet.collector" Version="6.0.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.2" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.2" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0"/>
+        <PackageReference Include="MockQueryable.Moq" Version="7.0.4-beta" />
+        <PackageReference Include="Moq" Version="4.20.72" />
         <PackageReference Include="xunit" Version="2.5.3"/>
         <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3"/>
     </ItemGroup>
 
     <ItemGroup>
         <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\deeplynx.api\deeplynx.api.csproj" />
+      <ProjectReference Include="..\deeplynx.business\deeplynx.business.csproj" />
+      <ProjectReference Include="..\deeplynx.datalayer\deeplynx.datalayer.csproj" />
+      <ProjectReference Include="..\deeplynx.helpers\deeplynx.helpers.csproj" />
+      <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
+      <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
     </ItemGroup>
 
 </Project>
