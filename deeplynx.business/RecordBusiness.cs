@@ -83,7 +83,7 @@ public class RecordBusiness : IRecordBusiness
         return true;
     }
 
-    static int CalculateJsonMaxDepth(JsonNode node)
+    public int CalculateJsonMaxDepth(JsonNode node)
     {
         if (node is not JsonObject && node is not JsonArray)
             return 0;
