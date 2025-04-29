@@ -51,6 +51,7 @@ builder.Services.AddDbContext<DeeplynxContext>(options =>
 //serves for Dependency Injection
 builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>();
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
+builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 
 var app = builder.Build();
 

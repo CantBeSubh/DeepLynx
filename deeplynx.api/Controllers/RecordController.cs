@@ -35,7 +35,6 @@ namespace deeplynx.api.Controllers
         {
             var record = await _recordService.CreateRecord(projectId, dataSourceId, dto);
             return Ok(record);
-            // return CreatedAtAction(nameof(GetRecord), new { projectId, dataSourceId, recordId = record.Id }, record);
         }
 
         [HttpPut("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
