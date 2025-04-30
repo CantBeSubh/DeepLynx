@@ -38,7 +38,7 @@ public class ClassBusiness : IClassBusiness
             Name = dto.Name,
             Description = dto.Description,
             Uuid = dto.Uuid,
-            CreatedAt =DateTime.UtcNow.ToLocalTime(),
+            CreatedAt =DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
@@ -55,7 +55,7 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Name = dto.Name;
         updatedClass.Description = dto.Description;
         updatedClass.Uuid = dto.Uuid;
-        updatedClass.ModifiedAt = DateTime.UtcNow.ToLocalTime();
+        updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
 
         _context.Classes.Update(updatedClass);
@@ -71,8 +71,8 @@ public class ClassBusiness : IClassBusiness
         if (await IsClassInUse(classId))
             throw new InvalidOperationException("Cannot delete Class: it is still referenced by other entities.");
 
-        dbClass.DeletedAt = DateTime.UtcNow.ToLocalTime();
-        dbClass.ModifiedAt = DateTime.UtcNow.ToLocalTime();
+        dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        dbClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _context.SaveChangesAsync();
         return true;
