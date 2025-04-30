@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.models;
 
 namespace deeplynx.api.Controllers
 {
@@ -30,14 +31,14 @@ namespace deeplynx.api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateProject([FromBody] Project project)
+        public async Task<IActionResult> CreateProject([FromBody] ProjectRequestDto project)
         {
             var createdProject = await _projectBusiness.CreateProject(project);
             return CreatedAtAction(nameof(GetProject), new { projectId = createdProject.Id }, createdProject);
         }
 
         [HttpPut("{projectId}")]
-        public async Task<IActionResult> UpdateProject(long projectId, [FromBody] Project project)
+        public async Task<IActionResult> UpdateProject(long projectId, [FromBody] ProjectRequestDto project)
         {
             var updatedProject = await _projectBusiness.UpdateProject(projectId, project);
             return Ok(updatedProject);

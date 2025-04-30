@@ -1,5 +1,6 @@
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
@@ -25,18 +26,23 @@ public class ProjectBusiness : IProjectBusiness
             ?? throw new KeyNotFoundException("Project not found.");
     }
 
-    public async Task<Project> CreateProject(Project project)
+    public async Task<Project> CreateProject(ProjectRequestDto project)
     {
-        project.CreatedAt = DateTime.UtcNow.ToLocalTime();
-        project.ModifiedAt = DateTime.UtcNow.ToLocalTime();
+        var newProject = new Project
+        {
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null, //TODO: Will add once JWTs work
+            Name = project.Name,
+            Abbreviation = project.Abbreviation,
+        }; 
 
-        _context.Projects.Add(project);
+        _context.Projects.Add(newProject);
         await _context.SaveChangesAsync();
 
-        return project;
+        return newProject;
     }
 
-    public async Task<Project> UpdateProject(long projectId, Project project)
+    public async Task<Project> UpdateProject(long projectId, ProjectRequestDto project)
     {
         var existingProject = await _context.Projects.FindAsync(projectId);
 
@@ -45,11 +51,8 @@ public class ProjectBusiness : IProjectBusiness
 
         existingProject.Name = project.Name;
         existingProject.Abbreviation = project.Abbreviation;
-        existingProject.CreatedBy = project.CreatedBy;
-        existingProject.CreatedAt = project.CreatedAt;
-        existingProject.ModifiedBy = project.ModifiedBy;
-        existingProject.ModifiedAt = DateTime.UtcNow.ToLocalTime();
-        existingProject.DeletedAt = project.DeletedAt;
+        existingProject.ModifiedBy = null; //TODO: Will add once JWTS work
+        existingProject.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Update(existingProject);
         await _context.SaveChangesAsync();
