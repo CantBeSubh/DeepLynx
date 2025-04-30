@@ -1,18 +1,20 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace deeplynx.models;
 
 public class RecordRequestDto
 {
+    
+    public string? Uri { get; set; }
+    
     [Required]
-    public JsonElement Properties { get; set; }
+    public JsonObject Properties { get; set; }
+    
+    public string? OriginalId { get; set; }
+    public string? Name { get; set; }
 
-    public int? Depth { get; set; }
-
-    public object? Name { get; set; }
-
-    public object? original_id { get; set; }
-
+    public int? ClassId { get; set; }
     public string? ClassName { get; set; }
+    
 }
