@@ -38,8 +38,8 @@ public class ClassBusiness : IClassBusiness
             Name = dto.Name,
             Description = dto.Description,
             Uuid = dto.Uuid,
-            CreatedAt = DateTime.UtcNow.ToLocalTime(),
-            CreatedBy = ""
+            CreatedAt =DateTime.UtcNow.ToLocalTime(),
+            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Classes.Add(newClass);
@@ -56,7 +56,7 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Description = dto.Description;
         updatedClass.Uuid = dto.Uuid;
         updatedClass.ModifiedAt = DateTime.UtcNow.ToLocalTime();
-        updatedClass.ModifiedBy = "";
+        updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
