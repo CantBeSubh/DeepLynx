@@ -1,10 +1,11 @@
-using deeplynx.business;
-using deeplynx.datalayer.Models;
-using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+
+using deeplynx.datalayer.Models;
+using deeplynx.business;
+using deeplynx.interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +53,8 @@ builder.Services.AddDbContext<DeeplynxContext>(options =>
 builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>();
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
+builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
+
 
 var app = builder.Build();
 
