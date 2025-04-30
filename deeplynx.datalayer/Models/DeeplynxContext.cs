@@ -79,6 +79,10 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Relationship).WithMany(p => p.Edges)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("edges_relationship_id_fkey");
+            
+            entity.HasOne(e => e.Project).WithMany(p => p.Edges).HasConstraintName("edges_project_id_fkey");
+            
+            entity.HasOne(e => e.DataSource).WithMany(d => d.Edges).HasConstraintName("edges_data_source_id_fkey");
         });
 
         modelBuilder.Entity<EdgeParameter>(entity =>

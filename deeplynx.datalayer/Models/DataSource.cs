@@ -52,6 +52,9 @@ public partial class DataSource
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]
     public virtual Project Project { get; set; } = null!;
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
