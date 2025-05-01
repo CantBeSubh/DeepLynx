@@ -26,6 +26,16 @@ When you're ready to submit your changes, follow these steps:
 
 3. Build the app: Ensure the app builds properly with your changes.
     - Using Rider, this can be performed with the play button in the top right: ![alt text](markdown-assets/buildApp.png)
+    - if the resulting browser window doesn't show API routes, there is something wrong with the build. Please address any build issues before submitting your PR.
+
+4. If you added API endpoints, test them in scalar.
+    - Following the instructions in step 3 should bring you to a page like this. You can also find it by navigating to `localhost:5095`.
+    ![alt text](markdown-assets/scalar.png)
+    - Test each endpoint that you created. 
+        - Doing so may require you to insert some dummy data in other domains.
+        - For example, to create a record, you need to create a project and a datasource first.
+        - Data created via scalar, just like via Postman or other tools, will live on in your database. This means that if you have previously created additional objects for testing, you will likely not need to re-create new ones.
+    - To do your testing, you can use scalar, Postman, or any other API client of your choice. Scalar is just highlighted here because it is conveniently built in to the project.
 
 4. Create a pull request: Provide a clear description of your changes and any related issues.
 
