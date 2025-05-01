@@ -10,18 +10,10 @@ import Tabs from "@/app/components/Tabs";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import SearchInput from "@/app/components/SearchInput";
 import { fileTableData } from "@/app/dummy_data/data";
-
-type TableRow = {
-  id: number;
-  fileName: string;
-  timeseries: boolean;
-  fileSize: number;
-  dateModified: string;
-  select?: boolean;
-};
+import { FileViewerTableRow, TableRow, Column } from "@/app/types/types";
 
 const FileViewer = () => {
-  const [tableData, setTableData] = useState<TableRow[]>(fileTableData);
+  const [tableData, setTableData] = useState<FileViewerTableRow[]>(fileTableData);
 
   const handleSelectChange = (id: number) => {
     setTableData((prevData) =>
@@ -37,7 +29,7 @@ const FileViewer = () => {
 
   const isAnyRowSelected = tableData.some((row) => row.select);
 
-  const columns = [
+  const columns: Column[] = [
     {
       header: "Select",
       accessor: "select",
@@ -47,7 +39,7 @@ const FileViewer = () => {
             type="checkbox"
             className="checkbox"
             checked={row.select || false}
-            onChange={() => handleSelectChange(row.id)}
+            onChange={() => handleSelectChange(row.id as number)}
           />
         </label>
       ),
@@ -63,14 +55,17 @@ const FileViewer = () => {
     {
       header: "Timeseries",
       accessor: "timeseries",
-      cell: (row: TableRow) => (
-        <input
-          type="checkbox"
-          checked={row.timeseries}
-          className="checkbox checkbox-primary"
-          readOnly
-        />
-      ),
+      cell: (row: TableRow) => {
+        const isChecked = ("timeseries" in row) ? row.timeseries : false;
+        return (
+          <input
+            type="checkbox"
+            checked={isChecked}
+            className="checkbox checkbox-primary"
+            readOnly
+          />
+        )
+      }
     },
     {
       header: "File Size (KB)",
@@ -82,7 +77,7 @@ const FileViewer = () => {
     },
   ];
 
-  const timeseries_columns = [
+  const timeseries_columns: Column[] = [
     {
       header: "Select",
       accessor: "select",
@@ -92,7 +87,7 @@ const FileViewer = () => {
             type="checkbox"
             className="checkbox"
             checked={row.select || false}
-            onChange={() => handleSelectChange(row.id)}
+            onChange={() => handleSelectChange(row.id as number)}
           />
         </label>
       ),
@@ -117,7 +112,7 @@ const FileViewer = () => {
 
   const timeseries_true_info = tableData.filter((row) => row.timeseries);
 
-  /* Tabs bummy data */
+  /* Tabs dummy data */
   const tabData = [
     {
       label: "All",
