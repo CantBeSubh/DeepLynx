@@ -31,7 +31,7 @@ spec:
               memory: "4Gi"
               cpu: "1500m"
           ports:
-            - containerPort: 5000
+            - containerPort: 3000
 ---
 apiVersion: v1
 kind: Service
@@ -43,7 +43,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 5000
+      targetPort: 3000
   selector:
     app: deeplynxv3
 ---
@@ -63,7 +63,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   rules:
-    - host: deeplynxv3.dev.inl.gov
+    - host: nexus.dev.inl.gov
       http:
         paths:
           - path: /
