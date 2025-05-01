@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEdge(long projectId, long dataSourceId, [FromBody] EdgeRequestDto edge)
+        public async Task<IActionResult> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
         {
             try
             {
