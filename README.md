@@ -1,12 +1,12 @@
 # DeepLynx Nexus
-## Deployment
-### Prerequisites
-1. PostgreSQL: Ensure PostgreSQL is installed and running on your system. Download [PostgreSQL](https://www.postgresql.org/)
+## Prerequisites
+1. Postgres download:
+    * Download [PostgreSQL](https://www.postgresql.org/) natively, OR
+    * Download [Docker](https://docs.docker.com/engine/install/)
 
 2. .NET SDK: Ensure .NET SDK version 9.0 is installed on your system. Download [.NET 9.0](https://dotnet.microsoft.com/en-us/).
 
-### Install
-#### Docker Setup
+## Docker Setup
 1. Environment variables:
     * Create a .env file in the root directory
     * Copy the contents of .env_sample to .env
@@ -19,32 +19,27 @@ docker compose -f docker-compose.yaml build
 docker compose -f docker-compose.yaml up
 ```
 
-#### Local Setup
+## Local Setup
 1. PostgreSQL Setup:
-    * Install and launch PostgreSQL.
-    * Create a PostgreSQL server. 
-    * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. 
-
-##### Running postgres from docker 
-``` 
-docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres
-```
-
-This change will also changes to your appsettings.json file connection string:
-```
-"User ID=postgres;Database=deeplynx;Password=postgres;Server=localhost;Port=5432;"
-```
+    * Native Install:
+        * Install and launch PostgreSQL.
+        * Create a PostgreSQL server.
+    * Docker Install:
+        * Run the following command: `docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres`
+    * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. For example: 
+        * `"User ID=postgres;Database=deeplynx;Password=postgres;Server=localhost;Port=5432;"`
 
 2. .NET SDK Setup:
+    * Install the .NET SDK version 9.0.
 
-* Install the .NET SDK version 9.0.
 3. Entity Framework CLI:
 
     * Install the .NET Entity Framework CLI tool globally:
-```
-dotnet tool install --global dotnet-ef
-```
-## Load the Database
+        * `dotnet tool install --global dotnet-ef`
+
+## Development
+
+### Load the Database
 1. Navigate to the root folder in your project directory.
 
 2. Run the following command to apply the latest migrations and update the database:
@@ -52,11 +47,14 @@ dotnet tool install --global dotnet-ef
 ```
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
-## Development
+
 ### Create Migration
 If you make changes to the datalayer, create a new database migration with a descriptive name. For example, to add a migration for updating the users table, run:
 ```
 dotnet ef migrations add UpdateUsersExample -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
+
+See [CONTRIBUTING](./CONTRIBUTING.md) for more details.
+
 ### Additional Notes
 * Ensure that your PostgreSQL server is running before attempting to update the database or create migrations.
