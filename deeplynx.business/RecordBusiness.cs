@@ -46,6 +46,7 @@ public class RecordBusiness : IRecordBusiness
             OriginalId = dto.OriginalId,
             Name = dto.Name,
             ClassName = dto.ClassName,
+            ClassId = dto.ClassId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
@@ -65,6 +66,7 @@ public class RecordBusiness : IRecordBusiness
         record.OriginalId = dto.OriginalId;
         record.Name = dto.Name;
         record.ClassName = dto.ClassName;
+        record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
 

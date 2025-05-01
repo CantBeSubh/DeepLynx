@@ -5,6 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
+    [Route("api/projects/{projectId}/datasources/{dataSourceId}/records")]
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordBusiness;
@@ -13,20 +14,20 @@ namespace deeplynx.api.Controllers
         {
             _recordBusiness = recordBusiness;
         }
-        [HttpGet("projects/{projectId}/datasources/{dataSourceId}/records")]
+        [HttpGet]
         public async Task<IActionResult> GetAllRecords(long projectId, long dataSourceId)
         {
             var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId);
             return Ok(records);
         }
-        [HttpGet("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
+        [HttpGet("{recordId}")]
         public async Task<IActionResult> GetRecord(long projectId, long dataSourceId, long recordId)
         {
             var record = await _recordBusiness.GetRecord(projectId, dataSourceId, recordId);
             return Ok(record);
         }
 
-        [HttpPost("projects/{projectId}/datasources/{dataSourceId}/records")]
+        [HttpPost]
         public async Task<IActionResult> CreateRecord(long projectId, long dataSourceId,
             [FromBody] RecordRequestDto dto)
         {
@@ -34,7 +35,7 @@ namespace deeplynx.api.Controllers
             return Ok(record);
         }
 
-        [HttpPut("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
+        [HttpPut("{recordId}")]
         public async Task<IActionResult> UpdateRecord(long projectId, long dataSourceId, long recordId,
             [FromBody] RecordRequestDto dto)
         {
@@ -42,7 +43,7 @@ namespace deeplynx.api.Controllers
             return Ok(updated);
         }
 
-        [HttpDelete("projects/{projectId}/datasources/{dataSourceId}/records/{recordId}")]
+        [HttpDelete("{recordId}")]
         public async Task<IActionResult> DeleteRecord(long projectId, long dataSourceId, long recordId)
         {
             await _recordBusiness.DeleteRecord(projectId, dataSourceId, recordId);
