@@ -54,6 +54,7 @@ builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
+builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
 
 
 var app = builder.Build();
