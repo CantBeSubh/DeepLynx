@@ -10,6 +10,7 @@ import InboxIcon from "@mui/icons-material/Inbox";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import Link from "next/link";
 
 const SideMenu: React.FC = () => {
   const router = useRouter();
@@ -43,7 +44,7 @@ const SideMenu: React.FC = () => {
     <aside className="fixed w-64 bg-gray-800 text-white h-screen p-4 bg-secondary">
       <ul>
         <li>
-          <a
+          <Link
             href="/pages/projects"
             onClick={(event) => handleItemClick("/pages/projects", event)}
             className={`flex items-center block py-2 px-4 rounded ${
@@ -53,7 +54,7 @@ const SideMenu: React.FC = () => {
             }`}
           >
             <OtherHousesOutlinedIcon /> <p className="ml-2">All Projects</p>
-          </a>
+          </Link>
         </li>
         <li>
           <a

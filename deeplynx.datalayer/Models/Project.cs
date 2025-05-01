@@ -49,6 +49,9 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [InverseProperty("Project")]
     public virtual ICollection<Relationship> Relationships { get; set; } = new List<Relationship>();
