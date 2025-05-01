@@ -18,16 +18,16 @@ dotnet test
 ## Submitting Pull Requests
 When you're ready to submit your changes, follow these steps:
 
-1. Create a new branch associated with a jira ticket:
+1. Create a new branch associated with a jira ticket: `git checkout -b DL-100`
+    - If there are multiple jira tickets you're covering, do your best to split them into separate PRs to make them digestable.
+    - If you must tackle multiple tickets in a single PR, just choose one ticket number for your branch name.
 
-```
-git checkout -b DL-100
-```
 2. Make your changes: Ensure your changes include appropriate documentation and tests.
 
-** Do not check in manually altered deeplynx.datalayer files. Pull requests that contain manual datalayer changes will be rejected unless granted prior permission. Database changes are done via migrations, see README. **
+3. Build the app: Ensure the app builds properly with your changes.
+    - Using Rider, this can be performed with the play button in the top right: ![alt text](markdown-assets/buildApp.png)
 
-3. Create a pull request: Provide a clear description of your changes and any related issues.
+4. Create a pull request: Provide a clear description of your changes and any related issues.
 
 ### Communication
 If you need any help or have questions, feel free to reach out. 
