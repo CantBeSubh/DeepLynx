@@ -144,5 +144,5 @@ dotnet ef migrations add <MIGRATION_NAME> -c DeeplynxContext --verbose --project
 This can be done after you've made your migration to verify that the changes are accurately reflected in the DB. Use this command:
 
 ```
-dotnet ef migrations add UpdateUsersExample -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
+dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
