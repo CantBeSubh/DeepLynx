@@ -7,18 +7,10 @@ import GenericTable from "@/app/components/GenericTable";
 import SideMenu from "@/app/components/SideMenu";
 import ModeIcon from "@mui/icons-material/Mode";
 import { initialTableData } from "@/app/dummy_data/data";
-
-type TableRow = {
-  name: string;
-  country: string;
-  adapterType: string;
-  active: boolean;
-  id: string;
-  select?: boolean;
-};
+import { DataSourceTableRow, TableRow, Column } from "@/app/types/types";
 
 const DataSource = () => {
-  const [tableData, setTableData] = useState<TableRow[]>(initialTableData);
+  const [tableData, setTableData] = useState<DataSourceTableRow[]>(initialTableData);
 
   const handleToggleActive = (id: string) => {
     setTableData((prevData) =>
@@ -41,8 +33,8 @@ const DataSource = () => {
   };
 
   const isAnyRowSelected = tableData.some((row) => row.select);
-
-  const columns = [
+  const isRowAcitve = (obj: TableRow) => ("active" in obj) ? obj.active : false;
+  const columns: Column[] = [
     {
       header: "Select",
       accessor: "select",
@@ -52,7 +44,7 @@ const DataSource = () => {
             type="checkbox"
             className="checkbox"
             checked={row.select || false}
-            onChange={() => handleSelectChange(row.id)}
+            onChange={() => handleSelectChange(row.id as string)}
           />
         </label>
       ),
@@ -72,14 +64,15 @@ const DataSource = () => {
     {
       header: "Active",
       accessor: "active",
-      cell: (row: TableRow) => (
+      cell: (row: TableRow) =>
+      (
         <input
           type="checkbox"
-          checked={row.active}
+          checked={isRowAcitve(row)}
           className="toggle toggle-primary"
-          onChange={() => handleToggleActive(row.id)}
+          onChange={() => handleToggleActive(row.id as string)}
         />
-      ),
+      )
     },
     {
       header: "Edit",
