@@ -157,6 +157,8 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Class).WithMany(p => p.RecordParameters).HasConstraintName("record_parameters_class_id_fkey");
+            
+            entity.HasOne(d => d.Tag).WithMany(p => p.RecordParameters).HasConstraintName("record_parameters_tag_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.RecordParameters).HasConstraintName("record_parameters_project_id_fkey");
         });

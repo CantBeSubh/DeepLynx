@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250501202712_FixModifiedAtNulls")]
+    partial class FixModifiedAtNulls
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -502,7 +505,7 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<long?>("ClassId")
+                    b.Property<long>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
 
@@ -537,10 +540,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("record_params");
 
-                    b.Property<long?>("TagId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("tag_id");
-
                     b.HasKey("Id")
                         .HasName("record_parameters_pkey");
 
@@ -551,8 +550,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Id" }, "idx_record_parameters_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_record_parameters_project_id");
-
-                    b.HasIndex(new[] { "TagId" }, "idx_record_parameters_tag_id");
 
                     b.ToTable("record_parameters", "deeplynx");
                 });
@@ -1059,6 +1056,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Class", "Class")
                         .WithMany("RecordParameters")
                         .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("record_parameters_class_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
@@ -1068,16 +1067,9 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasConstraintName("record_parameters_project_id_fkey");
 
-                    b.HasOne("deeplynx.datalayer.Models.Tag", "Tag")
-                        .WithMany("RecordParameters")
-                        .HasForeignKey("TagId")
-                        .HasConstraintName("record_parameters_tag_id_fkey");
-
                     b.Navigation("Class");
 
                     b.Navigation("Project");
-
-                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Relationship", b =>
@@ -1299,8 +1291,6 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
-                    b.Navigation("RecordParameters");
-
                     b.Navigation("RoleResources");
                 });
 
