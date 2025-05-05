@@ -3,8 +3,8 @@ using deeplynx.datalayer.database;
 
 namespace deeplynx.business
 {
-    using DataLayerDataSource = datalayer.Models.DataSource;
-    using BusinessLayerDataSource = models.DataSource;
+    using DataLayerDataSource = deeplynx.datalayer.Models.DataSource;
+    using BusinessLayerDataSource = deeplynx.models.DataSource
 
     public class DataSourceBusiness : IDataSourceBusiness
     {
