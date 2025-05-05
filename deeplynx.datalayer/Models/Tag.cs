@@ -42,6 +42,9 @@ public partial class Tag
 
     [InverseProperty("Tag")]
     public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
+    
+    [InverseProperty("Tag")]
+    public virtual ICollection<RecordParameter> RecordParameters { get; set; } = new List<RecordParameter>();
 
     [ForeignKey("TagId")]
     [InverseProperty("Tags")]

@@ -9,6 +9,7 @@ namespace deeplynx.datalayer.Models;
 [Table("record_parameters", Schema = "deeplynx")]
 [Index("ClassId", Name = "IX_record_parameters_class_id")]
 [Index("ClassId", Name = "idx_record_parameters_class_id")]
+[Index("TagId", Name = "idx_record_parameters_tag_id")]
 [Index("Id", Name = "idx_record_parameters_id")]
 [Index("ProjectId", Name = "idx_record_parameters_project_id")]
 public partial class RecordParameter
@@ -21,7 +22,10 @@ public partial class RecordParameter
     public string RecordParams { get; set; } = null!;
 
     [Column("class_id")]
-    public long ClassId { get; set; }
+    public long? ClassId { get; set; }
+    
+    [Column("tag_id")]
+    public long? TagId { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
@@ -43,7 +47,11 @@ public partial class RecordParameter
 
     [ForeignKey("ClassId")]
     [InverseProperty("RecordParameters")]
-    public virtual Class Class { get; set; } = null!;
+    public virtual Class? Class { get; set; }
+    
+    [ForeignKey("TagId")]
+    [InverseProperty("RecordParameters")]
+    public virtual Tag? Tag { get; set; }
 
     [ForeignKey("ProjectId")]
     [InverseProperty("RecordParameters")]
