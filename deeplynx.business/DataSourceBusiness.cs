@@ -1,17 +1,17 @@
-using deeplynx.interface;
-using deeplynx.datalayer.database;
+using deeplynx.interfaces;
+// Update these to be named correctly 
+using DataLayerDataSource = deeplynx.datalayer.Models.DataSource;
+using BusinessLayerDataSource = deeplynx.models.DataSource;
+
 
 namespace deeplynx.business
 {
-    // Update these to be named correctly 
-    using DataLayerDataSource = deeplynx.datalayer.Models.DataSource;
-    using BusinessLayerDataSource = deeplynx.models.DataSource
 
     public class DataSourceBusiness : IDataSourceBusiness
     {
-        private readonly DeepLynxDatabaseContext _context;
+        private readonly deeplynx.datalayer.Models.DeeplynxContext _context;
 
-        public DataSourceBusiness(DeepLynxDatabaseContext context)
+        public DataSourceBusiness(deeplynx.datalayer.Models.DeeplynxContext context)
         {
             _context = context;
         }

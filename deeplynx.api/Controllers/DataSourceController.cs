@@ -1,6 +1,7 @@
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
+using deeplynx.business;
 
 namespace deeplynx.api.Controllers
 {
@@ -10,7 +11,7 @@ namespace deeplynx.api.Controllers
     {
         private readonly IDataSourceBusiness _dataSourceBusiness;
 
-        public DataSourceController(IDataSourceBusiness DataSourceBusiness)
+        public DataSourceController(IDataSourceBusiness dataSourceBusiness)
         {
             _dataSourceBusiness = dataSourceBusiness;
         }
