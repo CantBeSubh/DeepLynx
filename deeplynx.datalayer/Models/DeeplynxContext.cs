@@ -87,17 +87,17 @@ public partial class DeeplynxContext : DbContext
 
         modelBuilder.Entity<EdgeMapping>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("edge_parameters_pkey");
+            entity.HasKey(e => e.Id).HasName("edge_mappings_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasOne(d => d.Destination).WithMany(p => p.EdgeMappingDestinations).HasConstraintName("edge_parameters_destination_id_fkey");
+            entity.HasOne(d => d.Destination).WithMany(p => p.EdgeMappingDestinations).HasConstraintName("edge_mappings_destination_id_fkey");
 
-            entity.HasOne(d => d.Origin).WithMany(p => p.EdgeMappingOrigins).HasConstraintName("edge_parameters_origin_id_fkey");
+            entity.HasOne(d => d.Origin).WithMany(p => p.EdgeMappingOrigins).HasConstraintName("edge_mappings_origin_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_parameters_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
 
-            entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_parameters_relationship_id_fkey");
+            entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
         });
 
         modelBuilder.Entity<Permission>(entity =>
@@ -152,15 +152,15 @@ public partial class DeeplynxContext : DbContext
 
         modelBuilder.Entity<RecordMapping>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("record_parameters_pkey");
+            entity.HasKey(e => e.Id).HasName("record_mappings_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings).HasConstraintName("record_parameters_class_id_fkey");
+            entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_class_id_fkey");
             
-            entity.HasOne(d => d.Tag).WithMany(p => p.RecordMappings).HasConstraintName("record_parameters_tag_id_fkey");
+            entity.HasOne(d => d.Tag).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_tag_id_fkey");
 
-            entity.HasOne(d => d.Project).WithMany(p => p.RecordMappings).HasConstraintName("record_parameters_project_id_fkey");
+            entity.HasOne(d => d.Project).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_project_id_fkey");
         });
 
         modelBuilder.Entity<Relationship>(entity =>
