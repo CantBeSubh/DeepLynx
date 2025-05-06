@@ -6,17 +6,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("edge_parameters", Schema = "deeplynx")]
-[Index("DestinationId", Name = "IX_edge_parameters_destination_id")]
-[Index("OriginId", Name = "IX_edge_parameters_origin_id")]
-[Index("ProjectId", Name = "IX_edge_parameters_project_id")]
-[Index("RelationshipId", Name = "IX_edge_parameters_relationship_id")]
-[Index("DestinationId", Name = "idx_edge_parameters_destination_id")]
-[Index("Id", Name = "idx_edge_parameters_id")]
-[Index("OriginId", Name = "idx_edge_parameters_origin_id")]
-[Index("ProjectId", Name = "idx_edge_parameters_project_id")]
-[Index("RelationshipId", Name = "idx_edge_parameters_relationship_id")]
-public partial class EdgeParameter
+[Table("edge_mappings", Schema = "deeplynx")]
+[Index("DestinationId", Name = "idx_edge_mappings_destination_id")]
+[Index("Id", Name = "idx_edge_mappings_id")]
+[Index("OriginId", Name = "idx_edge_mappings_origin_id")]
+[Index("ProjectId", Name = "idx_edge_mappings_project_id")]
+[Index("RelationshipId", Name = "idx_edge_mappings_relationship_id")]
+public partial class EdgeMapping
 {
     [Key]
     [Column("id")]
@@ -56,18 +52,18 @@ public partial class EdgeParameter
     public DateTime? DeletedAt { get; set; }
 
     [ForeignKey("DestinationId")]
-    [InverseProperty("EdgeParameterDestinations")]
+    [InverseProperty("EdgeMappingDestinations")]
     public virtual Class Destination { get; set; } = null!;
 
     [ForeignKey("OriginId")]
-    [InverseProperty("EdgeParameterOrigins")]
+    [InverseProperty("EdgeMappingOrigins")]
     public virtual Class Origin { get; set; } = null!;
 
     [ForeignKey("ProjectId")]
-    [InverseProperty("EdgeParameters")]
+    [InverseProperty("EdgeMappings")]
     public virtual Project Project { get; set; } = null!;
 
     [ForeignKey("RelationshipId")]
-    [InverseProperty("EdgeParameters")]
+    [InverseProperty("EdgeMappings")]
     public virtual Relationship Relationship { get; set; } = null!;
 }

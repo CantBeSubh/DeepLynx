@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250506180921_ChangeParamsToMappings")]
+    partial class ChangeParamsToMappings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -222,7 +225,7 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("edges", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeMapping", b =>
+            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeParameter", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -280,7 +283,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("relationship_id");
 
                     b.HasKey("Id")
-                        .HasName("edge_mappings_pkey");
+                        .HasName("edge_parameters_pkey");
 
                     b.HasIndex(new[] { "DestinationId" }, "idx_edge_mappings_destination_id");
 
@@ -485,7 +488,7 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("records", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.RecordMapping", b =>
+            modelBuilder.Entity("deeplynx.datalayer.Models.RecordParameter", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -534,7 +537,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("tag_id");
 
                     b.HasKey("Id")
-                        .HasName("record_mappings_pkey");
+                        .HasName("record_parameters_pkey");
 
                     b.HasIndex(new[] { "ClassId" }, "idx_record_mappings_class_id");
 
@@ -976,35 +979,35 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Relationship");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeMapping", b =>
+            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeParameter", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Class", "Destination")
-                        .WithMany("EdgeMappingDestinations")
+                        .WithMany("EdgeParameterDestinations")
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("edge_mappings_destination_id_fkey");
+                        .HasConstraintName("edge_parameters_destination_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
-                        .WithMany("EdgeMappingOrigins")
+                        .WithMany("EdgeParameterOrigins")
                         .HasForeignKey("OriginId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("edge_mappings_origin_id_fkey");
+                        .HasConstraintName("edge_parameters_origin_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("EdgeMappings")
+                        .WithMany("EdgeParameters")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("edge_mappings_project_id_fkey");
+                        .HasConstraintName("edge_parameters_project_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Relationship", "Relationship")
-                        .WithMany("EdgeMappings")
+                        .WithMany("EdgeParameters")
                         .HasForeignKey("RelationshipId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("edge_mappings_relationship_id_fkey");
+                        .HasConstraintName("edge_parameters_relationship_id_fkey");
 
                     b.Navigation("Destination");
 
@@ -1044,24 +1047,24 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.RecordMapping", b =>
+            modelBuilder.Entity("deeplynx.datalayer.Models.RecordParameter", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Class", "Class")
-                        .WithMany("RecordMappings")
+                        .WithMany("RecordParameters")
                         .HasForeignKey("ClassId")
-                        .HasConstraintName("record_mappings_class_id_fkey");
+                        .HasConstraintName("record_parameters_class_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("RecordMappings")
+                        .WithMany("RecordParameters")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("record_mappings_project_id_fkey");
+                        .HasConstraintName("record_parameters_project_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Tag", "Tag")
-                        .WithMany("RecordMappings")
+                        .WithMany("RecordParameters")
                         .HasForeignKey("TagId")
-                        .HasConstraintName("record_mappings_tag_id_fkey");
+                        .HasConstraintName("record_parameters_tag_id_fkey");
 
                     b.Navigation("Class");
 
@@ -1212,11 +1215,11 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
                 {
-                    b.Navigation("EdgeMappingDestinations");
+                    b.Navigation("EdgeParameterDestinations");
 
-                    b.Navigation("EdgeMappingOrigins");
+                    b.Navigation("EdgeParameterOrigins");
 
-                    b.Navigation("RecordMappings");
+                    b.Navigation("RecordParameters");
 
                     b.Navigation("Records");
 
@@ -1245,11 +1248,11 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("DataSources");
 
-                    b.Navigation("EdgeMappings");
+                    b.Navigation("EdgeParameters");
 
                     b.Navigation("Edges");
 
-                    b.Navigation("RecordMappings");
+                    b.Navigation("RecordParameters");
 
                     b.Navigation("Records");
 
@@ -1273,7 +1276,7 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Relationship", b =>
                 {
-                    b.Navigation("EdgeMappings");
+                    b.Navigation("EdgeParameters");
 
                     b.Navigation("Edges");
                 });
@@ -1289,7 +1292,7 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
-                    b.Navigation("RecordMappings");
+                    b.Navigation("RecordParameters");
 
                     b.Navigation("RoleResources");
                 });
