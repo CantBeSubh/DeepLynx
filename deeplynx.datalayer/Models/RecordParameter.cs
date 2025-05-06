@@ -6,12 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("record_parameters", Schema = "deeplynx")]
-[Index("ClassId", Name = "IX_record_parameters_class_id")]
-[Index("ClassId", Name = "idx_record_parameters_class_id")]
-[Index("TagId", Name = "idx_record_parameters_tag_id")]
-[Index("Id", Name = "idx_record_parameters_id")]
-[Index("ProjectId", Name = "idx_record_parameters_project_id")]
+[Table("record_mappings", Schema = "deeplynx")]
+[Index("ClassId", Name = "idx_record_mappings_class_id")]
+[Index("TagId", Name = "idx_record_mappings_tag_id")]
+[Index("Id", Name = "idx_record_mappings_id")]
+[Index("ProjectId", Name = "idx_record_mappings_project_id")]
 public partial class RecordParameter
 {
     [Key]
