@@ -5,94 +5,94 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/parameters/records")]
-    public class RecordParameterController : ControllerBase
+    [Route("api/projects/{projectId}/mappings")]
+    public class RecordMappingController : ControllerBase
     {
-        private readonly IRecordParameterBusiness _rParamBusiness;
+        private readonly IRecordMappingBusiness _rMappingBusiness;
 
-        public RecordParameterController(IRecordParameterBusiness rParamBusiness)
+        public RecordMappingController(IRecordMappingBusiness rMappingBusiness)
         {
-            _rParamBusiness = rParamBusiness;
+            _rMappingBusiness = rMappingBusiness;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllRecordParams(long projectId)
+        [HttpGet("GetAllRecordMappings")]
+        public async Task<IActionResult> GetAllRecordMappings(long projectId)
         {
             try
             {
-                var rParams = await _rParamBusiness.GetAllRecordParameters(projectId);
-                return Ok(rParams);
+                var rMappings = await _rMappingBusiness.GetAllRecordMappings(projectId);
+                return Ok(rMappings);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while listing all record parameters: {exc}";
+                var message = $"An error occurred while listing all record mappings: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
         
-        [HttpGet("{recordParameterId}")]
-        public async Task<IActionResult> GetRecordParam(long recordParameterId)
+        [HttpGet("GetRecordMapping/{mappingId}")]
+        public async Task<IActionResult> GetRecordMapping(long mappingId)
         {
             try
             {
-                var rParam = await _rParamBusiness.GetRecordParameter(recordParameterId);
-                return Ok(rParam);
+                var rMapping = await _rMappingBusiness.GetRecordMapping(mappingId);
+                return Ok(rMapping);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while listing record parameter {recordParameterId}: {exc}";
+                var message = $"An error occurred while retrieving record mapping {mappingId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
         
-        [HttpPost]
-        public async Task<IActionResult> CreateRecordParam(long projectId, [FromBody] RecordParameterRequestDto dto)
+        [HttpPost("CreateRecordMapping")]
+        public async Task<IActionResult> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
         {
             try
             {
-                var rParam = await _rParamBusiness.CreateRecordParameter(projectId, dto);
-                return Ok(rParam);
+                var rMapping = await _rMappingBusiness.CreateRecordMapping(projectId, dto);
+                return Ok(rMapping);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while creating record parameter: {exc}";
+                var message = $"An error occurred while creating record mapping: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
         
-        [HttpPut("{recordParameterId}")]
-        public async Task<IActionResult> UpdateRecordParam(
+        [HttpPut("UpdateRecordMapping/{mappingId}")]
+        public async Task<IActionResult> UpdateRecordMapping(
             long projectId, 
-            long recordParameterId, 
-            [FromBody] RecordParameterRequestDto dto)
+            long mappingId, 
+            [FromBody] RecordMappingRequestDto dto)
         {
             try
             {
-                var rParam = await _rParamBusiness.UpdateRecordParameter(projectId, recordParameterId, dto);
-                return Ok(rParam);
+                var rMapping = await _rMappingBusiness.UpdateRecordMapping(projectId, mappingId, dto);
+                return Ok(rMapping);
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while updating record parameter {recordParameterId}: {exc}";
+                var message = $"An error occurred while updating record mapping {mappingId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
         
-        [HttpDelete("{recordParameterId}")]
-        public async Task<IActionResult> DeleteRecordParam(long recordParameterId)
+        [HttpDelete("DeleteRecordMapping/{mappingId}")]
+        public async Task<IActionResult> DeleteRecordMapping(long mappingId)
         {
             try
             {
-                await _rParamBusiness.DeleteRecordParameter(recordParameterId);
+                await _rMappingBusiness.DeleteRecordMapping(mappingId);
                 return NoContent();
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting record param {recordParameterId}: {exc}";
+                var message = $"An error occurred while deleting record param {mappingId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

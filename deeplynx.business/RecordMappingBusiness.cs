@@ -5,32 +5,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
-public class RecordParameterBusiness : IRecordParameterBusiness
+public class RecordMappingBusiness : IRecordMappingBusiness
 {
     private readonly DeeplynxContext _context;
 
-    public RecordParameterBusiness(DeeplynxContext context)
+    public RecordMappingBusiness(DeeplynxContext context)
     {
         _context = context;
     }
 
-    public async Task<IEnumerable<RecordParameter>> GetAllRecordParameters(long projectId)
+    public async Task<IEnumerable<RecordMapping>> GetAllRecordMappings(long projectId)
     {
-        return await _context.RecordParameters
+        return await _context.RecordMappings
             .Where(rp => rp.ProjectId == projectId).ToListAsync();
     }
 
-    public async Task<RecordParameter> GetRecordParameter(long recordParameterId)
+    public async Task<RecordMapping> GetRecordMapping(long mappingId)
     {
-        return await _context.RecordParameters
-            .FirstOrDefaultAsync(rp => rp.Id == recordParameterId);
+        return await _context.RecordMappings
+            .FirstOrDefaultAsync(rp => rp.Id == mappingId);
     }
 
-    public async Task<RecordParameter> CreateRecordParameter(
+    public async Task<RecordMapping> CreateRecordMapping(
         long projectId, 
-        RecordParameterRequestDto dto)
+        RecordMappingRequestDto dto)
     {
-        var recordParameter = new RecordParameter
+        var mapping = new RecordMapping
         {
             RecordParams = dto.RecordParams.ToString(),
             ProjectId = projectId,
@@ -38,35 +38,35 @@ public class RecordParameterBusiness : IRecordParameterBusiness
             TagId = dto.TagId
         };
         
-        _context.RecordParameters.Add(recordParameter);
+        _context.RecordMappings.Add(mapping);
         await _context.SaveChangesAsync();
         
-        return recordParameter;
+        return mapping;
     }
 
-    public async Task<RecordParameter> UpdateRecordParameter(
+    public async Task<RecordMapping> UpdateRecordMapping(
         long projectId,
-        long recordParameterId,
-        RecordParameterRequestDto dto)
+        long mappingId,
+        RecordMappingRequestDto dto)
     {
-        var recordParameter = await GetRecordParameter(recordParameterId);
+        var mapping = await GetRecordMapping(mappingId);
 
-        recordParameter.RecordParams = dto.RecordParams.ToString();
-        recordParameter.ProjectId = projectId;
-        recordParameter.ClassId = dto.ClassId;
-        recordParameter.TagId = dto.TagId;
+        mapping.RecordParams = dto.RecordParams.ToString();
+        mapping.ProjectId = projectId;
+        mapping.ClassId = dto.ClassId;
+        mapping.TagId = dto.TagId;
         
-        _context.RecordParameters.Add(recordParameter);
+        _context.RecordMappings.Add(mapping);
         await _context.SaveChangesAsync();
         
-        return recordParameter;
+        return mapping;
     }
 
-    public async Task<bool> DeleteRecordParameter(long recordParameterId)
+    public async Task<bool> DeleteRecordMapping(long mappingId)
     {
-        var recordParameter = await GetRecordParameter(recordParameterId);
+        var mapping = await GetRecordMapping(mappingId);
         
-        _context.RecordParameters.Remove(recordParameter);
+        _context.RecordMappings.Remove(mapping);
         await _context.SaveChangesAsync();
         
         return true;

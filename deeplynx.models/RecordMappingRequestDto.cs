@@ -3,13 +3,10 @@ using System.Text.Json.Nodes;
 
 namespace deeplynx.models;
 
-public class RecordParameterRequestDto
+public class RecordMappingRequestDto
 {
     [Required]
     public JsonObject RecordParams { get; set; }
-    
-    [Required]
-    public int ProjectId { get; set; }
     
     public int? ClassId { get; set; }
     
