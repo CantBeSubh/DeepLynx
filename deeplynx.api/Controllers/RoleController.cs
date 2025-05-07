@@ -69,7 +69,7 @@ namespace deeplynx.api.Controllers
             if (!success)
                 return NotFound(new { message = "This role was not found or was already deleted"});
 
-            return Ok(new { message = "This role was soft deleted successfully"})
+            return Ok(new { message = "This role was soft deleted successfully" });
         }
 
 
