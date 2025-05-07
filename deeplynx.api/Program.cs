@@ -56,6 +56,7 @@ builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
 builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
 builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
+builder.Services.AddTransient<IRecordMappingBusiness, RecordMappingBusiness>();
 
 var app = builder.Build();
 
