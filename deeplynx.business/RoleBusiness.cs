@@ -64,7 +64,7 @@ namespace deeplynx.business
             if (existing == null)
                 throw new Exception("Role not found");
 
-            existing.Name = role.Name
+            existing.Name = role.Name;
 
             _context.SaveChanges();
 
