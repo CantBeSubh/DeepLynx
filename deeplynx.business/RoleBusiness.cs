@@ -25,6 +25,7 @@ namespace deeplynx.business
 
         public Role GetRole(long projectId, long roleId)
         {
+            // First or Default should only return a single record I believe, so should be good on any multiple returns issue
             var role = _context.Roles.FirstOrDefault(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null);
 
             if (role == null)
@@ -76,6 +77,7 @@ namespace deeplynx.business
             if (existing == null)
                 return false;
 
+            //soft delete
             existing.DeletedAt = DateTime.UtcNow; 
             _context.SaveChanges();
 
