@@ -1,87 +1,67 @@
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
-using deeplynx.datalayer.Models;
-
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business
 {
     public class RoleBusiness : IRoleBusiness
     {
-        private readonly deeplynx.datalayer.Models.DeeplynxContext _context;
+        private readonly DeeplynxContext _context;
 
-        public RoleBusiness(deeplynx.datalayer.Models.DeeplynxContext context)
+        public RoleBusiness(DeeplynxContext context)
         {
             _context = context;
         }
 
-        public IEnumerable<Role> GetAllRoles(long projectId)
+        public async Task<IEnumerable<Role>> GetAllRoles(long projectId)
         {
-            return _context.Roles.Where(r => r.ProjectId == projectId && r.DeletedAt == null).Select(r => new Role
-            {
-                Id = r.Id,
-                Name = r.Name,
-                ProjectId = r.ProjectId
-            }).ToList();
+            return await _context.Roles
+                .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
+                .ToListAsync();
         }
 
-        public Role GetRole(long projectId, long roleId)
+        public async Task<Role> GetRole(long projectId, long roleId)
         {
-            // First or Default should only return a single record I believe, so should be good on any multiple returns issue
-            var role = _context.Roles.FirstOrDefault(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null);
-
-            if (role == null)
-                throw new Exception("Role not found");
-
-            return new Role
-            {
-                Id = role.Id,
-                Name = role.Name,
-                ProjectId = role.ProjectId
-            };
+            return await _context.Roles
+                .FirstOrDefaultAsync(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null) ??
+                throw new KeyNotFoundException($"Role with id {roleId} not found");
         }
 
-        public Role CreateNewRole(Role role)
+        public async Task<Role> CreateRole(long projectId, RoleRequestDto dto)
         {
-            if (role == null)
-                throw new ArgumentNullException(nameof(role));
-
-            var newRole = new datalayer.Models.Role
+            var role = new Role
             {
-                Name = role.Name,
-                ProjectId = role.ProjectId
+                Name = dto.Name,
+                ProjectId = projectId
             };
 
-            _context.Roles.Add(newRole);
-            _context.SaveChanges();
-
-            role.Id = newRole.Id;
-            return role;
-        }
-
-        public Role UpdateRole(long projectId, long roleId, Role role)
-        {
-            var existing = _context.Roles.FirstOrDefault(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null);
-
-            if (existing == null)
-                throw new Exception("Role not found");
-
-            existing.Name = role.Name;
-
-            _context.SaveChanges();
+            _context.Roles.Add(role);
+            await _context.SaveChangesAsync();
 
             return role;
         }
 
-        public bool DeleteRole(long projectId, long roleId)
+        public async Task<Role> UpdateRole(long projectId, long roleId, RoleRequestDto dto)
         {
-            var existing = _context.Roles.FirstOrDefault(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null);
-            if (existing == null)
-                return false;
+            var role = await GetRole(projectId, roleId);
+
+            role.Name = dto.Name;
+
+            _context.Roles.Update(role);
+            await _context.SaveChangesAsync();
+
+            return role;
+        }
+
+        public async Task<bool> DeleteRole(long projectId, long roleId)
+        {
+            var role = await GetRole(projectId, roleId);
 
             //soft delete
-            existing.DeletedAt = DateTime.UtcNow; 
-            _context.SaveChanges();
-
+            role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
+            
+            await _context.SaveChangesAsync();
             return true;
         }
     }

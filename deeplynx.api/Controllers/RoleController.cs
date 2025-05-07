@@ -1,12 +1,12 @@
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    // Double check with Jason, Natalie or J2 that this is how we wanted to explicity deal with routes on method level
-    [Route("projects/{projectId}")]
+    [Route("projects/{projectId}/roles")]
     public class RoleController : ControllerBase
     {
         private readonly IRoleBusiness _roleBusiness;
@@ -17,59 +17,88 @@ namespace deeplynx.api.Controllers
         }
 
         [HttpGet("GetAllRoles")]
-        public ActionResult<IEnumerable<Role>> GetAll(long projectId)
+        public async Task<IActionResult> GetAllRoles(long projectId)
         {
-            var roles = _roleBusiness.GetAllRoles(projectId);
-            return Ok(new { message = "Returned all Roles", data = roles});
+            try
+            {
+                var roles = await _roleBusiness.GetAllRoles(projectId);
+                return Ok(new { message = "Returned all roles", data = roles });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing roles: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
         [HttpGet("GetRole/{roleId}")]
-        public ActionResult<Role> Get(long projectId, long roleId)
+        public async Task<IActionResult> GetRole(long projectId, long roleId)
         {
-            try 
+            try
             {
-                var role = _roleBusiness.GetRole(projectId, roleId);
-                return Ok(new { message = "Returned Role Requested", data = role});
+                var role = await _roleBusiness.GetRole(projectId, roleId);
+                return Ok(role);
             }
-            catch (Exception)
+            catch (Exception exc)
             {
-                return NotFound(new { message = "Role not found"});
+                var message = $"An error occurred while retrieving role {roleId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
-        [HttpPost("CreateNewRole")]  //CHECK
-        public ActionResult<Role> Post(long projectId, [FromBody] Role role)
+        [HttpPost("CreateRole")]
+        public async Task<IActionResult> CreateRole(
+            long projectId, 
+            [FromBody] RoleRequestDto dto)
         {
-            if (role == null)
-                return BadRequest(new { message = "Role is Null"});
-
-            role.ProjectId = projectId;
-            var created = _roleBusiness.CreateNewRole(role);
-            return Ok(new { message = "Role created successfully", data = created});
-        }
+            try
+            {
+                var role = await _roleBusiness.CreateRole(projectId, dto);
+                return Ok(role);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while creating role: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }   
 
         [HttpPut("UpdateRole/{roleId}")]
-        public ActionResult<Role> Put(long projectId, long roleId, [FromBody] Role role)
+        public async Task<IActionResult> UpdateRole(
+            long projectId, 
+            long roleId, 
+            [FromBody] RoleRequestDto dto)
         {
-            try 
+            try
             {
-                var updated = _roleBusiness.UpdateRole(projectId, roleId, role);
-                return Ok(new { mesaage = "Role updated successfully", data = updated});
+                var role = await _roleBusiness.UpdateRole(projectId, roleId, dto);
+                return Ok(role);
             }
-            catch (Exception)
+            catch (Exception exc)
             {
-                return NotFound(new { message = "Role not Found"});
+                var message = $"An error occurred while updating role {roleId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
         [HttpDelete("DeleteRole/{roleId}")]
-        public ActionResult Delete(long projectId, long roleId)
+        public async Task<IActionResult> DeleteRole(long projectId, long roleId)
         {
-            var success = _roleBusiness.DeleteRole(projectId, roleId);
-            if (!success)
-                return NotFound(new { message = "This role was not found or was already deleted"});
-
-            return Ok(new { message = "This role was soft deleted successfully" });
+            try
+            {
+                await (_roleBusiness).DeleteRole(projectId, roleId);
+                return Ok(new { message = $"Deleted role {roleId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting role {roleId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
 
