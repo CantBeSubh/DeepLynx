@@ -1,4 +1,5 @@
 using deeplynx.models;
+using deeplynx.datalayer.Models;
 
 namespace deeplynx.interfaces
 {
