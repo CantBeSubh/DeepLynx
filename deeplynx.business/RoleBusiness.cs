@@ -1,6 +1,7 @@
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
-using deeplynx.models;
+using deeplynx.datalayer.Models;
+
 
 namespace deeplynx.business
 {
