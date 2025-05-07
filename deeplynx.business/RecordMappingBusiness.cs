@@ -56,7 +56,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         mapping.ClassId = dto.ClassId;
         mapping.TagId = dto.TagId;
         
-        _context.RecordMappings.Add(mapping);
+        _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
         
         return mapping;
