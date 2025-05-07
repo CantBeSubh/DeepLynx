@@ -35,8 +35,14 @@ namespace deeplynx.api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(long projectId, [FromBody] RelationshipRequestDto dto)
         {
-            var result = await _business.CreateRelationship(projectId, dto);
-            return Ok(result);
+            // var result = await _business.CreateRelationship(projectId, dto);
+            // return Ok(result);
+            var created = await _business.CreateRelationship(projectId, dto);
+
+            // Re-use the clean, Include-ready method
+            var full = await _business.GetRelationship(projectId, created.Id);
+
+            return Ok(full);
         }
 
         [HttpPut("{relationshipId}")]

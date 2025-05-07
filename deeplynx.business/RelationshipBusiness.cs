@@ -34,15 +34,18 @@ public class RelationshipBusiness: IRelationshipBusiness
         return await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
             .ToListAsync();
+       
     }
-
+    
     public async Task<Relationship> GetRelationship(long projectId, long relationshipId)
     {
         return await _context.Relationships
-            .FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Id == relationshipId && r.DeletedAt == null)
-            ?? throw new KeyNotFoundException("Relationship not found.");
+                   .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.DeletedAt == null)
+                   .Include(r => r.Origin)
+                   .Include(r => r.Destination)
+                   .FirstOrDefaultAsync()
+               ?? throw new KeyNotFoundException("Relationship not found.");
     }
-
     public async Task<Relationship> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
         var originId = await ResolveClassIdentifier(dto.OriginClass);
@@ -64,6 +67,12 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         _context.Relationships.Add(relationship);
         await _context.SaveChangesAsync();
+        await _context.Entry(relationship)
+            .Reference(r => r.Origin)
+            .LoadAsync();
+        await _context.Entry(relationship)
+            .Reference(r => r.Destination)
+            .LoadAsync();
         return relationship;
     }
 
