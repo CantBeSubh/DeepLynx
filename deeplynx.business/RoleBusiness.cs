@@ -7,9 +7,9 @@ namespace deeplynx.business
 {
     public class RoleBusiness : IRoleBusiness
     {
-        private readonly DeepLynxContext _context;
+        private readonly deeplynx.datalayer.Models.DeeplynxContext _context;
 
-        public RoleBusiness(DeepLynxContext context)
+        public RoleBusiness(deeplynx.datalayer.Models.DeeplynxContext context)
         {
             _context = context;
         }
