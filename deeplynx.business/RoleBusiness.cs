@@ -61,6 +61,7 @@ namespace deeplynx.business
             //soft delete
             role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
             
+            _context.Roles.Update(role);
             await _context.SaveChangesAsync();
             return true;
         }

@@ -88,7 +88,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 await _rMappingBusiness.DeleteRecordMapping(mappingId);
-                return NoContent();
+                return Ok(new { message = $"Deleted role mapping {mappingId}" });
             }
             catch (Exception exc)
             {
