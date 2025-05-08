@@ -42,10 +42,10 @@ public partial class Project
     public virtual ICollection<DataSource> DataSources { get; set; } = new List<DataSource>();
 
     [InverseProperty("Project")]
-    public virtual ICollection<EdgeParameter> EdgeParameters { get; set; } = new List<EdgeParameter>();
+    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
 
     [InverseProperty("Project")]
-    public virtual ICollection<RecordParameter> RecordParameters { get; set; } = new List<RecordParameter>();
+    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
 
     [InverseProperty("Project")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
