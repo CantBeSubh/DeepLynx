@@ -62,8 +62,8 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        [HttpDelete("{id}")]
-        [Route("api/datasource/deleteDataSource/{id:long}")]
+        [HttpDelete]
+        [Route("api/datasource/deleteDataSource")]
         public ActionResult Delete(long id)
         {
             var success = _dataSourceBusiness.DeleteDataSource(id);
