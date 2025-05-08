@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
 
 namespace deeplynx.api.Controllers
