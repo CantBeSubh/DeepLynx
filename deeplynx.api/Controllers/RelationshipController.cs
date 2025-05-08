@@ -91,10 +91,6 @@ namespace deeplynx.api.Controllers
         [HttpDelete("DeleteRelationship/{relationshipId}")]
         public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { error = "Invalid input", details = ModelState });
-            }
             try
             {
                 var success = await _business.DeleteRelationship(projectId, relationshipId);
