@@ -82,15 +82,15 @@ public class ClassBusiness : IClassBusiness
         var inRecords = await _context.Records
             .AnyAsync(r => r.ClassId == classId && r.DeletedAt == null);
 
-        var inRecordParameters = await _context.RecordParameters
+        var inRecordMappings = await _context.RecordMappings
             .AnyAsync(rp => rp.ClassId == classId && rp.DeletedAt == null);
 
-        var inEdgeParameters = await _context.EdgeParameters
+        var inEdgeMappings = await _context.EdgeMappings
             .AnyAsync(ep => (ep.OriginId == classId || ep.DestinationId == classId) && ep.DeletedAt == null);
 
         var inRelationships = await _context.Relationships
             .AnyAsync(rel => (rel.OriginId == classId || rel.DestinationId == classId) && rel.DeletedAt == null);
 
-        return inRecords || inRecordParameters || inEdgeParameters || inRelationships;
+        return inRecords || inRecordMappings || inEdgeMappings || inRelationships;
     }
 }

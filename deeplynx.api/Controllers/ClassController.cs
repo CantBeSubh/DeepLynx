@@ -15,21 +15,21 @@ namespace deeplynx.api.Controllers
             _classBusiness = classBusiness;
         }
 
-        [HttpGet]
+        [HttpGet("GetAllClasses")]
         public async Task<IActionResult> GetAllClasses(long projectId)
         {
             var classes = await _classBusiness.GetAllClasses(projectId);
             return Ok(classes);
         }
 
-        [HttpGet("{classId}")]
+        [HttpGet("GetClass/{classId}")]
         public async Task<IActionResult> GetClass(long projectId, long classId)
         {
             var classes = await _classBusiness.GetClass(projectId, classId);
             return Ok(classes);
         }
 
-        [HttpPost]
+        [HttpPost("CreateClass")]
         public async Task<IActionResult> CreateClass(long projectId,
             [FromBody] ClassRequestDto dto)
         {
@@ -37,14 +37,14 @@ namespace deeplynx.api.Controllers
             return Ok(newClass);
         }
 
-        [HttpPut("{classId}")]
+        [HttpPut("UpdateClass/{classId}")]
         public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
             var updatedClass = await _classBusiness.UpdateClass(projectId, classId, dto);
             return Ok(updatedClass);
         }
 
-        [HttpDelete("{classId}")]
+        [HttpDelete("DeleteClass/{classId}")]
         public async Task<IActionResult> DeleteClass(long projectId, long classId)
         {
             try
