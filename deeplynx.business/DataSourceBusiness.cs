@@ -1,7 +1,6 @@
 using deeplynx.interfaces;
-// Update these to be named correctly 
-using DataLayerDataSource = deeplynx.datalayer.Models.DataSource;
-using BusinessLayerDataSource = deeplynx.models.DataSource;
+using deeplynx.datalayer.Models;
+using deeplynx.models;
 
 
 namespace deeplynx.business
@@ -9,16 +8,20 @@ namespace deeplynx.business
 
     public class DataSourceBusiness : IDataSourceBusiness
     {
-        private readonly deeplynx.datalayer.Models.DeeplynxContext _context;
+        private readonly DeeplynxContext _context;
 
-        public DataSourceBusiness(deeplynx.datalayer.Models.DeeplynxContext context)
+        public DataSourceBusiness(DeeplynxContext context)
         {
             _context = context;
         }
-
-        public IEnumerable<BusinessLayerDataSource> GetDataSources()
+        
+        /// <summary>
+        /// Get all data sources that exist and map to dto
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<DataSourceDto> GetAllDataSources()
         {
-            return _context.DataSources.Select(ds => new BusinessLayerDataSource
+            return _context.DataSources.Select(ds => new DataSourceDto
             {
                 Id = ds.Id,
                 Name = ds.Name,
@@ -26,43 +29,60 @@ namespace deeplynx.business
             }).ToList();
         }
 
-        public BusinessLayerDataSource CreateDataSource(BusinessLayerDataSource dataSource)
+        /// <summary>
+        /// Create new data source and return dto 
+        /// </summary>
+        /// <param name="dataSourceDto"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DataSourceDto CreateDataSource(DataSourceDto dataSourceDto)
         {
-            if (dataSource == null)
-                throw new ArgumentNullException(nameof(dataSource));
+            if (dataSourceDto == null)
+                throw new ArgumentNullException(nameof(dataSourceDto));
 
-            var dataLayerDataSource = new DataLayerDataSource
+            var dataLayerDataSource = new DataSource
             {
-                Name = dataSource.Name,
-                ProjectId = dataSource.ProjectId
+                Name = dataSourceDto.Name,
+                ProjectId = dataSourceDto.ProjectId
             };
 
             _context.DataSources.Add(dataLayerDataSource);
             _context.SaveChanges();
 
-            dataSource.Id = dataLayerDataSource.Id;
-            return dataSource;
+            dataSourceDto.Id = dataLayerDataSource.Id;
+            return dataSourceDto;
         }
 
-        public BusinessLayerDataSource UpdateDataSource(long id, BusinessLayerDataSource dataSource)
+        /// <summary>
+        /// Update a current data source and return dto 
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dataSourceDto"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public DataSourceDto UpdateDataSource(long id, DataSourceDto dataSourceDto)
         {
             var existing = _context.DataSources.FirstOrDefault(ds => ds.Id == id);
             if (existing == null)
                 throw new Exception("DataSource not found");
 
-            existing.Name = dataSource.Name;
+            existing.Name = dataSourceDto.Name;
 
             _context.SaveChanges();
-            return dataSource;
+            return dataSourceDto;
         }
 
+        /// <summary>
+        /// Soft delete data source using UTC field Deleted_At
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         public bool DeleteDataSource(long id)
         {
             var existing = _context.DataSources.FirstOrDefault(ds => ds.Id == id);
             if (existing == null)
                 return false; 
-
-            _context.DataSources.Remove(existing);
+            existing.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);;
             _context.SaveChanges();
             return true;
         }

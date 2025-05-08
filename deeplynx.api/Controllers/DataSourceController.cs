@@ -5,7 +5,6 @@ using deeplynx.business;
 
 namespace deeplynx.api.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
     public class DataSourceController : ControllerBase
     {
@@ -16,38 +15,62 @@ namespace deeplynx.api.Controllers
             _dataSourceBusiness = dataSourceBusiness;
         }
 
+        /// <summary>
+        /// Get all data sources from the database
+        /// </summary>
+        /// <returns></returns>
         [HttpGet]
-        public ActionResult<IEnumerable<DataSource>> Get()
+        [Route("api/datasource/getAllDataSources")]
+        public ActionResult<IEnumerable<DataSourceDto>> Get()
         {
-            var dataSources = _dataSourceBusiness.GetDataSources();
+            var dataSources = _dataSourceBusiness.GetAllDataSources();
             return Ok(dataSources);
         }
 
+        /// <summary>
+        /// Create new data source 
+        /// </summary>
+        /// <param name="dataSourceDto"></param>
+        /// <returns></returns>
         [HttpPost]
-        public ActionResult<DataSource> Post([FromBody] DataSource dataSource)
+        [Route("api/datasource/createDataSource")]
+        public ActionResult<DataSourceDto> Post([FromBody] DataSourceDto dataSourceDto)
         {
-            if (dataSource == null)
-                return BadRequest("Datasource is null.");
+            if (dataSourceDto == null)
+                return BadRequest("Datasource is empty");
 
-            var createdDataSource = _dataSourceBusiness.CreateDataSource(dataSource);
+            var createdDataSource = _dataSourceBusiness.CreateDataSource(dataSourceDto);
             return CreatedAtAction(nameof(Get), new { id = createdDataSource.Id }, createdDataSource);
         }
 
-        [HttpPut("{id}")]
-        public ActionResult<DataSource> Put(long id, [FromBody] DataSource dataSource)
+        /// <summary>
+        /// Update a data source record
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="dataSourceDto"></param>
+        /// <returns></returns>
+        [HttpPut]
+        [Route("api/datasource/updateDatasource/{id:long}")]
+        public ActionResult<DataSourceDto> Put(long id, [FromBody] DataSourceDto dataSourceDto)
         {
-            var updatedDataSource = _dataSourceBusiness.UpdateDataSource(id, dataSource);
+            var updatedDataSource = _dataSourceBusiness.UpdateDataSource(id, dataSourceDto);
             return Ok(updatedDataSource);
         }
 
+        /// <summary>
+        /// Soft delete data source
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete("{id}")]
+        [Route("api/datasource/deleteDataSource/{id:long}")]
         public ActionResult Delete(long id)
         {
             var success = _dataSourceBusiness.DeleteDataSource(id);
             if (!success)
-                return NotFound();
+                return NotFound($"Data source {id} not found");
 
-            return NoContent();
+            return Ok($"Data source {id} deleted");
         }
     }
 }

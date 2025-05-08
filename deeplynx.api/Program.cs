@@ -6,6 +6,7 @@ using Scalar.AspNetCore;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +56,7 @@ builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
 builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
+builder.Services.AddTransient<IDataSourceBusiness, DataSourceBusiness>();
 
 
 var app = builder.Build();
