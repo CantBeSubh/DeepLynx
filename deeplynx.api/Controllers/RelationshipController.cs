@@ -14,7 +14,12 @@ namespace deeplynx.api.Controllers
         {
             _business = business;
         }
-
+        
+    /// <summary>
+    /// Get all Relationships from the database
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns></returns>
         [HttpGet("GetAllRelationships")]
         public async Task<IActionResult> GetAll(long projectId)
         {
@@ -23,17 +28,20 @@ namespace deeplynx.api.Controllers
                 var relationships = await _business.GetAllRelationships(projectId);
                 return Ok(relationships);
             }
-            catch (Exception ex)
+            catch (Exception exc)
             {
-                return StatusCode(500,
-                    new
-                    {
-                        error = "AN unexpected error occurred while fetching all relationships.", details = ex.Message
-                    });
+                var message = $"An unexpected error occurred while fetching all relationships.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
 
-
+        /// <summary>
+        /// Get one Relationship from DB
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="relationshipId"></param>
+        /// <returns></returns>
         [HttpGet("GetAllRelationships/{relationshipId}")]
         public async Task<IActionResult> Get(long projectId, long relationshipId)
         {
@@ -44,9 +52,20 @@ namespace deeplynx.api.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { error = ex.Message });
+            } catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while fetching the relationship.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Create one Relationship
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("CreateRelationship")]
         public async Task<IActionResult> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
         {
@@ -63,12 +82,21 @@ namespace deeplynx.api.Controllers
 
                 return Ok(full);
             }
-            catch (Exception ex)
+            catch (Exception exc)
             {
-                return StatusCode(500, new { error = "Unexpected error while creating relationship." , details= ex.Message });
+                var message = $"Unexpected error while creating relationship.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Update Relationship
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="relationshipId"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut("UpdateRelationship/{relationshipId}")]
         public async Task<IActionResult> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] RelationshipRequestDto dto)
@@ -82,12 +110,20 @@ namespace deeplynx.api.Controllers
                 var result = await _business.UpdateRelationship(projectId, relationshipId, dto);
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception exc)
             {
-                return StatusCode(500, new { error = "Unexpected error while updating relationship." , details= ex.Message });
+                var message = $"Unexpected error while updating relationship.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Delete Relationship
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="relationshipId"></param>
+        /// <returns></returns>
         [HttpDelete("DeleteRelationship/{relationshipId}")]
         public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
@@ -100,9 +136,11 @@ namespace deeplynx.api.Controllers
             {
                 return NotFound(new { error = ex.Message });
             }
-            catch (Exception ex)
+            catch (Exception exc)
             {
-                return StatusCode(500, new { error = "Unexpected error while deleting relationship." ,details= ex.Message });
+                var message = $"Unexpected error while deleting relationship..: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
     }
