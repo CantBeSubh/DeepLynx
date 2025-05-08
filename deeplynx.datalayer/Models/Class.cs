@@ -45,17 +45,17 @@ public partial class Class
     public DateTime? DeletedAt { get; set; }
 
     [InverseProperty("Destination")]
-    public virtual ICollection<EdgeParameter> EdgeParameterDestinations { get; set; } = new List<EdgeParameter>();
+    public virtual ICollection<EdgeMapping> EdgeMappingDestinations { get; set; } = new List<EdgeMapping>();
 
     [InverseProperty("Origin")]
-    public virtual ICollection<EdgeParameter> EdgeParameterOrigins { get; set; } = new List<EdgeParameter>();
+    public virtual ICollection<EdgeMapping> EdgeMappingOrigins { get; set; } = new List<EdgeMapping>();
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Classes")]
     public virtual Project Project { get; set; } = null!;
 
     [InverseProperty("Class")]
-    public virtual ICollection<RecordParameter> RecordParameters { get; set; } = new List<RecordParameter>();
+    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
 
     [InverseProperty("Class")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
