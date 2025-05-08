@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("projects/{projectId}/roles")]
+    [Route("api/projects/{projectId}/roles")]
     public class RoleController : ControllerBase
     {
         private readonly IRoleBusiness _roleBusiness;

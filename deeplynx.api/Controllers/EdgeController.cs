@@ -16,7 +16,7 @@ namespace deeplynx.api.Controllers
             _edgeBusiness = edgeBusiness;
         }
 
-        [HttpGet]
+        [HttpGet("GetAllEdges")]
         public async Task<IActionResult> GetAllEdges(long projectId, [FromQuery] long? dataSourceId = null)
         {
             try
@@ -32,7 +32,7 @@ namespace deeplynx.api.Controllers
             }
         }
 
-        [HttpGet("edge")]
+        [HttpGet("GetEdge")]
         public async Task<IActionResult> GetEdge(
             [FromQuery, Required] long originId, 
             [FromQuery, Required] long destinationId)
@@ -50,7 +50,7 @@ namespace deeplynx.api.Controllers
             }
         }
 
-        [HttpPost]
+        [HttpPost("CreateEdge")]
         public async Task<IActionResult> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
         {
             try
@@ -66,7 +66,7 @@ namespace deeplynx.api.Controllers
             }
         }
 
-        [HttpPut("edge")]
+        [HttpPut("UpdateEdge")]
         public async Task<IActionResult> UpdateEdge(
             [FromQuery, Required] long originId, 
             [FromQuery, Required] long destinationId, 
@@ -85,7 +85,7 @@ namespace deeplynx.api.Controllers
             }
         }
 
-        [HttpDelete("edge")]
+        [HttpDelete("DeleteEdge")]
         public async Task<IActionResult> DeleteEdge(
             [FromQuery, Required] long originId, 
             [FromQuery, Required] long destinationId)
