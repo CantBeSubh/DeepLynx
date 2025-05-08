@@ -28,15 +28,53 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         return classByUuid ?? throw new KeyNotFoundException($"Class with UUID ‘{input}’ not found.");
     }
-
+    
     public async Task<IEnumerable<Relationship>> GetAllRelationships(long projectId)
     {
-        return await _context.Relationships
+        var rawData = await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
+            .Include(r => r.Origin)
+            .Include(r => r.Destination)
+            .Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Description,
+                r.Uuid,
+                r.ProjectId,
+                r.CreatedBy,
+                r.CreatedAt,
+                r.ModifiedBy,
+                r.ModifiedAt,
+                r.DeletedAt,
+                r.OriginId,
+                r.DestinationId,
+                Origin = r.Origin == null ? null : new Class { Id = r.Origin.Id, Name = r.Origin.Name },
+                Destination = r.Destination == null ? null : new Class { Id = r.Destination.Id, Name = r.Destination.Name }
+            })
             .ToListAsync();
-       
+
+        // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
+        var result = rawData.Select(r => new Relationship
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            Uuid = r.Uuid,
+            ProjectId = r.ProjectId,
+            CreatedBy = r.CreatedBy,
+            CreatedAt = r.CreatedAt,
+            ModifiedBy = r.ModifiedBy,
+            ModifiedAt = r.ModifiedAt,
+            DeletedAt = r.DeletedAt,
+            OriginId = r.OriginId,
+            DestinationId = r.DestinationId,
+            Origin = r.Origin,
+            Destination = r.Destination
+        });
+
+        return result;
     }
-    
     public async Task<Relationship> GetRelationship(long projectId, long relationshipId)
     {
         return await _context.Relationships
