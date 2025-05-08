@@ -15,11 +15,26 @@ namespace deeplynx.api.Controllers
             _business = business;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll(long projectId) =>
-            Ok(await _business.GetAllRelationships(projectId));
+        [HttpGet("GetAllRelationships")]
+        public async Task<IActionResult> GetAll(long projectId)
+        {
+            try
+            {
+                var relationships = await _business.GetAllRelationships(projectId);
+                return Ok(relationships);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500,
+                    new
+                    {
+                        error = "AN unexpected error occurred while fetching all relationships.", details = ex.Message
+                    });
+            }
+        }
 
-        [HttpGet("{relationshipId}")]
+
+        [HttpGet("GetAllRelationships/{relationshipId}")]
         public async Task<IActionResult> Get(long projectId, long relationshipId)
         {
             try
@@ -32,39 +47,58 @@ namespace deeplynx.api.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create(long projectId, [FromBody] RelationshipRequestDto dto)
+        [HttpPost("CreateRelationship")]
+        public async Task<IActionResult> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
         {
-            var created = await _business.CreateRelationship(projectId, dto);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid input", details = ModelState });
+            }
 
-            // Re-use the clean, Include-ready method
-            var full = await _business.GetRelationship(projectId, created.Id);
+            try
+            {
+                var created = await _business.CreateRelationship(projectId, dto);
+                // Re-use the clean, Include-ready method
+                var full = await _business.GetRelationship(projectId, created.Id);
 
-            return Ok(full);
+                return Ok(full);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Unexpected error while creating relationship." , details= ex.Message });
+            }
         }
 
-        [HttpPut("{relationshipId}")]
-        public async Task<IActionResult> Update(long projectId, long relationshipId,
+        [HttpPut("UpdateRelationship/{relationshipId}")]
+        public async Task<IActionResult> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] RelationshipRequestDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid input", details = ModelState });
+            }
             try
             {
                 var result = await _business.UpdateRelationship(projectId, relationshipId, dto);
                 return Ok(result);
             }
-            catch (KeyNotFoundException ex)
+            catch (Exception ex)
             {
-                return NotFound(new { error = ex.Message });
+                return StatusCode(500, new { error = "Unexpected error while updating relationship." , details= ex.Message });
             }
         }
 
-        [HttpDelete("{relationshipId}")]
-        public async Task<IActionResult> Delete(long projectId, long relationshipId)
+        [HttpDelete("DeleteRelationship/{relationshipId}")]
+        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid input", details = ModelState });
+            }
             try
             {
                 var success = await _business.DeleteRelationship(projectId, relationshipId);
-                return Ok(new { message = "Relationship successfully deleted." });
+                return Ok(new { message = $"Relationship successfully deleted.{relationshipId}" });
             }
             catch (KeyNotFoundException ex)
             {
@@ -72,7 +106,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = "Unexpected error while deleting relationship." });
+                return StatusCode(500, new { error = "Unexpected error while deleting relationship." ,details= ex.Message });
             }
         }
     }
