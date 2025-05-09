@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("roles", Schema = "deeplynx")]
-[Index("ProjectId", Name = "IX_roles_project_id")]
 [Index("Id", Name = "idx_roles_id")]
 [Index("ProjectId", Name = "idx_roles_project_id")]
 public partial class Role
@@ -32,7 +31,7 @@ public partial class Role
     public string? ModifiedBy { get; set; }
 
     [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }

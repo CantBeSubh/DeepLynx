@@ -7,9 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("relationships", Schema = "deeplynx")]
-[Index("DestinationId", Name = "IX_relationships_destination_id")]
-[Index("OriginId", Name = "IX_relationships_origin_id")]
-[Index("ProjectId", Name = "IX_relationships_project_id")]
 [Index("DestinationId", Name = "idx_relationships_destination_id")]
 [Index("Id", Name = "idx_relationships_id")]
 [Index("OriginId", Name = "idx_relationships_origin_id")]
@@ -49,7 +46,7 @@ public partial class Relationship
     public string? ModifiedBy { get; set; }
 
     [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
