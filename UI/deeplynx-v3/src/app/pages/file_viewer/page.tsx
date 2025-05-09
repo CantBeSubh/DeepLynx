@@ -1,19 +1,16 @@
 "use client";
 import React, { useState } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Refresh } from "@mui/icons-material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/components/GenericTable";
 import SideMenu from "@/app/components/SideMenu";
-import ModeIcon from "@mui/icons-material/Mode";
 import Tabs from "@/app/components/Tabs";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-import SearchInput from "@/app/components/SearchInput";
 import { fileTableData } from "@/app/dummy_data/data";
 import { FileViewerTableRow, TableRow, Column } from "@/app/types/types";
 
 const FileViewer = () => {
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>(fileTableData);
+  const [tableData, setTableData] =
+    useState<FileViewerTableRow[]>(fileTableData);
+  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
 
   const handleSelectChange = (id: number) => {
     setTableData((prevData) =>
@@ -56,7 +53,7 @@ const FileViewer = () => {
       header: "Timeseries",
       accessor: "timeseries",
       cell: (row: TableRow) => {
-        const isChecked = ("timeseries" in row) ? row.timeseries : false;
+        const isChecked = "timeseries" in row ? row.timeseries : false;
         return (
           <input
             type="checkbox"
@@ -64,8 +61,8 @@ const FileViewer = () => {
             className="checkbox checkbox-primary"
             readOnly
           />
-        )
-      }
+        );
+      },
     },
     {
       header: "File Size (KB)",
@@ -147,22 +144,30 @@ const FileViewer = () => {
     { label: "Other files", content: <div>Tab content 3</div> },
   ];
 
+  const handleMenuToggle = (isCollapsed: boolean) => {
+    setIsMenuCollapsed(isCollapsed);
+  };
+
   return (
     <div className="flex bg-base-100">
-      <SideMenu />
-      <div className="ml-64 flex-1 p-6 text-base-content">
+      <SideMenu onToggle={handleMenuToggle} />
+      <div
+        className={`${
+          isMenuCollapsed ? "ml-22" : "ml-64"
+        } flex-1 p-6 container mx-auto transition-all duration-300`}
+      >
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">Files</h1>
           <i className="text-sm">User</i>
         </div>
         <div className="p-4">
           <div>
-            <Tabs tabs={tabData} showButtons={true} />
+            <Tabs tabs={tabData} showButtons={false} />
           </div>
         </div>
       </div>
       <button className="fixed bottom-10 right-10">
-        <AddCircleIcon className="text-primary" fontSize="large" />
+        <AddCircleIcon className="text-accent" sx={{ fontSize: 60 }} />
       </button>
     </div>
   );

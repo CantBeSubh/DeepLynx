@@ -14,9 +14,6 @@ public partial class Permission
     [Column("id")]
     public long Id { get; set; }
 
-    [Column("name")]
-    public string Name { get; set; } = null!;
-
     [Column("created_by")]
     public string? CreatedBy { get; set; }
 
@@ -31,6 +28,9 @@ public partial class Permission
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
+
+    [Column("name")]
+    public string Name { get; set; } = null!;
 
     [InverseProperty("Permission")]
     public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
