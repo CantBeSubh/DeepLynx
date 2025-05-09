@@ -10,7 +10,9 @@ import { initialTableData } from "@/app/dummy_data/data";
 import { DataSourceTableRow, TableRow, Column } from "@/app/types/types";
 
 const DataSource = () => {
-  const [tableData, setTableData] = useState<DataSourceTableRow[]>(initialTableData);
+  const [tableData, setTableData] =
+    useState<DataSourceTableRow[]>(initialTableData);
+  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
 
   const handleToggleActive = (id: string) => {
     setTableData((prevData) =>
@@ -33,7 +35,7 @@ const DataSource = () => {
   };
 
   const isAnyRowSelected = tableData.some((row) => row.select);
-  const isRowAcitve = (obj: TableRow) => ("active" in obj) ? obj.active : false;
+  const isRowAcitve = (obj: TableRow) => ("active" in obj ? obj.active : false);
   const columns: Column[] = [
     {
       header: "Select",
@@ -64,34 +66,41 @@ const DataSource = () => {
     {
       header: "Active",
       accessor: "active",
-      cell: (row: TableRow) =>
-      (
+      cell: (row: TableRow) => (
         <input
           type="checkbox"
           checked={isRowAcitve(row)}
           className="toggle toggle-primary"
           onChange={() => handleToggleActive(row.id as string)}
         />
-      )
+      ),
     },
     {
       header: "Edit",
       accessor: "edit",
       cell: (row: TableRow) => (
         <button className="btn btn-ghost btn-xs btn-secondary">
-          <ModeIcon className="text-secondary" />
+          <ModeIcon className="text-accent" />
         </button>
       ),
     },
   ];
 
+  const handleMenuToggle = (isCollapsed: boolean) => {
+    setIsMenuCollapsed(isCollapsed);
+  };
+
   return (
-    <div className="flex bg-base-100 duration-300">
-      <SideMenu />
-      <div className="ml-64 flex-1 p-6 text-base-content">
+    <div className="flex duration-300">
+      <SideMenu onToggle={handleMenuToggle} />
+      <div
+        className={`${
+          isMenuCollapsed ? "ml-22" : "ml-64"
+        } flex-1 p-6 container mx-auto transition-all duration-300`}
+      >
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Data Source</h1>
-          <i className="text-sm">User</i>
+          <h1 className="text-2xl font-bold text-base-content">Data Source</h1>
+          <i className="text-sm text-base-content">User</i>
         </div>
 
         <GenericTable
@@ -106,7 +115,7 @@ const DataSource = () => {
         />
       </div>
       <button className="fixed bottom-10 right-10">
-        <AddCircleIcon className="text-primary" fontSize="large" />
+        <AddCircleIcon className="text-accent" fontSize="large" />
       </button>
     </div>
   );
