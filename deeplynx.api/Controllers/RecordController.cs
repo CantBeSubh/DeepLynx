@@ -14,7 +14,12 @@ namespace deeplynx.api.Controllers
         {
             _recordBusiness = recordBusiness;
         }
-
+        /// <summary>
+        /// Get all Records
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <returns></returns>
         [HttpGet("GetAllRecords")]
         public async Task<IActionResult> GetAllRecords(long projectId, long dataSourceId)
         {
@@ -30,7 +35,13 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        /// <summary>
+        /// Get one Record from DB
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="recordId"></param>
+        /// <returns></returns>
         [HttpGet("GetRecord/{recordId}")]
         public async Task<IActionResult> GetRecord(long projectId, long dataSourceId, long recordId)
         {
@@ -46,7 +57,13 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        /// <summary>
+        /// Create a Record
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPost("CreateRecord")]
         public async Task<IActionResult> CreateRecord(long projectId, long dataSourceId,
             [FromBody] RecordRequestDto dto)
@@ -63,7 +80,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        /// <summary>
+        /// Update Record
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="recordId"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut("UpdateRecord/{recordId}")]
         public async Task<IActionResult> UpdateRecord(long projectId, long dataSourceId, long recordId,
             [FromBody] RecordRequestDto dto)
@@ -80,7 +104,13 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        /// <summary>
+        /// Delete Record
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="recordId"></param>
+        /// <returns></returns>
         [HttpDelete("DeleteRecord/{recordId}")]
         public async Task<IActionResult> DeleteRecord(long projectId, long dataSourceId, long recordId)
         {
