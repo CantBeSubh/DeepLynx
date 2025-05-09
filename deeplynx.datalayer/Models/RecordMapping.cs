@@ -8,9 +8,9 @@ namespace deeplynx.datalayer.Models;
 
 [Table("record_mappings", Schema = "deeplynx")]
 [Index("ClassId", Name = "idx_record_mappings_class_id")]
-[Index("TagId", Name = "idx_record_mappings_tag_id")]
 [Index("Id", Name = "idx_record_mappings_id")]
 [Index("ProjectId", Name = "idx_record_mappings_project_id")]
+[Index("TagId", Name = "idx_record_mappings_tag_id")]
 public partial class RecordMapping
 {
     [Key]
@@ -22,9 +22,6 @@ public partial class RecordMapping
 
     [Column("class_id")]
     public long? ClassId { get; set; }
-    
-    [Column("tag_id")]
-    public long? TagId { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
@@ -36,7 +33,7 @@ public partial class RecordMapping
     public string? ModifiedBy { get; set; }
 
     [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }
@@ -44,15 +41,18 @@ public partial class RecordMapping
     [Column("project_id")]
     public long ProjectId { get; set; }
 
+    [Column("tag_id")]
+    public long? TagId { get; set; }
+
     [ForeignKey("ClassId")]
     [InverseProperty("RecordMappings")]
     public virtual Class? Class { get; set; }
-    
-    [ForeignKey("TagId")]
-    [InverseProperty("RecordMappings")]
-    public virtual Tag? Tag { get; set; }
 
     [ForeignKey("ProjectId")]
     [InverseProperty("RecordMappings")]
     public virtual Project Project { get; set; } = null!;
+
+    [ForeignKey("TagId")]
+    [InverseProperty("RecordMappings")]
+    public virtual Tag? Tag { get; set; }
 }

@@ -33,7 +33,7 @@ public partial class User
     public string? ModifiedBy { get; set; }
 
     [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime ModifiedAt { get; set; }
+    public DateTime? ModifiedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
     public DateTime? DeletedAt { get; set; }

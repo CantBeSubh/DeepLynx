@@ -8,7 +8,6 @@ namespace deeplynx.datalayer.Models;
 
 [PrimaryKey("UserId", "ProjectId")]
 [Table("user_projects", Schema = "deeplynx")]
-[Index("ProjectId", Name = "IX_user_projects_project_id")]
 [Index("ProjectId", Name = "idx_user_projects_project_id")]
 [Index("RoleId", Name = "idx_user_projects_role_id")]
 [Index("UserId", Name = "idx_user_projects_user_id")]
