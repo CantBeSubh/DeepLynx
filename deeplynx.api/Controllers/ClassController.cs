@@ -50,7 +50,7 @@ namespace deeplynx.api.Controllers
                 return Ok(classes);
             }  catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching this class.: {exc}";
+                var message = $"An unexpected error occurred while fetching this class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -90,7 +90,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while updating this class.: {exc}";
+                var message = $"An unexpected error occurred while updating this class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -121,7 +121,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while deleting this class.: {exc}";
+                var message = $"An unexpected error occurred while deleting this class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

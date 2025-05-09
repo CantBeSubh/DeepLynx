@@ -54,7 +54,7 @@ namespace deeplynx.api.Controllers
                 return NotFound(new { error = ex.Message });
             } catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching the relationship.: {exc}";
+                var message = $"An unexpected error occurred while fetching the relationship {relationshipId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -112,7 +112,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"Unexpected error while updating relationship.: {exc}";
+                var message = $"Unexpected error while updating relationship {relationshipId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -138,7 +138,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"Unexpected error while deleting relationship..: {exc}";
+                var message = $"Unexpected error while deleting relationship {relationshipId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
