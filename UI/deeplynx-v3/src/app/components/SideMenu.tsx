@@ -1,5 +1,10 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+"use client"; // Indicates that this file contains client-side code
+
+import React, { useState, useEffect } from "react"; // Import React and hooks
+import { useRouter, usePathname } from "next/navigation"; // Import Next.js navigation hooks
+import Link from "next/link"; // Import Next.js link component
+
+// Importing Material-UI icons
 import OtherHousesOutlinedIcon from "@mui/icons-material/OtherHousesOutlined";
 import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
@@ -10,183 +15,218 @@ import InboxIcon from "@mui/icons-material/Inbox";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import Link from "next/link";
+import KeyboardArrowLeftTwoToneIcon from "@mui/icons-material/KeyboardArrowLeftTwoTone";
+import KeyboardArrowRightTwoToneIcon from "@mui/icons-material/KeyboardArrowRightTwoTone";
 
-const SideMenu: React.FC = () => {
-  const router = useRouter();
+// Define the props for the SideMenu component
+interface SideMenuProps {
+  onToggle: (isCollapsed: boolean) => void;
+}
+
+// Main SideMenu component
+const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
+  const router = useRouter(); // Router hook for navigation
+  const pathname = usePathname(); // Hook to get the current pathname
+
+  // State variables for selected item and menu collapse state
   const [selectedItem, setSelectedItem] = useState<string>("");
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
+  // Effect to set the selected item based on the current pathname
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedSelectedItem = localStorage.getItem("selectedItem");
-      if (savedSelectedItem) {
-        setSelectedItem(savedSelectedItem);
-      }
-    }
+    setSelectedItem(pathname);
+  }, [pathname]);
+
+  // Effect to get the selected item from localStorage on initial render
+  useEffect(() => {
+    const savedItem = localStorage.getItem("selectedItem");
+    if (savedItem) setSelectedItem(savedItem);
   }, []);
 
+  // Effect to save the selected item to localStorage whenever it changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("selectedItem", selectedItem);
-    }
+    localStorage.setItem("selectedItem", selectedItem);
   }, [selectedItem]);
 
+  // Function to toggle the collapse state of the menu
+  const toggleMenu = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      onToggle(next); // Call the onToggle prop with the new state
+      return next;
+    });
+  };
+
+  // Function to handle item click events
   const handleItemClick = (
     item: string,
-    event: React.MouseEvent<HTMLAnchorElement>
+    event: React.MouseEvent<HTMLElement>
   ) => {
+    if (isDisabled(item)) {
+      event.preventDefault(); // Prevent default behavior if the item is disabled
+      return;
+    }
     event.preventDefault();
-    setSelectedItem(item);
-    router.push(item);
+    setSelectedItem(item); // Set the clicked item as selected
+    router.push(item); // Navigate to the clicked item's path
+  };
+
+  // Function to check if an item is disabled
+  const isDisabled = (targetPath: string) =>
+    pathname === "/pages/projects" && targetPath !== "/pages/projects";
+
+  // Function to get the CSS class for an item based on its state
+  const getItemClass = (targetPath: string) => {
+    const isSelected =
+      selectedItem === targetPath ||
+      (targetPath === "/pages/projects/[project_id]" &&
+        pathname?.startsWith("/pages/projects/") &&
+        pathname !== "/pages/projects");
+
+    return [
+      "flex items-center block py-2 px-4 rounded transition",
+      isSelected ? "bg-base-300" : "hover:bg-base-300",
+      isDisabled(targetPath)
+        ? "pointer-events-none opacity-50 cursor-not-allowed"
+        : "",
+    ].join(" ");
   };
 
   return (
-    <aside className="fixed w-64 bg-gray-800 text-white h-screen p-4 bg-secondary">
+    <aside
+      className={`fixed ${
+        isCollapsed ? "w-22" : "w-64"
+      } bg-secondary text-base-100 h-screen p-4 transition-width duration-300`}
+    >
+      <div className="flex justify-end">
+        <button onClick={toggleMenu} className="p-2">
+          {isCollapsed ? (
+            <KeyboardArrowRightTwoToneIcon />
+          ) : (
+            <KeyboardArrowLeftTwoToneIcon />
+          )}
+        </button>
+      </div>
+
+      {/* Projects section */}
       <ul>
         <li>
           <Link
             href="/pages/projects"
-            onClick={(event) => handleItemClick("/pages/projects", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "/pages/projects"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+            onClick={(e) => handleItemClick("/pages/projects", e)}
+            className={getItemClass("/pages/projects")}
           >
-            <OtherHousesOutlinedIcon /> <p className="ml-2">All Projects</p>
+            <OtherHousesOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">All Projects</p>}
           </Link>
         </li>
         <li>
-          <a
-            href="#"
-            onClick={(event) =>
-              handleItemClick("#current-project-dashboard", event)
-            }
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#current-project-dashboard"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+          <button
+            onClick={(e) => handleItemClick("/pages/projects/[project_id]", e)}
+            className={getItemClass("/pages/projects/[project_id]")}
           >
             <ListAltOutlinedIcon />
-            <p className="ml-2">Current Project Dashboard</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">Current Project Dashboard</p>}
+          </button>
         </li>
       </ul>
-      <p className="text-sm mt-4">Your Data</p>
+
+      {/* Your Data section */}
+      {!isCollapsed && <p className="text-sm mt-4">Your Data</p>}
       <ul>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#data-viewer", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#data-viewer"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#data-viewer"
+            onClick={(e) => handleItemClick("#data-viewer", e)}
+            className={getItemClass("#data-viewer")}
           >
-            <ManageSearchIcon /> <p className="ml-2">Data Viewer</p>
-          </a>
+            <ManageSearchIcon />
+            {!isCollapsed && <p className="ml-2">Data Viewer</p>}
+          </Link>
         </li>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#timeseries-viewer", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#timeseries-viewer"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#timeseries-viewer"
+            onClick={(e) => handleItemClick("#timeseries-viewer", e)}
+            className={getItemClass("#timeseries-viewer")}
           >
             <TimelineIcon />
-            <p className="ml-2">Timeseries Viewer</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">Timeseries Viewer</p>}
+          </Link>
         </li>
         <li>
-          <a
+          <Link
             href="/pages/file_viewer"
-            onClick={(event) => handleItemClick("/pages/file_viewer", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "/pages/file_viewer"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+            onClick={(e) => handleItemClick("/pages/file_viewer", e)}
+            className={getItemClass("/pages/file_viewer")}
           >
             <FindInPageOutlinedIcon />
-            <p className="ml-2">File Viewer</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">File Viewer</p>}
+          </Link>
         </li>
       </ul>
-      <p className="text-sm mt-4">Data Management</p>
+
+      {/* Data Management section */}
+      {!isCollapsed && <p className="text-sm mt-4">Data Management</p>}
       <ul>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#ontology", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#ontology" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#ontology"
+            onClick={(e) => handleItemClick("#ontology", e)}
+            className={getItemClass("#ontology")}
           >
-            <CoronavirusOutlinedIcon /> <p className="ml-2">Ontology</p>
-          </a>
+            <CoronavirusOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">Ontology</p>}
+          </Link>
         </li>
         <li>
-          <a
+          <Link
             href="/pages/data_source"
-            onClick={(event) => handleItemClick("/pages/data_source", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "/pages/data_source"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+            onClick={(e) => handleItemClick("/pages/data_source", e)}
+            className={getItemClass("/pages/data_source")}
           >
             <InboxIcon />
-            <p className="ml-2">Data Source</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">Data Source</p>}
+          </Link>
         </li>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#tags", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#tags" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#tags"
+            onClick={(e) => handleItemClick("#tags", e)}
+            className={getItemClass("#tags")}
           >
             <SellOutlinedIcon />
-            <p className="ml-2">Tags</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">Tags</p>}
+          </Link>
         </li>
       </ul>
-      <p className="text-sm mt-4">Widgets</p>
+
+      {/* Widgets section */}
+      {!isCollapsed && <p className="text-sm mt-4">Widgets</p>}
       <ul>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#model-viewer", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#model-viewer"
-                ? "bg-gray-700"
-                : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#model-viewer"
+            onClick={(e) => handleItemClick("#model-viewer", e)}
+            className={getItemClass("#model-viewer")}
           >
-            <ViewInArOutlinedIcon /> <p className="ml-2">Model Viewer</p>
-          </a>
+            <ViewInArOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">Model Viewer</p>}
+          </Link>
         </li>
         <li>
-          <a
-            href="#"
-            onClick={(event) => handleItemClick("#events", event)}
-            className={`flex items-center block py-2 px-4 rounded ${
-              selectedItem === "#events" ? "bg-gray-700" : "hover:bg-gray-700"
-            }`}
+          <Link
+            href="#events"
+            onClick={(e) => handleItemClick("#events", e)}
+            className={getItemClass("#events")}
           >
             <CalendarMonthOutlinedIcon />
-            <p className="ml-2">Events</p>
-          </a>
+            {!isCollapsed && <p className="ml-2">Events</p>}
+          </Link>
         </li>
       </ul>
     </aside>
   );
 };
 
-export default SideMenu;
+export default SideMenu; // Export the SideMenu component as default

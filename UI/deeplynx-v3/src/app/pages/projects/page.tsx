@@ -1,74 +1,88 @@
 "use client";
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
 import CreateProject from "./CreateProjectsWidget";
 import { useRouter } from "next/navigation";
 import SearchInput from "@/app/components/SearchInput";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { sampleProjectData } from "@/app/dummy_data/data";
+import SideMenu from "@/app/components/SideMenu";
 
-export default function Projects() {
-  const router = useRouter();
+const Projects = () => {
+  const router = useRouter(); // Initialize the router
+
+  // State for controlling the modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
-  // ---------- Sidebar toggel effects ----------
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  // State for controlling the sidebar collapse state
+  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
+  const handleMenuToggle = (isCollapsed: boolean) => {
+    setIsMenuCollapsed(isCollapsed);
   };
-  // ---------- Sidebar toggel effects ends ----------
 
+  // State for the search query
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter projects based on the search query
   const filteredProjects = sampleProjectData.filter((project) =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // TODO: When page gets smaller, change the grid layout of the cards to keep formatting
   return (
-    <div className="flex min-h-screen bg-base-100">
-      <Sidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+    <div className="flex min-h-screen">
+      <SideMenu onToggle={handleMenuToggle} />{" "}
+      {/* Render the SideMenu component */}
       <div
         className={`flex-grow transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? "ml-[32%]" : "ml-[2%]"
-        }`}
+          isMenuCollapsed ? "ml-22" : "ml-64"
+        } flex-1 p-6 max-w-auto mx-auto`}
       >
-        <main className="container mx-auto p-6">
+        <main className="p-6">
           {/* Title and search bar */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="border-b-2 text-base-content">
-              <h1 className="text-2xl font-bold">Your Projects</h1>
+          <div>
+            <div className="flex justify-between items-center">
+              <div className=" text-base-content">
+                <h1 className="text-2xl font-bold">Welcome Back Kevin</h1>
+              </div>
+              {/* 
+                  TODO: Expand the searchability. Right now it can filter titles only.
+                  Feed back: Being able to search the description of cards. 
+              */}
+              <SearchInput
+                placeholder="Search projects ..."
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="placeholder:text-base-content"
+              />
             </div>
-            <SearchInput
-              placeholder="Search"
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="divider"></div>
           </div>
-          {/* Project Grid */}
-          <div className="grid grid-cols-3 gap-6">
-            {/* Create New Project Card */}
-            <div className="card bg-neutral-content shadow-md flex items-center justify-center p-6">
-              <button onClick={openModal}>
-                <AddCircleIcon className="text-primary" sx={{ fontSize: 60 }} />
-              </button>
-              <p className="mt-4 font-bold text-neutral">Create New Project</p>
-            </div>
 
-            {filteredProjects.map((project, index) => (
-              <div
-                key={index}
-                className="card bg-neutral-content shadow-md p-4"
+          {/* Your Projects section */}
+          <div>
+            <div className="flex justify-between items-center">
+              <h3>Your Projects</h3>
+              <button
+                className="btn btn-outline btn-sm btn-primary"
+                onClick={openModal} // Open the modal when clicked
               >
-                <h3 className="font-bold text-neutral">{project.name}</h3>
-                <p className="text-sm text-neutral">{project.description}</p>
-                <div className="mt-4 flex justify-between">
-                  <button className="btn btn-outline btn-sm text-neutral">
-                    more info
-                  </button>
+                Add new Project
+              </button>
+            </div>
+            <div className="divider"></div>
+          </div>
+
+          {/* Project Grid */}
+          <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+            {filteredProjects.map((project, index) => (
+              <div key={index} className="card bg-base-200 shadow-md p-4">
+                <h3 className="font-bold text-base-content">{project.name}</h3>
+                <p className="text-sm text-base-content">
+                  {project.description}
+                </p>
+                <div className="mt-4">
                   <button
-                    className="btn bg-primary btn-sm text-neutral-content"
-                    onClick={() => router.push(`/pages/projects/${project.id}`)}
+                    className="btn bg-primary btn-block text-base-100"
+                    onClick={() => router.push(`/pages/projects/${project.id}`)} // Navigate to the project page
                   >
                     enter project
                   </button>
@@ -76,12 +90,16 @@ export default function Projects() {
               </div>
             ))}
           </div>
+
+          {/* Recent Activity section */}
+          <h3 className="">Your Recent Activity</h3>
+          <div className="divider"></div>
         </main>
-        <button className="fixed bottom-10 right-10" onClick={openModal}>
-          <AddCircleIcon className="text-primary" sx={{ fontSize: 60 }} />
-        </button>
       </div>
+      {/* Render the CreateProject modal */}
       <CreateProject isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
-}
+};
+
+export default Projects;
