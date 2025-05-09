@@ -9,11 +9,21 @@ public class TagBusiness : ITagBusiness
 {
     private readonly DeeplynxContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TagBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context to be used for tag operations.</param>
     public TagBusiness(DeeplynxContext context)
     {
         _context = context;
     }
 
+    /// <summary>
+    /// Asynchronously creates a new tag for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <returns>The created tag with its details.</returns>
     public async Task<TagRequestDto> CreateTagAsync(long projectId, TagRequestDto TagRequestDto)
     {
         var tag = new Tag
@@ -33,6 +43,14 @@ public class TagBusiness : ITagBusiness
         return TagRequestDto;
     }
 
+    /// <summary>
+    /// Updates an existing tag for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to update.</param>
+    /// <param name="TagRequestDto">The tag data transfer object containing updated tag details.</param>
+    /// <returns>The updated tag with its details.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<TagRequestDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto TagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
@@ -52,6 +70,11 @@ public class TagBusiness : ITagBusiness
         return TagRequestDto;
     }
 
+    /// <summary>
+    /// Retrieves all tags for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <returns>A list of tags belonging to the project.</returns>
     public async Task<IEnumerable<TagRequestDto>> GetAllTagsAsync(long projectId)
     {
         return await _context.Tags
@@ -70,6 +93,13 @@ public class TagBusiness : ITagBusiness
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Retrieves a specific tag by its ID for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <returns>The tag with its details.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<TagRequestDto> GetTagByIdAsync(long projectId, long tagId)
     {
         var tag = await _context.Tags
@@ -94,6 +124,13 @@ public class TagBusiness : ITagBusiness
         };
     }
 
+    /// <summary>
+    /// Deletes a specific tag by its ID for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to delete.</param>
+    /// <param name="force">Indicates whether to force delete the tag if it is in use.</param>
+    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task DeleteTagAsync(long projectId, long tagId, bool force = false)
     {
         var tag = await _context.Tags.FindAsync(tagId);
