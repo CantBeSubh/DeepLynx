@@ -20,18 +20,32 @@ public class TagBusiness : ITagBusiness
 
     /// <summary>
     /// Asynchronously creates a new tag for a specified project.
+    /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
+    /// <
     public async Task<TagRequestDto> CreateTagAsync(long projectId, TagRequestDto TagRequestDto)
     {
+        // Validate 'Name' and 'CreatedBy' fields
+        if (string.IsNullOrWhiteSpace(TagRequestDto.Name))
+        {
+            throw new ArgumentException("Name is required and cannot be empty or whitespace.");
+        }
+
+        if (string.IsNullOrWhiteSpace(TagRequestDto.CreatedBy))
+        {
+            throw new ArgumentException("CreatedBy is required and cannot be empty or whitespace.");
+        }
         var tag = new Tag
         {
             Name = TagRequestDto.Name,
-            ProjectId = projectId,
+            ProjectId = projectId, 
             CreatedBy = TagRequestDto.CreatedBy,
-            CreatedAt = DateTime.UtcNow
+            ModifiedBy = TagRequestDto.CreatedBy,
+            CreatedAt = DateTime.Now, // NOW: saves without time zones
+            ModifiedAt = DateTime.Now 
         };
 
         _context.Tags.Add(tag);
