@@ -76,12 +76,12 @@ public class TagsController : ControllerBase
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
-    /// <param name="force">Indicates whether to force delete the tag if it is in use.</param>
-    /// <returns>No content if the tag is successfully deleted.</returns>
+    /// <param name="force">Boolean indicating whether to force delete the tag if it is true.</param>
+    /// <returns> A message stating the tag was successfully deleted.</returns>
     [HttpDelete("DeleteTag/{tagId}")]
     public async Task<IActionResult> DeleteTag(long projectId, long tagId, [FromQuery] bool force = false)
     {
         await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
-        return NoContent();
+        return Ok("Tag successfully deleted");
     }
 }
