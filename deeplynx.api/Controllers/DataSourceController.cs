@@ -21,10 +21,10 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpGet]
         [Route("api/datasource/getAllDataSources")]
-        public ActionResult<IEnumerable<DataSourceDto>> Get()
+        public async Task<ActionResult<IEnumerable<DataSourceDto>>> Get()
         {
-            var dataSources = _dataSourceBusiness.GetAllDataSources();
-            return Ok(dataSources);
+            var dataSources = await _dataSourceBusiness.GetAllDataSources();
+            return  Ok(dataSources);
         }
 
         /// <summary>
@@ -34,12 +34,12 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("api/datasource/createDataSource")]
-        public ActionResult<DataSourceDto> Post([FromBody] DataSourceDto dataSourceDto)
+        public async Task<ActionResult<DataSourceDto>> Post([FromBody] DataSourceDto dataSourceDto)
         {
             if (dataSourceDto == null)
                 return BadRequest("Datasource is empty");
 
-            var createdDataSource = _dataSourceBusiness.CreateDataSource(dataSourceDto);
+            var createdDataSource = await _dataSourceBusiness.CreateDataSource(dataSourceDto);
             return CreatedAtAction(nameof(Get), new { id = createdDataSource.Id }, createdDataSource);
         }
 
@@ -51,9 +51,9 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPut]
         [Route("api/datasource/updateDatasource/{id:long}")]
-        public ActionResult<DataSourceDto> Put(long id, [FromBody] DataSourceDto dataSourceDto)
+        public async Task<ActionResult<DataSourceDto>> Put(long id, [FromBody] DataSourceDto dataSourceDto)
         {
-            var updatedDataSource = _dataSourceBusiness.UpdateDataSource(id, dataSourceDto);
+            var updatedDataSource = await _dataSourceBusiness.UpdateDataSource(id, dataSourceDto);
             return Ok(updatedDataSource);
         }
 
@@ -64,9 +64,9 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpDelete]
         [Route("api/datasource/deleteDataSource")]
-        public ActionResult Delete(long id)
+        public async Task<ActionResult> Delete(long id)
         {
-            var success = _dataSourceBusiness.DeleteDataSource(id);
+            var success = await _dataSourceBusiness.DeleteDataSource(id);
             if (!success)
                 return NotFound($"Data source {id} not found");
 

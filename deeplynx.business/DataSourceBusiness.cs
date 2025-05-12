@@ -1,6 +1,7 @@
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace deeplynx.business
@@ -19,14 +20,14 @@ namespace deeplynx.business
         /// Get all data sources that exist and map to dto
         /// </summary>
         /// <returns></returns>
-        public IEnumerable<DataSourceDto> GetAllDataSources()
+        public async Task<IEnumerable<DataSourceDto>> GetAllDataSources()
         {
-            return _context.DataSources.Select(ds => new DataSourceDto
+            return await _context.DataSources.Select(ds => new DataSourceDto
             {
                 Id = ds.Id,
                 Name = ds.Name,
                 ProjectId = ds.ProjectId
-            }).ToList();
+            }).ToListAsync();
         }
 
         /// <summary>
@@ -35,7 +36,7 @@ namespace deeplynx.business
         /// <param name="dataSourceDto"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public DataSourceDto CreateDataSource(DataSourceDto dataSourceDto)
+        public async Task<DataSourceDto> CreateDataSource(DataSourceDto dataSourceDto)
         {
             if (dataSourceDto == null)
                 throw new ArgumentNullException(nameof(dataSourceDto));
@@ -43,11 +44,18 @@ namespace deeplynx.business
             var dataLayerDataSource = new DataSource
             {
                 Name = dataSourceDto.Name,
-                ProjectId = dataSourceDto.ProjectId
+                ProjectId = dataSourceDto.ProjectId,
+                Abbreviation = dataSourceDto.Abbreviation,
+                Config = dataSourceDto.Config,
+                Type = dataSourceDto.Type,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ModifiedBy = null
             };
 
             _context.DataSources.Add(dataLayerDataSource);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             dataSourceDto.Id = dataLayerDataSource.Id;
             return dataSourceDto;
@@ -60,15 +68,20 @@ namespace deeplynx.business
         /// <param name="dataSourceDto"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public DataSourceDto UpdateDataSource(long id, DataSourceDto dataSourceDto)
+        public async Task<DataSourceDto> UpdateDataSource(long id, DataSourceDto dataSourceDto)
         {
-            var existing = _context.DataSources.FirstOrDefault(ds => ds.Id == id);
+            var existing = await _context.DataSources.FirstOrDefaultAsync(ds => ds.Id == id);
             if (existing == null)
                 throw new Exception("DataSource not found");
 
             existing.Name = dataSourceDto.Name;
+            existing.Abbreviation = dataSourceDto.Abbreviation;
+            existing.BaseUri = dataSourceDto.BaseUri;
+            existing.Config = dataSourceDto.Config;
+            existing.Type = dataSourceDto.Type;
+            existing.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return dataSourceDto;
         }
 
@@ -77,13 +90,13 @@ namespace deeplynx.business
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public bool DeleteDataSource(long id)
+        public async Task<bool> DeleteDataSource(long id)
         {
-            var existing = _context.DataSources.FirstOrDefault(ds => ds.Id == id);
+            var existing = await _context.DataSources.FirstOrDefaultAsync(ds => ds.Id == id);
             if (existing == null)
                 return false; 
             existing.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
             return true;
         }
     }

@@ -4,9 +4,9 @@ namespace deeplynx.interfaces
 {
     public interface IDataSourceBusiness
     {
-        IEnumerable<DataSourceDto> GetAllDataSources();
-        DataSourceDto CreateDataSource(DataSourceDto dataSourceDto);
-        DataSourceDto UpdateDataSource(long id, DataSourceDto dataSourceDto);
-        bool DeleteDataSource(long id);
+        Task<IEnumerable<DataSourceDto>> GetAllDataSources();
+        Task<DataSourceDto> CreateDataSource(DataSourceDto dataSourceDto);
+        Task<DataSourceDto> UpdateDataSource(long id, DataSourceDto dataSourceDto);
+        Task<bool> DeleteDataSource(long id);
     }
 }
