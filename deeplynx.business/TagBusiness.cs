@@ -25,7 +25,6 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    /// <
     public async Task<TagRequestDto> CreateTagAsync(long projectId, TagRequestDto TagRequestDto)
     {
         // Validate 'Name' and 'CreatedBy' fields
@@ -54,7 +53,7 @@ public class TagBusiness : ITagBusiness
         TagRequestDto.Id = tag.Id;
         TagRequestDto.CreatedAt = tag.CreatedAt;
 
-        return TagRequestDto;
+        return TagRequestDto; // Return validated DTO back to user.
     }
 
     /// <summary>
