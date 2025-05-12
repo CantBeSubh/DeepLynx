@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-
+using System.Text.Json.Serialization;  
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
@@ -36,7 +36,12 @@ builder.Services.AddAuthentication(options =>
     };
 });
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.MaxDepth = 64; // optional
+});
 builder.Services.AddHttpContextAccessor();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
@@ -57,6 +62,7 @@ builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
 builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
 builder.Services.AddTransient<IDataSourceBusiness, DataSourceBusiness>();
+builder.Services.AddTransient<IRelationshipBusiness, RelationshipBusiness>();
 builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
 builder.Services.AddTransient<IRecordMappingBusiness, RecordMappingBusiness>();
 builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();

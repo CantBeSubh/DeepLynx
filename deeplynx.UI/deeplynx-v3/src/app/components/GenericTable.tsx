@@ -46,9 +46,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
   // Get current page data if pagination is enabled
   const currentData = enablePagination
     ? filteredData.slice(
-      (currentPage - 1) * rowsPerPage,
-      currentPage * rowsPerPage
-    )
+        (currentPage - 1) * rowsPerPage,
+        currentPage * rowsPerPage
+      )
     : filteredData;
 
   const handlePageClick = (pageNumber: number) => {
@@ -63,8 +63,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -88,8 +89,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -129,8 +131,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -156,8 +159,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
 
   return (
     <div
-      className={`overflow-x-auto ${bordered ? "rounded-box border border-neutral-content" : ""
-        } p-2`}
+      className={`overflow-x-auto ${
+        bordered ? "rounded-box border border-neutral-content" : ""
+      } p-2`}
     >
       <div className="my-4 flex justify-between items-center">
         <SearchInput
@@ -173,7 +177,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
           </button>
           <button
             onClick={deleteSelectedRows}
-            className={!isAnyRowSelected ? "text-base-300" : "text-secondary"}
+            className={!isAnyRowSelected ? "text-base-100" : "text-accent"}
           >
             <DeleteIcon fontSize="medium" />
           </button>
@@ -183,16 +187,20 @@ const GenericTable: React.FC<GenericTableProps> = ({
         <thead>
           <tr>
             {columns.map((column, index) => (
-              <th key={index}>{column.header}</th>
+              <th className="text-base-content" key={index}>
+                {column.header}
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-secondary">
+            <tr key={rowIndex} className="hover:bg-base-200">
               {columns.map((column, colIndex) => (
-                <td key={colIndex} className="text-primary-content">
-                  {column.cell ? column.cell(row) : row[column.accessor as keyof typeof row]}
+                <td key={colIndex} className="text-base-content">
+                  {column.cell
+                    ? column.cell(row)
+                    : row[column.accessor as keyof typeof row]}
                 </td>
               ))}
             </tr>

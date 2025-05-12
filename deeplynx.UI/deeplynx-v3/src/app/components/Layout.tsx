@@ -1,18 +1,29 @@
 import React from "react";
+import Image from "next/image";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Banner/Header */}
-      <header className="bg-primary text-white flex justify-between items-center px-6 py-4 shadow-md z-50 fixed w-full">
-        <div className="text-xl font-bold">DeepLynx</div>
+      <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
+        <Image
+          src="/images/lynx.png"
+          alt="Logo"
+          height={20}
+          width={150}
+          className="rounded "
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
+            maskImage:
+              "linear-gradient(to right, to top, to bottom, transparent, black 5%, black 95%, transparent)",
+            WebkitMaskRepeat: "no-repeat",
+            maskRepeat: "no-repeat",
+          }}
+        />
         <label className="swap swap-rotate">
           {/* this hidden checkbox controls the state */}
-          <input
-            type="checkbox"
-            className="theme-controller"
-            value="business"
-          />
+          <input type="checkbox" className="theme-controller" value="dark" />
 
           {/* sun icon */}
           <svg
@@ -36,7 +47,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </header>
 
       {/* Page Content */}
-      <main className="flex-grow bg-gray-200 pt-16">{children}</main>
+      <main className="flex-grow bg-base-100 pt-16">{children}</main>
     </div>
   );
 };

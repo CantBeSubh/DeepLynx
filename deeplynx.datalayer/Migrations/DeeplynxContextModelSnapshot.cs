@@ -69,7 +69,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -92,8 +92,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("classes_pkey");
-
-                    b.HasIndex(new[] { "ProjectId" }, "IX_classes_project_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_classes_id");
 
@@ -139,7 +137,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -163,8 +161,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("data_sources_pkey");
 
-                    b.HasIndex(new[] { "ProjectId" }, "IX_data_sources_project_id");
-
                     b.HasIndex(new[] { "Id" }, "idx_data_sources_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_data_sources_project_id");
@@ -187,7 +183,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("data_source_id");
 
                     b.Property<long>("ProjectId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
+                        .HasDefaultValue(0L)
                         .HasColumnName("project_id");
 
                     b.Property<string>("Properties")
@@ -204,10 +202,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("OriginId", "DestinationId")
                         .HasName("edges_pkey");
-
-                    b.HasIndex(new[] { "DestinationId" }, "IX_edges_destination_id");
-
-                    b.HasIndex(new[] { "RelationshipId" }, "IX_edges_relationship_id");
 
                     b.HasIndex(new[] { "DataSourceId" }, "idx_edges_data_source_id");
 
@@ -254,7 +248,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("destination_params");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -328,8 +322,10 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("text")
-                        .HasColumnName("name");
+                        .HasColumnName("name")
+                        .HasDefaultValueSql("''::text");
 
                     b.HasKey("Id")
                         .HasName("permissions_pkey");
@@ -366,7 +362,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -426,7 +422,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -457,12 +453,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("records_pkey");
-
-                    b.HasIndex(new[] { "ClassId" }, "IX_records_class_id");
-
-                    b.HasIndex(new[] { "DataSourceId" }, "IX_records_data_source_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "IX_records_project_id");
 
                     b.HasIndex(new[] { "ClassId" }, "idx_records_class_id");
 
@@ -512,7 +502,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -521,7 +511,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("modified_by");
 
                     b.Property<long>("ProjectId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
+                        .HasDefaultValue(0L)
                         .HasColumnName("project_id");
 
                     b.Property<string>("RecordParams")
@@ -578,7 +570,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -605,12 +597,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("relationships_pkey");
-
-                    b.HasIndex(new[] { "DestinationId" }, "IX_relationships_destination_id");
-
-                    b.HasIndex(new[] { "OriginId" }, "IX_relationships_origin_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "IX_relationships_project_id");
 
                     b.HasIndex(new[] { "DestinationId" }, "idx_relationships_destination_id");
 
@@ -648,7 +634,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at")
@@ -669,8 +655,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("roles_pkey");
-
-                    b.HasIndex(new[] { "ProjectId" }, "IX_roles_project_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_roles_id");
 
@@ -841,7 +825,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("email");
 
-                    b.Property<DateTime>("ModifiedAt")
+                    b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
 
@@ -878,8 +862,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("UserId", "ProjectId")
                         .HasName("user_projects_pkey");
-
-                    b.HasIndex(new[] { "ProjectId" }, "IX_user_projects_project_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_user_projects_project_id");
 
