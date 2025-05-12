@@ -2,9 +2,8 @@ using Testcontainers.PostgreSql;
 using deeplynx.business; 
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using Docker.DotNet.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+
 
 namespace deeplynx.tests;
 
@@ -13,7 +12,6 @@ public sealed class ProjectTest : IAsyncLifetime
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder()
         .WithImage("postgres:15-alpine")
         .Build();
-    
 
     public Task InitializeAsync()
     {   
@@ -28,15 +26,17 @@ public sealed class ProjectTest : IAsyncLifetime
     [Fact]
     async public void ShouldReturn3Projects()
     {
-        var projectBusiness = new ProjectBusiness(new DeeplynxContext());
+      
+        var projectBusiness = new ProjectBusiness(new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
+            .UseNpgsql(_postgres.GetConnectionString())
+            .Options));
         
-        projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project One", Abbreviation = "P1" });
-
-        projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Two", Abbreviation = "P2" });
-        projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Three"});
-        var projects = await projectBusiness.GetAllProjects();
+        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project One", Abbreviation = "P1" });
+        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Two", Abbreviation = "P2" });
+        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Three"});
+        var project = await projectBusiness.GetAllProjects();
 
         // Then
-        Assert.Equal(3, projects.Count());
+        Assert.Equal(3, project.Count());
     }
 }
