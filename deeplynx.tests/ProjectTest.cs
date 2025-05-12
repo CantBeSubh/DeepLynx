@@ -9,6 +9,7 @@ namespace deeplynx.tests;
 public sealed class ProjectTest : IAsyncLifetime
 {
     private DeeplynxContext _context;
+    public ProjectBusiness _projectBusiness; 
 
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder()
          .WithImage("postgres:15-alpine")
@@ -24,24 +25,66 @@ public sealed class ProjectTest : IAsyncLifetime
 
         _context = new DeeplynxContext(options);
         await _context.Database.MigrateAsync(); 
+        _projectBusiness = new ProjectBusiness(_context);
     }
 
     public async Task DisposeAsync()
     {
         await _postgresContainer.DisposeAsync();
     }
-
+    
     [Fact]
-    async public void ShouldReturn3Projects()
+    public async Task CreateProject_Should_Add_Project()
     {
-
-        var projectBusiness = new ProjectBusiness(_context);
-
-        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project One", Abbreviation = "P1" });
-        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Two", Abbreviation = "P2" });
-        await projectBusiness.CreateProject(new ProjectRequestDto { Name = "Project Three" });
-        var project = await projectBusiness.GetAllProjects();
-
-        Assert.Equal(3, project.Count());
+        var dto = new ProjectRequestDto { Name = "Test Project", Abbreviation = "TP" };
+        var project = await _projectBusiness.CreateProject(dto);
+        Assert.NotNull(project);
+        Assert.Equal("Test Project", project.Name);
+        Assert.Equal("TP", project.Abbreviation);
+    }
+    [Fact]
+    public async Task GetAllProjects_Should_Return_All_Projects()
+    {
+        await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "Proj1", Abbreviation = "P1" });
+        await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "Proj2", Abbreviation = "P2" });
+        var projects = await _projectBusiness.GetAllProjects();
+        Assert.NotNull(projects);
+        Assert.Equal(2, await _context.Projects.CountAsync());
+    }
+    [Fact]
+    public async Task GetProject_Should_Return_Project_If_Exists()
+    {
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "Proj", Abbreviation = "PR" });
+        var fetched = await _projectBusiness.GetProject(created.Id);
+        Assert.NotNull(fetched);
+        Assert.Equal("Proj", fetched.Name);
+    }
+    [Fact]
+    public async Task GetProject_Should_Throw_If_Not_Exists()
+    {
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
+        Assert.Equal("Project not found.", ex.Message);
+    }
+    [Fact]
+    public async Task UpdateProject_Should_Modify_Fields()
+    {
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "Old", Abbreviation = "OLD" });
+        var updated = await _projectBusiness.UpdateProject(created.Id, new ProjectRequestDto { Name = "New", Abbreviation = "NEW" });
+        Assert.Equal("New", updated.Name);
+        Assert.Equal("NEW", updated.Abbreviation);
+    }
+    [Fact]
+    public async Task DeleteProject_Should_Remove_Project()
+    {
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDelete", Abbreviation = "TD" });
+        var result = await _projectBusiness.DeleteProject(created.Id);
+        Assert.True(result);
+        Assert.Null(await _context.Projects.FindAsync(created.Id));
+    }
+    [Fact]
+    public async Task DeleteProject_Should_Throw_If_Not_Exists()
+    {
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.DeleteProject(999));
+        Assert.Equal("Project not found.", ex.Message);
     }
 }
