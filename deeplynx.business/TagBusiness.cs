@@ -74,7 +74,7 @@ public class TagBusiness : ITagBusiness
 
         tag.Name = TagRequestDto.Name;
         tag.ModifiedBy = TagRequestDto.ModifiedBy;
-        tag.ModifiedAt = DateTime.UtcNow;
+        tag.ModifiedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
 
@@ -158,7 +158,7 @@ public class TagBusiness : ITagBusiness
         }
         else
         {
-            tag.DeletedAt = DateTime.UtcNow;
+            tag.DeletedAt = DateTime.Now;
         }
 
         await _context.SaveChangesAsync();
