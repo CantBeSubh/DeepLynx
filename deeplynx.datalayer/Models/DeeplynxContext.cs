@@ -44,7 +44,10 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserProject> UserProjects { get; set; }
-    
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DefaultConnection");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Class>(entity =>
