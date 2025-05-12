@@ -42,9 +42,7 @@ public class TagBusiness : ITagBusiness
             Name = TagRequestDto.Name,
             ProjectId = projectId, 
             CreatedBy = TagRequestDto.CreatedBy,
-            ModifiedBy = TagRequestDto.CreatedBy,
             CreatedAt = DateTime.Now, // NOW: saves without time zones
-            ModifiedAt = DateTime.Now 
         };
 
         _context.Tags.Add(tag);
