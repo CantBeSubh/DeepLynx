@@ -1,8 +1,8 @@
-# Stage 2: Download dependencies
+# Stage 1: Download dependencies
 FROM node:lts-alpine3.20 AS dependencies
 WORKDIR /app
 # Copy package.json and package-lock.json
-COPY UI/deeplynx-v3/package*.json ./
+COPY deeplynx.UI/deeplynx-v3/package*.json ./
 RUN npm install
 
 # Stage 2: Build the frontend
@@ -13,7 +13,7 @@ WORKDIR /app
 COPY --from=dependencies /app/node_modules ./node_modules
 
 # Copy the rest of the frontend source code
-COPY UI/deeplynx-v3/ ./
+COPY deeplynx.UI/deeplynx-v3/ ./
 
 # Build the frontend
 RUN npm run build
