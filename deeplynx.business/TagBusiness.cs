@@ -59,7 +59,7 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
-    /// <param name="TagRequestDto">The tag request data transfer object containing updated tag details.</param>
+    /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
