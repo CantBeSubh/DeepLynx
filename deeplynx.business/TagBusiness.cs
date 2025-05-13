@@ -23,20 +23,20 @@ public class TagBusiness : ITagBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
-    /// <returns>The created tag with its details.</returns>
-    public async Task<TagRequestDto> CreateTagAsync(long projectId, TagRequestDto TagRequestDto)
+    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <returns>The created tag response DTO with saved details.</returns>
+    public async Task<TagResponseDto> CreateTagAsync(long projectId, TagRequestDto tagRequestDto)
     {
-        // Validate 'Name' and 'CreatedBy' fields
-        if (string.IsNullOrWhiteSpace(TagRequestDto.Name))
+        // Validate 'Name' field
+        if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
             throw new ArgumentException("Name is required and cannot be empty or whitespace.");
         }
-
+        
         var tag = new Tag
         {
-            Name = TagRequestDto.Name,
-            ProjectId = projectId, 
+            Name = tagRequestDto.Name,
+            ProjectId = projectId,
             CreatedBy = null, // TODO: handled in future by JWT.
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
@@ -44,10 +44,14 @@ public class TagBusiness : ITagBusiness
         _context.Tags.Add(tag);
         await _context.SaveChangesAsync();
 
-        TagRequestDto.Id = tag.Id;
-        TagRequestDto.CreatedAt = tag.CreatedAt;
-
-        return TagRequestDto; // Return validated DTO back to user.
+        return new TagResponseDto // Return validated response DTO back to user.
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            ProjectId = tag.ProjectId,
+            CreatedBy = tag.CreatedBy,
+            CreatedAt = tag.CreatedAt
+        };
     }
 
     /// <summary>
@@ -55,10 +59,10 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
-    /// <param name="TagRequestDto">The tag data transfer object containing updated tag details.</param>
-    /// <returns>The updated tag with its details.</returns>
+    /// <param name="TagRequestDto">The tag request data transfer object containing updated tag details.</param>
+    /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagRequestDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto TagRequestDto)
+    public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId)
@@ -66,15 +70,22 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException("Tag not found.");
         }
 
-        tag.Name = TagRequestDto.Name;
+        tag.Name = tagRequestDto.Name;
         tag.ModifiedBy = null; // TODO: handled in future by JWT.
         tag.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _context.SaveChangesAsync();
 
-        TagRequestDto.ModifiedAt = tag.ModifiedAt;
-
-        return TagRequestDto;
+        return new TagResponseDto
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            ProjectId = tag.ProjectId,
+            CreatedBy = tag.CreatedBy,
+            CreatedAt = tag.CreatedAt,
+            ModifiedBy = tag.ModifiedBy,
+            ModifiedAt = tag.ModifiedAt
+        };
     }
 
     /// <summary>
@@ -82,11 +93,11 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagRequestDto>> GetAllTagsAsync(long projectId)
+    public async Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId)
     {
         return await _context.Tags
             .Where(t => t.ProjectId == projectId && t.DeletedAt == null)
-            .Select(t => new TagRequestDto
+            .Select(t => new TagResponseDto()
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -94,8 +105,7 @@ public class TagBusiness : ITagBusiness
                 CreatedBy = t.CreatedBy,
                 CreatedAt = t.CreatedAt,
                 ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt,
-                DeletedAt = t.DeletedAt
+                ModifiedAt = t.ModifiedAt
             })
             .ToListAsync();
     }
@@ -107,7 +117,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <returns>The tag with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagRequestDto> GetTagByIdAsync(long projectId, long tagId)
+    public async Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId)
     {
         var tag = await _context.Tags
             .Where(t => t.ProjectId == projectId && t.Id == tagId && t.DeletedAt == null)
@@ -118,7 +128,7 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException("Tag not found.");
         }
 
-        return new TagRequestDto
+        return new TagResponseDto
         {
             Id = tag.Id,
             Name = tag.Name,
@@ -126,8 +136,7 @@ public class TagBusiness : ITagBusiness
             CreatedBy = tag.CreatedBy,
             CreatedAt = tag.CreatedAt,
             ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt,
-            DeletedAt = tag.DeletedAt
+            ModifiedAt = tag.ModifiedAt
         };
     }
 

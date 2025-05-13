@@ -23,15 +23,15 @@ public class TagsController : ControllerBase
     /// Creates a new tag for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="TagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("CreateTag")]
-    public async Task<ActionResult<TagRequestDto>> CreateTag(long projectId, [FromBody] TagRequestDto TagRequestDto)
+    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
     {
         try
         {
-            var createdTag = await _tagBusiness.CreateTagAsync(projectId, TagRequestDto);
-            return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id },
+            var createdTag = await _tagBusiness.CreateTagAsync(projectId, tagRequestDto);
+            return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id }, 
                 createdTag);
         }
         catch (Exception exception)
@@ -47,14 +47,14 @@ public class TagsController : ControllerBase
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
-    /// <param name="TagRequestDto">The tag data transfer object containing updated tag details.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
     [HttpPut("UpdateTag/{tagId}")]
-    public async Task<ActionResult<TagRequestDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto TagRequestDto)
+    public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto tagRequestDto)
     {
         try
         {
-            var updatedTag = await _tagBusiness.UpdateTagAsync(projectId, tagId, TagRequestDto);
+            var updatedTag = await _tagBusiness.UpdateTagAsync(projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
@@ -71,12 +71,12 @@ public class TagsController : ControllerBase
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags")]
-    public async Task<ActionResult<IEnumerable<TagRequestDto>>> GetAllTags(long projectId)
+    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(long projectId)
     {
         try
         {
             var tags = await _tagBusiness.GetAllTagsAsync(projectId);
-            return Ok(tags);           
+            return Ok(tags);
         }
         catch (Exception exception)
         {
@@ -84,7 +84,6 @@ public class TagsController : ControllerBase
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
-
     }
 
     /// <summary>
@@ -94,12 +93,12 @@ public class TagsController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <returns>The tag with its details.</returns>
     [HttpGet("GetTagById/{tagId}")]
-    public async Task<ActionResult<TagRequestDto>> GetTagById(long projectId, long tagId)
+    public async Task<ActionResult<TagResponseDto>> GetTagById(long projectId, long tagId)
     {
         try
         {
             var tag = await _tagBusiness.GetTagByIdAsync(projectId, tagId);
-            return Ok(tag);           
+            return Ok(tag);
         }
         catch (Exception exception)
         {
@@ -107,7 +106,6 @@ public class TagsController : ControllerBase
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
-
     }
 
     /// <summary>
@@ -123,7 +121,7 @@ public class TagsController : ControllerBase
         try
         {
             await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
-            return Ok("Tag successfully deleted");           
+            return Ok("Tag successfully deleted");
         }
         catch (Exception exception)
         {
