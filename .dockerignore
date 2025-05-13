@@ -1,1 +1,17 @@
 */node_modules
+*.bak
+*.env
+*.log
+*.zip
+dist
+
+## Mac OS ##
+*.DS_Store
+*.idea
+
+## VS Code ##
+.vscode
+
+## Web ##
+/**/obj/
+/**/bin/
