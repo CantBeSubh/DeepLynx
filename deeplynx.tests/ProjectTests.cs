@@ -6,7 +6,7 @@ using deeplynx.models;
 
 namespace deeplynx.tests;
 
-public sealed class ProjectTest : IAsyncLifetime
+public sealed class ProjectTests : IAsyncLifetime
 {
     private DeeplynxContext _context;
     public ProjectBusiness _projectBusiness; 
