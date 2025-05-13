@@ -33,6 +33,7 @@ public sealed class ProjectTest : IAsyncLifetime
         await _postgresContainer.DisposeAsync();
     }
     
+    // Creates a project and checks that the created values are not null 
     [Fact]
     public async Task CreateProject_Should_Add_Project()
     {
@@ -42,6 +43,7 @@ public sealed class ProjectTest : IAsyncLifetime
         Assert.Equal("Test Project", project.Name);
         Assert.Equal("TP", project.Abbreviation);
     }
+    // Creates two projects and checks that two were creataed 
     [Fact]
     public async Task GetAllProjects_Should_Return_All_Projects()
     {
@@ -51,6 +53,7 @@ public sealed class ProjectTest : IAsyncLifetime
         Assert.NotNull(projects);
         Assert.Equal(2, await _context.Projects.CountAsync());
     }
+    // Create project compare against returned project with GetProject()
     [Fact]
     public async Task GetProject_Should_Return_Project_If_Exists()
     {
@@ -59,12 +62,14 @@ public sealed class ProjectTest : IAsyncLifetime
         Assert.NotNull(fetched);
         Assert.Equal("Proj", fetched.Name);
     }
+    // Project that doesn't exist throws error 
     [Fact]
     public async Task GetProject_Should_Throw_If_Not_Exists()
     {
         var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
         Assert.Equal("Project not found.", ex.Message);
     }
+    // Create project, update name and abbreviation fields successfully 
     [Fact]
     public async Task UpdateProject_Should_Modify_Fields()
     {
@@ -73,6 +78,7 @@ public sealed class ProjectTest : IAsyncLifetime
         Assert.Equal("New", updated.Name);
         Assert.Equal("NEW", updated.Abbreviation);
     }
+    // Create and delete project successfully 
     [Fact]
     public async Task DeleteProject_Should_Remove_Project()
     {
@@ -81,6 +87,7 @@ public sealed class ProjectTest : IAsyncLifetime
         Assert.True(result);
         Assert.Null(await _context.Projects.FindAsync(created.Id));
     }
+    // Project that doesn't exist cannot be deleted 
     [Fact]
     public async Task DeleteProject_Should_Throw_If_Not_Exists()
     {
