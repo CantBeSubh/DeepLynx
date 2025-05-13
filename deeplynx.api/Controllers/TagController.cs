@@ -28,8 +28,18 @@ public class TagsController : ControllerBase
     [HttpPost("CreateTag")]
     public async Task<ActionResult<TagRequestDto>> CreateTag(long projectId, [FromBody] TagRequestDto TagRequestDto)
     {
-        var createdTag = await _tagBusiness.CreateTagAsync(projectId, TagRequestDto);
-        return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id }, createdTag);
+        try
+        {
+            var createdTag = await _tagBusiness.CreateTagAsync(projectId, TagRequestDto);
+            return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id },
+                createdTag);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while creating tag: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
     }
 
     /// <summary>
@@ -42,8 +52,17 @@ public class TagsController : ControllerBase
     [HttpPut("UpdateTag/{tagId}")]
     public async Task<ActionResult<TagRequestDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto TagRequestDto)
     {
-        var updatedTag = await _tagBusiness.UpdateTagAsync(projectId, tagId, TagRequestDto);
-        return Ok(updatedTag);
+        try
+        {
+            var updatedTag = await _tagBusiness.UpdateTagAsync(projectId, tagId, TagRequestDto);
+            return Ok(updatedTag);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while updating tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
     }
 
     /// <summary>
@@ -54,8 +73,18 @@ public class TagsController : ControllerBase
     [HttpGet("GetAllTags")]
     public async Task<ActionResult<IEnumerable<TagRequestDto>>> GetAllTags(long projectId)
     {
-        var tags = await _tagBusiness.GetAllTagsAsync(projectId);
-        return Ok(tags);
+        try
+        {
+            var tags = await _tagBusiness.GetAllTagsAsync(projectId);
+            return Ok(tags);           
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while listing all tags: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+
     }
 
     /// <summary>
@@ -67,8 +96,18 @@ public class TagsController : ControllerBase
     [HttpGet("GetTagById/{tagId}")]
     public async Task<ActionResult<TagRequestDto>> GetTagById(long projectId, long tagId)
     {
-        var tag = await _tagBusiness.GetTagByIdAsync(projectId, tagId);
-        return Ok(tag);
+        try
+        {
+            var tag = await _tagBusiness.GetTagByIdAsync(projectId, tagId);
+            return Ok(tag);           
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while retrieving tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+
     }
 
     /// <summary>
@@ -81,7 +120,16 @@ public class TagsController : ControllerBase
     [HttpDelete("DeleteTag/{tagId}")]
     public async Task<IActionResult> DeleteTag(long projectId, long tagId, [FromQuery] bool force = false)
     {
-        await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
-        return Ok("Tag successfully deleted");
+        try
+        {
+            await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
+            return Ok("Tag successfully deleted");           
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while deleting tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
     }
 }

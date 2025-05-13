@@ -33,16 +33,12 @@ public class TagBusiness : ITagBusiness
             throw new ArgumentException("Name is required and cannot be empty or whitespace.");
         }
 
-        if (string.IsNullOrWhiteSpace(TagRequestDto.CreatedBy))
-        {
-            throw new ArgumentException("CreatedBy is required and cannot be empty or whitespace.");
-        }
         var tag = new Tag
         {
             Name = TagRequestDto.Name,
             ProjectId = projectId, 
-            CreatedBy = TagRequestDto.CreatedBy,
-            CreatedAt = DateTime.Now, // NOW: saves without time zones
+            CreatedBy = null, // TODO: handled in future by JWT.
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         _context.Tags.Add(tag);
@@ -71,8 +67,8 @@ public class TagBusiness : ITagBusiness
         }
 
         tag.Name = TagRequestDto.Name;
-        tag.ModifiedBy = TagRequestDto.ModifiedBy;
-        tag.ModifiedAt = DateTime.Now;
+        tag.ModifiedBy = null; // TODO: handled in future by JWT.
+        tag.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _context.SaveChangesAsync();
 
@@ -156,7 +152,7 @@ public class TagBusiness : ITagBusiness
         }
         else
         {
-            tag.DeletedAt = DateTime.Now;
+            tag.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         }
 
         await _context.SaveChangesAsync();
