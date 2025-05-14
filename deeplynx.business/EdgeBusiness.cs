@@ -20,7 +20,7 @@ public class EdgeBusiness : IEdgeBusiness
         var edgeQuery = _context.Edges.AsQueryable();
         
         // add filter for project
-        edgeQuery = edgeQuery.Where(e => e.ProjectId == projectId);
+        edgeQuery = edgeQuery.Where(e => e.ProjectId == projectId && e.DataSourceId == dataSourceId);
         
         // add filter for datasource if specified
         if (dataSourceId.HasValue)
@@ -35,7 +35,7 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<Edge> GetEdge(long originId, long destinationId)
     {
         return await _context.Edges
-            .FirstOrDefaultAsync(e => e.OriginId == originId && e.DestinationId == destinationId);
+            .FirstOrDefaultAsync(e => e.OriginId == originId && e.DestinationId == destinationId && e.DeletedAt == null);
     }
 
     public async Task<Edge> CreateEdge(long projectId, long dataSourceId, EdgeRequestDto dto)
@@ -48,7 +48,9 @@ public class EdgeBusiness : IEdgeBusiness
             DataSourceId = dataSourceId,
             Properties = dto.Properties?.ToString(),
             RelationshipId = dto.RelationshipId,
-            RelationshipName = dto.RelationshipName
+            RelationshipName = dto.RelationshipName,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
         
         _context.Edges.Add(edge);
@@ -64,6 +66,8 @@ public class EdgeBusiness : IEdgeBusiness
         edge.Properties = dto.Properties?.ToString();
         edge.RelationshipId = dto.RelationshipId;
         edge.RelationshipName = dto.RelationshipName;
+        edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
@@ -75,7 +79,9 @@ public class EdgeBusiness : IEdgeBusiness
     {
         var edge = await GetEdge(originId, destinationId);
         
-        _context.Edges.Remove(edge);
+        edge.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        
+        _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
 
         return true;
