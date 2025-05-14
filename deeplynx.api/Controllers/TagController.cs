@@ -6,15 +6,15 @@ namespace deeplynx.api.Controllers;
 
 [Route("projects/{projectId}/tags")]
 [ApiController]
-public class TagsController : ControllerBase
+public class TagController : ControllerBase
 {
     private readonly ITagBusiness _tagBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TagsController"/> class.
+    /// Initializes a new instance of the <see cref="TagController"/> class.
     /// </summary>
     /// <param name="tagBusiness">The business logic interface for handling tag operations.</param>
-    public TagsController(ITagBusiness tagBusiness)
+    public TagController(ITagBusiness tagBusiness)
     {
         _tagBusiness = tagBusiness;
     }

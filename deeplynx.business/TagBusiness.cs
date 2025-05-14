@@ -65,9 +65,15 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId)
+        if (tag == null || tag.ProjectId != projectId || tag.DeletedAt is not null)
         {
-            throw new KeyNotFoundException("Tag not found.");
+            throw new KeyNotFoundException($"Tag with id {tagId} not found");
+        }
+        
+        // Validate 'Name' field
+        if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
+        {
+            throw new ArgumentException("Name is required and cannot be empty.");
         }
 
         tag.Name = tagRequestDto.Name;
@@ -147,12 +153,12 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <param name="force">Indicates whether to force delete the tag if it is in use.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task DeleteTagAsync(long projectId, long tagId, bool force = false)
+    public async Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false)
     {
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId)
+        if (tag == null || tag.ProjectId != projectId || tag.DeletedAt is not null)
         {
-            throw new KeyNotFoundException("Tag not found.");
+            throw new KeyNotFoundException($"Tag with {tagId} not found.");
         }
 
         if (force)
@@ -162,8 +168,10 @@ public class TagBusiness : ITagBusiness
         else
         {
             tag.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Tags.Update(tag);
         }
-
+        
         await _context.SaveChangesAsync();
+        return true;
     }
 }
