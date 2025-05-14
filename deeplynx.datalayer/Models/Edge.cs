@@ -37,6 +37,21 @@ public partial class Edge
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("created_by")]
+    public string? CreatedBy { get; set; }
+
+    [Column("created_at", TypeName = "timestamp without time zone")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("modified_by")]
+    public string? ModifiedBy { get; set; }
+
+    [Column("modified_at", TypeName = "timestamp without time zone")]
+    public DateTime? ModifiedAt { get; set; }
+
+    [Column("deleted_at", TypeName = "timestamp without time zone")]
+    public DateTime? DeletedAt { get; set; }
 
     [ForeignKey("DataSourceId")]
     [InverseProperty("Edges")]
