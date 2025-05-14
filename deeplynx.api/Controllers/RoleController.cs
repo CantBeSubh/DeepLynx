@@ -10,11 +10,20 @@ namespace deeplynx.api.Controllers
     {
         private readonly IRoleBusiness _roleBusiness;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RoleController"/> class
+        /// </summary>
+        /// <param name="roleBusiness">The business logic interface for handling role operations.</param>
         public RoleController(IRoleBusiness roleBusiness)
         {
             _roleBusiness = roleBusiness;
         }
 
+        /// <summary>
+        /// Retrieve all roles for a specified project.
+        /// </summary>
+        /// <param name="projectId">The ID of the project whose roles are to be retrieved.</param>
+        /// <returns>A list of roles belonging to the project.</returns>
         [HttpGet("GetAllRoles")]
         public async Task<IActionResult> GetAllRoles(long projectId)
         {
@@ -31,6 +40,12 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// Retrieves a specific role by its ID
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the role belongs.</param>
+        /// <param name="roleId">The ID of the role to retrieve.</param>
+        /// <returns>The role with its details.</returns>
         [HttpGet("GetRole/{roleId}")]
         public async Task<IActionResult> GetRole(long projectId, long roleId)
         {
@@ -47,6 +62,12 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// Creates a new role for a specified project.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the role belongs.</param>
+        /// <param name="dto">The role data transfer object containing role details.</param>
+        /// <returns>The created role with its details.</returns>
         [HttpPost("CreateRole")]
         public async Task<IActionResult> CreateRole(
             long projectId, 
@@ -65,6 +86,13 @@ namespace deeplynx.api.Controllers
             }
         }   
 
+        /// <summary>
+        /// Updates an existing role for a specified project.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the role belongs.</param>
+        /// <param name="roleId">The ID of the role to update.</param>
+        /// <param name="dto">The role data transfer object containing updated role details.</param>
+        /// <returns>The updated role with its details.</returns>
         [HttpPut("UpdateRole/{roleId}")]
         public async Task<IActionResult> UpdateRole(
             long projectId, 
@@ -84,6 +112,12 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// Deletes a specific role by its ID for a specified project.
+        /// </summary>
+        /// <param name="projectId">THe ID of the role to which the tag belongs.</param>
+        /// <param name="roleId">The ID of the role to delete.</param>
+        /// <returns>A message stating the role was successfully deleted.</returns>
         [HttpDelete("DeleteRole/{roleId}")]
         public async Task<IActionResult> DeleteRole(long projectId, long roleId)
         {
