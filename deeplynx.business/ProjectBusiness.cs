@@ -8,6 +8,9 @@ namespace deeplynx.business;
 public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
+    
+    /// Note: The following dependencies are used exclusively for their respective bulk soft delete functions.
+    private readonly ITagBusiness _tagBusiness;
 
     public ProjectBusiness(DeeplynxContext context)
     {
@@ -60,14 +63,36 @@ public class ProjectBusiness : IProjectBusiness
         return existingProject;
     }
 
-    public async Task<bool> DeleteProject(long projectId)
+    /// <summary>
+    /// NOTE: This takes in a force boolean for future force support however
+    ///     the project will currently only be soft-deleted no matter what.
+    ///     Note the commented out force removal thus the same if/else result.
+    /// Delete a project by id. This MUST also handle deletion of ALL downstream dependents.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="force"></param>
+    /// <returns></returns>
+    /// <exception cref="KeyNotFoundException"></exception>
+    public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null)
             throw new KeyNotFoundException("Project not found.");
 
-        _context.Projects.Remove(project);
+        // Note: If force deleting, downstream dependents must be handled first.
+        if (force)
+        {
+            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            // The actual force delete is the line below and should remain the final line.
+            // _context.Projects.Remove(project);
+        }
+        else
+        {
+            await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
+            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Projects.Update(project);
+        }
         await _context.SaveChangesAsync();
         return true;
     }

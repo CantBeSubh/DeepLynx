@@ -80,11 +80,11 @@ namespace deeplynx.api.Controllers
         }
 
         [HttpDelete("DeleteProject/{projectId}")]
-        public async Task<IActionResult> DeleteProject(long projectId)
+        public async Task<IActionResult> DeleteProject(long projectId, [FromQuery] bool force = false)
         {
             try
             {
-                await _projectBusiness.DeleteProject(projectId);
+                await _projectBusiness.DeleteProject(projectId, force);
                 return Ok(new { message = $"Deleted project {projectId}" });
             }
             catch (Exception exc)
