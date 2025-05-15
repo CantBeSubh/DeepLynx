@@ -12,9 +12,10 @@ public class ProjectBusiness : IProjectBusiness
     /// Note: The following dependencies are used exclusively for their respective bulk soft delete functions.
     private readonly ITagBusiness _tagBusiness;
 
-    public ProjectBusiness(DeeplynxContext context)
+    public ProjectBusiness(DeeplynxContext context, ITagBusiness tagBusiness)
     {
         _context = context;
+        _tagBusiness = tagBusiness;
     }
 
     public async Task<IEnumerable<Project>> GetAllProjects()
