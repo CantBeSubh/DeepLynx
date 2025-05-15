@@ -175,6 +175,12 @@ public class TagBusiness : ITagBusiness
         return true;
     }
     
+    /// <summary>
+    /// Called primarily by project's delete. Soft delete all tags in a project by id.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> SoftDeleteAllTagsByProjectIdAsync(long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
