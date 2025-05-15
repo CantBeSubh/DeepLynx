@@ -17,8 +17,3 @@ public class RelationshipResponseDto
     public ClassResponseDto? Origin { get; set; }
     public ClassResponseDto? Destination { get; set; }
 }
-public class ClassResponseDto
-{
-    public long Id { get; set; }
-    public string Name { get; set; } = null!;
-}
