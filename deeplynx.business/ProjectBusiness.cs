@@ -65,14 +65,13 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// NOTE: This takes in a force boolean for future force support however
-    ///     the project will currently only be soft-deleted no matter what.
-    ///     Note the commented out force removal thus the same if/else result.
-    /// Delete a project by id. This MUST also handle deletion of ALL downstream dependents.
+    /// NOTE: This takes in a force boolean for force support, however
+    ///     the project will currently only be soft-deleted.
+    /// Delete a project by id. This MUST also handle deletion of all project's downstream dependents.
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="force"></param>
-    /// <returns></returns>
+    /// <returns>True boolean on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
@@ -81,12 +80,11 @@ public class ProjectBusiness : IProjectBusiness
         if (project == null)
             throw new KeyNotFoundException("Project not found.");
 
-        // Note: If force deleting, downstream dependents must be handled first.
         if (force)
         {
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            // The actual force delete is the line below and should remain the final line.
-            // _context.Projects.Remove(project);
+            throw new NotSupportedException("Deeplynx does not support forced project deletion at this time. Check back later.");
+            // Note: Downstream dependents should be handled by below line based on FK's. Added force protection for dev safety.
+            //_context.Projects.Remove(project);
         }
         else
         {
