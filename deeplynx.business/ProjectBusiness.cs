@@ -12,10 +12,13 @@ public class ProjectBusiness : IProjectBusiness
     /// Note: The following dependencies are used exclusively for their respective bulk soft delete functions.
     private readonly ITagBusiness _tagBusiness;
 
-    public ProjectBusiness(DeeplynxContext context, ITagBusiness tagBusiness)
+    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
+
+    public ProjectBusiness(DeeplynxContext context, ITagBusiness tagBusiness, IEdgeMappingBusiness edgeMappingBusiness)
     {
         _context = context;
         _tagBusiness = tagBusiness;
+        _edgeMappingBusiness = edgeMappingBusiness;
     }
 
     public async Task<IEnumerable<Project>> GetAllProjects()
@@ -89,6 +92,7 @@ public class ProjectBusiness : IProjectBusiness
         else
         {
             await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
+            await _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId);
             project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Projects.Update(project);
         }

@@ -10,4 +10,5 @@ public interface IEdgeMappingBusiness
     Task<EdgeMapping> CreateEdgeMapping(long projectId, EdgeMappingRequestDto dto);
     Task<EdgeMapping> UpdateEdgeMapping(long projectId, long mappingId, EdgeMappingRequestDto dto);
     Task<bool> DeleteEdgeMapping(long mappingId);
+    Task<bool> SoftDeleteAllEdgeMappingsByProjectIdAsync(long projectId);
 }

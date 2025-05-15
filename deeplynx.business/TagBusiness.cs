@@ -176,7 +176,7 @@ public class TagBusiness : ITagBusiness
     }
     
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all tags in a project by id.
+    /// Called primarily by project's delete. Soft delete all tags in a project by project id.
     /// </summary>
     /// <param name="projectId"></param>
     /// <returns>Boolean true on successful deletion.</returns>
