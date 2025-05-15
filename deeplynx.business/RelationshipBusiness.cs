@@ -49,8 +49,8 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.DeletedAt,
                 r.OriginId,
                 r.DestinationId,
-                Origin = r.Origin == null ? null : new ClassResponseDto { Id = r.Origin.Id, Name = r.Origin.Name },
-                Destination = r.Destination == null ? null : new ClassResponseDto { Id = r.Destination.Id, Name = r.Destination.Name }
+                Origin = r.Origin == null ? null : new ClassRelationshipRespDto { Id = r.Origin.Id, Name = r.Origin.Name },
+                Destination = r.Destination == null ? null : new ClassRelationshipRespDto { Id = r.Destination.Id, Name = r.Destination.Name }
             })
             .ToListAsync();
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
@@ -99,8 +99,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedAt = relationship.ModifiedAt,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId,
-            Origin = relationship.Origin == null ? null : new ClassResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null ? null : new ClassResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+            Origin = relationship.Origin == null ? null : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+            Destination = relationship.Destination == null ? null : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
         };
     }
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
@@ -145,10 +145,10 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = relationship.DestinationId,
             Origin = relationship.Origin == null
                 ? null
-                : new ClassResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
             Destination = relationship.Destination == null
                 ? null
-                : new ClassResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
         };
     }
 
@@ -184,10 +184,10 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = relationship.DestinationId,
             Origin = relationship.Origin == null
                 ? null
-                : new ClassResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
             Destination = relationship.Destination == null
                 ? null
-                : new ClassResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
         };
     }
 
