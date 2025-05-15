@@ -117,13 +117,14 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">THe ID of the role to which the tag belongs.</param>
         /// <param name="roleId">The ID of the role to delete.</param>
+        /// <param name="force">Boolean indicating whether to force delete the role if true.</param>
         /// <returns>A message stating the role was successfully deleted.</returns>
         [HttpDelete("DeleteRole/{roleId}")]
-        public async Task<IActionResult> DeleteRole(long projectId, long roleId)
+        public async Task<IActionResult> DeleteRole(long projectId, long roleId, [FromQuery] bool force = false)
         {
             try
             {
-                await (_roleBusiness).DeleteRole(projectId, roleId);
+                await (_roleBusiness).DeleteRole(projectId, roleId, force);
                 return Ok(new { message = $"Deleted role {roleId}" });
             }
             catch (Exception exc)
