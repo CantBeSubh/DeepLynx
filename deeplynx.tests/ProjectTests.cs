@@ -10,6 +10,7 @@ public sealed class ProjectTests : IAsyncLifetime
 {
     private DeeplynxContext _context;
     public ProjectBusiness _projectBusiness; 
+    public TagBusiness _tagBusiness; 
 
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder()
          .WithImage("postgres:15-alpine")
@@ -25,7 +26,7 @@ public sealed class ProjectTests : IAsyncLifetime
 
         _context = new DeeplynxContext(options);
         await _context.Database.MigrateAsync(); 
-        _projectBusiness = new ProjectBusiness(_context);
+        _projectBusiness = new ProjectBusiness(_context, _tagBusiness);
     }
 
     public async Task DisposeAsync()
