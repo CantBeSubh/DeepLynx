@@ -67,6 +67,15 @@ public class RecordBusiness : IRecordBusiness
 
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.DeletedAt == null);
+        if (project == null)
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        
+        var ds = await _context.DataSources
+            .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.DeletedAt == null);
+        if (ds == null)
+            throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
