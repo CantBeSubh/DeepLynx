@@ -10,4 +10,5 @@ public interface IRecordMappingBusiness
     Task<RecordMapping> CreateRecordMapping(long projectId, RecordMappingRequestDto dto);
     Task<RecordMapping> UpdateRecordMapping(long projectId, long mappingId, RecordMappingRequestDto dto);
     Task<bool> DeleteRecordMapping(long mappingId);
+    Task<bool> SoftDeleteAllRecordMappingsByProjectIdAsync(long projectId);
 }
