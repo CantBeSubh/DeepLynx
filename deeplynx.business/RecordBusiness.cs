@@ -15,21 +15,57 @@ public class RecordBusiness : IRecordBusiness
     {
         _context = context;
     }
-    public async Task<IEnumerable<Record>> GetAllRecords(long projectId, long dataSourceId)
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long dataSourceId)
     {
         return await _context.Records
-            .Where(r => r.ProjectId == projectId && r.DataSourceId == dataSourceId)
+            .Where(r => r.ProjectId == projectId && r.DataSourceId == dataSourceId && r.DeletedAt == null)
+            .Select(r=>new RecordResponseDto()
+            {
+                Id = r.Id,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                CustomId = r.CustomId,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                CreatedBy = r.CreatedBy,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+            })
             .ToListAsync();
     }
-    public async Task<Record> GetRecord(long projectId, long dataSourceId, long recordId)
+    public async Task<RecordResponseDto> GetRecord(long projectId, long dataSourceId, long recordId)
     {
-        return await _context.Records
-                   .FirstOrDefaultAsync(r =>
-                       r.ProjectId == projectId && r.DataSourceId == dataSourceId && r.Id == recordId)
-               ?? throw new KeyNotFoundException("Record not found.");
+        var record = await _context.Records
+            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DataSourceId == dataSourceId &&
+                        r.DeletedAt == null).FirstOrDefaultAsync();
+        if (record == null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+
+        return new RecordResponseDto
+        {
+            Id = record.Id,
+            Uri = record.Uri,
+            Properties = record.Properties,
+            OriginalId = record.OriginalId,
+            Name = record.Name,
+            CustomId = record.CustomId,
+            ClassId = record.ClassId,
+            ClassName = record.ClassName,
+            DataSourceId = record.DataSourceId,
+            ProjectId = record.ProjectId,
+            CreatedBy = record.CreatedBy,
+            ModifiedBy = record.ModifiedBy,
+            ModifiedAt = record.ModifiedAt,
+        };
     }
 
-    public async Task<Record> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
@@ -54,13 +90,31 @@ public class RecordBusiness : IRecordBusiness
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
 
-        return record;
+        return new RecordResponseDto
+        {
+            Id = record.Id,
+            Uri = record.Uri,
+            Properties = record.Properties,
+            OriginalId = record.OriginalId,
+            Name = record.Name,
+            CustomId = record.CustomId,
+            ClassId = record.ClassId,
+            ClassName = record.ClassName,
+            DataSourceId = record.DataSourceId,
+            ProjectId = record.ProjectId,
+            CreatedBy = record.CreatedBy,
+            ModifiedBy = record.ModifiedBy,
+            ModifiedAt = record.ModifiedAt,
+        };
     }
 
-    public async Task<Record> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
     {
-        var record = await GetRecord(projectId, dataSourceId, recordId);
-
+        var record= await _context.Records.FindAsync(recordId);
+        if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
         record.Uri = dto.Uri;
         record.Properties = dto.Properties.ToString()!;
         record.OriginalId = dto.OriginalId;
@@ -69,18 +123,38 @@ public class RecordBusiness : IRecordBusiness
         record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-
+        
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
-
-        return record;
+        
+        return new RecordResponseDto
+        {
+            Id = record.Id,
+            Uri = record.Uri,
+            Properties = record.Properties,
+            OriginalId = record.OriginalId,
+            Name = record.Name,
+            CustomId = record.CustomId,
+            ClassId = record.ClassId,
+            ClassName = record.ClassName,
+            DataSourceId = record.DataSourceId,
+            ProjectId = record.ProjectId,
+            CreatedBy = record.CreatedBy,
+            ModifiedBy = record.ModifiedBy,
+            ModifiedAt = record.ModifiedAt,
+        };
+        
     }
 
     public async Task<bool> DeleteRecord(long projectId, long dataSourceId, long recordId)
     {
-        var record = await GetRecord(projectId, dataSourceId, recordId);
-
-        _context.Records.Remove(record);
+        var record = await _context.Records.FindAsync(recordId);
+        if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+        record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Records.Update(record);
         await _context.SaveChangesAsync();
         return true;
     }
