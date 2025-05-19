@@ -92,4 +92,37 @@ public class ClassBusiness : IClassBusiness
 
         return inRecords || inRecordMappings || inEdgeMappings || inRelationships;
     }
+
+    /// <summary>
+    /// Called primarily by project's delete. Soft delete all classes in a project by project id.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException"></exception>
+    public async Task<bool> SoftDeleteAllClassesByProjectIdAsync(long projectId)
+    {
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null)
+            throw new KeyNotFoundException("Project not found.");
+
+        try
+        {
+            var projectClasses = await _context.Classes.Where(t => t.ProjectId == projectId && t.DeletedAt == null)
+                .ToListAsync();
+            foreach (var projectClass in projectClasses)
+            {
+                projectClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while deleting project classes: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return false;
+        }
+    }
 }

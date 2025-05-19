@@ -13,18 +13,21 @@ public class ProjectBusiness : IProjectBusiness
     private readonly ITagBusiness _tagBusiness;
     private readonly IEdgeMappingBusiness _edgeMappingBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
+    private readonly IClassBusiness _classBusiness;
 
     public ProjectBusiness(
         DeeplynxContext context, 
         ITagBusiness tagBusiness, 
         IEdgeMappingBusiness edgeMappingBusiness,
-        IRelationshipBusiness relationshipBusiness
+        IRelationshipBusiness relationshipBusiness,
+        IClassBusiness classBusiness
         )
     {
         _context = context;
         _tagBusiness = tagBusiness;
         _edgeMappingBusiness = edgeMappingBusiness;
         _relationshipBusiness = relationshipBusiness;
+        _classBusiness = classBusiness;
     }
 
     public async Task<IEnumerable<Project>> GetAllProjects()
@@ -100,6 +103,7 @@ public class ProjectBusiness : IProjectBusiness
             await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
             await _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId);
             await _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId);
+            await _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId);
             project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Projects.Update(project);
         }
