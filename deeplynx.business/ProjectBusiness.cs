@@ -92,42 +92,62 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// NOTE: This takes in a force boolean for force support, however
-    ///     the project will currently only be soft-deleted.
     /// Delete a project by id. This MUST also handle deletion of all project's downstream dependents.
+    /// Note: Downstream dependents on _context.Projects.Remove() should automatically be handled for us based on FK's.
+    ///     We otherwise must handle our own soft-deletes.
     /// </summary>
     /// <param name="projectId"></param>
-    /// <param name="force"></param>
+    /// <param name="force">Boolean flag to force delete a project if true.</param>
     /// <returns>True boolean on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-
-        if (force)
+        try
         {
-            throw new NotSupportedException("Deeplynx does not support forced project deletion at this time. Check back later.");
-            // Note: Downstream dependents should be handled by below line based on FK's. Added force protection for dev safety.
-            //_context.Projects.Remove(project);
+            var project = await _context.Projects.FindAsync(projectId);
+
+            if (project == null)
+                throw new KeyNotFoundException("Project not found.");
+
+            if (force)
+            {
+                _context.Projects.Remove(project);
+            }
+            else
+            {
+                await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
+                await _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId);
+                await _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId);
+                await _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId);
+                await _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId);
+                await _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId);
+                await _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId);
+                await _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId);
+                await _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId);
+                project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                _context.Projects.Update(project);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
         }
-        else
+        catch (KeyNotFoundException keyNotFoundException)
         {
-            await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
-            await _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId);
-            await _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId);
-            await _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId);
-            await _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId);
-            await _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId);
-            await _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId);
-            await _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId);
-            await _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId);
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Projects.Update(project);
+            var message = $"An error occurred while deleting project {projectId}: {keyNotFoundException.Message}";
+            NLog.LogManager.GetCurrentClassLogger().Error(keyNotFoundException);
+            throw new KeyNotFoundException(message);
         }
-        await _context.SaveChangesAsync();
-        return true;
+        catch (DbUpdateException dbUpdateException)
+        {
+            var message = $"An error occurred while updating the database: {dbUpdateException.Message}";
+            NLog.LogManager.GetCurrentClassLogger().Error(dbUpdateException);
+            throw new DbUpdateException(message);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An unexpected error occurred: {exception.Message}";
+            NLog.LogManager.GetCurrentClassLogger().Error(exception);
+            throw new Exception(message);
+        }
     }
 }
