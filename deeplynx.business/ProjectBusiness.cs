@@ -15,6 +15,7 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly IClassBusiness _classBusiness;
     private readonly IRecordMappingBusiness _recordMappingBusiness;
+    private readonly IEdgeBusiness _edgeBusiness;
     
     public ProjectBusiness(
         DeeplynxContext context, 
@@ -22,7 +23,8 @@ public class ProjectBusiness : IProjectBusiness
         IEdgeMappingBusiness edgeMappingBusiness,
         IRelationshipBusiness relationshipBusiness,
         IClassBusiness classBusiness,
-        IRecordMappingBusiness recordMappingBusiness
+        IRecordMappingBusiness recordMappingBusiness,
+        IEdgeBusiness edgeBusiness
         )
     {
         _context = context;
@@ -31,6 +33,7 @@ public class ProjectBusiness : IProjectBusiness
         _relationshipBusiness = relationshipBusiness;
         _classBusiness = classBusiness;
         _recordMappingBusiness = recordMappingBusiness;
+        _edgeBusiness = edgeBusiness;
     }
 
     public async Task<IEnumerable<Project>> GetAllProjects()
@@ -108,6 +111,7 @@ public class ProjectBusiness : IProjectBusiness
             await _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId);
             await _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId);
             await _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId);
+            await _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId);
             project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Projects.Update(project);
         }

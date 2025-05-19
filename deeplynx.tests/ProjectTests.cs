@@ -15,6 +15,7 @@ public sealed class ProjectTests : IAsyncLifetime
     public RelationshipBusiness _relationshipBusiness;
     public ClassBusiness _classBusiness;
     public RecordMappingBusiness _recordMappingBusiness;
+    public EdgeBusiness _edgeBusiness;
 
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder()
          .WithImage("postgres:15-alpine")
@@ -36,7 +37,8 @@ public sealed class ProjectTests : IAsyncLifetime
             _edgeMappingBusiness,
             _relationshipBusiness,
             _classBusiness,
-           _recordMappingBusiness 
+           _recordMappingBusiness,
+            _edgeBusiness
             );
     }
 

@@ -10,4 +10,5 @@ public interface IEdgeBusiness
     Task<Edge> CreateEdge(long projectId, long dataSourceId, EdgeRequestDto edge);
     Task<Edge> UpdateEdge(long originId, long destinationId, EdgeRequestDto edge);
     Task<bool> DeleteEdge(long originId, long destinationId);
+    Task<bool> SoftDeleteAllEdgesByProjectIdAsync(long projectId);
 }
