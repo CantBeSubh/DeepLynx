@@ -8,5 +8,6 @@ namespace deeplynx.interfaces
         Task<DataSourceDto> CreateDataSource(DataSourceDto dataSourceDto);
         Task<DataSourceDto> UpdateDataSource(long id, DataSourceDto dataSourceDto);
         Task<bool> DeleteDataSource(long id);
+        Task<bool> SoftDeleteAllDataSourcesByProjectIdAsync(long projectId);
     }
 }
