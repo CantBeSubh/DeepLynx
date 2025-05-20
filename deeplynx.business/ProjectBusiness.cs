@@ -97,13 +97,14 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Delete a project by id. This MUST also handle deletion of all project's downstream dependents.
     /// Exceptions are handled per dependency for better logging and will be propagated up on error.
-    /// Note: Downstream dependents on _context.Projects.Remove() should automatically be handled for us based on FK's.
+    /// Note: Downstream dependents on force delete should automatically be handled for us based on FK's.
     ///     We otherwise must handle our own soft-deletes.
     /// </summary>
     /// <param name="projectId">ID of the project to delete.</param>
     /// <param name="force">Boolean flag to force delete a project if true.</param>
-    /// <returns>True boolean on successful deletion.</returns>
+    /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
+    /// <exception cref="ProjectDependencyDeletionException">Thrown if error during dependency deletions.</exception>
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
         var project = await _context.Projects.FindAsync(projectId);
@@ -137,7 +138,6 @@ public class ProjectBusiness : IProjectBusiness
 
                 foreach (var task in softDeleteTasks)
                 {
-                    Console.WriteLine($"Executing task: {task.Method.Name}");
                     bool result = await task();
                     if (!result)
                     {
