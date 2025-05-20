@@ -13,13 +13,13 @@ using RecordEntity = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests;
 
-public sealed class RecordBusinessTests : IAsyncLifetime
+public sealed class RecordTests : IAsyncLifetime
 {
     private DeeplynxContext _context;
     private RecordBusiness _business;
     private readonly PostgreSqlContainer _postgresContainer;
 
-    public RecordBusinessTests()
+    public RecordTests()
     {
         _postgresContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15-alpine")
@@ -99,7 +99,7 @@ public sealed class RecordBusinessTests : IAsyncLifetime
     public async Task CreateRecord_Fails_IfProjectNotFound()
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
-        var missingPid = pid + 999;
+        var missingPid = pid + 999; //create an ID that is not on the DB
         var dto = new RecordRequestDto
         {
             Properties = new JsonObject(),
@@ -128,7 +128,7 @@ public sealed class RecordBusinessTests : IAsyncLifetime
     public async Task CreateRecord_Fails_IfDataSourceNotFound()
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
-        var missingDsid = dsid + 999;
+        var missingDsid = dsid + 999;  //create an ID that is not on the DB
         var dto = new RecordRequestDto
         {
             Properties = new JsonObject(),
@@ -257,5 +257,18 @@ public sealed class RecordBusinessTests : IAsyncLifetime
         await _business.DeleteRecord(pid, dsid, cr.Id);
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => _business.UpdateRecord(pid, dsid, cr.Id, new RecordRequestDto { Properties = new JsonObject() }));
+    }
+    [Fact]
+    public async Task DeleteRecord_SoftDelete_SetsDeletedAt()
+    {
+        var (pid, dsid) = await SeedProjectAndDataSource();
+        var created = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject(), Name = "ToDelete" });
+
+        var result = await _business.DeleteRecord(pid, dsid, created.Id);
+
+        Assert.True(result);
+        var entity = await _context.Records.FindAsync(created.Id);
+        Assert.NotNull(entity);
+        Assert.NotNull(entity.DeletedAt);
     }
 }
