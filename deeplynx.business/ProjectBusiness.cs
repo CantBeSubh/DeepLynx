@@ -106,18 +106,19 @@ public class ProjectBusiness : IProjectBusiness
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
-        using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null)
+            throw new KeyNotFoundException("Project not found.");
+
+        if (force)
         {
-            var project = await _context.Projects.FindAsync(projectId);
-
-            if (project == null)
-                throw new KeyNotFoundException("Project not found.");
-
-            if (force)
-            {
-                _context.Projects.Remove(project);
-            }
-            else
+            _context.Projects.Remove(project);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
             {
                 // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
                 // as to not block the thread of our lone database context.
@@ -139,20 +140,21 @@ public class ProjectBusiness : IProjectBusiness
                     bool result = await task();
                     if (!result)
                     {
-                        const string message = "An error occurred during deletion of project dependencies.";
+                        var methodName = task.Method.Name;
+                        var offendingFunction = methodName.Substring( "SoftDeleteAll".Length, methodName.Length - "SoftDeleteAll".Length - "ByProjectIdAsync".Length );
+                        string message = $"An error occurred during deletion of project dependencies: {offendingFunction}.";
                         throw new ProjectDependencyDeletionException(message);
                     }
                 }
 
                 project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 _context.Projects.Update(project);
+
+                await _context.SaveChangesAsync();
+                transaction.Complete();
             }
-
-            await _context.SaveChangesAsync();
-
-            transaction.Complete();
         }
-
+        
         return true;
     }
 }
