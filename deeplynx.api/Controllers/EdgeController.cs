@@ -53,9 +53,9 @@ namespace deeplynx.api.Controllers
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge")]
         public async Task<IActionResult> GetEdge(
-            [FromQuery] long edgeId,
-            [FromQuery] long originId, 
-            [FromQuery] long destinationId)
+            [FromQuery] long? edgeId,
+            [FromQuery] long? originId, 
+            [FromQuery] long? destinationId)
         {
             try
             {
@@ -106,10 +106,10 @@ namespace deeplynx.api.Controllers
         [HttpPut("UpdateEdge")]
         public async Task<IActionResult> UpdateEdge(
             long projectId,
-            [FromQuery] long edgeId,
-            [FromQuery] long originId, 
-            [FromQuery] long destinationId, 
-            [FromBody] EdgeRequestDto edge)
+            [FromBody] EdgeRequestDto edge,
+            [FromQuery] long? edgeId,
+            [FromQuery] long? originId, 
+            [FromQuery] long? destinationId)
         {
             try
             {
@@ -136,9 +136,9 @@ namespace deeplynx.api.Controllers
         [HttpDelete("DeleteEdge")]
         public async Task<IActionResult> DeleteEdge(
             long projectId,
-            [FromQuery] long edgeId,
-            [FromQuery] long originId, 
-            [FromQuery] long destinationId, 
+            [FromQuery] long? edgeId,
+            [FromQuery] long? originId, 
+            [FromQuery] long? destinationId, 
             [FromQuery] bool force = false)
         {
             try

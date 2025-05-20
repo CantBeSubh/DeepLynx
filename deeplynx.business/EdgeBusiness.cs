@@ -157,7 +157,7 @@ public class EdgeBusiness : IEdgeBusiness
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
         {
-            throw new KeyNotFoundException($"Edge may have been moved or deleted.");
+            throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
         
         edge.Properties = dto.Properties?.ToString();
@@ -206,7 +206,7 @@ public class EdgeBusiness : IEdgeBusiness
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
         {
-            throw new KeyNotFoundException($"Edge may have been moved or deleted.");
+            throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
 
         if (force)
@@ -236,7 +236,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         if (edgeId == null && (originId == null || destinationId == null))
         {
-            throw new KeyNotFoundException($"Please supply either an edgeID or an originID and destinationID");
+            throw new KeyNotFoundException("Please supply either an edgeID or an originID and destinationID");
         }
         
         Edge edge = null;
