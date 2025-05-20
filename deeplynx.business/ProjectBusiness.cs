@@ -137,11 +137,15 @@ public class ProjectBusiness : IProjectBusiness
 
                 foreach (var task in softDeleteTasks)
                 {
+                    Console.WriteLine($"Executing task: {task.Method.Name}");
                     bool result = await task();
                     if (!result)
                     {
                         var methodName = task.Method.Name;
-                        var offendingFunction = methodName.Substring( "SoftDeleteAll".Length, methodName.Length - "SoftDeleteAll".Length - "ByProjectIdAsync".Length );
+                        var offendingFunction = methodName.Substring(
+                            "SoftDeleteAll".Length,
+                            methodName.Length - "SoftDeleteAll".Length - "ByProjectIdAsync".Length
+                        );
                         string message = $"An error occurred during deletion of project dependencies: {offendingFunction}.";
                         throw new ProjectDependencyDeletionException(message);
                     }

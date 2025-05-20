@@ -34,6 +34,19 @@ public sealed class ProjectTests : IAsyncLifetime
 
         _context = new DeeplynxContext(options);
         await _context.Database.MigrateAsync(); 
+        
+        // We have to initialize the business classes for tests
+        _tagBusiness = new TagBusiness(_context);
+        _edgeMappingBusiness = new EdgeMappingBusiness(_context);
+        _relationshipBusiness = new RelationshipBusiness(_context);
+        _classBusiness = new ClassBusiness(_context);
+        _recordMappingBusiness = new RecordMappingBusiness(_context);
+        _edgeBusiness = new EdgeBusiness(_context);
+        _dataSourceBusiness = new DataSourceBusiness(_context);
+        _recordBusiness = new RecordBusiness(_context);
+        _roleBusiness = new RoleBusiness(_context);
+                    
+        // Initialize ProjectBusiness with dependencies
         _projectBusiness = new ProjectBusiness(
             _context,
             _tagBusiness,
@@ -98,14 +111,27 @@ public sealed class ProjectTests : IAsyncLifetime
         Assert.Equal("New", updated.Name);
         Assert.Equal("NEW", updated.Abbreviation);
     }
-    // Create and delete project successfully 
+    // Create and force delete project successfully 
     [Fact]
-    public async Task DeleteProject_Should_Remove_Project()
+    public async Task Force_DeleteProject_Should_Remove_Project()
     {
-        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDelete", Abbreviation = "TD" });
-        var result = await _projectBusiness.DeleteProject(created.Id);
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDeleteHard", Abbreviation = "TDH" });
+        var result = await _projectBusiness.DeleteProject(created.Id, true);
         Assert.True(result);
         Assert.Null(await _context.Projects.FindAsync(created.Id));
+    }
+    
+    // Create and soft delete project successfully 
+    [Fact]
+    public async Task Soft_DeleteProject_Should_Remove_Project()
+    {
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDeleteSoft", Abbreviation = "TDS" });
+        var result = await _projectBusiness.DeleteProject(created.Id);
+        Assert.True(result);
+
+        var deletedProject = await _context.Projects.FindAsync(created.Id);
+        Assert.NotNull(deletedProject);
+        Assert.NotNull(deletedProject.DeletedAt); 
     }
     // Project that doesn't exist cannot be deleted 
     [Fact]
