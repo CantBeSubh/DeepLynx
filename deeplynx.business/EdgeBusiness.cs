@@ -160,6 +160,8 @@ public class EdgeBusiness : IEdgeBusiness
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
         
+        edge.OriginId = dto.OriginId;
+        edge.DestinationId = dto.DestinationId;
         edge.Properties = dto.Properties?.ToString();
         edge.RelationshipId = dto.RelationshipId;
         edge.RelationshipName = dto.RelationshipName;
@@ -171,6 +173,7 @@ public class EdgeBusiness : IEdgeBusiness
         
         return new EdgeResponseDto
         {
+            Id = edge.Id,
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
             // return empty object for properties if null

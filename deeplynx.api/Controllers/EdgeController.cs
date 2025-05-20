@@ -113,7 +113,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var updatedEdge = await _edgeBusiness.UpdateEdge(projectId, edge, originId, destinationId, edgeId);
+                var updatedEdge = await _edgeBusiness.UpdateEdge(projectId, edge, edgeId, originId, destinationId);
                 return Ok(updatedEdge);
             }
             catch (Exception exc)
@@ -144,7 +144,7 @@ namespace deeplynx.api.Controllers
             try
             {
                 await _edgeBusiness.DeleteEdge(projectId, edgeId, originId, destinationId, force);
-                return NoContent();
+                return Ok(new { message = $"Deleted edge {edgeId}" });
             }
             catch (Exception exc)
             {
