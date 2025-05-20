@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using System.Transactions;
+
+using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
+using deeplynx.helpers.exceptions;
 
 namespace deeplynx.business;
 
@@ -93,16 +96,17 @@ public class ProjectBusiness : IProjectBusiness
 
     /// <summary>
     /// Delete a project by id. This MUST also handle deletion of all project's downstream dependents.
+    /// Exceptions are handled per dependency for better logging and will be propagated up on error.
     /// Note: Downstream dependents on _context.Projects.Remove() should automatically be handled for us based on FK's.
     ///     We otherwise must handle our own soft-deletes.
     /// </summary>
-    /// <param name="projectId"></param>
+    /// <param name="projectId">ID of the project to delete.</param>
     /// <param name="force">Boolean flag to force delete a project if true.</param>
     /// <returns>True boolean on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
+    /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
-        try
+        using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
         {
             var project = await _context.Projects.FindAsync(projectId);
 
@@ -115,39 +119,40 @@ public class ProjectBusiness : IProjectBusiness
             }
             else
             {
-                await _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId);
-                await _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId);
-                await _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId);
-                await _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId);
-                await _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId);
-                await _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId);
-                await _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId);
-                await _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId);
-                await _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId);
+                // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
+                // as to not block the thread of our lone database context.
+                var softDeleteTasks = new List<Func<Task<bool>>>
+                {
+                    () => _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId),
+                    () => _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId),
+                    () => _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId),
+                    () => _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId),
+                    () => _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId),
+                    () => _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId),
+                    () => _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId),
+                    () => _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId),
+                    () => _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId)
+                };
+
+                foreach (var task in softDeleteTasks)
+                {
+                    bool result = await task();
+                    if (!result)
+                    {
+                        const string message = "An error occurred during deletion of project dependencies.";
+                        throw new ProjectDependencyDeletionException(message);
+                    }
+                }
+
                 project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 _context.Projects.Update(project);
             }
 
             await _context.SaveChangesAsync();
-            return true;
+
+            transaction.Complete();
         }
-        catch (KeyNotFoundException keyNotFoundException)
-        {
-            var message = $"An error occurred while deleting project {projectId}: {keyNotFoundException.Message}";
-            NLog.LogManager.GetCurrentClassLogger().Error(keyNotFoundException);
-            throw new KeyNotFoundException(message);
-        }
-        catch (DbUpdateException dbUpdateException)
-        {
-            var message = $"An error occurred while updating the database: {dbUpdateException.Message}";
-            NLog.LogManager.GetCurrentClassLogger().Error(dbUpdateException);
-            throw new DbUpdateException(message);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An unexpected error occurred: {exception.Message}";
-            NLog.LogManager.GetCurrentClassLogger().Error(exception);
-            throw new Exception(message);
-        }
+
+        return true;
     }
 }
