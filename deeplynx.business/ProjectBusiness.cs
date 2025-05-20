@@ -105,6 +105,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="ProjectDependencyDeletionException">Thrown if error during dependency deletions.</exception>
+    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact deleted_at time.
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
         var project = await _context.Projects.FindAsync(projectId);
