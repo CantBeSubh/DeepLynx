@@ -150,7 +150,8 @@ namespace deeplynx.business
         /// </summary>
         /// <param name="projectId">The ID of the project to which the role belongs.</param>
         /// <param name="roleId">The ID of the role to delete.</param>
-        public async Task<bool> DeleteRole(long projectId, long roleId)
+        /// <param name="force">Indicates whether to force delete the role if true.</param>
+        public async Task<bool> DeleteRole(long projectId, long roleId, bool force)
         {
             var role = await _context.Roles.FindAsync(roleId);
             if (role == null || role.ProjectId != projectId || role.DeletedAt is not null)
@@ -158,9 +159,17 @@ namespace deeplynx.business
                 throw new KeyNotFoundException($"Role with id {roleId} not found");
             }
 
-            //soft delete
-            role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
-            _context.Roles.Update(role);
+            if (force)
+            {
+                _context.Roles.Remove(role);
+            }
+            else
+            {
+                //soft delete
+                role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
+                _context.Roles.Update(role);
+            }
+            
             await _context.SaveChangesAsync();
             return true;
         }

@@ -67,7 +67,7 @@ public partial class DeeplynxContext : DbContext
 
         modelBuilder.Entity<Edge>(entity =>
         {
-            entity.HasKey(e => new { e.OriginId, e.DestinationId }).HasName("edges_pkey");
+            entity.HasKey(e => e.Id).HasName("edges_pkey");
 
             entity.Property(e => e.ProjectId).HasDefaultValue(0L);
 

@@ -9,7 +9,7 @@ namespace deeplynx.interfaces
         Task<RoleResponseDto> GetRole(long projectId, long roleId);
         Task<RoleResponseDto> CreateRole(long projectId, RoleRequestDto role);
         Task<RoleResponseDto> UpdateRole(long projectId, long roleId, RoleRequestDto role);
-        Task<bool> DeleteRole(long projectId, long roleId);
+        Task<bool> DeleteRole(long projectId, long roleId, bool force);
         Task<bool> SoftDeleteAllRolesByProjectIdAsync(long projectId);
     }
 }
