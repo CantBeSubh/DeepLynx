@@ -123,7 +123,7 @@ public sealed class ProjectTests : IAsyncLifetime
     
     // Create and soft delete project successfully 
     [Fact]
-    public async Task Soft_DeleteProject_Should_Remove_Project()
+    public async Task Soft_DeleteProject_Should_Update_DeletedAt()
     {
         var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDeleteSoft", Abbreviation = "TDS" });
         var result = await _projectBusiness.DeleteProject(created.Id);
