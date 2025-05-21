@@ -12,13 +12,13 @@ using ClassEntity = deeplynx.datalayer.Models.Class;
 
 namespace deeplynx.tests;
 
-public sealed class ClassBusinessTests : IAsyncLifetime
+public sealed class ClassTests : IAsyncLifetime
 {
     private DeeplynxContext _context;
     private ClassBusiness _business;
     private readonly PostgreSqlContainer _postgresContainer;
 
-    public ClassBusinessTests()
+    public ClassTests()
     {
         _postgresContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15-alpine")
