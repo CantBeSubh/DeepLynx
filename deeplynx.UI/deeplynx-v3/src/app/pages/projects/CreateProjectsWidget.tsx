@@ -1,60 +1,69 @@
 interface CreateProjectsWidgetProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean; // Indicates whether the modal is open
+  onClose: () => void; // Function to call when closing the modal
 }
 
-export default function CreateProject({
-  isOpen,
-  onClose,
-}: CreateProjectsWidgetProps) {
+// Main CreateProject component
+const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
   return (
     <>
+      {/* Render the modal dialog if isOpen is true */}
       {isOpen && (
-        <dialog className=" modal modal-open">
+        <dialog className="modal modal-open">
+          {" "}
+          {/* Modal dialog with styles */}
           <div className="modal-box max-w-lg">
+            {" "}
+            {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              Create New Project
+              Create New Project {/* Header for the modal */}
             </h3>
-
-            {/* Form */}
+            {/* Form for creating a new project */}
             <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Name"
-                className="input input-primary w-full"
+                placeholder="Name" // Placeholder for project name input
+                className="input input-primary w-full" // Input styling
               />
               <textarea
-                placeholder="Description"
-                className="textarea textarea-primary w-full"
+                placeholder="Description" // Placeholder for project description
+                className="textarea textarea-primary w-full" // Textarea styling
               />
               <div className="bg-base-200 p-4 rounded-xl">
+                {" "}
+                {/* Container for file upload */}
                 <label className="form-control">
                   <span className="label-text text-neutral">
-                    Upload .owl file (optional)
+                    Upload .owl file (optional) {/* Label for file upload */}
                   </span>
                   <input
-                    type="file"
-                    className="file-input file-input-primary text-neutral w-full"
+                    type="file" // File input for uploading .owl files
+                    className="file-input file-input-primary text-neutral w-full" // File input styling
                   />
                 </label>
               </div>
 
+              {/* Help text with a link to the Wiki */}
               <p className="cursor-pointer text-xs text-neutral">
                 Need Help? Details can be creating or updating a project via an
                 ontology file can be found on our <a className="link">Wiki.</a>
               </p>
             </form>
-
             {/* Modal Action Buttons */}
             <div className="modal-action">
               <button className="btn" onClick={onClose}>
+                {" "}
+                {/* Cancel button calls onClose */}
                 Cancel
               </button>
-              <button className="btn btn-primary">Save</button>
+              <button className="btn btn-primary">Save</button>{" "}
+              {/* Save button for saving the project */}
             </div>
           </div>
         </dialog>
       )}
     </>
   );
-}
+};
+
+export default CreateProject;

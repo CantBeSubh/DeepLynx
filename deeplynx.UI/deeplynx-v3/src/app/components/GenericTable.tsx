@@ -7,15 +7,16 @@ import { TableRow, Column } from "@/app/types/types";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
+// Define the props for the GenericTable component
 type GenericTableProps = {
   columns: Column[];
   data: TableRow[];
   filterPlaceholder?: string;
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
-  rowsPerPage?: number; // Optional rowsPerPage prop
-  enablePagination?: boolean; // Optional enablePagination prop
-  bordered?: boolean; // Optional bordered prop
+  rowsPerPage?: number;
+  enablePagination?: boolean;
+  bordered?: boolean;
   searchBar?: boolean;
   actionButtons?: boolean;
 };
@@ -26,15 +27,16 @@ const GenericTable: React.FC<GenericTableProps> = ({
   filterPlaceholder,
   isAnyRowSelected,
   deleteSelectedRows,
-  rowsPerPage = 10, // Default rowsPerPage to 10 if not provided
-  enablePagination = false, // Default enablePagination to false if not provided
-  bordered = false, // Default bordered to false if not provided
-  searchBar = false,
-  actionButtons = false,
+  rowsPerPage = 10, // Default value for rowsPerPage
+  enablePagination = false, // Default value for enablePagination
+  bordered = false, // Default value for bordered
+  searchBar = false, // Default value for searchBar
+  actionButtons = false, // Default value for actionButtons
 }) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Filter data based on the search input
   const filteredData = data.filter((row) =>
     columns.some((column) =>
       row[column.accessor as keyof typeof row]
@@ -44,12 +46,13 @@ const GenericTable: React.FC<GenericTableProps> = ({
     )
   );
 
-  // Column Sorting
+  // State and logic for column sorting
   const [sortConfig, setSortConfig] = useState<{
     key: string;
     direction: "asc" | "desc";
   } | null>(null);
 
+  // Memoize sorted data to avoid unnecessary calculations
   const sortedData = React.useMemo(() => {
     if (!sortConfig) return filteredData;
 
@@ -76,12 +79,12 @@ const GenericTable: React.FC<GenericTableProps> = ({
     });
   }, [filteredData, sortConfig]);
 
-  // Calculate total pages if pagination is enabled
+  // Calculate total pages for pagination
   const totalPages = enablePagination
     ? Math.ceil(filteredData.length / rowsPerPage)
     : 1;
 
-  // Get current page data if pagination is enabled
+  // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
         (currentPage - 1) * rowsPerPage,
@@ -89,10 +92,12 @@ const GenericTable: React.FC<GenericTableProps> = ({
       )
     : sortedData;
 
+  // Handle page click for pagination
   const handlePageClick = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
+  // Create pagination buttons
   const createPagination = () => {
     const pagination = [];
 

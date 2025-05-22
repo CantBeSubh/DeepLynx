@@ -1,5 +1,6 @@
 import React, { useRef, useState } from "react";
 
+// Define the props for the LargeSearchBar component
 interface LargeSearchBarProps {
   placeholder?: string;
   className?: string;
@@ -9,8 +10,8 @@ interface LargeSearchBarProps {
 }
 
 const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
-  placeholder = "Search...",
-  className = "",
+  placeholder = "Search...", // Default placeholder text
+  className = "", // Default className
   onChange,
   onEnter,
   value,
@@ -18,9 +19,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   const [internalValue, setInternalValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Check if the component is controlled or uncontrolled
   const isControlled = value !== undefined;
   const currentValue = isControlled ? value : internalValue;
 
+  // Clear the input field
   const handleClear = () => {
     if (!isControlled) {
       setInternalValue("");
@@ -62,7 +65,8 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
             onEnter((e.target as HTMLInputElement).value);
           }
         }}
-        value={value}
+        value={currentValue}
+        ref={inputRef}
       />
       {/* Clear button - only show when there's text */}
       {currentValue && (

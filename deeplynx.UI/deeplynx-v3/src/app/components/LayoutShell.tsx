@@ -1,4 +1,3 @@
-// app/components/LayoutShell.tsx
 "use client";
 
 import React from "react";
@@ -6,6 +5,7 @@ import Image from "next/image";
 import SideMenu from "./SideMenu";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
   const handleMenuToggle = (isCollapsed: boolean) => {
