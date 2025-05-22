@@ -10,4 +10,5 @@ public interface IClassBusiness
     Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto);
     Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto);
     Task<bool> DeleteClass(long projectId, long classId);
+    Task<bool> SoftDeleteAllClassesByProjectIdAsync(long projectId);
 }

@@ -186,4 +186,36 @@ public class RecordBusiness : IRecordBusiness
 
         return maxDepth + 1;
     }
+    
+    /// <summary>
+    /// Called primarily by project's delete. Soft delete all records in a project by project id.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException"></exception>
+    public async Task<bool> SoftDeleteAllRecordsByProjectIdAsync(long projectId)
+    {
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null)
+            throw new KeyNotFoundException("Project not found.");
+        
+        try
+        {
+            var records = await _context.Records.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
+            foreach (var record in records)
+            {
+                record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while deleting project records: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return false;
+        }
+    }
 }

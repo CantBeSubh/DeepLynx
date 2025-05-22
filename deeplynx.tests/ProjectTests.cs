@@ -10,6 +10,15 @@ public sealed class ProjectTests : IAsyncLifetime
 {
     private DeeplynxContext _context;
     public ProjectBusiness _projectBusiness; 
+    public TagBusiness _tagBusiness; 
+    public EdgeMappingBusiness _edgeMappingBusiness;
+    public RelationshipBusiness _relationshipBusiness;
+    public ClassBusiness _classBusiness;
+    public RecordMappingBusiness _recordMappingBusiness;
+    public EdgeBusiness _edgeBusiness;
+    public DataSourceBusiness _dataSourceBusiness;
+    public RecordBusiness _recordBusiness;
+    public RoleBusiness _roleBusiness;
 
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder()
          .WithImage("postgres:15-alpine")
@@ -25,7 +34,31 @@ public sealed class ProjectTests : IAsyncLifetime
 
         _context = new DeeplynxContext(options);
         await _context.Database.MigrateAsync(); 
-        _projectBusiness = new ProjectBusiness(_context);
+        
+        // We have to initialize the business classes for tests
+        _tagBusiness = new TagBusiness(_context);
+        _edgeMappingBusiness = new EdgeMappingBusiness(_context);
+        _relationshipBusiness = new RelationshipBusiness(_context);
+        _classBusiness = new ClassBusiness(_context);
+        _recordMappingBusiness = new RecordMappingBusiness(_context);
+        _edgeBusiness = new EdgeBusiness(_context);
+        _dataSourceBusiness = new DataSourceBusiness(_context);
+        _recordBusiness = new RecordBusiness(_context);
+        _roleBusiness = new RoleBusiness(_context);
+                    
+        // Initialize ProjectBusiness with dependencies
+        _projectBusiness = new ProjectBusiness(
+            _context,
+            _tagBusiness,
+            _edgeMappingBusiness,
+            _relationshipBusiness,
+            _classBusiness,
+           _recordMappingBusiness,
+            _edgeBusiness,
+            _dataSourceBusiness,
+            _recordBusiness,
+            _roleBusiness
+            );
     }
 
     public async Task DisposeAsync()
@@ -78,14 +111,27 @@ public sealed class ProjectTests : IAsyncLifetime
         Assert.Equal("New", updated.Name);
         Assert.Equal("NEW", updated.Abbreviation);
     }
-    // Create and delete project successfully 
+    // Create and force delete project successfully 
     [Fact]
-    public async Task DeleteProject_Should_Remove_Project()
+    public async Task Force_DeleteProject_Should_Remove_Project()
     {
-        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDelete", Abbreviation = "TD" });
-        var result = await _projectBusiness.DeleteProject(created.Id);
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDeleteHard", Abbreviation = "TDH" });
+        var result = await _projectBusiness.DeleteProject(created.Id, true);
         Assert.True(result);
         Assert.Null(await _context.Projects.FindAsync(created.Id));
+    }
+    
+    // Create and soft delete project successfully 
+    [Fact]
+    public async Task Soft_DeleteProject_Should_Update_DeletedAt()
+    {
+        var created = await _projectBusiness.CreateProject(new ProjectRequestDto { Name = "ToDeleteSoft", Abbreviation = "TDS" });
+        var result = await _projectBusiness.DeleteProject(created.Id);
+        Assert.True(result);
+
+        var deletedProject = await _context.Projects.FindAsync(created.Id);
+        Assert.NotNull(deletedProject);
+        Assert.NotNull(deletedProject.DeletedAt); 
     }
     // Project that doesn't exist cannot be deleted 
     [Fact]

@@ -12,4 +12,5 @@ public interface IRecordBusiness
     Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long dataSourceId, long recordId);
     int CalculateJsonMaxDepth(JsonNode node); 
+    Task<bool> SoftDeleteAllRecordsByProjectIdAsync(long projectId);
 }
