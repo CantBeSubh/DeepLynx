@@ -4,16 +4,21 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
 import { TableRow, Column } from "@/app/types/types";
+import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
+// Define the props for the GenericTable component
 type GenericTableProps = {
   columns: Column[];
   data: TableRow[];
   filterPlaceholder?: string;
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
-  rowsPerPage?: number; // Optional rowsPerPage prop
-  enablePagination?: boolean; // Optional enablePagination prop
-  bordered?: boolean; // Optional bordered prop
+  rowsPerPage?: number;
+  enablePagination?: boolean;
+  bordered?: boolean;
+  searchBar?: boolean;
+  actionButtons?: boolean;
 };
 
 const GenericTable: React.FC<GenericTableProps> = ({
@@ -22,13 +27,16 @@ const GenericTable: React.FC<GenericTableProps> = ({
   filterPlaceholder,
   isAnyRowSelected,
   deleteSelectedRows,
-  rowsPerPage = 10, // Default rowsPerPage to 10 if not provided
-  enablePagination = false, // Default enablePagination to false if not provided
-  bordered = false, // Default bordered to false if not provided
+  rowsPerPage = 10, // Default value for rowsPerPage
+  enablePagination = false, // Default value for enablePagination
+  bordered = false, // Default value for bordered
+  searchBar = false, // Default value for searchBar
+  actionButtons = false, // Default value for actionButtons
 }) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Filter data based on the search input
   const filteredData = data.filter((row) =>
     columns.some((column) =>
       row[column.accessor as keyof typeof row]
@@ -38,23 +46,58 @@ const GenericTable: React.FC<GenericTableProps> = ({
     )
   );
 
-  // Calculate total pages if pagination is enabled
+  // State and logic for column sorting
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: "asc" | "desc";
+  } | null>(null);
+
+  // Memoize sorted data to avoid unnecessary calculations
+  const sortedData = React.useMemo(() => {
+    if (!sortConfig) return filteredData;
+
+    return [...filteredData].sort((a, b) => {
+      const aValue = a[sortConfig.key as keyof TableRow];
+      const bValue = b[sortConfig.key as keyof TableRow];
+
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        return sortConfig.direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "asc"
+          ? aValue - bValue
+          : bValue - aValue;
+      }
+
+      return 0;
+    });
+  }, [filteredData, sortConfig]);
+
+  // Calculate total pages for pagination
   const totalPages = enablePagination
     ? Math.ceil(filteredData.length / rowsPerPage)
     : 1;
 
-  // Get current page data if pagination is enabled
+  // Get data for the current page
   const currentData = enablePagination
-    ? filteredData.slice(
+    ? sortedData.slice(
         (currentPage - 1) * rowsPerPage,
         currentPage * rowsPerPage
       )
-    : filteredData;
+    : sortedData;
 
+  // Handle page click for pagination
   const handlePageClick = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 
+  // Create pagination buttons
   const createPagination = () => {
     const pagination = [];
 
@@ -164,31 +207,55 @@ const GenericTable: React.FC<GenericTableProps> = ({
       } p-2`}
     >
       <div className="my-4 flex justify-between items-center">
-        <SearchInput
-          placeholder={filterPlaceholder}
-          onChange={(e) => setFilterText(e.target.value)}
-        />
-        <div className="p-2">
-          <button className="mr-2 text-secondary">
-            <DriveFileMoveOutlineIcon fontSize="medium" />
-          </button>
-          <button className="mr-2 text-secondary">
-            <TimelineIcon fontSize="medium" />
-          </button>
-          <button
-            onClick={deleteSelectedRows}
-            className={!isAnyRowSelected ? "text-base-100" : "text-accent"}
-          >
-            <DeleteIcon fontSize="medium" />
-          </button>
-        </div>
+        {searchBar && (
+          <SearchInput
+            placeholder={filterPlaceholder}
+            onChange={(e) => setFilterText(e.target.value)}
+          />
+        )}
+        {actionButtons && (
+          <div className="p-2">
+            <button className="mr-2 text-secondary">
+              <DriveFileMoveOutlineIcon fontSize="medium" />
+            </button>
+            <button className="mr-2 text-secondary">
+              <TimelineIcon fontSize="medium" />
+            </button>
+            <button
+              onClick={deleteSelectedRows}
+              className={!isAnyRowSelected ? "text-base-100" : "text-accent"}
+            >
+              <DeleteIcon fontSize="medium" />
+            </button>
+          </div>
+        )}
       </div>
       <table className={`table ${bordered ? "table-bordered" : ""}`}>
         <thead>
           <tr>
             {columns.map((column, index) => (
-              <th className="text-base-content" key={index}>
+              <th
+                key={index}
+                className="text-base-content cursor-pointer select-none"
+                onClick={() => {
+                  const direction =
+                    sortConfig?.key === column.accessor &&
+                    sortConfig.direction === "asc"
+                      ? "desc"
+                      : "asc";
+                  setSortConfig({ key: column.accessor, direction });
+                }}
+              >
                 {column.header}
+                {sortConfig?.key === column.accessor && (
+                  <span>
+                    {sortConfig.direction === "asc" ? (
+                      <KeyboardArrowUpIcon />
+                    ) : (
+                      <KeyboardArrowDownIcon />
+                    )}
+                  </span>
+                )}
               </th>
             ))}
           </tr>
