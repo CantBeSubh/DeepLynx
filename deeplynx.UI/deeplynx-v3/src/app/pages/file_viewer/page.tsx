@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/components/GenericTable";
-import SideMenu from "@/app/components/SideMenu";
 import Tabs from "@/app/components/Tabs";
 import { fileTableData } from "@/app/dummy_data/data";
 import { FileViewerTableRow, TableRow, Column } from "@/app/types/types";
@@ -10,7 +9,6 @@ import { FileViewerTableRow, TableRow, Column } from "@/app/types/types";
 const FileViewer = () => {
   const [tableData, setTableData] =
     useState<FileViewerTableRow[]>(fileTableData);
-  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
 
   const handleSelectChange = (id: number) => {
     setTableData((prevData) =>
@@ -144,28 +142,14 @@ const FileViewer = () => {
     { label: "Other files", content: <div>Tab content 3</div> },
   ];
 
-  const handleMenuToggle = (isCollapsed: boolean) => {
-    setIsMenuCollapsed(isCollapsed);
-  };
-
   return (
-    <div className="flex bg-base-100">
-      <SideMenu onToggle={handleMenuToggle} />
-      <div
-        className={`${
-          isMenuCollapsed ? "ml-22" : "ml-64"
-        } flex-1 p-6 container mx-auto transition-all duration-300`}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Files</h1>
-          <i className="text-sm">User</i>
-        </div>
-        <div className="p-4">
-          <div>
-            <Tabs tabs={tabData} showButtons={false} />
-          </div>
-        </div>
+    <div>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Files</h1>
       </div>
+
+      <Tabs tabs={tabData} showButtons={false} />
+
       <button className="fixed bottom-10 right-10">
         <AddCircleIcon className="text-accent" sx={{ fontSize: 60 }} />
       </button>

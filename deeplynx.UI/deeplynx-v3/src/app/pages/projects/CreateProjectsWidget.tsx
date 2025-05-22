@@ -10,44 +10,33 @@ export default function CreateProject({
   return (
     <>
       {isOpen && (
-        <dialog className=" modal modal-open bg-neutral-content">
-          <div className="modal-box max-w-lg bg-neutral-content">
+        <dialog className=" modal modal-open">
+          <div className="modal-box max-w-lg">
             <h3 className="font-bold text-lg mb-4 text-neutral">
               Create New Project
             </h3>
 
             {/* Form */}
-            <form
-              method="dialog"
-              className="flex flex-col gap-4 bg-neutral-content"
-            >
+            <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
                 placeholder="Name"
-                className="input input-primary bg-neutral-content w-full"
+                className="input input-primary w-full"
               />
               <textarea
                 placeholder="Description"
-                className="textarea textarea-primary bg-neutral-content w-full"
+                className="textarea textarea-primary w-full"
               />
-              <div className="bg-gray-300 p-4 rounded-xl">
+              <div className="bg-base-200 p-4 rounded-xl">
                 <label className="form-control">
                   <span className="label-text text-neutral">
                     Upload .owl file (optional)
                   </span>
                   <input
                     type="file"
-                    className="file-input file-input-primary bg-neutral-content text-neutral w-full"
+                    className="file-input file-input-primary text-neutral w-full"
                   />
                 </label>
-
-                <div className="divider divider-primary">or</div>
-
-                <input
-                  type="text"
-                  placeholder="URL to .owl File"
-                  className="input input-bordered w-full bg-neutral-content input-primary"
-                />
               </div>
 
               <p className="cursor-pointer text-xs text-neutral">

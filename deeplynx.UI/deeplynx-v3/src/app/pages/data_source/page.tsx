@@ -1,10 +1,8 @@
 "use client";
+
 import React, { useState } from "react";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Refresh } from "@mui/icons-material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/components/GenericTable";
-import SideMenu from "@/app/components/SideMenu";
 import ModeIcon from "@mui/icons-material/Mode";
 import { initialTableData } from "@/app/dummy_data/data";
 import { DataSourceTableRow, TableRow, Column } from "@/app/types/types";
@@ -12,7 +10,6 @@ import { DataSourceTableRow, TableRow, Column } from "@/app/types/types";
 const DataSource = () => {
   const [tableData, setTableData] =
     useState<DataSourceTableRow[]>(initialTableData);
-  const [isMenuCollapsed, setIsMenuCollapsed] = useState<boolean>(false);
 
   const handleToggleActive = (id: string) => {
     setTableData((prevData) =>
@@ -86,18 +83,9 @@ const DataSource = () => {
     },
   ];
 
-  const handleMenuToggle = (isCollapsed: boolean) => {
-    setIsMenuCollapsed(isCollapsed);
-  };
-
   return (
-    <div className="flex duration-300">
-      <SideMenu onToggle={handleMenuToggle} />
-      <div
-        className={`${
-          isMenuCollapsed ? "ml-22" : "ml-64"
-        } flex-1 p-6 container mx-auto transition-all duration-300`}
-      >
+    <div>
+      <div>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-base-content">Data Source</h1>
           <i className="text-sm text-base-content">User</i>
@@ -112,6 +100,8 @@ const DataSource = () => {
           enablePagination={true}
           rowsPerPage={10}
           bordered={true}
+          actionButtons
+          searchBar
         />
       </div>
       <button className="fixed bottom-10 right-10">
