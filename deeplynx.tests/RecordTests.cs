@@ -154,7 +154,7 @@ public sealed class RecordTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateRecord_Returns_DefaultClass_WhenNoneProvided()
+    public async Task CreateRecord_Returns_NullClass_WhenNoneProvided()
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
         var dto = new RecordRequestDto
