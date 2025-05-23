@@ -170,13 +170,12 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Edge", b =>
                 {
-                    b.Property<long>("OriginId")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("origin_id");
+                        .HasColumnName("id");
 
-                    b.Property<long>("DestinationId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("destination_id");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
@@ -194,12 +193,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("deleted_at");
 
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
+                    b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                        .HasColumnName("destination_id");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
@@ -208,6 +204,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("text")
                         .HasColumnName("modified_by");
+
+                    b.Property<long>("OriginId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("origin_id");
 
                     b.Property<long>("ProjectId")
                         .ValueGeneratedOnAdd()
@@ -227,7 +227,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("relationship_name");
 
-                    b.HasKey("OriginId", "DestinationId")
+                    b.HasKey("Id")
                         .HasName("edges_pkey");
 
                     b.HasIndex(new[] { "DataSourceId" }, "idx_edges_data_source_id");
