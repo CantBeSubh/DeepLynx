@@ -97,7 +97,7 @@ namespace deeplynx.datalayer.Migrations
                 oldType: "bigint");
 
             migrationBuilder.AddPrimaryKey(
-                name: "PK_edges",
+                name: "edges_pk",
                 schema: "deeplynx",
                 table: "edges",
                 columns: new[] { "origin_id", "destination_id" });
