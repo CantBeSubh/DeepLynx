@@ -1,8 +1,8 @@
-"use client"; // Indicates that this file contains client-side code
+"use client";
 
-import React, { useState, useEffect } from "react"; // Import React and hooks
-import { useRouter, usePathname } from "next/navigation"; // Import Next.js navigation hooks
-import Link from "next/link"; // Import Next.js link component
+import React, { useState, useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 
 // Importing Material-UI icons
 import OtherHousesOutlinedIcon from "@mui/icons-material/OtherHousesOutlined";
@@ -50,10 +50,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   // Function to toggle the collapse state of the menu
   const toggleMenu = () => {
-    setIsCollapsed((prev) => {
-      const next = !prev;
-      onToggle(next); // Call the onToggle prop with the new state
-      return next;
+    setIsCollapsed((prevIsCollapsed) => {
+      const newIsCollapsed = !prevIsCollapsed;
+      onToggle(newIsCollapsed);
+      return newIsCollapsed;
     });
   };
 
@@ -95,9 +95,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <aside
       className={`fixed ${
-        isCollapsed ? "w-22" : "w-64"
-      } bg-secondary text-base-100 h-screen p-4 transition-width duration-300`}
+        isCollapsed ? "w-20" : "w-64"
+      } bg-secondary text-base-100 h-screen mt-16 p-4 transition-width duration-300`}
     >
+      {/* Button to toggle menu collapse state */}
       <div className="flex justify-end">
         <button onClick={toggleMenu} className="p-2">
           {isCollapsed ? (
@@ -126,7 +127,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             className={getItemClass("/pages/projects/[project_id]")}
           >
             <ListAltOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Current Project Dashboard</p>}
+            {!isCollapsed && <p className="ml-2">Current Project</p>}
           </button>
         </li>
       </ul>
@@ -187,6 +188,16 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           >
             <InboxIcon />
             {!isCollapsed && <p className="ml-2">Data Source</p>}
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/pages/data_catalog"
+            onClick={(e) => handleItemClick("/pages/data_catalog", e)}
+            className={getItemClass("/pages/data_catalog")}
+          >
+            <InboxIcon />
+            {!isCollapsed && <p className="ml-2">Data Catalog</p>}
           </Link>
         </li>
         <li>

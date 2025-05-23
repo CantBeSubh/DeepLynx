@@ -1,5 +1,6 @@
 import React from "react";
 
+// Define the props for the SearchInput component
 interface SearchInputProps {
   placeholder?: string;
   className?: string;
@@ -15,12 +16,14 @@ const SearchInput: React.FC<SearchInputProps> = ({
     <label
       className={`input flex items-center relative ml-2 bg-base-200 ${className}`}
     >
+      {/* Input field */}
       <input
         type="text"
         placeholder={placeholder}
         className="input pl-10 focus:outline-none"
         onChange={onChange}
       />
+      {/* Search icon */}
       <svg
         className="absolute left-3 top-2.5 w-5 h-5 text-base-content"
         xmlns="http://www.w3.org/2000/svg"

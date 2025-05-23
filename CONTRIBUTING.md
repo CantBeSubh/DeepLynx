@@ -50,6 +50,21 @@ If you need any help or have questions, feel free to reach out.
 
 Below is the home for several technical "gotchas" that may be useful for other project developers. If you learn something new as you develop, feel free to add a section here.
 
+## Coding Standards for Controllers and Business Classes
+
+* Methods for Controllers and Business Classes should be prefaced by a comment similar to this:
+    ```
+    /// <summary>
+    /// Summary of what your code does
+    /// </summary>
+    /// <param name="paramName"></param>
+    /// <returns></returns>
+    ```
+* Controllers should include error handling on each route in try-catch format
+* Routes names and the corresponding Controller and Business method names should be descriptive, such as "CreateDataSource"
+* Two `Dto` object should be used within each domain: A `RequestDto` object, containing the fields which a user submits upon POST or PUT, and a `ResponseDto` object, containing the fields which should be exposed to the user upon return.
+* Please write unit tests for your business classes and perform postman/scalar testing for your controllers.
+
 ## Making Database Changes
 
 Making changes to the data layer and underlying database can feel quite involved, but when done right it will facilitate easy transfer of changes from developer to developer. Here are some tips:

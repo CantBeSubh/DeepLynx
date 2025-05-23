@@ -29,7 +29,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         return classByUuid ?? throw new KeyNotFoundException($"Class with UUID ‘{input}’ not found.");
     }
     
-    public async Task<IEnumerable<Relationship>> GetAllRelationships(long projectId)
+    public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
     {
         var rawData = await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
@@ -49,13 +49,12 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.DeletedAt,
                 r.OriginId,
                 r.DestinationId,
-                Origin = r.Origin == null ? null : new Class { Id = r.Origin.Id, Name = r.Origin.Name },
-                Destination = r.Destination == null ? null : new Class { Id = r.Destination.Id, Name = r.Destination.Name }
+                Origin = r.Origin == null ? null : new ClassRelationshipRespDto { Id = r.Origin.Id, Name = r.Origin.Name },
+                Destination = r.Destination == null ? null : new ClassRelationshipRespDto { Id = r.Destination.Id, Name = r.Destination.Name }
             })
             .ToListAsync();
-
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
-        var result = rawData.Select(r => new Relationship
+        var result = rawData.Select(r => new RelationshipResponseDto
         {
             Id = r.Id,
             Name = r.Name,
@@ -66,7 +65,6 @@ public class RelationshipBusiness: IRelationshipBusiness
             CreatedAt = r.CreatedAt,
             ModifiedBy = r.ModifiedBy,
             ModifiedAt = r.ModifiedAt,
-            DeletedAt = r.DeletedAt,
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
             Origin = r.Origin,
@@ -75,16 +73,37 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         return result;
     }
-    public async Task<Relationship> GetRelationship(long projectId, long relationshipId)
+    public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId)
     {
-        return await _context.Relationships
-                   .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.DeletedAt == null)
-                   .Include(r => r.Origin)
-                   .Include(r => r.Destination)
-                   .FirstOrDefaultAsync()
-               ?? throw new KeyNotFoundException("Relationship not found.");
+        var relationship = await _context.Relationships
+            .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.DeletedAt == null)
+            .Include(r => r.Origin)
+            .Include(r => r.Destination)
+            .FirstOrDefaultAsync();
+
+        if (relationship == null)
+        {
+            throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
+        }
+
+        return new RelationshipResponseDto
+        {
+            Id = relationship.Id,
+            Name = relationship.Name,
+            Description = relationship.Description,
+            Uuid = relationship.Uuid,
+            ProjectId = relationship.ProjectId,
+            CreatedBy = relationship.CreatedBy,
+            CreatedAt = relationship.CreatedAt,
+            ModifiedBy = relationship.ModifiedBy,
+            ModifiedAt = relationship.ModifiedAt,
+            OriginId = relationship.OriginId,
+            DestinationId = relationship.DestinationId,
+            Origin = relationship.Origin == null ? null : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+            Destination = relationship.Destination == null ? null : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+        };
     }
-    public async Task<Relationship> CreateRelationship(long projectId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
         var originId = await ResolveClassIdentifier(dto.OriginClass);
         var destinationId = await ResolveClassIdentifier(dto.DestinationClass);
@@ -111,12 +130,36 @@ public class RelationshipBusiness: IRelationshipBusiness
         await _context.Entry(relationship)
             .Reference(r => r.Destination)
             .LoadAsync();
-        return relationship;
+        return new RelationshipResponseDto
+        {
+            Id = relationship.Id,
+            Name = relationship.Name,
+            Description = relationship.Description,
+            Uuid = relationship.Uuid,
+            ProjectId = relationship.ProjectId,
+            CreatedBy = relationship.CreatedBy,
+            CreatedAt = relationship.CreatedAt,
+            ModifiedBy = relationship.ModifiedBy,
+            ModifiedAt = relationship.ModifiedAt,
+            OriginId = relationship.OriginId,
+            DestinationId = relationship.DestinationId,
+            Origin = relationship.Origin == null
+                ? null
+                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+            Destination = relationship.Destination == null
+                ? null
+                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+        };
     }
 
-    public async Task<Relationship> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
     {
-        var relationship = await GetRelationship(projectId, relationshipId);
+        var relationship = await _context.Relationships.FindAsync(relationshipId);
+        if (relationship == null || relationship.ProjectId != projectId || relationship.DeletedAt is not null)
+        {
+            throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
+        }
+        
         relationship.Name = dto.Name;
         relationship.Description = dto.Description;
         relationship.Uuid = dto.Uuid;
@@ -124,18 +167,73 @@ public class RelationshipBusiness: IRelationshipBusiness
         relationship.DestinationId = await ResolveClassIdentifier(dto.DestinationClass);
         relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
-
+        _context.Relationships.Update(relationship);
         await _context.SaveChangesAsync();
-        return relationship;
+        return new RelationshipResponseDto
+        {
+            Id = relationship.Id,
+            Name = relationship.Name,
+            Description = relationship.Description,
+            Uuid = relationship.Uuid,
+            ProjectId = relationship.ProjectId,
+            CreatedBy = relationship.CreatedBy,
+            CreatedAt = relationship.CreatedAt,
+            ModifiedBy = relationship.ModifiedBy,
+            ModifiedAt = relationship.ModifiedAt,
+            OriginId = relationship.OriginId,
+            DestinationId = relationship.DestinationId,
+            Origin = relationship.Origin == null
+                ? null
+                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+            Destination = relationship.Destination == null
+                ? null
+                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+        };
     }
 
     public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
-        var relationship = await GetRelationship(projectId, relationshipId);
+        var relationship = await _context.Relationships.FindAsync(relationshipId);
+        if (relationship == null || relationship.ProjectId != projectId || relationship.DeletedAt is not null)
+        {
+            throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
+        }
         relationship.DeletedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _context.SaveChangesAsync();
         return true;
+    }
+    
+    /// <summary>
+    /// Called primarily by project's delete. Soft delete all relationships in a project by project id.
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException"></exception>
+    public async Task<bool>SoftDeleteAllRelationshipsByProjectIdAsync(long projectId)
+    {
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null)
+            throw new KeyNotFoundException("Project not found.");
+        
+        try
+        {
+            var relationships = await _context.Relationships.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
+            foreach (var relationship in relationships)
+            {
+                relationship.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while deleting project relationships: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return false;
+        }
     }
 }

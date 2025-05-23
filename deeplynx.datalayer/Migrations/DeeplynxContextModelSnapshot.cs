@@ -170,17 +170,44 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Edge", b =>
                 {
-                    b.Property<long>("OriginId")
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasColumnName("origin_id");
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<long>("DataSourceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("data_source_id");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
-                    b.Property<long?>("DataSourceId")
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<long>("OriginId")
                         .HasColumnType("bigint")
-                        .HasColumnName("data_source_id");
+                        .HasColumnName("origin_id");
 
                     b.Property<long>("ProjectId")
                         .ValueGeneratedOnAdd()
@@ -200,12 +227,14 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("relationship_name");
 
-                    b.HasKey("OriginId", "DestinationId")
+                    b.HasKey("Id")
                         .HasName("edges_pkey");
 
                     b.HasIndex(new[] { "DataSourceId" }, "idx_edges_data_source_id");
 
                     b.HasIndex(new[] { "DestinationId" }, "idx_edges_destination_id");
+
+                    b.HasIndex(new[] { "Id" }, "idx_edges_id");
 
                     b.HasIndex(new[] { "OriginId" }, "idx_edges_origin_id");
 
@@ -918,6 +947,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
                         .WithMany("Edges")
                         .HasForeignKey("DataSourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("edges_data_source_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Record", "Destination")
