@@ -19,8 +19,16 @@ export type DataSourceTableRow = {
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
-export type Column = {
+export type Column<T extends object> = {
     header: string;
-    accessor: string;
-    cell?: (row: TableRow) => React.ReactNode
+    data?: keyof T;
+    sortable?: boolean;
+    cell?: (row: T) => React.ReactNode
   };
+
+  export type ProjectsList = {
+    id?: string;
+    name: string;
+    description: string;
+    lastViewed: string;
+  }

@@ -4,7 +4,12 @@ import LargeSearchBar from "@/app/components/LargeSearchBar";
 import React, { useState, useEffect } from "react";
 import { fileTableData } from "@/app/dummy_data/data";
 import GenericTable from "@/app/components/GenericTable";
-import { Column, TableRow, FileViewerTableRow } from "@/app/types/types";
+import {
+  Column,
+  TableRow,
+  FileViewerTableRow,
+  ProjectsList,
+} from "@/app/types/types";
 
 const DataCatalog = () => {
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
@@ -69,14 +74,13 @@ const DataCatalog = () => {
   };
 
   // Define columns for the GenericTable
-  const columns: Column[] = [
+  const columns: Column<FileViewerTableRow>[] = [
     {
       header: "File Name",
-      accessor: "fileName", // Accessor for file name data
+      data: "fileName", // data for file name data
     },
     {
       header: "Explore",
-      accessor: "explore", // Accessor for explore action
       cell: (row: TableRow) => (
         <button className="btn btn-primary btn-outline btn-xs">Explore</button> // Button to explore file
       ),
