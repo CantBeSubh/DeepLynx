@@ -102,8 +102,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfProjectDeleted()
         {
-            try
-            {
                 var (projectId, originId, destId) = await SeedProjectAndClassIds(deleteProject: true);
 
                 await using var context = new DeeplynxContext(_options);
@@ -112,12 +110,8 @@ namespace deeplynx.tests
                     { Name = "Rel1", OriginClass = originId.ToString(), DestinationClass = destId.ToString() };
 
                 await Assert.ThrowsAsync<KeyNotFoundException>(() => business.CreateRelationship(projectId, dto));
-            }
-            catch (Npgsql.NpgsqlException ex)
-            {
-               Console.WriteLine($"unexpected error in test {ex}" );
-                throw;
-            }
+            
+           
         }
 
         [Fact]
