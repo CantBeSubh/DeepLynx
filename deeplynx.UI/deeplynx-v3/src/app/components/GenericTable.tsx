@@ -8,9 +8,9 @@ import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 // Define the props for the GenericTable component
-type GenericTableProps = {
-  columns: Column[];
-  data: TableRow[];
+type GenericTableProps<T extends object> = {
+  columns: Column<T>[];
+  data: T[];
   filterPlaceholder?: string;
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
@@ -21,7 +21,7 @@ type GenericTableProps = {
   actionButtons?: boolean;
 };
 
-const GenericTable: React.FC<GenericTableProps> = ({
+const GenericTable = <T extends object>({
   columns,
   data,
   filterPlaceholder,
@@ -32,14 +32,14 @@ const GenericTable: React.FC<GenericTableProps> = ({
   bordered = false, // Default value for bordered
   searchBar = false, // Default value for searchBar
   actionButtons = false, // Default value for actionButtons
-}) => {
+}: GenericTableProps<T>) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter data based on the search input
   const filteredData = data.filter((row) =>
     columns.some((column) =>
-      row[column.accessor as keyof typeof row]
+      row[column.data as keyof T]
         ?.toString()
         .toLowerCase()
         .includes(filterText.toLowerCase())
@@ -48,7 +48,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
 
   // State and logic for column sorting
   const [sortConfig, setSortConfig] = useState<{
-    key: string;
+    key: keyof T;
     direction: "asc" | "desc";
   } | null>(null);
 
@@ -57,8 +57,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
     if (!sortConfig) return filteredData;
 
     return [...filteredData].sort((a, b) => {
-      const aValue = a[sortConfig.key as keyof TableRow];
-      const bValue = b[sortConfig.key as keyof TableRow];
+      const aValue = a[sortConfig.key as keyof T];
+      const bValue = b[sortConfig.key as keyof T];
 
       if (aValue === null) return 1;
       if (bValue === null) return -1;
@@ -236,38 +236,42 @@ const GenericTable: React.FC<GenericTableProps> = ({
             {columns.map((column, index) => (
               <th
                 key={index}
-                className="text-base-content cursor-pointer select-none"
+                className={`text-base-content ${
+                  column.sortable !== false ? "cursor-pointer select-none" : ""
+                }`}
                 onClick={() => {
+                  if (column.sortable == false || !column.data) return;
                   const direction =
-                    sortConfig?.key === column.accessor &&
-                    sortConfig.direction === "asc"
+                    sortConfig?.key === column.data &&
+                    sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
-                  setSortConfig({ key: column.accessor, direction });
+                  setSortConfig({ key: column.data as keyof T, direction });
                 }}
               >
                 {column.header}
-                {sortConfig?.key === column.accessor && (
-                  <span>
-                    {sortConfig.direction === "asc" ? (
-                      <KeyboardArrowUpIcon />
-                    ) : (
-                      <KeyboardArrowDownIcon />
-                    )}
-                  </span>
-                )}
+                {sortConfig?.key === column.data &&
+                  column.sortable !== false && (
+                    <span>
+                      {sortConfig?.direction === "asc" ? (
+                        <KeyboardArrowUpIcon />
+                      ) : (
+                        <KeyboardArrowDownIcon />
+                      )}
+                    </span>
+                  )}
               </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-base-200">
+            <tr key={rowIndex} className="hover:bg-base-200 bg-base-100">
               {columns.map((column, colIndex) => (
                 <td key={colIndex} className="text-base-content">
                   {column.cell
                     ? column.cell(row)
-                    : row[column.accessor as keyof typeof row]}
+                    : (row[column.data as keyof T] as React.ReactNode)}
                 </td>
               ))}
             </tr>

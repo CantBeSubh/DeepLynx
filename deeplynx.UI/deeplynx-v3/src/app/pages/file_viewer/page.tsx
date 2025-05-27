@@ -30,10 +30,9 @@ const FileViewer = () => {
   const isAnyRowSelected = tableData.some((row) => row.select);
 
   // Define columns for the GenericTable for files
-  const columns: Column[] = [
+  const columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      accessor: "select", // Accessor for select checkbox
       cell: (row: TableRow) => (
         <label>
           <input
@@ -47,15 +46,15 @@ const FileViewer = () => {
     },
     {
       header: "ID",
-      accessor: "id", // Accessor for ID column
+      data: "id", // data for ID column
     },
     {
       header: "File Name",
-      accessor: "fileName", // Accessor for file name column
+      data: "fileName", // data for file name column
     },
     {
       header: "Timeseries",
-      accessor: "timeseries", // Accessor for timeseries column
+      data: "timeseries", // data for timeseries column
       cell: (row: TableRow) => {
         const isChecked = "timeseries" in row ? row.timeseries : false; // Check if the row has timeseries data
         return (
@@ -70,19 +69,18 @@ const FileViewer = () => {
     },
     {
       header: "File Size (KB)",
-      accessor: "fileSize", // Accessor for file size column
+      data: "fileSize", // data for file size column
     },
     {
       header: "Date Modified",
-      accessor: "dateModified", // Accessor for date modified column
+      data: "dateModified", // data for date modified column
     },
   ];
 
   // Define columns for the GenericTable for timeseries data
-  const timeseries_columns: Column[] = [
+  const timeseries_columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      accessor: "select", // Accessor for select checkbox
       cell: (row: TableRow) => (
         <label>
           <input
@@ -96,19 +94,19 @@ const FileViewer = () => {
     },
     {
       header: "ID",
-      accessor: "id", // Accessor for ID column
+      data: "id", // data for ID column
     },
     {
       header: "File Name",
-      accessor: "fileName", // Accessor for file name column
+      data: "fileName", // data for file name column
     },
     {
       header: "File Size (KB)",
-      accessor: "fileSize", // Accessor for file size column
+      data: "fileSize", // data for file size column
     },
     {
       header: "Date Modified",
-      accessor: "dateModified", // Accessor for date modified column
+      data: "dateModified", // data for date modified column
     },
   ];
 

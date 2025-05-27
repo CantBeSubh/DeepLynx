@@ -40,10 +40,10 @@ const DataSource = () => {
   const isRowAcitve = (obj: TableRow) => ("active" in obj ? obj.active : false);
 
   // Define columns for the GenericTable
-  const columns: Column[] = [
+  const columns: Column<DataSourceTableRow>[] = [
     {
       header: "Select",
-      accessor: "select", // Accessor for select checkbox
+      data: "select", // data for select checkbox
       cell: (row: TableRow) => (
         <label>
           <input
@@ -57,19 +57,19 @@ const DataSource = () => {
     },
     {
       header: "Name",
-      accessor: "name", // Accessor for name column
+      data: "name", // data for name column
     },
     {
       header: "ID",
-      accessor: "id", // Accessor for ID column
+      data: "id", // data for ID column
     },
     {
       header: "Adapter Type",
-      accessor: "adapterType", // Accessor for adapter type column
+      data: "adapterType", // data for adapter type column
     },
     {
       header: "Active",
-      accessor: "active", // Accessor for active status
+      data: "active", // data for active status
       cell: (row: TableRow) => (
         <input
           type="checkbox"
@@ -81,7 +81,6 @@ const DataSource = () => {
     },
     {
       header: "Edit",
-      accessor: "edit", // Accessor for edit action
       cell: (row: TableRow) => (
         <button className="btn btn-ghost btn-xs btn-secondary">
           <ModeIcon className="text-accent" /> {/* Edit icon */}

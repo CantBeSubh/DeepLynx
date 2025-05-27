@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import CreateProject from "./CreateProjectsWidget";
 import { useRouter } from "next/navigation";
-import SearchInput from "@/app/components/SearchInput";
 import { sampleProjectData } from "@/app/dummy_data/data";
+import GenericTable from "@/app/components/GenericTable";
+import { Column, ProjectsList } from "@/app/types/types";
 
 const Projects = () => {
   const router = useRouter();
@@ -14,16 +15,40 @@ const Projects = () => {
   const openModal = () => setIsModalOpen(true); // Function to open the modal
   const closeModal = () => setIsModalOpen(false); // Function to close the modal
 
-  // State for the search query
-  const [searchQuery, setSearchQuery] = useState(""); // State to hold the search query
+  // State to manage the table data
+  const [tableData, setTableData] = useState<ProjectsList[]>(sampleProjectData);
 
-  // Filter projects based on the search query
-  const filteredProjects = sampleProjectData.filter(
-    (project) => project.name.toLowerCase().includes(searchQuery.toLowerCase()) // Filter projects by name
-  );
+  // Define the columns for the GenericTable component
+  const columns: Column<ProjectsList>[] = [
+    {
+      header: "Project Name",
+      data: "name",
+    },
+    {
+      header: "Description",
+      data: "description",
+    },
+    {
+      header: "Last Viewed",
+      data: "lastViewed",
+    },
+    {
+      header: "", // Empty header for action buttons
+      sortable: false, // Disable sorting for this column
+      cell: (row) => (
+        <button
+          className="btn btn-sm btn-outline btn-accent"
+          onClick={() => router.push(`/pages/projects/${row.id}`)} // Navigate to project details page
+        >
+          Explore
+        </button>
+      ),
+    },
+  ];
 
+  // Render the Projects component
   return (
-    <div className="flex">
+    <div>
       <main>
         {/* Title and search bar */}
         <div>
@@ -32,15 +57,6 @@ const Projects = () => {
               <h1 className="text-2xl font-bold">Welcome Back Kevin</h1>{" "}
               {/* Welcome message */}
             </div>
-            {/* 
-                  TODO: Expand the searchability. Right now it can filter titles only.
-                  Feedback: Being able to search the description of cards. 
-              */}
-            <SearchInput
-              placeholder="Search projects ..."
-              onChange={(e) => setSearchQuery(e.target.value)} // Update search query on input change
-              className="placeholder:text-base-content"
-            />
           </div>
           <div className="divider"></div> {/* Divider line */}
         </div>
@@ -49,7 +65,7 @@ const Projects = () => {
           <div className="flex justify-between items-center">
             <h3>Your Projects</h3> {/* Section title */}
             <button
-              className="btn btn-outline btn-sm btn-primary"
+              className="btn btn-outline btn-sm btn-accent"
               onClick={openModal} // Open the modal when clicked
             >
               Add new Project
@@ -57,47 +73,16 @@ const Projects = () => {
           </div>
           <div className="divider"></div> {/* Divider line */}
         </div>
-        {/* Project Grid */}
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          {filteredProjects.map(
-            (
-              project,
-              index // Map through filtered projects to display them
-            ) => (
-              <div key={index} className="card card-outline shadow-md p-4">
-                {" "}
-                {/* Card for each project */}
-                <h3 className="font-bold text-base-content">
-                  {project.name}
-                </h3>{" "}
-                {/* Project name */}
-                <p className="text-sm text-base-content">
-                  {project.description}
-                </p>{" "}
-                {/* Project description */}
-                <div className="mt-4">
-                  <button
-                    className="btn bg-secondary btn-block text-base-100"
-                    onClick={() => {
-                      localStorage.setItem("selectedProjectName", project.name); // Store selected project name in localStorage
-                      router.push(`/pages/projects/${project.id}`); // Navigate to the project page
-                    }}
-                  >
-                    enter project
-                  </button>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-        {/* Recent Activity section */}
-        <h3 className="">Your Recent Activity</h3>{" "}
-        {/* Section title for recent activity */}
-        <div className="divider"></div> {/* Divider line */}
+        {/* Render the GenericTable component */}
+        <GenericTable
+          columns={columns} // Pass columns to the table
+          data={tableData} // Pass data to the table
+          searchBar // Enable search bar
+          filterPlaceholder="Search Projects ..." // Placeholder text for the search bar
+        />
       </main>
       {/* Render the CreateProject modal */}
       <CreateProject isOpen={isModalOpen} onClose={closeModal} />{" "}
-      {/* Pass modal open state and close function */}
     </div>
   );
 };
