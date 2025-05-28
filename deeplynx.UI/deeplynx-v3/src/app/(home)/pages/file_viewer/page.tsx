@@ -2,10 +2,10 @@
 
 import React, { useState } from "react";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import GenericTable from "@/app/components/GenericTable";
-import Tabs from "@/app/components/Tabs";
-import { fileTableData } from "@/app/dummy_data/data";
-import { FileViewerTableRow, TableRow, Column } from "@/app/types/types";
+import GenericTable from "@/app/(home)/components/GenericTable";
+import Tabs from "@/app/(home)/components/Tabs";
+import { fileTableData } from "@/app/(home)/dummy_data/data";
+import { FileViewerTableRow, TableRow, Column } from "@/app/(home)/types/types";
 
 const FileViewer = () => {
   // State to manage the file table data

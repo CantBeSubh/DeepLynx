@@ -3,8 +3,8 @@
 import React, { useState } from "react";
 import CreateProject from "./CreateProjectsWidget";
 import { useRouter } from "next/navigation";
-import SearchInput from "@/app/components/SearchInput";
-import { sampleProjectData } from "@/app/dummy_data/data";
+import SearchInput from "@/app/(home)/components/SearchInput";
+import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 
 const Projects = () => {
   const router = useRouter();

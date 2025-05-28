@@ -3,7 +3,7 @@ import SearchInput from "./SearchInput";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
-import { TableRow, Column } from "@/app/types/types";
+import { TableRow, Column } from "@/app/(home)/types/types";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
@@ -87,9 +87,9 @@ const GenericTable: React.FC<GenericTableProps> = ({
   // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
-        (currentPage - 1) * rowsPerPage,
-        currentPage * rowsPerPage
-      )
+      (currentPage - 1) * rowsPerPage,
+      currentPage * rowsPerPage
+    )
     : sortedData;
 
   // Handle page click for pagination
@@ -106,9 +106,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -132,9 +131,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -174,9 +172,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -202,9 +199,8 @@ const GenericTable: React.FC<GenericTableProps> = ({
 
   return (
     <div
-      className={`overflow-x-auto ${
-        bordered ? "rounded-box border border-neutral-content" : ""
-      } p-2`}
+      className={`overflow-x-auto ${bordered ? "rounded-box border border-neutral-content" : ""
+        } p-2`}
     >
       <div className="my-4 flex justify-between items-center">
         {searchBar && (
@@ -240,7 +236,7 @@ const GenericTable: React.FC<GenericTableProps> = ({
                 onClick={() => {
                   const direction =
                     sortConfig?.key === column.accessor &&
-                    sortConfig.direction === "asc"
+                      sortConfig.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.accessor, direction });

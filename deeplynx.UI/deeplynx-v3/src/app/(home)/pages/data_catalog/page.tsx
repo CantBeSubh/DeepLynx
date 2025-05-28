@@ -1,10 +1,10 @@
 "use client";
 
-import LargeSearchBar from "@/app/components/LargeSearchBar";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import React, { useState, useEffect } from "react";
-import { fileTableData } from "@/app/dummy_data/data";
-import GenericTable from "@/app/components/GenericTable";
-import { Column, TableRow, FileViewerTableRow } from "@/app/types/types";
+import { fileTableData } from "@/app/(home)/dummy_data/data";
+import GenericTable from "@/app/(home)/components/GenericTable";
+import { Column, TableRow, FileViewerTableRow } from "@/app/(home)/types/types";
 
 const DataCatalog = () => {
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
