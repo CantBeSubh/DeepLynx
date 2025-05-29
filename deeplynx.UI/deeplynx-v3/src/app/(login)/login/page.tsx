@@ -1,17 +1,53 @@
 "use client"
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import ArrowButton from "../../(home)/components/ArrowButton";
 import { links, LinkT } from "../../(home)/pages/links";
 import "../../globals.css";
 
-let api = process.env.API
+
+const OIDC = async () => {
+    const client_id = '0oams2nsiuY2yKwIE1d7';
+    const client_secret = 'wWfnWEC1jfjdcFEI-QEjkEqXzdiOJuynMei-QWlqBxhRXEgsUTHBO4D03BAsjInQ';
+    const tokenEndpoint = 'https://identity-preview.inl.gov';
+    // const url = 'https://identity-preview.inl.gov';
+    const url = new URL('https://identity-preview.inl.gov');
+
+    const params = new URLSearchParams({
+        client_id: client_id,
+        client_secret: client_secret,
+        scope: "openid",
+        response_type: "code"
+    });
+
+    url.search = params.toString();
+
+    try {
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                "Accept": "*/*",
+                "Accept-Encoding": "gzip, deflate, br",
+                "Connection": "keep-alive"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Token:', data);
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
 
 const Page: React.FC = () => {
     const [isChecked, setChecked] = useState(true);
-    const url = "http://localhost:5095/login"
-
 
     return (
         <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
@@ -37,13 +73,13 @@ const Page: React.FC = () => {
                             keep me signed in
                         </label>
                         <div className="flex flex-col items-center mt-10">
-                            <Link className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl" href={url}>
+                            <Link className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl" href="/">
                                 <button className="">Next</button>
                             </Link>
                             <div className="my-15 text-sm text-gray-800 divider divider-primary">OR</div>
-                            <Link className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl" href={url}>
+                            <button className="button w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl" onClick={OIDC}>
                                 <button className="">Sign in with PIV/CAC Card</button>
-                            </Link>
+                            </button>
                         </div>
                     </div>
                 </div>
