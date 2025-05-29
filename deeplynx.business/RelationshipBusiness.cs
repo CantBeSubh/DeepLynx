@@ -105,6 +105,15 @@ public class RelationshipBusiness: IRelationshipBusiness
     }
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.DeletedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
+        }
+        if(string.IsNullOrWhiteSpace(dto.OriginClass))
+            throw new KeyNotFoundException($"Origin class is empty.");
+        if(string.IsNullOrWhiteSpace(dto.DestinationClass))
+            throw new KeyNotFoundException($"Destination class is empty.");
         var originId = await ResolveClassIdentifier(dto.OriginClass);
         var destinationId = await ResolveClassIdentifier(dto.DestinationClass);
 

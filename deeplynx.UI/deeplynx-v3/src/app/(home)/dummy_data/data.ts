@@ -741,53 +741,61 @@ export const fileTableData = [
   ];
 
    /* Added sample data to pass to project detail */
-  export const sampleProjectData = [
+   export const sampleProjectData = [
     {
       name: "Muzak",
       id: "56231",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-25T14:48:00.000Z"
     },
     {
       name: "Admin",
       id: "87122",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-26T09:30:00.000Z"
     },
     {
       name: "Library",
       id: "34903",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-25T12:15:00.000Z"
     },
     {
       name: "Other Project",
       id: "22014",
       description:
-        "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+        "Here is is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-24T11:20:00.000Z"
     },
     {
       name: "Other Other Project",
       id: "45375",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-27T07:45:00.000Z"
     },
     {
       name: "Yet Another Project",
       id: "63456",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-26T15:00:00.000Z"
     },
     {
       name: "Yet Again",
       id: "78897",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-25T18:30:00.000Z"
     },
     {
       name: "Final One",
       id: "91238",
       description:
         "Here is a short description of this project and the things that you might find inside of it. Max 150 char.",
+      lastViewed: "2025-05-27T10:00:00.000Z"
     },
   ];
