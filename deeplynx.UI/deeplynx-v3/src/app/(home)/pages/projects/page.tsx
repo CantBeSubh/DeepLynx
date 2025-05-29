@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import CreateProject from "./CreateProjectsWidget";
 import { useRouter } from "next/navigation";
-import { sampleProjectData } from "@/app/dummy_data/data";
-import GenericTable from "@/app/components/GenericTable";
-import { Column, ProjectsList } from "@/app/types/types";
+import { sampleProjectData } from "@/app/(home)/dummy_data/data";
+import GenericTable from "@/app/(home)/components/GenericTable";
+import { Column, ProjectsList } from "@/app/(home)/types/types";
 
 const Projects = () => {
   const router = useRouter();
