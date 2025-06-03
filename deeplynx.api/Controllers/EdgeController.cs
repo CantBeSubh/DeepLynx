@@ -71,7 +71,6 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific edge by its origin and destination IDs
         /// Asynchronously creates a new edge for a specified project.
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
@@ -97,23 +96,22 @@ namespace deeplynx.api.Controllers
         /// Updates an existing edge by its ID or origin/destination.
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs.</param>
-        /// <param name="edge">The edge request data transfer object containing updated edge details.</param>
+        /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
         /// <param name="edgeId">The ID of the edge to update</param>
         /// <param name="originId">The origin ID of the edge to update if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>The updated edge response DTO with its details</returns>
-        /// <returns></returns>
         [HttpPut("UpdateEdge")]
         public async Task<IActionResult> UpdateEdge(
             long projectId,
-            [FromBody] EdgeRequestDto edge,
+            [FromBody] EdgeRequestDto dto,
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId)
         {
             try
             {
-                var updatedEdge = await _edgeBusiness.UpdateEdge(projectId, edge, edgeId, originId, destinationId);
+                var updatedEdge = await _edgeBusiness.UpdateEdge(projectId, dto, edgeId, originId, destinationId);
                 return Ok(updatedEdge);
             }
             catch (Exception exc)
