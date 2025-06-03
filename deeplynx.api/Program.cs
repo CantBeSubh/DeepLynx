@@ -56,7 +56,6 @@ builder.Services.AddDbContext<DeeplynxContext>(options =>
     options.UseNpgsql(connectionString));
 
 //serves for Dependency Injection
-builder.Services.AddTransient<IWeatherForecastBusiness, WeatherForecastBusiness>();
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
