@@ -8,7 +8,7 @@ export type DataSourceTableRow = {
     select?: boolean;
   };
 
-  export type FileViewerTableRow = {
+export type FileViewerTableRow = {
     id: number;
     fileName: string;
     timeseries: boolean;
@@ -26,7 +26,7 @@ export type Column<T extends object> = {
     cell?: (row: T) => React.ReactNode
   };
 
-  export type ProjectsList = {
+export type ProjectsList = {
     id?: string;
     name: string;
     description: string;

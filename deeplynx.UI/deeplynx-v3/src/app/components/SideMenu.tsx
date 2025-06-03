@@ -5,18 +5,20 @@ import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 
 // Importing Material-UI icons
-import OtherHousesOutlinedIcon from "@mui/icons-material/OtherHousesOutlined";
 import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
-import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
 import CoronavirusOutlinedIcon from "@mui/icons-material/CoronavirusOutlined";
 import InboxIcon from "@mui/icons-material/Inbox";
 import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
-import ViewInArOutlinedIcon from "@mui/icons-material/ViewInArOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import KeyboardArrowLeftTwoToneIcon from "@mui/icons-material/KeyboardArrowLeftTwoTone";
 import KeyboardArrowRightTwoToneIcon from "@mui/icons-material/KeyboardArrowRightTwoTone";
+import HomeIcon from "@mui/icons-material/Home";
+import SettingsIcon from "@mui/icons-material/Settings";
+import HelpIcon from "@mui/icons-material/Help";
+import ContactMainIcon from "@mui/icons-material/ContactMail";
+import BugReportIcon from "@mui/icons-material/BugReport";
 
 // Define the props for the SideMenu component
 interface SideMenuProps {
@@ -62,10 +64,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     item: string,
     event: React.MouseEvent<HTMLElement>
   ) => {
-    if (isDisabled(item)) {
-      event.preventDefault(); // Prevent default behavior if the item is disabled
-      return;
-    }
+    // if (isDisabled(item)) {
+    //   event.preventDefault(); // Prevent default behavior if the item is disabled
+    //   return;
+    // }
     event.preventDefault();
     setSelectedItem(item); // Set the clicked item as selected
     router.push(item); // Navigate to the clicked item's path
@@ -77,16 +79,19 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   // Function to get the CSS class for an item based on its state
   const getItemClass = (targetPath: string) => {
-    const isSelected =
-      selectedItem === targetPath ||
-      (targetPath === "/pages/projects/[project_id]" &&
-        pathname?.startsWith("/pages/projects/") &&
-        pathname !== "/pages/projects");
+    const alwaysActivePaths = ["/settings", "/help", "/contact", "/fileBug"];
+    const isExactMatch = selectedItem === targetPath;
+    const isDynamicProject =
+      targetPath === "/pages/projects/[project_id]" &&
+      pathname?.startsWith("/pages/projects/") &&
+      pathname !== "/pages/projects";
+    const isSelected = isExactMatch || isDynamicProject;
+    const isAlwaysActive = alwaysActivePaths.includes(targetPath);
 
     return [
       "flex items-center block py-2 px-4 rounded transition",
       isSelected ? "bg-base-300" : "hover:bg-base-300",
-      isDisabled(targetPath)
+      isDisabled(targetPath) && !isAlwaysActive
         ? "pointer-events-none opacity-50 cursor-not-allowed"
         : "",
     ].join(" ");
@@ -96,7 +101,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     <aside
       className={`fixed ${
         isCollapsed ? "w-20" : "w-64"
-      } bg-secondary text-base-100 h-screen mt-16 p-4 transition-width duration-300`}
+      } bg-secondary text-base-100 top-16 bottom-0 p-4 transition-width duration-300 flex flex-col`}
     >
       {/* Button to toggle menu collapse state */}
       <div className="flex justify-end">
@@ -109,7 +114,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </button>
       </div>
 
-      {/* Projects section */}
+      {/* Home */}
       <ul>
         <li>
           <Link
@@ -117,35 +122,78 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("/pages/projects", e)}
             className={getItemClass("/pages/projects")}
           >
-            <OtherHousesOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">All Projects</p>}
+            <HomeIcon />
+            {!isCollapsed && <p className="ml-2">Home Dashboard</p>}
           </Link>
         </li>
+      </ul>
+
+      <div className="divider" />
+
+      {/* Your Data section */}
+      {/* {!isCollapsed && <p className="text-sm mt-4">Your Data</p>} */}
+      <ul className="flex-grow">
         <li>
-          <button
+          <Link
+            href="/pages/projects/#"
             onClick={(e) => handleItemClick("/pages/projects/[project_id]", e)}
             className={getItemClass("/pages/projects/[project_id]")}
           >
             <ListAltOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Current Project</p>}
-          </button>
-        </li>
-      </ul>
-
-      {/* Your Data section */}
-      {!isCollapsed && <p className="text-sm mt-4">Your Data</p>}
-      <ul>
-        <li>
-          <Link
-            href="#data-viewer"
-            onClick={(e) => handleItemClick("#data-viewer", e)}
-            className={getItemClass("#data-viewer")}
-          >
-            <ManageSearchIcon />
-            {!isCollapsed && <p className="ml-2">Data Viewer</p>}
+            {!isCollapsed && <p className="ml-2">Project Management</p>}
           </Link>
         </li>
-        <li>
+        <li className="mt-2">
+          <Link
+            href="#ontology"
+            onClick={(e) => handleItemClick("#ontology", e)}
+            className={getItemClass("#ontology")}
+          >
+            <CoronavirusOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">Ontology</p>}
+          </Link>
+        </li>
+        <li className="mt-2">
+          <Link
+            href="/pages/data_source"
+            onClick={(e) => handleItemClick("/pages/data_source", e)}
+            className={getItemClass("/pages/data_source")}
+          >
+            <InboxIcon />
+            {!isCollapsed && <p className="ml-2">Data Source</p>}
+          </Link>
+        </li>
+        <li className="mt-2">
+          <Link
+            href="/pages/data_catalog"
+            onClick={(e) => handleItemClick("/pages/data_catalog", e)}
+            className={getItemClass("/pages/data_catalog")}
+          >
+            <InboxIcon />
+            {!isCollapsed && <p className="ml-2">Data Catalog</p>}
+          </Link>
+        </li>
+        <li className="mt-2">
+          <Link
+            href="#saved-searches"
+            onClick={(e) => handleItemClick("#saved-searches", e)}
+            className={getItemClass("#saved-searches")}
+          >
+            <SellOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">Saved Searches</p>}
+          </Link>
+        </li>
+        <li className="mt-2">
+          <Link
+            href="#events"
+            onClick={(e) => handleItemClick("#events", e)}
+            className={getItemClass("#events")}
+          >
+            <CalendarMonthOutlinedIcon />
+            {!isCollapsed && <p className="ml-2">Events</p>}
+          </Link>
+        </li>
+        <li className="mt-2">
           <Link
             href="#timeseries-viewer"
             onClick={(e) => handleItemClick("#timeseries-viewer", e)}
@@ -155,7 +203,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             {!isCollapsed && <p className="ml-2">Timeseries Viewer</p>}
           </Link>
         </li>
-        <li>
+        <li className="mt-2">
           <Link
             href="/pages/file_viewer"
             onClick={(e) => handleItemClick("/pages/file_viewer", e)}
@@ -167,77 +215,55 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </li>
       </ul>
 
-      {/* Data Management section */}
-      {!isCollapsed && <p className="text-sm mt-4">Data Management</p>}
-      <ul>
-        <li>
-          <Link
-            href="#ontology"
-            onClick={(e) => handleItemClick("#ontology", e)}
-            className={getItemClass("#ontology")}
-          >
-            <CoronavirusOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Ontology</p>}
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/pages/data_source"
-            onClick={(e) => handleItemClick("/pages/data_source", e)}
-            className={getItemClass("/pages/data_source")}
-          >
-            <InboxIcon />
-            {!isCollapsed && <p className="ml-2">Data Source</p>}
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="/pages/data_catalog"
-            onClick={(e) => handleItemClick("/pages/data_catalog", e)}
-            className={getItemClass("/pages/data_catalog")}
-          >
-            <InboxIcon />
-            {!isCollapsed && <p className="ml-2">Data Catalog</p>}
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="#tags"
-            onClick={(e) => handleItemClick("#tags", e)}
-            className={getItemClass("#tags")}
-          >
-            <SellOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Tags</p>}
-          </Link>
-        </li>
-      </ul>
-
-      {/* Widgets section */}
-      {!isCollapsed && <p className="text-sm mt-4">Widgets</p>}
-      <ul>
-        <li>
-          <Link
-            href="#model-viewer"
-            onClick={(e) => handleItemClick("#model-viewer", e)}
-            className={getItemClass("#model-viewer")}
-          >
-            <ViewInArOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Model Viewer</p>}
-          </Link>
-        </li>
-        <li>
-          <Link
-            href="#events"
-            onClick={(e) => handleItemClick("#events", e)}
-            className={getItemClass("#events")}
-          >
-            <CalendarMonthOutlinedIcon />
-            {!isCollapsed && <p className="ml-2">Events</p>}
-          </Link>
-        </li>
-      </ul>
+      <div className="divider" />
+      {/* Last 4 Menu Items */}
+      {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
+      <div className="mt-auto">
+        <ul>
+          <li className="mt-2">
+            <Link
+              href="/settings"
+              onClick={(e) => handleItemClick("/settings", e)}
+              className={getItemClass("/settings")}
+            >
+              <SettingsIcon />
+              {!isCollapsed && <p className="ml-2">Settings</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="/help"
+              onClick={(e) => handleItemClick("/help", e)}
+              className={getItemClass("/help")}
+            >
+              <HelpIcon />
+              {!isCollapsed && <p className="ml-2">Help</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="/contact"
+              onClick={(e) => handleItemClick("/contact", e)}
+              className={getItemClass("/contact")}
+            >
+              <ContactMainIcon />
+              {!isCollapsed && <p className="ml-2">Contact</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="/fileBug"
+              onClick={(e) => handleItemClick("/fileBug", e)}
+              className={getItemClass("/fileBug")}
+            >
+              <BugReportIcon />
+              {!isCollapsed && <p className="ml-2">File A Bug</p>}
+            </Link>
+          </li>
+        </ul>
+      </div>
     </aside>
   );
 };
 
-export default SideMenu; // Export the SideMenu component as default
+export default SideMenu;
