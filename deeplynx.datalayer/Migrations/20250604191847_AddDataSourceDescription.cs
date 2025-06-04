@@ -1,0 +1,30 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace deeplynx.datalayer.Migrations
+{
+    /// <inheritdoc />
+    public partial class AddDataSourceDescription : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "description",
+                schema: "deeplynx",
+                table: "data_sources",
+                type: "text",
+                nullable: true);
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "description",
+                schema: "deeplynx",
+                table: "data_sources");
+        }
+    }
+}
