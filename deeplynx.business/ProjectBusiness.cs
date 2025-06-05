@@ -213,14 +213,14 @@ public class ProjectBusiness : IProjectBusiness
                 // as to not block the thread of our lone database context.
                 var softDeleteTasks = new List<Func<Task<bool>>>
                 {
-                    () => _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId),
-                    () => _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId),
-                    () => _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId),
-                    () => _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId),
-                    () => _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId),
-                    () => _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId),
-                    () => _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId),
-                    () => _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId),
+                    () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
+                    () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", projectId),
+                    () => _relationshipBusiness.BulkSoftDeleteRelationships("project", projectId),
+                    () => _classBusiness.BulkSoftDeleteClasses("project", projectId),
+                    () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", projectId),
+                    () => _edgeBusiness.BulkSoftDeleteEdges("project", projectId),
+                    () => _dataSourceBusiness.BulkSoftDeleteDataSources("project", projectId),
+                    () => _recordBusiness.BulkSoftDeleteRecords("project", projectId),
                     () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
                 };
 
