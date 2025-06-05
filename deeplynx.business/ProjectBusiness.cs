@@ -221,7 +221,7 @@ public class ProjectBusiness : IProjectBusiness
                     () => _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId),
                     () => _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId),
                     () => _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId),
-                    () => _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId)
+                    () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
                 };
 
                 foreach (var task in softDeleteTasks)
