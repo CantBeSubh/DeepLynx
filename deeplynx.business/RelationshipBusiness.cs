@@ -215,32 +215,36 @@ public class RelationshipBusiness: IRelationshipBusiness
     }
     
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all relationships in a project by project id.
+    /// Bulk Soft Delete relationships by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns>Boolean true on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool>SoftDeleteAllRelationshipsByProjectIdAsync(long projectId)
+    /// <param name="domainType">The type of domain which is calling this function</param>
+    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    public async Task<bool> BulkSoftDeleteRelationships(string domainType, long domainId)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-        
         try
         {
-            var relationships = await _context.Relationships.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-            foreach (var relationship in relationships)
-            {
-                relationship.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
+            var relationshipQuery = _context.Relationships.Where(r => r.DeletedAt == null);
 
+            if (domainType == "project")
+            {
+                relationshipQuery = relationshipQuery.Where(r => r.ProjectId == domainId);
+            }
+                    
+            var relationships = await relationshipQuery.ToListAsync();
+                
+            foreach (var r in relationships)
+            {
+                r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            }
+                
             await _context.SaveChangesAsync();
             return true;
+                
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while deleting project relationships: {exception}";
+            var message = $"An error occurred while deleting relationships for domain {domainType} with id {domainId}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }

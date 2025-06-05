@@ -193,9 +193,9 @@ namespace deeplynx.business
                     
                 var roles = await roleQuery.ToListAsync();
                 
-                foreach (var role in roles)
+                foreach (var r in roles)
                 {
-                    role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                    r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 }
                 
                 await _context.SaveChangesAsync();

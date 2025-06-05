@@ -164,33 +164,36 @@ public class ClassBusiness : IClassBusiness
     }
 
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all classes in a project by project id.
+    /// Bulk Soft Delete classes by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns>Boolean true on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> SoftDeleteAllClassesByProjectIdAsync(long projectId)
+    /// <param name="domainType">The type of domain which is calling this function</param>
+    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    public async Task<bool> BulkSoftDeleteClasses(string domainType, long domainId)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-
         try
         {
-            var projectClasses = await _context.Classes.Where(t => t.ProjectId == projectId && t.DeletedAt == null)
-                .ToListAsync();
-            foreach (var projectClass in projectClasses)
-            {
-                projectClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
+            var classQuery = _context.Classes.Where(c => c.DeletedAt == null);
 
+            if (domainType == "project")
+            {
+                classQuery = classQuery.Where(c => c.ProjectId == domainId);
+            }
+                    
+            var classes = await classQuery.ToListAsync();
+                
+            foreach (var c in classes)
+            {
+                c.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            }
+                
             await _context.SaveChangesAsync();
             return true;
+                
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while deleting project classes: {exception}";
+            var message = $"An error occurred while deleting classes for domain {domainType} with id {domainId}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
