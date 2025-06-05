@@ -71,8 +71,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <returns>The mapping associated with the given ID</returns>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<RecordMappingResponseDto> GetRecordMapping(
-        long mappingId,
-        long projectId
+        long projectId,
+        long mappingId
         )
     {
         var mapping = await _context.RecordMappings
@@ -185,8 +185,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <param name="force">Indicates whether to force delete the mapping if true.</param>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteRecordMapping(
-        long mappingId, 
         long projectId, 
+        long mappingId, 
         bool force=false)
     {
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
