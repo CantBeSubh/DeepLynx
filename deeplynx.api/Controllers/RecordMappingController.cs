@@ -53,11 +53,11 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <returns>The record mapping associated with the given ID</returns>
         [HttpGet("GetRecordMapping/{mappingId}")]
-        public async Task<IActionResult> GetRecordMapping(long mappingId, long projectId)
+        public async Task<IActionResult> GetRecordMapping(long projectId, long mappingId)
         {
             try
             {
-                var rMapping = await _rMappingBusiness.GetRecordMapping(mappingId, projectId);
+                var rMapping = await _rMappingBusiness.GetRecordMapping(projectId, mappingId);
                 return Ok(rMapping);
             }
             catch (Exception exc)
@@ -125,13 +125,13 @@ namespace deeplynx.api.Controllers
         /// <returns>A message stating the record mapping was successfully deleted.</returns>
         [HttpDelete("DeleteRecordMapping/{mappingId}")]
         public async Task<IActionResult> DeleteRecordMapping(
-            long mappingId, 
             long projectId, 
+            long mappingId, 
             [FromQuery] bool force = false)
         {
             try
             {
-                await _rMappingBusiness.DeleteRecordMapping(mappingId, projectId, force);
+                await _rMappingBusiness.DeleteRecordMapping(projectId, mappingId, force);
                 return Ok(new { message = $"Deleted record mapping {mappingId}" });
             }
             catch (Exception exc)
