@@ -68,7 +68,8 @@ public class ProjectBusiness : IProjectBusiness
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
     {
-        var projects = await _context.Projects.ToListAsync();
+        var projects = await _context.Projects
+            .Where(p => p.DeletedAt == null).ToListAsync();
 
         return projects
             .Select(p => new ProjectResponseDto()
@@ -155,7 +156,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.DeletedAt == null)
+        if (project == null || project.DeletedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name;
@@ -196,7 +197,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null)
+        if (project == null || project.DeletedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         if (force)
