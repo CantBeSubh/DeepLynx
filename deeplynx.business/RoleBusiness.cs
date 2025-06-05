@@ -173,34 +173,38 @@ namespace deeplynx.business
             await _context.SaveChangesAsync();
             return true;
         }
-        
-        /// <summary>
-        /// Called primarily by project's delete. Soft delete all roles in a project by project id.
-        /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns>Boolean true on successful deletion.</returns>
-        /// <exception cref="KeyNotFoundException"></exception>
-        public async Task<bool> SoftDeleteAllRolesByProjectIdAsync(long projectId)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
 
-            if (project == null)
-                throw new KeyNotFoundException("Project not found.");
-        
+        /// <summary>
+        /// Bulk Soft Delete roles by a specific upstream domain. Used to avoid repeating functions.
+        /// </summary>
+        /// <param name="domainType">The type of domain which is calling this function</param>
+        /// <param name="domainId">The ID of the upstream domain calling this function</param>
+        /// <returns>Boolean true on successful deletion</returns>
+        public async Task<bool> BulkSoftDeleteRoles(string domainType, long domainId)
+        {
             try
             {
-                var roles = await _context.Roles.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-                foreach (var role in roles)
-                {
-                    role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                }
+                var roleQuery = _context.Roles.Where(r => r.DeletedAt == null);
 
+                if (domainType == "project")
+                {
+                    roleQuery = roleQuery.Where(r => r.ProjectId == domainId);
+                }
+                    
+                var roles = await roleQuery.ToListAsync();
+                
+                foreach (var r in roles)
+                {
+                    r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                }
+                
                 await _context.SaveChangesAsync();
                 return true;
+                
             }
-            catch (Exception exception)
+            catch (Exception exc)
             {
-                var message = $"An error occurred while deleting project roles: {exception}";
+                var message = $"An error occurred while deleting roles for domain {domainType} with id {domainId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return false;
             }
