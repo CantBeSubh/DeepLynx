@@ -4,10 +4,11 @@ namespace deeplynx.interfaces
 {
     public interface IDataSourceBusiness
     {
-        Task<IEnumerable<DataSourceDto>> GetAllDataSources();
-        Task<DataSourceDto> CreateDataSource(DataSourceDto dataSourceDto);
-        Task<DataSourceDto> UpdateDataSource(long id, DataSourceDto dataSourceDto);
-        Task<bool> DeleteDataSource(long id);
+        Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId);
+        Task<DataSourceResponseDto> GetDataSource(long projectId, long dataSourceId);
+        Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto);
+        Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, DataSourceRequestDto dto);
+        Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force);
         Task<bool> SoftDeleteAllDataSourcesByProjectIdAsync(long projectId);
     }
 }
