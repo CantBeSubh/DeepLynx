@@ -23,6 +23,19 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IRecordBusiness _recordBusiness;
     private readonly IRoleBusiness _roleBusiness;
     
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context used for the record mapping operations.</param>
+    /// <param name="tagBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="edgeMappingBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="relationshipBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="classBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="recordMappingBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="edgeBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="dataSourceBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="recordBusiness">One of the downstream business layers used for cascading deletions.</param>
+    /// <param name="roleBusiness">One of the downstream business layers used for cascading deletions.</param>
     public ProjectBusiness(
         DeeplynxContext context, 
         ITagBusiness tagBusiness, 
@@ -48,50 +61,124 @@ public class ProjectBusiness : IProjectBusiness
         _roleBusiness = roleBusiness;
     }
 
-    public async Task<IEnumerable<Project>> GetAllProjects()
+    /// <summary>
+    /// Retrieves all projects
+    /// </summary>
+    /// <returns>A list of projects</returns>
+    /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
     {
-        return await _context.Projects.ToListAsync();
+        var projects = await _context.Projects
+            .Where(p => p.DeletedAt == null).ToListAsync();
+
+        return projects
+            .Select(p => new ProjectResponseDto()
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Abbreviation = p.Abbreviation,
+                CreatedBy = p.CreatedBy,
+                CreatedAt = p.CreatedAt,
+                ModifiedBy = p.ModifiedBy,
+                ModifiedAt = p.ModifiedAt
+            });
     }
 
-    public async Task<Project> GetProject(long projectId)
+    /// <summary>
+    /// Retrieves a specific project by ID
+    /// </summary>
+    /// <param name="projectId">The ID by which to retrieve the project</param>
+    /// <returns>The given project to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if project not found</exception>
+    public async Task<ProjectResponseDto> GetProject(long projectId)
     {
-        return await _context.Projects
-                .FirstOrDefaultAsync(p => p.Id == projectId)
-            ?? throw new KeyNotFoundException("Project not found.");
-    }
+        var project = await _context.Projects
+            .Where(p => p.Id == projectId && p.DeletedAt == null)
+            .FirstOrDefaultAsync();
 
-    public async Task<Project> CreateProject(ProjectRequestDto project)
-    {
-        var newProject = new Project
+        if (project == null)
         {
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null, //TODO: Will add once JWTs work
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+
+        return new ProjectResponseDto
+        {
+            Id = project.Id,
             Name = project.Name,
+            Description = project.Description,
             Abbreviation = project.Abbreviation,
+            CreatedBy = project.CreatedBy,
+            CreatedAt = project.CreatedAt,
+            ModifiedBy = project.ModifiedBy,
+            ModifiedAt = project.ModifiedAt
+        };
+    }
+
+    /// <summary>
+    /// Creates a new project based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="dto">A data transfer object with details on the new project to be created.</param>
+    /// <returns>The new project which was just created.</returns>
+    public async Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto)
+    {
+        var project = new Project
+        {
+            Name = dto.Name,
+            Description = dto.Description,
+            Abbreviation = dto.Abbreviation,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         }; 
 
-        _context.Projects.Add(newProject);
+        _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        return newProject;
+        return new ProjectResponseDto
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Abbreviation = project.Abbreviation,
+            CreatedBy = project.CreatedBy,
+            CreatedAt = project.CreatedAt
+        };
     }
 
-    public async Task<Project> UpdateProject(long projectId, ProjectRequestDto project)
+    /// <summary>
+    /// Updates an existing project by ID
+    /// </summary>
+    /// <param name="projectId">The ID of the project to update</param>
+    /// <param name="dto">A data transfer object with details on the project to be updated.</param>
+    /// <returns>The project which was just updated.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
+    public async Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto)
     {
-        var existingProject = await _context.Projects.FindAsync(projectId);
+        var project = await _context.Projects.FindAsync(projectId);
 
-        if (existingProject == null)
+        if (project == null || project.DeletedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
-        existingProject.Name = project.Name;
-        existingProject.Abbreviation = project.Abbreviation;
-        existingProject.ModifiedBy = null; //TODO: Will add once JWTS work
-        existingProject.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        project.Name = dto.Name;
+        project.Description = dto.Description;
+        project.Abbreviation = dto.Abbreviation;
+        project.ModifiedBy = null; // TODO: handled in future by JWT.
+        project.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-        _context.Projects.Update(existingProject);
+        _context.Projects.Update(project);
         await _context.SaveChangesAsync();
 
-        return existingProject;
+        return new ProjectResponseDto
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Abbreviation = project.Abbreviation,
+            CreatedBy = project.CreatedBy,
+            CreatedAt = project.CreatedAt,
+            ModifiedBy = project.ModifiedBy,
+            ModifiedAt = project.ModifiedAt
+        };
     }
 
     /// <summary>
@@ -110,7 +197,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null)
+        if (project == null || project.DeletedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         if (force)
@@ -126,15 +213,15 @@ public class ProjectBusiness : IProjectBusiness
                 // as to not block the thread of our lone database context.
                 var softDeleteTasks = new List<Func<Task<bool>>>
                 {
-                    () => _tagBusiness.SoftDeleteAllTagsByProjectIdAsync(projectId),
-                    () => _edgeMappingBusiness.SoftDeleteAllEdgeMappingsByProjectIdAsync(projectId),
-                    () => _relationshipBusiness.SoftDeleteAllRelationshipsByProjectIdAsync(projectId),
-                    () => _classBusiness.SoftDeleteAllClassesByProjectIdAsync(projectId),
-                    () => _recordMappingBusiness.SoftDeleteAllRecordMappingsByProjectIdAsync(projectId),
-                    () => _edgeBusiness.SoftDeleteAllEdgesByProjectIdAsync(projectId),
-                    () => _dataSourceBusiness.SoftDeleteAllDataSourcesByProjectIdAsync(projectId),
-                    () => _recordBusiness.SoftDeleteAllRecordsByProjectIdAsync(projectId),
-                    () => _roleBusiness.SoftDeleteAllRolesByProjectIdAsync(projectId)
+                    () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
+                    () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", projectId),
+                    () => _relationshipBusiness.BulkSoftDeleteRelationships("project", projectId),
+                    () => _classBusiness.BulkSoftDeleteClasses("project", projectId),
+                    () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", projectId),
+                    () => _edgeBusiness.BulkSoftDeleteEdges("project", projectId),
+                    () => _dataSourceBusiness.BulkSoftDeleteDataSources("project", projectId),
+                    () => _recordBusiness.BulkSoftDeleteRecords("project", projectId),
+                    () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
                 };
 
                 foreach (var task in softDeleteTasks)

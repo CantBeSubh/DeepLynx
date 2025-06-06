@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("projects/{projectId}/tags")]
+[Route("api/projects/{projectId}/tags")]
 [ApiController]
 public class TagController : ControllerBase
 {

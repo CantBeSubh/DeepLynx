@@ -9,5 +9,5 @@ public interface ITagBusiness
     Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId);
     Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId);
     Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false);
-    Task<bool> SoftDeleteAllTagsByProjectIdAsync(long projectId);
+    Task<bool> BulkSoftDeleteTags(string domainType, long domainId);
 }
