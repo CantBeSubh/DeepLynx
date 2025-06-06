@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
-using System.Text.Json.Serialization;  
+using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
@@ -14,8 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(o =>
 {
     o.AddPolicy(
-            name:"AllowAll",
-            builder  => builder.AllowAnyOrigin()
+            name: "AllowAll",
+            builder => builder.AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader()
         );
