@@ -1,4 +1,6 @@
+using System.Transactions;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -8,10 +10,24 @@ namespace deeplynx.business;
 public class ClassBusiness : IClassBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
+    private readonly IRecordBusiness _recordBusiness;
+    private readonly IRecordMappingBusiness _recordMappingBusiness;
+    private readonly IRelationshipBusiness _relationshipBusiness;
 
-    public ClassBusiness(DeeplynxContext context)
+    public ClassBusiness(
+        DeeplynxContext context,
+        IEdgeMappingBusiness edgeMappingBusiness,
+        IRecordBusiness recordBusiness,
+        IRecordMappingBusiness recordMappingBusiness,
+        IRelationshipBusiness relationshipBusiness
+        )
     {
         _context = context;
+        _edgeMappingBusiness = edgeMappingBusiness;
+        _recordBusiness = recordBusiness;
+        _recordMappingBusiness = recordMappingBusiness;
+        _relationshipBusiness = relationshipBusiness;
     }
 
     public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId)
@@ -129,38 +145,55 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
-    public async Task<bool> DeleteClass(long projectId, long classId)
+    public async Task<bool> DeleteClass(long projectId, long classId, bool force)
     {
         var dbClass = await _context.Classes.FindAsync(classId);
-
-        if (await IsClassInUse(classId))
-            throw new InvalidOperationException("Cannot delete Class: it is still referenced by other entities.");
-        else if (dbClass == null || dbClass.ProjectId != projectId || dbClass.DeletedAt is not null)
+        
+        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.DeletedAt is not null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
-        dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        dbClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-        await _context.SaveChangesAsync();
+        if (force)
+        {
+            _context.Classes.Remove(dbClass);
+        }
+        else
+        {
+            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            {
+                var softDeleteTasks = new List<Func<Task<bool>>>
+                {
+                    () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classId), 
+                    () => _recordBusiness.BulkSoftDeleteRecords("class", classId), 
+                    () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classId),
+                    () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classId)
+                };
+
+                foreach (var task in softDeleteTasks)
+                {
+                    bool result = await task();
+                    if (!result)
+                    {
+                        var methodName = task.Method.Name;
+                        var offendingFunction = methodName.Substring(
+                            "BulkSoftDelete".Length,
+                            methodName.Length - "BulkSoftDelete".Length
+                        );
+                        string message =
+                            $"An error occurred during deletion of project dependencies: {offendingFunction}.";
+                        throw new ClassDependencyDeletionException(message);
+                    }
+                }
+
+                dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                _context.Classes.Update(dbClass);
+
+                await _context.SaveChangesAsync();
+                transaction.Complete();
+            }
+        }
         return true;
-    }
-
-    private async Task<bool> IsClassInUse(long classId)
-    {
-        var inRecords = await _context.Records
-            .AnyAsync(r => r.ClassId == classId && r.DeletedAt == null);
-
-        var inRecordMappings = await _context.RecordMappings
-            .AnyAsync(rp => rp.ClassId == classId && rp.DeletedAt == null);
-
-        var inEdgeMappings = await _context.EdgeMappings
-            .AnyAsync(ep => (ep.OriginId == classId || ep.DestinationId == classId) && ep.DeletedAt == null);
-
-        var inRelationships = await _context.Relationships
-            .AnyAsync(rel => (rel.OriginId == classId || rel.DestinationId == classId) && rel.DeletedAt == null);
-
-        return inRecords || inRecordMappings || inEdgeMappings || inRelationships;
     }
 
     /// <summary>

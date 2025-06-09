@@ -211,6 +211,10 @@ public class RecordBusiness : IRecordBusiness
             if (domainType == "project")
             {
                 recordQuery = recordQuery.Where(r => r.ProjectId == domainId);
+            } 
+            else if (domainType == "class")
+            {
+                recordQuery = recordQuery.Where(r => r.ClassId == domainId);
             }
                     
             var records = await recordQuery.ToListAsync();

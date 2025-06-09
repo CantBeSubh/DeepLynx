@@ -238,6 +238,10 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             {
                 edgeMappingQuery = edgeMappingQuery.Where(e => e.ProjectId == domainId);
             }
+            else if (domainType == "class")
+            {
+                edgeMappingQuery = edgeMappingQuery.Where(e => e.OriginId == domainId || e.DestinationId == domainId);
+            }
                     
             var edgeMappings = await edgeMappingQuery.ToListAsync();
                 

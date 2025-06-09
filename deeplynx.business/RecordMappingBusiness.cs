@@ -227,6 +227,10 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             {
                 recordMappingQuery = recordMappingQuery.Where(r => r.ProjectId == domainId);
             }
+            else if (domainType == "class")
+            {
+                recordMappingQuery = recordMappingQuery.Where(r => r.ClassId == domainId);
+            }
                     
             var recordMappings = await recordMappingQuery.ToListAsync();
                 

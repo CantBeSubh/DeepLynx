@@ -230,6 +230,10 @@ public class RelationshipBusiness: IRelationshipBusiness
             {
                 relationshipQuery = relationshipQuery.Where(r => r.ProjectId == domainId);
             }
+            else if (domainType == "class")
+            {
+                relationshipQuery = relationshipQuery.Where(r => r.OriginId == domainId || r.DestinationId == domainId);
+            }
                     
             var relationships = await relationshipQuery.ToListAsync();
                 

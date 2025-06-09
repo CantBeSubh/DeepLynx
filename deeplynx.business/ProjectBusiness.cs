@@ -231,8 +231,8 @@ public class ProjectBusiness : IProjectBusiness
                     {
                         var methodName = task.Method.Name;
                         var offendingFunction = methodName.Substring(
-                            "SoftDeleteAll".Length,
-                            methodName.Length - "SoftDeleteAll".Length - "ByProjectIdAsync".Length
+                            "BulkSoftDelete".Length,
+                            methodName.Length - "BulkSoftDelete".Length
                         );
                         string message = $"An error occurred during deletion of project dependencies: {offendingFunction}.";
                         throw new ProjectDependencyDeletionException(message);
