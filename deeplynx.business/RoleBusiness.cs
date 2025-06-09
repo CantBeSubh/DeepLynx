@@ -25,6 +25,12 @@ namespace deeplynx.business
         /// <returns>A list of roles belonging to the project.</returns>
         public async Task<IEnumerable<RoleResponseDto>> GetAllRoles(long projectId)
         {
+            var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
+            if (project == null)
+            {
+                throw new KeyNotFoundException($"Project with id {projectId} not found");
+            }
+            
             return await _context.Roles
                 .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
                 .Select(r => new RoleResponseDto()
