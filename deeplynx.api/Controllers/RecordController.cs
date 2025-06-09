@@ -14,6 +14,7 @@ namespace deeplynx.api.Controllers
         {
             _recordBusiness = recordBusiness;
         }
+        
         /// <summary>
         /// Get all Records
         /// </summary>
@@ -35,6 +36,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Get one Record from DB
         /// </summary>
@@ -57,6 +59,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Create a Record
         /// </summary>
@@ -80,6 +83,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Update Record
         /// </summary>
@@ -104,19 +108,20 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
-        /// Delete Record
+        /// 
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
+        /// <param name="force"></param>
         /// <returns></returns>
         [HttpDelete("DeleteRecord/{recordId}")]
-        public async Task<IActionResult> DeleteRecord(long projectId, long dataSourceId, long recordId)
+        public async Task<IActionResult> DeleteRecord(long projectId, long recordId, [FromQuery] bool force = false)
         {
             try
             {
-                await _recordBusiness.DeleteRecord(projectId, dataSourceId, recordId);
+                await _recordBusiness.DeleteRecord(projectId, recordId, force);
                 return Ok(new { message = $"Deleted record {recordId}" });
             }
             catch (Exception exc)
