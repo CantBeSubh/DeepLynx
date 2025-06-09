@@ -13,14 +13,26 @@ public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
     
-    // dependency used exclusively for bulk soft deletes
+    // dependency used to trigger downstream soft deletes
     private readonly IEdgeBusiness _edgeBusiness;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context used for the edge operations.</param>
+    /// <param name="edgeBusiness">Passed in context of downstream edge objects.</param>
     public RecordBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness)
     {
         _context = context;
         _edgeBusiness = edgeBusiness;
     }
+    
+    /// <summary>
+    /// Retrieves all records for a specific project and datasource.
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
+    /// <param name="dataSourceId">The ID of the datasource by which to filter edges</param>
+    /// <returns>A list of records based on the applied filters.</returns>
     public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long dataSourceId)
     {
         return await _context.Records
@@ -43,6 +55,15 @@ public class RecordBusiness : IRecordBusiness
             })
             .ToListAsync();
     }
+    
+    /// <summary>
+    /// Retrieves a specific record by its ID
+    /// </summary>
+    /// <param name="projectId">The project of the record to retrieve</param>
+    /// <param name="dataSourceId">The data source of the record to retrieve</param>
+    /// <param name="recordId">The ID of the record to retrieve</param>
+    /// <returns>The record in question</returns>
+    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
     public async Task<RecordResponseDto> GetRecord(long projectId, long dataSourceId, long recordId)
     {
         var record = await _context.Records
@@ -71,6 +92,15 @@ public class RecordBusiness : IRecordBusiness
         };
     }
 
+    /// <summary>
+    /// Create a new record
+    /// </summary>
+    /// <param name="projectId">The ID of the project under which to create the record</param>
+    /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
+    /// <param name="dto">The data transfer object containing details on the record to be created</param>
+    /// <returns>The newly created metadata record</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
+    /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
         var project = await _context.Projects
@@ -123,6 +153,15 @@ public class RecordBusiness : IRecordBusiness
         };
     }
 
+    /// <summary>
+    /// Updates a record with new information
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the record belongs</param>
+    /// <param name="dataSourceId">The ID of the datasource to which the record belongs</param>
+    /// <param name="recordId">The ID of the record to be updated</param>
+    /// <param name="dto">The data transfer object containing details on the record to be updated</param>
+    /// <returns>The newly updated metadata record</returns>
+    /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
     {
         var record= await _context.Records.FindAsync(recordId);
@@ -138,6 +177,8 @@ public class RecordBusiness : IRecordBusiness
         record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        
+        // TODO: check property depth like we do on create
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
@@ -161,6 +202,15 @@ public class RecordBusiness : IRecordBusiness
         
     }
 
+    /// <summary>
+    /// Delete a metadata record and any downstream edges.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record in question</param>
+    /// <param name="force">If force is true, permanently delete the record. Otherwise, soft delete</param>
+    /// <returns>Boolean indicating record was deleted</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
+    /// <exception cref="ProjectDependencyDeletionException">Returned if downstream deletions failed.</exception>
     public async Task<bool> DeleteRecord(long projectId, long recordId, bool force=false)
     {
         var record = await _context.Records.FindAsync(recordId);
@@ -213,6 +263,11 @@ public class RecordBusiness : IRecordBusiness
         return true;
     }
 
+    /// <summary>
+    /// Private method used to calculate json depth of properties (should be <3)
+    /// </summary>
+    /// <param name="node"></param>
+    /// <returns></returns>
     private int CalculateJsonMaxDepth(JsonNode node)
     {
         if (node is not JsonObject && node is not JsonArray)

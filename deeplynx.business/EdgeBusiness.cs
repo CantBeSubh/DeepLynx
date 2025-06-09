@@ -285,6 +285,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         try
         {
+            // create a query builder object to remain flexible depending on the upstream domain triggering deletion
             var edgeQuery = _context.Edges.Where(e => e.DeletedAt == null);
 
             if (domainType == "project")

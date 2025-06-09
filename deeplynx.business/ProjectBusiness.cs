@@ -207,45 +207,39 @@ public class ProjectBusiness : IProjectBusiness
         }
         else
         {
-            try
+            var transaction = await _context.Database.BeginTransactionAsync();
+            
+            // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
+            // as to not block the thread of our lone database context.
+            // NOTE: transactions may be passed in to maintain downstream ACID compliance.
+            var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                var transaction = await _context.Database.BeginTransactionAsync();
-                
-                // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
-                // as to not block the thread of our lone database context.
-                var softDeleteTasks = new List<Func<Task<bool>>>
-                {
-                    () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
-                    () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", projectId),
-                    () => _relationshipBusiness.BulkSoftDeleteRelationships("project", projectId),
-                    () => _classBusiness.BulkSoftDeleteClasses("project", projectId),
-                    () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", projectId),
-                    () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
-                    () => _dataSourceBusiness.BulkSoftDeleteDataSources("project", projectId),
-                    () => _recordBusiness.BulkSoftDeleteRecords("project", projectId, transaction),
-                    () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
-                };
+                () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", projectId),
+                () => _relationshipBusiness.BulkSoftDeleteRelationships("project", projectId),
+                () => _classBusiness.BulkSoftDeleteClasses("project", projectId),
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", projectId),
+                () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
+                () => _dataSourceBusiness.BulkSoftDeleteDataSources("project", projectId),
+                () => _recordBusiness.BulkSoftDeleteRecords("project", projectId, transaction),
+                () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
+            };
 
-                foreach (var task in softDeleteTasks)
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
                 {
-                    bool result = await task();
-                    if (!result)
-                    {
-                        await transaction.RollbackAsync();
-                        throw new ProjectDependencyDeletionException("something broke");
-                    }
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
                 }
-
-                project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                _context.Projects.Update(project);
-
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
             }
-            catch (Exception exc)
-            {
-                throw new ProjectDependencyDeletionException(exc.Message);
-            }
+
+            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Projects.Update(project);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
         
         return true;
