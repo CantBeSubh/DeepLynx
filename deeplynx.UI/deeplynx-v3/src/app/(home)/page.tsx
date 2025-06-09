@@ -1,5 +1,5 @@
 "use client";
-import "./globals.css";
+import "../globals.css";
 import type { AppProps } from "next/app";
 import Layout from "./components/LayoutShell";
 

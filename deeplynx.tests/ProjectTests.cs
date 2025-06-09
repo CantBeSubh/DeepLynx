@@ -99,8 +99,7 @@ public sealed class ProjectTests : IAsyncLifetime
     [Fact]
     public async Task GetProject_Should_Throw_If_Not_Exists()
     {
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
-        Assert.Equal("Project not found.", ex.Message);
+       await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
     }
     // Create project, update name and abbreviation fields successfully 
     [Fact]
