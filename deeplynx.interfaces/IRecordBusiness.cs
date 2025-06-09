@@ -11,6 +11,5 @@ public interface IRecordBusiness
     Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto);
     Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long dataSourceId, long recordId);
-    int CalculateJsonMaxDepth(JsonNode node); 
-    Task<bool> SoftDeleteAllRecordsByProjectIdAsync(long projectId);
+    Task<bool> BulkSoftDeleteRecords(string domainType, long domainId);
 }
