@@ -261,9 +261,12 @@ public class RecordBusiness : IRecordBusiness
             
             var records = await recordQuery.ToListAsync();
 
+            
             // start a database transaction to ensure deletion changes are rolled back if errors occur
+            var commit = false; // variable to indicate whether we can commit or if parent should commit transaction
             if (transaction == null)
             {
+                commit = true;
                 transaction = await _context.Database.BeginTransactionAsync();
             }
             
@@ -295,8 +298,10 @@ public class RecordBusiness : IRecordBusiness
                     
             // save changes and close the transaction
             await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-            
+            if (commit)
+            {
+                await transaction.CommitAsync();
+            }
             return true;
                 
         }

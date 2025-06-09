@@ -225,12 +225,10 @@ public class ProjectBusiness : IProjectBusiness
                     () => _recordBusiness.BulkSoftDeleteRecords("project", projectId, transaction),
                     () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
                 };
-                
-                var taskList = softDeleteTasks.Select(task => task()).ToList();
-                bool[] results = await Task.WhenAll(taskList);
 
-                foreach (bool result in results)
+                foreach (var task in softDeleteTasks)
                 {
+                    bool result = await task();
                     if (!result)
                     {
                         await transaction.RollbackAsync();
