@@ -1,8 +1,10 @@
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 
 namespace deeplynx.business;
@@ -10,10 +12,14 @@ namespace deeplynx.business;
 public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
+    
+    // dependency used exclusively for bulk soft deletes
+    private readonly IEdgeBusiness _edgeBusiness;
 
-    public RecordBusiness(DeeplynxContext context)
+    public RecordBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness)
     {
         _context = context;
+        _edgeBusiness = edgeBusiness;
     }
     public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long dataSourceId)
     {
@@ -155,20 +161,59 @@ public class RecordBusiness : IRecordBusiness
         
     }
 
-    public async Task<bool> DeleteRecord(long projectId, long dataSourceId, long recordId)
+    public async Task<bool> DeleteRecord(long projectId, long recordId, bool force=false)
     {
         var record = await _context.Records.FindAsync(recordId);
+        
         if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
-        record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Records.Update(record);
-        await _context.SaveChangesAsync();
+
+        if (force)
+        {
+            _context.Records.Remove(record);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            // start a database transaction to ensure deletion changes are rolled back if errors occur
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            
+            // define a list of lambda functions for bulk deletes to sequentially iterate
+            // so as not to block the thread of our lone database context
+            // there is only one downstream task currently, but there may be more in the future
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _edgeBusiness.BulkSoftDeleteEdges("record", [recordId])
+            };
+
+
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    var methodName = task.Method.Name;
+                    var message = $"An error occurred during deletion of record dependencies: {methodName}";
+                    // rollback the transaction and then throw an error
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException(message);
+                }
+            }
+                
+            record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Records.Update(record);
+
+            // save changes and commit the transaction to close it
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        
         return true;
     }
 
-    public int CalculateJsonMaxDepth(JsonNode node)
+    private int CalculateJsonMaxDepth(JsonNode node)
     {
         if (node is not JsonObject && node is not JsonArray)
             return 0;
@@ -201,8 +246,9 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="domainType">The type of domain which is calling this function</param>
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecords(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteRecords(string domainType, long domainId, IDbContextTransaction? transaction)
     {
         try
         {
@@ -212,15 +258,45 @@ public class RecordBusiness : IRecordBusiness
             {
                 recordQuery = recordQuery.Where(r => r.ProjectId == domainId);
             }
-                    
+            
             var records = await recordQuery.ToListAsync();
+
+            // start a database transaction to ensure deletion changes are rolled back if errors occur
+            if (transaction == null)
+            {
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
+            
+            // define a list of lambda functions for bulk deletes to sequentially iterate
+            // so as not to block the thread of our lone database context
+            // there is only one downstream task currently, but there may be more in the future
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _edgeBusiness.BulkSoftDeleteEdges("record", records.Select(r => r.Id))
+            };
+    
+            // execute all downstream update tasks (just edges currently)
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    // rollback the transaction and then throw an error
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
+                }
+            }
                 
+            // update all records with the new deletion date
             foreach (var r in records)
             {
                 r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             }
-                
+                    
+            // save changes and close the transaction
             await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
             return true;
                 
         }

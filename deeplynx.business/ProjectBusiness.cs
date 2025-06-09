@@ -207,8 +207,10 @@ public class ProjectBusiness : IProjectBusiness
         }
         else
         {
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            try
             {
+                var transaction = await _context.Database.BeginTransactionAsync();
+                
                 // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
                 // as to not block the thread of our lone database context.
                 var softDeleteTasks = new List<Func<Task<bool>>>
@@ -218,24 +220,21 @@ public class ProjectBusiness : IProjectBusiness
                     () => _relationshipBusiness.BulkSoftDeleteRelationships("project", projectId),
                     () => _classBusiness.BulkSoftDeleteClasses("project", projectId),
                     () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", projectId),
-                    () => _edgeBusiness.BulkSoftDeleteEdges("project", projectId),
+                    () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
                     () => _dataSourceBusiness.BulkSoftDeleteDataSources("project", projectId),
-                    () => _recordBusiness.BulkSoftDeleteRecords("project", projectId),
+                    () => _recordBusiness.BulkSoftDeleteRecords("project", projectId, transaction),
                     () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
                 };
+                
+                var taskList = softDeleteTasks.Select(task => task()).ToList();
+                bool[] results = await Task.WhenAll(taskList);
 
-                foreach (var task in softDeleteTasks)
+                foreach (bool result in results)
                 {
-                    bool result = await task();
                     if (!result)
                     {
-                        var methodName = task.Method.Name;
-                        var offendingFunction = methodName.Substring(
-                            "SoftDeleteAll".Length,
-                            methodName.Length - "SoftDeleteAll".Length - "ByProjectIdAsync".Length
-                        );
-                        string message = $"An error occurred during deletion of project dependencies: {offendingFunction}.";
-                        throw new ProjectDependencyDeletionException(message);
+                        await transaction.RollbackAsync();
+                        throw new ProjectDependencyDeletionException("something broke");
                     }
                 }
 
@@ -243,7 +242,11 @@ public class ProjectBusiness : IProjectBusiness
                 _context.Projects.Update(project);
 
                 await _context.SaveChangesAsync();
-                transaction.Complete();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exc)
+            {
+                throw new ProjectDependencyDeletionException(exc.Message);
             }
         }
         

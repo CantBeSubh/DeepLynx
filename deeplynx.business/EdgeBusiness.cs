@@ -279,9 +279,9 @@ public class EdgeBusiness : IEdgeBusiness
     /// Bulk Soft Delete edges by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
     /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="domainIds">The ID(s) of the upstream domain calling this function</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteEdges(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteEdges(string domainType, IEnumerable<long> domainIds)
     {
         try
         {
@@ -289,7 +289,12 @@ public class EdgeBusiness : IEdgeBusiness
 
             if (domainType == "project")
             {
-                edgeQuery = edgeQuery.Where(e => e.ProjectId == domainId);
+                edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.ProjectId));
+            }
+
+            if (domainType == "record")
+            {
+                edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.OriginId) || domainIds.Contains(e.DestinationId));
             }
                     
             var edges = await edgeQuery.ToListAsync();
@@ -305,7 +310,8 @@ public class EdgeBusiness : IEdgeBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting edges for domain {domainType} with id {domainId}: {exc}";
+            var id_list = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {id_list}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
