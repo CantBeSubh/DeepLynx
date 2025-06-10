@@ -13,9 +13,13 @@
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.0.2",
     "@mui/material": "^7.0.2",
+    "@okta/okta-auth-js": "^7.12.1",
+    "@okta/okta-react": "^6.10.0",
     "next": "15.2.4",
+    "next-auth": "^5.0.0-beta.28",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.6.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

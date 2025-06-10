@@ -13,6 +13,8 @@
       <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
     </ItemGroup>
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.5" />
       <PackageReference Include="DuckDB.NET.Data.Full" Version="1.2.1" />
       <PackageReference Include="Scalar.AspNetCore" Version="2.0.18" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
@@ -20,6 +22,7 @@
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
       <PackageReference Include="NLog" Version="5.4.0" />
+      <PackageReference Include="Okta.AspNetCore" Version="4.6.3" />
     </ItemGroup>
 
     <ItemGroup>
