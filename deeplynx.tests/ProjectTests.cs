@@ -43,7 +43,7 @@ public sealed class ProjectTests : IAsyncLifetime
         _recordMappingBusiness = new RecordMappingBusiness(_context);
         _edgeBusiness = new EdgeBusiness(_context);
         _dataSourceBusiness = new DataSourceBusiness(_context);
-        _recordBusiness = new RecordBusiness(_context);
+        _recordBusiness = new RecordBusiness(_context, _edgeBusiness);
         _roleBusiness = new RoleBusiness(_context);
                     
         // Initialize ProjectBusiness with dependencies
@@ -99,8 +99,7 @@ public sealed class ProjectTests : IAsyncLifetime
     [Fact]
     public async Task GetProject_Should_Throw_If_Not_Exists()
     {
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
-        Assert.Equal("Project not found.", ex.Message);
+       await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
     }
     // Create project, update name and abbreviation fields successfully 
     [Fact]

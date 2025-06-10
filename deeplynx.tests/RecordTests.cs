@@ -18,6 +18,8 @@ public sealed class RecordTests : IAsyncLifetime
     private DeeplynxContext _context;
     private RecordBusiness _business;
     private readonly PostgreSqlContainer _postgresContainer;
+    public EdgeBusiness _edgeBusiness;
+
 
     public RecordTests()
     {
@@ -35,9 +37,10 @@ public sealed class RecordTests : IAsyncLifetime
             .Options;
 
         _context = new DeeplynxContext(options);
+        
         await _context.Database.MigrateAsync();
-
-        _business = new RecordBusiness(_context);
+        _edgeBusiness = new EdgeBusiness(_context);
+        _business = new RecordBusiness(_context, _edgeBusiness);
     }
 
     public async Task DisposeAsync()
@@ -225,7 +228,7 @@ public sealed class RecordTests : IAsyncLifetime
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject() });
-        await _business.DeleteRecord(pid, dsid, cr.Id);
+        await _business.DeleteRecord(pid, dsid);
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => _business.GetRecord(pid, dsid, cr.Id));
     }
@@ -254,7 +257,7 @@ public sealed class RecordTests : IAsyncLifetime
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject() });
-        await _business.DeleteRecord(pid, dsid, cr.Id);
+        await _business.DeleteRecord(pid, dsid);
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => _business.UpdateRecord(pid, dsid, cr.Id, new RecordRequestDto { Properties = new JsonObject() }));
     }
@@ -264,7 +267,7 @@ public sealed class RecordTests : IAsyncLifetime
         var (pid, dsid) = await SeedProjectAndDataSource();
         var created = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject(), Name = "ToDelete" });
 
-        var result = await _business.DeleteRecord(pid, dsid, created.Id);
+        var result = await _business.DeleteRecord(pid, dsid);
 
         Assert.True(result);
         var entity = await _context.Records.FindAsync(created.Id);
