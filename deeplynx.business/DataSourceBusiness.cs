@@ -1,22 +1,36 @@
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Linq.Expressions;
 
 namespace deeplynx.business
 {
     public class DataSourceBusiness : IDataSourceBusiness
     {
         private readonly DeeplynxContext _context;
+        
+        // dependants used to trigger downstream soft deletes
+        private readonly IEdgeBusiness _edgeBusiness;
+        private readonly IRecordBusiness _recordBusiness;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataSourceBusiness"/> class.
         /// </summary>
         /// <param name="context">The database context used for the data source operations.</param>
-        public DataSourceBusiness(DeeplynxContext context)
+        /// <param name="edgeBusiness">Passed in context for downstream edge objects.</param>
+        /// <param name="recordBusiness">Passed in context for downstream record objects.</param>
+        public DataSourceBusiness(
+            DeeplynxContext context, 
+            IEdgeBusiness edgeBusiness, 
+            IRecordBusiness recordBusiness)
         {
             _context = context;
+            _edgeBusiness = edgeBusiness;
+            _recordBusiness = recordBusiness;
         }
         
         /// <summary>
@@ -196,16 +210,26 @@ namespace deeplynx.business
 
             if (force)
             {
+                // hard delete
                 _context.DataSources.Remove(dataSource);
+                await _context.SaveChangesAsync();
             }
             else
             {
-                // soft delete
-                dataSource.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                _context.DataSources.Update(dataSource);
+                try
+                {
+                    var transaction = await _context.Database.BeginTransactionAsync();
+                    await this.SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
+                    await transaction.CommitAsync();
+                }
+                catch (Exception exc)
+                {
+                    var message = $"An error occurred while deleting data source: {exc}";
+                    NLog.LogManager.GetCurrentClassLogger().Error(message);
+                    return false;
+                }
             }
             
-            await _context.SaveChangesAsync();
             return true;
         }
         
@@ -215,34 +239,88 @@ namespace deeplynx.business
         /// <param name="domainType">The type of domain which is calling this function</param>
         /// <param name="domainId">The ID of the upstream domain calling this function</param>
         /// <returns>Boolean true on successful deletion</returns>
-        public async Task<bool> BulkSoftDeleteDataSources(string domainType, long domainId)
+        public async Task<bool> BulkSoftDeleteDataSources(
+            Expression<Func<DataSource, bool>> predicate, 
+            IDbContextTransaction? transaction)
         {
             try
             {
-                var dataSourceQuery = _context.DataSources.Where(d => d.DeletedAt == null);
-
-                if (domainType == "project")
-                {
-                    dataSourceQuery = dataSourceQuery.Where(d => d.ProjectId == domainId);
-                }
-                    
-                var dataSources = await dataSourceQuery.ToListAsync();
-                
-                foreach (var d in dataSources)
-                {
-                    d.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                }
-                
-                await _context.SaveChangesAsync();
+                await this.SoftDeleteDataSources(predicate, transaction);
                 return true;
-                
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting data sources for domain {domainType} with id {domainId}: {exc}";
+                var message = $"An error occurred while deleting data sources: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return false;
             }
+        }
+
+        private async Task<bool> SoftDeleteDataSources(
+            Expression<Func<DataSource, bool>> predicate, 
+            IDbContextTransaction? transaction)
+        {
+            // check for existing transaction; if one does not exist, start a new one
+            var commit = false; // flag used to determine if transaction should be committed
+            if (transaction == null)
+            {
+                commit = true;
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
+            
+            // search for records matching the passed-in predicate (filter) to be updated
+            var dsContext = _context.DataSources
+                .Where(d => d.DeletedAt == null)
+                .Where(predicate);
+            
+            var dataSources = await dsContext.ToListAsync();
+            var dataSourceIds = dataSources.Select(d => d.Id);
+            
+            if (dataSources.Count == 0)
+            {
+                // return true even if no records are to be deleted;
+                // we only want to return false if there were errors
+                return true;
+            }
+            
+            // trigger downstream deletions
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _recordBusiness.BulkSoftDeleteRecords("dataSource", dataSourceIds, null),
+                () => _edgeBusiness.BulkSoftDeleteEdges("dataSource", dataSourceIds)
+            };
+            
+            // loop through tasks and trigger downstream deletions
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    // rollback the transaction and throw an error
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException(
+                        "An error occurred during the deletion of downstream datasource dependants.");
+                }
+            }
+
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await dsContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found records to update, but weren't successful in updating, throw an error
+            if (updated == 0)
+            {
+                throw new ProjectDependencyDeletionException("An error occurred when deleting data sources");
+            }
+            
+            // save changes and commit transaction to close it
+            await _context.SaveChangesAsync();
+            if (commit)
+            {
+                await transaction.CommitAsync();
+            }
+            
+            return true;
         }
     }
 }
