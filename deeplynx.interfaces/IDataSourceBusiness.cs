@@ -1,4 +1,7 @@
 using deeplynx.models;
+using Microsoft.EntityFrameworkCore.Storage;
+using deeplynx.datalayer.Models;
+using System.Linq.Expressions;
 
 namespace deeplynx.interfaces
 {
@@ -9,6 +12,6 @@ namespace deeplynx.interfaces
         Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto);
         Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, DataSourceRequestDto dto);
         Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force);
-        Task<bool> BulkSoftDeleteDataSources(string domainType, long domainId);
+        Task<bool> BulkSoftDeleteDataSources(Expression<Func<DataSource, bool>> predicate, IDbContextTransaction? transaction);
     }
 }

@@ -297,6 +297,11 @@ public class EdgeBusiness : IEdgeBusiness
             {
                 edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.OriginId) || domainIds.Contains(e.DestinationId));
             }
+            
+            if (domainType == "dataSource")
+            {
+                edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.DataSourceId));
+            }
                     
             var edges = await edgeQuery.ToListAsync();
                 

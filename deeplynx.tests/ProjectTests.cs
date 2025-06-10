@@ -42,7 +42,7 @@ public sealed class ProjectTests : IAsyncLifetime
         _classBusiness = new ClassBusiness(_context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _recordMappingBusiness = new RecordMappingBusiness(_context);
         _edgeBusiness = new EdgeBusiness(_context);
-        _dataSourceBusiness = new DataSourceBusiness(_context);
+        _dataSourceBusiness = new DataSourceBusiness(_context, _edgeBusiness, _recordBusiness);
         _recordBusiness = new RecordBusiness(_context, _edgeBusiness);
         _roleBusiness = new RoleBusiness(_context);
                     
