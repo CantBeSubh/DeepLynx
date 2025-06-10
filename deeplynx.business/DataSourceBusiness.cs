@@ -286,7 +286,7 @@ namespace deeplynx.business
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _recordBusiness.BulkSoftDeleteRecords("dataSource", dataSourceIds, null),
+                () => _recordBusiness.BulkSoftDeleteRecords("dataSource", dataSourceIds, transaction),
                 () => _edgeBusiness.BulkSoftDeleteEdges("dataSource", dataSourceIds)
             };
             
