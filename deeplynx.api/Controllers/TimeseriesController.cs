@@ -20,7 +20,13 @@ namespace deeplynx.api.Controllers
             _timeseriesBusiness = timeseriesBusiness;
         }
 
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
         [HttpPost("upload")]
         public async Task<IActionResult> UploadFile([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile file)
         {
@@ -37,6 +43,13 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("start-upload")]
         public IActionResult StartUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
@@ -53,6 +66,15 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="chunk"></param>
+        /// <param name="uploadId"></param>
+        /// <param name="chunkNumber"></param>
+        /// <returns></returns>
         [HttpPost("upload-chunk")]
         public async Task<IActionResult> UploadChunk([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
@@ -70,6 +92,13 @@ namespace deeplynx.api.Controllers
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("complete-upload")]
         public async Task<IActionResult> CompleteUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {

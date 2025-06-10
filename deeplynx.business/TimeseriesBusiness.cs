@@ -10,6 +10,15 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
     private readonly DeeplynxContext _context = context;
     private const string UploadFolderPath = "uploads";
 
+    /// <summary>
+    /// Uploads a time series file and kicks off the processing for DuckDB
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The Data Source ID</param>
+    /// <param name="file">This is the entire file attached as form data in the request</param>
+    /// <returns>An object of the uploaded file information</returns>
+    /// <exception cref="ArgumentException">If the file is null or has no data</exception>
+    /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
     public async Task<TimeseriesResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file)
     {
         if (file == null || file.Length == 0)
@@ -26,7 +35,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
             await file.CopyToAsync(stream);
         }
 
-        // todo: kick off file processing here
+        // todo: kick off file processing here (See DL-97 Sub-Tasks)
         // start saving metadata to db
         // import into duckdb
         // describe table for metadata record properties
@@ -44,6 +53,12 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         };
     }
 
+    /// <summary>
+    /// Sets up the directory for file chunks to be uploaded
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The Data Source ID</param>
+    /// <returns>The upload ID (guid format) for file chunks to go to the right directory</returns>
     public string StartUpload(string projectId, string dataSourceId)
     {
         var uploadId = Guid.NewGuid().ToString();
@@ -53,6 +68,16 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return uploadId;
     }
 
+    /// <summary>
+    /// Uploads a partial file to the specified directory
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The Data Source ID</param>
+    /// <param name="chunk">Raw binary data, max of 30MB by default</param>
+    /// <param name="uploadId">the upload guid from StartUpload</param>
+    /// <param name="chunkNumber">the index for tracking the order to merge chunks together</param>
+    /// <returns>A string to denote the status</returns>
+    /// <exception cref="ArgumentException">If the chunk is null or has no data</exception>
     public async Task<string> UploadChunk(string projectId, string dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
@@ -65,9 +90,16 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
 
-        return "Chunk uploaded successfully.";
+        return "success";
     }
 
+    /// <summary>
+    /// Merges the file chunks and creates the finalized uploaded file and kicks off the processing for DuckDB
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The Data Source ID</param>
+    /// <param name="request">The request, which contains the UploadID and FileName</param>
+    /// <returns>An object of the uploaded file information</returns>
     public async Task<TimeseriesResponseDto> CompleteUpload(string projectId, string dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
@@ -89,7 +121,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
 
         Directory.Delete(folderPath); // Clean up the upload folder
         
-        // todo: kick off file processing here
+        // todo: kick off file processing here (See DL-97 Sub-Tasks)
         // start saving metadata to db
         // import into duckdb
         // describe table for metadata record properties
