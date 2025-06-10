@@ -11,5 +11,5 @@ public interface IRecordBusiness
     Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto);
     Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId, bool force);
-    Task<bool> BulkSoftDeleteRecords(string domainType, long domainId, IDbContextTransaction? transaction);
+    Task<bool> BulkSoftDeleteRecords(string domainType, IEnumerable<long> domainIds, IDbContextTransaction? transaction);
 }

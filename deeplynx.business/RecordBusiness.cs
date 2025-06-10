@@ -13,7 +13,7 @@ public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
     
-    // dependency used to trigger downstream soft deletes
+    // dependant used to trigger downstream soft deletes
     private readonly IEdgeBusiness _edgeBusiness;
 
     /// <summary>
@@ -222,13 +222,14 @@ public class RecordBusiness : IRecordBusiness
 
         if (force)
         {
+            // hard delete
             _context.Records.Remove(record);
             await _context.SaveChangesAsync();
         }
         else
         {
             // start a database transaction to ensure deletion changes are rolled back if errors occur
-            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var transaction = await _context.Database.BeginTransactionAsync();
             
             // define a list of lambda functions for bulk deletes to sequentially iterate
             // so as not to block the thread of our lone database context
@@ -244,14 +245,13 @@ public class RecordBusiness : IRecordBusiness
                 bool result = await task();
                 if (!result)
                 {
-                    var methodName = task.Method.Name;
-                    var message = $"An error occurred during deletion of record dependencies: {methodName}";
                     // rollback the transaction and then throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException(message);
+                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
                 }
             }
                 
+            // soft delete
             record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Records.Update(record);
 
@@ -300,10 +300,13 @@ public class RecordBusiness : IRecordBusiness
     /// Bulk Soft Delete records by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
     /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="domainIds">The ID of the upstream domain calling this function</param>
     /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecords(string domainType, long domainId, IDbContextTransaction? transaction)
+    public async Task<bool> BulkSoftDeleteRecords(
+        string domainType, 
+        IEnumerable<long> domainIds, 
+        IDbContextTransaction? transaction)
     {
         try
         {
@@ -311,11 +314,15 @@ public class RecordBusiness : IRecordBusiness
 
             if (domainType == "project")
             {
-                recordQuery = recordQuery.Where(r => r.ProjectId == domainId);
+                recordQuery = recordQuery.Where(r => domainIds.Contains(r.ProjectId));
+            }
+
+            if (domainType == "dataSource")
+            {
+                recordQuery = recordQuery.Where(r => domainIds.Contains(r.DataSourceId));
             }
             
             var records = await recordQuery.ToListAsync();
-
             
             // start a database transaction to ensure deletion changes are rolled back if errors occur
             var commit = false; // variable to indicate whether we can commit or if parent should commit transaction
@@ -362,7 +369,8 @@ public class RecordBusiness : IRecordBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting roles for domain {domainType} with id {domainId}: {exc}";
+            var id_list = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting roles for domain {domainType} with id(s) {id_list}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
