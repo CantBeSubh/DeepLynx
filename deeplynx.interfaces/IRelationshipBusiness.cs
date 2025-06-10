@@ -10,5 +10,5 @@ public interface IRelationshipBusiness
     Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto);
     Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto);
     Task<bool> DeleteRelationship(long projectId, long relationshipId);
-    Task<bool> BulkSoftDeleteRelationships(string domainType, long domainId);
+    Task<bool> BulkSoftDeleteRelationships(string domainType, IEnumerable<long> domainIds);
 }

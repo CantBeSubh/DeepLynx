@@ -4,6 +4,7 @@ using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
@@ -125,7 +126,7 @@ public class ClassBusiness : IClassBusiness
         updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         updatedClass.CreatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-        updatedClass.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);;
+        updatedClass.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
        _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
@@ -145,7 +146,7 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
-    public async Task<bool> DeleteClass(long projectId, long classId, bool force)
+    public async Task<bool> DeleteClass(long projectId, long classId, bool force=false)
     {
         var dbClass = await _context.Classes.FindAsync(classId);
         
@@ -160,38 +161,31 @@ public class ClassBusiness : IClassBusiness
         }
         else
         {
-            using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+            var transaction = await _context.Database.BeginTransactionAsync();
+            var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                var softDeleteTasks = new List<Func<Task<bool>>>
-                {
-                    () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classId), 
-                    () => _recordBusiness.BulkSoftDeleteRecords("class", classId), 
-                    () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classId),
-                    () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classId)
-                };
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", [classId]), 
+                () => _recordBusiness.BulkSoftDeleteRecords("class", [classId], transaction), 
+                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", [classId]),
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", [classId])
+            };
 
-                foreach (var task in softDeleteTasks)
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
                 {
-                    bool result = await task();
-                    if (!result)
-                    {
-                        var methodName = task.Method.Name;
-                        var offendingFunction = methodName.Substring(
-                            "BulkSoftDelete".Length,
-                            methodName.Length - "BulkSoftDelete".Length
-                        );
-                        string message =
-                            $"An error occurred during deletion of project dependencies: {offendingFunction}.";
-                        throw new ClassDependencyDeletionException(message);
-                    }
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException($"error while deleting downstream dependants for class {classId}");
                 }
-
-                dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                _context.Classes.Update(dbClass);
-
-                await _context.SaveChangesAsync();
-                transaction.Complete();
             }
+
+            dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.Classes.Update(dbClass);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            
         }
         return true;
     }
@@ -201,8 +195,9 @@ public class ClassBusiness : IClassBusiness
     /// </summary>
     /// <param name="domainType">The type of domain which is calling this function</param>
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteClasses(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteClasses(string domainType, long domainId, IDbContextTransaction? transaction)
     {
         try
         {
@@ -214,6 +209,32 @@ public class ClassBusiness : IClassBusiness
             }
                     
             var classes = await classQuery.ToListAsync();
+            
+            // start a database transaction to ensure deletion changes are rolled back if errors occur
+            var commit = false; // variable to indicate whether we can commit or if parent should commit transaction
+            if (transaction == null)
+            {
+                commit = true;
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
+            
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classes.Select(c => c.Id)), 
+                () => _recordBusiness.BulkSoftDeleteRecords("class", classes.Select(c => c.Id), transaction), 
+                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classes.Select(c => c.Id)),
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classes.Select(c => c.Id))
+            };
+
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    await transaction.RollbackAsync();
+                    throw new ProjectDependencyDeletionException($"error while deleting downstream class dependants");
+                }
+            }
                 
             foreach (var c in classes)
             {

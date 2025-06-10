@@ -303,7 +303,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
     /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecords(string domainType, long domainId, IDbContextTransaction? transaction)
+    public async Task<bool> BulkSoftDeleteRecords(string domainType, IEnumerable<long> domainIds, IDbContextTransaction? transaction)
     {
         try
         {
@@ -311,11 +311,11 @@ public class RecordBusiness : IRecordBusiness
 
             if (domainType == "project")
             {
-                recordQuery = recordQuery.Where(r => r.ProjectId == domainId);
+                recordQuery = recordQuery.Where(r => domainIds.Contains(r.ProjectId));
             } 
             else if (domainType == "class")
             {
-                recordQuery = recordQuery.Where(r => r.ClassId == domainId);
+                recordQuery = recordQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
             }
             
             var records = await recordQuery.ToListAsync();
@@ -366,7 +366,8 @@ public class RecordBusiness : IRecordBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting roles for domain {domainType} with id {domainId}: {exc}";
+            var idList = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }

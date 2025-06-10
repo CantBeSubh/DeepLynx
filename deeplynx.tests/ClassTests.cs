@@ -6,6 +6,7 @@ using Testcontainers.PostgreSql;
 using Xunit;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models;
 // Alias to disambiguate EF model from C# keyword
 using ClassEntity = deeplynx.datalayer.Models.Class;
@@ -17,6 +18,10 @@ public sealed class ClassTests : IAsyncLifetime
     private DeeplynxContext _context;
     private ClassBusiness _business;
     private readonly PostgreSqlContainer _postgresContainer;
+    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
+    private readonly IRecordBusiness _recordBusiness;
+    private readonly IRecordMappingBusiness _recordMappingBusiness;
+    private readonly IRelationshipBusiness _relationshipBusiness;
 
     public ClassTests()
     {

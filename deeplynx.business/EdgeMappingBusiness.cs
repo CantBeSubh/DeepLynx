@@ -2,8 +2,9 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;                  
 using deeplynx.models;                            
 using Microsoft.EntityFrameworkCore;              
-using System.Text.Json.Nodes;                     
-                                                  
+using System.Text.Json.Nodes;
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace deeplynx.business;                      
 
 public class EdgeMappingBusiness : IEdgeMappingBusiness
@@ -228,7 +229,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <param name="domainType">The type of domain which is calling this function</param>
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteEdgeMappings(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteEdgeMappings(string domainType, IEnumerable<long> domainIds)
     {
         try
         {
@@ -236,11 +237,11 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
 
             if (domainType == "project")
             {
-                edgeMappingQuery = edgeMappingQuery.Where(e => e.ProjectId == domainId);
+                edgeMappingQuery = edgeMappingQuery.Where(e => domainIds.Contains(e.ProjectId));
             }
             else if (domainType == "class")
             {
-                edgeMappingQuery = edgeMappingQuery.Where(e => e.OriginId == domainId || e.DestinationId == domainId);
+                edgeMappingQuery = edgeMappingQuery.Where(e => domainIds.Contains(e.OriginId) || domainIds.Contains(e.DestinationId));
             }
                     
             var edgeMappings = await edgeMappingQuery.ToListAsync();
@@ -256,7 +257,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting edge mappings for domain {domainType} with id {domainId}: {exc}";
+            var id_list = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edge mappings for domain {domainType} with id(s) {id_list}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
