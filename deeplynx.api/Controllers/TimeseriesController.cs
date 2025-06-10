@@ -80,6 +80,7 @@ namespace deeplynx.api.Controllers
             };
 
             // todo: something like `await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeSeriesDataDTO);`
+            await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeSeriesDataDTO);
 
             return Ok(new { Message = "Upload completed successfully." });
         }
