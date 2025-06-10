@@ -8,16 +8,33 @@ namespace deeplynx.api.Controllers
     [Route("api/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
     public class TimeseriesController : ControllerBase
     {
-        private readonly ITimeseriesBusiness _timeseriesBusiness;
+        private readonly ITimeseriesUploadBusiness _timeseriesUploadBusiness;
         private const string UploadFolderPath = "uploads";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimeseriesController"/> class
         /// </summary>
-        /// <param name="timeseriesBusiness">The business logic interface for handling time series operations.</param>
-        public TimeseriesController(ITimeseriesBusiness timeseriesBusiness)
+        /// <param name="timeseriesUploadBusiness">The business logic interface for handling time series operations.</param>
+        public TimeseriesController(ITimeseriesUploadBusiness timeseriesUploadBusiness)
         {
-            _timeseriesBusiness = timeseriesBusiness;
+            _timeseriesUploadBusiness = timeseriesUploadBusiness;
+        }
+
+        
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadFile([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile file)
+        {
+            try
+            {
+                var timeSeriesUploadInfo= await _timeseriesUploadBusiness.UploadFile(projectId, dataSourceId, file);
+                return Ok(timeSeriesUploadInfo);
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while uploading timeseries file {file.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
         [HttpPost("start-upload")]
@@ -41,7 +58,7 @@ namespace deeplynx.api.Controllers
             }
 
             var tempFilePath = Path.Combine(UploadFolderPath, uploadId, $"{chunkNumber}.part");
-            using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            await using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
                 await chunk.CopyToAsync(stream);
             }
@@ -53,7 +70,7 @@ namespace deeplynx.api.Controllers
         public async Task<IActionResult> CompleteUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             var folderPath = Path.Combine(UploadFolderPath, request.UploadId);
-            var finalFilePath = Path.Combine(UploadFolderPath, request.FileName);
+            var finalFilePath = Path.Combine(UploadFolderPath, request.UploadId, "_", request.FileName);
 
             using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
             {
@@ -70,16 +87,17 @@ namespace deeplynx.api.Controllers
 
             Directory.Delete(folderPath); // Clean up the upload folder
 
-            var timeSeriesDataDTO = new TimeseriesDataDto
+            var timeseriesData = new TimeseriesDataRequestDto
             {
                 ProjectId = projectId,
                 DataSourceId = dataSourceId,
+                FileId = request.UploadId,
                 FileName = request.FileName,
                 FilePath = finalFilePath,
                 FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             };
 
-            // todo: something like `await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeSeriesDataDTO);`
+            // todo: something like `await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeseriesData);`
 
             return Ok(new { Message = "Upload completed successfully." });
         }
