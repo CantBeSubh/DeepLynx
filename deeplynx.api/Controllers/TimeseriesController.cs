@@ -8,16 +8,16 @@ namespace deeplynx.api.Controllers
     [Route("api/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
     public class TimeseriesController : ControllerBase
     {
-        private readonly ITimeseriesUploadBusiness _timeseriesUploadBusiness;
+        private readonly ITimeseriesBusiness _timeseriesBusiness;
         private const string UploadFolderPath = "uploads";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimeseriesController"/> class
         /// </summary>
-        /// <param name="timeseriesUploadBusiness">The business logic interface for handling time series operations.</param>
-        public TimeseriesController(ITimeseriesUploadBusiness timeseriesUploadBusiness)
+        /// <param name="timeseriesBusiness">The business logic interface for handling time series operations.</param>
+        public TimeseriesController(ITimeseriesBusiness timeseriesBusiness)
         {
-            _timeseriesUploadBusiness = timeseriesUploadBusiness;
+            _timeseriesBusiness = timeseriesBusiness;
         }
 
         
@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var timeSeriesUploadInfo= await _timeseriesUploadBusiness.UploadFile(projectId, dataSourceId, file);
+                var timeSeriesUploadInfo= await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
                 return Ok(timeSeriesUploadInfo);
             }
             catch (Exception e)
@@ -40,66 +40,50 @@ namespace deeplynx.api.Controllers
         [HttpPost("start-upload")]
         public IActionResult StartUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
-            var uploadId = Guid.NewGuid().ToString();
-            var folderPath = Path.Combine(UploadFolderPath, uploadId);
-            Directory.CreateDirectory(folderPath);
-
-            // store some metadata about the upload session?
-
-            return Ok(new { UploadId = uploadId });
+            try
+            {
+                var uploadId = _timeseriesBusiness.StartUpload(projectId, dataSourceId);
+                return Ok(new { UploadId = uploadId });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while starting an upload for timeseries file {request.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
         [HttpPost("upload-chunk")]
         public async Task<IActionResult> UploadChunk([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
-            if (chunk == null || chunk.Length == 0)
+            try
             {
-                return BadRequest("No chunk uploaded.");
+                var chunkUploadStatus =
+                    await _timeseriesBusiness.UploadChunk(projectId, dataSourceId, chunk, uploadId, chunkNumber);
+                return Ok(new { ChunkUploadStatus = chunkUploadStatus });
             }
-
-            var tempFilePath = Path.Combine(UploadFolderPath, uploadId, $"{chunkNumber}.part");
-            await using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            catch (Exception e)
             {
-                await chunk.CopyToAsync(stream);
+                var message = $"An error occurred while uploading a chunk for timeseries file {uploadId}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
-            return Ok(new { Message = "Chunk uploaded successfully." });
         }
 
         [HttpPost("complete-upload")]
         public async Task<IActionResult> CompleteUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
-            var folderPath = Path.Combine(UploadFolderPath, request.UploadId);
-            var finalFilePath = Path.Combine(UploadFolderPath, request.UploadId, "_", request.FileName);
-
-            using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
+            try
             {
-                for (int i = 0; i < request.TotalChunks; i++)
-                {
-                    var partFilePath = Path.Combine(folderPath, $"{i}.part");
-                    using (var partStream = new FileStream(partFilePath, FileMode.Open))
-                    {
-                        await partStream.CopyToAsync(finalFileStream);
-                    }
-                    System.IO.File.Delete(partFilePath); // Clean up the chunk file
-                }
+                var timeseriesUploadRecord = await _timeseriesBusiness.CompleteUpload(projectId, dataSourceId, request);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
-
-            Directory.Delete(folderPath); // Clean up the upload folder
-
-            var timeseriesData = new TimeseriesDataRequestDto
+            catch (Exception e)
             {
-                ProjectId = projectId,
-                DataSourceId = dataSourceId,
-                FileId = request.UploadId,
-                FileName = request.FileName,
-                FilePath = finalFilePath,
-                FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
-            };
-
-            // todo: something like `await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeseriesData);`
-
-            return Ok(new { Message = "Upload completed successfully." });
+                var message = $"An error occurred while completing a timeseries file upload for {request.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
     }
 }
