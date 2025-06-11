@@ -227,7 +227,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             try
             {
                 var transaction = await _context.Database.BeginTransactionAsync();
-                await this.SoftDeleteRelationships(r => r.Id == relationshipId, transaction);
+                await SoftDeleteRelationships(r => r.Id == relationshipId, transaction);
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
@@ -253,7 +253,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     {
         try
         {
-            await this.SoftDeleteRelationships(predicate, transaction);
+            await SoftDeleteRelationships(predicate, transaction);
             return true;
         }
         catch (Exception exc)
@@ -285,8 +285,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             
             if (relationships.Count == 0)
             {
-                // return true even if no relationships are to be deleted;
-                // we only want to return false if there were errors
+                // return early if no records are to be deleted
                 return;
             }
             

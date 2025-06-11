@@ -219,7 +219,7 @@ namespace deeplynx.business
                 try
                 {
                     var transaction = await _context.Database.BeginTransactionAsync();
-                    await this.SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
+                    await SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
                     await transaction.CommitAsync();
                 }
                 catch (Exception exc)
@@ -245,7 +245,7 @@ namespace deeplynx.business
         {
             try
             {
-                await this.SoftDeleteDataSources(predicate, transaction);
+                await SoftDeleteDataSources(predicate, transaction);
                 return true;
             }
             catch (Exception exc)
@@ -277,8 +277,7 @@ namespace deeplynx.business
             
             if (dataSources.Count == 0)
             {
-                // return true even if no records are to be deleted;
-                // we only want to return false if there were errors
+                // return early if no records are to be deleted
                 return;
             }
             
@@ -287,7 +286,7 @@ namespace deeplynx.business
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _recordBusiness.BulkSoftDeleteRecords("dataSource", dataSourceIds, transaction),
+                () => _recordBusiness.BulkSoftDeleteRecords(r => dataSourceIds.Contains(r.DataSourceId), transaction),
                 () => _edgeBusiness.BulkSoftDeleteEdges("dataSource", dataSourceIds)
             };
 
