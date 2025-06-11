@@ -5,11 +5,15 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/datasources/{dataSourceId}/records")]
+    [Route("api/projects/{projectId}/records")]
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordBusiness;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecordController"/> class
+        /// </summary>
+        /// <param name="recordBusiness">The business logic interface for handling record operations.</param>
         public RecordController(IRecordBusiness recordBusiness)
         {
             _recordBusiness = recordBusiness;
@@ -19,14 +23,13 @@ namespace deeplynx.api.Controllers
         /// Get all Records
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAllRecords")]
-        public async Task<IActionResult> GetAllRecords(long projectId, long dataSourceId)
+        public async Task<IActionResult> GetAllRecords(long projectId)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId);
+                var records = await _recordBusiness.GetAllRecords(projectId);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -41,15 +44,14 @@ namespace deeplynx.api.Controllers
         /// Get one Record from DB
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
         /// <returns></returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<IActionResult> GetRecord(long projectId, long dataSourceId, long recordId)
+        public async Task<IActionResult> GetRecord(long projectId, long recordId)
         {
             try
             {
-                var record = await _recordBusiness.GetRecord(projectId, dataSourceId, recordId);
+                var record = await _recordBusiness.GetRecord(projectId, recordId);
                 return Ok(record);
             }
             catch (Exception exc)
@@ -68,7 +70,9 @@ namespace deeplynx.api.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("CreateRecord")]
-        public async Task<IActionResult> CreateRecord(long projectId, long dataSourceId,
+        public async Task<IActionResult> CreateRecord(
+            long projectId, 
+            [FromQuery] long dataSourceId,
             [FromBody] RecordRequestDto dto)
         {
             try
@@ -88,17 +92,18 @@ namespace deeplynx.api.Controllers
         /// Update Record
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPut("UpdateRecord/{recordId}")]
-        public async Task<IActionResult> UpdateRecord(long projectId, long dataSourceId, long recordId,
+        public async Task<IActionResult> UpdateRecord(
+            long projectId,
+            long recordId,
             [FromBody] RecordRequestDto dto)
         {
             try
             {
-                var updated = await _recordBusiness.UpdateRecord(projectId, dataSourceId, recordId, dto);
+                var updated = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
                 return Ok(updated);
             }
             catch (Exception exc)

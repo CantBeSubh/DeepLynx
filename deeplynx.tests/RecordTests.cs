@@ -179,7 +179,7 @@ public sealed class RecordTests : IAsyncLifetime
         await _business.CreateRecord(p1, d1, new RecordRequestDto { Properties = new JsonObject() });
         await _business.CreateRecord(p2, d2, new RecordRequestDto { Properties = new JsonObject() });
 
-        var records = await _business.GetAllRecords(p1, d1);
+        var records = await _business.GetAllRecords(p1);
         Assert.Single(records);
     }
 
@@ -200,7 +200,7 @@ public sealed class RecordTests : IAsyncLifetime
         _context.Records.Add(deleted);
         await _context.SaveChangesAsync();
 
-        var records = await _business.GetAllRecords(pid, dsid);
+        var records = await _business.GetAllRecords(pid);
         Assert.Single(records);
         Assert.DoesNotContain(records, r => r.Id == deleted.Id);
     }
@@ -211,7 +211,7 @@ public sealed class RecordTests : IAsyncLifetime
         var (pid, dsid) = await SeedProjectAndDataSource();
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject() });
 
-        var fetched = await _business.GetRecord(pid, dsid, cr.Id);
+        var fetched = await _business.GetRecord(pid, cr.Id);
         Assert.Equal(cr.Id, fetched.Id);
     }
 
@@ -220,7 +220,7 @@ public sealed class RecordTests : IAsyncLifetime
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
         await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _business.GetRecord(pid, dsid, 9999));
+            () => _business.GetRecord(pid, 9999));
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class RecordTests : IAsyncLifetime
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject() });
         await _business.DeleteRecord(pid, dsid);
         await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _business.GetRecord(pid, dsid, cr.Id));
+            () => _business.GetRecord(pid, cr.Id));
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public sealed class RecordTests : IAsyncLifetime
         var (pid, dsid) = await SeedProjectAndDataSource();
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject(), Name = "Old" });
 
-        var updated = await _business.UpdateRecord(pid, dsid, cr.Id, new RecordRequestDto { Properties = new JsonObject { ["x"] = "y" }, Name = "New" });
+        var updated = await _business.UpdateRecord(pid, cr.Id, new RecordRequestDto { Properties = new JsonObject { ["x"] = "y" }, Name = "New" });
         Assert.Equal("New", updated.Name);
         Assert.NotNull(updated.ModifiedAt);
     }
@@ -249,7 +249,7 @@ public sealed class RecordTests : IAsyncLifetime
     {
         var (pid, dsid) = await SeedProjectAndDataSource();
         await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _business.UpdateRecord(pid, dsid, 9999, new RecordRequestDto { Properties = new JsonObject() }));
+            () => _business.UpdateRecord(pid, 9999, new RecordRequestDto { Properties = new JsonObject() }));
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public sealed class RecordTests : IAsyncLifetime
         var cr = await _business.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject() });
         await _business.DeleteRecord(pid, dsid);
         await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _business.UpdateRecord(pid, dsid, cr.Id, new RecordRequestDto { Properties = new JsonObject() }));
+            () => _business.UpdateRecord(pid, cr.Id, new RecordRequestDto { Properties = new JsonObject() }));
     }
     [Fact]
     public async Task DeleteRecord_SoftDelete_SetsDeletedAt()
