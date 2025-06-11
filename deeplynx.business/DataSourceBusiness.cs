@@ -236,8 +236,8 @@ namespace deeplynx.business
         /// <summary>
         /// Bulk Soft Delete data sources by a specific upstream domain. Used to avoid repeating functions.
         /// </summary>
-        /// <param name="domainType">The type of domain which is calling this function</param>
-        /// <param name="domainId">The ID of the upstream domain calling this function</param>
+        /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+        /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
         /// <returns>Boolean true on successful deletion</returns>
         public async Task<bool> BulkSoftDeleteDataSources(
             Expression<Func<DataSource, bool>> predicate, 
@@ -256,7 +256,7 @@ namespace deeplynx.business
             }
         }
 
-        private async Task<bool> SoftDeleteDataSources(
+        private async Task SoftDeleteDataSources(
             Expression<Func<DataSource, bool>> predicate, 
             IDbContextTransaction? transaction)
         {
@@ -274,14 +274,15 @@ namespace deeplynx.business
                 .Where(predicate);
             
             var dataSources = await dsContext.ToListAsync();
-            var dataSourceIds = dataSources.Select(d => d.Id);
             
             if (dataSources.Count == 0)
             {
                 // return true even if no records are to be deleted;
                 // we only want to return false if there were errors
-                return true;
+                return;
             }
+            
+            var dataSourceIds = dataSources.Select(d => d.Id);
             
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
@@ -319,8 +320,6 @@ namespace deeplynx.business
             {
                 await transaction.CommitAsync();
             }
-            
-            return true;
         }
     }
 }

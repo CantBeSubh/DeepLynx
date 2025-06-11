@@ -1,4 +1,4 @@
-using System.Transactions;
+using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
@@ -146,7 +146,7 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
-    public async Task<bool> DeleteClass(long projectId, long classId, bool force=false)
+    public async Task<bool> DeleteClass(long projectId, long classId, bool force = false)
     {
         var dbClass = await _context.Classes.FindAsync(classId);
         
@@ -158,98 +158,119 @@ public class ClassBusiness : IClassBusiness
         if (force)
         {
             _context.Classes.Remove(dbClass);
+            await _context.SaveChangesAsync();
         }
         else
         {
-            var transaction = await _context.Database.BeginTransactionAsync();
-            var softDeleteTasks = new List<Func<Task<bool>>>
+            try
             {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", [classId]), 
-                () => _recordBusiness.BulkSoftDeleteRecords("class", [classId], transaction), 
-                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", [classId]),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", [classId])
-            };
-
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException($"error while deleting downstream dependants for class {classId}");
-                }
+                var transaction = await _context.Database.BeginTransactionAsync();
+                await this.SoftDeleteClasses(c => c.Id == classId, transaction);
+                await transaction.CommitAsync();
             }
-
-            dbClass.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Classes.Update(dbClass);
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-            
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting data source: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return false;
+            }
         }
         return true;
     }
-
+    
     /// <summary>
     /// Bulk Soft Delete classes by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
     /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteClasses(string domainType, long domainId, IDbContextTransaction? transaction)
+    public async Task<bool> BulkSoftDeleteClasses(
+        Expression<Func<Class, bool>> predicate, 
+        IDbContextTransaction? transaction)
     {
         try
         {
-            var classQuery = _context.Classes.Where(c => c.DeletedAt == null);
-
-            if (domainType == "project")
-            {
-                classQuery = classQuery.Where(c => c.ProjectId == domainId);
-            }
-                    
-            var classes = await classQuery.ToListAsync();
-            
-            // start a database transaction to ensure deletion changes are rolled back if errors occur
-            var commit = false; // variable to indicate whether we can commit or if parent should commit transaction
+            await this.SoftDeleteClasses(predicate, transaction);
+            return true;
+        }
+        catch (Exception exc)
+        {
+            var message = $"An error occurred while deleting classes: {exc}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return false;
+        }
+    }
+    
+    /// <summary>
+    /// Bulk Soft Delete classes by a specific upstream domain. Used to avoid repeating functions.
+    /// </summary>
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    private async Task SoftDeleteClasses(
+            Expression<Func<Class, bool>> predicate, 
+            IDbContextTransaction? transaction)
+        {
+            // check for existing transaction; if one does not exist, start a new one
+            var commit = false; // flag used to determine if transaction should be committed
             if (transaction == null)
             {
                 commit = true;
                 transaction = await _context.Database.BeginTransactionAsync();
             }
             
+            // search for records matching the passed-in predicate (filter) to be updated
+            var classContext = _context.Classes
+                .Where(c => c.DeletedAt == null)
+                .Where(predicate);
+            
+            var classes = await classContext.ToListAsync();
+            if (classes.Count == 0)
+            {
+                // return true even if no classes are to be deleted;
+                // we only want to return false if there were errors
+                return;
+            }
+            
+            var classIds = classes.Select(d => d.Id);
+            
+            // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classes.Select(c => c.Id)), 
-                () => _recordBusiness.BulkSoftDeleteRecords("class", classes.Select(c => c.Id), transaction), 
-                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classes.Select(c => c.Id)),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classes.Select(c => c.Id))
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classIds), 
+                () => _recordBusiness.BulkSoftDeleteRecords("class", classIds, transaction), 
+                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classIds),
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classIds)
             };
-
+            
+            // loop through tasks and trigger downstream deletions
             foreach (var task in softDeleteTasks)
             {
                 bool result = await task();
                 if (!result)
                 {
+                    // rollback the transaction and throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException($"error while deleting downstream class dependants");
+                    throw new ProjectDependencyDeletionException(
+                        "An error occurred during the deletion of downstream class dependants.");
                 }
             }
-                
-            foreach (var c in classes)
+
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await classContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found classes to update, but weren't successful in updating, throw an error
+            if (updated == 0)
             {
-                c.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                throw new ProjectDependencyDeletionException("An error occurred when deleting classes");
             }
-                
+            
+            // save changes and commit transaction to close it
             await _context.SaveChangesAsync();
-            return true;
-                
+            if (commit)
+            {
+                await transaction.CommitAsync();
+            }
         }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting classes for domain {domainType} with id {domainId}: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
-    }
 }

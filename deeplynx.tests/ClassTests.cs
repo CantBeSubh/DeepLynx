@@ -18,10 +18,12 @@ public sealed class ClassTests : IAsyncLifetime
     private DeeplynxContext _context;
     private ClassBusiness _business;
     private readonly PostgreSqlContainer _postgresContainer;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
-    private readonly IRecordBusiness _recordBusiness;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
-    private readonly IRelationshipBusiness _relationshipBusiness;
+    public EdgeMappingBusiness _edgeMappingBusiness;
+    public RelationshipBusiness _relationshipBusiness;
+    public RecordMappingBusiness _recordMappingBusiness;
+    public EdgeBusiness _edgeBusiness;
+    public RecordBusiness _recordBusiness;
+
 
     public ClassTests()
     {
@@ -32,6 +34,11 @@ public sealed class ClassTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        _edgeMappingBusiness = new EdgeMappingBusiness(_context);
+        _relationshipBusiness = new RelationshipBusiness(_context);
+        _recordMappingBusiness = new RecordMappingBusiness(_context);
+        _edgeBusiness = new EdgeBusiness(_context);
+        _recordBusiness = new RecordBusiness(_context, _edgeBusiness);
         await _postgresContainer.StartAsync();
 
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
@@ -41,7 +48,7 @@ public sealed class ClassTests : IAsyncLifetime
         _context = new DeeplynxContext(options);
         await _context.Database.MigrateAsync();
 
-        _business = new ClassBusiness(_context);
+        _business = new ClassBusiness(_context, _edgeMappingBusiness, _recordBusiness,  _recordMappingBusiness, _relationshipBusiness);
     }
 
     public async Task DisposeAsync()
