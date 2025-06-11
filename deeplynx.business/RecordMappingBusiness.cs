@@ -217,7 +217,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <param name="domainType">The type of domain which is calling this function</param>
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecordMappings(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteRecordMappings(string domainType, IEnumerable<long> domainIds)
     {
         try
         {
@@ -225,7 +225,11 @@ public class RecordMappingBusiness : IRecordMappingBusiness
 
             if (domainType == "project")
             {
-                recordMappingQuery = recordMappingQuery.Where(r => r.ProjectId == domainId);
+                recordMappingQuery = recordMappingQuery.Where(r => domainIds.Contains(r.ProjectId));
+            }
+            else if (domainType == "class")
+            {
+                recordMappingQuery = recordMappingQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
             }
                     
             var recordMappings = await recordMappingQuery.ToListAsync();
@@ -241,7 +245,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting record mappings for domain {domainType} with id {domainId}: {exc}";
+            var idList = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }

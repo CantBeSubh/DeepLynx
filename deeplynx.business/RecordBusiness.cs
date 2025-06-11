@@ -329,6 +329,10 @@ public class RecordBusiness : IRecordBusiness
             {
                 recordQuery = recordQuery.Where(r => domainIds.Contains(r.DataSourceId));
             }
+            else if (domainType == "class")
+            {
+                recordQuery = recordQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
+            }
             
             var records = await recordQuery.ToListAsync();
             

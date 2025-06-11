@@ -218,9 +218,9 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// Bulk Soft Delete relationships by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
     /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="domainIds">The IDs of the upstream domains calling this function</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRelationships(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteRelationships(string domainType, IEnumerable<long> domainIds)
     {
         try
         {
@@ -228,7 +228,11 @@ public class RelationshipBusiness: IRelationshipBusiness
 
             if (domainType == "project")
             {
-                relationshipQuery = relationshipQuery.Where(r => r.ProjectId == domainId);
+                relationshipQuery = relationshipQuery.Where(r => domainIds.Contains(r.ProjectId));
+            }
+            else if (domainType == "class")
+            {
+                relationshipQuery = relationshipQuery.Where(r => domainIds.Contains(r.OriginId) || domainIds.Contains(r.DestinationId));
             }
                     
             var relationships = await relationshipQuery.ToListAsync();
@@ -244,7 +248,8 @@ public class RelationshipBusiness: IRelationshipBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting relationships for domain {domainType} with id {domainId}: {exc}";
+            var idList = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
