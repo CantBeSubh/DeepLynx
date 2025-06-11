@@ -216,7 +216,7 @@ public class ProjectBusiness : IProjectBusiness
             {
                 () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", [projectId]),
-                () => _relationshipBusiness.BulkSoftDeleteRelationships("project", [projectId]),
+                () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
                 () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", [projectId]),
                 () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
@@ -231,7 +231,7 @@ public class ProjectBusiness : IProjectBusiness
                 if (!result)
                 {
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
+                    throw new DependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
                 }
             }
 

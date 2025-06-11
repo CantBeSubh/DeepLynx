@@ -243,6 +243,10 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             {
                 edgeMappingQuery = edgeMappingQuery.Where(e => domainIds.Contains(e.OriginId) || domainIds.Contains(e.DestinationId));
             }
+            else if (domainType == "relationship")
+            {
+                edgeMappingQuery = edgeMappingQuery.Where(e => domainIds.Contains(e.RelationshipId));
+            }
                     
             var edgeMappings = await edgeMappingQuery.ToListAsync();
                 

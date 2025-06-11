@@ -1,16 +1,23 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
 public class RelationshipBusiness: IRelationshipBusiness
 {
       private readonly DeeplynxContext _context;
+      private readonly IEdgeMappingBusiness _edgeMappingBusiness;
+      private readonly IEdgeBusiness _edgeBusiness;
 
-    public RelationshipBusiness(DeeplynxContext context)
+    public RelationshipBusiness(DeeplynxContext context, IEdgeMappingBusiness edgeMappingBusiness, IEdgeBusiness edgeBusiness)
     {
+        _edgeMappingBusiness = edgeMappingBusiness;
+        _edgeBusiness = edgeBusiness;
         _context = context;
     }
     private async Task<long> ResolveClassIdentifier(string input)
@@ -28,7 +35,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         return classByUuid ?? throw new KeyNotFoundException($"Class with UUID ‘{input}’ not found.");
     }
-    
+
     public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
     {
         var rawData = await _context.Relationships
@@ -168,7 +175,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        
+
         relationship.Name = dto.Name;
         relationship.Description = dto.Description;
         relationship.Uuid = dto.Uuid;
@@ -200,58 +207,126 @@ public class RelationshipBusiness: IRelationshipBusiness
         };
     }
 
-    public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
+    public async Task<bool> DeleteRelationship(long projectId, long relationshipId, bool force = false)
     {
         var relationship = await _context.Relationships.FindAsync(relationshipId);
+        
         if (relationship == null || relationship.ProjectId != projectId || relationship.DeletedAt is not null)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        relationship.DeletedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        relationship.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
-        await _context.SaveChangesAsync();
+        
+        if (force)
+        {
+            // hard delete
+            _context.Relationships.Remove(relationship);
+            await _context.SaveChangesAsync();
+        }
+        else
+        {
+            try
+            {
+                var transaction = await _context.Database.BeginTransactionAsync();
+                await this.SoftDeleteRelationships(r => r.Id == relationshipId, transaction);
+                await transaction.CommitAsync();
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting data source: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return false;
+            }
+        }
+        
         return true;
     }
-    
+
     /// <summary>
     /// Bulk Soft Delete relationships by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainIds">The IDs of the upstream domains calling this function</param>
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRelationships(string domainType, IEnumerable<long> domainIds)
+    public async Task<bool> BulkSoftDeleteRelationships(
+        Expression<Func<Relationship, bool>> predicate,
+        IDbContextTransaction? transaction)
     {
         try
         {
-            var relationshipQuery = _context.Relationships.Where(r => r.DeletedAt == null);
-
-            if (domainType == "project")
-            {
-                relationshipQuery = relationshipQuery.Where(r => domainIds.Contains(r.ProjectId));
-            }
-            else if (domainType == "class")
-            {
-                relationshipQuery = relationshipQuery.Where(r => domainIds.Contains(r.OriginId) || domainIds.Contains(r.DestinationId));
-            }
-                    
-            var relationships = await relationshipQuery.ToListAsync();
-                
-            foreach (var r in relationships)
-            {
-                r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
-                
-            await _context.SaveChangesAsync();
+            await this.SoftDeleteRelationships(predicate, transaction);
             return true;
-                
         }
         catch (Exception exc)
         {
-            var idList = string.Join(",", domainIds);
-            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
+            var message = $"An error occurred while deleting relationships: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
     }
+    
+    private async Task SoftDeleteRelationships(
+            Expression<Func<Relationship, bool>> predicate,
+            IDbContextTransaction? transaction)
+        {
+            // check for existing transaction; if one does not exist, start a new one
+            var commit = false; // flag used to determine if transaction should be committed
+            if (transaction == null)
+            {
+                commit = true;
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
+
+            // search for relationships matching the passed-in predicate (filter) to be updated
+            var rContext = _context.Relationships
+                .Where(d => d.DeletedAt == null)
+                .Where(predicate);
+
+            var relationships = await rContext.ToListAsync();
+            
+            if (relationships.Count == 0)
+            {
+                // return true even if no relationships are to be deleted;
+                // we only want to return false if there were errors
+                return;
+            }
+            
+            var relationshipIds = relationships.Select(d => d.Id);
+            
+            // trigger downstream deletions
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("relationship", relationshipIds),
+                () => _edgeBusiness.BulkSoftDeleteEdges("relationship", relationshipIds)
+            };
+
+            // loop through tasks and trigger downstream deletions
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    // rollback the transaction and throw an error
+                    await transaction.RollbackAsync();
+                    throw new DependencyDeletionException(
+                        "An error occurred during the deletion of downstream datasource dependants.");
+                }
+            }
+
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await rContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found relationships to update, but weren't successful in updating, throw an error
+            if (updated == 0)
+            {
+                throw new DependencyDeletionException("An error occurred when deleting data sources");
+            }
+
+            // save changes and commit transaction to close it
+            await _context.SaveChangesAsync();
+            if (commit)
+            {
+                await transaction.CommitAsync();
+            }
+        }
 }
