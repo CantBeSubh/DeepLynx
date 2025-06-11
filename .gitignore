@@ -3,6 +3,7 @@
 *.log
 *.zip
 dist
+uploads
 
 
 ## Mac OS ##

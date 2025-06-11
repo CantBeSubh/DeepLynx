@@ -31,4 +31,8 @@
       <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="uploads\" />
+    </ItemGroup>
+
 </Project>

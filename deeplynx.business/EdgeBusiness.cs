@@ -316,8 +316,8 @@ public class EdgeBusiness : IEdgeBusiness
         }
         catch (Exception exc)
         {
-            var id_list = string.Join(",", domainIds);
-            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {id_list}: {exc}";
+            var idList = string.Join(",", domainIds);
+            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }

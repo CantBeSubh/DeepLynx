@@ -31,12 +31,19 @@ public class RecordBusiness : IRecordBusiness
     /// Retrieves all records for a specific project and datasource.
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
-    /// <param name="dataSourceId">The ID of the datasource by which to filter edges</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long dataSourceId)
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
-        return await _context.Records
-            .Where(r => r.ProjectId == projectId && r.DataSourceId == dataSourceId && r.DeletedAt == null)
+        var recordQuery = _context.Records
+            .Where(r => r.ProjectId == projectId && r.DeletedAt == null);
+
+        if (dataSourceId.HasValue)
+        {
+            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
+        }
+        
+        return await recordQuery
             .Select(r=>new RecordResponseDto()
             {
                 Id = r.Id,
@@ -64,11 +71,12 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The ID of the record to retrieve</param>
     /// <returns>The record in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long dataSourceId, long recordId)
+    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
     {
         var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DataSourceId == dataSourceId &&
-                        r.DeletedAt == null).FirstOrDefaultAsync();
+            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DeletedAt == null)
+            .FirstOrDefaultAsync();
+        
         if (record == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
@@ -162,7 +170,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
     {
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
@@ -320,6 +328,10 @@ public class RecordBusiness : IRecordBusiness
             if (domainType == "dataSource")
             {
                 recordQuery = recordQuery.Where(r => domainIds.Contains(r.DataSourceId));
+            }
+            else if (domainType == "class")
+            {
+                recordQuery = recordQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
             }
             
             var records = await recordQuery.ToListAsync();

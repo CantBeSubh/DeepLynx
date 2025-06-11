@@ -100,13 +100,14 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="classId"></param>
+        /// <param name="force">Indicates whether to force delete the data source if true.</param>
         /// <returns></returns>
         [HttpDelete("DeleteClass/{classId}")]
-        public async Task<IActionResult> DeleteClass(long projectId, long classId)
+        public async Task<IActionResult> DeleteClass(long projectId, long classId, [FromQuery] bool force = false)
         {
             try
             {
-                var result = await _classBusiness.DeleteClass(projectId, classId);
+                var result = await _classBusiness.DeleteClass(projectId, classId, force);
 
                 return result
                     ? Ok(new { message = "Class successfully deleted." })
