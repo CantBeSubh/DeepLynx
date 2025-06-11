@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers
         {
             _business = business;
         }
-        
+
     /// <summary>
     /// Get all Relationships from the database
     /// </summary>
@@ -59,7 +59,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create one Relationship
         /// </summary>
@@ -89,7 +89,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update Relationship
         /// </summary>
@@ -117,7 +117,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Delete Relationship
         /// </summary>

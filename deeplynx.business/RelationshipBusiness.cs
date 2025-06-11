@@ -28,7 +28,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         return classByUuid ?? throw new KeyNotFoundException($"Class with UUID ‘{input}’ not found.");
     }
-    
+
     public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
     {
         var rawData = await _context.Relationships
@@ -168,7 +168,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        
+
         relationship.Name = dto.Name;
         relationship.Description = dto.Description;
         relationship.Uuid = dto.Uuid;
@@ -213,7 +213,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
     /// Bulk Soft Delete relationships by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
@@ -230,17 +230,17 @@ public class RelationshipBusiness: IRelationshipBusiness
             {
                 relationshipQuery = relationshipQuery.Where(r => r.ProjectId == domainId);
             }
-                    
+
             var relationships = await relationshipQuery.ToListAsync();
-                
+
             foreach (var r in relationships)
             {
                 r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             }
-                
+
             await _context.SaveChangesAsync();
             return true;
-                
+
         }
         catch (Exception exc)
         {
