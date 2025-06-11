@@ -191,7 +191,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="force">Boolean flag to force delete a project if true.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
-    /// <exception cref="ProjectDependencyDeletionException">Thrown if error during dependency deletions.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if error during dependency deletions.</exception>
     /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact deleted_at time.
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
@@ -215,11 +215,11 @@ public class ProjectBusiness : IProjectBusiness
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
                 () => _tagBusiness.BulkSoftDeleteTags("project", projectId),
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", [projectId]),
-                () => _relationshipBusiness.BulkSoftDeleteRelationships("project", [projectId]),
+                // () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", [projectId]),
+                () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
                 () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", [projectId]),
-                () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
+                // () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
                 () => _recordBusiness.BulkSoftDeleteRecords("project", [projectId], transaction),
                 () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
@@ -231,7 +231,7 @@ public class ProjectBusiness : IProjectBusiness
                 if (!result)
                 {
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
+                    throw new DependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
                 }
             }
 

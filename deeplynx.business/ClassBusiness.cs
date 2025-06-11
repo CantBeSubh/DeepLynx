@@ -239,7 +239,7 @@ public class ClassBusiness : IClassBusiness
             {
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classIds), 
                 () => _recordBusiness.BulkSoftDeleteRecords("class", classIds, transaction), 
-                () => _relationshipBusiness.BulkSoftDeleteRelationships("class", classIds),
+                () => _relationshipBusiness.BulkSoftDeleteRelationships(r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classIds)
             };
             
@@ -251,7 +251,7 @@ public class ClassBusiness : IClassBusiness
                 {
                     // rollback the transaction and throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException(
+                    throw new DependencyDeletionException(
                         "An error occurred during the deletion of downstream class dependants.");
                 }
             }
@@ -263,7 +263,7 @@ public class ClassBusiness : IClassBusiness
             // if we found classes to update, but weren't successful in updating, throw an error
             if (updated == 0)
             {
-                throw new ProjectDependencyDeletionException("An error occurred when deleting classes");
+                throw new DependencyDeletionException("An error occurred when deleting classes");
             }
             
             // save changes and commit transaction to close it

@@ -35,9 +35,9 @@ public sealed class ClassTests : IAsyncLifetime
     public async Task InitializeAsync()
     {
         _edgeMappingBusiness = new EdgeMappingBusiness(_context);
-        _relationshipBusiness = new RelationshipBusiness(_context);
         _recordMappingBusiness = new RecordMappingBusiness(_context);
         _edgeBusiness = new EdgeBusiness(_context);
+        _relationshipBusiness = new RelationshipBusiness(_context, _edgeMappingBusiness, _edgeBusiness);
         _recordBusiness = new RecordBusiness(_context, _edgeBusiness);
         await _postgresContainer.StartAsync();
 

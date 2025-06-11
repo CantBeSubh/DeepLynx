@@ -218,7 +218,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="force">If force is true, permanently delete the record. Otherwise, soft delete</param>
     /// <returns>Boolean indicating record was deleted</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
-    /// <exception cref="ProjectDependencyDeletionException">Returned if downstream deletions failed.</exception>
+    /// <exception cref="DependencyDeletionException">Returned if downstream deletions failed.</exception>
     public async Task<bool> DeleteRecord(long projectId, long recordId, bool force=false)
     {
         var record = await _context.Records.FindAsync(recordId);
@@ -255,7 +255,7 @@ public class RecordBusiness : IRecordBusiness
                 {
                     // rollback the transaction and then throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
+                    throw new DependencyDeletionException("An error occurred during deletion of downstream record dependants.");
                 }
             }
                 
@@ -360,7 +360,7 @@ public class RecordBusiness : IRecordBusiness
                 {
                     // rollback the transaction and then throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
+                    throw new DependencyDeletionException("An error occurred during deletion of downstream record dependants.");
                 }
             }
                 

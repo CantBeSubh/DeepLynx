@@ -292,15 +292,17 @@ public class EdgeBusiness : IEdgeBusiness
             {
                 edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.ProjectId));
             }
-
-            if (domainType == "record")
+            else if (domainType == "record")
             {
                 edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.OriginId) || domainIds.Contains(e.DestinationId));
             }
-            
-            if (domainType == "dataSource")
+            else if (domainType == "dataSource")
             {
                 edgeQuery = edgeQuery.Where(e => domainIds.Contains(e.DataSourceId));
+            }
+            else if (domainType == "relationship")
+            {
+                edgeQuery = edgeQuery.Where(e => e.RelationshipId.HasValue && domainIds.Contains(e.RelationshipId.Value));
             }
                     
             var edges = await edgeQuery.ToListAsync();

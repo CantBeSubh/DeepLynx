@@ -299,7 +299,7 @@ namespace deeplynx.business
                 {
                     // rollback the transaction and throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException(
+                    throw new DependencyDeletionException(
                         "An error occurred during the deletion of downstream datasource dependants.");
                 }
             }
@@ -311,7 +311,7 @@ namespace deeplynx.business
             // if we found records to update, but weren't successful in updating, throw an error
             if (updated == 0)
             {
-                throw new ProjectDependencyDeletionException("An error occurred when deleting data sources");
+                throw new DependencyDeletionException("An error occurred when deleting data sources");
             }
 
             // save changes and commit transaction to close it

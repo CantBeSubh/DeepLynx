@@ -125,11 +125,11 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId"></param>
         /// <returns></returns>
         [HttpDelete("DeleteRelationship/{relationshipId}")]
-        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
+        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId, [FromQuery] bool force = false)
         {
             try
             {
-                var success = await _business.DeleteRelationship(projectId, relationshipId);
+                var success = await _business.DeleteRelationship(projectId, relationshipId, force);
                 return Ok(new { message = $"Relationship successfully deleted.{relationshipId}" });
             }
             catch (KeyNotFoundException ex)
