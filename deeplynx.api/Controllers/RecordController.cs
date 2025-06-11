@@ -20,16 +20,17 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get all Records
+        /// Get All Records
         /// </summary>
         /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAllRecords")]
-        public async Task<IActionResult> GetAllRecords(long projectId)
+        public async Task<IActionResult> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId);
+                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId);
                 return Ok(records);
             }
             catch (Exception exc)
