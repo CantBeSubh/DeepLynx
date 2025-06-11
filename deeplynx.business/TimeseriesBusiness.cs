@@ -21,16 +21,8 @@ public class TimeseriesBusiness : ITimeseriesBusiness
         return new DuckDBConnection("Data Source=file.db");
     }
 
-    public async Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesDataDto timeSeriesDataDTO)
+    public List<List<dynamic>> OrganizeQueryData(DuckDBDataReader reader)
     {
-        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
-        await duckDBConnection.OpenAsync();
-        using DuckDBCommand command = duckDBConnection.CreateCommand();
-
-        command.CommandText = "SELECT * FROM $table_name";
-        command.Parameters.Add(new DuckDBParameter("table_name", timeSeriesDataDTO.FileName));
-        using DuckDBDataReader reader = command.ExecuteReader();
-
         List<dynamic> columns = [];
         for (var index = 0; index < reader.FieldCount; index++)
         {
@@ -64,6 +56,31 @@ public class TimeseriesBusiness : ITimeseriesBusiness
         }
 
         return tableData;
+    }
+
+    public async Task<List<List<dynamic>>> QueryTimeseries(string query)
+    {
+        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
+        using DuckDBCommand command = duckDBConnection.CreateCommand();
+
+        command.CommandText = query;
+        using DuckDBDataReader reader = command.ExecuteReader();
+
+        return OrganizeQueryData(reader);
+    }
+
+    public async Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesDataDto timeSeriesDataDTO)
+    {
+        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
+        using DuckDBCommand command = duckDBConnection.CreateCommand();
+
+        command.CommandText = "SELECT * FROM $table_name";
+        command.Parameters.Add(new DuckDBParameter("table_name", timeSeriesDataDTO.FileName));
+        using DuckDBDataReader reader = command.ExecuteReader();
+
+        return OrganizeQueryData(reader);
     }
 
     public async Task ProcessTimeSeriesDataAsync(TimeseriesDataDto timeSeriesDataDTO)
