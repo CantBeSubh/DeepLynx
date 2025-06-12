@@ -231,6 +231,10 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             {
                 recordMappingQuery = recordMappingQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
             }
+            else if (domainType == "tag")
+            {
+                recordMappingQuery = recordMappingQuery.Where(r => r.TagId.HasValue && domainIds.Contains(r.TagId.Value));
+            }
                     
             var recordMappings = await recordMappingQuery.ToListAsync();
                 
