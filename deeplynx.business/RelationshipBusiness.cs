@@ -294,7 +294,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("relationship", relationshipIds),
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(e => relationshipIds.Contains(e.RelationshipId)),
                 () => _edgeBusiness.BulkSoftDeleteEdges(e => e.RelationshipId.HasValue && relationshipIds.Contains(e.RelationshipId.Value))
             };
 
@@ -318,7 +318,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             // if we found relationships to update, but weren't successful in updating, throw an error
             if (updated == 0)
             {
-                throw new DependencyDeletionException("An error occurred when deleting data sources");
+                throw new DependencyDeletionException("An error occurred when deleting data sources.");
             }
 
             // save changes and commit transaction to close it
