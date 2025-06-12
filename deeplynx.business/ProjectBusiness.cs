@@ -214,7 +214,7 @@ public class ProjectBusiness : IProjectBusiness
             // NOTE: transactions may be passed in to maintain downstream ACID compliance.
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _tagBusiness.BulkSoftDeleteTags(r => r.ProjectId == projectId, transaction),
+                () => _tagBusiness.BulkSoftDeleteTags(t => t.ProjectId == projectId, transaction),
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", [projectId]),
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
                 () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),

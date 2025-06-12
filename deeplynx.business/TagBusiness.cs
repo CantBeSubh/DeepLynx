@@ -176,7 +176,7 @@ public class TagBusiness : ITagBusiness
             try
             {
                 var transaction = await _context.Database.BeginTransactionAsync();
-                await SoftDeleteTags(d => d.Id == tagId, transaction);
+                await SoftDeleteTags(t => t.Id == tagId, transaction);
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
