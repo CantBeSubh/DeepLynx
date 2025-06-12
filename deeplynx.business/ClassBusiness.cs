@@ -236,7 +236,7 @@ public class ClassBusiness : IClassBusiness
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classIds), 
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(e => classIds.Contains(e.OriginId) || classIds.Contains(e.DestinationId)), 
                 // unfortunately we need to assert that class id is not null here which looks really ugly
                 () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId), transaction), 
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(

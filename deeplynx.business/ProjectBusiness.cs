@@ -215,7 +215,7 @@ public class ProjectBusiness : IProjectBusiness
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
                 () => _tagBusiness.BulkSoftDeleteTags(t => t.ProjectId == projectId, transaction),
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("project", [projectId]),
+                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(em => em.ProjectId == projectId),
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
                 () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", [projectId]),
