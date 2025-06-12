@@ -36,10 +36,10 @@ public sealed class ProjectTests : IAsyncLifetime
         await _context.Database.MigrateAsync(); 
         
         // We have to initialize the business classes for tests
-        _tagBusiness = new TagBusiness(_context);
         _edgeMappingBusiness = new EdgeMappingBusiness(_context);
         _classBusiness = new ClassBusiness(_context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _recordMappingBusiness = new RecordMappingBusiness(_context);
+        _tagBusiness = new TagBusiness(_context, _recordMappingBusiness);
         _edgeBusiness = new EdgeBusiness(_context);
         _relationshipBusiness = new RelationshipBusiness(_context, _edgeMappingBusiness, _edgeBusiness);
         _dataSourceBusiness = new DataSourceBusiness(_context, _edgeBusiness, _recordBusiness);
