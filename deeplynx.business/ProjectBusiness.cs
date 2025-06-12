@@ -191,7 +191,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="force">Boolean flag to force delete a project if true.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
-    /// <exception cref="ProjectDependencyDeletionException">Thrown if error during dependency deletions.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if error during dependency deletions.</exception>
     /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact deleted_at time.
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
@@ -225,13 +225,16 @@ public class ProjectBusiness : IProjectBusiness
                 () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
             };
 
+            // loop through tasks and trigger downstream deletions
             foreach (var task in softDeleteTasks)
             {
                 bool result = await task();
                 if (!result)
                 {
+                    // rollback the transaction and throw an error
                     await transaction.RollbackAsync();
-                    throw new DependencyDeletionException($"error while deleting downstream dependants for project {projectId}");
+                    throw new DependencyDeletionException(
+                        "An error occurred during the deletion of downstream project dependants.");
                 }
             }
 
