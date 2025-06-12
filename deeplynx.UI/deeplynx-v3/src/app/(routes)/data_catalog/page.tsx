@@ -4,14 +4,11 @@ import LargeSearchBar from "@/app/components/LargeSearchBar";
 import React, { useState, useEffect } from "react";
 import { fileTableData } from "@/app/dummy_data/data";
 import GenericTable from "@/app/components/GenericTable";
-import {
-  Column,
-  TableRow,
-  FileViewerTableRow,
-  ProjectsList,
-} from "@/app/types/types";
+import { Column, FileViewerTableRow } from "@/app/types/types";
+import { useRouter } from "next/navigation";
 
 const DataCatalog = () => {
+  const router = useRouter();
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
   const [tableData, setTableData] =
     useState<FileViewerTableRow[]>(fileTableData);
@@ -30,21 +27,52 @@ const DataCatalog = () => {
     if (storedName) setProjectName(storedName);
   }, []);
 
-  // Effect to filter table data based on active filters
   useEffect(() => {
     if (activeFilters.length === 0) {
-      // If no filters are active, show all data
       setTableData(fileTableData);
     } else {
-      // Apply filters to the data
-      const filteredData = fileTableData.filter((file) => {
-        return activeFilters.some((filter) =>
-          file.fileName.toLowerCase().includes(filter.term.toLowerCase())
-        );
+      const filtered = fileTableData.filter((row) => {
+        return activeFilters.some((filter) => {
+          const query = filter.term.toLowerCase();
+          return (
+            row.fileName.toLowerCase().includes(query) ||
+            row.fileDescription.toLowerCase().includes(query) ||
+            row.fileType.toLowerCase().includes(query) ||
+            row.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+            (row.timeseries ? "yes" : "no").includes(query) ||
+            row.lastEdit.toLowerCase().includes(query)
+          );
+        });
       });
-      setTableData(filteredData);
+      setTableData(filtered);
     }
   }, [activeFilters]);
+
+  const getHighlightedCell = (text: unknown, queries: string[]) => {
+    const safeText = String(text); // ⛑ force conversion to string
+
+    if (!queries.length) return { content: safeText, matched: false };
+
+    const lowerText = safeText.toLowerCase();
+    const match = queries.find((q) => lowerText.includes(q.toLowerCase()));
+
+    if (!match) return { content: safeText, matched: false };
+
+    const regex = new RegExp(`(${match})`, "gi");
+    const parts = safeText.split(regex);
+
+    const content = parts.map((part, index) =>
+      regex.test(part) ? (
+        <span key={index} className="font-bold text-info-content rounded px-1">
+          {part}
+        </span>
+      ) : (
+        part
+      )
+    );
+
+    return { content, matched: true };
+  };
 
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
@@ -73,16 +101,101 @@ const DataCatalog = () => {
     setSearchTerm(""); // Clear search input
   };
 
+  const activeSearchTerms = activeFilters.map((f) => f.term.toLowerCase());
+
   // Define columns for the GenericTable
   const columns: Column<FileViewerTableRow>[] = [
     {
-      header: "File Name",
-      data: "fileName", // data for file name data
+      data: "fileName",
+      cell: (row: FileViewerTableRow) => {
+        const fileName = getHighlightedCell(row.fileName, activeSearchTerms);
+        const fileDescription = getHighlightedCell(
+          row.fileDescription,
+          activeSearchTerms
+        );
+        const cellBg =
+          fileName.matched || fileDescription.matched ? "bg-info/40" : "";
+        return (
+          <div className={`p-2 rounded ${cellBg}`}>
+            <div className="font-bold">{fileName.content}</div>
+            <div className="text-sm text-base-300">
+              {fileDescription.content}
+            </div>
+          </div>
+        );
+      },
     },
     {
-      header: "Explore",
-      cell: (row: TableRow) => (
-        <button className="btn btn-primary btn-outline btn-xs">Explore</button> // Button to explore file
+      sortable: false,
+      cell: (row: FileViewerTableRow) => {
+        const cellData = getHighlightedCell(row.fileType, activeSearchTerms);
+        return (
+          <div>
+            <div
+              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
+            >
+              <div>{cellData.content}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      sortable: false,
+      cell: (row: FileViewerTableRow) => {
+        const cellData = getHighlightedCell(row.tags, activeSearchTerms);
+        return (
+          <div>
+            <div
+              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
+            >
+              <div>{cellData.content}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      sortable: false,
+      cell: (row: FileViewerTableRow) => {
+        const cellData = getHighlightedCell(row.timeseries, activeSearchTerms);
+        return (
+          <div>
+            <div
+              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
+            >
+              <div>{cellData.content}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      sortable: false,
+      cell: (row: FileViewerTableRow) => {
+        const cellData = getHighlightedCell(row.lastEdit, activeSearchTerms);
+        return (
+          <div>
+            <div
+              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
+            >
+              <div>{cellData.content}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      sortable: false,
+      cell: (row: FileViewerTableRow) => (
+        <div className="flex justify-end mr-10">
+          <button
+            className="btn btn-primary-content btn-outline"
+            onClick={() => router.push(`/file_details/${row.id}`)}
+          >
+            Explore
+          </button>
+        </div>
       ),
     },
   ];
@@ -96,7 +209,7 @@ const DataCatalog = () => {
     <div>
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">
+          <h1 className="text-2xl font-bold text-secondary-content">
             {hasMounted ? `Project Name: ${projectName}` : "Loading..."}
           </h1>
         </div>
@@ -106,7 +219,7 @@ const DataCatalog = () => {
         {/* Search bar for filtering files */}
         <LargeSearchBar
           onEnter={handleSearch} // Call handleSearch on Enter key
-          placeholder="Search files by name..."
+          placeholder="Search table ..."
           value={searchTerm} // Controlled input for search term
           onChange={(e) => setSearchTerm(e.target.value)} // Update search term on input change
         />
@@ -154,7 +267,11 @@ const DataCatalog = () => {
         </div>
       )}
       {/* Render the GenericTable with filtered data */}
-      <GenericTable columns={columns} data={tableData} />
+      <GenericTable
+        columns={columns}
+        data={tableData}
+        rowClassName="border-separate border-spacing-y-2"
+      />
     </div>
   );
 };

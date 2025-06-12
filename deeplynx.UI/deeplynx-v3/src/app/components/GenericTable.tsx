@@ -19,6 +19,7 @@ type GenericTableProps<T extends object> = {
   bordered?: boolean;
   searchBar?: boolean;
   actionButtons?: boolean;
+  rowClassName?: string;
 };
 
 const GenericTable = <T extends object>({
@@ -32,9 +33,11 @@ const GenericTable = <T extends object>({
   bordered = false, // Default value for bordered
   searchBar = false, // Default value for searchBar
   actionButtons = false, // Default value for actionButtons
+  rowClassName,
 }: GenericTableProps<T>) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFullPagination, setShowFullPagination] = useState(false);
 
   // Filter data based on the search input
   const filteredData = data.filter((row) =>
@@ -99,105 +102,92 @@ const GenericTable = <T extends object>({
 
   // Create pagination buttons
   const createPagination = () => {
-    const pagination = [];
+    const pages: (number | "...")[] = [];
 
-    if (totalPages <= 6) {
-      for (let i = 1; i <= totalPages; i++) {
-        pagination.push(
-          <button
-            key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
-            onClick={() => handlePageClick(i)}
-          >
-            {i}
-          </button>
-        );
-      }
+    const showPageButton = (page: number) => (
+      <button
+        key={page}
+        className={`join-item btn ${
+          currentPage === page ? "btn-secondary text-neutral-content" : ""
+        }`}
+        onClick={() => handlePageClick(page)}
+      >
+        {page}
+      </button>
+    );
+
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      if (currentPage > 1) {
-        pagination.push(
-          <button
-            key="prev"
-            className="join-item btn"
-            onClick={() => handlePageClick(currentPage - 1)}
-          >
-            Prev
-          </button>
-        );
-      }
+      pages.push(1, 2);
 
-      for (let i = 1; i <= Math.min(3, totalPages); i++) {
-        pagination.push(
-          <button
-            key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
-            onClick={() => handlePageClick(i)}
-          >
-            {i}
-          </button>
-        );
-      }
+      if (currentPage > 4) pages.push("...");
 
-      if (currentPage > 3 && currentPage <= totalPages - 3) {
-        pagination.push(
-          <span key="ellipsis1" className=" btn join-item btn-disabled">
-            ...
-          </span>
-        );
-        pagination.push(
-          <button
-            key={currentPage}
-            className="join-item btn btn-primary"
-            onClick={() => handlePageClick(currentPage)}
-          >
-            {currentPage}
-          </button>
-        );
-        pagination.push(
-          <span key="ellipsis2" className="btn join-item btn-disabled">
-            ...
-          </span>
-        );
-      } else if (currentPage >= 3 || currentPage <= 3) {
-        pagination.push(
-          <span key="ellipsis" className="btn join-item btn-disabled">
-            ...
-          </span>
-        );
-      }
+      const middlePages = [
+        currentPage - 1,
+        currentPage,
+        currentPage + 1,
+      ].filter((p) => p > 2 && p < totalPages - 1);
+      pages.push(...middlePages);
 
-      for (let i = Math.max(totalPages - 2, 4); i <= totalPages; i++) {
-        pagination.push(
-          <button
-            key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
-            onClick={() => handlePageClick(i)}
-          >
-            {i}
-          </button>
-        );
-      }
+      if (currentPage < totalPages - 3) pages.push("...");
 
-      if (currentPage < totalPages) {
-        pagination.push(
-          <button
-            key="next"
-            className="join-item btn"
-            onClick={() => handlePageClick(currentPage + 1)}
-          >
-            Next
-          </button>
-        );
-      }
+      pages.push(totalPages - 1, totalPages);
     }
 
-    return pagination;
+    return showFullPagination ? (
+      <div className="join">
+        {/* Prev Arrow */}
+        <button
+          className="join-item btn"
+          disabled={currentPage === 1}
+          onClick={() => handlePageClick(currentPage - 1)}
+        >
+          «
+        </button>
+
+        {/* Page Buttons */}
+        {pages.map((page, index) =>
+          page === "..." ? (
+            <button
+              key={`ellipsis-${index}`}
+              className="join-item btn btn-disabled text-base-200 bg-accent border-base-200"
+            >
+              ...
+            </button>
+          ) : (
+            showPageButton(page)
+          )
+        )}
+
+        {/* Next Arrow */}
+        <button
+          className="join-item btn"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageClick(currentPage + 1)}
+        >
+          »
+        </button>
+      </div>
+    ) : (
+      <div className="join">
+        <button
+          className="join-item btn"
+          disabled={currentPage === 1}
+          onClick={() => handlePageClick(currentPage - 1)}
+        >
+          «
+        </button>
+        <button className="join-item btn btn-disabled text-neutral border-base-200">{`Page ${currentPage}`}</button>
+        <button
+          className="join-item btn"
+          disabled={currentPage === totalPages}
+          onClick={() => handlePageClick(currentPage + 1)}
+        >
+          »
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -215,10 +205,10 @@ const GenericTable = <T extends object>({
         )}
         {actionButtons && (
           <div className="p-2">
-            <button className="mr-2 text-secondary">
+            <button className="mr-2 text-secondary-content">
               <DriveFileMoveOutlineIcon fontSize="medium" />
             </button>
-            <button className="mr-2 text-secondary">
+            <button className="mr-2 text-secondary-content">
               <TimelineIcon fontSize="medium" />
             </button>
             <button
@@ -230,13 +220,15 @@ const GenericTable = <T extends object>({
           </div>
         )}
       </div>
-      <table className={`table ${bordered ? "table-bordered" : ""}`}>
+      <table
+        className={`table ${rowClassName} ${bordered ? "table-bordered" : ""}`}
+      >
         <thead>
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`text-base-content ${
+                className={`text-secondary-content ${
                   column.sortable !== false ? "cursor-pointer select-none" : ""
                 }`}
                 onClick={() => {
@@ -266,9 +258,12 @@ const GenericTable = <T extends object>({
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-base-200 bg-base-100">
+            <tr
+              key={rowIndex}
+              className={`hover:bg-base-200/30 bg-base-100 mb-4`}
+            >
               {columns.map((column, colIndex) => (
-                <td key={colIndex} className="text-base-content">
+                <td key={colIndex} className="text-secondary-content">
                   {column.cell
                     ? column.cell(row)
                     : (row[column.data as keyof T] as React.ReactNode)}
@@ -279,8 +274,22 @@ const GenericTable = <T extends object>({
         </tbody>
       </table>
       {enablePagination && filteredData.length > rowsPerPage && (
-        <div className="flex justify-center p-2">
-          <div className="join">{createPagination()}</div>
+        <div className="flex flex-col md:flex-row md:justify-between items-center p-2 gap-2">
+          <div className="text-sm text-secondary-content">{`Showing ${
+            (currentPage - 1) * rowsPerPage + 1
+          } to ${Math.min(currentPage * rowsPerPage, filteredData.length)} of ${
+            filteredData.length
+          } results`}</div>
+
+          <div className="flex flex-col items-end gap-1">
+            {createPagination()}
+            <button
+              onClick={() => setShowFullPagination(!showFullPagination)}
+              className="btn btn-sm btn-outline btn-neutral mt-2"
+            >
+              {showFullPagination ? "Compact View" : "Full View"}
+            </button>
+          </div>
         </div>
       )}
     </div>

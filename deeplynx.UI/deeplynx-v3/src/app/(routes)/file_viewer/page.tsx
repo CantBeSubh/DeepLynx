@@ -37,7 +37,7 @@ const FileViewer = () => {
         <label>
           <input
             type="checkbox"
-            className="checkbox"
+            className="checkbox checkbox-info"
             checked={row.select || false} // Control checkbox based on row's select status
             onChange={() => handleSelectChange(row.id as number)} // Handle checkbox change
           />
@@ -61,7 +61,7 @@ const FileViewer = () => {
           <input
             type="checkbox"
             checked={isChecked} // Control checkbox based on timeseries status
-            className="checkbox checkbox-primary"
+            className="checkbox checkbox-info"
             readOnly // Make checkbox read-only
           />
         );
@@ -85,7 +85,7 @@ const FileViewer = () => {
         <label>
           <input
             type="checkbox"
-            className="checkbox"
+            className="checkbox checkbox-info"
             checked={row.select || false} // Control checkbox based on row's select status
             onChange={() => handleSelectChange(row.id as number)} // Handle checkbox change
           />
@@ -141,6 +141,7 @@ const FileViewer = () => {
             enablePagination={true} // Enable pagination
             rowsPerPage={10} // Set rows per page
             filterPlaceholder="Filter Table..." // Placeholder for filter input
+            searchBar
           />
         </div>
       ),
@@ -151,11 +152,12 @@ const FileViewer = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Files</h1> {/* Main title */}
+        <h1 className="text-2xl font-bold text-secondary-content">Files</h1>{" "}
+        {/* Main title */}
       </div>
 
       {/* Render Tabs component with tab data */}
-      <Tabs tabs={tabData} showButtons={false} />
+      <Tabs tabs={tabData} className="tabs tabs-border" />
 
       {/* Button to add new items, positioned at the bottom right */}
       <button className="fixed bottom-10 right-10">
