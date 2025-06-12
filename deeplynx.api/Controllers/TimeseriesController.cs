@@ -20,69 +20,99 @@ namespace deeplynx.api.Controllers
             _timeseriesBusiness = timeseriesBusiness;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        [HttpPost("upload")]
+        public async Task<IActionResult> UploadFile([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile file)
+        {
+            try
+            {
+                var timeSeriesUploadInfo= await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
+                return Ok(timeSeriesUploadInfo);
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while uploading timeseries file {file.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("start-upload")]
         public IActionResult StartUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
-            var uploadId = Guid.NewGuid().ToString();
-            var folderPath = Path.Combine(UploadFolderPath, uploadId);
-            Directory.CreateDirectory(folderPath);
-
-            // store some metadata about the upload session?
-
-            return Ok(new { UploadId = uploadId });
+            try
+            {
+                var uploadId = _timeseriesBusiness.StartUpload(projectId, dataSourceId);
+                return Ok(new { UploadId = uploadId });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while starting an upload for timeseries file {request.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="chunk"></param>
+        /// <param name="uploadId"></param>
+        /// <param name="chunkNumber"></param>
+        /// <returns></returns>
         [HttpPost("upload-chunk")]
         public async Task<IActionResult> UploadChunk([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
-            if (chunk == null || chunk.Length == 0)
+            try
             {
-                return BadRequest("No chunk uploaded.");
+                var chunkUploadStatus =
+                    await _timeseriesBusiness.UploadChunk(projectId, dataSourceId, chunk, uploadId, chunkNumber);
+                return Ok(new { ChunkUploadStatus = chunkUploadStatus });
             }
-
-            var tempFilePath = Path.Combine(UploadFolderPath, uploadId, $"{chunkNumber}.part");
-            using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            catch (Exception e)
             {
-                await chunk.CopyToAsync(stream);
+                var message = $"An error occurred while uploading a chunk for timeseries file {uploadId}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
-            return Ok(new { Message = "Chunk uploaded successfully." });
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost("complete-upload")]
         public async Task<IActionResult> CompleteUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
-            var folderPath = Path.Combine(UploadFolderPath, request.UploadId);
-            var finalFilePath = Path.Combine(UploadFolderPath, request.FileName);
-
-            using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
+            try
             {
-                for (int i = 0; i < request.TotalChunks; i++)
-                {
-                    var partFilePath = Path.Combine(folderPath, $"{i}.part");
-                    using (var partStream = new FileStream(partFilePath, FileMode.Open))
-                    {
-                        await partStream.CopyToAsync(finalFileStream);
-                    }
-                    System.IO.File.Delete(partFilePath); // Clean up the chunk file
-                }
+                var timeseriesUploadRecord = await _timeseriesBusiness.CompleteUpload(projectId, dataSourceId, request);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
-
-            Directory.Delete(folderPath); // Clean up the upload folder
-
-            var timeSeriesDataDTO = new TimeseriesDataDto
+            catch (Exception e)
             {
-                ProjectId = projectId,
-                DataSourceId = dataSourceId,
-                FileName = request.FileName,
-                FilePath = finalFilePath,
-                FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
-            };
-
-            // todo: something like `await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeSeriesDataDTO);`
-            await _timeseriesBusiness.ProcessTimeSeriesDataAsync(timeSeriesDataDTO);
-
-            return Ok(new { Message = "Upload completed successfully." });
+                var message = $"An error occurred while completing a timeseries file upload for {request.FileName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
     }
 }
