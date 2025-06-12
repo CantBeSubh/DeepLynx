@@ -254,7 +254,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting edges: {exc}";
+            var message = $"An error occurred while deleting record mappings: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
