@@ -165,7 +165,7 @@ public class ClassBusiness : IClassBusiness
             try
             {
                 var transaction = await _context.Database.BeginTransactionAsync();
-                await this.SoftDeleteClasses(c => c.Id == classId, transaction);
+                await SoftDeleteClasses(c => c.Id == classId, transaction);
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
@@ -190,7 +190,7 @@ public class ClassBusiness : IClassBusiness
     {
         try
         {
-            await this.SoftDeleteClasses(predicate, transaction);
+            await SoftDeleteClasses(predicate, transaction);
             return true;
         }
         catch (Exception exc)
@@ -227,8 +227,7 @@ public class ClassBusiness : IClassBusiness
             var classes = await classContext.ToListAsync();
             if (classes.Count == 0)
             {
-                // return true even if no classes are to be deleted;
-                // we only want to return false if there were errors
+                // return early if no records are to be deleted
                 return;
             }
             
@@ -238,8 +237,10 @@ public class ClassBusiness : IClassBusiness
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classIds), 
-                () => _recordBusiness.BulkSoftDeleteRecords("class", classIds, transaction), 
-                () => _relationshipBusiness.BulkSoftDeleteRelationships(r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
+                // unfortunately we need to assert that class id is not null here which looks really ugly
+                () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId), transaction), 
+                () => _relationshipBusiness.BulkSoftDeleteRelationships(
+                    r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classIds)
             };
             

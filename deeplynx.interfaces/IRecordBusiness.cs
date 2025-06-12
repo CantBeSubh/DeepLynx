@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -11,5 +13,5 @@ public interface IRecordBusiness
     Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto);
     Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId, bool force);
-    Task<bool> BulkSoftDeleteRecords(string domainType, IEnumerable<long> domainIds, IDbContextTransaction? transaction);
+    Task<bool> BulkSoftDeleteRecords(Expression<Func<Record, bool>> predicate, IDbContextTransaction? transaction);
 }

@@ -118,8 +118,8 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="force">Indicates whether to force delete the data source if true.</param>
         /// <returns>A message stating the data source was successfully deleted.</returns>
-        [HttpDelete("DeleteRecordMapping/{dataSourceId}")]
-        public async Task<IActionResult> DeleteRecordMapping(
+        [HttpDelete("DeleteDataSource/{dataSourceId}")]
+        public async Task<IActionResult> DeleteDataSource(
             long dataSourceId, 
             long projectId, 
             [FromQuery] bool force = false)

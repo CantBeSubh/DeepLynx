@@ -221,7 +221,7 @@ public class ProjectBusiness : IProjectBusiness
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", [projectId]),
                 () => _edgeBusiness.BulkSoftDeleteEdges("project", [projectId]),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
-                () => _recordBusiness.BulkSoftDeleteRecords("project", [projectId], transaction),
+                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction),
                 () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
             };
 
