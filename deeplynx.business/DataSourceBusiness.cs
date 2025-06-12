@@ -287,7 +287,7 @@ namespace deeplynx.business
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
                 () => _recordBusiness.BulkSoftDeleteRecords(r => dataSourceIds.Contains(r.DataSourceId), transaction),
-                () => _edgeBusiness.BulkSoftDeleteEdges("dataSource", dataSourceIds)
+                () => _edgeBusiness.BulkSoftDeleteEdges(e => dataSourceIds.Contains(e.DataSourceId))
             };
 
             // loop through tasks and trigger downstream deletions
