@@ -50,13 +50,15 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     localStorage.setItem("selectedItem", selectedItem);
   }, [selectedItem]);
 
+  useEffect(() => {
+    onToggle(isCollapsed);
+  }, [isCollapsed, onToggle]);
+
   // Function to toggle the collapse state of the menu
   const toggleMenu = () => {
-    setIsCollapsed((prevIsCollapsed) => {
-      const newIsCollapsed = !prevIsCollapsed;
-      onToggle(newIsCollapsed);
-      return newIsCollapsed;
-    });
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    onToggle(newState);
   };
 
   // Function to handle item click events
@@ -64,10 +66,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     item: string,
     event: React.MouseEvent<HTMLElement>
   ) => {
-    // if (isDisabled(item)) {
-    //   event.preventDefault(); // Prevent default behavior if the item is disabled
-    //   return;
-    // }
     event.preventDefault();
     setSelectedItem(item); // Set the clicked item as selected
     router.push(item); // Navigate to the clicked item's path
@@ -75,22 +73,20 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   // Function to check if an item is disabled
   const isDisabled = (targetPath: string) =>
-    pathname === "/pages/projects" && targetPath !== "/pages/projects";
+    pathname === "/projects" && targetPath !== "/projects";
 
   // Function to get the CSS class for an item based on its state
   const getItemClass = (targetPath: string) => {
     const alwaysActivePaths = ["/settings", "/help", "/contact", "/fileBug"];
     const isExactMatch = selectedItem === targetPath;
     const isDynamicProject =
-      targetPath === "/pages/projects/[project_id]" &&
-      pathname?.startsWith("/pages/projects/") &&
-      pathname !== "/pages/projects";
+      targetPath === "/project/[id]" && /^\/project\/[^/]+$/.test(pathname);
     const isSelected = isExactMatch || isDynamicProject;
     const isAlwaysActive = alwaysActivePaths.includes(targetPath);
 
     return [
       "flex items-center block py-2 px-4 rounded transition",
-      isSelected ? "bg-base-300" : "hover:bg-base-300",
+      isSelected ? "bg-info/30" : "hover:bg-info/30",
       isDisabled(targetPath) && !isAlwaysActive
         ? "pointer-events-none opacity-50 cursor-not-allowed"
         : "",
@@ -100,8 +96,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <aside
       className={`fixed ${
-        isCollapsed ? "w-20" : "w-64"
-      } bg-secondary text-base-100 top-16 bottom-0 p-4 transition-width duration-300 flex flex-col`}
+        isCollapsed ? "w-22" : "w-64"
+      } bg-secondary text-primary-content top-16 bottom-0 p-4 transition-width duration-300 flex flex-col`}
     >
       {/* Button to toggle menu collapse state */}
       <div className="flex justify-end">
@@ -118,9 +114,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       <ul>
         <li>
           <Link
-            href="/pages/projects"
-            onClick={(e) => handleItemClick("/pages/projects", e)}
-            className={getItemClass("/pages/projects")}
+            href="/projects"
+            onClick={(e) => handleItemClick("/projects", e)}
+            className={getItemClass("/projects")}
           >
             <HomeIcon />
             {!isCollapsed && <p className="ml-2">Home Dashboard</p>}
@@ -135,9 +131,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       <ul className="flex-grow">
         <li>
           <Link
-            href="/pages/projects/#"
-            onClick={(e) => handleItemClick("/pages/projects/[project_id]", e)}
-            className={getItemClass("/pages/projects/[project_id]")}
+            href="/project/#"
+            onClick={(e) => handleItemClick("/project/[id]", e)}
+            className={getItemClass("/project/[id]")}
           >
             <ListAltOutlinedIcon />
             {!isCollapsed && <p className="ml-2">Project Management</p>}
@@ -155,9 +151,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </li>
         <li className="mt-2">
           <Link
-            href="/pages/data_source"
-            onClick={(e) => handleItemClick("/pages/data_source", e)}
-            className={getItemClass("/pages/data_source")}
+            href="/data_source"
+            onClick={(e) => handleItemClick("/data_source", e)}
+            className={getItemClass("/data_source")}
           >
             <InboxIcon />
             {!isCollapsed && <p className="ml-2">Data Source</p>}
@@ -165,9 +161,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </li>
         <li className="mt-2">
           <Link
-            href="/pages/data_catalog"
-            onClick={(e) => handleItemClick("/pages/data_catalog", e)}
-            className={getItemClass("/pages/data_catalog")}
+            href="/data_catalog"
+            onClick={(e) => handleItemClick("/data_catalog", e)}
+            className={getItemClass("/data_catalog")}
           >
             <InboxIcon />
             {!isCollapsed && <p className="ml-2">Data Catalog</p>}
@@ -205,9 +201,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </li>
         <li className="mt-2">
           <Link
-            href="/pages/file_viewer"
-            onClick={(e) => handleItemClick("/pages/file_viewer", e)}
-            className={getItemClass("/pages/file_viewer")}
+            href="/file_viewer"
+            onClick={(e) => handleItemClick("/file_viewer", e)}
+            className={getItemClass("/file_viewer")}
           >
             <FindInPageOutlinedIcon />
             {!isCollapsed && <p className="ml-2">File Viewer</p>}
