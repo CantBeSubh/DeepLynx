@@ -295,7 +295,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("relationship", relationshipIds),
-                () => _edgeBusiness.BulkSoftDeleteEdges("relationship", relationshipIds)
+                () => _edgeBusiness.BulkSoftDeleteEdges(e => e.RelationshipId.HasValue && relationshipIds.Contains(e.RelationshipId.Value))
             };
 
             // loop through tasks and trigger downstream deletions

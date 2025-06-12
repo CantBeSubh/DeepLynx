@@ -129,8 +129,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var success = await _business.DeleteRelationship(projectId, relationshipId, force);
-                return Ok(new { message = $"Relationship successfully deleted.{relationshipId}" });
+                await _business.DeleteRelationship(projectId, relationshipId, force);
+                return Ok(new { message = $"Relationship with ID {relationshipId} was successfully deleted." });
             }
             catch (KeyNotFoundException ex)
             {
