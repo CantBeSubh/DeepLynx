@@ -232,15 +232,15 @@ public class TagBusiness : ITagBusiness
             .Where(d => d.DeletedAt == null)
             .Where(predicate);
 
-        var dataSources = await tContext.ToListAsync();
+        var tags = await tContext.ToListAsync();
         
-        if (dataSources.Count == 0)
+        if (tags.Count == 0)
         {
             // return early if there are no tags to delete
             return;
         }
         
-        var tagIds = dataSources.Select(d => d.Id);
+        var tagIds = tags.Select(t => t.Id);
         
         // trigger downstream deletions
         var softDeleteTasks = new List<Func<Task<bool>>>
