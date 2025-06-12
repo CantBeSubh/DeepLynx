@@ -336,7 +336,7 @@ public class RecordBusiness : IRecordBusiness
         // trigger downstream deletions
         var softDeleteTasks = new List<Func<Task<bool>>>
         {
-            () => _edgeBusiness.BulkSoftDeleteEdges("record", records.Select(r => r.Id))
+            () => _edgeBusiness.BulkSoftDeleteEdges(e => recordIds.Contains(e.OriginId) || recordIds.Contains(e.DestinationId))
         };
         
         // loop through tasks and trigger downstream deletions
