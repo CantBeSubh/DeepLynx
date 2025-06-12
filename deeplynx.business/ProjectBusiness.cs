@@ -222,7 +222,7 @@ public class ProjectBusiness : IProjectBusiness
                 () => _edgeBusiness.BulkSoftDeleteEdges(e => e.ProjectId == projectId),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
                 () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction),
-                () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
+                () => _roleBusiness.BulkSoftDeleteRoles(r => r.ProjectId == projectId)
             };
 
             // loop through tasks and trigger downstream deletions
