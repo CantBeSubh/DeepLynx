@@ -1,8 +1,11 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.exceptions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
@@ -214,46 +217,46 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <summary>
     /// Bulk Soft Delete record mappings by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecordMappings(string domainType, IEnumerable<long> domainIds)
+    public async Task<bool> BulkSoftDeleteRecordMappings(Expression<Func<RecordMapping, bool>> predicate)
     {
         try
         {
-            var recordMappingQuery = _context.RecordMappings.Where(r => r.DeletedAt == null);
-
-            if (domainType == "project")
+            // search for record mappings matching the passed-in predicate (filter) to be updated
+            var mContext = _context.RecordMappings
+                .Where(m => m.DeletedAt == null)
+                .Where(predicate);
+            
+            var recordMappings = await mContext.ToListAsync();
+    
+            if (recordMappings.Count == 0)
             {
-                recordMappingQuery = recordMappingQuery.Where(r => domainIds.Contains(r.ProjectId));
+                // return early if there are no record mappings to delete
+                return true;
             }
-            else if (domainType == "class")
+            
+            var mappingIds = recordMappings.Select(r => r.Id);
+    
+            var updated = await mContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+    
+            // if we found mappings to update, but weren't successful in updating, throw an error
+            if (updated == 0)
             {
-                recordMappingQuery = recordMappingQuery.Where(r => r.ClassId.HasValue && domainIds.Contains(r.ClassId.Value));
+                throw new DependencyDeletionException("An error occurred when deleting record mappings");
             }
-            else if (domainType == "tag")
-            {
-                recordMappingQuery = recordMappingQuery.Where(r => r.TagId.HasValue && domainIds.Contains(r.TagId.Value));
-            }
-                    
-            var recordMappings = await recordMappingQuery.ToListAsync();
-                
-            foreach (var r in recordMappings)
-            {
-                r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
-                
+            
+            // save changes
             await _context.SaveChangesAsync();
             return true;
-                
         }
         catch (Exception exc)
         {
-            var idList = string.Join(",", domainIds);
-            var message = $"An error occurred while deleting edges for domain {domainType} with id(s) {idList}: {exc}";
+            var message = $"An error occurred while deleting edges: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
     }
-
 }

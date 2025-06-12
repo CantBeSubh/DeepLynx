@@ -238,10 +238,12 @@ public class ClassBusiness : IClassBusiness
             {
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings("class", classIds), 
                 // unfortunately we need to assert that class id is not null here which looks really ugly
-                () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId), transaction), 
+                () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId)), 
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(
                     r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classIds)
+                // unfortunately we need to assert that class id is not null here which looks really ugly
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(
+                    m => classIds.Contains((long)m.ClassId), transaction)
             };
             
             // loop through tasks and trigger downstream deletions
