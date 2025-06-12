@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("projects/{projectId}/tags")]
+[Route("api/projects/{projectId}/tags")]
 [ApiController]
 public class TagController : ControllerBase
 {
@@ -121,7 +121,14 @@ public class TagController : ControllerBase
         try
         {
             await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
-            return Ok("Tag successfully deleted");
+            return Ok(new { message = $"Tag deleted successfully" });
+        }
+        catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
+        {
+            var statusCode = ex is KeyNotFoundException
+                ? StatusCodes.Status404NotFound
+                : StatusCodes.Status400BadRequest;
+            return StatusCode(statusCode, new { error = ex.Message });
         }
         catch (Exception exception)
         {

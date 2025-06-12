@@ -1,8 +1,11 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.exceptions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
@@ -71,8 +74,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <returns>The mapping associated with the given ID</returns>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<RecordMappingResponseDto> GetRecordMapping(
-        long mappingId,
-        long projectId
+        long projectId,
+        long mappingId
         )
     {
         var mapping = await _context.RecordMappings
@@ -185,8 +188,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <param name="force">Indicates whether to force delete the mapping if true.</param>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteRecordMapping(
-        long mappingId, 
         long projectId, 
+        long mappingId, 
         bool force=false)
     {
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
@@ -212,36 +215,48 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     }
 
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all record mappings in a project by project id.
+    /// Bulk Soft Delete record mappings by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns>Boolean true on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> SoftDeleteAllRecordMappingsByProjectIdAsync(long projectId)
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    public async Task<bool> BulkSoftDeleteRecordMappings(Expression<Func<RecordMapping, bool>> predicate)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-
         try
         {
-            var recordMappings = await _context.RecordMappings
-                .Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-            foreach (var recordMapping in recordMappings)
+            // search for record mappings matching the passed-in predicate (filter) to be updated
+            var mContext = _context.RecordMappings
+                .Where(m => m.DeletedAt == null)
+                .Where(predicate);
+            
+            var recordMappings = await mContext.ToListAsync();
+    
+            if (recordMappings.Count == 0)
             {
-                recordMapping.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                // return early if there are no record mappings to delete
+                return true;
             }
-
+            
+            var mappingIds = recordMappings.Select(r => r.Id);
+    
+            var updated = await mContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(m => m.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+    
+            // if we found mappings to update, but weren't successful in updating, throw an error
+            if (updated == 0)
+            {
+                throw new DependencyDeletionException("An error occurred when deleting record mappings");
+            }
+            
+            // save changes
             await _context.SaveChangesAsync();
             return true;
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while deleting project record mappings: {exception}";
+            var message = $"An error occurred while deleting record mappings: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
     }
-
 }

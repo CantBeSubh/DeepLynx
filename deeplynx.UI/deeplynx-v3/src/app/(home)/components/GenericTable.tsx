@@ -3,7 +3,7 @@ import SearchInput from "./SearchInput";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
-import { TableRow, Column } from "@/app/types/types";
+import { TableRow, Column } from "@/app/(home)/types/types";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
@@ -90,9 +90,9 @@ const GenericTable = <T extends object>({
   // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
-        (currentPage - 1) * rowsPerPage,
-        currentPage * rowsPerPage
-      )
+      (currentPage - 1) * rowsPerPage,
+      currentPage * rowsPerPage
+    )
     : sortedData;
 
   // Handle page click for pagination
@@ -104,6 +104,7 @@ const GenericTable = <T extends object>({
   const createPagination = () => {
     const pages: (number | "...")[] = [];
 
+<<<<<<< HEAD:deeplynx.UI/deeplynx-v3/src/app/components/GenericTable.tsx
     const showPageButton = (page: number) => (
       <button
         key={page}
@@ -118,10 +119,40 @@ const GenericTable = <T extends object>({
 
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
+=======
+    if (totalPages <= 6) {
+      for (let i = 1; i <= totalPages; i++) {
+        pagination.push(
+          <button
+            key={i}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
+            onClick={() => handlePageClick(i)}
+          >
+            {i}
+          </button>
+        );
+      }
+>>>>>>> origin/develop:deeplynx.UI/deeplynx-v3/src/app/(home)/components/GenericTable.tsx
     } else {
       pages.push(1, 2);
 
+<<<<<<< HEAD:deeplynx.UI/deeplynx-v3/src/app/components/GenericTable.tsx
       if (currentPage > 4) pages.push("...");
+=======
+      for (let i = 1; i <= Math.min(3, totalPages); i++) {
+        pagination.push(
+          <button
+            key={i}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
+            onClick={() => handlePageClick(i)}
+          >
+            {i}
+          </button>
+        );
+      }
+>>>>>>> origin/develop:deeplynx.UI/deeplynx-v3/src/app/(home)/components/GenericTable.tsx
 
       const middlePages = [
         currentPage - 1,
@@ -130,7 +161,22 @@ const GenericTable = <T extends object>({
       ].filter((p) => p > 2 && p < totalPages - 1);
       pages.push(...middlePages);
 
+<<<<<<< HEAD:deeplynx.UI/deeplynx-v3/src/app/components/GenericTable.tsx
       if (currentPage < totalPages - 3) pages.push("...");
+=======
+      for (let i = Math.max(totalPages - 2, 4); i <= totalPages; i++) {
+        pagination.push(
+          <button
+            key={i}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
+            onClick={() => handlePageClick(i)}
+          >
+            {i}
+          </button>
+        );
+      }
+>>>>>>> origin/develop:deeplynx.UI/deeplynx-v3/src/app/(home)/components/GenericTable.tsx
 
       pages.push(totalPages - 1, totalPages);
     }
@@ -192,9 +238,8 @@ const GenericTable = <T extends object>({
 
   return (
     <div
-      className={`overflow-x-auto ${
-        bordered ? "rounded-box border border-neutral-content" : ""
-      } p-2`}
+      className={`overflow-x-auto ${bordered ? "rounded-box border border-neutral-content" : ""
+        } p-2`}
     >
       <div className="my-4 flex justify-between items-center">
         {searchBar && (
@@ -228,14 +273,19 @@ const GenericTable = <T extends object>({
             {columns.map((column, index) => (
               <th
                 key={index}
+<<<<<<< HEAD:deeplynx.UI/deeplynx-v3/src/app/components/GenericTable.tsx
                 className={`text-secondary-content ${
                   column.sortable !== false ? "cursor-pointer select-none" : ""
                 }`}
+=======
+                className={`text-base-content ${column.sortable !== false ? "cursor-pointer select-none" : ""
+                  }`}
+>>>>>>> origin/develop:deeplynx.UI/deeplynx-v3/src/app/(home)/components/GenericTable.tsx
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                    sortConfig?.direction === "asc"
+                      sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });

@@ -19,6 +19,9 @@ public partial class Project
 
     [Column("abbreviation")]
     public string? Abbreviation { get; set; }
+    
+    [Column("description")]
+    public string? Description { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }

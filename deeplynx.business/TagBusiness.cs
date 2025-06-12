@@ -1,21 +1,26 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
 public class TagBusiness : ITagBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IRecordMappingBusiness _recordMappingBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TagBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
-    public TagBusiness(DeeplynxContext context)
+    public TagBusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness)
     {
         _context = context;
+        _recordMappingBusiness = recordMappingBusiness;
     }
 
     /// <summary>
@@ -164,11 +169,22 @@ public class TagBusiness : ITagBusiness
         if (force)
         {
             _context.Tags.Remove(tag);
+            await _context.SaveChangesAsync();
         }
         else
         {
-            tag.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Tags.Update(tag);
+            try
+            {
+                var transaction = await _context.Database.BeginTransactionAsync();
+                await SoftDeleteTags(t => t.Id == tagId, transaction);
+                await transaction.CommitAsync();
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting tag: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return false;
+            }
         }
         
         await _context.SaveChangesAsync();
@@ -176,34 +192,91 @@ public class TagBusiness : ITagBusiness
     }
     
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all tags in a project by project id.
+    /// Bulk Soft Delete tags by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns>Boolean true on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> SoftDeleteAllTagsByProjectIdAsync(long projectId)
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    public async Task<bool> BulkSoftDeleteTags(
+        Expression<Func<Tag, bool>> predicate,
+        IDbContextTransaction? transaction)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-        
         try
         {
-            var tags = await _context.Tags.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-            foreach (var tag in tags)
-            {
-                tag.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
-
-            await _context.SaveChangesAsync();
+            await SoftDeleteTags(predicate, transaction);
             return true;
+                
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while deleting project tags: {exception}";
+            var message = $"An error occurred while deleting tags: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
+        }
+    }
+    
+    private async Task SoftDeleteTags(
+            Expression<Func<Tag, bool>> predicate,
+            IDbContextTransaction? transaction)
+    {
+        // check for existing transaction; if one does not exist, start a new one
+        var commit = false; // flag used to determine if transaction should be committed
+        if (transaction == null)
+        {
+            commit = true;
+            transaction = await _context.Database.BeginTransactionAsync();
+        }
+
+        // search for tags matching the passed-in predicate (filter) to be updated
+        var tContext = _context.Tags
+            .Where(d => d.DeletedAt == null)
+            .Where(predicate);
+
+        var tags = await tContext.ToListAsync();
+        
+        if (tags.Count == 0)
+        {
+            // return early if there are no tags to delete
+            return;
+        }
+        
+        var tagIds = tags.Select(t => t.Id);
+        
+        // trigger downstream deletions
+        var softDeleteTasks = new List<Func<Task<bool>>>
+        {
+            // unfortunately we need to assert that tag id is not null here which looks really ugly
+            () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => tagIds.Contains((long)m.TagId)),
+        };
+
+        // loop through tasks and trigger downstream deletions
+        foreach (var task in softDeleteTasks)
+        {
+            bool result = await task();
+            if (!result)
+            {
+                // rollback the transaction and throw an error
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException(
+                    "An error occurred during the deletion of downstream tag dependants.");
+            }
+        }
+
+        // bulk update the results of the query to set the deleted_at date
+        var updated = await tContext.ExecuteUpdateAsync(setters => setters
+            .SetProperty(t => t.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+        // if we found tags to update, but weren't successful in updating, throw an error
+        if (updated == 0)
+        {
+            throw new DependencyDeletionException("An error occurred when deleting tags");
+        }
+
+        // save changes and commit transaction to close it
+        await _context.SaveChangesAsync();
+        if (commit)
+        {
+            await transaction.CommitAsync();
         }
     }
 }

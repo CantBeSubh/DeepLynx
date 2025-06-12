@@ -1,134 +1,323 @@
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Linq.Expressions;
 
 namespace deeplynx.business
 {
-
     public class DataSourceBusiness : IDataSourceBusiness
     {
         private readonly DeeplynxContext _context;
 
-        public DataSourceBusiness(DeeplynxContext context)
+        // dependants used to trigger downstream soft deletes
+        private readonly IEdgeBusiness _edgeBusiness;
+        private readonly IRecordBusiness _recordBusiness;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DataSourceBusiness"/> class.
+        /// </summary>
+        /// <param name="context">The database context used for the data source operations.</param>
+        /// <param name="edgeBusiness">Passed in context for downstream edge objects.</param>
+        /// <param name="recordBusiness">Passed in context for downstream record objects.</param>
+        public DataSourceBusiness(
+            DeeplynxContext context,
+            IEdgeBusiness edgeBusiness,
+            IRecordBusiness recordBusiness)
         {
             _context = context;
-        }
-        
-        /// <summary>
-        /// Get all data sources that exist and map to dto
-        /// </summary>
-        /// <returns></returns>
-        public async Task<IEnumerable<DataSourceDto>> GetAllDataSources()
-        {
-            return await _context.DataSources.Select(ds => new DataSourceDto
-            {
-                Id = ds.Id,
-                Name = ds.Name,
-                ProjectId = ds.ProjectId
-            }).ToListAsync();
+            _edgeBusiness = edgeBusiness;
+            _recordBusiness = recordBusiness;
         }
 
         /// <summary>
-        /// Create new data source and return dto 
+        /// Retrieves all data sources for a specific project.
         /// </summary>
-        /// <param name="dataSourceDto"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentNullException"></exception>
-        public async Task<DataSourceDto> CreateDataSource(DataSourceDto dataSourceDto)
+        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <returns>A list of data sources within the given project.</returns>
+        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId)
         {
-            if (dataSourceDto == null)
-                throw new ArgumentNullException(nameof(dataSourceDto));
+            var dataSources = await _context.DataSources
+                .Where(d => d.ProjectId == projectId && d.DeletedAt == null).ToListAsync();
 
-            var dataLayerDataSource = new DataSource
+            return dataSources
+                .Select(d => new DataSourceResponseDto()
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    Description = d.Description,
+                    Abbreviation = d.Abbreviation,
+                    Type = d.Type,
+                    BaseUri = d.BaseUri,
+                    // return empty object for config if null
+                    Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
+                    ProjectId = d.ProjectId,
+                    CreatedBy = d.CreatedBy,
+                    CreatedAt = d.CreatedAt,
+                    ModifiedBy = d.ModifiedBy,
+                    ModifiedAt = d.ModifiedAt
+                });
+        }
+
+        /// <summary>
+        /// Retrieve a specific data source by its ID
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="datasourceId">The ID of the data source</param>
+        /// <returns>The data source in question</returns>
+        /// <exception cref="KeyNotFoundException">Returned if the data source is not found</exception>
+        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId)
+        {
+            var dataSource = await _context.DataSources
+                .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.DeletedAt == null)
+                .FirstOrDefaultAsync();
+
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
             {
-                Name = dataSourceDto.Name,
-                ProjectId = dataSourceDto.ProjectId,
-                Abbreviation = dataSourceDto.Abbreviation,
-                Config = dataSourceDto.Config,
-                Type = dataSourceDto.Type,
+                throw new KeyNotFoundException($"Data Source with id {datasourceId} not found");
+            }
+
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                CreatedBy = dataSource.CreatedBy,
+                CreatedAt = dataSource.CreatedAt,
+                ModifiedBy = dataSource.ModifiedBy,
+                ModifiedAt = dataSource.ModifiedAt
+            };
+        }
+
+        /// <summary>
+        /// Asynchronously creates a new data source for a specified project.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dto">The data transfer object containing data source details</param>
+        /// <returns>The created data source.</returns>
+        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto)
+        {
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            var dataSource = new DataSource
+            {
+                Name = dto.Name,
+                ProjectId = projectId,
+                Description = dto.Description,
+                BaseUri = dto.BaseUri,
+                Abbreviation = dto.Abbreviation,
+                Config = dto.Config?.ToString(),
+                Type = dto.Type,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ModifiedBy = null
+                CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
             };
 
-            _context.DataSources.Add(dataLayerDataSource);
+            _context.DataSources.Add(dataSource);
             await _context.SaveChangesAsync();
 
-            dataSourceDto.Id = dataLayerDataSource.Id;
-            return dataSourceDto;
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                CreatedBy = dataSource.CreatedBy,
+                CreatedAt = dataSource.CreatedAt
+            };
         }
 
         /// <summary>
-        /// Update a current data source and return dto 
+        /// Asynchronously updates an existing data source based on its ID.
         /// </summary>
-        /// <param name="id"></param>
-        /// <param name="dataSourceDto"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<DataSourceDto> UpdateDataSource(long id, DataSourceDto dataSourceDto)
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the existing data source to update.</param>
+        /// <param name="dto">The data transfer object containing the updated data source details</param>
+        /// <returns>The updated data source.</returns>
+        /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
+        public async Task<DataSourceResponseDto> UpdateDataSource(
+            long projectId,
+            long dataSourceId,
+            DataSourceRequestDto dto)
         {
-            var existing = await _context.DataSources.FirstOrDefaultAsync(ds => ds.Id == id);
-            if (existing == null)
-                throw new Exception("DataSource not found");
+            var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-            existing.Name = dataSourceDto.Name;
-            existing.Abbreviation = dataSourceDto.Abbreviation;
-            existing.BaseUri = dataSourceDto.BaseUri;
-            existing.Config = dataSourceDto.Config;
-            existing.Type = dataSourceDto.Type;
-            existing.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
+            {
+                throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+            }
 
+            dataSource.Name = dto.Name;
+            dataSource.Description = dto.Description;
+            dataSource.Abbreviation = dto.Abbreviation;
+            dataSource.BaseUri = dto.BaseUri;
+            dataSource.Config = dto.Config?.ToString();
+            dataSource.Type = dto.Type;
+            dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
+            dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+            _context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
-            return dataSourceDto;
+
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                CreatedBy = dataSource.CreatedBy,
+                CreatedAt = dataSource.CreatedAt,
+                ModifiedBy = dataSource.ModifiedBy,
+                ModifiedAt = dataSource.ModifiedAt
+            };
         }
 
         /// <summary>
-        /// Soft delete data source using UTC field Deleted_At
+        /// Deletes a specific data source by its ID or origin/destination.
         /// </summary>
-        /// <param name="id"></param>
-        /// <returns></returns>
-        public async Task<bool> DeleteDataSource(long id)
+        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="dataSourceId">The ID of the data source to delete</param>
+        /// <param name="force">Indicates whether to force delete the data source if true.</param>
+        /// <returns>Boolean true on successful deletion.</returns>
+        /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
+        public async Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force = false)
         {
-            var existing = await _context.DataSources.FirstOrDefaultAsync(ds => ds.Id == id);
-            if (existing == null)
-                return false; 
-            existing.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);;
-            await _context.SaveChangesAsync();
+            var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
+            {
+                throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+            }
+
+            if (force)
+            {
+                // hard delete
+                _context.DataSources.Remove(dataSource);
+                await _context.SaveChangesAsync();
+            }
+            else
+            {
+                try
+                {
+                    var transaction = await _context.Database.BeginTransactionAsync();
+                    await SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
+                    await transaction.CommitAsync();
+                }
+                catch (Exception exc)
+                {
+                    var message = $"An error occurred while deleting data source: {exc}";
+                    NLog.LogManager.GetCurrentClassLogger().Error(message);
+                    return false;
+                }
+            }
+
             return true;
         }
-        
-        /// <summary>
-        /// Called primarily by project's delete. Soft delete all data sources in a project by project id.
-        /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns>Boolean true on successful deletion.</returns>
-        /// <exception cref="KeyNotFoundException"></exception>
-        public async Task<bool> SoftDeleteAllDataSourcesByProjectIdAsync(long projectId)
-        {
-            var project = await _context.Projects.FindAsync(projectId);
 
-            if (project == null)
-                throw new KeyNotFoundException("Project not found.");
-        
+        /// <summary>
+        /// Bulk Soft Delete data sources by a specific upstream domain. Used to avoid repeating functions.
+        /// </summary>
+        /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+        /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
+        /// <returns>Boolean true on successful deletion</returns>
+        public async Task<bool> BulkSoftDeleteDataSources(
+            Expression<Func<DataSource, bool>> predicate,
+            IDbContextTransaction? transaction)
+        {
             try
             {
-                var dataSources = await _context.DataSources.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-                foreach (var dataSource in dataSources)
-                {
-                    dataSource.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                }
-
-                await _context.SaveChangesAsync();
+                await SoftDeleteDataSources(predicate, transaction);
                 return true;
             }
-            catch (Exception exception)
+            catch (Exception exc)
             {
-                var message = $"An error occurred while deleting project data sources: {exception}";
+                var message = $"An error occurred while deleting data sources: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return false;
+            }
+        }
+
+        private async Task SoftDeleteDataSources(
+            Expression<Func<DataSource, bool>> predicate,
+            IDbContextTransaction? transaction)
+        {
+            // check for existing transaction; if one does not exist, start a new one
+            var commit = false; // flag used to determine if transaction should be committed
+            if (transaction == null)
+            {
+                commit = true;
+                transaction = await _context.Database.BeginTransactionAsync();
+            }
+
+            // search for records matching the passed-in predicate (filter) to be updated
+            var dsContext = _context.DataSources
+                .Where(d => d.DeletedAt == null)
+                .Where(predicate);
+
+            var dataSources = await dsContext.ToListAsync();
+            
+            if (dataSources.Count == 0)
+            {
+                // return early if no records are to be deleted
+                return;
+            }
+            
+            var dataSourceIds = dataSources.Select(d => d.Id);
+            
+            // trigger downstream deletions
+            var softDeleteTasks = new List<Func<Task<bool>>>
+            {
+                () => _recordBusiness.BulkSoftDeleteRecords(r => dataSourceIds.Contains(r.DataSourceId), transaction),
+                () => _edgeBusiness.BulkSoftDeleteEdges(e => dataSourceIds.Contains(e.DataSourceId))
+            };
+
+            // loop through tasks and trigger downstream deletions
+            foreach (var task in softDeleteTasks)
+            {
+                bool result = await task();
+                if (!result)
+                {
+                    // rollback the transaction and throw an error
+                    await transaction.RollbackAsync();
+                    throw new DependencyDeletionException(
+                        "An error occurred during the deletion of downstream datasource dependants.");
+                }
+            }
+
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await dsContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found records to update, but weren't successful in updating, throw an error
+            if (updated == 0)
+            {
+                throw new DependencyDeletionException("An error occurred when deleting data sources");
+            }
+
+            // save changes and commit transaction to close it
+            await _context.SaveChangesAsync();
+            if (commit)
+            {
+                await transaction.CommitAsync();
             }
         }
     }

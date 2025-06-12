@@ -1,0 +1,7 @@
+//Duplicate file, rename to .env and add credentials 
+
+OKTA_CLIENT_ID = ""
+OKTA_CLIENT_SECRET = ""
+OKTA_ISSUER = ""
+
+AUTH_SECRET = ""

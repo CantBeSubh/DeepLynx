@@ -1,8 +1,11 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.exceptions;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
@@ -276,34 +279,49 @@ public class EdgeBusiness : IEdgeBusiness
     }
 
     /// <summary>
-    /// Called primarily by project's delete. Soft delete all edges in a project by project id.
+    /// Bulk Soft Delete edges by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns>Boolean true on successful deletion.</returns>
-    /// <exception cref="KeyNotFoundException"></exception>
-    public async Task<bool> SoftDeleteAllEdgesByProjectIdAsync(long projectId)
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    public async Task<bool> BulkSoftDeleteEdges(Expression<Func<Edge, bool>> predicate)
     {
-        var project = await _context.Projects.FindAsync(projectId);
-
-        if (project == null)
-            throw new KeyNotFoundException("Project not found.");
-
         try
         {
-            var edges = await _context.Edges.Where(t => t.ProjectId == projectId && t.DeletedAt == null).ToListAsync();
-            foreach (var edge in edges)
+            // search for records matching the passed-in predicate (filter) to be updated
+            var eContext = _context.Edges
+                .Where(d => d.DeletedAt == null)
+                .Where(predicate);
+
+            var edges = await eContext.ToListAsync();
+            
+            if (edges.Count == 0)
             {
-                edge.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                // return early if no edges are to be deleted
+                return true;
             }
 
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await eContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found edges to update, but weren't successful in updating, throw an error
+            if (updated == 0)
+            {
+                throw new DependencyDeletionException("Edges found but were not deleted");
+            }
+
+            // save changes and commit transaction to close it
             await _context.SaveChangesAsync();
             return true;
+                
         }
-        catch (Exception exception)
+        catch (Exception exc)
         {
-            var message = $"An error occurred while deleting project edges: {exception}";
+            
+            var message = $"An error occurred while deleting edges: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }
     }
+    
 }

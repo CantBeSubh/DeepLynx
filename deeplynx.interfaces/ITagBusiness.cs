@@ -1,4 +1,7 @@
+using System.Linq.Expressions;
+using deeplynx.datalayer.Models;
 using deeplynx.models;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.interfaces;
     
@@ -9,5 +12,5 @@ public interface ITagBusiness
     Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId);
     Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId);
     Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false);
-    Task<bool> SoftDeleteAllTagsByProjectIdAsync(long projectId);
+    Task<bool> BulkSoftDeleteTags(Expression<Func<Tag, bool>> predicate, IDbContextTransaction? transaction);
 }

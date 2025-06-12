@@ -1,10 +1,10 @@
 "use client";
 import React, { useState } from "react";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import GenericTable from "@/app/components/GenericTable";
+import GenericTable from "@/app/(home)/components/GenericTable";
 import ModeIcon from "@mui/icons-material/Mode";
-import { initialTableData } from "@/app/dummy_data/data";
-import { DataSourceTableRow, TableRow, Column } from "@/app/types/types";
+import { initialTableData } from "@/app/(home)/dummy_data/data";
+import { DataSourceTableRow, TableRow, Column } from "@/app/(home)/types/types";
 
 const DataSource = () => {
   // State to manage table data

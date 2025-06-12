@@ -17,6 +17,9 @@ public partial class DataSource
 
     [Column("name")]
     public string Name { get; set; } = null!;
+    
+    [Column("description")]
+    public string? Description { get; set; }
 
     [Column("abbreviation")]
     public string? Abbreviation { get; set; }

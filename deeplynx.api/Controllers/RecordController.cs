@@ -5,23 +5,28 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/datasources/{dataSourceId}/records")]
+    [Route("api/projects/{projectId}/records")]
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordBusiness;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RecordController"/> class
+        /// </summary>
+        /// <param name="recordBusiness">The business logic interface for handling record operations.</param>
         public RecordController(IRecordBusiness recordBusiness)
         {
             _recordBusiness = recordBusiness;
         }
+        
         /// <summary>
-        /// Get all Records
+        /// Get All Records
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAllRecords")]
-        public async Task<IActionResult> GetAllRecords(long projectId, long dataSourceId)
+        public async Task<IActionResult> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
         {
             try
             {
@@ -35,19 +40,19 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Get one Record from DB
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
         /// <returns></returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<IActionResult> GetRecord(long projectId, long dataSourceId, long recordId)
+        public async Task<IActionResult> GetRecord(long projectId, long recordId)
         {
             try
             {
-                var record = await _recordBusiness.GetRecord(projectId, dataSourceId, recordId);
+                var record = await _recordBusiness.GetRecord(projectId, recordId);
                 return Ok(record);
             }
             catch (Exception exc)
@@ -57,6 +62,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Create a Record
         /// </summary>
@@ -65,7 +71,9 @@ namespace deeplynx.api.Controllers
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPost("CreateRecord")]
-        public async Task<IActionResult> CreateRecord(long projectId, long dataSourceId,
+        public async Task<IActionResult> CreateRecord(
+            long projectId, 
+            [FromQuery] long dataSourceId,
             [FromBody] RecordRequestDto dto)
         {
             try
@@ -80,21 +88,23 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
         /// Update Record
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
         /// <param name="dto"></param>
         /// <returns></returns>
         [HttpPut("UpdateRecord/{recordId}")]
-        public async Task<IActionResult> UpdateRecord(long projectId, long dataSourceId, long recordId,
+        public async Task<IActionResult> UpdateRecord(
+            long projectId,
+            long recordId,
             [FromBody] RecordRequestDto dto)
         {
             try
             {
-                var updated = await _recordBusiness.UpdateRecord(projectId, dataSourceId, recordId, dto);
+                var updated = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
                 return Ok(updated);
             }
             catch (Exception exc)
@@ -104,19 +114,20 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
         /// <summary>
-        /// Delete Record
+        /// 
         /// </summary>
         /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
         /// <param name="recordId"></param>
+        /// <param name="force"></param>
         /// <returns></returns>
         [HttpDelete("DeleteRecord/{recordId}")]
-        public async Task<IActionResult> DeleteRecord(long projectId, long dataSourceId, long recordId)
+        public async Task<IActionResult> DeleteRecord(long projectId, long recordId, [FromQuery] bool force = false)
         {
             try
             {
-                await _recordBusiness.DeleteRecord(projectId, dataSourceId, recordId);
+                await _recordBusiness.DeleteRecord(projectId, recordId, force);
                 return Ok(new { message = $"Deleted record {recordId}" });
             }
             catch (Exception exc)

@@ -6,6 +6,7 @@ using Testcontainers.PostgreSql;
 using Xunit;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models;
 using NLog;
 
@@ -15,6 +16,8 @@ namespace deeplynx.tests
     {
         private readonly PostgreSqlContainer _postgresContainer;
         private DbContextOptions<DeeplynxContext> _options;
+        private IEdgeMappingBusiness _edgeMappingBusiness;
+        private IEdgeBusiness _edgeBusiness;
 
         public RelationshipTests()
         {
@@ -34,6 +37,8 @@ namespace deeplynx.tests
 
             await using var context = new DeeplynxContext(_options);
             await context.Database.MigrateAsync();
+            _edgeMappingBusiness = new EdgeMappingBusiness(context);
+            _edgeBusiness = new EdgeBusiness(context);
         }
 
         public async Task DisposeAsync()
@@ -76,7 +81,7 @@ namespace deeplynx.tests
             var (projectId, originId, destId) = await SeedProjectAndClassIds();
 
             await using var context = new DeeplynxContext(_options);
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
             var dto = new RelationshipRequestDto { Name = "Rel1", OriginClass = originId.ToString(), DestinationClass = destId.ToString() };
 
             var result = await business.CreateRelationship(projectId, dto);
@@ -93,7 +98,7 @@ namespace deeplynx.tests
             var (projectId, originId, destId) = await SeedProjectAndClassIds();
 
             await using var context = new DeeplynxContext(_options);
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
             var dto = new RelationshipRequestDto { Name = null, OriginClass = originId.ToString(), DestinationClass = destId.ToString() };
 
             await Assert.ThrowsAsync<DbUpdateException>(() => business.CreateRelationship(projectId, dto));
@@ -105,7 +110,7 @@ namespace deeplynx.tests
                 var (projectId, originId, destId) = await SeedProjectAndClassIds(deleteProject: true);
 
                 await using var context = new DeeplynxContext(_options);
-                var business = new RelationshipBusiness(context);
+                var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
                 var dto = new RelationshipRequestDto
                     { Name = "Rel1", OriginClass = originId.ToString(), DestinationClass = destId.ToString() };
 
@@ -120,7 +125,7 @@ namespace deeplynx.tests
             var (projectId, originId, destId) = await SeedProjectAndClassIds(deleteClasses: true);
 
             await using var context = new DeeplynxContext(_options);
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
             var dto = new RelationshipRequestDto { Name = "Rel1", OriginClass = originId.ToString(), DestinationClass = destId.ToString() };
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() => business.CreateRelationship(projectId, dto));
@@ -132,7 +137,7 @@ namespace deeplynx.tests
             var (projectId, originId, destId) = await SeedProjectAndClassIds();
 
             await using var context = new DeeplynxContext(_options);
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
 
             var otherProject = new Project { Name = "Other Project", Abbreviation = "OP" };
             context.Projects.Add(otherProject);
@@ -164,7 +169,7 @@ namespace deeplynx.tests
             context.Relationships.Add(relationship);
             await context.SaveChangesAsync();
 
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
             var result = await business.GetRelationship(projectId, relationship.Id);
 
             Assert.NotNull(result);
@@ -188,7 +193,7 @@ namespace deeplynx.tests
             context.Relationships.Add(relationship);
             await context.SaveChangesAsync();
 
-            var business = new RelationshipBusiness(context);
+            var business = new RelationshipBusiness(context, _edgeMappingBusiness, _edgeBusiness);
             var result = await business.DeleteRelationship(projectId, relationship.Id);
             Assert.True(result);
 

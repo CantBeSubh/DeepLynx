@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 
@@ -10,5 +11,5 @@ public interface IEdgeBusiness
     Task<EdgeResponseDto> CreateEdge(long projectId, long dataSourceId, EdgeRequestDto edge);
     Task<EdgeResponseDto> UpdateEdge(long projectId, EdgeRequestDto edge, long? edgeId, long? originId, long? destinationId);
     Task<bool> DeleteEdge(long projectId, long? edgeId, long? originId, long? destinationId, bool force=false);
-    Task<bool> SoftDeleteAllEdgesByProjectIdAsync(long projectId);
+    Task<bool> BulkSoftDeleteEdges(Expression<Func<Edge, bool>> predicate);
 }

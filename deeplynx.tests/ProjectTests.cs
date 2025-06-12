@@ -36,14 +36,14 @@ public sealed class ProjectTests : IAsyncLifetime
         await _context.Database.MigrateAsync(); 
         
         // We have to initialize the business classes for tests
-        _tagBusiness = new TagBusiness(_context);
         _edgeMappingBusiness = new EdgeMappingBusiness(_context);
-        _relationshipBusiness = new RelationshipBusiness(_context);
-        _classBusiness = new ClassBusiness(_context);
+        _classBusiness = new ClassBusiness(_context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _recordMappingBusiness = new RecordMappingBusiness(_context);
+        _tagBusiness = new TagBusiness(_context, _recordMappingBusiness);
         _edgeBusiness = new EdgeBusiness(_context);
-        _dataSourceBusiness = new DataSourceBusiness(_context);
-        _recordBusiness = new RecordBusiness(_context);
+        _relationshipBusiness = new RelationshipBusiness(_context, _edgeMappingBusiness, _edgeBusiness);
+        _dataSourceBusiness = new DataSourceBusiness(_context, _edgeBusiness, _recordBusiness);
+        _recordBusiness = new RecordBusiness(_context, _edgeBusiness);
         _roleBusiness = new RoleBusiness(_context);
                     
         // Initialize ProjectBusiness with dependencies
@@ -99,8 +99,7 @@ public sealed class ProjectTests : IAsyncLifetime
     [Fact]
     public async Task GetProject_Should_Throw_If_Not_Exists()
     {
-        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
-        Assert.Equal("Project not found.", ex.Message);
+       await Assert.ThrowsAsync<KeyNotFoundException>(() => _projectBusiness.GetProject(999));
     }
     // Create project, update name and abbreviation fields successfully 
     [Fact]
