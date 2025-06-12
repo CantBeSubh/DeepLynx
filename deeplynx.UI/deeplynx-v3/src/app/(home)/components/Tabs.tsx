@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
 
 // Define the structure of a Tab
 interface Tab {

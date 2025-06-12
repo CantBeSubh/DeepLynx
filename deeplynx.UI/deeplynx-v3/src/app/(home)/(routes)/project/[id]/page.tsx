@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { sampleProjectData } from "@/app/dummy_data/data";
+import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
-import { ProjectsList } from "@/app/types/types";
+import { ProjectsList } from "@/app/(home)/types/types";
 
 const ProjectDetailPage = () => {
   // State to manage the project name and mounting status

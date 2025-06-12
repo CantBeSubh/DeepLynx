@@ -2,12 +2,7 @@
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import React, { useState, useEffect } from "react";
-<<<<<<<< HEAD:deeplynx.UI/deeplynx-v3/src/app/(routes)/data_catalog/page.tsx
-import { fileTableData } from "@/app/dummy_data/data";
-import GenericTable from "@/app/components/GenericTable";
-import { Column, FileViewerTableRow } from "@/app/types/types";
-import { useRouter } from "next/navigation";
-========
+
 import { fileTableData } from "@/app/(home)/dummy_data/data";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import {
@@ -16,7 +11,7 @@ import {
   FileViewerTableRow,
   ProjectsList,
 } from "@/app/(home)/types/types";
->>>>>>>> origin/develop:deeplynx.UI/deeplynx-v3/src/app/(home)/pages/data_catalog/page.tsx
+import { useRouter } from "next/navigation";
 
 const DataCatalog = () => {
   const router = useRouter();

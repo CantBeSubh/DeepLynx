@@ -1,7 +1,7 @@
 "use client";
 
-import Tabs from "@/app/components/Tabs";
-import { fileData } from "@/app/dummy_data/data";
+import Tabs from "@/app/(home)/components/Tabs";
+import { fileData } from "@/app/(home)/dummy_data/data";
 import { notFound, useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
 import React from "react";

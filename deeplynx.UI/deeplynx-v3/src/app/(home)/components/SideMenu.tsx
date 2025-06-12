@@ -52,7 +52,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   useEffect(() => {
     onToggle(isCollapsed);
-  }, []);
+  }, [isCollapsed, onToggle]);
 
   // Function to toggle the collapse state of the menu
   const toggleMenu = () => {
@@ -66,10 +66,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     item: string,
     event: React.MouseEvent<HTMLElement>
   ) => {
-    // if (isDisabled(item)) {
-    //   event.preventDefault(); // Prevent default behavior if the item is disabled
-    //   return;
-    // }
     event.preventDefault();
     setSelectedItem(item); // Set the clicked item as selected
     router.push(item); // Navigate to the clicked item's path
