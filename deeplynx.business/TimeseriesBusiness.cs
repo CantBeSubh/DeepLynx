@@ -2,8 +2,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
-using DuckDB.NET.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
@@ -43,7 +41,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
-
+        
         return new TimeseriesResponseDto
         {
             ProjectId = projectId,
@@ -87,7 +85,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         {
             throw new ArgumentException("No chunk uploaded.");
         }
-
+        
         var tempFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId, $"{chunkNumber}.part");
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
@@ -122,14 +120,14 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         }
 
         Directory.Delete(folderPath); // Clean up the upload folder
-
+        
         // todo: kick off file processing here (See DL-97 Sub-Tasks)
         // start saving metadata to db
         // import into duckdb
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
-
+        
         return new TimeseriesResponseDto
         {
             ProjectId = projectId,
@@ -140,7 +138,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
             FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
         };
     }
-
+}
     // todo: get methods implemented here
 
     public DuckDBConnection GetDuckDBConnection()

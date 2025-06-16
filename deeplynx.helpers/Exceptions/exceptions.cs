@@ -1,6 +1,6 @@
 namespace deeplynx.helpers.exceptions;
 
-public class ProjectDependencyDeletionException : Exception
+public class DependencyDeletionException : Exception
 {
-    public ProjectDependencyDeletionException(string message) : base(message) { }
+    public DependencyDeletionException(string message) : base(message) { }
 }

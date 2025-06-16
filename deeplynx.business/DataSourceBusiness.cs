@@ -12,7 +12,7 @@ namespace deeplynx.business
     public class DataSourceBusiness : IDataSourceBusiness
     {
         private readonly DeeplynxContext _context;
-        
+
         // dependants used to trigger downstream soft deletes
         private readonly IEdgeBusiness _edgeBusiness;
         private readonly IRecordBusiness _recordBusiness;
@@ -24,15 +24,15 @@ namespace deeplynx.business
         /// <param name="edgeBusiness">Passed in context for downstream edge objects.</param>
         /// <param name="recordBusiness">Passed in context for downstream record objects.</param>
         public DataSourceBusiness(
-            DeeplynxContext context, 
-            IEdgeBusiness edgeBusiness, 
+            DeeplynxContext context,
+            IEdgeBusiness edgeBusiness,
             IRecordBusiness recordBusiness)
         {
             _context = context;
             _edgeBusiness = edgeBusiness;
             _recordBusiness = recordBusiness;
         }
-        
+
         /// <summary>
         /// Retrieves all data sources for a specific project.
         /// </summary>
@@ -150,12 +150,12 @@ namespace deeplynx.business
         /// <returns>The updated data source.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
         public async Task<DataSourceResponseDto> UpdateDataSource(
-            long projectId, 
-            long dataSourceId, 
+            long projectId,
+            long dataSourceId,
             DataSourceRequestDto dto)
         {
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
-            
+
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
             {
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
@@ -172,7 +172,7 @@ namespace deeplynx.business
 
             _context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
-            
+
             return new DataSourceResponseDto
             {
                 Id = dataSource.Id,
@@ -202,7 +202,7 @@ namespace deeplynx.business
         public async Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force = false)
         {
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
-            
+
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
             {
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
@@ -219,7 +219,7 @@ namespace deeplynx.business
                 try
                 {
                     var transaction = await _context.Database.BeginTransactionAsync();
-                    await this.SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
+                    await SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
                     await transaction.CommitAsync();
                 }
                 catch (Exception exc)
@@ -229,23 +229,23 @@ namespace deeplynx.business
                     return false;
                 }
             }
-            
+
             return true;
         }
-        
+
         /// <summary>
         /// Bulk Soft Delete data sources by a specific upstream domain. Used to avoid repeating functions.
         /// </summary>
-        /// <param name="domainType">The type of domain which is calling this function</param>
-        /// <param name="domainId">The ID of the upstream domain calling this function</param>
+        /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
+        /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
         /// <returns>Boolean true on successful deletion</returns>
         public async Task<bool> BulkSoftDeleteDataSources(
-            Expression<Func<DataSource, bool>> predicate, 
+            Expression<Func<DataSource, bool>> predicate,
             IDbContextTransaction? transaction)
         {
             try
             {
-                await this.SoftDeleteDataSources(predicate, transaction);
+                await SoftDeleteDataSources(predicate, transaction);
                 return true;
             }
             catch (Exception exc)
@@ -256,8 +256,8 @@ namespace deeplynx.business
             }
         }
 
-        private async Task<bool> SoftDeleteDataSources(
-            Expression<Func<DataSource, bool>> predicate, 
+        private async Task SoftDeleteDataSources(
+            Expression<Func<DataSource, bool>> predicate,
             IDbContextTransaction? transaction)
         {
             // check for existing transaction; if one does not exist, start a new one
@@ -267,29 +267,29 @@ namespace deeplynx.business
                 commit = true;
                 transaction = await _context.Database.BeginTransactionAsync();
             }
-            
+
             // search for records matching the passed-in predicate (filter) to be updated
             var dsContext = _context.DataSources
                 .Where(d => d.DeletedAt == null)
                 .Where(predicate);
-            
+
             var dataSources = await dsContext.ToListAsync();
-            var dataSourceIds = dataSources.Select(d => d.Id);
             
             if (dataSources.Count == 0)
             {
-                // return true even if no records are to be deleted;
-                // we only want to return false if there were errors
-                return true;
+                // return early if no records are to be deleted
+                return;
             }
+            
+            var dataSourceIds = dataSources.Select(d => d.Id);
             
             // trigger downstream deletions
             var softDeleteTasks = new List<Func<Task<bool>>>
             {
-                () => _recordBusiness.BulkSoftDeleteRecords("dataSource", dataSourceIds, transaction),
-                () => _edgeBusiness.BulkSoftDeleteEdges("dataSource", dataSourceIds)
+                () => _recordBusiness.BulkSoftDeleteRecords(r => dataSourceIds.Contains(r.DataSourceId), transaction),
+                () => _edgeBusiness.BulkSoftDeleteEdges(e => dataSourceIds.Contains(e.DataSourceId))
             };
-            
+
             // loop through tasks and trigger downstream deletions
             foreach (var task in softDeleteTasks)
             {
@@ -298,7 +298,7 @@ namespace deeplynx.business
                 {
                     // rollback the transaction and throw an error
                     await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException(
+                    throw new DependencyDeletionException(
                         "An error occurred during the deletion of downstream datasource dependants.");
                 }
             }
@@ -310,17 +310,15 @@ namespace deeplynx.business
             // if we found records to update, but weren't successful in updating, throw an error
             if (updated == 0)
             {
-                throw new ProjectDependencyDeletionException("An error occurred when deleting data sources");
+                throw new DependencyDeletionException("An error occurred when deleting data sources");
             }
-            
+
             // save changes and commit transaction to close it
             await _context.SaveChangesAsync();
             if (commit)
             {
                 await transaction.CommitAsync();
             }
-            
-            return true;
         }
     }
 }

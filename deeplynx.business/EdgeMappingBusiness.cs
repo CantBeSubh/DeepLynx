@@ -1,9 +1,12 @@
+using System.Linq.Expressions;
 using deeplynx.interfaces;                        
 using deeplynx.datalayer.Models;                  
 using deeplynx.models;                            
 using Microsoft.EntityFrameworkCore;              
-using System.Text.Json.Nodes;                     
-                                                  
+using System.Text.Json.Nodes;
+using deeplynx.helpers.exceptions;
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace deeplynx.business;                      
 
 public class EdgeMappingBusiness : IEdgeMappingBusiness
@@ -228,31 +231,41 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <param name="domainType">The type of domain which is calling this function</param>
     /// <param name="domainId">The ID of the upstream domain calling this function</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteEdgeMappings(string domainType, long domainId)
+    public async Task<bool> BulkSoftDeleteEdgeMappings(Expression<Func<EdgeMapping, bool>> predicate)
     {
         try
         {
-            var edgeMappingQuery = _context.EdgeMappings.Where(e => e.DeletedAt == null);
+            // search for records matching the passed-in predicate (filter) to be updated
+            var emContext = _context.EdgeMappings
+                .Where(d => d.DeletedAt == null)
+                .Where(predicate);
 
-            if (domainType == "project")
+            var edgeMappings = await emContext.ToListAsync();
+            
+            if (edgeMappings.Count == 0)
             {
-                edgeMappingQuery = edgeMappingQuery.Where(e => e.ProjectId == domainId);
+                // return early if no edge mappings are to be deleted
+                return true;
             }
-                    
-            var edgeMappings = await edgeMappingQuery.ToListAsync();
-                
-            foreach (var e in edgeMappings)
+
+            // bulk update the results of the query to set the deleted_at date
+            var updated = await emContext.ExecuteUpdateAsync(setters => setters
+                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+            // if we found edge mappings to update, but weren't successful in updating, throw an error
+            if (updated == 0)
             {
-                e.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                throw new DependencyDeletionException("Edge mappings found but were not deleted");
             }
-                
+
+            // save changes and commit transaction to close it
             await _context.SaveChangesAsync();
             return true;
                 
         }
         catch (Exception exc)
         {
-            var message = $"An error occurred while deleting edge mappings for domain {domainType} with id {domainId}: {exc}";
+            var message = $"An error occurred while deleting edge mappings: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
         }

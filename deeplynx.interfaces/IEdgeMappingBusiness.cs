@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 
@@ -10,5 +11,5 @@ public interface IEdgeMappingBusiness
     Task<EdgeMappingResponseDto> CreateEdgeMapping(long projectId, EdgeMappingRequestDto dto);
     Task<EdgeMappingResponseDto> UpdateEdgeMapping(long projectId, long mappingId, EdgeMappingRequestDto dto);
     Task<bool> DeleteEdgeMapping(long projectId, long mappingId, bool force);
-    Task<bool> BulkSoftDeleteEdgeMappings(string domainType, long domainId);
+    Task<bool> BulkSoftDeleteEdgeMappings(Expression<Func<EdgeMapping, bool>> predicate);
 }

@@ -5,7 +5,7 @@ using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-
+using System.Linq.Expressions;
 
 namespace deeplynx.business;
 
@@ -31,12 +31,19 @@ public class RecordBusiness : IRecordBusiness
     /// Retrieves all records for a specific project and datasource.
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
-    /// <param name="dataSourceId">The ID of the datasource by which to filter edges</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long dataSourceId)
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
-        return await _context.Records
-            .Where(r => r.ProjectId == projectId && r.DataSourceId == dataSourceId && r.DeletedAt == null)
+        var recordQuery = _context.Records
+            .Where(r => r.ProjectId == projectId && r.DeletedAt == null);
+
+        if (dataSourceId.HasValue)
+        {
+            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
+        }
+        
+        return await recordQuery
             .Select(r=>new RecordResponseDto()
             {
                 Id = r.Id,
@@ -60,15 +67,15 @@ public class RecordBusiness : IRecordBusiness
     /// Retrieves a specific record by its ID
     /// </summary>
     /// <param name="projectId">The project of the record to retrieve</param>
-    /// <param name="dataSourceId">The data source of the record to retrieve</param>
     /// <param name="recordId">The ID of the record to retrieve</param>
     /// <returns>The record in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long dataSourceId, long recordId)
+    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
     {
         var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DataSourceId == dataSourceId &&
-                        r.DeletedAt == null).FirstOrDefaultAsync();
+            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DeletedAt == null)
+            .FirstOrDefaultAsync();
+        
         if (record == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
@@ -157,12 +164,11 @@ public class RecordBusiness : IRecordBusiness
     /// Updates a record with new information
     /// </summary>
     /// <param name="projectId">The ID of the project to which the record belongs</param>
-    /// <param name="dataSourceId">The ID of the datasource to which the record belongs</param>
     /// <param name="recordId">The ID of the record to be updated</param>
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long projectId, long dataSourceId, long recordId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
     {
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
@@ -210,7 +216,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="force">If force is true, permanently delete the record. Otherwise, soft delete</param>
     /// <returns>Boolean indicating record was deleted</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
-    /// <exception cref="ProjectDependencyDeletionException">Returned if downstream deletions failed.</exception>
+    /// <exception cref="DependencyDeletionException">Returned if downstream deletions failed.</exception>
     public async Task<bool> DeleteRecord(long projectId, long recordId, bool force=false)
     {
         var record = await _context.Records.FindAsync(recordId);
@@ -228,36 +234,18 @@ public class RecordBusiness : IRecordBusiness
         }
         else
         {
-            // start a database transaction to ensure deletion changes are rolled back if errors occur
-            var transaction = await _context.Database.BeginTransactionAsync();
-            
-            // define a list of lambda functions for bulk deletes to sequentially iterate
-            // so as not to block the thread of our lone database context
-            // there is only one downstream task currently, but there may be more in the future
-            var softDeleteTasks = new List<Func<Task<bool>>>
+            try
             {
-                () => _edgeBusiness.BulkSoftDeleteEdges("record", [recordId])
-            };
-
-
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and then throw an error
-                    await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
-                }
+                var transaction = await _context.Database.BeginTransactionAsync();
+                await SoftDeleteRecords(r => r.Id == recordId, transaction);
+                await transaction.CommitAsync();
             }
-                
-            // soft delete
-            record.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Records.Update(record);
-
-            // save changes and commit the transaction to close it
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while deleting record: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return false;
+            }
         }
         
         return true;
@@ -299,80 +287,86 @@ public class RecordBusiness : IRecordBusiness
     /// <summary>
     /// Bulk Soft Delete records by a specific upstream domain. Used to avoid repeating functions.
     /// </summary>
-    /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainIds">The ID of the upstream domain calling this function</param>
+    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
     /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
     /// <returns>Boolean true on successful deletion</returns>
     public async Task<bool> BulkSoftDeleteRecords(
-        string domainType, 
-        IEnumerable<long> domainIds, 
+        Expression<Func<Record, bool>> predicate,
         IDbContextTransaction? transaction)
     {
         try
         {
-            var recordQuery = _context.Records.Where(r => r.DeletedAt == null);
-
-            if (domainType == "project")
-            {
-                recordQuery = recordQuery.Where(r => domainIds.Contains(r.ProjectId));
-            }
-
-            if (domainType == "dataSource")
-            {
-                recordQuery = recordQuery.Where(r => domainIds.Contains(r.DataSourceId));
-            }
-            
-            var records = await recordQuery.ToListAsync();
-            
-            // start a database transaction to ensure deletion changes are rolled back if errors occur
-            var commit = false; // variable to indicate whether we can commit or if parent should commit transaction
-            if (transaction == null)
-            {
-                commit = true;
-                transaction = await _context.Database.BeginTransactionAsync();
-            }
-            
-            // define a list of lambda functions for bulk deletes to sequentially iterate
-            // so as not to block the thread of our lone database context
-            // there is only one downstream task currently, but there may be more in the future
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _edgeBusiness.BulkSoftDeleteEdges("record", records.Select(r => r.Id))
-            };
-    
-            // execute all downstream update tasks (just edges currently)
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and then throw an error
-                    await transaction.RollbackAsync();
-                    throw new ProjectDependencyDeletionException("An error occurred during deletion of downstream record dependants.");
-                }
-            }
-                
-            // update all records with the new deletion date
-            foreach (var r in records)
-            {
-                r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
-                    
-            // save changes and close the transaction
-            await _context.SaveChangesAsync();
-            if (commit)
-            {
-                await transaction.CommitAsync();
-            }
+            await SoftDeleteRecords(predicate, transaction);
             return true;
-                
         }
         catch (Exception exc)
         {
-            var id_list = string.Join(",", domainIds);
-            var message = $"An error occurred while deleting roles for domain {domainType} with id(s) {id_list}: {exc}";
+            var message = $"An error occurred while deleting records: {exc}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return false;
+        }
+    }
+
+    private async Task SoftDeleteRecords(
+        Expression<Func<Record, bool>> predicate,
+        IDbContextTransaction? transaction)
+    {
+        // check for existing transaction; if one does not exist, start a new one
+        var commit = false; // flag used to determine if transaction should be committed
+        if (transaction == null)
+        {
+            commit = true;
+            transaction = await _context.Database.BeginTransactionAsync();
+        }
+        
+        var rContext = _context.Records
+            .Where(r => r.DeletedAt == null)
+            .Where(predicate);
+        
+        var records = await rContext.ToListAsync();
+        
+        if (records.Count == 0)
+        {
+            // return early if no records are to be deleted
+            return;
+        }
+        
+        var recordIds = records.Select(r => r.Id);
+        
+        // trigger downstream deletions
+        var softDeleteTasks = new List<Func<Task<bool>>>
+        {
+            () => _edgeBusiness.BulkSoftDeleteEdges(e => recordIds.Contains(e.OriginId) || recordIds.Contains(e.DestinationId))
+        };
+        
+        // loop through tasks and trigger downstream deletions
+        foreach (var task in softDeleteTasks)
+        {
+            bool result = await task();
+            if (!result)
+            {
+                // rollback the transaction and throw an error
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException(
+                    "An error occurred during the deletion of downstream record dependents.");
+            }
+        }
+        
+        // bulk update the results of the query to set the deleted_at date
+        var updated = await rContext.ExecuteUpdateAsync(setters => setters
+            .SetProperty(r => r.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+        // if we found records to update, but weren't successful in updating, throw an error
+        if (updated == 0)
+        {
+            throw new DependencyDeletionException("An error occurred when deleting records");
+        }
+
+        // save changes and commit transaction to close it
+        await _context.SaveChangesAsync();
+        if (commit)
+        {
+            await transaction.CommitAsync();
         }
     }
 }
