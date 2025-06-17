@@ -25,8 +25,8 @@ export function ExpandableTable<T>({
   const closeExpanded = () => setExpandedIndex(null);
 
   return (
-    <div className="">
-      <table className="table w-full border-separate border-spacing-y-2">
+    <div>
+      <table className="table w-full border-separate p-2 border-spacing-y-2 shadow">
         {expandedIndex === null && (
           <thead>
             <tr>
@@ -43,22 +43,16 @@ export function ExpandableTable<T>({
             <React.Fragment key={index}>
               {expandedIndex === index ? (
                 <tr>
-                  <td colSpan={columns.length + 2} className="p-0 ">
-                    <div
-                      className={`overflow-hidden transition-all duration-100 ease-in-out ${
-                        expandedIndex === index
-                          ? "max-h-100 opacity-1000"
-                          : "max-h-0 opacity-0"
-                      }`}
-                    >
-                      <div className="card bg-base-200/40 transition-all duration-900 ease-in-out animate-fade-in p-4">
+                  <td colSpan={columns.length + 2} className="p-0">
+                    <div className="overflow-hidden transition-all duration-500 ease-in-out max-h-[1000px] opacity-100">
+                      <div className="card bg-base-200/40 p-6 rounded-box shadow">
                         {renderExpandedContent(row, closeExpanded)}
                       </div>
                     </div>
                   </td>
                 </tr>
               ) : (
-                <tr className="bg-base-200/20 hover:bg-base-200/40 mb-2">
+                <tr className="bg-base-200/20 hover:bg-base-200/40 rounded-lg overflow-hidden">
                   {columns.map((col, i) => (
                     <td key={i}>{col.data(row)}</td>
                   ))}
@@ -71,7 +65,10 @@ export function ExpandableTable<T>({
                     </button>
                   </td>
                   <td>
-                    <button onClick={() => toggleRow(index)}>
+                    <button
+                      onClick={() => toggleRow(index)}
+                      aria-label="Expand row"
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         fill="none"
@@ -95,7 +92,6 @@ export function ExpandableTable<T>({
         </tbody>
       </table>
 
-      {/* Example pagination placeholder */}
       <div className="flex justify-center mt-4">
         <div className="join">
           <button className="join-item btn">«</button>
