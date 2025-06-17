@@ -19,6 +19,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import HelpIcon from "@mui/icons-material/Help";
 import ContactMainIcon from "@mui/icons-material/ContactMail";
 import BugReportIcon from "@mui/icons-material/BugReport";
+import { useProjectSession } from "@/app/contexts/ProjectSessionContext";
 
 // Define the props for the SideMenu component
 interface SideMenuProps {
@@ -29,6 +30,7 @@ interface SideMenuProps {
 const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const router = useRouter(); // Router hook for navigation
   const pathname = usePathname(); // Hook to get the current pathname
+  const { project } = useProjectSession();
 
   // State variables for selected item and menu collapse state
   const [selectedItem, setSelectedItem] = useState<string>("");
@@ -73,7 +75,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   // Function to check if an item is disabled
   const isDisabled = (targetPath: string) =>
-    pathname === "/projects" && targetPath !== "/projects";
+    pathname === "/" && targetPath !== "/";
 
   // Function to get the CSS class for an item based on its state
   const getItemClass = (targetPath: string) => {
@@ -114,9 +116,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       <ul>
         <li>
           <Link
-            href="/projects"
-            onClick={(e) => handleItemClick("/projects", e)}
-            className={getItemClass("/projects")}
+            href="/"
+            onClick={(e) => handleItemClick("/", e)}
+            className={getItemClass("/")}
           >
             <HomeIcon />
             {!isCollapsed && <p className="ml-2">Home Dashboard</p>}
@@ -132,8 +134,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         <li>
           <Link
             href="/project/#"
-            onClick={(e) => handleItemClick("/project/[id]", e)}
-            className={getItemClass("/project/[id]")}
+            onClick={(e) =>
+              handleItemClick(`/project/${project?.projectId}`, e)
+            }
+            className={getItemClass(`/project/${project?.projectId}`)}
           >
             <ListAltOutlinedIcon />
             {!isCollapsed && <p className="ml-2">Project Management</p>}

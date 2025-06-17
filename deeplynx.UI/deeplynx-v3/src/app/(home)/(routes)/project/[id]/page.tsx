@@ -4,62 +4,55 @@ import React, { useState, useEffect } from "react";
 import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
 import { ProjectsList } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionContext";
 
 const ProjectDetailPage = () => {
-  // State to manage the project name and mounting status
-  const [projectName, setProjectName] = useState<string>(""); // Initialize project name as an empty string
-  const [hasMounted, setHasMounted] = useState(false); // State to check if the component has mounted
-  const params = useParams();
-  const projectId = params?.id as string;
-
+  const { id } = useParams();
+  const projectId = id?.toString();
   const [project, setProject] = useState<ProjectsList | null>(null);
+  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
 
-  // Effect to run on component mount
   useEffect(() => {
-    if (projectId) {
-      const found = sampleProjectData.find((p) => p.id === projectId);
-      setProject(found || null);
-    }
-  }, [projectId]);
+    if (!hasLoaded || !projectId) return;
 
-  // If the component has not mounted yet, return null to avoid rendering, i do this to try and control the Hydration of pages ... its a console error
-  if (!project) return <p className="p-4">Loading project ...</p>;
+    const found = sampleProjectData.find((p) => p.id === projectId);
+    if (found) {
+      setProject(found);
+      setProjectSession({ projectId: found.id, projectName: found.name });
+    }
+  }, [hasLoaded, projectId]);
+
+  if (!hasLoaded) return <p className="p-4">Loading session...</p>;
+  if (!project) return <p className="p-4">No project found.</p>;
 
   return (
     <div>
       <main>
-        {/* Header section */}
         <div className="flex justify-between items-center text-secondary-content">
           <h1 className="text-2xl font-bold">Project Name: {project.name}</h1>
         </div>
-        <div className="divider"></div> {/* Divider line */}
-        {/* Project Overview Card */}
+        <div className="divider"></div>
+
         <div className="mb-6">
           <div className="card w-120 bg-base-200 text-secondary-content card-sm shadow-sm">
-            {" "}
-            {/* Card component for project overview */}
             <div className="card-body">
-              <h2 className="card-title ">Project Description</h2>
-              {/* Title for project description */}
+              <h2 className="card-title">Project Description</h2>
               <p>{project.description}</p>
               <div className="justify-end card-actions">
                 <button className="btn btn-accent btn-outline btn-xs">
                   Edit
-                </button>{" "}
-                {/* Button to edit project details */}
+                </button>
               </div>
             </div>
           </div>
         </div>
-        {/* Section for displaying personnel data */}
+
         <div>
           <h2 className="text-lg font-semibold mb-4 text-secondary-content">
             Personnel
-          </h2>{" "}
-          {/* Title for personnel section */}
-          <div className="divider"></div> {/* Divider line */}
+          </h2>
+          <div className="divider"></div>
         </div>
-        {/* TODO: Data Management? (Placeholder for future implementation) */}
       </main>
     </div>
   );

@@ -5,9 +5,17 @@ import { useState } from "react";
 import ArrowButton from "../../(home)/components/ArrowButton";
 import { links, LinkT } from "@/app/(home)/(routes)/links";
 import "../../globals.css";
+import { useUserSession } from "@/app/contexts/UserSessionContext";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
+  const router = useRouter();
   const [isChecked, setChecked] = useState(true);
+  const { setUser } = useUserSession();
+  const handleLogin = () => {
+    setUser({ username: "stacys_mom", isLoggedIn: true });
+    router.push("/");
+  };
 
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
