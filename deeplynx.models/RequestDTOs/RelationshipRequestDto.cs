@@ -1,16 +1,17 @@
-using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 namespace deeplynx.models;
 
 public class RelationshipRequestDto
 {
+    [Required]
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
     public string? Uuid { get; set; }
-
-    [JsonPropertyName("origin_class")]
-    public string OriginClass { get; set; } = null!;
-
-    [JsonPropertyName("destination_class")]
-    public string DestinationClass { get; set; } = null!;
+    
+    [Required]
+    public long OriginId { get; set; }
+    
+    [Required]
+    public long DestinationId { get; set; }
 }
