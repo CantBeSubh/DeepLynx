@@ -1,15 +1,18 @@
+using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
+using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
+public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
+    private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private const string UploadFolderPath = "uploads";
-
+    
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
     /// </summary>
@@ -41,6 +44,23 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
+        
+        var columns = await GetColumnsFromDb(filePath);
+            
+        var recordRequest = new RecordRequestDto 
+        {
+            Properties = new JsonObject
+            {
+                ["fileName"] = filePath,
+                ["columns"] = columns,
+                ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
+            },
+            Name = file.FileName,
+            OriginalId = uploadId,
+        };
+        
+        await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
         
         return new TimeseriesResponseDto
         {
@@ -104,7 +124,8 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         TimeseriesUploadCompleteRequestDto request)
     {
         var folderPath = Path.Combine(UploadFolderPath, projectId, dataSourceId, request.UploadId);
-        var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, request.UploadId + "_" + request.FileName);
+        var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId,
+            request.UploadId + "_" + request.FileName);
 
         await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
         {
@@ -120,13 +141,33 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         }
 
         Directory.Delete(folderPath); // Clean up the upload folder
-        
+
         // todo: kick off file processing here (See DL-97 Sub-Tasks)
         // start saving metadata to db
         // import into duckdb
         // describe table for metadata record properties
         // after processing, new filepath should be something like
-        // "duckdb://path/to/uuid_filename"
+        // "duckdb://uuid_filename"
+        
+        var columns = await GetColumnsFromDb(finalFilePath);
+        
+        // todo: check to see if a timeseries class exists for this project and create one if it doesn't
+            
+        var recordRequest = new RecordRequestDto 
+        {
+            Properties = new JsonObject
+            {
+                ["fileName"] = finalFilePath,
+                ["columns"] = columns,
+                ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
+            },
+            Name = request.FileName,
+            OriginalId = request.UploadId,
+            
+        };
+        
+        await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
         
         return new TimeseriesResponseDto
         {
@@ -137,5 +178,35 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
             FilePath = finalFilePath,
             FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
         };
+    }
+    private async Task<JsonArray> GetColumnsFromDb(string tableName)
+    {
+        await using var duckDbConnection = new DuckDBConnection("Data Source=file.db");
+        duckDbConnection.Open();
+
+        await using var command = duckDbConnection.CreateCommand();
+        command.CommandText = "SELECT column_name, data_type " +
+                              "FROM information_schema.columns " +
+                              "WHERE table_name = $table_name;";
+        command.Parameters.Add(new DuckDBParameter("table_name", tableName));
+
+        await using var reader = command.ExecuteReader();
+        var columns = new JsonArray();
+        
+        while (reader.Read())
+        {
+            var columnName = reader["COLUMN_NAME"].ToString();
+            var columnType = reader["DATA_TYPE"].ToString();
+            
+            var columnObject = new JsonObject
+            {
+                ["name"] = columnName,
+                ["type"] = columnType
+            };
+
+            columns.Add(columnObject);
+        }
+        
+        return columns;
     }
 }
