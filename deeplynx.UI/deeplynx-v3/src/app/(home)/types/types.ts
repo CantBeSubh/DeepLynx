@@ -11,16 +11,20 @@ export type DataSourceTableRow = {
 export type FileViewerTableRow = {
     id: number;
     fileName: string;
+    fileDescription: string;
+    fileType: string;
     timeseries: boolean;
     fileSize: number;
     dateModified: string;
     select?: boolean;
+    tags: string[];
+    lastEdit: string;
   };
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
-    header: string;
+    header?: string;
     data?: keyof T;
     sortable?: boolean;
     cell?: (row: T) => React.ReactNode

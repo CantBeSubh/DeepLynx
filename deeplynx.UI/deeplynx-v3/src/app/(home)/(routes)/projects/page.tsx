@@ -38,7 +38,7 @@ const Projects = () => {
       cell: (row) => (
         <button
           className="btn btn-sm btn-outline btn-accent"
-          onClick={() => router.push(`/pages/projects/${row.id}`)} // Navigate to project details page
+          onClick={() => router.push(`/project/${row.id}`)} // Navigate to project details page
         >
           Explore
         </button>
@@ -48,41 +48,46 @@ const Projects = () => {
 
   // Render the Projects component
   return (
-    <div>
-      <main>
-        {/* Title and search bar */}
-        <div>
-          <div className="flex justify-between items-center">
-            <div className="text-base-content">
-              <h1 className="text-2xl font-bold">Welcome Back Kevin</h1>{" "}
-              {/* Welcome message */}
-            </div>
+    <div className="bg-base-100">
+      {/* Title and search bar  */}
+      <div>
+        <div className="flex justify-between items-center">
+          <div className="text-secondary-content">
+            <h1 className="text-2xl font-bold">Welcome Back Kevin</h1>{" "}
+            {/* Welcome message */}
           </div>
-          <div className="divider"></div> {/* Divider line */}
         </div>
-        {/* Your Projects section */}
+        <div className="divider"></div> {/* Divider line */}
+      </div>
+      {/* Your Projects section */}
+      <div>
+        <div className="flex justify-between items-center">
+          <h3 className="text-secondary-content">Your Projects</h3>{" "}
+          {/* Section title */}
+          <button
+            className="btn btn-outline btn-sm btn-accent"
+            onClick={openModal} // Open the modal when clicked
+          >
+            Add new Project
+          </button>
+        </div>
+        <div className="divider"></div> {/* Divider line */}
+      </div>
+      <div className="flex">
         <div>
-          <div className="flex justify-between items-center">
-            <h3>Your Projects</h3> {/* Section title */}
-            <button
-              className="btn btn-outline btn-sm btn-accent"
-              onClick={openModal} // Open the modal when clicked
-            >
-              Add new Project
-            </button>
-          </div>
-          <div className="divider"></div> {/* Divider line */}
+          <GenericTable
+            columns={columns} // Pass columns to the table
+            data={tableData} // Pass data to the table
+            searchBar // Enable search bar
+            filterPlaceholder="Search Projects ..." // Placeholder text for the search bar
+          />
         </div>
-        {/* Render the GenericTable component */}
-        <GenericTable
-          columns={columns} // Pass columns to the table
-          data={tableData} // Pass data to the table
-          searchBar // Enable search bar
-          filterPlaceholder="Search Projects ..." // Placeholder text for the search bar
-        />
-      </main>
+        <div>Autumn's Widgets go here 👇</div>
+      </div>
+      {/* Render the GenericTable component */}
+
       {/* Render the CreateProject modal */}
-      <CreateProject isOpen={isModalOpen} onClose={closeModal} />{" "}
+      <CreateProject isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 };

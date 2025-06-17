@@ -1,4 +1,6 @@
+using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -183,34 +185,43 @@ namespace deeplynx.business
         /// <summary>
         /// Bulk Soft Delete roles by a specific upstream domain. Used to avoid repeating functions.
         /// </summary>
-        /// <param name="domainType">The type of domain which is calling this function</param>
-        /// <param name="domainId">The ID of the upstream domain calling this function</param>
+        /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
         /// <returns>Boolean true on successful deletion</returns>
-        public async Task<bool> BulkSoftDeleteRoles(string domainType, long domainId)
+        public async Task<bool> BulkSoftDeleteRoles(Expression<Func<Role, bool>> predicate)
         {
             try
             {
-                var roleQuery = _context.Roles.Where(r => r.DeletedAt == null);
+                // search for roles matching the passed-in predicate (filter) to be updated
+                var rContext = _context.Roles
+                    .Where(d => d.DeletedAt == null)
+                    .Where(predicate);
 
-                if (domainType == "project")
+                var roles = await rContext.ToListAsync();
+            
+                if (roles.Count == 0)
                 {
-                    roleQuery = roleQuery.Where(r => r.ProjectId == domainId);
+                    // return early if no roles are to be deleted
+                    return true;
                 }
-                    
-                var roles = await roleQuery.ToListAsync();
-                
-                foreach (var r in roles)
+
+                // bulk update the results of the query to set the deleted_at date
+                var updated = await rContext.ExecuteUpdateAsync(setters => setters
+                    .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+                // if we found roles to update, but weren't successful in updating, throw an error
+                if (updated == 0)
                 {
-                    r.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                    throw new DependencyDeletionException("Roles found but were not deleted");
                 }
-                
+
+                // save changes and commit transaction to close it
                 await _context.SaveChangesAsync();
                 return true;
                 
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting roles for domain {domainType} with id {domainId}: {exc}";
+                var message = $"An error occurred while deleting roles: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return false;
             }
