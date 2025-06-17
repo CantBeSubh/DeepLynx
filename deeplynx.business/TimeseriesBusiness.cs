@@ -32,6 +32,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var uploadId = Guid.NewGuid().ToString();
         var filePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId + "_" + file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
+        var uri = "duckdb://" + uploadId + "_" + file.FileName; 
 
         await using (var stream = new FileStream(filePath, FileMode.Create))
         {
@@ -51,13 +52,13 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         {
             Properties = new JsonObject
             {
-                ["fileName"] = filePath,
                 ["columns"] = columns,
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             },
             Name = file.FileName,
             OriginalId = uploadId,
+            Uri = uri
         };
         
         await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
@@ -126,6 +127,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var folderPath = Path.Combine(UploadFolderPath, projectId, dataSourceId, request.UploadId);
         var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId,
             request.UploadId + "_" + request.FileName);
+        var uri = "duckdb://" + request.UploadId + "_" + request.FileName; 
 
         await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
         {
@@ -157,14 +159,13 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         {
             Properties = new JsonObject
             {
-                ["fileName"] = finalFilePath,
                 ["columns"] = columns,
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             },
             Name = request.FileName,
             OriginalId = request.UploadId,
-            
+            Uri = uri
         };
         
         await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
@@ -206,7 +207,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
             columns.Add(columnObject);
         }
-        
         return columns;
     }
 }
