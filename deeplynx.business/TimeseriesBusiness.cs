@@ -1,12 +1,15 @@
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
+using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 
 namespace deeplynx.business;
 
+//DuckDB C# https://duckdb.net/docs/getting-started.html
 public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
 {
+
     private readonly DeeplynxContext _context = context;
     private const string UploadFolderPath = "uploads";
 
@@ -41,8 +44,8 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
-        
-        return new TimeseriesResponseDto
+
+        TimeseriesResponseDto responseDto = new TimeseriesResponseDto
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
@@ -51,6 +54,10 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
             FilePath = filePath,
             FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
         };
+
+        await CreateTimeseriesTable(responseDto);
+
+        return responseDto;
     }
 
     /// <summary>
@@ -85,7 +92,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         {
             throw new ArgumentException("No chunk uploaded.");
         }
-        
+
         var tempFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId, $"{chunkNumber}.part");
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
@@ -120,15 +127,15 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         }
 
         Directory.Delete(folderPath); // Clean up the upload folder
-        
+
         // todo: kick off file processing here (See DL-97 Sub-Tasks)
         // start saving metadata to db
         // import into duckdb
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
-        
-        return new TimeseriesResponseDto
+
+        TimeseriesResponseDto responseDto = new TimeseriesResponseDto
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
@@ -137,8 +144,12 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
             FilePath = finalFilePath,
             FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
         };
+
+        await CreateTimeseriesTable(responseDto);
+
+        return responseDto;
     }
-}
+
     // todo: get methods implemented here
 
     public DuckDBConnection GetDuckDBConnection()
@@ -146,43 +157,64 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return new DuckDBConnection("Data Source=file.db");
     }
 
+    /// <summary>
+    /// Formats data from DuckDB reader to a 2D array with column names
+    /// Modified from https://duckdb.net/docs/getting-started.html
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <returns>A 2D array with column names</returns>
     public List<List<dynamic>> OrganizeQueryData(DuckDBDataReader reader)
     {
-        List<dynamic> columns = [];
-        for (var index = 0; index < reader.FieldCount; index++)
+        List<List<dynamic>> tableData = [];
+        try
         {
-            string column = reader.GetName(index);
-            columns.Add(column);
-        }
-
-        List<List<dynamic>> tableData = [columns];
-
-        while (reader.Read())
-        {
-            for (int ordinal = 0; ordinal < reader.FieldCount; ordinal += columns.Count)
+            List<dynamic> columns = [];
+            for (var index = 0; index < reader.FieldCount; index++)
             {
-                List<dynamic> data = [];
-                for (int i = 0; i < columns.Count; i++)
-                {
-                    int newOrdinal = ordinal + i;
-
-                    if (reader.IsDBNull(ordinal))
-                    {
-                        Console.WriteLine("NULL");
-                        data.Add(null);
-                    }
-                    else
-                    {
-                        data.Add(reader.GetValue(newOrdinal));
-                    }
-                }
-                tableData.Add(data);
+                string column = reader.GetName(index);
+                columns.Add(column);
             }
+
+            tableData.Add(columns);
+
+            while (reader.Read())
+            {
+                for (int ordinal = 0; ordinal < reader.FieldCount; ordinal += columns.Count)
+                {
+                    List<dynamic> data = [];
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        int newOrdinal = ordinal + i;
+
+                        if (reader.IsDBNull(ordinal))
+                        {
+                            //Console.WriteLine("NULL");
+                            data.Add(null);
+                        }
+                        else
+                        {
+                            data.Add(reader.GetValue(newOrdinal));
+                        }
+                    }
+                    tableData.Add(data);
+                }
+            }
+        }
+        catch (DuckDBException ex)
+        {
+            // Ex from bad query etc.
+            //catch ex
+            tableData = [];
         }
 
         return tableData;
     }
 
+    /// <summary>
+    /// Takes in raw query and runs it
+    /// </summary>
+    /// <param name="query">The duck db query to run</param>
+    /// <returns>Data</returns>
     public async Task<List<List<dynamic>>> QueryTimeseries(string query)
     {
         using DuckDBConnection duckDBConnection = GetDuckDBConnection();
@@ -195,6 +227,11 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return OrganizeQueryData(reader);
     }
 
+    /// <summary>
+    /// Generic select all for given table
+    /// </summary>
+    /// <param name="timeseriesResponseDto">Table object</param>
+    /// <returns>All data for given table</returns>
     public async Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesResponseDto timeseriesResponseDto)
     {
         using DuckDBConnection duckDBConnection = GetDuckDBConnection();
@@ -208,17 +245,21 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return OrganizeQueryData(reader);
     }
 
-    public async Task ProcessTimeSeriesDataAsync(TimeseriesResponseDto timeseriesResponseDto)
+    /// <summary>
+    /// Creates DuckDB table based on the response object
+    /// </summary>
+    /// <param name="timeseriesResponseDto">Timeseries table data</param>
+    /// <returns></returns>
+    public async Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto)
     {
         using DuckDBConnection duckDBConnection = GetDuckDBConnection();
         await duckDBConnection.OpenAsync();
-        //Transaction? duckDBConnection.BeginTransaction();
 
         using DuckDBCommand command = duckDBConnection.CreateCommand();
         int executeNonQuery;
 
         //TODO What to do if table already exists
-        command.CommandText = "CREATE TABLE $file_name AS SELECT * from '$file_name';"; //https://duckdb.org/docs/stable/data/overview.html
+        command.CommandText = "CREATE TABLE $file_name AS SELECT * from '$file_name';";
         command.Parameters.Add(new DuckDBParameter("$file_name", timeseriesResponseDto.FilePath));
         executeNonQuery = command.ExecuteNonQuery();
     }

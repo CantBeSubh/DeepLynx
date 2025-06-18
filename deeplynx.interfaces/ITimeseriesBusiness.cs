@@ -14,17 +14,11 @@ namespace deeplynx.interfaces
 
         Task<TimeseriesResponseDto> CompleteUpload(string projectId, string datasourceId,
             TimeseriesUploadCompleteRequestDto request);
-        Task<TimeseriesResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file);
-        string StartUpload(string projectId, string datasourceId);
-
-        Task<string> UploadChunk(string projectId, string datasourceId, IFormFile chunk,
-            string uploadId, int chunkNumber);
-
-        Task<TimeseriesResponseDto> CompleteUpload(string projectId, string datasourceId,
-            TimeseriesUploadCompleteRequestDto request);
 
         Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesResponseDto timeseriesResponseDto);
 
-        Task ProcessTimeSeriesDataAsync(TimeseriesResponseDto timeseriesResponseDto);
+        Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto);
+
+        Task<List<List<dynamic>>> QueryTimeseries(string query);
     }
 }
