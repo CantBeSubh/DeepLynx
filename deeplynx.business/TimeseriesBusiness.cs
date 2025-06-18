@@ -4,13 +4,15 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness) : ITimeseriesBusiness
+public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
+    private readonly IClassBusiness _classBusiness = classBusiness;
     private const string UploadFolderPath = "uploads";
     
     /// <summary>
@@ -30,9 +32,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         }
 
         var uploadId = Guid.NewGuid().ToString();
+        string tableName = uploadId + "_" + file.FileName;
         var filePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId + "_" + file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
-        var uri = "duckdb://" + uploadId + "_" + file.FileName; 
+        var uri = "duckdb://" + tableName;
 
         await using (var stream = new FileStream(filePath, FileMode.Create))
         {
@@ -46,7 +49,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
         
-        var columns = await GetColumnsFromDb(filePath);
+        ClassResponseDto recordClass = await GetClassInfo(projectId);
+        var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
         {
@@ -58,7 +62,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             },
             Name = file.FileName,
             OriginalId = uploadId,
-            Uri = uri
+            Uri = uri,
+            ClassId = recordClass.Id,
+            ClassName = recordClass.Name,
         };
         
         await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
@@ -125,6 +131,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         TimeseriesUploadCompleteRequestDto request)
     {
         var folderPath = Path.Combine(UploadFolderPath, projectId, dataSourceId, request.UploadId);
+        string tableName = request.UploadId + "_" + request.FileName;
         var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId,
             request.UploadId + "_" + request.FileName);
         var uri = "duckdb://" + request.UploadId + "_" + request.FileName; 
@@ -150,10 +157,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // describe table for metadata record properties
         // after processing, new filepath should be something like
         // "duckdb://uuid_filename"
-        
-        var columns = await GetColumnsFromDb(finalFilePath);
-        
-        // todo: check to see if a timeseries class exists for this project and create one if it doesn't
+
+        ClassResponseDto recordClass = await GetClassInfo(projectId);
+
+        var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
         {
@@ -165,7 +172,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             },
             Name = request.FileName,
             OriginalId = request.UploadId,
-            Uri = uri
+            Uri = uri,
+            ClassId = recordClass.Id,
+            ClassName = recordClass.Name
         };
         
         await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
@@ -209,4 +218,25 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         }
         return columns;
     }
+
+    private async Task<ClassResponseDto> GetClassInfo(string projectId)
+    {
+        var timeseriesClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == "Timeseries" && c.ProjectId == long.Parse(projectId));
+
+        if (timeseriesClass != null)
+        {
+            return new ClassResponseDto()
+            {
+                Id = timeseriesClass.Id,
+                Name = timeseriesClass.Name,
+            };
+        }
+        
+        var classDto = new ClassRequestDto()
+        {
+            Name = "Timeseries"
+        };
+
+        return await _classBusiness.CreateClass(long.Parse(projectId), classDto);
+    } 
 }
