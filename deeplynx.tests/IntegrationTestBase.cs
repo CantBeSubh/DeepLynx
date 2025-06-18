@@ -2,6 +2,7 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using Testcontainers.PostgreSql;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 public class IntegrationTestBase : IAsyncLifetime
 {

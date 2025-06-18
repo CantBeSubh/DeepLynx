@@ -1,9 +1,11 @@
 
+using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
+using Xunit;
+
 
 namespace deeplynx.tests;
 
@@ -29,58 +31,50 @@ public class ClassIntegrationTests : IntegrationTestBase
         var dto = new ClassRequestDto { Name = "C1", Description = "D1", Uuid = "U1" };
     
         var result = await _classBusiness.CreateClass(pid, dto);
-        result.Name.Should().Equals("C1");
+        result.Name.Should().BeSameAs("C1");
         result.Id.Should().BeGreaterThan(0);
       }
-    //
-    // [Fact]
-    // public async Task CreateClassRequest_Fails_IfNoName()
-    // { 
-    //     var missingNameDto = new ClassRequestDto { Name = null, Description = "D", Uuid = "U" };
-    //     var exception = await Assert.ThrowsAsync<ValidationException>(() =>
-    //     {
-    //         var validationContext = new ValidationContext(missingNameDto);
-    //         return Task.Run(() => Validator.ValidateObject(missingNameDto, validationContext, validateAllProperties: true));
-    //     });
-    //     Assert.Contains("The Name field is required.", exception.Message);
-    // }
-    //
-    //
-    // [Fact]
-    // public async Task CreateClass_Succeeds_IfNoDescriptionOrUuid()
-    // {
-    //     var pid = _fixture.pid;
-    //     var dto = new ClassRequestDto { Name = "C" };
-    //
-    //     var result = await _fixture.ClassBusiness.CreateClass(pid, dto);
-    //
-    //     Assert.True(result.Id > 0);
-    //     Assert.Null(result.Description);
-    //     Assert.Null(result.Uuid);
-    // }
-    //
-    // [Fact]
-    // public async Task CreateClass_Fails_IfProjectNotFound()
-    // {
-    //     var pid = _fixture.pid;
-    //     var missing = pid + 999;
-    //     var dto = new ClassRequestDto { Name = "C" };
-    //
-    //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    //         () => _fixture.ClassBusiness.CreateClass(missing, dto));
-    // }
-    //
-    // [Fact]
-    // public async Task CreateClass_Fails_IfProjectDeleted()
-    // {
-    //     var project = new Project { Name = "DeletedProj", DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-    //     _fixture.Context.Projects.Add(project);
-    //     await _fixture.Context.SaveChangesAsync();
-    //     var dto = new ClassRequestDto { Name = "C" };
-    //
-    //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    //         () => _fixture.ClassBusiness.CreateClass(project.Id, dto));
-    // }
+    
+    [Fact]
+    public async Task CreateClassRequest_Fails_IfNoName()
+    { 
+        await SeedTestDataAsync();
+        var missingNameDto = new ClassRequestDto { Name = null, Description = "D", Uuid = "U" };
+        var result  = () => _classBusiness.CreateClass(pid, missingNameDto);
+        result.Should().ThrowAsync<ValidationException>();
+    }
+    
+    
+    [Fact]
+    public async Task CreateClass_Succeeds_IfNoDescriptionOrUuid()
+    {
+        await SeedTestDataAsync();
+        var dto = new ClassRequestDto { Name = "C" };
+        var result = await _classBusiness.CreateClass(pid, dto);
+    
+        result.Name.Should().Be("C");
+        result.Id.Should().BeGreaterThan(0);
+    }
+    
+    [Fact]
+    public async Task CreateClass_Fails_IfProjectNotFound()
+    {
+        await SeedTestDataAsync();
+        var missing = pid + 999;
+        var dto = new ClassRequestDto { Name = "C" };
+    
+        var result = () => _classBusiness.CreateClass(missing, dto);
+        result.Should().ThrowAsync<KeyNotFoundException>();
+    }
+    
+    [Fact]
+    public async Task CreateClass_Fails_IfProjectDeleted()
+    {
+        await SeedTestDataAsync(true);
+        var dto = new ClassRequestDto { Name = "C" };
+        var result = () => _classBusiness.CreateClass(pid, dto);
+        result.Should().ThrowAsync<KeyNotFoundException>();
+    }
     //
     //
     // [Fact]
@@ -210,15 +204,19 @@ public class ClassIntegrationTests : IntegrationTestBase
         // Placeholder for cascading record mapping deletion
     }
     
-    private async Task SeedTestDataAsync()
+    private async Task SeedTestDataAsync(bool deleteProject = false)
     {
         await CleanDatabaseAsync();
-
+        
         var project = new Project { Name = "Project 2" };
+        if (deleteProject)
+        {
+            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        }
+        
         Context.Projects.Add(project);
         
         await Context.SaveChangesAsync();
         pid = project.Id;
-        
     }
 }
