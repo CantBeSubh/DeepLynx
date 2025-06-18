@@ -14,6 +14,7 @@ const Projects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false); // State to manage modal open/close
   const openModal = () => setIsModalOpen(true); // Function to open the modal
   const closeModal = () => setIsModalOpen(false); // Function to close the modal
+  // cosnt addWidget = () => canAddWidget(true); //Function to add widgets
 
   // State to manage the table data
   const [tableData, setTableData] = useState<ProjectsList[]>(sampleProjectData);
@@ -74,15 +75,47 @@ const Projects = () => {
         <div className="divider"></div> {/* Divider line */}
       </div>
       <div className="flex">
-        <div>
-          <GenericTable
-            columns={columns} // Pass columns to the table
-            data={tableData} // Pass data to the table
-            searchBar // Enable search bar
-            filterPlaceholder="Search Projects ..." // Placeholder text for the search bar
-          />
+        <div className="">
+          <div>
+            <GenericTable
+              columns={columns} // Pass columns to the table
+              data={tableData} // Pass data to the table
+              searchBar // Enable search bar
+              filterPlaceholder="Search Projects ..." // Placeholder text for the search bar
+            />
+          </div>
         </div>
-        <div>Autumn's Widgets go here 👇</div>
+          <div className="overflow-x p-2">
+            <div className="my-4 flex justify-between items-center justify-end">
+              <button
+                className="btn btn-outline btn-sm btn-accent"
+                // onClick={addWidget} // Adds new widget when clicked
+              >
+                + Widget
+              </button>
+            </div>
+            <div className="card bg-base-100 w-96 shadow-sm">
+              <figure>
+                <img
+                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                  alt="widgetLinks"/>
+              </figure>
+            </div>
+            <div className="card bg-base-100 w-96 shadow-sm">
+              <figure>
+                <img
+                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                  alt="widgetLinksX2"/>
+              </figure>
+            </div>
+            <div className="card bg-base-100 w-96 shadow-sm">
+              <figure>
+                <img
+                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
+                  alt="updateGraph"/>
+              </figure>
+            </div>
+          </div>
       </div>
       {/* Render the GenericTable component */}
 
