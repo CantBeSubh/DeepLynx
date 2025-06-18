@@ -14,5 +14,7 @@ namespace deeplynx.interfaces
 
         Task<TimeseriesResponseDto> CompleteUpload(string projectId, string datasourceId,
             TimeseriesUploadCompleteRequestDto request);
+
+        Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto);
     }
 }
