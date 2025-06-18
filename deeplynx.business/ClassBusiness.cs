@@ -75,10 +75,16 @@ public class ClassBusiness : IClassBusiness
 
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project=await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
+        var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
+        var existingClass = await _context.Classes.FirstOrDefaultAsync(c=> c.ProjectId == projectId && c.Name == dto.Name);
+        if (existingClass != null)
+        {
+            throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
         }
         
         var newClass = new Class
