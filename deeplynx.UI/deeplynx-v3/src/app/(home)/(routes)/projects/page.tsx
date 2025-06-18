@@ -91,29 +91,35 @@ const Projects = () => {
                 className="btn btn-outline btn-sm btn-accent"
                 // onClick={addWidget} // Adds new widget when clicked
               >
-                + Widget
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="size-4">
+                <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
+                </svg>
+                Widget
               </button>
             </div>
-            <div className="card bg-base-100 w-96 shadow-sm">
-              <figure>
-                <img
-                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                  alt="widgetLinks"/>
-              </figure>
+            <div className="card card-border bg-base-100 w-96">
+              <div className="card-body">
+                <h2 className="card-title">Links</h2>
+                <div className="card-actions justify-end">
+                  add links here
+                </div>
+              </div>
             </div>
-            <div className="card bg-base-100 w-96 shadow-sm">
-              <figure>
-                <img
-                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                  alt="widgetLinksX2"/>
-              </figure>
+            <div className="card card-border bg-base-100 w-96">
+              <div className="card-body">
+                <h2 className="card-title">Data Overview</h2>
+                <div className="card-actions justify-end">
+                  add data links here
+                </div>
+              </div>
             </div>
-            <div className="card bg-base-100 w-96 shadow-sm">
-              <figure>
-                <img
-                  src="https://img.daisyui.com/images/stock/photo-1606107557195-0e29a4b5b4aa.webp"
-                  alt="updateGraph"/>
-              </figure>
+            <div className="card card-border bg-base-100 w-96">
+              <div className="card-body">
+                <h2 className="card-title">Graph</h2>
+                <div className="card-actions justify-end">
+                  add updated graphs here
+                </div>
+              </div>
             </div>
           </div>
       </div>
