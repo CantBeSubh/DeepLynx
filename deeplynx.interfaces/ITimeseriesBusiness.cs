@@ -15,10 +15,6 @@ namespace deeplynx.interfaces
         Task<TimeseriesResponseDto> CompleteUpload(string projectId, string datasourceId,
             TimeseriesUploadCompleteRequestDto request);
 
-        Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesResponseDto timeseriesResponseDto);
-
         Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto);
-
-        Task<List<List<dynamic>>> QueryTimeseries(string query);
     }
 }
