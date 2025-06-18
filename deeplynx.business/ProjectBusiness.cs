@@ -134,6 +134,13 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
+        var classDto = new ClassRequestDto()
+        {
+            Name = "Timeseries"
+        };
+
+        await _classBusiness.CreateClass(project.Id, classDto);
+
         return new ProjectResponseDto
         {
             Id = project.Id,
