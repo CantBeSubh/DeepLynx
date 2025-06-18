@@ -14,7 +14,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-base-100">
       {/* Banner/Header */}
       <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
         <Image
@@ -32,7 +32,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             maskRepeat: "no-repeat",
           }}
         />
-        <label className="toggle text-base-content">
+        <label className="toggle text-neutral">
           <input type="checkbox" value="dark" className="theme-controller" />
 
           <svg

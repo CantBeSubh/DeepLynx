@@ -75,10 +75,16 @@ public class ClassBusiness : IClassBusiness
 
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project=await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
+        var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
+        var existingClass = await _context.Classes.FirstOrDefaultAsync(c=> c.ProjectId == projectId && c.Name == dto.Name);
+        if (existingClass != null)
+        {
+            throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
         }
         
         var newClass = new Class
@@ -241,7 +247,8 @@ public class ClassBusiness : IClassBusiness
                 () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId), transaction), 
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(
                     r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("class", classIds)
+                // unfortunately we need to assert that class id is not null here which looks really ugly
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => classIds.Contains((long)m.ClassId))
             };
             
             // loop through tasks and trigger downstream deletions

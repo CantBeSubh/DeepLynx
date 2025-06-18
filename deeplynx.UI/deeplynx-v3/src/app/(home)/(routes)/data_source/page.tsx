@@ -48,7 +48,7 @@ const DataSource = () => {
         <label>
           <input
             type="checkbox"
-            className="checkbox"
+            className="checkbox checkbox-info"
             checked={row.select || false} // Control checkbox based on row's select status
             onChange={() => handleSelectChange(row.id as string)} // Handle checkbox change
           />
@@ -74,7 +74,7 @@ const DataSource = () => {
         <input
           type="checkbox"
           checked={isRowAcitve(row)} // Control checkbox based on row's active status
-          className="toggle toggle-primary"
+          className="toggle text-base-200 checked:text-info"
           onChange={() => handleToggleActive(row.id as string)} // Handle active toggle
         />
       ),
@@ -93,8 +93,10 @@ const DataSource = () => {
     <div>
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-base-content">Data Source</h1>
-          <i className="text-sm text-base-content">User</i>{" "}
+          <h1 className="text-2xl font-bold text-secondary-content">
+            Data Source
+          </h1>
+          <i className="text-sm text-secondary-content">User</i>{" "}
           {/* Placeholder for user info */}
         </div>
 
@@ -107,7 +109,6 @@ const DataSource = () => {
           deleteSelectedRows={deleteSelectedRows} // Function to delete selected rows
           enablePagination={true} // Enable pagination
           rowsPerPage={10} // Set rows per page
-          bordered={true} // Add borders to the table
           actionButtons // Enable action buttons
           searchBar // Enable search bar
         />

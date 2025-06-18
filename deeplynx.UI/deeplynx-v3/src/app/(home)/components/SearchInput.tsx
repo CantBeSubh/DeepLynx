@@ -20,7 +20,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
       <input
         type="text"
         placeholder={placeholder}
-        className="input pl-10 focus:outline-none"
+        className="input pl-10 focus:outline-none text-secondary-content"
         onChange={onChange}
       />
       {/* Search icon */}

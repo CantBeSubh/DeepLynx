@@ -218,66 +218,65 @@ public class TagBusiness : ITagBusiness
     private async Task SoftDeleteTags(
             Expression<Func<Tag, bool>> predicate,
             IDbContextTransaction? transaction)
+    {
+        // check for existing transaction; if one does not exist, start a new one
+        var commit = false; // flag used to determine if transaction should be committed
+        if (transaction == null)
         {
-            // check for existing transaction; if one does not exist, start a new one
-            var commit = false; // flag used to determine if transaction should be committed
-            if (transaction == null)
-            {
-                commit = true;
-                transaction = await _context.Database.BeginTransactionAsync();
-            }
+            commit = true;
+            transaction = await _context.Database.BeginTransactionAsync();
+        }
 
-            // search for tags matching the passed-in predicate (filter) to be updated
-            var tContext = _context.Tags
-                .Where(d => d.DeletedAt == null)
-                .Where(predicate);
+        // search for tags matching the passed-in predicate (filter) to be updated
+        var tContext = _context.Tags
+            .Where(d => d.DeletedAt == null)
+            .Where(predicate);
 
-            var dataSources = await tContext.ToListAsync();
-            
-            if (dataSources.Count == 0)
-            {
-                // return early if there are no tags to delete
-                return;
-            }
-            
-            var tagIds = dataSources.Select(d => d.Id);
-            
-            // trigger downstream deletions
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("tag", tagIds),
-            };
+        var tags = await tContext.ToListAsync();
+        
+        if (tags.Count == 0)
+        {
+            // return early if there are no tags to delete
+            return;
+        }
+        
+        var tagIds = tags.Select(t => t.Id);
+        
+        // trigger downstream deletions
+        var softDeleteTasks = new List<Func<Task<bool>>>
+        {
+            // unfortunately we need to assert that tag id is not null here which looks really ugly
+            () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => tagIds.Contains((long)m.TagId)),
+        };
 
-            // loop through tasks and trigger downstream deletions
-            foreach (var task in softDeleteTasks)
+        // loop through tasks and trigger downstream deletions
+        foreach (var task in softDeleteTasks)
+        {
+            bool result = await task();
+            if (!result)
             {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and throw an error
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        "An error occurred during the deletion of downstream tag dependants.");
-                }
-            }
-
-            // bulk update the results of the query to set the deleted_at date
-            var updated = await tContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-            // if we found tags to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("An error occurred when deleting tags");
-            }
-
-            // save changes and commit transaction to close it
-            await _context.SaveChangesAsync();
-            if (commit)
-            {
-                await transaction.CommitAsync();
+                // rollback the transaction and throw an error
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException(
+                    "An error occurred during the deletion of downstream tag dependants.");
             }
         }
-    
-    
+
+        // bulk update the results of the query to set the deleted_at date
+        var updated = await tContext.ExecuteUpdateAsync(setters => setters
+            .SetProperty(t => t.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+
+        // if we found tags to update, but weren't successful in updating, throw an error
+        if (updated == 0)
+        {
+            throw new DependencyDeletionException("An error occurred when deleting tags");
+        }
+
+        // save changes and commit transaction to close it
+        await _context.SaveChangesAsync();
+        if (commit)
+        {
+            await transaction.CommitAsync();
+        }
+    }
 }

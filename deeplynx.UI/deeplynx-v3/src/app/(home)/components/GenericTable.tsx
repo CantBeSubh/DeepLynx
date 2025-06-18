@@ -3,7 +3,7 @@ import SearchInput from "./SearchInput";
 import DeleteIcon from "@mui/icons-material/Delete";
 import TimelineIcon from "@mui/icons-material/Timeline";
 import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
-import { TableRow, Column } from "@/app/(home)/types/types";
+import { Column } from "@/app/(home)/types/types";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
@@ -19,6 +19,7 @@ type GenericTableProps<T extends object> = {
   bordered?: boolean;
   searchBar?: boolean;
   actionButtons?: boolean;
+  rowClassName?: string | ((row: T, index: number) => string);
 };
 
 const GenericTable = <T extends object>({
@@ -32,6 +33,7 @@ const GenericTable = <T extends object>({
   bordered = false, // Default value for bordered
   searchBar = false, // Default value for searchBar
   actionButtons = false, // Default value for actionButtons
+  rowClassName,
 }: GenericTableProps<T>) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -87,9 +89,9 @@ const GenericTable = <T extends object>({
   // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
-      (currentPage - 1) * rowsPerPage,
-      currentPage * rowsPerPage
-    )
+        (currentPage - 1) * rowsPerPage,
+        currentPage * rowsPerPage
+      )
     : sortedData;
 
   // Handle page click for pagination
@@ -106,8 +108,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -131,8 +134,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -172,8 +176,9 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "btn-primary" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -199,8 +204,9 @@ const GenericTable = <T extends object>({
 
   return (
     <div
-      className={`overflow-x-auto ${bordered ? "rounded-box border border-neutral-content" : ""
-        } p-2`}
+      className={`overflow-x-auto ${
+        bordered ? "rounded-box border border-neutral-content" : ""
+      } p-2`}
     >
       <div className="my-4 flex justify-between items-center">
         {searchBar && (
@@ -232,13 +238,14 @@ const GenericTable = <T extends object>({
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`text-base-content ${column.sortable !== false ? "cursor-pointer select-none" : ""
-                  }`}
+                className={`text-base-content ${
+                  column.sortable !== false ? "cursor-pointer select-none" : ""
+                }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                      sortConfig?.direction === "asc"
+                    sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });
@@ -261,7 +268,14 @@ const GenericTable = <T extends object>({
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-base-200 bg-base-100">
+            <tr
+              key={rowIndex}
+              className={
+                typeof rowClassName === "function"
+                  ? rowClassName(row, rowIndex)
+                  : rowClassName || "hover:bg-base-200 bg-base-100"
+              }
+            >
               {columns.map((column, colIndex) => (
                 <td key={colIndex} className="text-base-content">
                   {column.cell

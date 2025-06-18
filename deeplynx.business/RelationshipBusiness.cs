@@ -20,22 +20,6 @@ public class RelationshipBusiness: IRelationshipBusiness
         _edgeBusiness = edgeBusiness;
         _context = context;
     }
-    private async Task<long> ResolveClassIdentifier(string input)
-    {
-        if (long.TryParse(input, out var id))
-        {
-            var dbClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == id && c.DeletedAt == null);
-            return dbClass?.Id ?? throw new KeyNotFoundException($"Class with ID {id} not found.");
-        }
-
-        var classByUuid = await _context.Classes
-            .Where(c => c.Uuid == input && c.DeletedAt == null)
-            .Select(c => (long?)c.Id)
-            .FirstOrDefaultAsync();
-
-        return classByUuid ?? throw new KeyNotFoundException($"Class with UUID ‘{input}’ not found.");
-    }
-
     public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
     {
         var rawData = await _context.Relationships
@@ -117,20 +101,25 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Project with ID {projectId} not found.");
         }
-        if(string.IsNullOrWhiteSpace(dto.OriginClass))
-            throw new KeyNotFoundException($"Origin class is empty.");
-        if(string.IsNullOrWhiteSpace(dto.DestinationClass))
-            throw new KeyNotFoundException($"Destination class is empty.");
-        var originId = await ResolveClassIdentifier(dto.OriginClass);
-        var destinationId = await ResolveClassIdentifier(dto.DestinationClass);
-
+        
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.DeletedAt == null);
+        if (orignClass == null)
+        {
+            throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
+        }
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.DeletedAt == null);
+        if (destinationClass == null)
+        {
+            throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+        }
+        
         var relationship = new Relationship
         {
             Name = dto.Name,
             Description = dto.Description,
             Uuid = dto.Uuid,
-            OriginId = originId,
-            DestinationId = destinationId,
+            OriginId = dto.OriginId,
+            DestinationId = dto.DestinationId,
             ProjectId = projectId,
             CreatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -175,12 +164,23 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-
+        
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.DeletedAt == null);
+        if (orignClass == null)
+        {
+            throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
+        }
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.DeletedAt == null);
+        if (destinationClass == null)
+        {
+            throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+        }
+        
         relationship.Name = dto.Name;
         relationship.Description = dto.Description;
         relationship.Uuid = dto.Uuid;
-        relationship.OriginId = await ResolveClassIdentifier(dto.OriginClass);
-        relationship.DestinationId = await ResolveClassIdentifier(dto.DestinationClass);
+        relationship.OriginId = dto.OriginId;
+        relationship.DestinationId = dto.DestinationId;
         relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);

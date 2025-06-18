@@ -134,6 +134,13 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
+        var classDto = new ClassRequestDto()
+        {
+            Name = "Timeseries"
+        };
+
+        await _classBusiness.CreateClass(project.Id, classDto);
+
         return new ProjectResponseDto
         {
             Id = project.Id,
@@ -218,11 +225,11 @@ public class ProjectBusiness : IProjectBusiness
                 () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(em => em.ProjectId == projectId),
                 () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
                 () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings("project", [projectId]),
+                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => m.ProjectId == projectId),
                 () => _edgeBusiness.BulkSoftDeleteEdges(e => e.ProjectId == projectId),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
                 () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction),
-                () => _roleBusiness.BulkSoftDeleteRoles("project", projectId)
+                () => _roleBusiness.BulkSoftDeleteRoles(r => r.ProjectId == projectId)
             };
 
             // loop through tasks and trigger downstream deletions

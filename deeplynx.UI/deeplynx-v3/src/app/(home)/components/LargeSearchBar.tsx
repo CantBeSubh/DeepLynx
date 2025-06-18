@@ -42,7 +42,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   return (
     <div className={`relative w-full max-w-3xl ${className}`}>
       <svg
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-base-content"
+        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral"
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
         viewBox="0 0 24 24"
@@ -58,7 +58,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
       <input
         type="text"
         placeholder={placeholder}
-        className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
         onChange={onChange}
         onKeyDown={(e) => {
           if (e.key === "Enter" && onEnter) {

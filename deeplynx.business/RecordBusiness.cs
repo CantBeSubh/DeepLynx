@@ -119,6 +119,7 @@ public class RecordBusiness : IRecordBusiness
             .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.DeletedAt == null);
         if (ds == null)
             throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
+        
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
@@ -175,6 +176,13 @@ public class RecordBusiness : IRecordBusiness
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
+        
+        var maxDepth = CalculateJsonMaxDepth(dto.Properties);
+        if (maxDepth > 3)
+        {
+            throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
+        }
+        
         record.Uri = dto.Uri;
         record.Properties = dto.Properties.ToString()!;
         record.OriginalId = dto.OriginalId;
