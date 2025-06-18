@@ -16,8 +16,9 @@ public partial class Class
     [Column("id")]
     public long Id { get; set; }
 
+    [Required]
     [Column("name")]
-    public string Name { get; set; } = null!;
+    public string Name { get; set; }
 
     [Column("description")]
     public string? Description { get; set; }

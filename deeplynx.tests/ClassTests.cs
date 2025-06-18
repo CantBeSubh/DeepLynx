@@ -4,6 +4,7 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using FluentAssertions;
+using Npgsql;
 using Xunit;
 
 
@@ -41,7 +42,7 @@ public class ClassIntegrationTests : IntegrationTestBase
         await SeedTestDataAsync();
         var missingNameDto = new ClassRequestDto { Name = null, Description = "D", Uuid = "U" };
         var result  = async () => await _classBusiness.CreateClass(pid, missingNameDto);
-        await result.Should().ThrowAsync<Exception>();
+        await result.Should().ThrowAsync<ValidationException>();
     }
     
     
