@@ -6,10 +6,8 @@ using Microsoft.AspNetCore.Http;
 
 namespace deeplynx.business;
 
-//DuckDB C# https://duckdb.net/docs/getting-started.html
 public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
 {
-
     private readonly DeeplynxContext _context = context;
     private const string UploadFolderPath = "uploads";
 
@@ -45,7 +43,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
 
-        TimeseriesResponseDto responseDto = new TimeseriesResponseDto
+        var responseDto = new TimeseriesResponseDto
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
@@ -135,7 +133,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
 
-        TimeseriesResponseDto responseDto = new TimeseriesResponseDto
+        var responseDto = new TimeseriesResponseDto
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
@@ -150,7 +148,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return responseDto;
     }
 
-    public DuckDBConnection GetDuckDBConnection()
+    private DuckDBConnection GetDuckDBConnection()
     {
         return new DuckDBConnection("Data Source=TimeSeries.db");
     }
@@ -162,10 +160,10 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
     /// <returns></returns>
     public async Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto)
     {
-        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
+        using var duckDBConnection = GetDuckDBConnection();
         await duckDBConnection.OpenAsync();
 
-        using DuckDBCommand command = duckDBConnection.CreateCommand();
+        using var command = duckDBConnection.CreateCommand();
 
         command.CommandText = $"CREATE TABLE '{timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName}' AS SELECT * from read_csv('{timeseriesResponseDto.FilePath}'); ";
         var executeNonQuery = command.ExecuteNonQuery();
