@@ -154,95 +154,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
 
     public DuckDBConnection GetDuckDBConnection()
     {
-        return new DuckDBConnection("Data Source=file.db");
-    }
-
-    /// <summary>
-    /// Formats data from DuckDB reader to a 2D array with column names
-    /// Modified from https://duckdb.net/docs/getting-started.html
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <returns>A 2D array with column names</returns>
-    public List<List<dynamic>> OrganizeQueryData(DuckDBDataReader reader)
-    {
-        List<List<dynamic>> tableData = [];
-        try
-        {
-            List<dynamic> columns = [];
-            for (var index = 0; index < reader.FieldCount; index++)
-            {
-                string column = reader.GetName(index);
-                columns.Add(column);
-            }
-
-            tableData.Add(columns);
-
-            while (reader.Read())
-            {
-                for (int ordinal = 0; ordinal < reader.FieldCount; ordinal += columns.Count)
-                {
-                    List<dynamic> data = [];
-                    for (int i = 0; i < columns.Count; i++)
-                    {
-                        int newOrdinal = ordinal + i;
-
-                        if (reader.IsDBNull(ordinal))
-                        {
-                            //Console.WriteLine("NULL");
-                            data.Add(null);
-                        }
-                        else
-                        {
-                            data.Add(reader.GetValue(newOrdinal));
-                        }
-                    }
-                    tableData.Add(data);
-                }
-            }
-        }
-        catch (DuckDBException ex)
-        {
-            // Ex from bad query etc.
-            //catch ex
-            tableData = [];
-        }
-
-        return tableData;
-    }
-
-    /// <summary>
-    /// Takes in raw query and runs it
-    /// </summary>
-    /// <param name="query">The duck db query to run</param>
-    /// <returns>Data</returns>
-    public async Task<List<List<dynamic>>> QueryTimeseries(string query)
-    {
-        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
-        await duckDBConnection.OpenAsync();
-        using DuckDBCommand command = duckDBConnection.CreateCommand();
-
-        command.CommandText = query;
-        using DuckDBDataReader reader = command.ExecuteReader();
-
-        return OrganizeQueryData(reader);
-    }
-
-    /// <summary>
-    /// Generic select all for given table
-    /// </summary>
-    /// <param name="timeseriesResponseDto">Table object</param>
-    /// <returns>All data for given table</returns>
-    public async Task<List<List<dynamic>>> GetAllTableRecords(TimeseriesResponseDto timeseriesResponseDto)
-    {
-        using DuckDBConnection duckDBConnection = GetDuckDBConnection();
-        await duckDBConnection.OpenAsync();
-        using DuckDBCommand command = duckDBConnection.CreateCommand();
-
-        command.CommandText = "SELECT * FROM $table_name";
-        command.Parameters.Add(new DuckDBParameter("table_name", timeseriesResponseDto.FileName));
-        using DuckDBDataReader reader = command.ExecuteReader();
-
-        return OrganizeQueryData(reader);
+        return new DuckDBConnection("Data Source=TimeSeries.db");
     }
 
     /// <summary>
@@ -258,8 +170,8 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         using DuckDBCommand command = duckDBConnection.CreateCommand();
         int executeNonQuery;
 
-        //TODO What to do if table already exists
-        command.CommandText = "CREATE TABLE $file_name AS SELECT * from '$file_name';";
+        command.CommandText = "CREATE TABLE $table_name AS SELECT * from '$file_name';";
+        command.Parameters.Add(new DuckDBParameter("$table_name", timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName));
         command.Parameters.Add(new DuckDBParameter("$file_name", timeseriesResponseDto.FilePath));
         executeNonQuery = command.ExecuteNonQuery();
     }
