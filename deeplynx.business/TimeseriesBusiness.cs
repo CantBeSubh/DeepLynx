@@ -49,6 +49,18 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
         
+        var responseDto = new TimeseriesResponseDto
+        {
+            ProjectId = projectId,
+            DataSourceId = dataSourceId,
+            FileId = uploadId,
+            FileName = file.FileName,
+            FilePath = filePath,
+            FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
+        };
+
+        await CreateTimeseriesTable(responseDto);
+        
         var recordClass = await GetClassInfo(projectId);
         var columns = await GetColumnsFromDb(tableName);
             
@@ -66,22 +78,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassId = recordClass.Id,
             ClassName = recordClass.Name,
         };
-        
-        var recordResponseDto = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
 
-        var responseDto = new TimeseriesResponseDto
-        {
-            ProjectId = projectId,
-            DataSourceId = dataSourceId,
-            FileId = uploadId,
-            FileName = file.FileName,
-            FilePath = filePath,
-            FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
-        };
-
-        await CreateTimeseriesTable(responseDto);
-
-        return recordResponseDto;
+        return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
     }
 
     /// <summary>
@@ -162,6 +160,18 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // after processing, new filepath should be something like
         // "duckdb://path/to/uuid_filename"
         
+        var responseDto = new TimeseriesResponseDto
+        {
+            ProjectId = projectId,
+            DataSourceId = dataSourceId,
+            FileId = request.UploadId,
+            FileName = request.FileName,
+            FilePath = finalFilePath,
+            FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
+        };
+
+        await CreateTimeseriesTable(responseDto);
+        
         var recordClass = await GetClassInfo(projectId);
         var columns = await GetColumnsFromDb(tableName);
             
@@ -179,25 +189,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassId = recordClass.Id,
             ClassName = recordClass.Name,
         };
-        
-        var recordResponseDto = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
-        
-        var responseDto = new TimeseriesResponseDto
-        {
-            ProjectId = projectId,
-            DataSourceId = dataSourceId,
-            FileId = request.UploadId,
-            FileName = request.FileName,
-            FilePath = finalFilePath,
-            FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
-        };
 
-        await CreateTimeseriesTable(responseDto);
-
-        return recordResponseDto;
+        return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
     }
 
-    private DuckDBConnection GetDuckDbConnection()
+    private DuckDBConnection GetDuckDBConnection()
     {
         return new DuckDBConnection("Data Source=TimeSeries.db");
     }
@@ -209,10 +205,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns></returns>
     public async Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto)
     {
-        await using var duckDbConnection = GetDuckDbConnection();
-        await duckDbConnection.OpenAsync();
+        await using var duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
 
-        await using var command = duckDbConnection.CreateCommand();
+        await using var command = duckDBConnection.CreateCommand();
 
         command.CommandText = $"CREATE TABLE '{timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName}' AS SELECT * from read_csv('{timeseriesResponseDto.FilePath}'); ";
         var executeNonQuery = command.ExecuteNonQuery();
@@ -221,10 +217,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     private async Task<JsonArray> GetColumnsFromDb(string tableName)
     {
         var columns = new JsonArray();
-        await using var duckDbConnection = new DuckDBConnection("Data Source=file.db");
-        await duckDbConnection.OpenAsync();
+        await using var duckDBConnection = new DuckDBConnection("Data Source=file.db");
+        await duckDBConnection.OpenAsync();
 
-        await using var command = duckDbConnection.CreateCommand();
+        await using var command = duckDBConnection.CreateCommand();
         command.CommandText = "SELECT column_name, data_type " +
                               "FROM information_schema.columns " +
                               "WHERE table_name = $table_name;";
