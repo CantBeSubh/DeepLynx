@@ -23,8 +23,6 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
 
-    public virtual DbSet<Permission> Permissions { get; set; }
-
     public virtual DbSet<Project> Projects { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
@@ -33,17 +31,7 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<Relationship> Relationships { get; set; }
 
-    public virtual DbSet<Role> Roles { get; set; }
-
-    public virtual DbSet<RolePermission> RolePermissions { get; set; }
-
-    public virtual DbSet<RoleResource> RoleResources { get; set; }
-
     public virtual DbSet<Tag> Tags { get; set; }
-
-    public virtual DbSet<User> Users { get; set; }
-
-    public virtual DbSet<UserProject> UserProjects { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -97,14 +85,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
 
             entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
-        });
-
-        modelBuilder.Entity<Permission>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("permissions_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.Name).HasDefaultValueSql("''::text");
         });
 
         modelBuilder.Entity<Project>(entity =>
@@ -177,46 +157,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.Relationships).HasConstraintName("relationships_project_id_fkey");
         });
 
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("roles_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.ModifiedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Roles).HasConstraintName("roles_project_id_fkey");
-        });
-
-        modelBuilder.Entity<RolePermission>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("role_permissions_pkey");
-
-            entity.HasOne(d => d.Permission).WithMany(p => p.RolePermissions).HasConstraintName("role_permissions_permission_id_fkey");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.RolePermissions).HasConstraintName("role_permissions_role_id_fkey");
-        });
-
-        modelBuilder.Entity<RoleResource>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("role_resources_pkey");
-
-            entity.Property(e => e.HasAccess).HasDefaultValue(true);
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.RoleResources)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("role_resources_data_source_id_fkey");
-
-            entity.HasOne(d => d.Record).WithMany(p => p.RoleResources)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("role_resources_record_id_fkey");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.RoleResources).HasConstraintName("role_resources_role_id_fkey");
-
-            entity.HasOne(d => d.Tag).WithMany(p => p.RoleResources)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("role_resources_tag_id_fkey");
-        });
-
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("tags_pkey");
@@ -224,26 +164,6 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
-        });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("users_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-        });
-
-        modelBuilder.Entity<UserProject>(entity =>
-        {
-            entity.HasKey(e => new { e.UserId, e.ProjectId }).HasName("user_projects_pkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.UserProjects).HasConstraintName("user_projects_project_id_fkey");
-
-            entity.HasOne(d => d.Role).WithMany(p => p.UserProjects)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("user_projects_role_id_fkey");
-
-            entity.HasOne(d => d.User).WithMany(p => p.UserProjects).HasConstraintName("user_projects_user_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

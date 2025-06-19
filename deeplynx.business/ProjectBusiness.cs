@@ -21,7 +21,6 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IEdgeBusiness _edgeBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IRecordBusiness _recordBusiness;
-    private readonly IRoleBusiness _roleBusiness;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
@@ -35,7 +34,6 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="edgeBusiness">One of the downstream business layers used for cascading deletions.</param>
     /// <param name="dataSourceBusiness">One of the downstream business layers used for cascading deletions.</param>
     /// <param name="recordBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="roleBusiness">One of the downstream business layers used for cascading deletions.</param>
     public ProjectBusiness(
         DeeplynxContext context, 
         ITagBusiness tagBusiness, 
@@ -45,8 +43,7 @@ public class ProjectBusiness : IProjectBusiness
         IRecordMappingBusiness recordMappingBusiness,
         IEdgeBusiness edgeBusiness,
         IDataSourceBusiness dataSourceBusiness,
-        IRecordBusiness recordBusiness,
-        IRoleBusiness roleBusiness
+        IRecordBusiness recordBusiness
         )
     {
         _context = context;
@@ -58,7 +55,6 @@ public class ProjectBusiness : IProjectBusiness
         _edgeBusiness = edgeBusiness;
         _dataSourceBusiness = dataSourceBusiness;
         _recordBusiness = recordBusiness;
-        _roleBusiness = roleBusiness;
     }
 
     /// <summary>
@@ -69,7 +65,7 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
     {
         var projects = await _context.Projects
-            .Where(p => p.DeletedAt == null).ToListAsync();
+            .Where(p => p.ArchivedAt == null).ToListAsync();
 
         return projects
             .Select(p => new ProjectResponseDto()
@@ -94,7 +90,7 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> GetProject(long projectId)
     {
         var project = await _context.Projects
-            .Where(p => p.Id == projectId && p.DeletedAt == null)
+            .Where(p => p.Id == projectId && p.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (project == null)
@@ -163,7 +159,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.DeletedAt is not null)
+        if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name;
@@ -199,12 +195,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if error during dependency deletions.</exception>
-    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact deleted_at time.
+    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact archived_at time.
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.DeletedAt is not null)
+        if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         if (force)
@@ -228,8 +224,7 @@ public class ProjectBusiness : IProjectBusiness
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => m.ProjectId == projectId),
                 () => _edgeBusiness.BulkSoftDeleteEdges(e => e.ProjectId == projectId),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
-                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction),
-                () => _roleBusiness.BulkSoftDeleteRoles(r => r.ProjectId == projectId)
+                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction)
             };
 
             // loop through tasks and trigger downstream deletions
@@ -245,7 +240,7 @@ public class ProjectBusiness : IProjectBusiness
                 }
             }
 
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Projects.Update(project);
 
             await _context.SaveChangesAsync();

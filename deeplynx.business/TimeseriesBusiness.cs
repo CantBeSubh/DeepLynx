@@ -173,7 +173,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
     }
 
-    private DuckDBConnection GetDuckDBConnection()
+    private static DuckDBConnection GetDuckDbConnection()
     {
         return new DuckDBConnection("Data Source=TimeSeries.db");
     }
@@ -186,10 +186,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns></returns>
     public async Task CreateTimeseriesTable(string tableName, string filePath)
     {
-        await using var duckDBConnection = GetDuckDBConnection();
-        await duckDBConnection.OpenAsync();
+        await using var duckDbConnection = GetDuckDbConnection();
+        await duckDbConnection.OpenAsync();
 
-        await using var command = duckDBConnection.CreateCommand();
+        await using var command = duckDbConnection.CreateCommand();
 
         command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}'); ";
         var executeNonQuery = command.ExecuteNonQuery();

@@ -70,7 +70,7 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.DeletedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
@@ -107,7 +107,7 @@ public class TagBusiness : ITagBusiness
     public async Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId)
     {
         return await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.DeletedAt == null)
+            .Where(t => t.ProjectId == projectId && t.ArchivedAt == null)
             .Select(t => new TagResponseDto()
             {
                 Id = t.Id,
@@ -131,7 +131,7 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId)
     {
         var tag = await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.Id == tagId && t.DeletedAt == null)
+            .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (tag == null)
@@ -161,7 +161,7 @@ public class TagBusiness : ITagBusiness
     public async Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false)
     {
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.DeletedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Tag with {tagId} not found.");
         }
@@ -229,7 +229,7 @@ public class TagBusiness : ITagBusiness
 
         // search for tags matching the passed-in predicate (filter) to be updated
         var tContext = _context.Tags
-            .Where(d => d.DeletedAt == null)
+            .Where(d => d.ArchivedAt == null)
             .Where(predicate);
 
         var tags = await tContext.ToListAsync();
@@ -262,9 +262,9 @@ public class TagBusiness : ITagBusiness
             }
         }
 
-        // bulk update the results of the query to set the deleted_at date
+        // bulk update the results of the query to set the archived_at date
         var updated = await tContext.ExecuteUpdateAsync(setters => setters
-            .SetProperty(t => t.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+            .SetProperty(t => t.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
         // if we found tags to update, but weren't successful in updating, throw an error
         if (updated == 0)

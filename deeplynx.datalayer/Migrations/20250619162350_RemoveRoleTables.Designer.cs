@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250619162350_RemoveRoleTables")]
+    partial class RemoveRoleTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,10 +54,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -64,6 +63,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -115,10 +118,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("abbreviation");
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<string>("BaseUri")
                         .HasColumnType("text")
                         .HasColumnName("base_uri");
@@ -136,6 +135,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -181,10 +184,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -196,6 +195,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
@@ -258,10 +261,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -271,6 +270,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
@@ -335,10 +338,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("abbreviation");
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -348,6 +347,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -383,10 +386,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<long?>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -412,6 +411,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
@@ -475,10 +478,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<long?>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
@@ -492,6 +491,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
@@ -539,10 +542,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -552,6 +551,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -611,10 +614,6 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -624,6 +623,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")

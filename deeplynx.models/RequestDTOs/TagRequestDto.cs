@@ -14,5 +14,5 @@ public class TagRequestDto
     [JsonIgnore]
     public DateTime? ModifiedAt { get; set; }
     [JsonIgnore]
-    public DateTime? DeletedAt { get; set; }
+    public DateTime? ArchivedAt { get; set; }
 }

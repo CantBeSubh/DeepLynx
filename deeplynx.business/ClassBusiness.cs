@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
@@ -5,6 +6,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 
@@ -34,7 +36,7 @@ public class ClassBusiness : IClassBusiness
     public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId)
     {
         return await _context.Classes
-            .Where(c => c.ProjectId == projectId && c.DeletedAt == null)
+            .Where(c => c.ProjectId == projectId && c.ArchivedAt == null)
             .Select(c => new ClassResponseDto
             {
                 Id = c.Id,
@@ -53,7 +55,7 @@ public class ClassBusiness : IClassBusiness
     public async Task<ClassResponseDto> GetClass(long projectId, long classId)
     {
         var newClass = await _context.Classes
-            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId && c.DeletedAt == null);
+            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId && c.ArchivedAt == null);
         if (newClass == null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
@@ -75,11 +77,13 @@ public class ClassBusiness : IClassBusiness
 
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
+        var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.ArchivedAt == null);
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
+
+        ValidationHelper.ValidateModel(dto);
         
         var existingClass = await _context.Classes.FirstOrDefaultAsync(c=> c.ProjectId == projectId && c.Name == dto.Name);
         if (existingClass != null)
@@ -120,7 +124,7 @@ public class ClassBusiness : IClassBusiness
     public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
     {
         var updatedClass = await _context.Classes.FindAsync(classId);
-        if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.DeletedAt is not null)
+        if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
@@ -156,7 +160,7 @@ public class ClassBusiness : IClassBusiness
     {
         var dbClass = await _context.Classes.FindAsync(classId);
         
-        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.DeletedAt is not null)
+        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
@@ -227,7 +231,7 @@ public class ClassBusiness : IClassBusiness
             
             // search for records matching the passed-in predicate (filter) to be updated
             var classContext = _context.Classes
-                .Where(c => c.DeletedAt == null)
+                .Where(c => c.ArchivedAt == null)
                 .Where(predicate);
             
             var classes = await classContext.ToListAsync();
@@ -264,9 +268,9 @@ public class ClassBusiness : IClassBusiness
                 }
             }
 
-            // bulk update the results of the query to set the deleted_at date
+            // bulk update the results of the query to set the archived_at date
             var updated = await classContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
             // if we found classes to update, but weren't successful in updating, throw an error
             if (updated == 0)

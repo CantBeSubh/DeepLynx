@@ -35,7 +35,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long? tagId)
     {
         var mappingQuery = _context.RecordMappings
-            .Where(m => m.ProjectId == projectId && m.DeletedAt == null);
+            .Where(m => m.ProjectId == projectId && m.ArchivedAt == null);
 
         // add filter for class or tag if specified
         if (classId.HasValue)
@@ -79,7 +79,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         )
     {
         var mapping = await _context.RecordMappings
-            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.DeletedAt == null)
+            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (mapping == null)
@@ -151,7 +151,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     {
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -194,7 +194,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     {
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -206,7 +206,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         else
         {
             // soft delete
-            mapping.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.RecordMappings.Update(mapping);
         }
         
@@ -226,7 +226,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         {
             // search for record mappings matching the passed-in predicate (filter) to be updated
             var mContext = _context.RecordMappings
-                .Where(m => m.DeletedAt == null)
+                .Where(m => m.ArchivedAt == null)
                 .Where(predicate);
             
             var recordMappings = await mContext.ToListAsync();
@@ -240,7 +240,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             var mappingIds = recordMappings.Select(r => r.Id);
     
             var updated = await mContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(m => m.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(m => m.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
     
             // if we found mappings to update, but weren't successful in updating, throw an error
             if (updated == 0)

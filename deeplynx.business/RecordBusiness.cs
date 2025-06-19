@@ -36,7 +36,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
         var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId && r.DeletedAt == null);
+            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null);
 
         if (dataSourceId.HasValue)
         {
@@ -73,7 +73,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
     {
         var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.DeletedAt == null)
+            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.ArchivedAt == null)
             .FirstOrDefaultAsync();
         
         if (record == null)
@@ -111,12 +111,12 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
         var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.DeletedAt == null);
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
         if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         
         var ds = await _context.DataSources
-            .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.DeletedAt == null);
+            .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.ArchivedAt == null);
         if (ds == null)
             throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
         
@@ -172,7 +172,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
     {
         var record= await _context.Records.FindAsync(recordId);
-        if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
@@ -229,7 +229,7 @@ public class RecordBusiness : IRecordBusiness
     {
         var record = await _context.Records.FindAsync(recordId);
         
-        if (record == null || record.ProjectId != projectId || record.DeletedAt != null)
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
@@ -328,7 +328,7 @@ public class RecordBusiness : IRecordBusiness
         }
         
         var rContext = _context.Records
-            .Where(r => r.DeletedAt == null)
+            .Where(r => r.ArchivedAt == null)
             .Where(predicate);
         
         var records = await rContext.ToListAsync();
@@ -360,9 +360,9 @@ public class RecordBusiness : IRecordBusiness
             }
         }
         
-        // bulk update the results of the query to set the deleted_at date
+        // bulk update the results of the query to set the archived_at date
         var updated = await rContext.ExecuteUpdateAsync(setters => setters
-            .SetProperty(r => r.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+            .SetProperty(r => r.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
         // if we found records to update, but weren't successful in updating, throw an error
         if (updated == 0)

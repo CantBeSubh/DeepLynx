@@ -23,7 +23,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
     {
         var rawData = await _context.Relationships
-            .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
+            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null)
             .Include(r => r.Origin)
             .Include(r => r.Destination)
             .Select(r => new
@@ -37,7 +37,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.CreatedAt,
                 r.ModifiedBy,
                 r.ModifiedAt,
-                r.DeletedAt,
+                r.ArchivedAt,
                 r.OriginId,
                 r.DestinationId,
                 Origin = r.Origin == null ? null : new ClassRelationshipRespDto { Id = r.Origin.Id, Name = r.Origin.Name },
@@ -67,7 +67,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId)
     {
         var relationship = await _context.Relationships
-            .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.DeletedAt == null)
+            .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.ArchivedAt == null)
             .Include(r => r.Origin)
             .Include(r => r.Destination)
             .FirstOrDefaultAsync();
@@ -96,18 +96,18 @@ public class RelationshipBusiness: IRelationshipBusiness
     }
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.DeletedAt == null);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with ID {projectId} not found.");
         }
         
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.DeletedAt == null);
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.DeletedAt == null);
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
@@ -160,17 +160,17 @@ public class RelationshipBusiness: IRelationshipBusiness
     public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
     {
         var relationship = await _context.Relationships.FindAsync(relationshipId);
-        if (relationship == null || relationship.ProjectId != projectId || relationship.DeletedAt is not null)
+        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
         
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.DeletedAt == null);
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.DeletedAt == null);
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
@@ -211,7 +211,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     {
         var relationship = await _context.Relationships.FindAsync(relationshipId);
         
-        if (relationship == null || relationship.ProjectId != projectId || relationship.DeletedAt is not null)
+        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
@@ -278,7 +278,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
             // search for relationships matching the passed-in predicate (filter) to be updated
             var rContext = _context.Relationships
-                .Where(d => d.DeletedAt == null)
+                .Where(d => d.ArchivedAt == null)
                 .Where(predicate);
 
             var relationships = await rContext.ToListAsync();
@@ -311,9 +311,9 @@ public class RelationshipBusiness: IRelationshipBusiness
                 }
             }
 
-            // bulk update the results of the query to set the deleted_at date
+            // bulk update the results of the query to set the archived_at date
             var updated = await rContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
             // if we found relationships to update, but weren't successful in updating, throw an error
             if (updated == 0)
