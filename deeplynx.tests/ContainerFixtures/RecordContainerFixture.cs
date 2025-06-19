@@ -41,13 +41,13 @@ public class RecordContainerFixture : IAsyncLifetime
     {
         var project = new Project { Name = "Proj", Abbreviation = "P" };
         if (deletedProject)
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         Context.Projects.Add(project);
 
         var dataSource = new DataSource { Name = "DS", Project = project };
         if (deletedDataSource)
-            dataSource.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            dataSource.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();

@@ -150,7 +150,7 @@ public sealed class RecordTests : IClassFixture<RecordContainerFixture>
             Properties = "{}",
             ProjectId = pid,
             DataSourceId = dsid,
-            DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         _fixture.Context.Records.Add(deleted);
         await _fixture.Context.SaveChangesAsync();
@@ -217,7 +217,7 @@ public sealed class RecordTests : IClassFixture<RecordContainerFixture>
             () => _fixture.RecordBusiness.UpdateRecord(pid, cr.Id, new RecordRequestDto { Properties = new JsonObject() }));
     }
     [Fact]
-    public async Task DeleteRecord_SoftDelete_SetsDeletedAt()
+    public async Task DeleteRecord_SoftDelete_SetsArchivedAt()
     {
         var (pid, dsid) = await _fixture.SeedProjectAndDataSource();
         var created = await _fixture.RecordBusiness.CreateRecord(pid, dsid, new RecordRequestDto { Properties = new JsonObject(), Name = "ToDelete" });
@@ -227,6 +227,6 @@ public sealed class RecordTests : IClassFixture<RecordContainerFixture>
         Assert.True(result);
         var entity = await _fixture.Context.Records.FindAsync(created.Id);
         Assert.NotNull(entity);
-        Assert.NotNull(entity.DeletedAt);
+        Assert.NotNull(entity.ArchivedAt);
     }
 }

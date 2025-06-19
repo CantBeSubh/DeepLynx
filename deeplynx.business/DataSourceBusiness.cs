@@ -41,7 +41,7 @@ namespace deeplynx.business
         public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId)
         {
             var dataSources = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.DeletedAt == null).ToListAsync();
+                .Where(d => d.ProjectId == projectId && d.ArchivedAt == null).ToListAsync();
 
             return dataSources
                 .Select(d => new DataSourceResponseDto()
@@ -72,10 +72,10 @@ namespace deeplynx.business
         public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId)
         {
             var dataSource = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.DeletedAt == null)
+                .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.ArchivedAt == null)
                 .FirstOrDefaultAsync();
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
             {
                 throw new KeyNotFoundException($"Data Source with id {datasourceId} not found");
             }
@@ -156,7 +156,7 @@ namespace deeplynx.business
         {
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
             {
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
             }
@@ -203,7 +203,7 @@ namespace deeplynx.business
         {
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.DeletedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
             {
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
             }
@@ -270,7 +270,7 @@ namespace deeplynx.business
 
             // search for records matching the passed-in predicate (filter) to be updated
             var dsContext = _context.DataSources
-                .Where(d => d.DeletedAt == null)
+                .Where(d => d.ArchivedAt == null)
                 .Where(predicate);
 
             var dataSources = await dsContext.ToListAsync();
@@ -303,9 +303,9 @@ namespace deeplynx.business
                 }
             }
 
-            // bulk update the results of the query to set the deleted_at date
+            // bulk update the results of the query to set the archived_at date
             var updated = await dsContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
             // if we found records to update, but weren't successful in updating, throw an error
             if (updated == 0)
