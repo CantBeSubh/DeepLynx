@@ -14,7 +14,7 @@ public class RecordRequestDto
     public string? OriginalId { get; set; }
     public string? Name { get; set; }
 
-    public int? ClassId { get; set; }
+    public long? ClassId { get; set; }
     public string? ClassName { get; set; }
     
 }

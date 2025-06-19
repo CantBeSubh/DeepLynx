@@ -6,15 +6,15 @@ namespace deeplynx.interfaces
 {
     public interface ITimeseriesBusiness
     {
-        Task<TimeseriesResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file);
+        Task<RecordResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file);
         string StartUpload(string projectId, string datasourceId);
 
         Task<string> UploadChunk(string projectId, string datasourceId, IFormFile chunk,
             string uploadId, int chunkNumber);
 
-        Task<TimeseriesResponseDto> CompleteUpload(string projectId, string datasourceId,
+        Task<RecordResponseDto> CompleteUpload(string projectId, string datasourceId,
             TimeseriesUploadCompleteRequestDto request);
 
-        Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto);
+        Task CreateTimeseriesTable(string tableName, string filePath);
     }
 }
