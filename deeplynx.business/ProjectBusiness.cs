@@ -21,7 +21,6 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IEdgeBusiness _edgeBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IRecordBusiness _recordBusiness;
-    private readonly IRoleBusiness _roleBusiness;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
@@ -45,8 +44,7 @@ public class ProjectBusiness : IProjectBusiness
         IRecordMappingBusiness recordMappingBusiness,
         IEdgeBusiness edgeBusiness,
         IDataSourceBusiness dataSourceBusiness,
-        IRecordBusiness recordBusiness,
-        IRoleBusiness roleBusiness
+        IRecordBusiness recordBusiness
         )
     {
         _context = context;
@@ -58,7 +56,6 @@ public class ProjectBusiness : IProjectBusiness
         _edgeBusiness = edgeBusiness;
         _dataSourceBusiness = dataSourceBusiness;
         _recordBusiness = recordBusiness;
-        _roleBusiness = roleBusiness;
     }
 
     /// <summary>
@@ -228,8 +225,7 @@ public class ProjectBusiness : IProjectBusiness
                 () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => m.ProjectId == projectId),
                 () => _edgeBusiness.BulkSoftDeleteEdges(e => e.ProjectId == projectId),
                 () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
-                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction),
-                () => _roleBusiness.BulkSoftDeleteRoles(r => r.ProjectId == projectId)
+                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction)
             };
 
             // loop through tasks and trigger downstream deletions

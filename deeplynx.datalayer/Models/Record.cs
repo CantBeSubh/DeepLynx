@@ -80,9 +80,6 @@ public partial class Record
     [InverseProperty("Records")]
     public virtual Project Project { get; set; } = null!;
 
-    [InverseProperty("Record")]
-    public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
-
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();

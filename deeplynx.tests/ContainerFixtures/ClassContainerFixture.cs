@@ -16,7 +16,6 @@ public class ClassContainerFixture : IAsyncLifetime
     public EdgeBusiness EdgeBusiness { get; private set; }
     public DataSourceBusiness DataSourceBusiness { get; private set; }
     public RecordBusiness RecordBusiness { get; private set; }
-    public RoleBusiness RoleBusiness { get; private set; }
 
     private readonly PostgreSqlContainer _postgresContainer = new PostgreSqlBuilder()
          .WithImage("postgres:15-alpine")
@@ -41,7 +40,6 @@ public class ClassContainerFixture : IAsyncLifetime
         RecordMappingBusiness = new RecordMappingBusiness(Context);
         EdgeBusiness = new EdgeBusiness(Context);
         RecordBusiness = new RecordBusiness(Context, EdgeBusiness);
-        RoleBusiness = new RoleBusiness(Context);
         DataSourceBusiness = new DataSourceBusiness(Context, EdgeBusiness, RecordBusiness);
 
         // Initialize ProjectBusiness with dependencies
@@ -54,8 +52,7 @@ public class ClassContainerFixture : IAsyncLifetime
             RecordMappingBusiness,
             EdgeBusiness,
             DataSourceBusiness,
-            RecordBusiness,
-            RoleBusiness
+            RecordBusiness
         );
     }
 

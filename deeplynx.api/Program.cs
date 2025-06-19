@@ -81,7 +81,6 @@ builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
 builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
 builder.Services.AddTransient<IDataSourceBusiness, DataSourceBusiness>();
 builder.Services.AddTransient<IRelationshipBusiness, RelationshipBusiness>();
-builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
 builder.Services.AddTransient<IRecordMappingBusiness, RecordMappingBusiness>();
 builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
 builder.Services.AddTransient<ITagBusiness, TagBusiness>();
