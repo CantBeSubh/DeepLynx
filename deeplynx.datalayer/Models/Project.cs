@@ -35,8 +35,8 @@ public partial class Project
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [InverseProperty("Project")]
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

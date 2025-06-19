@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -59,8 +59,8 @@ public partial class Record
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [ForeignKey("ClassId")]
     [InverseProperty("Records")]

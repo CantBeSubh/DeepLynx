@@ -66,7 +66,7 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
     {
         var projects = await _context.Projects
-            .Where(p => p.DeletedAt == null).ToListAsync();
+            .Where(p => p.ArchivedAt == null).ToListAsync();
 
         return projects
             .Select(p => new ProjectResponseDto()
@@ -91,7 +91,7 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> GetProject(long projectId)
     {
         var project = await _context.Projects
-            .Where(p => p.Id == projectId && p.DeletedAt == null)
+            .Where(p => p.Id == projectId && p.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (project == null)
@@ -160,7 +160,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.DeletedAt is not null)
+        if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name;
@@ -196,12 +196,12 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
     /// <exception cref="DependencyDeletionException">Thrown if error during dependency deletions.</exception>
-    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact deleted_at time.
+    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact archived_at time.
     public async Task<bool> DeleteProject(long projectId, bool force = false)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.DeletedAt is not null)
+        if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
         if (force)
@@ -241,7 +241,7 @@ public class ProjectBusiness : IProjectBusiness
                 }
             }
 
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Projects.Update(project);
 
             await _context.SaveChangesAsync();

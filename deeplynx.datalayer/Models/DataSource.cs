@@ -48,8 +48,8 @@ public partial class DataSource
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();

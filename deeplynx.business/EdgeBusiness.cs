@@ -34,7 +34,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // base query object to get all edges for the project
         var edgeQuery = _context.Edges
-            .Where(e => e.ProjectId == projectId && e.DeletedAt == null);
+            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
     
         // add filter for datasource if specified
         if (dataSourceId.HasValue)
@@ -158,7 +158,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
@@ -210,7 +210,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
@@ -222,7 +222,7 @@ public class EdgeBusiness : IEdgeBusiness
         else
         {
             // soft delete
-            edge.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            edge.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.Edges.Update(edge);
         }
         
@@ -251,14 +251,14 @@ public class EdgeBusiness : IEdgeBusiness
         if (edgeId != null)
         {
             edge = await _context.Edges
-                .Where(e => e.Id == edgeId && e.DeletedAt == null)
+                .Where(e => e.Id == edgeId && e.ArchivedAt == null)
                 .FirstOrDefaultAsync();
         }
         else
         {
             edge = await _context.Edges
                 .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
-                .Where(e => e.DeletedAt == null)
+                .Where(e => e.ArchivedAt == null)
                 .FirstOrDefaultAsync();
         }
 
@@ -289,7 +289,7 @@ public class EdgeBusiness : IEdgeBusiness
         {
             // search for records matching the passed-in predicate (filter) to be updated
             var eContext = _context.Edges
-                .Where(d => d.DeletedAt == null)
+                .Where(d => d.ArchivedAt == null)
                 .Where(predicate);
 
             var edges = await eContext.ToListAsync();
@@ -300,9 +300,9 @@ public class EdgeBusiness : IEdgeBusiness
                 return true;
             }
 
-            // bulk update the results of the query to set the deleted_at date
+            // bulk update the results of the query to set the archived_at date
             var updated = await eContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
             // if we found edges to update, but weren't successful in updating, throw an error
             if (updated == 0)
