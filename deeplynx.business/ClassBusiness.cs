@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
@@ -5,6 +6,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 
@@ -80,6 +82,8 @@ public class ClassBusiness : IClassBusiness
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
+
+        ValidationHelper.ValidateModel(dto);
         
         var existingClass = await _context.Classes.FirstOrDefaultAsync(c=> c.ProjectId == projectId && c.Name == dto.Name);
         if (existingClass != null)
