@@ -27,14 +27,14 @@ namespace deeplynx.business
         /// <returns>A list of roles belonging to the project.</returns>
         public async Task<IEnumerable<RoleResponseDto>> GetAllRoles(long projectId)
         {
-            var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.DeletedAt == null);
+            var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.ArchivedAt == null);
             if (project == null)
             {
                 throw new KeyNotFoundException($"Project with id {projectId} not found");
             }
             
             return await _context.Roles
-                .Where(r => r.ProjectId == projectId && r.DeletedAt == null)
+                .Where(r => r.ProjectId == projectId && r.ArchivedAt == null)
                 .Select(r => new RoleResponseDto()
                 {
                     Id = r.Id,
@@ -58,7 +58,7 @@ namespace deeplynx.business
         public async Task<RoleResponseDto> GetRole(long projectId, long roleId)
         {
             var role = await _context.Roles
-                .Where(r => r.Id == roleId && r.ProjectId == projectId && r.DeletedAt == null)
+                .Where(r => r.Id == roleId && r.ProjectId == projectId && r.ArchivedAt == null)
                 .FirstOrDefaultAsync();
 
             if (role == null)
@@ -123,7 +123,7 @@ namespace deeplynx.business
         public async Task<RoleResponseDto> UpdateRole(long projectId, long roleId, RoleRequestDto dto)
         {
             var role = await _context.Roles.FindAsync(roleId);
-            if (role == null || role.ProjectId != projectId || role.DeletedAt is not null)
+            if (role == null || role.ProjectId != projectId || role.ArchivedAt is not null)
             {
                 throw new KeyNotFoundException($"Role with id {roleId} not found");
             }
@@ -162,7 +162,7 @@ namespace deeplynx.business
         public async Task<bool> DeleteRole(long projectId, long roleId, bool force)
         {
             var role = await _context.Roles.FindAsync(roleId);
-            if (role == null || role.ProjectId != projectId || role.DeletedAt is not null)
+            if (role == null || role.ProjectId != projectId || role.ArchivedAt is not null)
             {
                 throw new KeyNotFoundException($"Role with id {roleId} not found");
             }
@@ -174,7 +174,7 @@ namespace deeplynx.business
             else
             {
                 //soft delete
-                role.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
+                role.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified); 
                 _context.Roles.Update(role);
             }
             
@@ -193,7 +193,7 @@ namespace deeplynx.business
             {
                 // search for roles matching the passed-in predicate (filter) to be updated
                 var rContext = _context.Roles
-                    .Where(d => d.DeletedAt == null)
+                    .Where(d => d.ArchivedAt == null)
                     .Where(predicate);
 
                 var roles = await rContext.ToListAsync();
@@ -204,9 +204,9 @@ namespace deeplynx.business
                     return true;
                 }
 
-                // bulk update the results of the query to set the deleted_at date
+                // bulk update the results of the query to set the archived_at date
                 var updated = await rContext.ExecuteUpdateAsync(setters => setters
-                    .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                    .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
                 // if we found roles to update, but weren't successful in updating, throw an error
                 if (updated == 0)
