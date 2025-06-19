@@ -26,8 +26,8 @@ public partial class Permission
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [Column("name")]
     public string Name { get; set; } = null!;

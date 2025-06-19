@@ -35,7 +35,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long? relationshipId)
     {
         var mappingQuery = _context.EdgeMappings
-            .Where(e => e.ProjectId == projectId && e.DeletedAt == null);
+            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
             
             // add filter for class or tag if specified                                  
             if (classId.HasValue)                                                        
@@ -80,7 +80,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long mappingId)
     {
         var mapping = await _context.EdgeMappings
-            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.DeletedAt == null)
+            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (mapping == null)
@@ -158,7 +158,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     {
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -205,7 +205,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     {
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -217,7 +217,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         else
         {
             // soft delete
-            mapping.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.EdgeMappings.Update(mapping);
         }
         
@@ -237,7 +237,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         {
             // search for records matching the passed-in predicate (filter) to be updated
             var emContext = _context.EdgeMappings
-                .Where(d => d.DeletedAt == null)
+                .Where(d => d.ArchivedAt == null)
                 .Where(predicate);
 
             var edgeMappings = await emContext.ToListAsync();
@@ -248,9 +248,9 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
                 return true;
             }
 
-            // bulk update the results of the query to set the deleted_at date
+            // bulk update the results of the query to set the archived_at date
             var updated = await emContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
 
             // if we found edge mappings to update, but weren't successful in updating, throw an error
             if (updated == 0)
