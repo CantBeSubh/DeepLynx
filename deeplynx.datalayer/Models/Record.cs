@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -79,9 +79,6 @@ public partial class Record
     [ForeignKey("ProjectId")]
     [InverseProperty("Records")]
     public virtual Project Project { get; set; } = null!;
-
-    [InverseProperty("Record")]
-    public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
 
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]

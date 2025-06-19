@@ -60,11 +60,5 @@ public partial class Project
     public virtual ICollection<Relationship> Relationships { get; set; } = new List<Relationship>();
 
     [InverseProperty("Project")]
-    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
-
-    [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-
-    [InverseProperty("Project")]
-    public virtual ICollection<UserProject> UserProjects { get; set; } = new List<UserProject>();
 }

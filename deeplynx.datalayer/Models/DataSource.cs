@@ -61,6 +61,4 @@ public partial class DataSource
     [InverseProperty("DataSource")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
 
-    [InverseProperty("DataSource")]
-    public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
 }
