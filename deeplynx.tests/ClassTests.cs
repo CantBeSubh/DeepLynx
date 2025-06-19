@@ -76,111 +76,95 @@ public class ClassIntegrationTests : IntegrationTestBase
         var result = () => _classBusiness.CreateClass(pid, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
-    //
-    //
+    
+    
+    [Fact]
+    public async Task GetAllClasses_ReturnsOnlyForProject()
+    {
+        await SeedTestDataAsync();
+        var p2 = new Project { Name = "ExtraProj" };
+        Context.Projects.Add(p2);
+        await Context.SaveChangesAsync();
+    
+        await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C1" });
+        await _classBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = "C2" });
+    
+        var list = await _classBusiness.GetAllClasses(pid);
+        Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
+    }
+    
+    
+    [Fact]
+    public async Task GetAllClasses_ExcludesSoftDeleted()
+    {
+        await SeedTestDataAsync();
+        var class1 = new Class { Name = "Proj", ProjectId = pid};
+        var class2 = new Class { Name = "Proj2", ProjectId = pid, ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+        Context.Classes.Add(class1);
+        Context.Classes.Add(class2);
+        await Context.SaveChangesAsync();
+        
+        var list = await _classBusiness.GetAllClasses(pid);
+        Assert.DoesNotContain(list, c => c.Id == class2.Id);
+    }
+    
+    [Fact]
+    public async Task GetClass_Success_WhenExists()
+    {
+        await SeedTestDataAsync();
+        var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
+        var result = await _classBusiness.GetClass(pid, created.Id);
+        Assert.Equal(created.Id, result.Id);
+    }
+    
+    [Fact]
+    public async Task GetClass_Fails_IfNotFound()
+    {
+        await SeedTestDataAsync();
+        var result = () => _classBusiness.GetClass(pid, 9999);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
+    
     // [Fact]
-    // public async Task GetAllClasses_ReturnsOnlyForProject()
+    // public async Task GetClass_Fails_IfDeleted()
     // {
-    //     var p1 =  _fixture.pid;
-    //     var p2 = new Project { Name = "ExtraProj" };
-    //     _fixture.Context.Projects.Add(p2);
-    //     await _fixture.Context.SaveChangesAsync();
-    //
-    //     await _fixture.ClassBusiness.CreateClass(p1, new ClassRequestDto { Name = "C1" });
-    //     await _fixture.ClassBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = "C2" });
-    //
-    //     var list = await _fixture.ClassBusiness.GetAllClasses(p1);
-    //     Assert.All(list, c => Assert.Equal(p1, c.ProjectId));
+    //     await SeedTestDataAsync();
+    //     var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
+    //     await _classBusiness.DeleteClass(pid, created.Id);
+    //     var result = await _classBusiness.GetClass(pid, created.Id);
+    //    Assert.Null(result);
     // }
-    //
-    //
-    // [Fact]
-    // public async Task GetAllClasses_ExcludesSoftDeleted()
-    // {
-    //     var pid = _fixture.pid;
-    //     var class1 = new Class { Name = "Proj", ProjectId = pid};
-    //     var class2 = new Class { Name = "Proj2", ProjectId = pid, DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-    //     _fixture.Context.Classes.Add(class1);
-    //     _fixture.Context.Classes.Add(class2);
-    //     await _fixture.Context.SaveChangesAsync();
-    //     
-    //     var list = await _fixture.ClassBusiness.GetAllClasses(pid);
-    //     Assert.DoesNotContain(list, c => c.Id == class2.Id);
-    // }
-    //
-    // [Fact]
-    // public async Task GetClass_Success_WhenExists()
-    // {
-    //     var pid = _fixture.pid;
-    //     var created = await _fixture.ClassBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
-    //
-    //     var result = await _fixture.ClassBusiness.GetClass(pid, created.Id);
-    //     Assert.Equal(created.Id, result.Id);
-    // }
-    //
-    // [Fact]
-    // public async Task GetClass_Fails_IfNotFound()
-    // {
-    //     var pid = _fixture.pid;
-    //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    //         () => _fixture.ClassBusiness.GetClass(pid, 9999));
-    // }
-    //
-    // // [Fact]
-    // // public async Task GetClass_Fails_IfDeleted()
-    // // {
-    // //     var pid = _fixture.pid;
-    // //     var created = await _fixture.ClassBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
-    // //     await _fixture.ClassBusiness.DeleteClass(pid, created.Id);
-    // //
-    // //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    // //         () => _fixture.ClassBusiness.GetClass(pid, created.Id));
-    // // }
-    // //
-    //
-    // [Fact]
-    // public async Task UpdateClass_Success_ReturnsModifiedAt()
-    // {
-    //     var pid = _fixture.pid;
-    //     var created = await _fixture.ClassBusiness.CreateClass(pid, new ClassRequestDto { Name = "Old" });
-    //
-    //     var updated = await _fixture.ClassBusiness.UpdateClass(pid, created.Id, new ClassRequestDto { Name = "New" });
-    //     Assert.Equal("New", updated.Name);
-    //     Assert.NotNull(updated.ModifiedAt);
-    // }
-    //
-    // [Fact]
-    // public async Task UpdateClass_Fails_IfNotFound()
-    // {
-    //     var pid = _fixture.pid;
-    //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    //         () => _fixture.ClassBusiness.UpdateClass(pid, 9999, new ClassRequestDto { Name = "X" }));
-    // }
+    
+    
+    [Fact]
+    public async Task UpdateClass_Success_ReturnsModifiedAt()
+    {
+        await SeedTestDataAsync();
+        var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "Old" });
+        var updated = await _classBusiness.UpdateClass(pid, created.Id, new ClassRequestDto { Name = "New" });
+        Assert.Equal("New", updated.Name);
+        Assert.NotNull(updated.ModifiedAt);
+    }
+    
+    [Fact]
+    public async Task UpdateClass_Fails_IfNotFound()
+    {
+        await SeedTestDataAsync();
+        var result = () => _classBusiness.UpdateClass(pid, 9999, new ClassRequestDto { Name = "X" });
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
     
     // [Fact]
     // public async Task UpdateClass_Fails_IfDeleted()
     // {
-    //     var pid = _fixture.pid;
-    //     var created = await _fixture.ClassBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
-    //     await _fixture.ClassBusiness.DeleteClass(pid, created.Id);
-    //
-    //     await Assert.ThrowsAsync<KeyNotFoundException>(
-    //         () => _fixture.ClassBusiness.UpdateClass(pid, created.Id, new ClassRequestDto { Name = "Y" }));
+    //     await SeedTestDataAsync();
+    //     var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
+    //     await _classBusiness.DeleteClass(pid, created.Id);
+    //     
+    //     var result = () => _classBusiness.UpdateClass(pid, created.Id, new ClassRequestDto { Name = "Y" });
+    //     await result.Should().ThrowAsync<KeyNotFoundException>();
     // }
-    //
-    // [Fact]
-    // public async Task DeleteClass_SoftDelete_SetsDeletedAt()
-    // {
-    //     var pid = _fixture.pid;
-    //     var created = await _fixture.ClassBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
-    //
-    //     var result = await _fixture.ClassBusiness.DeleteClass(pid, created.Id);
-    //     Assert.True(result);
-    //
-    //     var entity = await _fixture.Context.Classes.FindAsync(created.Id);
-    //     Assert.NotNull(entity.DeletedAt);
-    // }
-
+  
     [Fact(Skip = "Force delete not implemented yet")]
     public async Task ForceDeleteClass_RemovesFromDatabase()
     {
@@ -212,7 +196,7 @@ public class ClassIntegrationTests : IntegrationTestBase
         var project = new Project { Name = "Project 2" };
         if (deleteProject)
         {
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         }
         
         Context.Projects.Add(project);
