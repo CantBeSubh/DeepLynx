@@ -35,7 +35,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while listing roles: {exc}";
+                var message = $"An error occurred while listing records: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

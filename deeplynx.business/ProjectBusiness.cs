@@ -34,7 +34,6 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="edgeBusiness">One of the downstream business layers used for cascading deletions.</param>
     /// <param name="dataSourceBusiness">One of the downstream business layers used for cascading deletions.</param>
     /// <param name="recordBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="roleBusiness">One of the downstream business layers used for cascading deletions.</param>
     public ProjectBusiness(
         DeeplynxContext context, 
         ITagBusiness tagBusiness, 
