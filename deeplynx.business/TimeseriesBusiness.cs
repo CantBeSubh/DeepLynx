@@ -148,7 +148,7 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
         return responseDto;
     }
 
-    private DuckDBConnection GetDuckDBConnection()
+    private static DuckDBConnection GetDuckDbConnection()
     {
         return new DuckDBConnection("Data Source=TimeSeries.db");
     }
@@ -160,10 +160,10 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
     /// <returns></returns>
     public async Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto)
     {
-        using var duckDBConnection = GetDuckDBConnection();
-        await duckDBConnection.OpenAsync();
+        await using var duckDbConnection = GetDuckDbConnection();
+        await duckDbConnection.OpenAsync();
 
-        using var command = duckDBConnection.CreateCommand();
+        await using var command = duckDbConnection.CreateCommand();
 
         command.CommandText = $"CREATE TABLE '{timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName}' AS SELECT * from read_csv('{timeseriesResponseDto.FilePath}'); ";
         var executeNonQuery = command.ExecuteNonQuery();
