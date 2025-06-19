@@ -34,10 +34,10 @@ public class ClassContainerFixture : IAsyncLifetime
         await Context.Database.MigrateAsync();
 
         // Initialize the business classes
-        TagBusiness = new TagBusiness(Context);
+        TagBusiness = new TagBusiness(Context, RecordMappingBusiness);
         EdgeMappingBusiness = new EdgeMappingBusiness(Context);
-        RelationshipBusiness = new RelationshipBusiness(Context);
-        ClassBusiness = new ClassBusiness(Context);
+        RelationshipBusiness = new RelationshipBusiness(Context, EdgeMappingBusiness, EdgeBusiness);
+        ClassBusiness = new ClassBusiness(Context, EdgeMappingBusiness, RecordBusiness, RecordMappingBusiness, RelationshipBusiness);
         RecordMappingBusiness = new RecordMappingBusiness(Context);
         EdgeBusiness = new EdgeBusiness(Context);
         RecordBusiness = new RecordBusiness(Context, EdgeBusiness);

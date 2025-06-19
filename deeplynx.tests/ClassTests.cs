@@ -61,7 +61,7 @@ public sealed class ClassTests : IAsyncLifetime
     {
         var project = new Project { Name = "Proj", Abbreviation = "P" };
         if (deleted)
-            project.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
@@ -152,7 +152,7 @@ public sealed class ClassTests : IAsyncLifetime
         {
             Name = "C2",
             ProjectId = pid,
-            DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         _context.Classes.Add(deleted);
         await _context.SaveChangesAsync();
@@ -222,7 +222,7 @@ public sealed class ClassTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task DeleteClass_SoftDelete_SetsDeletedAt()
+    public async Task DeleteClass_SoftDelete_SetsArchivedAt()
     {
         var pid = await SeedProject();
         var created = await _business.CreateClass(pid, new ClassRequestDto { Name = "C" });
@@ -231,7 +231,7 @@ public sealed class ClassTests : IAsyncLifetime
         Assert.True(result);
 
         var entity = await _context.Classes.FindAsync(created.Id);
-        Assert.NotNull(entity.DeletedAt);
+        Assert.NotNull(entity.ArchivedAt);
     }
 
     [Fact(Skip = "Force delete not implemented yet")]
