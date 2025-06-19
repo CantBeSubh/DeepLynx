@@ -6,8 +6,8 @@ import CreateProject from "@/app/(home)/components/CreateProjectsWidget";
 import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/Accordion";
-import { useProjectSession } from "@/app/contexts/ProjectSessionContext";
-import { useUserSession } from "@/app/contexts/UserSessionContext";
+import { useProjectSession } from "../contexts/ProjectSessionProvider";
+import { useUserSession } from "../contexts/UserSessionProvider";
 
 const LandingPage = () => {
   const router = useRouter();
