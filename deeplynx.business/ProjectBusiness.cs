@@ -11,7 +11,7 @@ namespace deeplynx.business;
 public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
-    
+
     /// Note: The following dependencies are used exclusively for their respective bulk soft delete functions.
     private readonly ITagBusiness _tagBusiness;
     private readonly IEdgeMappingBusiness _edgeMappingBusiness;
@@ -21,7 +21,7 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IEdgeBusiness _edgeBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IRecordBusiness _recordBusiness;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
@@ -35,8 +35,8 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="dataSourceBusiness">One of the downstream business layers used for cascading deletions.</param>
     /// <param name="recordBusiness">One of the downstream business layers used for cascading deletions.</param>
     public ProjectBusiness(
-        DeeplynxContext context, 
-        ITagBusiness tagBusiness, 
+        DeeplynxContext context,
+        ITagBusiness tagBusiness,
         IEdgeMappingBusiness edgeMappingBusiness,
         IRelationshipBusiness relationshipBusiness,
         IClassBusiness classBusiness,
@@ -125,7 +125,7 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = dto.Abbreviation,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
-        }; 
+        };
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
@@ -185,68 +185,63 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
-    /// Delete a project by id. This MUST also handle deletion of all project's downstream dependents.
-    /// Exceptions are handled per dependency for better logging and will be propagated up on error.
-    /// Note: Downstream dependents on force delete should automatically be handled for us based on FK's.
-    ///     We otherwise must handle our own soft-deletes.
+    /// Delete a project by id.
     /// </summary>
     /// <param name="projectId">ID of the project to delete.</param>
-    /// <param name="force">Boolean flag to force delete a project if true.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
-    /// <exception cref="DependencyDeletionException">Thrown if error during dependency deletions.</exception>
-    /// TODO: We can maybe create a single timestamp to pass to functions ensuring all share exact archived_at time.
-    public async Task<bool> DeleteProject(long projectId, bool force = false)
+    public async Task<bool> DeleteProject(long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
-        if (force)
-        {
-            _context.Projects.Remove(project);
-            await _context.SaveChangesAsync();
-        }
-        else
-        {
-            var transaction = await _context.Database.BeginTransactionAsync();
-            
-            // We will define a list of lambda functions of our bulk deletes to sequentially iterate through
-            // as to not block the thread of our lone database context.
-            // NOTE: transactions may be passed in to maintain downstream ACID compliance.
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _tagBusiness.BulkSoftDeleteTags(t => t.ProjectId == projectId, transaction),
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(em => em.ProjectId == projectId),
-                () => _relationshipBusiness.BulkSoftDeleteRelationships(r => r.ProjectId == projectId, transaction),
-                () => _classBusiness.BulkSoftDeleteClasses(c => c.ProjectId == projectId, transaction),
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => m.ProjectId == projectId),
-                () => _edgeBusiness.BulkSoftDeleteEdges(e => e.ProjectId == projectId),
-                () => _dataSourceBusiness.BulkSoftDeleteDataSources(d => d.ProjectId == projectId, transaction),
-                () => _recordBusiness.BulkSoftDeleteRecords(r => r.ProjectId == projectId, transaction)
-            };
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
 
-            // loop through tasks and trigger downstream deletions
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and throw an error
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        "An error occurred during the deletion of downstream project dependants.");
-                }
-            }
-
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Projects.Update(project);
-
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-        }
-        
         return true;
+    }
+    
+    /// <summary>
+    /// Archive (soft delete) a project by id. This also archives downstream dependents.
+    /// </summary>
+    /// <param name="projectId">ID of the project to delete.</param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
+    public async Task<bool> ArchiveProject(long projectId)
+    {
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null || project.ArchivedAt is not null)
+            throw new KeyNotFoundException("Project not found.");
+
+        // set archivedAt timestamp
+        var archivedAt = DateTime.UtcNow;
+
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the archive project procedure, which archives this project
+                // and all child objects with project_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", projectId, archivedAt);
+
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to archive project {projectId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive project {projectId} or its downstream dependents: {exc}");
+            }
+        }
     }
 }
