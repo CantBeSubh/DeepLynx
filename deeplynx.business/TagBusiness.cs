@@ -30,7 +30,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTagAsync(long projectId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
@@ -67,7 +67,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
@@ -104,7 +104,7 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId)
+    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId)
     {
         return await _context.Tags
             .Where(t => t.ProjectId == projectId && t.ArchivedAt == null)
@@ -128,7 +128,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <returns>The tag with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId)
+    public async Task<TagResponseDto> GetTagById(long projectId, long tagId)
     {
         var tag = await _context.Tags
             .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
@@ -158,7 +158,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <param name="force">Indicates whether to force delete the tag if it is in use.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false)
+    public async Task<bool> DeleteTag(long projectId, long tagId, bool force = false)
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)

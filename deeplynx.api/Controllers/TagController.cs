@@ -30,7 +30,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var createdTag = await _tagBusiness.CreateTagAsync(projectId, tagRequestDto);
+            var createdTag = await _tagBusiness.CreateTag(projectId, tagRequestDto);
             return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id }, 
                 createdTag);
         }
@@ -54,7 +54,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var updatedTag = await _tagBusiness.UpdateTagAsync(projectId, tagId, tagRequestDto);
+            var updatedTag = await _tagBusiness.UpdateTag(projectId, tagId, tagRequestDto);
             return Ok(updatedTag);
         }
         catch (Exception exception)
@@ -75,7 +75,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTagsAsync(projectId);
+            var tags = await _tagBusiness.GetAllTags(projectId);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -97,7 +97,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            var tag = await _tagBusiness.GetTagByIdAsync(projectId, tagId);
+            var tag = await _tagBusiness.GetTagById(projectId, tagId);
             return Ok(tag);
         }
         catch (Exception exception)
@@ -120,7 +120,7 @@ public class TagController : ControllerBase
     {
         try
         {
-            await _tagBusiness.DeleteTagAsync(projectId, tagId, force);
+            await _tagBusiness.DeleteTag(projectId, tagId, force);
             return Ok(new { message = $"Tag deleted successfully" });
         }
         catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
