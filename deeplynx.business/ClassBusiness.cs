@@ -47,7 +47,8 @@ public class ClassBusiness : IClassBusiness
                 CreatedBy = c.CreatedBy,
                 CreatedAt = c.CreatedAt,
                 ModifiedBy = c.ModifiedBy,
-                ModifiedAt = c.ModifiedAt
+                ModifiedAt = c.ModifiedAt,
+                ArchivedAt = c.ArchivedAt,
             })
             .ToListAsync();
     }
@@ -71,7 +72,8 @@ public class ClassBusiness : IClassBusiness
             CreatedBy = newClass.CreatedBy,
             CreatedAt = newClass.CreatedAt,
             ModifiedBy = newClass.ModifiedBy,
-            ModifiedAt = newClass.ModifiedAt
+            ModifiedAt = newClass.ModifiedAt,
+            ArchivedAt = newClass.ArchivedAt
         };
     }
 
@@ -152,7 +154,6 @@ public class ClassBusiness : IClassBusiness
             CreatedAt = updatedClass.CreatedAt,
             ModifiedBy = updatedClass.ModifiedBy,
             ModifiedAt = updatedClass.ModifiedAt,
-
         };
     }
 

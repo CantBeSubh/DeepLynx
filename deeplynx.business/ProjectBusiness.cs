@@ -45,7 +45,8 @@ public class ProjectBusiness : IProjectBusiness
                 CreatedBy = p.CreatedBy,
                 CreatedAt = p.CreatedAt,
                 ModifiedBy = p.ModifiedBy,
-                ModifiedAt = p.ModifiedAt
+                ModifiedAt = p.ModifiedAt,
+                ArchivedAt = p.ArchivedAt,
             });
     }
 
@@ -75,7 +76,8 @@ public class ProjectBusiness : IProjectBusiness
             CreatedBy = project.CreatedBy,
             CreatedAt = project.CreatedAt,
             ModifiedBy = project.ModifiedBy,
-            ModifiedAt = project.ModifiedAt
+            ModifiedAt = project.ModifiedAt,
+            ArchivedAt = project.ArchivedAt,
         };
     }
 

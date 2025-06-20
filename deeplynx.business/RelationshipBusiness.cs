@@ -59,7 +59,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
             Origin = r.Origin,
-            Destination = r.Destination
+            Destination = r.Destination,
+            ArchivedAt = r.ArchivedAt,
         });
 
         return result;
@@ -91,7 +92,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId,
             Origin = relationship.Origin == null ? null : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null ? null : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+            Destination = relationship.Destination == null ? null : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name },
+            ArchivedAt = relationship.ArchivedAt,
         };
     }
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)

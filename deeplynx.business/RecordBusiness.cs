@@ -59,6 +59,7 @@ public class RecordBusiness : IRecordBusiness
                 CreatedBy = r.CreatedBy,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
             })
             .ToListAsync();
     }
@@ -96,6 +97,7 @@ public class RecordBusiness : IRecordBusiness
             CreatedBy = record.CreatedBy,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
         };
     }
 
