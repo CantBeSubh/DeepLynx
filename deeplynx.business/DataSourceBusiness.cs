@@ -192,133 +192,46 @@ namespace deeplynx.business
         }
 
         /// <summary>
-        /// Deletes a specific data source by its ID or origin/destination.
+        /// Deletes a specific data source by its ID.
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <param name="dataSourceId">The ID of the data source to delete</param>
-        /// <param name="force">Indicates whether to force delete the data source if true.</param>
         /// <returns>Boolean true on successful deletion.</returns>
         /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
-        public async Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force = false)
+        public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
         {
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
-            {
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
-            }
 
-            if (force)
-            {
-                // hard delete
-                _context.DataSources.Remove(dataSource);
-                await _context.SaveChangesAsync();
-            }
-            else
-            {
-                try
-                {
-                    var transaction = await _context.Database.BeginTransactionAsync();
-                    await SoftDeleteDataSources(d => d.Id == dataSourceId, transaction);
-                    await transaction.CommitAsync();
-                }
-                catch (Exception exc)
-                {
-                    var message = $"An error occurred while deleting data source: {exc}";
-                    NLog.LogManager.GetCurrentClassLogger().Error(message);
-                    return false;
-                }
-            }
+            _context.DataSources.Remove(dataSource);
+            await _context.SaveChangesAsync();
 
             return true;
         }
 
         /// <summary>
-        /// Bulk Soft Delete data sources by a specific upstream domain. Used to avoid repeating functions.
+        /// Archives a specific data source by its ID.
         /// </summary>
-        /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-        /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-        /// <returns>Boolean true on successful deletion</returns>
-        public async Task<bool> BulkSoftDeleteDataSources(
-            Expression<Func<DataSource, bool>> predicate,
-            IDbContextTransaction? transaction)
+        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="dataSourceId">The ID of the data source to archive</param>
+        /// <returns>Boolean true on successful archival.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
+        public async Task<bool> ArchiveDataSource(long projectId, long dataSourceId)
         {
-            try
-            {
-                await SoftDeleteDataSources(predicate, transaction);
-                return true;
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting data sources: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return false;
-            }
-        }
+            var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-        private async Task SoftDeleteDataSources(
-            Expression<Func<DataSource, bool>> predicate,
-            IDbContextTransaction? transaction)
-        {
-            // check for existing transaction; if one does not exist, start a new one
-            var commit = false; // flag used to determine if transaction should be committed
-            if (transaction == null)
-            {
-                commit = true;
-                transaction = await _context.Database.BeginTransactionAsync();
-            }
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+                throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
-            // search for records matching the passed-in predicate (filter) to be updated
-            var dsContext = _context.DataSources
-                .Where(d => d.ArchivedAt == null)
-                .Where(predicate);
 
-            var dataSources = await dsContext.ToListAsync();
-            
-            if (dataSources.Count == 0)
-            {
-                // return early if no records are to be deleted
-                return;
-            }
-            
-            var dataSourceIds = dataSources.Select(d => d.Id);
-            
-            // trigger downstream deletions
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _recordBusiness.BulkSoftDeleteRecords(r => dataSourceIds.Contains(r.DataSourceId), transaction),
-                () => _edgeBusiness.BulkSoftDeleteEdges(e => dataSourceIds.Contains(e.DataSourceId))
-            };
 
-            // loop through tasks and trigger downstream deletions
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and throw an error
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        "An error occurred during the deletion of downstream datasource dependants.");
-                }
-            }
-
-            // bulk update the results of the query to set the archived_at date
-            var updated = await dsContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-            // if we found records to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("An error occurred when deleting data sources");
-            }
-
-            // save changes and commit transaction to close it
+            dataSource.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
-            if (commit)
-            {
-                await transaction.CommitAsync();
-            }
+
+            return true;
         }
     }
 }

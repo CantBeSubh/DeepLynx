@@ -195,7 +195,7 @@ public class ProjectBusiness : IProjectBusiness
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.ArchivedAt is not null)
-            throw new KeyNotFoundException("Project not found.");
+            throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
@@ -206,9 +206,10 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
-    /// <param name="projectId">ID of the project to delete.</param>
-    /// <returns>Boolean true on successful deletion.</returns>
+    /// <param name="projectId">ID of the project to archive.</param>
+    /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveProject(long projectId)
     {
         var project = await _context.Projects.FindAsync(projectId);
