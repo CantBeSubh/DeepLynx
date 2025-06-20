@@ -77,20 +77,20 @@ public class ClassBusiness : IClassBusiness
 
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project= await _context.Projects.FirstOrDefaultAsync(p=>p.Id == projectId && p.ArchivedAt == null);
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
 
         ValidationHelper.ValidateModel(dto);
-        
-        var existingClass = await _context.Classes.FirstOrDefaultAsync(c=> c.ProjectId == projectId && c.Name == dto.Name);
+
+        var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
         if (existingClass != null)
         {
             throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
         }
-        
+
         var newClass = new Class
         {
             ProjectId = projectId,
@@ -99,15 +99,15 @@ public class ClassBusiness : IClassBusiness
             Uuid = dto.Uuid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
+            CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
             ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
-           
+
         };
 
         _context.Classes.Add(newClass);
         await _context.SaveChangesAsync();
 
-        return  new ClassResponseDto
+        return new ClassResponseDto
         {
             Id = newClass.Id,
             Name = newClass.Name,
@@ -128,7 +128,7 @@ public class ClassBusiness : IClassBusiness
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
-        
+
         updatedClass.ProjectId = projectId;
         updatedClass.Name = dto.Name;
         updatedClass.Description = dto.Description;
@@ -137,8 +137,8 @@ public class ClassBusiness : IClassBusiness
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         updatedClass.CreatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
         updatedClass.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        
-       _context.Classes.Update(updatedClass);
+
+        _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
 
         return new ClassResponseDto
@@ -156,133 +156,67 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
-    public async Task<bool> DeleteClass(long projectId, long classId, bool force = false)
+    /// <summary>
+    /// Delete a class by id.
+    /// </summary>
+    /// <param name="projectId">ID of the project to which the class belongs.</param>
+    /// <param name="classId">ID of the class to delete.</param>
+    /// <returns>Boolean true on successful deletion.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if class is not found.</exception>
+    public async Task<bool> DeleteClass(long projectId, long classId)
     {
-        var dbClass = await _context.Classes.FindAsync(classId);
-        
-        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is not null)
-        {
-            throw new KeyNotFoundException($"Class with id {classId} not found");
-        }
+        var project = await _context.Projects.FindAsync(projectId);
 
-        if (force)
-        {
-            _context.Classes.Remove(dbClass);
-            await _context.SaveChangesAsync();
-        }
-        else
+        if (project == null || project.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Project with id {projectId} not found.");
+
+        _context.Projects.Remove(project);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+
+    /// <summary>
+    /// Archive (soft delete) a class by id. This also archives downstream dependents.
+    /// </summary>
+    /// <param name="classId">ID of the class to archive.</param>
+    /// <returns>Boolean true on successful archival.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if class is not found.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
+    public async Task<bool> ArchiveClass(long projectId, long classId)
+    {
+        // using dbClass since "class" is a reserved word
+        var dbClass = await _context.Classes.FindAsync(classId);
+
+        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is not null)
+            throw new KeyNotFoundException("Class not found.");
+
+        // set archivedAt timestamp
+        var archivedAt = DateTime.UtcNow;
+
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
-                var transaction = await _context.Database.BeginTransactionAsync();
-                await SoftDeleteClasses(c => c.Id == classId, transaction);
+                // run the archive class procedure, which archives this class
+                // and all child objects with class_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", classId, archivedAt);
+
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents.");
+                }
+
                 await transaction.CommitAsync();
+                return true;
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting data source: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return false;
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
             }
-        }
-        return true;
-    }
-    
-    /// <summary>
-    /// Bulk Soft Delete classes by a specific upstream domain. Used to avoid repeating functions.
-    /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteClasses(
-        Expression<Func<Class, bool>> predicate, 
-        IDbContextTransaction? transaction)
-    {
-        try
-        {
-            await SoftDeleteClasses(predicate, transaction);
-            return true;
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting classes: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
         }
     }
-    
-    /// <summary>
-    /// Bulk Soft Delete classes by a specific upstream domain. Used to avoid repeating functions.
-    /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    private async Task SoftDeleteClasses(
-            Expression<Func<Class, bool>> predicate, 
-            IDbContextTransaction? transaction)
-        {
-            // check for existing transaction; if one does not exist, start a new one
-            var commit = false; // flag used to determine if transaction should be committed
-            if (transaction == null)
-            {
-                commit = true;
-                transaction = await _context.Database.BeginTransactionAsync();
-            }
-            
-            // search for records matching the passed-in predicate (filter) to be updated
-            var classContext = _context.Classes
-                .Where(c => c.ArchivedAt == null)
-                .Where(predicate);
-            
-            var classes = await classContext.ToListAsync();
-            if (classes.Count == 0)
-            {
-                // return early if no records are to be deleted
-                return;
-            }
-            
-            var classIds = classes.Select(d => d.Id);
-            
-            // trigger downstream deletions
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(e => classIds.Contains(e.OriginId) || classIds.Contains(e.DestinationId)), 
-                // unfortunately we need to assert that class id is not null here which looks really ugly
-                () => _recordBusiness.BulkSoftDeleteRecords(r => classIds.Contains((long)r.ClassId), transaction), 
-                () => _relationshipBusiness.BulkSoftDeleteRelationships(
-                    r => classIds.Contains(r.OriginId) || classIds.Contains(r.DestinationId), transaction),
-                // unfortunately we need to assert that class id is not null here which looks really ugly
-                () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => classIds.Contains((long)m.ClassId))
-            };
-            
-            // loop through tasks and trigger downstream deletions
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and throw an error
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        "An error occurred during the deletion of downstream class dependants.");
-                }
-            }
-
-            // bulk update the results of the query to set the archived_at date
-            var updated = await classContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-            // if we found classes to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("An error occurred when deleting classes");
-            }
-            
-            // save changes and commit transaction to close it
-            await _context.SaveChangesAsync();
-            if (commit)
-            {
-                await transaction.CommitAsync();
-            }
-        }
 }

@@ -217,46 +217,66 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Delete a metadata record and any downstream edges.
+    /// Delete a metadata record.
     /// </summary>
     /// <param name="projectId">The project to which the record belongs</param>
     /// <param name="recordId">The record in question</param>
-    /// <param name="force">If force is true, permanently delete the record. Otherwise, soft delete</param>
     /// <returns>Boolean indicating record was deleted</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
-    /// <exception cref="DependencyDeletionException">Returned if downstream deletions failed.</exception>
-    public async Task<bool> DeleteRecord(long projectId, long recordId, bool force=false)
+    public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
-        {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
+        
+        _context.Records.Remove(record);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
+    
+    /// <summary>
+    /// Archive a metadata record.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record in question</param>
+    /// <returns>Boolean indicating record was archived</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
+    public async Task<bool> ArchiveRecord(long projectId, long recordId)
+    {
+        var record = await _context.Records.FindAsync(recordId);
+        
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        
+        // set archivedAt timestamp
+        var archivedAt = DateTime.UtcNow;
 
-        if (force)
-        {
-            // hard delete
-            _context.Records.Remove(record);
-            await _context.SaveChangesAsync();
-        }
-        else
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
-                var transaction = await _context.Database.BeginTransactionAsync();
-                await SoftDeleteRecords(r => r.Id == recordId, transaction);
+                // run the archive record procedure, which archives this record
+                // and all child objects with record_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
+
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents.");
+                }
+
                 await transaction.CommitAsync();
+                return true;
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting record: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return false;
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
-        
-        return true;
     }
 
     /// <summary>
@@ -290,91 +310,5 @@ public class RecordBusiness : IRecordBusiness
         }
 
         return maxDepth + 1;
-    }
-    
-    /// <summary>
-    /// Bulk Soft Delete records by a specific upstream domain. Used to avoid repeating functions.
-    /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecords(
-        Expression<Func<Record, bool>> predicate,
-        IDbContextTransaction? transaction)
-    {
-        try
-        {
-            await SoftDeleteRecords(predicate, transaction);
-            return true;
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting records: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
-    }
-
-    private async Task SoftDeleteRecords(
-        Expression<Func<Record, bool>> predicate,
-        IDbContextTransaction? transaction)
-    {
-        // check for existing transaction; if one does not exist, start a new one
-        var commit = false; // flag used to determine if transaction should be committed
-        if (transaction == null)
-        {
-            commit = true;
-            transaction = await _context.Database.BeginTransactionAsync();
-        }
-        
-        var rContext = _context.Records
-            .Where(r => r.ArchivedAt == null)
-            .Where(predicate);
-        
-        var records = await rContext.ToListAsync();
-        
-        if (records.Count == 0)
-        {
-            // return early if no records are to be deleted
-            return;
-        }
-        
-        var recordIds = records.Select(r => r.Id);
-        
-        // trigger downstream deletions
-        var softDeleteTasks = new List<Func<Task<bool>>>
-        {
-            () => _edgeBusiness.BulkSoftDeleteEdges(e => recordIds.Contains(e.OriginId) || recordIds.Contains(e.DestinationId))
-        };
-        
-        // loop through tasks and trigger downstream deletions
-        foreach (var task in softDeleteTasks)
-        {
-            bool result = await task();
-            if (!result)
-            {
-                // rollback the transaction and throw an error
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException(
-                    "An error occurred during the deletion of downstream record dependents.");
-            }
-        }
-        
-        // bulk update the results of the query to set the archived_at date
-        var updated = await rContext.ExecuteUpdateAsync(setters => setters
-            .SetProperty(r => r.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-        // if we found records to update, but weren't successful in updating, throw an error
-        if (updated == 0)
-        {
-            throw new DependencyDeletionException("An error occurred when deleting records");
-        }
-
-        // save changes and commit transaction to close it
-        await _context.SaveChangesAsync();
-        if (commit)
-        {
-            await transaction.CommitAsync();
-        }
     }
 }

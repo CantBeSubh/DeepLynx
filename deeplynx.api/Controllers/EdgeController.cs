@@ -129,7 +129,6 @@ namespace deeplynx.api.Controllers
         /// <param name="edgeId">The ID of the edge to delete</param>
         /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
-        /// <param name="force">Indicates whether to force delete the edge if true.</param>
         /// <returns>A message stating the edge was successfully deleted.</returns>
         [HttpDelete("DeleteEdge")]
         public async Task<IActionResult> DeleteEdge(
@@ -141,12 +140,40 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                await _edgeBusiness.DeleteEdge(projectId, edgeId, originId, destinationId, force);
+                edgeId = await _edgeBusiness.DeleteEdge(projectId, edgeId, originId, destinationId);
                 return Ok(new { message = $"Deleted edge {edgeId}" });
             }
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting edge: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Archives a specific edge by its ID or origin/destination.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+        /// <param name="edgeId">The ID of the edge to archive</param>
+        /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
+        /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
+        /// <returns>A message stating the edge was successfully archived.</returns>
+        [HttpDelete("ArchiveEdge")]
+        public async Task<IActionResult> ArchiveEdge(
+            long projectId,
+            [FromQuery] long? edgeId,
+            [FromQuery] long? originId, 
+            [FromQuery] long? destinationId)
+        {
+            try
+            {
+                edgeId = await _edgeBusiness.ArchiveEdge(projectId, edgeId, originId, destinationId);
+                return Ok(new { message = $"Archived edge {edgeId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving edge: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

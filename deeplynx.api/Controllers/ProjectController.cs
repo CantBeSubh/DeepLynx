@@ -108,19 +108,39 @@ namespace deeplynx.api.Controllers
         /// Delete a project by ID. This also cascades to downstream dependents.
         /// </summary>
         /// <param name="projectId">ID of the project to delete.</param>
-        /// <param name="force">Boolean flag to force delete a project if true.</param>
         /// <returns>Boolean true on successful deletion.</returns>
         [HttpDelete("DeleteProject/{projectId}")]
-        public async Task<IActionResult> DeleteProject(long projectId, [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteProject(long projectId)
         {
             try
             {
-                await _projectBusiness.DeleteProject(projectId, force);
+                await _projectBusiness.DeleteProject(projectId);
                 return Ok(new { message = $"Deleted project {projectId}" });
             }
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting project {projectId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Archive (soft delete) a project by ID. This also cascades to downstream dependents.
+        /// </summary>
+        /// <param name="projectId">ID of the project to delete.</param>
+        /// <returns>Boolean true on successful deletion.</returns>
+        [HttpDelete("ArchiveProject/{projectId}")]
+        public async Task<IActionResult> ArchiveProject(long projectId)
+        {
+            try
+            {
+                await _projectBusiness.ArchiveProject(projectId);
+                return Ok(new { message = $"Archived project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving project {projectId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

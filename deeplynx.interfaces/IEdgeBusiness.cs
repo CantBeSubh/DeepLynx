@@ -10,6 +10,6 @@ public interface IEdgeBusiness
     Task<EdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId);
     Task<EdgeResponseDto> CreateEdge(long projectId, long dataSourceId, EdgeRequestDto edge);
     Task<EdgeResponseDto> UpdateEdge(long projectId, EdgeRequestDto edge, long? edgeId, long? originId, long? destinationId);
-    Task<bool> DeleteEdge(long projectId, long? edgeId, long? originId, long? destinationId, bool force=false);
-    Task<bool> BulkSoftDeleteEdges(Expression<Func<Edge, bool>> predicate);
+    Task<long> DeleteEdge(long projectId, long? edgeId, long? originId, long? destinationId);
+    Task<long> ArchiveEdge(long projectId, long? edgeId, long? originId, long? destinationId);
 }

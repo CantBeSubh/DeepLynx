@@ -207,125 +207,66 @@ public class RelationshipBusiness: IRelationshipBusiness
         };
     }
 
-    public async Task<bool> DeleteRelationship(long projectId, long relationshipId, bool force = false)
+    /// <summary>
+    /// Delete a specific relationship by ID
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
+    /// <param name="relationshipId">The ID of the relationship to delete</param>
+    /// <returns>Boolean true on successful deletion</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
+    public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
         var relationship = await _context.Relationships.FindAsync(relationshipId);
-        
+
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
-        {
-            throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
-        }
-        
-        if (force)
-        {
-            // hard delete
-            _context.Relationships.Remove(relationship);
-            await _context.SaveChangesAsync();
-        }
-        else
-        {
-            try
-            {
-                var transaction = await _context.Database.BeginTransactionAsync();
-                await SoftDeleteRelationships(r => r.Id == relationshipId, transaction);
-                await transaction.CommitAsync();
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting data source: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return false;
-            }
-        }
-        
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
+
+        _context.Relationships.Remove(relationship);
+        await _context.SaveChangesAsync();
+
         return true;
     }
 
     /// <summary>
-    /// Bulk Soft Delete relationships by a specific upstream domain. Used to avoid repeating functions.
+    /// Archive a specific relationship by ID
     /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
+    /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
+    /// <param name="relationshipId">The ID of the relationship to archive</param>
     /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRelationships(
-        Expression<Func<Relationship, bool>> predicate,
-        IDbContextTransaction? transaction)
+    /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
+    public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
-        try
+        var relationship = await _context.Relationships.FindAsync(relationshipId);
+
+        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
+
+        // set archivedAt timestamp
+        var archivedAt = DateTime.UtcNow;
+        
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            await SoftDeleteRelationships(predicate, transaction);
-            return true;
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting relationships: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
+            try
+            {
+                // run the archive relationship procedure, which archives this relationship
+                // and all child objects with relationship_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_relationship({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", relationshipId, archivedAt);
+
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents: {exc}");
+            }
         }
     }
-    
-    private async Task SoftDeleteRelationships(
-            Expression<Func<Relationship, bool>> predicate,
-            IDbContextTransaction? transaction)
-        {
-            // check for existing transaction; if one does not exist, start a new one
-            var commit = false; // flag used to determine if transaction should be committed
-            if (transaction == null)
-            {
-                commit = true;
-                transaction = await _context.Database.BeginTransactionAsync();
-            }
-
-            // search for relationships matching the passed-in predicate (filter) to be updated
-            var rContext = _context.Relationships
-                .Where(d => d.ArchivedAt == null)
-                .Where(predicate);
-
-            var relationships = await rContext.ToListAsync();
-            
-            if (relationships.Count == 0)
-            {
-                // return early if no records are to be deleted
-                return;
-            }
-            
-            var relationshipIds = relationships.Select(d => d.Id);
-            
-            // trigger downstream deletions
-            var softDeleteTasks = new List<Func<Task<bool>>>
-            {
-                () => _edgeMappingBusiness.BulkSoftDeleteEdgeMappings(e => relationshipIds.Contains(e.RelationshipId)),
-                () => _edgeBusiness.BulkSoftDeleteEdges(e => e.RelationshipId.HasValue && relationshipIds.Contains(e.RelationshipId.Value))
-            };
-
-            // loop through tasks and trigger downstream deletions
-            foreach (var task in softDeleteTasks)
-            {
-                bool result = await task();
-                if (!result)
-                {
-                    // rollback the transaction and throw an error
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        "An error occurred during the deletion of downstream datasource dependants.");
-                }
-            }
-
-            // bulk update the results of the query to set the archived_at date
-            var updated = await rContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-            // if we found relationships to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("An error occurred when deleting data sources.");
-            }
-
-            // save changes and commit transaction to close it
-            await _context.SaveChangesAsync();
-            if (commit)
-            {
-                await transaction.CommitAsync();
-            }
-        }
 }
