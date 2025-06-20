@@ -225,8 +225,6 @@ namespace deeplynx.business
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
-
-
             dataSource.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             _context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
