@@ -241,10 +241,32 @@ public class RelationshipBusiness: IRelationshipBusiness
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
 
-        relationship.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Relationships.Update(relationship);
-        await _context.SaveChangesAsync();
+        // set archivedAt timestamp
+        var archivedAt = DateTime.UtcNow;
+        
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the archive relationship procedure, which archives this relationship
+                // and all child objects with relationship_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_relationship({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", relationshipId, archivedAt);
 
-        return true;
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents: {exc}");
+            }
+        }
     }
 }
