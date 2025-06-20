@@ -113,26 +113,40 @@ public class TagController : ControllerBase
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
-    /// <param name="force">Boolean indicating whether to force delete the tag if it is true.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
     [HttpDelete("DeleteTag/{tagId}")]
-    public async Task<IActionResult> DeleteTag(long projectId, long tagId, [FromQuery] bool force = false)
+    public async Task<IActionResult> DeleteTag(long projectId, long tagId)
     {
         try
         {
-            await _tagBusiness.DeleteTag(projectId, tagId, force);
+            await _tagBusiness.DeleteTag(projectId, tagId);
             return Ok(new { message = $"Tag deleted successfully" });
-        }
-        catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
-        {
-            var statusCode = ex is KeyNotFoundException
-                ? StatusCodes.Status404NotFound
-                : StatusCodes.Status400BadRequest;
-            return StatusCode(statusCode, new { error = ex.Message });
         }
         catch (Exception exception)
         {
             var message = $"An error occurred while deleting tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+    
+    /// <summary>
+    /// Archives a specific tag by its ID for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to archive.</param>
+    /// <returns> A message stating the tag was successfully archived.</returns>
+    [HttpDelete("ArchiveTag/{tagId}")]
+    public async Task<IActionResult> ArchiveTag(long projectId, long tagId)
+    {
+        try
+        {
+            await _tagBusiness.ArchiveTag(projectId, tagId);
+            return Ok(new { message = $"Tag archived successfully" });
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while archiving tag {tagId}: {exception}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
