@@ -12,49 +12,17 @@ public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
 
-    /// Note: The following dependencies are used exclusively for their respective bulk soft delete functions.
-    private readonly ITagBusiness _tagBusiness;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
-    private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly IClassBusiness _classBusiness;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
-    private readonly IEdgeBusiness _edgeBusiness;
-    private readonly IDataSourceBusiness _dataSourceBusiness;
-    private readonly IRecordBusiness _recordBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record mapping operations.</param>
-    /// <param name="tagBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="edgeMappingBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="relationshipBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="classBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="recordMappingBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="edgeBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="dataSourceBusiness">One of the downstream business layers used for cascading deletions.</param>
-    /// <param name="recordBusiness">One of the downstream business layers used for cascading deletions.</param>
-    public ProjectBusiness(
-        DeeplynxContext context,
-        ITagBusiness tagBusiness,
-        IEdgeMappingBusiness edgeMappingBusiness,
-        IRelationshipBusiness relationshipBusiness,
-        IClassBusiness classBusiness,
-        IRecordMappingBusiness recordMappingBusiness,
-        IEdgeBusiness edgeBusiness,
-        IDataSourceBusiness dataSourceBusiness,
-        IRecordBusiness recordBusiness
-        )
+    /// <param name="classBusiness">Used to create a Timeseries class automatically on project creation.</param>
+    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness)
     {
         _context = context;
-        _tagBusiness = tagBusiness;
-        _edgeMappingBusiness = edgeMappingBusiness;
-        _relationshipBusiness = relationshipBusiness;
         _classBusiness = classBusiness;
-        _recordMappingBusiness = recordMappingBusiness;
-        _edgeBusiness = edgeBusiness;
-        _dataSourceBusiness = dataSourceBusiness;
-        _recordBusiness = recordBusiness;
     }
 
     /// <summary>

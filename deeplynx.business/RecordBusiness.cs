@@ -341,24 +341,6 @@ public class RecordBusiness : IRecordBusiness
         
         var recordIds = records.Select(r => r.Id);
         
-        // trigger downstream deletions
-        var softDeleteTasks = new List<Func<Task<bool>>>
-        {
-            () => _edgeBusiness.BulkSoftDeleteEdges(e => recordIds.Contains(e.OriginId) || recordIds.Contains(e.DestinationId))
-        };
-        
-        // loop through tasks and trigger downstream deletions
-        foreach (var task in softDeleteTasks)
-        {
-            bool result = await task();
-            if (!result)
-            {
-                // rollback the transaction and throw an error
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException(
-                    "An error occurred during the deletion of downstream record dependents.");
-            }
-        }
         
         // bulk update the results of the query to set the archived_at date
         var updated = await rContext.ExecuteUpdateAsync(setters => setters

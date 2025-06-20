@@ -185,7 +185,6 @@ public class TagBusiness : ITagBusiness
         tag.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-
         return true;
     }
 }
