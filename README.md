@@ -48,6 +48,9 @@ docker compose -f docker-compose.yaml up
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
+If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to the PATH.  
+Please update your path to include the .NET tools directory, similar to: `export PATH="$PATH:/Users/_username_/.dotnet/tools"`
+
 ### Create Migration
 If you make changes to the datalayer, create a new database migration with a descriptive name. For example, to add a migration for updating the users table, run:
 ```
