@@ -6,6 +6,7 @@ import CreateProject from "./CreateProjectsWidget";
 import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "../../components/Accordion";
+import { Reorder, motion } from "motion/react";
 
 const Projects = () => {
   const router = useRouter();
@@ -186,7 +187,7 @@ const Projects = () => {
               Widget
             </button>
           </div>
-
+          
           <div className="card card-border bg-base-100 w-141 justify-end mb-4">
             <div className="card-body">
               <h2 className="card-title justify-between items-center">
