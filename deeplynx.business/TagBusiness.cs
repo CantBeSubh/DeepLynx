@@ -116,7 +116,8 @@ public class TagBusiness : ITagBusiness
                 CreatedBy = t.CreatedBy,
                 CreatedAt = t.CreatedAt,
                 ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt
+                ModifiedAt = t.ModifiedAt,
+                ArchivedAt = t.ArchivedAt,
             })
             .ToListAsync();
     }
@@ -147,7 +148,8 @@ public class TagBusiness : ITagBusiness
             CreatedBy = tag.CreatedBy,
             CreatedAt = tag.CreatedAt,
             ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt
+            ModifiedAt = tag.ModifiedAt,
+            ArchivedAt = tag.ArchivedAt,
         };
     }
 

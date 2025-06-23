@@ -61,7 +61,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
                 ModifiedBy = m.ModifiedBy,
-                ModifiedAt = m.ModifiedAt
+                ModifiedAt = m.ModifiedAt,
+                ArchivedAt = m.ArchivedAt,
             })
             .ToList();
     }
@@ -97,7 +98,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
             ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt
+            ModifiedAt = mapping.ModifiedAt,
+            ArchivedAt = mapping.ArchivedAt,
         };
     }
 

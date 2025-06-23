@@ -58,7 +58,8 @@ namespace deeplynx.business
                     CreatedBy = d.CreatedBy,
                     CreatedAt = d.CreatedAt,
                     ModifiedBy = d.ModifiedBy,
-                    ModifiedAt = d.ModifiedAt
+                    ModifiedAt = d.ModifiedAt,
+                    ArchivedAt = d.ArchivedAt,
                 });
         }
 
@@ -94,7 +95,8 @@ namespace deeplynx.business
                 CreatedBy = dataSource.CreatedBy,
                 CreatedAt = dataSource.CreatedAt,
                 ModifiedBy = dataSource.ModifiedBy,
-                ModifiedAt = dataSource.ModifiedAt
+                ModifiedAt = dataSource.ModifiedAt,
+                ArchivedAt = dataSource.ArchivedAt,
             };
         }
 

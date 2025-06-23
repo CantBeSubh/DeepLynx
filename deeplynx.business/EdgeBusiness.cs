@@ -59,7 +59,8 @@ public class EdgeBusiness : IEdgeBusiness
                 CreatedAt = e.CreatedAt,
                 CreatedBy = e.CreatedBy,
                 ModifiedAt = e.ModifiedAt,
-                ModifiedBy = e.ModifiedBy
+                ModifiedBy = e.ModifiedBy,
+                ArchivedAt = e.ArchivedAt,
             })
             .ToList();
     }
@@ -91,7 +92,8 @@ public class EdgeBusiness : IEdgeBusiness
             CreatedAt = edge.CreatedAt,
             CreatedBy = edge.CreatedBy,
             ModifiedAt = edge.ModifiedAt,
-            ModifiedBy = edge.ModifiedBy
+            ModifiedBy = edge.ModifiedBy,
+            ArchivedAt = edge.ArchivedAt,
         };
     }
 
