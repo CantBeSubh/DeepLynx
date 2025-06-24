@@ -11,4 +11,5 @@ public interface IProjectBusiness
     Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto);
     Task<bool> DeleteProject(long projectId);
     Task<bool> ArchiveProject(long projectId);
+    Task<ProjectStatResponseDto> GetProjectStats(long projectId);
 }
