@@ -32,6 +32,7 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Relationship> Relationships { get; set; }
 
     public virtual DbSet<Tag> Tags { get; set; }
+    public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -164,6 +165,11 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
+        });
+        
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("users_pkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

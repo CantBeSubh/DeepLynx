@@ -35,14 +35,13 @@ public class UserBusiness : IUserBusiness
         }
         else
         {
-            users = await _context.Users.Where(p => p.ArchivedAt == null && p.projectId == projectId).ToListAsync();
+            users = await _context.Users.Where(p => p.ArchivedAt == null).ToListAsync();
         }
         
         return users
             .Select(p => new UserResponseDto()
             {
-                FirstName = p.FirstName,
-                LastName = p.LastName,
+                Name = p.Name,
                 Email = p.Email
             });
     }
@@ -66,10 +65,8 @@ public class UserBusiness : IUserBusiness
     
         return new UserResponseDto()
         {
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            Email = user.Email,
-            ArchivedAt = user.ArchivedAt,
+           Name = user.Name,
+           Email = user.Email
         };
     }
     
@@ -82,8 +79,7 @@ public class UserBusiness : IUserBusiness
     {
         var user = new User
         {
-          FirstName = dto.FirstName,
-          LastName = dto.LastName,
+          Name = dto.Name,
           Email = dto.Email,
         };
     
@@ -92,8 +88,7 @@ public class UserBusiness : IUserBusiness
         
         return new UserResponseDto()
         {
-            FirstName = user.FirstName,
-            LastName = user.LastName,
+            Name = user.Name,
             Email = user.Email,
         };
     }
@@ -114,8 +109,7 @@ public class UserBusiness : IUserBusiness
         if (user == null)
             throw new KeyNotFoundException("User not found.");
         
-        user.FirstName = dto.FirstName;
-        user.LastName = dto.LastName;
+        user.Name = dto.Name;
         user.Email = dto.Email;
     
         _context.Users.Update(user);
@@ -123,8 +117,7 @@ public class UserBusiness : IUserBusiness
     
         return new UserResponseDto()
         {
-           FirstName = user.FirstName,
-           LastName = user.LastName,
+           Name = user.Name,
            Email = user.Email,
         };
     }
@@ -144,7 +137,7 @@ public class UserBusiness : IUserBusiness
         if (user == null)
             throw new KeyNotFoundException("User not found.");
     
-        _context.Projects.Remove(user);
+        _context.Users.Remove(user);
         await _context.SaveChangesAsync();
     }
     
@@ -163,7 +156,7 @@ public class UserBusiness : IUserBusiness
         if (user == null)
             throw new KeyNotFoundException("User not found.");
 
-        user.archivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        user.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
     
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
