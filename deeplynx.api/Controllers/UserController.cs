@@ -109,7 +109,7 @@ namespace deeplynx.api.Controllers
         {
             try
             { 
-                _userBusiness.DeleteUser(userId);
+                await _userBusiness.DeleteUser(userId);
                 return Ok(new { message = $"Deleted user {userId}" });
             }
             catch (Exception exc)
@@ -130,7 +130,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                _userBusiness.ArchiveUser(userId);
+                await _userBusiness.ArchiveUser(userId);
                 return Ok(new { message = $"Archived user {userId}" });
             }
             catch (Exception exc)

@@ -125,17 +125,16 @@ public class UserBusiness : IUserBusiness
     /// <param name="userId">ID of the user to delete.</param>
     /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if user is not found.</exception>
-    public async void DeleteUser(long userId)
+    public async Task<bool> DeleteUser(long userId)
     {
-        var user = await _context.Users
-            .Where(p => p.Id == userId && p.ArchivedAt == null)
-            .FirstOrDefaultAsync();
-        
-        if (user == null)
-            throw new KeyNotFoundException("User not found.");
+        var user = await _context.Users.FindAsync(userId);
+
+        if (user == null || user.ArchivedAt is not null)
+            throw new KeyNotFoundException($"User with id {userId} not found.");
     
         _context.Users.Remove(user);
         await _context.SaveChangesAsync();
+        return true;
     }
     
     /// <summary>
@@ -144,7 +143,7 @@ public class UserBusiness : IUserBusiness
     /// <param name="userId">ID of the user to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if user is not found.</exception>
-    public async void ArchiveUser(long userId)
+    public async Task<bool> ArchiveUser(long userId)
     {
         var user = await _context.Users
             .Where(p => p.Id == userId && p.ArchivedAt == null)
@@ -157,5 +156,6 @@ public class UserBusiness : IUserBusiness
     
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
+        return true;
     }
 }
