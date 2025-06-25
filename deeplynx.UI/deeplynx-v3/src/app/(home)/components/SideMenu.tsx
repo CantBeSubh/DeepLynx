@@ -19,7 +19,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import HelpIcon from "@mui/icons-material/Help";
 import ContactMainIcon from "@mui/icons-material/ContactMail";
 import BugReportIcon from "@mui/icons-material/BugReport";
-import { useProjectSession } from "@/app/contexts/ProjectSessionContext";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 // Define the props for the SideMenu component
 interface SideMenuProps {

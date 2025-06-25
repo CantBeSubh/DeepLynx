@@ -1,10 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { sampleProjectData } from "@/app/(home)/dummy_data/data";
+import { sampleProjectData, peopleData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
-import { ProjectsList } from "@/app/(home)/types/types";
-import { useProjectSession } from "@/app/contexts/ProjectSessionContext";
+import { Column, ProjectsList } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import Link from "next/link";
+import Tabs from "@/app/(home)/components/Tabs";
+import GenericTable from "@/app/(home)/components/GenericTable";
+import AvatarCell from "@/app/(home)/components/Avatar";
+
+type PopularTable = {
+  id: number;
+  name: string;
+  image: string;
+  nickname: string;
+  visibility: string;
+};
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
@@ -22,36 +35,85 @@ const ProjectDetailPage = () => {
     }
   }, [hasLoaded, projectId]);
 
+  const popular_table_columns: Column<PopularTable>[] = [
+    {
+      header: "Created by",
+      cell: (row) => <AvatarCell name={row.name} image={row.image} />,
+    },
+    {
+      header: "Search nickname",
+      data: "nickname",
+    },
+    {
+      header: "Visibility",
+      data: "visibility",
+    },
+  ];
+
+  const tabData = [
+    {
+      label: "Recent",
+      content: <GenericTable columns={[]} data={[]} />,
+    },
+    {
+      label: "Popular",
+      content: (
+        <GenericTable
+          columns={popular_table_columns}
+          data={peopleData}
+          enablePagination
+          rowsPerPage={5}
+        />
+      ),
+    },
+    {
+      label: "My Searchs",
+      content: "",
+    },
+  ];
+
   if (!hasLoaded) return <p className="p-4">Loading session...</p>;
   if (!project) return <p className="p-4">No project found.</p>;
 
   return (
     <div>
       <main>
-        <div className="flex justify-between items-center text-secondary-content">
-          <h1 className="text-2xl font-bold">Project Name: {project.name}</h1>
+        <div className="text-secondary-content">
+          <h1 className="text-2xl">Project Name: {project.name}</h1>
+          <p className="mt-2 text-base-content">
+            For databases or systems tracking chain reactions and realated data.
+          </p>
+          <p>
+            <strong>Created: </strong>
+            {new Date(project?.created).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            })}
+          </p>
         </div>
+
         <div className="divider"></div>
 
-        <div className="mb-6">
-          <div className="card w-120 bg-base-200 text-secondary-content card-sm shadow-sm">
-            <div className="card-body">
-              <h2 className="card-title">Project Description</h2>
-              <p>{project.description}</p>
-              <div className="justify-end card-actions">
-                <button className="btn btn-accent btn-outline btn-xs">
-                  Edit
-                </button>
+        <div className="flex w-full">
+          <div className="w-full md:w-1/2 pr-4">
+            <LargeSearchBar />
+            <div className="flex justify-end">
+              <Link
+                href="#"
+                className="text-sm underline text-secondary/70 mr-3 hover:text-primary mt-1"
+              >
+                Advanced Search
+              </Link>
+            </div>
+            <div className="card shadow-lg mt-3">
+              <div className="card-body">
+                <h2 className="card-title">Seaved Searchs</h2>
+                <Tabs tabs={tabData} className="tabs tabs-border" />
               </div>
             </div>
           </div>
-        </div>
-
-        <div>
-          <h2 className="text-lg font-semibold mb-4 text-secondary-content">
-            Personnel
-          </h2>
-          <div className="divider"></div>
+          <div>Other half here: 👇</div>
         </div>
       </main>
     </div>

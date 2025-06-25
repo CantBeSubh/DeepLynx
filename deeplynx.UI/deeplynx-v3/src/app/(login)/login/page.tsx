@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useState } from "react";
 import ArrowButton from "../../(home)/components/ArrowButton";
 import { links, LinkT } from "@/app/(home)/(routes)/links";
-import "../../globals.css";
-import { useUserSession } from "@/app/contexts/UserSessionContext";
+import "@/app/globals.css";
+import { useUserSession } from "@/app/contexts/UserSessionProvider";
 import { useRouter } from "next/navigation";
 
 export default function Login() {

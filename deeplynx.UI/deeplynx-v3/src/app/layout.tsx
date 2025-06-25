@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "../globals.css";
-import LayoutShell from "./components/LayoutShell";
-import { UserSessionProvider } from "../contexts/UserSessionProvider";
-import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
+import "@/app/globals.css";
+import LayoutShell from "./(home)/components/LayoutShell";
+import { UserSessionProvider } from "./contexts/UserSessionProvider";
+import { ProjectSessionProvider } from "./contexts/ProjectSessionProvider";
 
 export const metadata: Metadata = {
   title: "DeepLynx",

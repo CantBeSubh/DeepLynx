@@ -1,5 +1,5 @@
-import { ProjectSessionProvider } from "@/app/contexts/ProjectSessionContext";
-import { UserSessionProvider } from "@/app/contexts/UserSessionContext";
+import { ProjectSessionProvider } from "@/app/contexts/ProjectSessionProvider";
+import { UserSessionProvider } from "@/app/contexts/UserSessionProvider";
 
 export default function RootLayout({
   children,

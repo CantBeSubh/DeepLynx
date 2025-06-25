@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useUserSession } from "@/app/contexts/UserSessionContext";
+import { useUserSession } from "@/app/contexts/UserSessionProvider";
 
 export default function AuthCallback() {
   const searchParams = useSearchParams();
@@ -17,8 +17,8 @@ export default function AuthCallback() {
       // Example: const user = await exchangeCodeForUser(code);
 
       const mockUser = {
-        username: "stacys_mom",
-        email: "stacy@example.com",
+        username: "deep_nexus",
+        email: "nexus@example.com",
         isLoggedIn: true,
       };
 
