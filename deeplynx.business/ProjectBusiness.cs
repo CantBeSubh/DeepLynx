@@ -1,6 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Transactions;
-
 using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
@@ -172,7 +170,7 @@ public class ProjectBusiness : IProjectBusiness
 
         return true;
     }
-    
+
     /// <summary>
     /// Archive (soft delete) a project by id. This also archives downstream dependents.
     /// </summary>
@@ -198,11 +196,13 @@ public class ProjectBusiness : IProjectBusiness
                 // run the archive project procedure, which archives this project
                 // and all child objects with project_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", projectId, archivedAt);
+                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", projectId,
+                    archivedAt);
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
-                    throw new DependencyDeletionException($"unable to archive project {projectId} or its downstream dependents.");
+                    throw new DependencyDeletionException(
+                        $"unable to archive project {projectId} or its downstream dependents.");
                 }
 
                 await transaction.CommitAsync();
@@ -211,8 +211,33 @@ public class ProjectBusiness : IProjectBusiness
             catch (Exception exc)
             {
                 await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive project {projectId} or its downstream dependents: {exc}");
+                throw new DependencyDeletionException(
+                    $"unable to archive project {projectId} or its downstream dependents: {exc}");
             }
         }
     }
+
+    /// <summary>
+    /// Retrieves project stats
+    /// </summary>
+    /// <returns>A list of project stats</returns>
+    public async Task<ProjectStatResponseDto> GetProjectStats(long projectId)
+    {
+        //classes”: number, “dataRecords”: number, “connections”: number 
+        var classes = _context.Classes
+            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+        var records = _context.Records
+            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+        var datasources = _context.DataSources
+            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+        
+        var response = new ProjectStatResponseDto()
+            {
+               classes = classes,
+               records = records,
+               datasources =  datasources
+            };
+        return response;
+    }
+    
 }

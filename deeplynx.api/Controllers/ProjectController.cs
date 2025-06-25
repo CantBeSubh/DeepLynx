@@ -145,5 +145,26 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Retrieve stats for a given project
+        /// </summary>
+        /// <param name="projectId">ID of the project to display stats about.</param>
+        /// <returns>Project stats</returns>
+        [HttpGet("ProjectStats/{projectId}")]
+        public async Task<IActionResult> ProjectStats(long projectId)
+        {
+            try
+            {
+                var stats = await _projectBusiness.GetProjectStats(projectId);
+                return Ok(stats);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while retrieving project {projectId} stats: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }

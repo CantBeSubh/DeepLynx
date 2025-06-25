@@ -86,6 +86,7 @@ builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
 builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
+builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
 var app = builder.Build();
 
