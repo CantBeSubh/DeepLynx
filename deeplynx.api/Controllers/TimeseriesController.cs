@@ -25,14 +25,15 @@ namespace deeplynx.api.Controllers
         /// An endpoint to allow users to execute read operations on timeseries data
         /// </summary>
         /// <param name="request"> The request containing an sql query string</param>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpPost("query")]
-        public async Task<IActionResult> QueryTimeseries([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
+        public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
         {
             try
             {
                 var timeseriesDataTable = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
-                LogManager.GetCurrentClassLogger().Info("Request was successful, report in progress");
                 return Ok(timeseriesDataTable);
             }
             catch (Exception e)
@@ -74,7 +75,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("start-upload")]
-        public IActionResult StartUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
+        public IActionResult StartUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
             try
             {
@@ -99,7 +100,7 @@ namespace deeplynx.api.Controllers
         /// <param name="chunkNumber"></param>
         /// <returns></returns>
         [HttpPost("upload-chunk")]
-        public async Task<IActionResult> UploadChunk([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
+        public async Task<IActionResult> UploadChunk(string projectId, string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
             try
             {
@@ -110,7 +111,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while uploading a chunk for timeseries file {uploadId}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -123,7 +124,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request"></param>
         /// <returns></returns>
         [HttpPost("complete-upload")]
-        public async Task<IActionResult> CompleteUpload([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
+        public async Task<IActionResult> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
             {

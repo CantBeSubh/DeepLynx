@@ -219,7 +219,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         Task.Run(() =>
         { 
             DataTableToCsv(resultTable, projectId, dataSourceId);
-            NLog.LogManager.GetCurrentClassLogger().Info("Report file was written");
         });
         var result = DataTableToDictionary(resultTable);
         
