@@ -116,18 +116,17 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// 
+        /// Deletes a specific record by its ID.
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="recordId"></param>
-        /// <param name="force"></param>
-        /// <returns></returns>
+        /// <param name="recordId">The ID of the record to delete.</param>
+        /// <param name="projectId">The ID of the project to which the record belongs.</param>
+        /// <returns>A message stating the record was successfully deleted.</returns>
         [HttpDelete("DeleteRecord/{recordId}")]
-        public async Task<IActionResult> DeleteRecord(long projectId, long recordId, [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteRecord(long projectId, long recordId)
         {
             try
             {
-                await _recordBusiness.DeleteRecord(projectId, recordId, force);
+                await _recordBusiness.DeleteRecord(projectId, recordId);
                 return Ok(new { message = $"Deleted record {recordId}" });
             }
             catch (Exception exc)
@@ -138,6 +137,27 @@ namespace deeplynx.api.Controllers
             }
         }
             
+        /// <summary>
+        /// Archives a specific record by its ID.
+        /// </summary>
+        /// <param name="recordId">The ID of the record to archive.</param>
+        /// <param name="projectId">The ID of the project to which the record belongs.</param>
+        /// <returns>A message stating the record was successfully archived.</returns>
+        [HttpDelete("ArchiveRecord/{recordId}")]
+        public async Task<IActionResult> ArchiveRecord(long projectId, long recordId)
+        {
+            try
+            {
+                await _recordBusiness.ArchiveRecord(projectId, recordId);
+                return Ok(new { message = $"Archived record {recordId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving record {recordId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
 

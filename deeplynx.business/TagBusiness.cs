@@ -30,7 +30,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTagAsync(long projectId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
@@ -67,7 +67,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> UpdateTagAsync(long projectId, long tagId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
@@ -104,7 +104,7 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTagsAsync(long projectId)
+    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId)
     {
         return await _context.Tags
             .Where(t => t.ProjectId == projectId && t.ArchivedAt == null)
@@ -116,7 +116,8 @@ public class TagBusiness : ITagBusiness
                 CreatedBy = t.CreatedBy,
                 CreatedAt = t.CreatedAt,
                 ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt
+                ModifiedAt = t.ModifiedAt,
+                ArchivedAt = t.ArchivedAt,
             })
             .ToListAsync();
     }
@@ -128,7 +129,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <returns>The tag with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> GetTagByIdAsync(long projectId, long tagId)
+    public async Task<TagResponseDto> GetTagById(long projectId, long tagId)
     {
         var tag = await _context.Tags
             .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
@@ -147,7 +148,8 @@ public class TagBusiness : ITagBusiness
             CreatedBy = tag.CreatedBy,
             CreatedAt = tag.CreatedAt,
             ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt
+            ModifiedAt = tag.ModifiedAt,
+            ArchivedAt = tag.ArchivedAt,
         };
     }
 
@@ -156,127 +158,35 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
-    /// <param name="force">Indicates whether to force delete the tag if it is in use.</param>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<bool> DeleteTagAsync(long projectId, long tagId, bool force = false)
+    public async Task<bool> DeleteTag(long projectId, long tagId)
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
-        {
             throw new KeyNotFoundException($"Tag with {tagId} not found.");
-        }
-
-        if (force)
-        {
-            _context.Tags.Remove(tag);
-            await _context.SaveChangesAsync();
-        }
-        else
-        {
-            try
-            {
-                var transaction = await _context.Database.BeginTransactionAsync();
-                await SoftDeleteTags(t => t.Id == tagId, transaction);
-                await transaction.CommitAsync();
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while deleting tag: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return false;
-            }
-        }
         
+        _context.Tags.Remove(tag);
         await _context.SaveChangesAsync();
+        
         return true;
     }
     
     /// <summary>
-    /// Bulk Soft Delete tags by a specific upstream domain. Used to avoid repeating functions.
+    /// Archives a specific tag by its ID for a specified project.
     /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteTags(
-        Expression<Func<Tag, bool>> predicate,
-        IDbContextTransaction? transaction)
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to archive.</param>
+    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
+    public async Task<bool> ArchiveTag(long projectId, long tagId)
     {
-        try
-        {
-            await SoftDeleteTags(predicate, transaction);
-            return true;
-                
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting tags: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
-    }
-    
-    private async Task SoftDeleteTags(
-            Expression<Func<Tag, bool>> predicate,
-            IDbContextTransaction? transaction)
-    {
-        // check for existing transaction; if one does not exist, start a new one
-        var commit = false; // flag used to determine if transaction should be committed
-        if (transaction == null)
-        {
-            commit = true;
-            transaction = await _context.Database.BeginTransactionAsync();
-        }
+        var tag = await _context.Tags.FindAsync(tagId);
 
-        // search for tags matching the passed-in predicate (filter) to be updated
-        var tContext = _context.Tags
-            .Where(d => d.ArchivedAt == null)
-            .Where(predicate);
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found");
 
-        var tags = await tContext.ToListAsync();
-        
-        if (tags.Count == 0)
-        {
-            // return early if there are no tags to delete
-            return;
-        }
-        
-        var tagIds = tags.Select(t => t.Id);
-        
-        // trigger downstream deletions
-        var softDeleteTasks = new List<Func<Task<bool>>>
-        {
-            // unfortunately we need to assert that tag id is not null here which looks really ugly
-            () => _recordMappingBusiness.BulkSoftDeleteRecordMappings(m => tagIds.Contains((long)m.TagId)),
-        };
-
-        // loop through tasks and trigger downstream deletions
-        foreach (var task in softDeleteTasks)
-        {
-            bool result = await task();
-            if (!result)
-            {
-                // rollback the transaction and throw an error
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException(
-                    "An error occurred during the deletion of downstream tag dependants.");
-            }
-        }
-
-        // bulk update the results of the query to set the archived_at date
-        var updated = await tContext.ExecuteUpdateAsync(setters => setters
-            .SetProperty(t => t.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-        // if we found tags to update, but weren't successful in updating, throw an error
-        if (updated == 0)
-        {
-            throw new DependencyDeletionException("An error occurred when deleting tags");
-        }
-
-        // save changes and commit transaction to close it
+        tag.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
-        if (commit)
-        {
-            await transaction.CommitAsync();
-        }
+        return true;
     }
 }

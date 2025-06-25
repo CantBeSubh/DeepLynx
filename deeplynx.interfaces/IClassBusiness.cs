@@ -11,6 +11,6 @@ public interface IClassBusiness
     Task<ClassResponseDto> GetClass(long projectId,  long classId);
     Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto);
     Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto);
-    Task<bool> DeleteClass(long projectId, long classId, bool force);
-    Task<bool> BulkSoftDeleteClasses(Expression<Func<Class, bool>> predicate, IDbContextTransaction? transaction);
+    Task<bool> DeleteClass(long projectId, long classId);
+    Task<bool> ArchiveClass(long projectId, long classId);
 }

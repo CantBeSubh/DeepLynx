@@ -16,16 +16,15 @@ namespace deeplynx.datalayer.Migrations
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_project(arc_project_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
                 LANGUAGE plpgsql AS $$
                 BEGIN
-                    UPDATE deeplynx.projects SET deleted_at = arc_time WHERE id = arc_project_id;
-                    UPDATE deeplynx.roles SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.data_sources SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.records SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.edges SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.classes SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.relationships SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.edge_mappings SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.record_mappings SET deleted_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.tags SET deleted_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.projects SET archived_at = arc_time WHERE id = arc_project_id;
+                    UPDATE deeplynx.data_sources SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.records SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edges SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.classes SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.relationships SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edge_mappings SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.record_mappings SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.tags SET archived_at = arc_time WHERE project_id = arc_project_id;
                 END;
                 $$;
             ");
@@ -35,8 +34,8 @@ namespace deeplynx.datalayer.Migrations
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_record(arc_record_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
                 LANGUAGE plpgsql AS $$
                 BEGIN
-                    UPDATE deeplynx.records SET deleted_at = arc_time WHERE id = arc_record_id;
-                    UPDATE deeplynx.edges SET deleted_at = arc_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+                    UPDATE deeplynx.records SET archived_at = arc_time WHERE id = arc_record_id;
+                    UPDATE deeplynx.edges SET archived_at = arc_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
                 END;
                 $$;
             ");
@@ -46,10 +45,10 @@ namespace deeplynx.datalayer.Migrations
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_class(arc_class_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
                 LANGUAGE plpgsql AS $$
                 BEGIN
-                    UPDATE deeplynx.classes SET deleted_at = arc_time WHERE id = arc_class_id;
-                    UPDATE deeplynx.relationships SET deleted_at = arc_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
-                    UPDATE deeplynx.edge_mappings SET deleted_at = arc_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
-                    UPDATE deeplynx.record_mappings SET deleted_at = arc_time WHERE class_id = arc_class_id;
+                    UPDATE deeplynx.classes SET archived_at = arc_time WHERE id = arc_class_id;
+                    UPDATE deeplynx.relationships SET archived_at = arc_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.edge_mappings SET archived_at = arc_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.record_mappings SET archived_at = arc_time WHERE class_id = arc_class_id;
                 END;
                 $$;
             ");
@@ -59,8 +58,8 @@ namespace deeplynx.datalayer.Migrations
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_relationship(arc_rel_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
                 LANGUAGE plpgsql AS $$
                 BEGIN
-                    UPDATE deeplynx.relationships SET deleted_at = arc_time WHERE id = arc_rel_id;
-                    UPDATE deeplynx.edge_mappings SET deleted_at = arc_time WHERE relationship_id = arc_rel_id;
+                    UPDATE deeplynx.relationships SET archived_at = arc_time WHERE id = arc_rel_id;
+                    UPDATE deeplynx.edge_mappings SET archived_at = arc_time WHERE relationship_id = arc_rel_id;
                 END;
                 $$;
             ");

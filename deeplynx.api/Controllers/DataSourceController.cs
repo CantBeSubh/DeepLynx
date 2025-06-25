@@ -40,7 +40,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Retrieves a specific data source by ID
         /// </summary>
@@ -94,8 +94,8 @@ namespace deeplynx.api.Controllers
         /// <returns>The newly updated data source</returns>
         [HttpPut("UpdateDataSource/{dataSourceId}")]
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
-            long projectId, 
-            long dataSourceId, 
+            long projectId,
+            long dataSourceId,
             [FromBody] DataSourceRequestDto dto)
         {
             try
@@ -116,22 +116,44 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
-        /// <param name="force">Indicates whether to force delete the data source if true.</param>
         /// <returns>A message stating the data source was successfully deleted.</returns>
         [HttpDelete("DeleteDataSource/{dataSourceId}")]
         public async Task<IActionResult> DeleteDataSource(
-            long dataSourceId, 
-            long projectId, 
-            [FromQuery] bool force = false)
+            long dataSourceId,
+            long projectId)
         {
             try
             {
-                await _dataSourceBusiness.DeleteDataSource(projectId, dataSourceId, force);
+                await _dataSourceBusiness.DeleteDataSource(projectId, dataSourceId);
                 return Ok(new { message = $"Deleted data source {dataSourceId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting record param {dataSourceId}: {exc}";
+                var message = $"An error occurred while deleting data source {dataSourceId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Deletes a specific data source by its ID.
+        /// </summary>
+        /// <param name="dataSourceId">The ID of the data source to delete.</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <returns>A message stating the data source was successfully deleted.</returns>
+        [HttpDelete("ArchiveDataSource/{dataSourceId}")]
+        public async Task<IActionResult> ArchiveDataSource(
+            long dataSourceId, 
+            long projectId)
+        {
+            try
+            {
+                await _dataSourceBusiness.ArchiveDataSource(projectId, dataSourceId);
+                return Ok(new { message = $"Archived data source {dataSourceId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving data source {dataSourceId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

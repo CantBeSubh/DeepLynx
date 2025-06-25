@@ -33,7 +33,7 @@ namespace deeplynx.api.Controllers
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-            
+
         }
         /// <summary>
         /// Get a class
@@ -48,16 +48,17 @@ namespace deeplynx.api.Controllers
             {
                 var classes = await _classBusiness.GetClass(projectId, classId);
                 return Ok(classes);
-            }  catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching this class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-           
+
         }
 
-        
+
         /// <summary>
         /// Create a class
         /// </summary>
@@ -73,7 +74,8 @@ namespace deeplynx.api.Controllers
                 var newClass = await _classBusiness.CreateClass(projectId, dto);
                 return Ok(newClass);
             }
-            catch (Exception exc){
+            catch (Exception exc)
+            {
                 var message = $"An unexpected error occurred while creating this class.: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
@@ -95,34 +97,46 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+
         /// <summary>
-        /// Delete a class
+        /// Deletes a specific class by its ID.
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="classId"></param>
-        /// <param name="force">Indicates whether to force delete the data source if true.</param>
-        /// <returns></returns>
+        /// <param name="classId">The ID of the class to delete.</param>
+        /// <param name="projectId">The ID of the project to which the class belongs.</param>
+        /// <returns>A message stating the class was successfully deleted.</returns>
         [HttpDelete("DeleteClass/{classId}")]
-        public async Task<IActionResult> DeleteClass(long projectId, long classId, [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteClass(long projectId, long classId)
         {
             try
             {
-                var result = await _classBusiness.DeleteClass(projectId, classId, force);
-
-                return result
-                    ? Ok(new { message = "Class successfully deleted." })
-                    : BadRequest(new { error = "Class could not be deleted. It may have already been deleted." });
-            }
-            catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
-            {
-                var statusCode = ex is KeyNotFoundException
-                    ? StatusCodes.Status404NotFound
-                    : StatusCodes.Status400BadRequest;
-                return StatusCode(statusCode, new { error = ex.Message });
+                await _classBusiness.DeleteClass(projectId, classId);
+                return Ok(new { message = $"Deleted class {classId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while deleting this class {classId}: {exc}";
+                var message = $"An error occurred while deleting class {classId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Archives a specific class by its ID.
+        /// </summary>
+        /// <param name="classId">The ID of the class to archive.</param>
+        /// <param name="projectId">The ID of the project to which the class belongs.</param>
+        /// <returns>A message stating the class was successfully archived.</returns>
+        [HttpDelete("ArchiveClass/{classId}")]
+        public async Task<IActionResult> ArchiveClass(long projectId, long classId)
+        {
+            try
+            {
+                await _classBusiness.ArchiveClass(projectId, classId);
+                return Ok(new { message = $"Archived class {classId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

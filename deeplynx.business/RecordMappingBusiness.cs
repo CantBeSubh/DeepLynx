@@ -61,7 +61,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
                 ModifiedBy = m.ModifiedBy,
-                ModifiedAt = m.ModifiedAt
+                ModifiedAt = m.ModifiedAt,
+                ArchivedAt = m.ArchivedAt,
             })
             .ToList();
     }
@@ -97,7 +98,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
             ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt
+            ModifiedAt = mapping.ModifiedAt,
+            ArchivedAt = mapping.ArchivedAt,
         };
     }
 
@@ -185,78 +187,37 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// </summary>
     /// <param name="mappingId">The ID of the mapping to delete</param>
     /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
-    /// <param name="force">Indicates whether to force delete the mapping if true.</param>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
-    public async Task<bool> DeleteRecordMapping(
-        long projectId, 
-        long mappingId, 
-        bool force=false)
+    public async Task<bool> DeleteRecordMapping(long projectId, long mappingId)
     {
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
-        {
-            throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
-        }
+            throw new KeyNotFoundException($"Record Mapping with id {mappingId} not found");
 
-        if (force)
-        {
-            _context.RecordMappings.Remove(mapping);
-        }
-        else
-        {
-            // soft delete
-            mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.RecordMappings.Update(mapping);
-        }
-        
+        _context.RecordMappings.Remove(mapping);
         await _context.SaveChangesAsync();
+
         return true;
     }
-
+    
     /// <summary>
-    /// Bulk Soft Delete record mappings by a specific upstream domain. Used to avoid repeating functions.
+    /// Archives a specific mapping by its ID
     /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <param name="transaction">(Optional) a transaction passed in from the parent to ensure ACID compliance</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteRecordMappings(Expression<Func<RecordMapping, bool>> predicate)
+    /// <param name="mappingId">The ID of the mapping to archive</param>
+    /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+    /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
+    public async Task<bool> ArchiveRecordMapping(long projectId, long mappingId)
     {
-        try
-        {
-            // search for record mappings matching the passed-in predicate (filter) to be updated
-            var mContext = _context.RecordMappings
-                .Where(m => m.ArchivedAt == null)
-                .Where(predicate);
-            
-            var recordMappings = await mContext.ToListAsync();
-    
-            if (recordMappings.Count == 0)
-            {
-                // return early if there are no record mappings to delete
-                return true;
-            }
-            
-            var mappingIds = recordMappings.Select(r => r.Id);
-    
-            var updated = await mContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(m => m.ArchivedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-    
-            // if we found mappings to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("An error occurred when deleting record mappings");
-            }
-            
-            // save changes
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting record mappings: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
+        var mapping = await _context.RecordMappings.FindAsync(mappingId);
+
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Record Mapping with id {mappingId} not found");
+
+        mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.RecordMappings.Update(mapping);
+        await _context.SaveChangesAsync();
+
+        return true;
     }
 }

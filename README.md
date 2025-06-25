@@ -18,6 +18,7 @@ This application can be run from docker using the following docker commands:
 docker compose -f docker-compose.yaml build
 docker compose -f docker-compose.yaml up
 ```
+Docker users can skip the steps in [Load the Database](#load-the-database), as `database/migration.sql` is automatically applied during container creation. 
 
 ## Local Setup
 1. PostgreSQL Setup:
@@ -48,11 +49,20 @@ docker compose -f docker-compose.yaml up
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
+If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to the PATH.  
+Please update your path to include the .NET tools directory, similar to: `export PATH="$PATH:/Users/_username_/.dotnet/tools"`
+
 ### Create Migration
 If you make changes to the datalayer, create a new database migration with a descriptive name. For example, to add a migration for updating the users table, run:
 ```
 dotnet ef migrations add UpdateUsersExample -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
+
+Additionally, please update the `migration.sql` file used for applying migrations to Docker containers using the following command from the project root:
+```
+dotnet ef migrations script -o database/migration.sql --project deeplynx.datalayer --startup-project deeplynx.api --idempotent
+```
+This creates an idempotent migration script that will only apply missing migrations to the database.  
 
 See [CONTRIBUTING](./CONTRIBUTING.md) for more details.
 
