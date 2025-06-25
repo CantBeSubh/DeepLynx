@@ -32,6 +32,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Folder Include="reports\0\0\" />
       <Folder Include="uploads\" />
     </ItemGroup>
 

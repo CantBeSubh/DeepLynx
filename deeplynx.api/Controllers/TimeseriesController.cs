@@ -1,6 +1,7 @@
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
+using NLog;
 
 namespace deeplynx.api.Controllers
 {
@@ -18,6 +19,28 @@ namespace deeplynx.api.Controllers
         public TimeseriesController(ITimeseriesBusiness timeseriesBusiness)
         {
             _timeseriesBusiness = timeseriesBusiness;
+        }
+        
+        /// <summary>
+        /// An endpoint to allow users to execute read operations on timeseries data
+        /// </summary>
+        /// <param name="request"> The request containing an sql query string</param>
+        /// <returns></returns>
+        [HttpPost("query")]
+        public async Task<IActionResult> QueryTimeseries([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
+        {
+            try
+            {
+                var timeseriesDataTable = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
+                LogManager.GetCurrentClassLogger().Info("Request was successful, report in progress");
+                return Ok(timeseriesDataTable);
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while querying timeseries table {e}";
+                LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
 
         /// <summary>

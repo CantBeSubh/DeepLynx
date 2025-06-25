@@ -1,3 +1,5 @@
+using System.Data;
+using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
@@ -16,5 +18,7 @@ namespace deeplynx.interfaces
             TimeseriesUploadCompleteRequestDto request);
 
         Task CreateTimeseriesTable(string tableName, string filePath);
+
+        Task<List<Dictionary<string, object?>>> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
     }
 }
