@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile([FromRoute] string projectId, [FromRoute] string dataSourceId, [FromForm] IFormFile file)
+        public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, [FromForm] IFormFile file)
         {
             try
             {
