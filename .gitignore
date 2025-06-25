@@ -4,6 +4,7 @@
 *.zip
 dist
 uploads
+reports
 
 
 ## Mac OS ##
