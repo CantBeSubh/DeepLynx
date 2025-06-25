@@ -11,6 +11,6 @@ public interface IRecordMappingBusiness
     Task<RecordMappingResponseDto> GetRecordMapping(long projectId, long mappingId);
     Task<RecordMappingResponseDto> CreateRecordMapping(long projectId, RecordMappingRequestDto dto);
     Task<RecordMappingResponseDto> UpdateRecordMapping(long projectId, long mappingId, RecordMappingRequestDto dto);
-    Task<bool> DeleteRecordMapping(long projectId, long mappingId, bool force);
-    Task<bool> BulkSoftDeleteRecordMappings(Expression<Func<RecordMapping, bool>> predicate);
+    Task<bool> DeleteRecordMapping(long projectId, long mappingId);
+    Task<bool> ArchiveRecordMapping(long projectId, long mappingId);
 }

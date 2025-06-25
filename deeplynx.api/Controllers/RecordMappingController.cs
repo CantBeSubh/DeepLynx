@@ -121,22 +121,40 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="mappingId">The ID of the record mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
-        /// <param name="force">Indicates whether to force delete the mapping if true.</param>
         /// <returns>A message stating the record mapping was successfully deleted.</returns>
         [HttpDelete("DeleteRecordMapping/{mappingId}")]
-        public async Task<IActionResult> DeleteRecordMapping(
-            long projectId, 
-            long mappingId, 
-            [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteRecordMapping(long projectId, long mappingId)
         {
             try
             {
-                await _rMappingBusiness.DeleteRecordMapping(projectId, mappingId, force);
+                await _rMappingBusiness.DeleteRecordMapping(projectId, mappingId);
                 return Ok(new { message = $"Deleted record mapping {mappingId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting record param {mappingId}: {exc}";
+                var message = $"An error occurred while deleting record mapping {mappingId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Archives a specific record mapping by its ID.
+        /// </summary>
+        /// <param name="mappingId">The ID of the record mapping to archive.</param>
+        /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+        /// <returns>A message stating the record mapping was successfully archived.</returns>
+        [HttpDelete("ArchiveRecordMapping/{mappingId}")]
+        public async Task<IActionResult> ArchiveRecordMapping(long projectId, long mappingId)
+        {
+            try
+            {
+                await _rMappingBusiness.ArchiveRecordMapping(projectId, mappingId);
+                return Ok(new { message = $"Archived record mapping {mappingId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving record mapping {mappingId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

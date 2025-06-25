@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250619140545_AddArchivalStoredProcedures")]
+    partial class AddArchivalStoredProcedures
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -322,6 +325,52 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("edge_mappings", "deeplynx");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.Permission", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("text")
+                        .HasColumnName("name")
+                        .HasDefaultValueSql("''::text");
+
+                    b.HasKey("Id")
+                        .HasName("permissions_pkey");
+
+                    b.HasIndex(new[] { "Id" }, "idx_permissions_id");
+
+                    b.ToTable("permissions", "deeplynx");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
                 {
                     b.Property<long>("Id")
@@ -602,6 +651,137 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("relationships", "deeplynx");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("Id")
+                        .HasName("roles_pkey");
+
+                    b.HasIndex(new[] { "Id" }, "idx_roles_id");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_roles_project_id");
+
+                    b.ToTable("roles", "deeplynx");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.RolePermission", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("action_type");
+
+                    b.Property<long>("PermissionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("permission_id");
+
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("Id")
+                        .HasName("role_permissions_pkey");
+
+                    b.HasIndex(new[] { "ActionType" }, "idx_role_permissions_action_type");
+
+                    b.HasIndex(new[] { "PermissionId" }, "idx_role_permissions_permission_id");
+
+                    b.HasIndex(new[] { "RoleId" }, "idx_role_permissions_role_id");
+
+                    b.ToTable("role_permissions", "deeplynx");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.RoleResource", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long?>("DataSourceId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("data_source_id");
+
+                    b.Property<bool?>("HasAccess")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("has_access");
+
+                    b.Property<long?>("RecordId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("record_id");
+
+                    b.Property<long>("RoleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("role_id");
+
+                    b.Property<long?>("TagId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("tag_id");
+
+                    b.HasKey("Id")
+                        .HasName("role_resources_pkey");
+
+                    b.HasIndex(new[] { "DataSourceId" }, "idx_role_resources_data_source_id");
+
+                    b.HasIndex(new[] { "RecordId" }, "idx_role_resources_record_id");
+
+                    b.HasIndex(new[] { "RoleId" }, "idx_role_resources_role_id");
+
+                    b.HasIndex(new[] { "TagId" }, "idx_role_resources_tag_id");
+
+                    b.ToTable("role_resources", "deeplynx");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
                     b.Property<long>("Id")
@@ -650,6 +830,86 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "idx_tags_project_id");
 
                     b.ToTable("tags", "deeplynx");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.User", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("display_name");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("email");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("users_pkey");
+
+                    b.HasIndex(new[] { "Id" }, "idx_users_id");
+
+                    b.ToTable("users", "deeplynx");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.UserProject", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.Property<long?>("RoleId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("role_id");
+
+                    b.HasKey("UserId", "ProjectId")
+                        .HasName("user_projects_pkey");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_user_projects_project_id");
+
+                    b.HasIndex(new[] { "RoleId" }, "idx_user_projects_role_id");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_user_projects_user_id");
+
+                    b.ToTable("user_projects", "deeplynx");
                 });
 
             modelBuilder.Entity("RecordTag", b =>
@@ -864,6 +1124,75 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
+                        .WithMany("Roles")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("roles_project_id_fkey");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.RolePermission", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Permission", "Permission")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("role_permissions_permission_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Role", "Role")
+                        .WithMany("RolePermissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("role_permissions_role_id_fkey");
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.RoleResource", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
+                        .WithMany("RoleResources")
+                        .HasForeignKey("DataSourceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("role_resources_data_source_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Record", "Record")
+                        .WithMany("RoleResources")
+                        .HasForeignKey("RecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("role_resources_record_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Role", "Role")
+                        .WithMany("RoleResources")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("role_resources_role_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Tag", "Tag")
+                        .WithMany("RoleResources")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("role_resources_tag_id_fkey");
+
+                    b.Navigation("DataSource");
+
+                    b.Navigation("Record");
+
+                    b.Navigation("Role");
+
+                    b.Navigation("Tag");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
@@ -874,6 +1203,35 @@ namespace deeplynx.datalayer.Migrations
                         .HasConstraintName("tags_project_id_fkey");
 
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.UserProject", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
+                        .WithMany("UserProjects")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_projects_project_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Role", "Role")
+                        .WithMany("UserProjects")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("user_projects_role_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.User", "User")
+                        .WithMany("UserProjects")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_projects_user_id_fkey");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
@@ -896,6 +1254,13 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Edges");
 
                     b.Navigation("Records");
+
+                    b.Navigation("RoleResources");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.Permission", b =>
+                {
+                    b.Navigation("RolePermissions");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
@@ -914,7 +1279,11 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Relationships");
 
+                    b.Navigation("Roles");
+
                     b.Navigation("Tags");
+
+                    b.Navigation("UserProjects");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Record", b =>
@@ -922,6 +1291,8 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("EdgeDestinations");
 
                     b.Navigation("EdgeOrigins");
+
+                    b.Navigation("RoleResources");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Relationship", b =>
@@ -931,9 +1302,25 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Edges");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
+                {
+                    b.Navigation("RolePermissions");
+
+                    b.Navigation("RoleResources");
+
+                    b.Navigation("UserProjects");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
                     b.Navigation("RecordMappings");
+
+                    b.Navigation("RoleResources");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.User", b =>
+                {
+                    b.Navigation("UserProjects");
                 });
 #pragma warning restore 612, 618
         }

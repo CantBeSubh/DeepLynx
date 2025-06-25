@@ -11,7 +11,7 @@ namespace deeplynx.interfaces
         Task<DataSourceResponseDto> GetDataSource(long projectId, long dataSourceId);
         Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto);
         Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, DataSourceRequestDto dto);
-        Task<bool> DeleteDataSource(long projectId, long dataSourceId, bool force);
-        Task<bool> BulkSoftDeleteDataSources(Expression<Func<DataSource, bool>> predicate, IDbContextTransaction? transaction);
+        Task<bool> DeleteDataSource(long projectId, long dataSourceId);
+        Task<bool> ArchiveDataSource(long projectId, long dataSourceId);
     }
 }
