@@ -1,12 +1,9 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,21 +36,9 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("openid");
         options.Scope.Add("profile");
     });
-// builder.Services.AddAuthentication(options =>
-// {
-//     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-//     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-//     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-// }).AddJwtBearer(options =>
-// {
-//     options.SaveToken = true;
-//     options.RequireHttpsMetadata = false;
-//     options.TokenValidationParameters = new TokenValidationParameters()
-//     {
-//         ValidateIssuer = false,
-//         ValidateAudience = false
-//     };
-// });
+
+var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.xml");
+
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -62,8 +47,6 @@ builder.Services.AddControllers()
     options.JsonSerializerOptions.MaxDepth = 64; // optional
 });
 builder.Services.AddHttpContextAccessor();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
 
 // Add DbContext with connection string from appsettings.json
 var connectionString =
@@ -89,14 +72,24 @@ builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
+builder.Services.AddOpenApi();
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference();
+    app.MapScalarApiReference(o => o
+        .WithTheme(ScalarTheme.Mars) 
+        .AddMetadata("title", "DeepLynx Nexus")
+        //.WithCustomCss("* { color: white;}")
+    );
 }
+
+
+
 
 app.UseHttpsRedirection();
 

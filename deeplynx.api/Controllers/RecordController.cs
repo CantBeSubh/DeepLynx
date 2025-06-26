@@ -20,11 +20,11 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get All Records
+        /// Get all records
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which records are associated with</param>
+        /// <param name="dataSourceId">Datasource ID which records are associated with</param>
+        /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords")]
         public async Task<IActionResult> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
         {
@@ -42,11 +42,11 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get one Record from DB
+        /// Get a record
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="recordId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="recordId">Datasource ID which record is associated with</param>
+        /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
         public async Task<IActionResult> GetRecord(long projectId, long recordId)
         {
@@ -64,12 +64,12 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Create a Record
+        /// Create a record
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="dataSourceId">Datasource ID which record is associated with</param>
+        /// <param name="dto">Record request DTO</param>
+        /// <returns>Record response DTO</returns>
         [HttpPost("CreateRecord")]
         public async Task<IActionResult> CreateRecord(
             long projectId, 
@@ -90,12 +90,12 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Update Record
+        /// Update a record
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="recordId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="recordId">ID of record to be upated</param>
+        /// <param name="dto">Recored request DTO</param>
+        /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}")]
         public async Task<IActionResult> UpdateRecord(
             long projectId,
@@ -116,7 +116,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific record by its ID.
+        /// Delete a record 
         /// </summary>
         /// <param name="recordId">The ID of the record to delete.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
@@ -138,7 +138,7 @@ namespace deeplynx.api.Controllers
         }
             
         /// <summary>
-        /// Archives a specific record by its ID.
+        /// Archive a record
         /// </summary>
         /// <param name="recordId">The ID of the record to archive.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>

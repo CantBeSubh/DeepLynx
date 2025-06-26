@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all record mappings for a specific project and (optionally) class and/or tag
+        /// Get all record mapping
         /// </summary>
         /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
         /// <param name="classId">(Optional) The ID of the class by which to filter mappings</param>
@@ -47,7 +47,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Retrieves a specific record mapping by ID
+        /// Get a record mapping
         /// </summary>
         /// <param name="mappingId">The ID whereby to fetch the record mapping</param>
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
@@ -69,7 +69,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Asynchronously creates a new record mapping for a specified project.
+        /// Create a record mapping
         /// </summary>
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <param name="dto">The record mapping request data transfer object containing mapping details</param>
@@ -91,7 +91,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Updates an existing record mapping by its ID.
+        /// Update a record mapping 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the record mapping belongs.</param>
         /// <param name="mappingId">The ID of the record mapping to update.</param>
@@ -117,7 +117,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific record mapping by its ID.
+        /// Delete a record mapping 
         /// </summary>
         /// <param name="mappingId">The ID of the record mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
@@ -139,7 +139,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific record mapping by its ID.
+        /// Archive a record mapping 
         /// </summary>
         /// <param name="mappingId">The ID of the record mapping to archive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>

@@ -21,7 +21,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all data sources for a specific project.
+        /// Get all data sources
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <returns>A list of data sources for the given project.</returns>
@@ -42,7 +42,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific data source by ID
+        /// Get a data source
         /// </summary>
         /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
@@ -64,7 +64,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously creates a new data source for a specified project.
+        /// Create a data source 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
@@ -86,7 +86,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously updates an existing data source.
+        /// Update a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to update</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
@@ -112,7 +112,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific data source by its ID.
+        /// Deletes a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
@@ -136,7 +136,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific data source by its ID.
+        /// Archive a data source 
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
