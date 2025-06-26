@@ -40,7 +40,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
       </div>
 
       <div className="space-x-2">
-        <p className="text-base-300 mb-2">Team Members:</p>
+        <p className="text-base-300 mb-2">:</p>
         {[...Array(5)].map((_, i) => (
           <div key={i} className="avatar inline-block">
             <div className="w-10 rounded-full">

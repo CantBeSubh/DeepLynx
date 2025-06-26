@@ -1,19 +1,36 @@
 "use client";
 import React, { useState, ReactNode } from "react";
 import { Reorder } from "framer-motion";
-import DataOverviewWidget from "./DataOverviewWidget";
-import LinksWidget from "./LinksWidget";
-import GraphWidget from "./GraphWidget";
+import DataOverviewWidget from "./WidgetCards.tsx/DataOverviewWidget";
+import LinksWidget from "./WidgetCards.tsx/LinksWidget";
+import GraphWidget from "./WidgetCards.tsx/GraphWidget";
+import RecentActivityWidget from "./WidgetCards.tsx/RecentActivity";
+import ProjectOverviewWidget from "./WidgetCards.tsx/ProjectOverview";
+import TeamMembersWidget from "./WidgetCards.tsx/TeamMembers";
 
-type WidgetType = "DataOverview" | "Links" | "Graph";
+type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 
 // adjust logic for adding and removing widgets
+//MAKE WIDGET FOR PAGE AND PROJECT NAME
 const WidgetCard = () => {
   const [widgets, setWidgets] = useState<WidgetType[]>([
     "DataOverview",
     "Graph",
     "Links",
+    "RecentActivity",
+    "ProjectOverview",
+    "TeamMembers"
   ]);
+
+  // const WidgetCard = () => {
+  // const [widgets, setWidgets] = useState<WidgetType[]>([
+  //   "DataOverview",
+  //   "Graph",
+  //   "Links",
+  //   "RecentActivity",
+  //   "ProjectOverview",
+  //   "TeamMembers"
+  // ]);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
@@ -25,6 +42,15 @@ const WidgetCard = () => {
 
       case "Graph":
         return <GraphWidget />;
+
+      case "RecentActivity":
+        return <RecentActivityWidget />;
+
+      case "ProjectOverview":
+        return <ProjectOverviewWidget />;
+
+      case "TeamMembers":
+        return <TeamMembersWidget />;
     }
   };
 
