@@ -10,6 +10,6 @@ public interface IEdgeMappingBusiness
     Task<EdgeMappingResponseDto> GetEdgeMapping(long projectId, long mappingId);
     Task<EdgeMappingResponseDto> CreateEdgeMapping(long projectId, EdgeMappingRequestDto dto);
     Task<EdgeMappingResponseDto> UpdateEdgeMapping(long projectId, long mappingId, EdgeMappingRequestDto dto);
-    Task<bool> DeleteEdgeMapping(long projectId, long mappingId, bool force);
-    Task<bool> BulkSoftDeleteEdgeMappings(Expression<Func<EdgeMapping, bool>> predicate);
+    Task<bool> DeleteEdgeMapping(long projectId, long mappingId);
+    Task<bool> ArchiveEdgeMapping(long projectId, long mappingId);
 }

@@ -35,7 +35,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long? relationshipId)
     {
         var mappingQuery = _context.EdgeMappings
-            .Where(e => e.ProjectId == projectId && e.DeletedAt == null);
+            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
             
             // add filter for class or tag if specified                                  
             if (classId.HasValue)                                                        
@@ -63,7 +63,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
                 ModifiedBy = m.ModifiedBy,
-                ModifiedAt = m.ModifiedAt
+                ModifiedAt = m.ModifiedAt,
+                ArchivedAt = m.ArchivedAt,
             })
             .ToList();
     }
@@ -80,7 +81,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long mappingId)
     {
         var mapping = await _context.EdgeMappings
-            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.DeletedAt == null)
+            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
         if (mapping == null)
@@ -100,7 +101,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
             ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt
+            ModifiedAt = mapping.ModifiedAt,
+            ArchivedAt = mapping.ArchivedAt,
         };
     }
 
@@ -158,7 +160,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     {
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -196,78 +198,37 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// </summary>
     /// <param name="mappingId">The ID of the mapping to delete</param>
     /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
-    /// <param name="force">Indicates whether to force delete the mapping if true.</param>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
-    public async Task<bool> DeleteEdgeMapping(
-        long projectId, 
-        long mappingId, 
-        bool force=false)
+    public async Task<bool> DeleteEdgeMapping(long projectId, long mappingId)
     {
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.DeletedAt is not null)
-        {
-            throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
-        }
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
-        if (force)
-        {
-            _context.EdgeMappings.Remove(mapping);
-        }
-        else
-        {
-            // soft delete
-            mapping.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.EdgeMappings.Update(mapping);
-        }
-        
+        _context.EdgeMappings.Remove(mapping);
         await _context.SaveChangesAsync();
+
         return true;
     }
     
     /// <summary>
-    /// Bulk Soft Delete edge mappings by a specific upstream domain. Used to avoid repeating functions.
+    /// Archives a specific mapping by its ID
     /// </summary>
-    /// <param name="domainType">The type of domain which is calling this function</param>
-    /// <param name="domainId">The ID of the upstream domain calling this function</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteEdgeMappings(Expression<Func<EdgeMapping, bool>> predicate)
+    /// <param name="mappingId">The ID of the mapping to archive</param>
+    /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+    /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
+    public async Task<bool> ArchiveEdgeMapping(long projectId, long mappingId)
     {
-        try
-        {
-            // search for records matching the passed-in predicate (filter) to be updated
-            var emContext = _context.EdgeMappings
-                .Where(d => d.DeletedAt == null)
-                .Where(predicate);
+        var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-            var edgeMappings = await emContext.ToListAsync();
-            
-            if (edgeMappings.Count == 0)
-            {
-                // return early if no edge mappings are to be deleted
-                return true;
-            }
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
-            // bulk update the results of the query to set the deleted_at date
-            var updated = await emContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
+        mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.EdgeMappings.Update(mapping);
+        await _context.SaveChangesAsync();
 
-            // if we found edge mappings to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("Edge mappings found but were not deleted");
-            }
-
-            // save changes and commit transaction to close it
-            await _context.SaveChangesAsync();
-            return true;
-                
-        }
-        catch (Exception exc)
-        {
-            var message = $"An error occurred while deleting edge mappings: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
+        return true;
     }
 }

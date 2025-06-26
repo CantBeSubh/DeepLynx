@@ -33,8 +33,8 @@ public partial class Tag
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Tags")]
@@ -42,9 +42,6 @@ public partial class Tag
 
     [InverseProperty("Tag")]
     public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
-
-    [InverseProperty("Tag")]
-    public virtual ICollection<RoleResource> RoleResources { get; set; } = new List<RoleResource>();
 
     [ForeignKey("TagId")]
     [InverseProperty("Tags")]
