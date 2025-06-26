@@ -72,7 +72,8 @@ var connectionString =
                                            + "'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<DeeplynxContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString),
+        ServiceLifetime.Transient);
 
 //serves for Dependency Injection
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
