@@ -22,7 +22,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// An endpoint to allow users to execute read operations on timeseries data
+        /// Query timeseries 
         /// </summary>
         /// <param name="request"> The request containing an sql query string</param>
         /// <param name="projectId"></param>
@@ -45,14 +45,14 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Upload timeseries file 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
         /// <param name="file"></param>
         /// <returns></returns>
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, [FromForm] IFormFile file)
+        public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, IFormFile file)
         {
             try
             {
@@ -68,7 +68,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Start timeseries upload
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
@@ -91,7 +91,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Upload timeseries chunk 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
@@ -100,7 +100,7 @@ namespace deeplynx.api.Controllers
         /// <param name="chunkNumber"></param>
         /// <returns></returns>
         [HttpPost("upload-chunk")]
-        public async Task<IActionResult> UploadChunk(string projectId, string dataSourceId, [FromForm] IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
+        public async Task<IActionResult> UploadChunk(string projectId, string dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
             try
             {
@@ -117,7 +117,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// 
+        /// Comeplete timeseries upload 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>

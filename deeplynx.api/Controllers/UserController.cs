@@ -15,7 +15,7 @@ namespace deeplynx.api.Controllers
             _userBusiness = userBusiness;
         }
         /// <summary>
-        /// Get all users or get all users for a project
+        /// Get all users
         /// </summary>
         /// <returns></returns>
         [HttpGet("GetAllUsers")]
@@ -35,7 +35,7 @@ namespace deeplynx.api.Controllers
 
         }
         /// <summary>
-        /// Get a user by Id
+        /// Get a user
         /// </summary>
         /// <param name="userId"></param>
         /// <returns></returns>
@@ -100,7 +100,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific user by its ID.
+        /// Deletes a user 
         /// </summary>
         /// <param name="userId">The ID of the user to delete.</param>
         /// <returns>A message stating the user was successfully deleted.</returns>
@@ -121,7 +121,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific class by its ID.
+        /// Archive a user 
         /// </summary>
         /// <param name="userId">The ID of the user to archive.</param>
         /// <returns>A message stating the user was successfully archived.</returns>

@@ -16,7 +16,7 @@ namespace deeplynx.api.Controllers
         }
 
     /// <summary>
-    /// Get all Relationships from the database
+    /// Get all relationships 
     /// </summary>
     /// <param name="projectId"></param>
     /// <returns></returns>
@@ -37,7 +37,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get one Relationship from DB
+        /// Get a relationship
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="relationshipId"></param>
@@ -61,7 +61,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create one Relationship
+        /// Create a relationship 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dto"></param>
@@ -91,7 +91,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Update Relationship
+        /// Update a relationship 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="relationshipId"></param>
@@ -119,7 +119,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Delete Relationship
+        /// Delete a relationship
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="relationshipId"></param>
@@ -141,7 +141,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archive Relationship
+        /// Archive a relationship 
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="relationshipId"></param>

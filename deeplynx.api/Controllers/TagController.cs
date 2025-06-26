@@ -20,7 +20,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new tag for a specified project.
+    /// Creates a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
@@ -43,7 +43,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Updates an existing tag for a specified project.
+    /// Update a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
@@ -66,7 +66,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all tags for a specified project.
+    /// Get all tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <returns>A list of tags belonging to the project.</returns>
@@ -87,7 +87,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves a specific tag by its ID for a specified project.
+    /// Get a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
@@ -109,7 +109,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a specific tag by its ID for a specified project.
+    /// Delete a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
@@ -131,7 +131,7 @@ public class TagController : ControllerBase
     }
     
     /// <summary>
-    /// Archives a specific tag by its ID for a specified project.
+    /// Archive a tag 
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>

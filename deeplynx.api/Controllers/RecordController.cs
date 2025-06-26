@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get All Records
+        /// Get all records
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
@@ -42,7 +42,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get one Record from DB
+        /// Get a record
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="recordId"></param>
@@ -64,7 +64,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Create a Record
+        /// Create a record
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
@@ -90,7 +90,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Update Record
+        /// Update a record
         /// </summary>
         /// <param name="projectId"></param>
         /// <param name="recordId"></param>
@@ -116,7 +116,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific record by its ID.
+        /// Delete a record 
         /// </summary>
         /// <param name="recordId">The ID of the record to delete.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
@@ -138,7 +138,7 @@ namespace deeplynx.api.Controllers
         }
             
         /// <summary>
-        /// Archives a specific record by its ID.
+        /// Archive a record
         /// </summary>
         /// <param name="recordId">The ID of the record to archive.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>

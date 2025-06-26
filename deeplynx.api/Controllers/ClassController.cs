@@ -15,7 +15,7 @@ namespace deeplynx.api.Controllers
             _classBusiness = classBusiness;
         }
         /// <summary>
-        /// Get all classes from DB
+        /// Get all classes
         /// </summary>
         /// <param name="projectId"></param>
         /// <returns></returns>
@@ -81,7 +81,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Update a class
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// /// <param name="classId"></param>
+        /// <param name="dto"></param>
+        /// <returns></returns>
         [HttpPut("UpdateClass/{classId}")]
         public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
@@ -99,7 +106,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific class by its ID.
+        /// Deletes a class.
         /// </summary>
         /// <param name="classId">The ID of the class to delete.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -121,7 +128,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific class by its ID.
+        /// Archives a class.
         /// </summary>
         /// <param name="classId">The ID of the class to archive.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>

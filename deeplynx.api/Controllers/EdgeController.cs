@@ -22,7 +22,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all edges for a specific project and (optionally) datasource
+        /// Get all edges
         /// </summary>
         /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
         /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
@@ -44,8 +44,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific edge by its origin and destination IDs
-        /// OR Retrieves an edge by its id
+        /// Get edge 
         /// </summary>
         /// <param name="edgeId">The id whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
@@ -71,7 +70,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously creates a new edge for a specified project.
+        /// Create edge 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
@@ -93,7 +92,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing edge by its ID or origin/destination.
+        /// Update edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs.</param>
         /// <param name="dto">The edge request data transfer object containing updated edge details.</param>
@@ -123,7 +122,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific edge by its ID or origin/destination.
+        /// Delete edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs.</param>
         /// <param name="edgeId">The ID of the edge to delete</param>
@@ -152,7 +151,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific edge by its ID or origin/destination.
+        /// Archives edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs.</param>
         /// <param name="edgeId">The ID of the edge to archive</param>
