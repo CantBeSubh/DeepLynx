@@ -8,11 +8,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <UserSessionProvider>
-          <ProjectSessionProvider>{children}</ProjectSessionProvider>
-        </UserSessionProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
