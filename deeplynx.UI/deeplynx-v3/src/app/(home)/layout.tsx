@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "../globals.css";
+import "@/app/globals.css";
 import LayoutShell from "./components/LayoutShell";
+import { UserSessionProvider } from "../contexts/UserSessionProvider";
+import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
 
 export const metadata: Metadata = {
   title: "DeepLynx",
@@ -16,7 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="bg-base-100">
       <body className="min-h-screed text-base-content">
-        <LayoutShell>{children}</LayoutShell>
+        <UserSessionProvider>
+          <ProjectSessionProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </ProjectSessionProvider>
+        </UserSessionProvider>
       </body>
     </html>
   );
