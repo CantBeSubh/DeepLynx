@@ -76,14 +76,18 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
-            .WithTheme(ScalarTheme.Mars)
-            .WithTitle("DeepLynx Nexus")
-        );
+        .WithTheme(ScalarTheme.Mars) 
+        .AddMetadata("title", "DeepLynx Nexus")
+        //.WithCustomCss("* { color: white;}")
+    );
 }
+
+
 
 
 app.UseHttpsRedirection();
