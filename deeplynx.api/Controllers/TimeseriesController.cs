@@ -25,8 +25,8 @@ namespace deeplynx.api.Controllers
         /// Query timeseries 
         /// </summary>
         /// <param name="request"> The request containing an sql query string</param>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
+        /// <param name="projectId">ID of project that timeseries data is associated with</param>
+        /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
         [HttpPost("query")]
         public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
@@ -47,10 +47,10 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Upload timeseries file 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="file"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID of project that timeseries data is associated with</param>
+        /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
+        /// <param name="file">Timeseries file</param>
+        /// <returns>Record response DTO</returns>
         [HttpPost("upload")]
         public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, IFormFile file)
         {
@@ -70,10 +70,10 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Start timeseries upload
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID of project that timeseries data is associated with</param>
+        /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
+        /// <param name="request">Timeseries request DTO</param>
+        /// <returns>{UploadId}</returns>
         [HttpPost("start-upload")]
         public IActionResult StartUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
@@ -93,12 +93,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Upload timeseries chunk 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="chunk"></param>
-        /// <param name="uploadId"></param>
-        /// <param name="chunkNumber"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID of project that timeseries data is associated with</param>
+        /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
+        /// <param name="chunk">Chunk from form</param>
+        /// <param name="uploadId">ID of upload</param>
+        /// <param name="chunkNumber">Chunk number from form</param>
+        /// <returns>{ChunkUploadStatus}</returns>
         [HttpPost("upload-chunk")]
         public async Task<IActionResult> UploadChunk(string projectId, string dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
@@ -119,10 +119,10 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Comeplete timeseries upload 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="request"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID of project that timeseries data is associated with</param>
+        /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
+        /// <param name="request">Timeseries request DTO</param>
+        /// <returns>{TimeseriesUploadRecord}</returns>
         [HttpPost("complete-upload")]
         public async Task<IActionResult> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {

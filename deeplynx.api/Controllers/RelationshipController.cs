@@ -18,10 +18,10 @@ namespace deeplynx.api.Controllers
     /// <summary>
     /// Get all relationships 
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// <param name="projectId">ID for project which relationship is associated with</param>
+    /// <returns>List of relationship response DTOs</returns>
         [HttpGet("GetAllRelationships")]
-        public async Task<IActionResult> GetAll(long projectId)
+        public async Task<IActionResult> GetAllRelationships(long projectId)
         {
             try
             {
@@ -39,11 +39,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a relationship
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
-        [HttpGet("GetAllRelationships/{relationshipId}")]
-        public async Task<IActionResult> Get(long projectId, long relationshipId)
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Id of relationship</param>
+        /// <returns>Relationship response DTO</returns>
+        [HttpGet("GetRelationship/{relationshipId}")]
+        public async Task<IActionResult> GetRelationship(long projectId, long relationshipId)
         {
             try
             {
@@ -63,9 +63,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship")]
         public async Task<IActionResult> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
         {
@@ -93,10 +93,10 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}")]
         public async Task<IActionResult> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] RelationshipRequestDto dto)
@@ -121,9 +121,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Delete a relationship
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <returns>Relationship was successfully deleted.</returns>
         [HttpDelete("DeleteRelationship/{relationshipId}")]
         public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
@@ -143,9 +143,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <returns>Relationship was successfully archived.</returns>
         [HttpDelete("ArchiveRelationship/{relationshipId}")]
         public async Task<IActionResult> ArchiveRelationship(long projectId, long relationshipId)
         {

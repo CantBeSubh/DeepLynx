@@ -17,8 +17,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all classes
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
         public async Task<IActionResult> GetAllClasses(long projectId)
         {
@@ -38,9 +38,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="classId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="classId">The ID of the class to retrieve</param>
+        /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
         public async Task<IActionResult> GetClass(long projectId, long classId)
         {
@@ -62,8 +62,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dto"></param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="dto">The request DTO for classes</param>
         /// <returns></returns>
         [HttpPost("CreateClass")]
         public async Task<IActionResult> CreateClass(long projectId,
@@ -85,10 +85,10 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Update a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// /// <param name="classId"></param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// /// <param name="classId">The ID of the class to update</param>
         /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}")]
         public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
