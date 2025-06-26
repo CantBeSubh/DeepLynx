@@ -11,7 +11,6 @@ public interface IRelationshipBusiness
     Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId);
     Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto);
     Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto);
-    Task<bool> DeleteRelationship(long projectId, long relationshipId, bool force = false);
-    Task<bool> BulkSoftDeleteRelationships(Expression<Func<Relationship, bool>> predicate,
-        IDbContextTransaction? transaction);
+    Task<bool> DeleteRelationship(long projectId, long relationshipId);
+    Task<bool> ArchiveRelationship(long projectId, long relationshipId);
 }

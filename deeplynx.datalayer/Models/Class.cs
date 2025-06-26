@@ -16,8 +16,9 @@ public partial class Class
     [Column("id")]
     public long Id { get; set; }
 
+    [Required]
     [Column("name")]
-    public string Name { get; set; } = null!;
+    public string Name { get; set; }
 
     [Column("description")]
     public string? Description { get; set; }
@@ -40,8 +41,8 @@ public partial class Class
     [Column("modified_at", TypeName = "timestamp without time zone")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
+    [Column("archived_at", TypeName = "timestamp without time zone")]
+    public DateTime? ArchivedAt { get; set; }
 
     [InverseProperty("Destination")]
     public virtual ICollection<EdgeMapping> EdgeMappingDestinations { get; set; } = new List<EdgeMapping>();

@@ -21,6 +21,8 @@ services:
             dockerfile: Dockerfiles/Dockerfile.db.local
         ports:
             - "5432:5432"
+        volumes:
+            - ./database/migration.sql:/docker-entrypoint-initdb.d/migration.sql
         healthcheck:
             test: |
                 while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do

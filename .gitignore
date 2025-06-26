@@ -4,6 +4,7 @@
 *.zip
 dist
 uploads
+reports
 
 
 ## Mac OS ##
@@ -26,3 +27,5 @@ uploads
 package-lock.json
 
 deeplynx.sln.DotSettings.user
+
+TimeSeries.db

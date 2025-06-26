@@ -9,5 +9,7 @@ public interface IProjectBusiness
     Task<ProjectResponseDto> GetProject(long projectId);
     Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto);
     Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto);
-    Task<bool> DeleteProject(long projectId, bool force = false);
+    Task<bool> DeleteProject(long projectId);
+    Task<bool> ArchiveProject(long projectId);
+    Task<ProjectStatResponseDto> GetProjectStats(long projectId);
 }

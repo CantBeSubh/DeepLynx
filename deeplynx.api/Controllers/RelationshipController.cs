@@ -125,20 +125,38 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId"></param>
         /// <returns></returns>
         [HttpDelete("DeleteRelationship/{relationshipId}")]
-        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId, [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
             try
             {
-                await _business.DeleteRelationship(projectId, relationshipId, force);
+                await _business.DeleteRelationship(projectId, relationshipId);
                 return Ok(new { message = $"Relationship with ID {relationshipId} was successfully deleted." });
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { error = ex.Message });
             }
             catch (Exception exc)
             {
                 var message = $"Unexpected error while deleting relationship {relationshipId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Archive Relationship
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="relationshipId"></param>
+        /// <returns></returns>
+        [HttpDelete("ArchiveRelationship/{relationshipId}")]
+        public async Task<IActionResult> ArchiveRelationship(long projectId, long relationshipId)
+        {
+            try
+            {
+                await _business.ArchiveRelationship(projectId, relationshipId);
+                return Ok(new { message = $"Relationship with ID {relationshipId} was successfully archived." });
+            }
+            catch (Exception exc)
+            {
+                var message = $"Unexpected error while archiving relationship {relationshipId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

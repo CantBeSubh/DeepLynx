@@ -18,7 +18,7 @@ namespace deeplynx.api.Controllers
         {
             _eMappingBusiness = eMappingBusiness;
         }
-        
+
         /// <summary>
         /// Retrieves all edge mappings for a specific project and (optionally) class and/or tag
         /// </summary>
@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <returns>A list of edge mappings based on the applied filters.</returns>
         [HttpGet("GetAllEdgeMappings")]
         public async Task<IActionResult> GetAllEdgeMappings(
-            long projectId, 
+            long projectId,
             [FromQuery] long? classId = null,
             [FromQuery] long? relationshipId = null)
         {
@@ -45,7 +45,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Retrieves a specific edge mapping by ID
         /// </summary>
@@ -67,7 +67,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Asynchronously creates a new edge mapping for a specified project.
         /// </summary>
@@ -76,7 +76,7 @@ namespace deeplynx.api.Controllers
         /// <returns>The created edge mapping</returns>
         [HttpPost("CreateEdgeMapping")]
         public async Task<IActionResult> CreateEdgeMapping(
-            long projectId, 
+            long projectId,
             [FromBody] EdgeMappingRequestDto dto)
         {
             try
@@ -91,7 +91,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Updates an existing edge mapping by its ID.
         /// </summary>
@@ -117,28 +117,46 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Deletes a specific edge mapping by its ID.
         /// </summary>
         /// <param name="mappingId">The ID of the edge mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
-        /// <param name="force">Indicates whether to force delete the mapping if true.</param>
         /// <returns>A message stating the edge mapping was successfully deleted.</returns>
         [HttpDelete("DeleteEdgeMapping/{mappingId}")]
-        public async Task<IActionResult> DeleteEdgeMapping(
-            long projectId, 
-            long mappingId, 
-            [FromQuery] bool force = false)
+        public async Task<IActionResult> DeleteEdgeMapping(long projectId, long mappingId)
         {
             try
             {
-                await _eMappingBusiness.DeleteEdgeMapping(projectId, mappingId, force);
+                await _eMappingBusiness.DeleteEdgeMapping(projectId, mappingId);
                 return Ok(new { message = $"Deleted edge mapping {mappingId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting edge param {mappingId}: {exc}";
+                var message = $"An error occurred while deleting edge mapping {mappingId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Archives a specific edge mapping by its ID.
+        /// </summary>
+        /// <param name="mappingId">The ID of the edge mapping to archive.</param>
+        /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+        /// <returns>A message stating the edge mapping was successfully archived.</returns>
+        [HttpDelete("ArchiveEdgeMapping/{mappingId}")]
+        public async Task<IActionResult> ArchiveEdgeMapping(long projectId, long mappingId)
+        {
+            try
+            {
+                await _eMappingBusiness.ArchiveEdgeMapping(projectId, mappingId);
+                return Ok(new { message = $"Archived edge mapping {mappingId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while archiving edge mapping {mappingId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

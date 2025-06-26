@@ -34,7 +34,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // base query object to get all edges for the project
         var edgeQuery = _context.Edges
-            .Where(e => e.ProjectId == projectId && e.DeletedAt == null);
+            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
     
         // add filter for datasource if specified
         if (dataSourceId.HasValue)
@@ -59,7 +59,8 @@ public class EdgeBusiness : IEdgeBusiness
                 CreatedAt = e.CreatedAt,
                 CreatedBy = e.CreatedBy,
                 ModifiedAt = e.ModifiedAt,
-                ModifiedBy = e.ModifiedBy
+                ModifiedBy = e.ModifiedBy,
+                ArchivedAt = e.ArchivedAt,
             })
             .ToList();
     }
@@ -91,7 +92,8 @@ public class EdgeBusiness : IEdgeBusiness
             CreatedAt = edge.CreatedAt,
             CreatedBy = edge.CreatedBy,
             ModifiedAt = edge.ModifiedAt,
-            ModifiedBy = edge.ModifiedBy
+            ModifiedBy = edge.ModifiedBy,
+            ArchivedAt = edge.ArchivedAt,
         };
     }
 
@@ -158,7 +160,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
@@ -199,35 +201,46 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="edgeId">The ID of the edge to delete</param>
     /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
-    /// <param name="force">Indicates whether to force delete the edge if true.</param>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
-    public async Task<bool> DeleteEdge(
+    public async Task<long> DeleteEdge(
         long projectId, 
         long? edgeId,
         long? originId, 
-        long? destinationId,
-        bool force=false)
+        long? destinationId)
     {
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.DeletedAt is not null)
-        {
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
-        }
 
-        if (force)
-        {
-            _context.Edges.Remove(edge);
-        }
-        else
-        {
-            // soft delete
-            edge.DeletedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.Edges.Update(edge);
-        }
-        
+        _context.Edges.Remove(edge);
         await _context.SaveChangesAsync();
-        return true;
+        return edge.Id;
+    }
+    
+    /// <summary>
+    /// Archives a specific edge by its ID or origin/destination.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="edgeId">The ID of the edge to archive</param>
+    /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
+    /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
+    /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
+    public async Task<long> ArchiveEdge(
+        long projectId, 
+        long? edgeId,
+        long? originId, 
+        long? destinationId)
+    {
+        // find edge and perform error handling if not found
+        var edge = await FindEdge(edgeId, originId, destinationId);
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
+            throw new KeyNotFoundException("Edge may have been moved, archived or deleted.");
+
+        edge.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Edges.Update(edge);
+        await _context.SaveChangesAsync();
+        return edge.Id;
     }
     
     /// <summary>
@@ -251,14 +264,14 @@ public class EdgeBusiness : IEdgeBusiness
         if (edgeId != null)
         {
             edge = await _context.Edges
-                .Where(e => e.Id == edgeId && e.DeletedAt == null)
+                .Where(e => e.Id == edgeId && e.ArchivedAt == null)
                 .FirstOrDefaultAsync();
         }
         else
         {
             edge = await _context.Edges
                 .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
-                .Where(e => e.DeletedAt == null)
+                .Where(e => e.ArchivedAt == null)
                 .FirstOrDefaultAsync();
         }
 
@@ -277,51 +290,4 @@ public class EdgeBusiness : IEdgeBusiness
 
         return edge;  
     }
-
-    /// <summary>
-    /// Bulk Soft Delete edges by a specific upstream domain. Used to avoid repeating functions.
-    /// </summary>
-    /// <param name="predicate">an anonymous function that allows the context to be filtered appropriately</param>
-    /// <returns>Boolean true on successful deletion</returns>
-    public async Task<bool> BulkSoftDeleteEdges(Expression<Func<Edge, bool>> predicate)
-    {
-        try
-        {
-            // search for records matching the passed-in predicate (filter) to be updated
-            var eContext = _context.Edges
-                .Where(d => d.DeletedAt == null)
-                .Where(predicate);
-
-            var edges = await eContext.ToListAsync();
-            
-            if (edges.Count == 0)
-            {
-                // return early if no edges are to be deleted
-                return true;
-            }
-
-            // bulk update the results of the query to set the deleted_at date
-            var updated = await eContext.ExecuteUpdateAsync(setters => setters
-                .SetProperty(ds => ds.DeletedAt, DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)));
-
-            // if we found edges to update, but weren't successful in updating, throw an error
-            if (updated == 0)
-            {
-                throw new DependencyDeletionException("Edges found but were not deleted");
-            }
-
-            // save changes and commit transaction to close it
-            await _context.SaveChangesAsync();
-            return true;
-                
-        }
-        catch (Exception exc)
-        {
-            
-            var message = $"An error occurred while deleting edges: {exc}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return false;
-        }
-    }
-    
 }
