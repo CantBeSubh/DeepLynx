@@ -428,7 +428,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>Data</returns>
     public async Task<List<List<dynamic>>> RawQueryTimeseries(string query)
     {
-        using var duckDBConnection = GetDuckDBConnection();
+        using var duckDBConnection = GetDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
@@ -446,7 +446,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>All data for given table</returns>
     public async Task<List<List<dynamic>>> GetAllTableRecords(string tableName)
     {
-        using var duckDBConnection = GetDuckDBConnection();
+        using var duckDBConnection = GetDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
@@ -463,7 +463,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>Data</returns>
     public async Task<List<List<dynamic>>> QueryEveryNRows(int rowNumber, string tableName)
     {
-        using var duckDBConnection = GetDuckDBConnection();
+        using var duckDBConnection = GetDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
