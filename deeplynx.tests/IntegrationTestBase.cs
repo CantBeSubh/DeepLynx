@@ -1,5 +1,6 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.tests;
 using Testcontainers.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -31,6 +32,7 @@ public class IntegrationTestBase : IAsyncLifetime
 
         // Ensure database is created
         await Context.Database.EnsureCreatedAsync();
+        await SeedData.SeedDatabase(Context);
     }
 
 

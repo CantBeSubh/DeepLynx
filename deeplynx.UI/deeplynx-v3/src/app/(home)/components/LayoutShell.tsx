@@ -3,7 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import SideMenu from "./SideMenu";
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Handle menu togle
@@ -80,9 +80,11 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <AccountCircleIcon />
           </summary>
           <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
-            <li><a>Item 1</a></li>
             <li>
-              <button>Logout</button>
+              <a className="text-secondary-content">Item 1</a>
+            </li>
+            <li>
+              <button className="text-secondary-content">Logout</button>
             </li>
           </ul>
         </details>
@@ -93,8 +95,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full p-6 mt-20  ${isMenuCollapsed ? "ml-20" : "ml-64"
-            }`}
+          className={`transition-all duration-300 w-full p-6 mt-20  ${
+            isMenuCollapsed ? "ml-20" : "ml-64"
+          }`}
         >
           {children}
         </main>

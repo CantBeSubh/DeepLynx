@@ -9,7 +9,7 @@ interface Tab {
 // Define the props for the Tabs component
 interface TabsProps {
   tabs: Tab[];
-  className?: string;
+  className: string;
   showButtons?: boolean;
 }
 
@@ -27,7 +27,7 @@ const Tabs: React.FC<TabsProps> = ({
           <input
             type="radio"
             name={`tabs_${index}`}
-            className="tab ml-2 border-neutral text-neutral hover:text-neutral"
+            className="tab ml-2 border-neutral text-secondary hover:text-neutral"
             aria-label={tab.label} // Accessible label for the radio button
             checked={activeIndex === index} // Check if this tab is active
             onChange={() => setActiveIndex(index)} // Change active tab on selection
