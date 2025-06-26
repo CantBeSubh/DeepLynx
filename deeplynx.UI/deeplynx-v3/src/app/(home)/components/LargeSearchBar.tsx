@@ -20,7 +20,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Check if the component is controlled or uncontrolled
-  const isControlled = value !== undefined;
+  const isControlled = value !== undefined && onChange !== undefined;
   const currentValue = isControlled ? value : internalValue;
 
   // Clear the input field
@@ -59,7 +59,9 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
         type="text"
         placeholder={placeholder}
         className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
-        onChange={onChange}
+        onChange={
+          isControlled ? onChange : (e) => setInternalValue(e.target.value)
+        }
         onKeyDown={(e) => {
           if (e.key === "Enter" && onEnter) {
             onEnter((e.target as HTMLInputElement).value);

@@ -10,6 +10,7 @@ import Link from "next/link";
 import Tabs from "@/app/(home)/components/Tabs";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import AvatarCell from "@/app/(home)/components/Avatar";
+import { format } from "date-fns";
 
 type PopularTable = {
   id: number;
@@ -29,11 +30,15 @@ const ProjectDetailPage = () => {
     if (!hasLoaded || !projectId) return;
 
     const found = sampleProjectData.find((p) => p.id === projectId);
-    if (found) {
-      setProject(found);
+
+    if (!found) return;
+
+    setProject((prev) => (prev?.id === found.id ? prev : found));
+
+    if (found.id !== project?.id) {
       setProjectSession({ projectId: found.id, projectName: found.name });
     }
-  }, [hasLoaded, projectId]);
+  }, [hasLoaded, projectId, project, setProjectSession]);
 
   const popular_table_columns: Column<PopularTable>[] = [
     {
@@ -68,7 +73,7 @@ const ProjectDetailPage = () => {
     },
     {
       label: "My Searchs",
-      content: "",
+      content: <></>,
     },
   ];
 
@@ -85,11 +90,8 @@ const ProjectDetailPage = () => {
           </p>
           <p>
             <strong>Created: </strong>
-            {new Date(project?.created).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })}
+            {project?.created &&
+              format(new Date(project.created), "MM/dd/yyyy")}
           </p>
         </div>
 
