@@ -32,12 +32,6 @@ const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
               <div className="bg-base-200 p-4 rounded-xl">
                 {" "}
               </div>
-
-              {/* Help text with a link to the Wiki */}
-              <p className="cursor-pointer text-xs text-neutral">
-                Need Help? Details can be creating or updating a project via an
-                ontology file can be found on our <a className="link">Wiki.</a>
-              </p>
             </form>
             {/* Modal Action Buttons */}
             <div className="modal-action">
