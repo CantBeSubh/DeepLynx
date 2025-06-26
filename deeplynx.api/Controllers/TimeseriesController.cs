@@ -114,5 +114,69 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="rowNum"></param>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        [HttpGet("get-rows/{rowNum}/{tableName}")]
+        public async Task<IActionResult> QueryEveryNRows([FromRoute] int rowNum, [FromRoute] string tableName)
+        {
+            try
+            {
+                var timeseriesUploadRecord = await _timeseriesBusiness.QueryEveryNRows(rowNum, tableName);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <returns></returns>
+        [HttpGet("get-all/{tableName}")]
+        public async Task<IActionResult> GetAllTableRecords([FromRoute] string tableName)
+        {
+            try
+            {
+                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(tableName);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        [HttpGet("query")]
+        public async Task<IActionResult> UserInputQuery([FromForm] string query)
+        {
+            try
+            {
+                var timeseriesUploadRecord = await _timeseriesBusiness.RawQueryTimeseries(query);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while processing query Error: {e}\n\n {query}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e);
+            }
+        }
     }
 }

@@ -16,5 +16,11 @@ namespace deeplynx.interfaces
             TimeseriesUploadCompleteRequestDto request);
 
         Task CreateTimeseriesTable(TimeseriesResponseDto timeseriesResponseDto);
+
+        Task<List<List<dynamic>>> QueryEveryNRows(int rowNumber, string tableName);
+
+        Task<List<List<dynamic>>> GetAllTableRecords(string tableName);
+
+        Task<List<List<dynamic>>> RawQueryTimeseries(string query);
     }
 }

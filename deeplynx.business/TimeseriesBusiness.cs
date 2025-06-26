@@ -3,6 +3,8 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using System.ComponentModel;
 
 namespace deeplynx.business;
 
@@ -165,7 +167,126 @@ public class TimeseriesBusiness(DeeplynxContext context) : ITimeseriesBusiness
 
         using var command = duckDBConnection.CreateCommand();
 
-        command.CommandText = $"CREATE TABLE '{timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName}' AS SELECT * from read_csv('{timeseriesResponseDto.FilePath}'); ";
+        command.CommandText = $"CREATE TABLE '{timeseriesResponseDto.FileId + "_" + timeseriesResponseDto.FileName}' AS SELECT * from read_csv($fileName); ";
+        command.Parameters.Add(new DuckDBParameter("fileName", timeseriesResponseDto.FilePath));
+
         var executeNonQuery = command.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Formats data from DuckDB reader to a 2D array with column names
+    /// Modified from https://duckdb.net/docs/getting-started.html
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <returns>A 2D array with column names</returns>
+    public List<List<dynamic>> OrganizeQueryData(DuckDBDataReader reader)
+    {
+        List<List<dynamic>> tableData = [];
+        try
+        {
+            List<dynamic> columns = [];
+            for (var index = 0; index < reader.FieldCount; index++)
+            {
+                string column = reader.GetName(index);
+                columns.Add(column);
+            }
+
+            tableData.Add(columns);
+
+            while (reader.Read())
+            {
+                for (int ordinal = 0; ordinal < reader.FieldCount; ordinal += columns.Count)
+                {
+                    List<dynamic> data = [];
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        int newOrdinal = ordinal + i;
+
+                        if (reader.IsDBNull(ordinal))
+                        {
+                            //Console.WriteLine("NULL");
+                            data.Add(null);
+                        }
+                        else
+                        {
+                            data.Add(reader.GetValue(newOrdinal));
+                        }
+                    }
+                    tableData.Add(data);
+                }
+            }
+        }
+        catch (DuckDBException ex)
+        {
+            // Ex from bad query etc.
+            //catch ex
+            tableData = [];
+        }
+
+        return tableData;
+    }
+
+    /// <summary>
+    /// Takes in raw query and runs it
+    /// </summary>
+    /// <param name="query">The duck db query to run</param>
+    /// <returns>Data</returns>
+    public async Task<List<List<dynamic>>> RawQueryTimeseries(string query)
+    {
+        using var duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
+        using var command = duckDBConnection.CreateCommand();
+
+        // Sanitize query
+        command.CommandText = query;
+
+        using DuckDBDataReader reader = command.ExecuteReader();
+        return OrganizeQueryData(reader);
+    }
+
+    /// <summary>
+    /// Generic select all for given table
+    /// </summary>
+    /// <param name="timeseriesResponseDto">Table object</param>
+    /// <returns>All data for given table</returns>
+    public async Task<List<List<dynamic>>> GetAllTableRecords(string tableName)
+    {
+        using var duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
+        using var command = duckDBConnection.CreateCommand();
+
+        command.CommandText = $"SELECT * FROM '{tableName}'; ";
+        using var reader = command.ExecuteReader();
+
+        return OrganizeQueryData(reader);
+    }
+
+    /// <summary>
+    /// Takes in raw query and runs it
+    /// </summary>
+    /// <param name="query">The duck db query to run</param>
+    /// <returns>Data</returns>
+    public async Task<List<List<dynamic>>> QueryEveryNRows(int rowNumber, string tableName)
+    {
+        using var duckDBConnection = GetDuckDBConnection();
+        await duckDBConnection.OpenAsync();
+        using var command = duckDBConnection.CreateCommand();
+
+        command.CommandText = $"""
+            
+            SELECT * FROM
+            (
+                SELECT *, ROW_NUMBER() OVER() AS row_num 
+                FROM '{tableName}'
+            ) AS numbered_table
+            WHERE row_num % $rowNum = 0;
+            
+            """;
+
+        command.Parameters.Add(new DuckDBParameter("rowNum", rowNumber));
+
+        using var reader = command.ExecuteReader();
+
+        return OrganizeQueryData(reader);
     }
 }
