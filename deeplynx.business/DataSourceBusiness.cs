@@ -124,7 +124,7 @@ namespace deeplynx.business
                 CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
             };
 
-            _context.DataSources.Add(dataSource);
+            await _context.DataSources.AddAsync(dataSource);
             await _context.SaveChangesAsync();
 
             return new DataSourceResponseDto
@@ -172,7 +172,7 @@ namespace deeplynx.business
             dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
             dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            _context.DataSources.Update(dataSource);
+            //_context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
 
             return new DataSourceResponseDto
