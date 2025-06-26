@@ -8,7 +8,6 @@ import CreateWidget from "./CreateWidgets";
 import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "../../components/Accordion";
-import { Reorder, motion } from "motion/react";
 import ExpandedProjectCard from "../../components/ExpandedProjectCard";
 import WidgetCard from "../../components/Widgets";
 
