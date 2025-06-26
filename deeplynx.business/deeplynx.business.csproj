@@ -1,8 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
@@ -14,10 +15,9 @@
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
-      <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.5" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0-preview.5.25277.114" />
       <PackageReference Include="DuckDB.NET.Data.Full" Version="1.2.1" />
-      <PackageReference Include="Scalar.AspNetCore" Version="2.0.18" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.2">
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0-preview.5.25277.114">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
