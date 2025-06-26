@@ -1,7 +1,6 @@
 "use client";
 import React, { useState, ReactNode } from "react";
 import { Reorder } from "framer-motion";
-import { useRouter } from "next/navigation";
 import DataOverviewWidget from "./DataOverviewWidget";
 import LinksWidget from "./LinksWidget";
 import GraphWidget from "./GraphWidget";
