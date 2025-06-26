@@ -268,10 +268,15 @@ const GenericTable = <T extends object>({
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => {
-            const isPrivate = (row as any).visibility === "Private";
+            const isPrivate = row["visibility" as keyof T] === "Private";
+            const rowId = row["id" as keyof T];
+            const key =
+              typeof rowId === "string" || typeof rowId === "number"
+                ? rowId
+                : rowIndex;
             return (
               <tr
-                key={(row as any).id ?? rowIndex}
+                key={key}
                 className={`${
                   typeof rowClassName === "function"
                     ? rowClassName(row, rowIndex)

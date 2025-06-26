@@ -16,8 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="bg-base-100">
-      <body className="min-h-screed text-base-content">
+    <html lang="en">
+      <body>
         <UserSessionProvider>
           <ProjectSessionProvider>
             <LayoutShell>{children}</LayoutShell>

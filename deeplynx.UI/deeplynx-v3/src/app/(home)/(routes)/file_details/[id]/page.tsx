@@ -73,7 +73,7 @@ const FileDetailsPage = () => {
         </div>
       </div>
       <div className="mt-4">
-        <Tabs tabs={tabsData} />
+        <Tabs tabs={tabsData} className={""} />
       </div>
     </div>
   );
