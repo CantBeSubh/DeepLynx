@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all edge mappings for a specific project and (optionally) class and/or tag
+        /// Get all edge mappings
         /// </summary>
         /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
         /// <param name="classId">(Optional) The ID of the origin or destination class by which to filter mappings</param>
@@ -47,7 +47,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific edge mapping by ID
+        /// Get edge mapping
         /// </summary>
         /// <param name="mappingId">The ID whereby to fetch the edge mapping</param>
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
@@ -69,7 +69,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously creates a new edge mapping for a specified project.
+        /// Create edge mapping
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
         /// <param name="dto">The edge mapping request data transfer object containing mapping details</param>
@@ -93,7 +93,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing edge mapping by its ID.
+        /// Update edge mapping
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge mapping belongs.</param>
         /// <param name="mappingId">The ID of the edge mapping to update.</param>
@@ -119,7 +119,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific edge mapping by its ID.
+        /// Delete edge mapping
         /// </summary>
         /// <param name="mappingId">The ID of the edge mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
@@ -141,7 +141,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific edge mapping by its ID.
+        /// Archive a specific edge mapping
         /// </summary>
         /// <param name="mappingId">The ID of the edge mapping to archive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>

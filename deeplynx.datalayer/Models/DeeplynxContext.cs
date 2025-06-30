@@ -47,6 +47,7 @@ public partial class DeeplynxContext : DbContext
 
         modelBuilder.Entity<DataSource>(entity =>
         {
+            entity.Property(e => e.Id).HasIdentityOptions(startValue: 1);
             entity.HasKey(e => e.Id).HasName("data_sources_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");

@@ -14,7 +14,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col bg-base-100">
+    <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
       <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
         <Image
