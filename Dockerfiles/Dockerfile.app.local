@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20 AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 
 # Set the working directory
 WORKDIR /source
