@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Data;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -6,17 +7,28 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness) : ITimeseriesBusiness
+public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness, [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
+    private IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+    
     private const string UploadFolderPath = "uploads";
     private const string QueryFolderPath = "reports";
+    
+    private static class Status
+    {
+        public static string Failed { get; } = "Failed";
+        public static string Completed { get; } = "Completed";
+        public static string InProgress { get; } = "In Progress";
+    }
     
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
@@ -209,18 +221,111 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             return noResultList;
         }
         resultTable.Load(reader);
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+        
+        var preview = DataTableToPreview(resultTable);
+        var recordRequest = new RecordRequestDto 
+        {
+            Properties = new JsonObject
+            {
+                ["status"] = Status.InProgress,
+                ["preview"] = preview,
+                ["query"] = request.Query
+            },
+            Name = fileName,
+            OriginalId = queryId,
+        };
+
+        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        
         
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
-        // todo: modify task to work with db connections. Need to create the tasks own scope as shown in the 2nd
+        // todo:
+        // 1. modify task to work with db connections. Need to create the tasks own scope as shown in the 2nd
         // example in the stack overflow conversation above.
-        // Write report record to postgres
-        // Write csv to object storage
-        Task.Run(() =>
-        { 
-            DataTableToCsv(resultTable, projectId, dataSourceId);
+        // 2. Write report record to postgres
+        // 3. Write csv to object storage
+        // 4. get the scope working
+        Task.Run(async() =>
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+            try
+            { 
+                DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
+                // var recordRequestCompleted = new RecordRequestDto 
+                // {
+                //     Properties = new JsonObject
+                //     {
+                //         ["status"] = Status.Completed,
+                //         ["preview"] = preview,
+                //         ["query"] = request.Query
+                //     },
+                //     Name = fileName,
+                //     OriginalId = queryId,
+                // };
+                // await _recordBusiness.UpdateRecord(long.Parse(projectId), recordResponse.Id, recordRequestCompleted);
+
+                var properties = new JsonObject
+                {
+                    ["status"] = Status.Completed,
+                    ["preview"] = preview.DeepClone(),
+                    ["query"] = request.Query
+                };
+                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                {
+                    throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
+                }
+
+                record.Properties = properties.ToString();
+                record.Uri = "object://" + fileName;
+                
+                backgroundContext.Records.Update(record);
+                await backgroundContext.SaveChangesAsync();
+                Console.WriteLine("UPDATED CSV!");
+            }
+            catch (Exception e)
+            {
+                // var recordRequestFailed = new RecordRequestDto 
+                // {
+                //     Properties = new JsonObject
+                //     {
+                //         ["status"] = Status.Failed,
+                //         ["preview"] = preview,
+                //         ["query"] = request.Query
+                //     },
+                //     Name = fileName,
+                //     OriginalId = queryId,
+                // };
+                // await _recordBusiness.UpdateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequestFailed);
+
+                // var recordBusiness = new RecordBusiness(backgroundContext, new EdgeBusiness(backgroundContext));
+                
+                var properties = new JsonObject
+                {
+                    ["status"] = Status.Failed,
+                    ["preview"] = preview.DeepClone(),
+                    ["query"] = request.Query
+                };
+                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                {
+                    throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
+                }
+
+                record.Properties = properties.ToString();
+                
+                backgroundContext.Records.Update(record);
+                await backgroundContext.SaveChangesAsync();
+                NLog.LogManager.GetCurrentClassLogger().Error(e);
+                throw new Exception("Failed while writing report to csv and postgres");
+            }
         });
         var result = DataTableToDictionary(resultTable);
+        
         
         return result;
     }
@@ -232,7 +337,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns></returns>
     private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
     { 
-        var result = new List<Dictionary<string, object?>>();
+        var preview = new List<Dictionary<string, object?>>();
         foreach (DataRow row in dt.Rows)
         {
             var rowDict = new Dictionary<string, object?>();
@@ -240,8 +345,30 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             {
                 rowDict[column.ColumnName] = row.ItemArray[column.Ordinal];
             }
-            result.Add(rowDict);
+            preview.Add(rowDict);
         }
+        return preview;
+    }
+
+    private JsonObject DataTableToPreview(DataTable dt)
+    {
+        var result = new JsonObject();
+
+        foreach (DataColumn column in dt.Columns)
+        {
+            result[column.ColumnName] = new JsonArray();
+        }
+
+        var maxRows = Math.Min(5, dt.Rows.Count);
+        for (var i = 0; i < maxRows; i++)
+        {
+            var row = dt.Rows[i];
+            foreach (DataColumn column in dt.Columns)
+            {
+                ((JsonArray)result[column.ColumnName]).Add(row[column] == DBNull.Value ? null : row[column]);
+            }
+        }
+
         return result;
     }
     
@@ -252,7 +379,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId) {
+    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId, string fileName) {
         StringBuilder sbData = new StringBuilder();
         
         foreach (var col in dataTable.Columns) {
@@ -282,8 +409,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
         
-        var queryId = Guid.NewGuid().ToString();
-        var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, queryId + "_" + "report.csv");
+        var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
         File.WriteAllText(filePath, sbData.ToString());
