@@ -77,15 +77,31 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 
-
+var customcss = File.ReadAllText("windows95.css");
+app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
-        .WithTheme(ScalarTheme.Mars) 
+        // .WithTheme(ScalarTheme.Mars) 
         .AddMetadata("title", "DeepLynx Nexus")
-        //.WithCustomCss("* { color: white;}")
-    );
+        .WithCustomCss(customcss)
+        .AddHeaderContent(@"
+            <div class='references-header'>
+              <header class='header t-doc__header'>
+                <div class='header-container'>
+                  <div class='header-item header-item-meta'>
+                    <a class='header-item-logo'>
+                      <img
+                        alt='lynx'
+                        class='header-item-logo-image'
+                        src='/images/lynx-white.png'
+                        style='height: 50px; position: sticky; z-index: 1000;'>
+                    </a>
+                  </div>
+                </div>
+              </header>
+            </div>"));
 }
 
 
