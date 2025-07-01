@@ -1,3 +1,4 @@
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,6 @@ namespace deeplynx.api.Controllers
     public class TimeseriesController : ControllerBase
     {
         private readonly ITimeseriesBusiness _timeseriesBusiness;
-        private const string UploadFolderPath = "uploads";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimeseriesController"/> class
@@ -33,8 +33,12 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var timeseriesDataTable = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
-                return Ok(timeseriesDataTable);
+                var reportRecordResponse = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
+                return Ok(reportRecordResponse);
+            }
+            catch (NoResultsException nrException)
+            {
+                return Ok(nrException.Message);
             }
             catch (Exception e)
             {

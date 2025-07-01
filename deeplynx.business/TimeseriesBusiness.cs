@@ -1,8 +1,10 @@
 using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
@@ -196,7 +198,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns></returns>
-    public async Task<List<Dictionary<string, object?>>> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
+    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
     {
         var resultTable = new DataTable();
         await using var duckDbConnection = GetReadOnlyDuckDbConnection();
@@ -204,32 +206,23 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         
         await using var command = duckDbConnection.CreateCommand();
         command.CommandText = request.Query;
-        await using var reader = await command.ExecuteReaderAsync();
+        await using var reader = command.ExecuteReader();
         
         if (!reader.HasRows)
         {
-            var noResultList = new List<Dictionary<string, object?>>
-            {
-                new()
-                {
-                    { "status", "no rows matching query" }
-                }
-            };
-
-            return noResultList;
+            throw new NoResultsException("Empty query results, no report needed");
         }
+        
         resultTable.Load(reader);
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
         
-        var preview = DataTableToPreview(resultTable);
         var reportClass = await GetClassInfo(projectId, "Report");
         var recordRequest = new RecordRequestDto 
         {
             Properties = new JsonObject
             {
                 ["status"] = Status.InProgress,
-                ["preview"] = preview,
                 ["query"] = request.Query
             },
             Name = fileName,
@@ -254,7 +247,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Completed,
-                    ["preview"] = preview.DeepClone(),
                     ["query"] = request.Query
                 };
                 var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
@@ -275,7 +267,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Failed,
-                    ["preview"] = preview.DeepClone(),
                     ["query"] = request.Query
                 };
                 var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
@@ -293,53 +284,54 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 throw new Exception("Failed while writing report to csv and postgres");
             }
         });
-        var result = DataTableToDictionary(resultTable);
-        
-        
-        return result;
+        return recordResponse;
     }
+    
+    //todo: Determine how to structure query result depending on how UI needs it. This function will be commented out for now
     
     /// <summary>
     /// Makes a JSON like response from the table. This will be replaced by a link to the csv later.
     /// </summary>
     /// <param name="dt"> data table with response data</param>
     /// <returns></returns>
-    private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
-    { 
-        var preview = new List<Dictionary<string, object?>>();
-        foreach (DataRow row in dt.Rows)
-        {
-            var rowDict = new Dictionary<string, object?>();
-            foreach (DataColumn column in dt.Columns)
-            {
-                rowDict[column.ColumnName] = row.ItemArray[column.Ordinal];
-            }
-            preview.Add(rowDict);
-        }
-        return preview;
-    }
-
-    private JsonObject DataTableToPreview(DataTable dt)
-    {
-        var result = new JsonObject();
-
-        foreach (DataColumn column in dt.Columns)
-        {
-            result[column.ColumnName] = new JsonArray();
-        }
-
-        var maxRows = Math.Min(5, dt.Rows.Count);
-        for (var i = 0; i < maxRows; i++)
-        {
-            var row = dt.Rows[i];
-            foreach (DataColumn column in dt.Columns)
-            {
-                ((JsonArray)result[column.ColumnName]).Add(row[column] == DBNull.Value ? null : row[column]);
-            }
-        }
-
-        return result;
-    }
+    // private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
+    // { 
+    //     var preview = new List<Dictionary<string, object?>>();
+    //     foreach (DataRow row in dt.Rows)
+    //     {
+    //         var rowDict = new Dictionary<string, object?>();
+    //         foreach (DataColumn column in dt.Columns)
+    //         {
+    //             rowDict[column.ColumnName] = row.ItemArray[column.Ordinal];
+    //         }
+    //         preview.Add(rowDict);
+    //     }
+    //     return preview;
+    // }
+    
+    //todo: Determine how to structure preview depending on how UI needs it. This function will be commented out for now
+    
+    // private JsonObject DataTableToPreview(DataTable dt)
+    // {
+    //     var result = new JsonObject();
+    //
+    //     foreach (DataColumn column in dt.Columns)
+    //     {
+    //         result[column.ColumnName] = new JsonArray();
+    //     }
+    //
+    //     var maxRows = Math.Min(5, dt.Rows.Count);
+    //     for (var i = 0; i < maxRows; i++)
+    //     {
+    //         var row = dt.Rows[i];
+    //         foreach (DataColumn column in dt.Columns)
+    //         {
+    //             ((JsonArray)result[column.ColumnName]).Add(row[column] == DBNull.Value ? null : row[column]);
+    //         }
+    //     }
+    //
+    //     return result;
+    // }
     
     /// <summary>
     /// Converts a data table to csv.
