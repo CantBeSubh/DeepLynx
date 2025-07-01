@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all projects
+        /// Get all projects
         /// </summary>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
@@ -41,7 +41,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific project by ID
+        /// Get a project
         /// </summary>
         /// <param name="projectId">THe ID by which to retrieve the project</param>
         /// <returns>The given project to return</returns>
@@ -62,7 +62,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Creates a new project based on the data transfer object supplied.
+        /// Create a project
         /// </summary>
         /// <param name="dto">A data transfer object with details on the new project to be created.</param>
         /// <returns>The new project which was just created.</returns>
@@ -83,7 +83,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing project by ID
+        /// Update a project
         /// </summary>
         /// <param name="projectId">The ID of the project to update</param>
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
@@ -105,7 +105,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Delete a project by ID. This also cascades to downstream dependents.
+        /// Delete a project
         /// </summary>
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
@@ -126,7 +126,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Archive (soft delete) a project by ID. This also cascades to downstream dependents.
+        /// Archive a project
         /// </summary>
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
@@ -147,7 +147,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Retrieve stats for a given project
+        /// Get project stats 
         /// </summary>
         /// <param name="projectId">ID of the project to display stats about.</param>
         /// <returns>Project stats</returns>

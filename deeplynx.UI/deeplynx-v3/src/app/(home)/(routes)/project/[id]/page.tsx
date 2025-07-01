@@ -1,65 +1,122 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { sampleProjectData } from "@/app/(home)/dummy_data/data";
+import { sampleProjectData, peopleData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
-import { ProjectsList } from "@/app/(home)/types/types";
+import { Column, ProjectsList } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import Link from "next/link";
+import Tabs from "@/app/(home)/components/Tabs";
+import GenericTable from "@/app/(home)/components/GenericTable";
+import AvatarCell from "@/app/(home)/components/Avatar";
+import { format } from "date-fns";
+
+type PopularTable = {
+  id: number;
+  name: string;
+  image: string;
+  nickname: string;
+  visibility: string;
+};
 
 const ProjectDetailPage = () => {
-  // State to manage the project name and mounting status
-  const [projectName, setProjectName] = useState<string>(""); // Initialize project name as an empty string
-  const [hasMounted, setHasMounted] = useState(false); // State to check if the component has mounted
-  const params = useParams();
-  const projectId = params?.id as string;
-
+  const { id } = useParams();
+  const projectId = id?.toString();
   const [project, setProject] = useState<ProjectsList | null>(null);
+  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
 
-  // Effect to run on component mount
   useEffect(() => {
-    if (projectId) {
-      const found = sampleProjectData.find((p) => p.id === projectId);
-      setProject(found || null);
-    }
-  }, [projectId]);
+    if (!hasLoaded || !projectId) return;
 
-  // If the component has not mounted yet, return null to avoid rendering, i do this to try and control the Hydration of pages ... its a console error
-  if (!project) return <p className="p-4">Loading project ...</p>;
+    const found = sampleProjectData.find((p) => p.id === projectId);
+
+    if (!found) return;
+
+    setProject((prev) => (prev?.id === found.id ? prev : found));
+
+    if (found.id !== project?.id) {
+      setProjectSession({ projectId: found.id, projectName: found.name });
+    }
+  }, [hasLoaded, projectId, project, setProjectSession]);
+
+  const popular_table_columns: Column<PopularTable>[] = [
+    {
+      header: "Created by",
+      cell: (row) => <AvatarCell name={row.name} image={row.image} />,
+    },
+    {
+      header: "Search nickname",
+      data: "nickname",
+    },
+    {
+      header: "Visibility",
+      data: "visibility",
+    },
+  ];
+
+  const tabData = [
+    {
+      label: "Recent",
+      content: <GenericTable columns={[]} data={[]} />,
+    },
+    {
+      label: "Popular",
+      content: (
+        <GenericTable
+          columns={popular_table_columns}
+          data={peopleData}
+          enablePagination
+          rowsPerPage={5}
+        />
+      ),
+    },
+    {
+      label: "My Searchs",
+      content: <></>,
+    },
+  ];
+
+  if (!hasLoaded) return <p className="p-4">Loading session...</p>;
+  if (!project) return <p className="p-4">No project found.</p>;
 
   return (
     <div>
       <main>
-        {/* Header section */}
-        <div className="flex justify-between items-center text-secondary-content">
-          <h1 className="text-2xl font-bold">Project Name: {project.name}</h1>
+        <div className="text-secondary-content">
+          <h1 className="text-2xl">Project Name: {project.name}</h1>
+          <p className="mt-2 text-base-content">
+            For databases or systems tracking chain reactions and realated data.
+          </p>
+          <p>
+            <strong>Created: </strong>
+            {project?.created &&
+              format(new Date(project.created), "MM/dd/yyyy")}
+          </p>
         </div>
-        <div className="divider"></div> {/* Divider line */}
-        {/* Project Overview Card */}
-        <div className="mb-6">
-          <div className="card w-120 bg-base-200 text-secondary-content card-sm shadow-sm">
-            {" "}
-            {/* Card component for project overview */}
-            <div className="card-body">
-              <h2 className="card-title ">Project Description</h2>
-              {/* Title for project description */}
-              <p>{project.description}</p>
-              <div className="justify-end card-actions">
-                <button className="btn btn-accent btn-outline btn-xs">
-                  Edit
-                </button>{" "}
-                {/* Button to edit project details */}
+
+        <div className="divider"></div>
+
+        <div className="flex w-full">
+          <div className="w-full md:w-1/2 pr-4">
+            <LargeSearchBar />
+            <div className="flex justify-end">
+              <Link
+                href="#"
+                className="text-sm underline text-secondary/70 mr-3 hover:text-primary mt-1"
+              >
+                Advanced Search
+              </Link>
+            </div>
+            <div className="card shadow-lg mt-3">
+              <div className="card-body">
+                <h2 className="card-title">Seaved Searchs</h2>
+                <Tabs tabs={tabData} className="tabs tabs-border" />
               </div>
             </div>
           </div>
+          <div>Other half here: 👇</div>
         </div>
-        {/* Section for displaying personnel data */}
-        <div>
-          <h2 className="text-lg font-semibold mb-4 text-secondary-content">
-            Personnel
-          </h2>{" "}
-          {/* Title for personnel section */}
-          <div className="divider"></div> {/* Divider line */}
-        </div>
-        {/* TODO: Data Management? (Placeholder for future implementation) */}
       </main>
     </div>
   );

@@ -35,4 +35,5 @@ export type ProjectsList = {
     name: string;
     description: string;
     lastViewed: string;
-  }
+    created: string;
+  };

@@ -275,7 +275,15 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 if (column == null)
                     sbData.Append(",");
                 else
-                    sbData.Append("\"" + column.ToString().Replace("\"", "\"\"") + "\",");
+                {
+                    string stringColumnValue;
+                    if (column is DateTime dateTimeValue) {
+                        stringColumnValue = dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
+                    } else {
+                        stringColumnValue = $"{column}";
+                    }
+                    sbData.Append("\"" + stringColumnValue.Replace("\"", "\"\"") + "\",");
+                }   
             }
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
@@ -310,7 +318,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await using var command = duckDbConnection.CreateCommand();
 
-        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}'); ";
+        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
         var executeNonQuery = command.ExecuteNonQuery();
     }
 

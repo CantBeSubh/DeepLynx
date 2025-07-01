@@ -267,24 +267,57 @@ const GenericTable = <T extends object>({
           </tr>
         </thead>
         <tbody>
-          {currentData.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className={
-                typeof rowClassName === "function"
-                  ? rowClassName(row, rowIndex)
-                  : rowClassName || "hover:bg-base-200 bg-base-100"
-              }
-            >
-              {columns.map((column, colIndex) => (
-                <td key={colIndex} className="text-base-content">
-                  {column.cell
-                    ? column.cell(row)
-                    : (row[column.data as keyof T] as React.ReactNode)}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {currentData.map((row, rowIndex) => {
+            const isPrivate = row["visibility" as keyof T] === "Private";
+            const rowId = row["id" as keyof T];
+            const key =
+              typeof rowId === "string" || typeof rowId === "number"
+                ? rowId
+                : rowIndex;
+            return (
+              <tr
+                key={key}
+                className={`${
+                  typeof rowClassName === "function"
+                    ? rowClassName(row, rowIndex)
+                    : rowClassName || ""
+                } ${
+                  isPrivate
+                    ? "printer-events-none opacity-60"
+                    : "hover:bg-base-200 bg-base-100"
+                }`}
+              >
+                {columns.map((column, colIndex) => (
+                  <td key={colIndex} className="text-base-content">
+                    {column.cell
+                      ? column.cell(row)
+                      : (row[column.data as keyof T] as React.ReactNode)}
+                  </td>
+                ))}
+                {isPrivate && (
+                  <td
+                    className="text-right pr-4 text-secondary"
+                    title="Private - request access"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                      />
+                    </svg>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       {enablePagination && filteredData.length > rowsPerPage && (

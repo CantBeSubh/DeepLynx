@@ -15,10 +15,10 @@ namespace deeplynx.api.Controllers
             _classBusiness = classBusiness;
         }
         /// <summary>
-        /// Get all classes from DB
+        /// Get all classes
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
         public async Task<IActionResult> GetAllClasses(long projectId)
         {
@@ -38,9 +38,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="classId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="classId">The ID of the class to retrieve</param>
+        /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
         public async Task<IActionResult> GetClass(long projectId, long classId)
         {
@@ -62,8 +62,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dto"></param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="dto">The request DTO for classes</param>
         /// <returns></returns>
         [HttpPost("CreateClass")]
         public async Task<IActionResult> CreateClass(long projectId,
@@ -81,7 +81,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Update a class
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// /// <param name="classId">The ID of the class to update</param>
+        /// <param name="dto"></param>
+        /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}")]
         public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
@@ -99,7 +106,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific class by its ID.
+        /// Deletes a class.
         /// </summary>
         /// <param name="classId">The ID of the class to delete.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -121,7 +128,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific class by its ID.
+        /// Archives a class.
         /// </summary>
         /// <param name="classId">The ID of the class to archive.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
