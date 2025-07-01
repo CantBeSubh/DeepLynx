@@ -388,7 +388,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     public async Task<List<Dictionary<string, object?>>> GetAllTableRecords(string tableName)
     {
         var resultTable = new DataTable();
-        using var duckDBConnection = GetDuckDbConnection();
+        using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
@@ -407,7 +407,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     public async Task<List<Dictionary<string, object?>>> QueryEveryNRows(int rowNumber, string tableName)
     {
         var resultTable = new DataTable();
-        using var duckDBConnection = GetDuckDbConnection();
+        using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 

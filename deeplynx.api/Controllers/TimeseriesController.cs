@@ -145,7 +145,7 @@ namespace deeplynx.api.Controllers
         /// <param name="rowNum"></param>
         /// <param name="tableName"></param>
         /// <returns></returns>
-        [HttpGet("get-rows/{rowNum}/{tableName}")]
+        [HttpGet("get-n-rows/{rowNum}/{tableName}")]
         public async Task<IActionResult> QueryEveryNRows([FromRoute] int rowNum, [FromRoute] string tableName)
         {
             try
@@ -187,17 +187,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        [HttpGet("query")]
-        public async Task<IActionResult> UserInputQuery([FromForm] string query)
+        [HttpGet("query/{projectId}/{dataSourceId}")]
+        public async Task<IActionResult> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.RawQueryTimeseries(query);
+                var timeseriesUploadRecord = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
             {
-                var message = $"An error occurred while processing query Error: {e}\n\n {query}";
+                var message = $"An error occurred while processing query Error: {e}\n\n {request}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, e);
             }
