@@ -25,9 +25,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     
     private static class Status
     {
-        public static string Failed { get; } = "Failed";
-        public static string Completed { get; } = "Completed";
-        public static string InProgress { get; } = "In Progress";
+        public static string Failed { get; } = "failed";
+        public static string Completed { get; } = "completed";
+        public static string InProgress { get; } = "in progress";
     }
     
     /// <summary>
@@ -66,7 +66,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await CreateTimeseriesTable(tableName, filePath);
         
-        var recordClass = await GetClassInfo(projectId);
+        var recordClass = await GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
@@ -167,7 +167,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await CreateTimeseriesTable(tableName, finalFilePath);
         
-        var recordClass = await GetClassInfo(projectId);
+        var recordClass = await GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
@@ -206,8 +206,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         command.CommandText = request.Query;
         await using var reader = await command.ExecuteReaderAsync();
         
-        // return empty list if no rows returned
-        // todo: add a report/record with a status of something like "Empty response" 
         if (!reader.HasRows)
         {
             var noResultList = new List<Dictionary<string, object?>>
@@ -225,6 +223,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
         
         var preview = DataTableToPreview(resultTable);
+        var reportClass = await GetClassInfo(projectId, "Report");
         var recordRequest = new RecordRequestDto 
         {
             Properties = new JsonObject
@@ -235,6 +234,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             },
             Name = fileName,
             OriginalId = queryId,
+            ClassId = reportClass.Id,
+            ClassName = reportClass.Name
         };
 
         var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
@@ -242,32 +243,14 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
-        // todo:
-        // 1. modify task to work with db connections. Need to create the tasks own scope as shown in the 2nd
-        // example in the stack overflow conversation above.
-        // 2. Write report record to postgres
-        // 3. Write csv to object storage
-        // 4. get the scope working
+        // todo: Write csv to object storage
         Task.Run(async() =>
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
             try
-            { 
+            {
                 DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
-                // var recordRequestCompleted = new RecordRequestDto 
-                // {
-                //     Properties = new JsonObject
-                //     {
-                //         ["status"] = Status.Completed,
-                //         ["preview"] = preview,
-                //         ["query"] = request.Query
-                //     },
-                //     Name = fileName,
-                //     OriginalId = queryId,
-                // };
-                // await _recordBusiness.UpdateRecord(long.Parse(projectId), recordResponse.Id, recordRequestCompleted);
-
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Completed,
@@ -282,28 +265,13 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
                 record.Properties = properties.ToString();
                 record.Uri = "object://" + fileName;
+                record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
-                Console.WriteLine("UPDATED CSV!");
             }
             catch (Exception e)
             {
-                // var recordRequestFailed = new RecordRequestDto 
-                // {
-                //     Properties = new JsonObject
-                //     {
-                //         ["status"] = Status.Failed,
-                //         ["preview"] = preview,
-                //         ["query"] = request.Query
-                //     },
-                //     Name = fileName,
-                //     OriginalId = queryId,
-                // };
-                // await _recordBusiness.UpdateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequestFailed);
-
-                // var recordBusiness = new RecordBusiness(backgroundContext, new EdgeBusiness(backgroundContext));
-                
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Failed,
@@ -320,6 +288,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
+                
                 NLog.LogManager.GetCurrentClassLogger().Error(e);
                 throw new Exception("Failed while writing report to csv and postgres");
             }
@@ -450,10 +419,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     private async Task<JsonArray> GetColumnsFromDb(string tableName)
     {
         var columns = new JsonArray();
-        await using var duckDBConnection = GetDuckDbConnection();
-        await duckDBConnection.OpenAsync();
+        await using var duckDbConnection = GetDuckDbConnection();
+        await duckDbConnection.OpenAsync();
 
-        await using var command = duckDBConnection.CreateCommand();
+        await using var command = duckDbConnection.CreateCommand();
         command.CommandText = $"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tableName}';";
         
         await using var reader = command.ExecuteReader();
@@ -479,22 +448,22 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching</param>
     /// <returns></returns>
-    private async Task<ClassResponseDto> GetClassInfo(string projectId)
+    private async Task<ClassResponseDto> GetClassInfo(string projectId, string className)
     {
-        var timeseriesClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == "Timeseries" && c.ProjectId == long.Parse(projectId));
+        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == long.Parse(projectId));
 
-        if (timeseriesClass != null)
+        if (projectClass != null)
         {
             return new ClassResponseDto()
             {
-                Id = timeseriesClass.Id,
-                Name = timeseriesClass.Name,
+                Id = projectClass.Id,
+                Name = projectClass.Name,
             };
         }
         
         var classDto = new ClassRequestDto()
         {
-            Name = "Timeseries"
+            Name = className
         };
 
         return await _classBusiness.CreateClass(long.Parse(projectId), classDto);
