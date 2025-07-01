@@ -19,7 +19,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     private readonly IClassBusiness _classBusiness = classBusiness;
     private const string UploadFolderPath = "uploads";
     private const string QueryFolderPath = "reports";
-    
+
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
     /// </summary>
@@ -55,11 +55,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, filePath);
-        
+
         var recordClass = await GetClassInfo(projectId);
         var columns = await GetColumnsFromDb(tableName);
-            
-        var recordRequest = new RecordRequestDto 
+
+        var recordRequest = new RecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -131,7 +131,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var tableName = request.UploadId + "_" + request.FileName;
         var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId,
             request.UploadId + "_" + request.FileName);
-        var uri = "duckdb://" + tableName; 
+        var uri = "duckdb://" + tableName;
 
         await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
         {
@@ -156,11 +156,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, finalFilePath);
-        
+
         var recordClass = await GetClassInfo(projectId);
         var columns = await GetColumnsFromDb(tableName);
-            
-        var recordRequest = new RecordRequestDto 
+
+        var recordRequest = new RecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -177,7 +177,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
     }
-    
+
     /// <summary>
     /// This allows the user to query timeseries data in duckDb. Creates the command using an sql string
     /// The connection is read only so any write operations will be blocked.
@@ -191,11 +191,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var resultTable = new DataTable();
         await using var duckDbConnection = GetReadOnlyDuckDbConnection();
         await duckDbConnection.OpenAsync();
-        
+
         await using var command = duckDbConnection.CreateCommand();
         command.CommandText = request.Query;
         await using var reader = await command.ExecuteReaderAsync();
-        
+
         // return empty list if no rows returned
         // todo: add a report/record with a status of something like "Empty response" 
         if (!reader.HasRows)
@@ -211,7 +211,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             return noResultList;
         }
         resultTable.Load(reader);
-        
+
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: modify task to work with db connections. Need to create the tasks own scope as shown in the 2nd
@@ -219,21 +219,21 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // Write report record to postgres
         // Write csv to object storage
         Task.Run(() =>
-        { 
+        {
             DataTableToCsv(resultTable, projectId, dataSourceId);
         });
         var result = DataTableToDictionary(resultTable);
-        
+
         return result;
     }
-    
+
     /// <summary>
     /// Makes a JSON like response from the table. This will be replaced by a link to the csv later.
     /// </summary>
     /// <param name="dt"> data table with response data</param>
     /// <returns></returns>
     private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
-    { 
+    {
         var result = new List<Dictionary<string, object?>>();
         foreach (DataRow row in dt.Rows)
         {
@@ -246,7 +246,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         }
         return result;
     }
-    
+
     /// <summary>
     /// Converts a data table to csv.
     /// </summary>
@@ -254,10 +254,12 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId) {
+    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId)
+    {
         StringBuilder sbData = new StringBuilder();
-        
-        foreach (var col in dataTable.Columns) {
+
+        foreach (var col in dataTable.Columns)
+        {
             if (col == null)
                 sbData.Append(",");
             else
@@ -266,8 +268,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
 
-        foreach (DataRow dr in dataTable.Rows) {
-            foreach (var column in dr.ItemArray) {
+        foreach (DataRow dr in dataTable.Rows)
+        {
+            foreach (var column in dr.ItemArray)
+            {
                 if (column == null)
                     sbData.Append(",");
                 else
@@ -275,7 +279,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             }
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
-        
+
         var queryId = Guid.NewGuid().ToString();
         var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, queryId + "_" + "report.csv");
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
@@ -287,7 +291,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     {
         return new DuckDBConnection("Data Source=TimeSeries.db");
     }
-    
+
     private static DuckDBConnection GetReadOnlyDuckDbConnection()
     {
         return new DuckDBConnection("Data Source=TimeSeries.db;ACCESS_MODE=READ_ONLY");
@@ -309,7 +313,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}'); ";
         var executeNonQuery = command.ExecuteNonQuery();
     }
-    
+
     /// <summary>
     /// Gets all the column names and types from the table
     /// </summary>
@@ -323,14 +327,14 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await using var command = duckDBConnection.CreateCommand();
         command.CommandText = $"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tableName}';";
-        
+
         await using var reader = command.ExecuteReader();
 
         while (reader.Read())
         {
             var columnName = reader[0].ToString();
             var columnType = reader[1].ToString();
-            
+
             var columnObject = new JsonObject
             {
                 ["name"] = columnName,
@@ -359,7 +363,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 Name = timeseriesClass.Name,
             };
         }
-        
+
         var classDto = new ClassRequestDto()
         {
             Name = "Timeseries"
@@ -369,91 +373,22 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     }
 
     /// <summary>
-    /// Formats data from DuckDB reader to a 2D array with column names
-    /// Modified from https://duckdb.net/docs/getting-started.html
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <returns>A 2D array with column names</returns>
-    public List<List<dynamic>> OrganizeQueryData(DuckDBDataReader reader)
-    {
-        List<List<dynamic>> tableData = [];
-        try
-        {
-            List<dynamic> columns = [];
-            for (var index = 0; index < reader.FieldCount; index++)
-            {
-                string column = reader.GetName(index);
-                columns.Add(column);
-            }
-
-            tableData.Add(columns);
-
-            while (reader.Read())
-            {
-                for (int ordinal = 0; ordinal < reader.FieldCount; ordinal += columns.Count)
-                {
-                    List<dynamic> data = [];
-                    for (int i = 0; i < columns.Count; i++)
-                    {
-                        int newOrdinal = ordinal + i;
-
-                        if (reader.IsDBNull(ordinal))
-                        {
-                            //Console.WriteLine("NULL");
-                            data.Add(null);
-                        }
-                        else
-                        {
-                            data.Add(reader.GetValue(newOrdinal));
-                        }
-                    }
-                    tableData.Add(data);
-                }
-            }
-        }
-        catch (DuckDBException ex)
-        {
-            // Ex from bad query etc.
-            //catch ex
-            tableData = [];
-        }
-
-        return tableData;
-    }
-
-    /// <summary>
-    /// Takes in raw query and runs it
-    /// </summary>
-    /// <param name="query">The duck db query to run</param>
-    /// <returns>Data</returns>
-    public async Task<List<List<dynamic>>> RawQueryTimeseries(string query)
-    {
-        using var duckDBConnection = GetDuckDbConnection();
-        await duckDBConnection.OpenAsync();
-        using var command = duckDBConnection.CreateCommand();
-
-        // Sanitize query
-        command.CommandText = query;
-
-        using DuckDBDataReader reader = command.ExecuteReader();
-        return OrganizeQueryData(reader);
-    }
-
-    /// <summary>
     /// Generic select all for given table
     /// </summary>
     /// <param name="timeseriesResponseDto">Table object</param>
     /// <returns>All data for given table</returns>
-    public async Task<List<List<dynamic>>> GetAllTableRecords(string tableName)
+    public async Task<List<Dictionary<string, object?>>> GetAllTableRecords(string tableName)
     {
+        var resultTable = new DataTable();
         using var duckDBConnection = GetDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
         command.CommandText = $"SELECT * FROM '{tableName}'; ";
         using var reader = command.ExecuteReader();
+        resultTable.Load(reader);
 
-        return OrganizeQueryData(reader);
+        return DataTableToDictionary(resultTable);
     }
 
     /// <summary>
@@ -461,8 +396,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// </summary>
     /// <param name="query">The duck db query to run</param>
     /// <returns>Data</returns>
-    public async Task<List<List<dynamic>>> QueryEveryNRows(int rowNumber, string tableName)
+    public async Task<List<Dictionary<string, object?>>> QueryEveryNRows(int rowNumber, string tableName)
     {
+        var resultTable = new DataTable();
         using var duckDBConnection = GetDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
@@ -481,7 +417,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         command.Parameters.Add(new DuckDBParameter("rowNum", rowNumber));
 
         using var reader = command.ExecuteReader();
+        resultTable.Load(reader);
 
-        return OrganizeQueryData(reader);
+        return DataTableToDictionary(resultTable);
     }
 }

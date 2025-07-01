@@ -21,10 +21,8 @@ namespace deeplynx.interfaces
 
         Task<List<Dictionary<string, object?>>> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
 
-        Task<List<List<dynamic>>> QueryEveryNRows(int rowNumber, string tableName);
+        Task<List<Dictionary<string, object?>>> QueryEveryNRows(int rowNumber, string tableName);
 
-        Task<List<List<dynamic>>> GetAllTableRecords(string tableName);
-
-        Task<List<List<dynamic>>> RawQueryTimeseries(string query);
+        Task<List<Dictionary<string, object?>>> GetAllTableRecords(string tableName);
     }
 }
