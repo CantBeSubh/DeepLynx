@@ -4,6 +4,16 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Builder; 
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,10 +82,20 @@ builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
-builder.Services.AddOpenApi();
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer(async (document, context, cancellationToken) =>
+    {
+        document.Info.Version = "v1";
+        document.Info.Title = "DeepLynx Nexus";
+        document.Info.Description = "Hello you have reached deeplynx, please please please work this time I am tired of this";
+    });
+});
 
 var app = builder.Build();
 
+app.UseOpenApi(); 
 
 var customcss = File.ReadAllText("windows95.css");
 app.UseStaticFiles();
@@ -83,8 +103,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
-        // .WithTheme(ScalarTheme.Mars) 
-        .AddMetadata("title", "DeepLynx Nexus")
+        .WithTitle("DeepLynx Nexus API")
+        .AddMetadata("title", "DeepLynx Nexus API")
+        .AddMetadata("version", "1.0.0")
+        .AddMetadata("contact", "{ \"name\": \"API Support\",\n    \"url\": \"http://www.example.com/support\",\n    \"email\": \"support@example.com\"}")
         .WithCustomCss(customcss)
         .AddHeaderContent(@"
             <div class='references-header'>
@@ -114,3 +136,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
