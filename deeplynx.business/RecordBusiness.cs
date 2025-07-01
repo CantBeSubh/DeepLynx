@@ -57,6 +57,7 @@ public class RecordBusiness : IRecordBusiness
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
                 CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
@@ -95,6 +96,7 @@ public class RecordBusiness : IRecordBusiness
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
+            CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
             ArchivedAt = record.ArchivedAt,
@@ -158,6 +160,7 @@ public class RecordBusiness : IRecordBusiness
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
+            CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
         };
@@ -212,6 +215,7 @@ public class RecordBusiness : IRecordBusiness
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
+            CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
         };

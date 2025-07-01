@@ -68,7 +68,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await CreateTimeseriesTable(tableName, filePath);
         
-        var recordClass = await GetClassInfo(projectId, "Timeseries");
+        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
@@ -169,7 +169,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await CreateTimeseriesTable(tableName, finalFilePath);
         
-        var recordClass = await GetClassInfo(projectId, "Timeseries");
+        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
             
         var recordRequest = new RecordRequestDto 
@@ -217,7 +217,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
         
-        var reportClass = await GetClassInfo(projectId, "Report");
+        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new RecordRequestDto 
         {
             Properties = new JsonObject
@@ -239,8 +239,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // todo: Write csv to object storage
         Task.Run(async() =>
         {
+            // creates a background scope to create its own context so that the background task doesn't
+            // have to rely on other contexts that may be destroyed or closed. 
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+            
             try
             {
                 DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
@@ -432,32 +435,5 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             columns.Add(columnObject);
         }
         return columns;
-    }
-
-    /// <summary>
-    /// Gets the timeseries class in the project that we are setting the record in.
-    /// Creates a timeseries class if there is not one already
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching</param>
-    /// <returns></returns>
-    private async Task<ClassResponseDto> GetClassInfo(string projectId, string className)
-    {
-        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == long.Parse(projectId));
-
-        if (projectClass != null)
-        {
-            return new ClassResponseDto()
-            {
-                Id = projectClass.Id,
-                Name = projectClass.Name,
-            };
-        }
-        
-        var classDto = new ClassRequestDto()
-        {
-            Name = className
-        };
-
-        return await _classBusiness.CreateClass(long.Parse(projectId), classDto);
     }
 }
