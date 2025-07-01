@@ -26,9 +26,9 @@ jobs:
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          OKTA_CLIENT_ID: ${{ secrets.OKTA_CLIENT_ID }}
+          OKTA_CLIENT_ID: ${{ var.OKTA_CLIENT_ID }}
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER=: ${{ secrets.OKTA_ISSUER }}
+          OKTA_ISSUER=: ${{ var.OKTA_ISSUER }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
           cd $GITHUB_WORKSPACE
