@@ -1,25 +1,39 @@
+using System.ComponentModel;
 using System.Data;
+using System.Data.Common;
 using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System.ComponentModel;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness) : ITimeseriesBusiness
+public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness, [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
+    private IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+    
     private const string UploadFolderPath = "uploads";
     private const string QueryFolderPath = "reports";
-
+    
+    private static class Status
+    {
+        public static string Failed { get; } = "failed";
+        public static string Completed { get; } = "completed";
+        public static string InProgress { get; } = "in progress";
+    }
+    
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
     /// </summary>
@@ -55,8 +69,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, filePath);
-
-        var recordClass = await GetClassInfo(projectId);
+        
+        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
         var recordRequest = new RecordRequestDto
@@ -156,8 +170,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, finalFilePath);
-
-        var recordClass = await GetClassInfo(projectId);
+        
+        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
         var recordRequest = new RecordRequestDto
@@ -186,7 +200,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns></returns>
-    public async Task<List<Dictionary<string, object?>>> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
+    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
     {
         var resultTable = new DataTable();
         await using var duckDbConnection = GetReadOnlyDuckDbConnection();
@@ -194,59 +208,136 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         await using var command = duckDbConnection.CreateCommand();
         command.CommandText = request.Query;
-        await using var reader = await command.ExecuteReaderAsync();
-
-        // return empty list if no rows returned
-        // todo: add a report/record with a status of something like "Empty response" 
+        await using var reader = command.ExecuteReader();
+        
         if (!reader.HasRows)
         {
-            var noResultList = new List<Dictionary<string, object?>>
-            {
-                new()
-                {
-                    { "status", "no rows matching query" }
-                }
-            };
-
-            return noResultList;
+            throw new NoResultsException("Empty query results, no report needed");
         }
+        
         resultTable.Load(reader);
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+        
+        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var recordRequest = new RecordRequestDto 
+        {
+            Properties = new JsonObject
+            {
+                ["status"] = Status.InProgress,
+                ["query"] = request.Query
+            },
+            Name = fileName,
+            OriginalId = queryId,
+            ClassId = reportClass.Id,
+            ClassName = reportClass.Name
+        };
 
+        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        
+        
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
-        // todo: modify task to work with db connections. Need to create the tasks own scope as shown in the 2nd
-        // example in the stack overflow conversation above.
-        // Write report record to postgres
-        // Write csv to object storage
-        Task.Run(() =>
+        // todo: Write csv to object storage
+        Task.Run(async() =>
         {
-            DataTableToCsv(resultTable, projectId, dataSourceId);
+            // creates a background scope to create its own context so that the background task doesn't
+            // have to rely on other contexts that may be destroyed or closed. 
+            using var scope = _serviceScopeFactory.CreateScope();
+            var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+            
+            try
+            {
+                DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
+                var properties = new JsonObject
+                {
+                    ["status"] = Status.Completed,
+                    ["query"] = request.Query
+                };
+                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                {
+                    throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
+                }
+
+                record.Properties = properties.ToString();
+                record.Uri = "object://" + fileName;
+                record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                
+                backgroundContext.Records.Update(record);
+                await backgroundContext.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                var properties = new JsonObject
+                {
+                    ["status"] = Status.Failed,
+                    ["query"] = request.Query
+                };
+                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                {
+                    throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
+                }
+
+                record.Properties = properties.ToString();
+                
+                backgroundContext.Records.Update(record);
+                await backgroundContext.SaveChangesAsync();
+                
+                NLog.LogManager.GetCurrentClassLogger().Error(e);
+                throw new Exception("Failed while writing report to csv and postgres");
+            }
         });
-        var result = DataTableToDictionary(resultTable);
-
-        return result;
+        return recordResponse;
     }
-
+    
+    //todo: Determine how to structure query result depending on how UI needs it. This function will be commented out for now
+    
     /// <summary>
     /// Makes a JSON like response from the table. This will be replaced by a link to the csv later.
     /// </summary>
     /// <param name="dt"> data table with response data</param>
     /// <returns></returns>
-    private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
-    {
-        var result = new List<Dictionary<string, object?>>();
-        foreach (DataRow row in dt.Rows)
-        {
-            var rowDict = new Dictionary<string, object?>();
-            foreach (DataColumn column in dt.Columns)
-            {
-                rowDict[column.ColumnName] = row.ItemArray[column.Ordinal];
-            }
-            result.Add(rowDict);
-        }
-        return result;
-    }
-
+    // private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
+    // { 
+    //     var preview = new List<Dictionary<string, object?>>();
+    //     foreach (DataRow row in dt.Rows)
+    //     {
+    //         var rowDict = new Dictionary<string, object?>();
+    //         foreach (DataColumn column in dt.Columns)
+    //         {
+    //             rowDict[column.ColumnName] = row.ItemArray[column.Ordinal];
+    //         }
+    //         preview.Add(rowDict);
+    //     }
+    //     return preview;
+    // }
+    
+    //todo: Determine how to structure preview depending on how UI needs it. This function will be commented out for now
+    
+    // private JsonObject DataTableToPreview(DataTable dt)
+    // {
+    //     var result = new JsonObject();
+    //
+    //     foreach (DataColumn column in dt.Columns)
+    //     {
+    //         result[column.ColumnName] = new JsonArray();
+    //     }
+    //
+    //     var maxRows = Math.Min(5, dt.Rows.Count);
+    //     for (var i = 0; i < maxRows; i++)
+    //     {
+    //         var row = dt.Rows[i];
+    //         foreach (DataColumn column in dt.Columns)
+    //         {
+    //             ((JsonArray)result[column.ColumnName]).Add(row[column] == DBNull.Value ? null : row[column]);
+    //         }
+    //     }
+    //
+    //     return result;
+    // }
+    
     /// <summary>
     /// Converts a data table to csv.
     /// </summary>
@@ -254,8 +345,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId)
-    {
+    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId, string fileName) {
         StringBuilder sbData = new StringBuilder();
 
         foreach (var col in dataTable.Columns)
@@ -287,9 +377,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             }
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
-
-        var queryId = Guid.NewGuid().ToString();
-        var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, queryId + "_" + "report.csv");
+        
+        var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
         File.WriteAllText(filePath, sbData.ToString());
@@ -330,10 +419,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     private async Task<JsonArray> GetColumnsFromDb(string tableName)
     {
         var columns = new JsonArray();
-        await using var duckDBConnection = GetDuckDbConnection();
-        await duckDBConnection.OpenAsync();
+        await using var duckDbConnection = GetDuckDbConnection();
+        await duckDbConnection.OpenAsync();
 
-        await using var command = duckDBConnection.CreateCommand();
+        await using var command = duckDbConnection.CreateCommand();
         command.CommandText = $"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tableName}';";
 
         await using var reader = command.ExecuteReader();
