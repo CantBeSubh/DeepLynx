@@ -104,9 +104,9 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasOne(d => d.Class).WithMany(p => p.Records)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("records_class_id_fkey");
+            entity.HasOne(d => d.Class).WithMany(p => p.Records).HasConstraintName("records_class_id_fkey");
+
+            entity.HasOne(d => d.RecordMapping).WithMany(p => p.Records).HasConstraintName("records_mapping_id_fkey");
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 

@@ -14,6 +14,7 @@ namespace deeplynx.datalayer.Models;
 [Index("Name", Name = "idx_records_name")]
 [Index("OriginalId", Name = "idx_records_original_id")]
 [Index("ProjectId", Name = "idx_records_project_id")]
+[Index("MappingId", Name="idx_records_mapping_id")]
 public partial class Record
 {
     [Key]
@@ -37,6 +38,9 @@ public partial class Record
 
     [Column("class_id")]
     public long? ClassId { get; set; }
+    
+    [Column("mapping_id")]
+    public long? MappingId { get; set; }
 
     [Column("class_name")]
     public string? ClassName { get; set; }
@@ -65,6 +69,10 @@ public partial class Record
     [ForeignKey("ClassId")]
     [InverseProperty("Records")]
     public virtual Class? Class { get; set; }
+    
+    [ForeignKey("MappingId")]
+    [InverseProperty("Records")]
+    public virtual RecordMapping? RecordMapping { get; set; }
 
     [ForeignKey("DataSourceId")]
     [InverseProperty("Records")]
