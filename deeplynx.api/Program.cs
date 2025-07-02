@@ -47,7 +47,6 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("profile");
     });
 
-var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.xml");
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
@@ -82,31 +81,33 @@ builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
-
+var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer(async (document, context, cancellationToken) =>
     {
         document.Info.Version = "v1";
         document.Info.Title = "DeepLynx Nexus";
-        document.Info.Description = "Hello you have reached deeplynx, please please please work this time I am tired of this";
+        document.Info.Description =
+            "DeepLynx Nexus Api Documentation";
     });
+    
+    
 });
 
 var app = builder.Build();
 
 app.UseOpenApi(); 
 
-var customcss = File.ReadAllText("windows95.css");
+var customcss = File.ReadAllText("moon.css");
 app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
+        .WithDarkMode(true)
+        .WithTheme(ScalarTheme.Kepler)
         .WithTitle("DeepLynx Nexus API")
-        .AddMetadata("title", "DeepLynx Nexus API")
-        .AddMetadata("version", "1.0.0")
-        .AddMetadata("contact", "{ \"name\": \"API Support\",\n    \"url\": \"http://www.example.com/support\",\n    \"email\": \"support@example.com\"}")
         .WithCustomCss(customcss)
         .AddHeaderContent(@"
             <div class='references-header'>
@@ -118,7 +119,7 @@ if (app.Environment.IsDevelopment())
                         alt='lynx'
                         class='header-item-logo-image'
                         src='/images/lynx-white.png'
-                        style='height: 50px; position: sticky; z-index: 1000;'>
+                        style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
                     </a>
                   </div>
                 </div>
