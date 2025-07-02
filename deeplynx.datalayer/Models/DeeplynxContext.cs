@@ -64,6 +64,8 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");
 
             entity.HasOne(d => d.Destination).WithMany(p => p.EdgeDestinations).HasConstraintName("edges_destination_id_fkey");
+            
+            entity.HasOne(d => d.EdgeMapping).WithMany(p => p.Edges).HasConstraintName("edges_mapping_id_fkey");
 
             entity.HasOne(d => d.Origin).WithMany(p => p.EdgeOrigins).HasConstraintName("edges_origin_id_fkey");
 

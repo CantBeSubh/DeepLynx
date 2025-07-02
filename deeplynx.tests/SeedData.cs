@@ -706,7 +706,6 @@ public static class SeedData
                 Id = 1,
                 OriginId = 1, // Customer record
                 DestinationId = 2, // Purchase record
-                Properties = @"{""customer_id"":""CUST_001"",""purchase_id"":""PUR_001"",""purchase_date"":""2024-01-15T10:30:00Z"",""purchase_amount"":299.99,""confidence_score"":0.98}",
                 RelationshipId = 1,
                 RelationshipName = "Customer Makes Purchase",
                 DataSourceId = 1,
@@ -722,7 +721,6 @@ public static class SeedData
                 Id = 2,
                 OriginId = 1, // Customer record
                 DestinationId = 3, // Segment record
-                Properties = @"{""customer_id"":""CUST_001"",""segment_id"":""SEG_PREMIUM"",""assignment_date"":""2024-02-01T09:00:00Z"",""segment_score"":0.87,""assignment_reason"":""high_value_purchases""}",
                 RelationshipId = 2,
                 RelationshipName = "Customer Belongs To Segment",
                 DataSourceId = 2,
@@ -740,7 +738,6 @@ public static class SeedData
                 Id = 3,
                 OriginId = 4, // Supplier record
                 DestinationId = 5, // Inventory record
-                Properties = @"{""supplier_id"":""SUP_ABC123"",""inventory_id"":""INV_XYZ789"",""supply_date"":""2024-05-15T08:00:00Z"",""quantity_supplied"":500,""unit_cost"":12.50,""quality_grade"":""A""}",
                 RelationshipId = 4,
                 RelationshipName = "Supplier Provides Inventory",
                 DataSourceId = 3,
@@ -756,7 +753,6 @@ public static class SeedData
                 Id = 4,
                 OriginId = 5, // Inventory record
                 DestinationId = 6, // Warehouse record
-                Properties = @"{""inventory_id"":""INV_XYZ789"",""warehouse_id"":""WH_EAST_001"",""location_zone"":""A-1-3"",""storage_date"":""2024-05-16T10:00:00Z"",""current_quantity"":485}",
                 RelationshipId = 5,
                 RelationshipName = "Inventory Stored In Warehouse",
                 DataSourceId = 4,
@@ -772,7 +768,6 @@ public static class SeedData
                 Id = 5,
                 OriginId = 7, // Shipment record
                 DestinationId = 5, // Inventory record
-                Properties = @"{""shipment_id"":""SHIP_OUT_001"",""inventory_id"":""INV_XYZ789"",""quantity_shipped"":50,""shipment_date"":""2024-06-01T14:30:00Z"",""tracking_number"":""TRK123456789""}",
                 RelationshipId = 6,
                 RelationshipName = "Shipment Contains Inventory",
                 DataSourceId = 4,
@@ -790,7 +785,6 @@ public static class SeedData
                 Id = 6,
                 OriginId = 8, // Legacy User record
                 DestinationId = 9, // Legacy Data record
-                Properties = @"{""legacy_user_id"":""USR_LEG_001"",""legacy_data_id"":""DATA_LEG_001"",""ownership_type"":""primary"",""migration_status"":""completed"",""validation_status"":""passed""}",
                 RelationshipId = 7,
                 RelationshipName = "Legacy User Owns Legacy Data",
                 DataSourceId = 5,

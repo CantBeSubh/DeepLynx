@@ -11,8 +11,6 @@ public class EdgeRequestDto
     [Required]
     public int DestinationId { get; set; }
     
-    public JsonObject? Properties { get; set; }
-    
     public int? RelationshipId { get; set; }
     
     public string? RelationshipName { get; set; }
