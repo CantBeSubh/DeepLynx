@@ -15,10 +15,10 @@ public static class SeedData
         await SeedDataSources(context);
         await SeedTags(context);
         await SeedRelationships(context);
-        await SeedRecords(context);
-        await SeedEdges(context);
         await SeedEdgeMappings(context);
         await SeedRecordMappings(context);
+        await SeedRecords(context);
+        await SeedEdges(context);
     }
 
     // Users
