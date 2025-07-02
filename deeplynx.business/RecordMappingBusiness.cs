@@ -4,11 +4,14 @@ using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
-
+//todo:
+//1. Add dto validator for all methods that use dto
+//2. Check to see if project exists when used in endpoint
 public class RecordMappingBusiness : IRecordMappingBusiness
 {
     private readonly DeeplynxContext _context;
