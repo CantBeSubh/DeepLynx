@@ -1192,5 +1192,258 @@ BEGIN
     VALUES ('20250702210556_UpdateEdgesTable', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records DROP CONSTRAINT records_class_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records DROP CONSTRAINT records_mapping_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges DROP CONSTRAINT edges_relationship_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges DROP CONSTRAINT edges_mapping_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN mapping_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN class_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges ALTER COLUMN mapping_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges ALTER COLUMN relationship_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records ADD CONSTRAINT records_class_id_fkey FOREIGN KEY (class_id) REFERENCES deeplynx.classes (id) ON DELETE RESTRICT;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.records ADD CONSTRAINT records_mapping_id_fkey FOREIGN KEY (mapping_id) REFERENCES deeplynx.record_mappings (id) ON DELETE RESTRICT;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges ADD CONSTRAINT edges_relationship_id_fkey FOREIGN KEY (relationship_id) REFERENCES deeplynx.relationships (id) ON DELETE RESTRICT;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    ALTER TABLE deeplynx.edges ADD CONSTRAINT edges_mapping_id_fkey FOREIGN KEY (mapping_id) REFERENCES deeplynx.edge_mappings (id) ON DELETE RESTRICT;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702220248_FixForeignKeyConstraints') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250702220248_FixForeignKeyConstraints', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    DROP INDEX deeplynx.idx_records_class_name;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.records DROP COLUMN class_name;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.records DROP COLUMN custom_id;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.edges DROP COLUMN relationship_name;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.edges ALTER COLUMN created_at SET DEFAULT (CURRENT_TIMESTAMP);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE TABLE deeplynx.historical_records (
+        id bigint GENERATED BY DEFAULT AS IDENTITY,
+        record_id bigint,
+        uri text,
+        name text,
+        properties jsonb NOT NULL,
+        original_id text,
+        class_id bigint,
+        class_name text,
+        mapping_id bigint,
+        data_source_id bigint NOT NULL,
+        data_source_name bigint NOT NULL,
+        project_id bigint NOT NULL,
+        project_name bigint NOT NULL,
+        tags jsonb NOT NULL,
+        created_by text,
+        created_at timestamp without time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        modified_by text,
+        modified_at timestamp without time zone,
+        archived_at timestamp without time zone,
+        CONSTRAINT historical_records_pkey PRIMARY KEY (id),
+        CONSTRAINT historical_records_record_id_fkey FOREIGN KEY (record_id) REFERENCES deeplynx.records (id) ON DELETE SET NULL
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE TABLE deeplynx.historical_edges (
+        id bigint GENERATED BY DEFAULT AS IDENTITY,
+        edge_id bigint,
+        origin_id bigint NOT NULL,
+        destination_id bigint NOT NULL,
+        relationship_id bigint,
+        relationship_name text,
+        mapping_id bigint,
+        data_source_id bigint NOT NULL,
+        project_id bigint NOT NULL DEFAULT 0,
+        created_by text,
+        created_at timestamp without time zone NOT NULL DEFAULT (CURRENT_TIMESTAMP),
+        modified_by text,
+        modified_at timestamp without time zone,
+        archived_at timestamp without time zone,
+        CONSTRAINT historical_edges_pkey PRIMARY KEY (id),
+        CONSTRAINT historical_edges_destination_id_fkey FOREIGN KEY (destination_id) REFERENCES deeplynx.historical_records (id) ON DELETE CASCADE,
+        CONSTRAINT historical_edges_edge_id_fkey FOREIGN KEY (edge_id) REFERENCES deeplynx.edges (id) ON DELETE SET NULL,
+        CONSTRAINT historical_edges_origin_id_fkey FOREIGN KEY (origin_id) REFERENCES deeplynx.historical_records (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_destination_id ON deeplynx.historical_edges (destination_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_edge_id ON deeplynx.historical_edges (edge_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_id ON deeplynx.historical_edges (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_origin_id ON deeplynx.historical_edges (origin_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_relationship_name ON deeplynx.historical_edges (relationship_name);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_records_class_name ON deeplynx.historical_records (class_name);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_records_id ON deeplynx.historical_records (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_records_properties ON deeplynx.historical_records USING gin (properties);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_records_record_id ON deeplynx.historical_records (record_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250703215341_AddHistoricalRecordsAndEdges') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250703215341_AddHistoricalRecordsAndEdges', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
