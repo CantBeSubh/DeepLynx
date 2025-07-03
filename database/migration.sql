@@ -1113,5 +1113,84 @@ BEGIN
     VALUES ('20250702192420_UpdateDataSource', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    ALTER TABLE deeplynx.records DROP CONSTRAINT records_class_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    ALTER TABLE deeplynx.records ADD mapping_id bigint;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    CREATE INDEX idx_records_mapping_id ON deeplynx.records (mapping_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    ALTER TABLE deeplynx.records ADD CONSTRAINT records_class_id_fkey FOREIGN KEY (class_id) REFERENCES deeplynx.classes (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    ALTER TABLE deeplynx.records ADD CONSTRAINT records_mapping_id_fkey FOREIGN KEY (mapping_id) REFERENCES deeplynx.record_mappings (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702195735_AddRecordMappingForeignKey') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250702195735_AddRecordMappingForeignKey', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702210556_UpdateEdgesTable') THEN
+    ALTER TABLE deeplynx.edges DROP COLUMN properties;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702210556_UpdateEdgesTable') THEN
+    ALTER TABLE deeplynx.edges ADD mapping_id bigint;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702210556_UpdateEdgesTable') THEN
+    CREATE INDEX idx_edges_mapping_id ON deeplynx.edges (mapping_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702210556_UpdateEdgesTable') THEN
+    ALTER TABLE deeplynx.edges ADD CONSTRAINT edges_mapping_id_fkey FOREIGN KEY (mapping_id) REFERENCES deeplynx.edge_mappings (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250702210556_UpdateEdgesTable') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250702210556_UpdateEdgesTable', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
