@@ -10,6 +10,7 @@ namespace deeplynx.datalayer.Models;
 [Table("historical_records", Schema = "deeplynx")]
 [Index("Id", Name = "idx_historical_records_id")]
 [Index("RecordId", Name = "idx_historical_records_record_id")]
+[Index("ClassName", Name = "idx_historical_records_class_name")]
 public partial class HistoricalRecord
 {
     [Key]

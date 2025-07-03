@@ -850,7 +850,6 @@ public static class SeedData
                 OriginId = 1, // Customer record
                 DestinationId = 2, // Purchase record
                 RelationshipId = 1,
-                RelationshipName = "Customer Makes Purchase",
                 DataSourceId = 1,
                 ProjectId = 1,
                 CreatedBy = "john.smith@company.com",
@@ -865,7 +864,6 @@ public static class SeedData
                 OriginId = 1, // Customer record
                 DestinationId = 3, // Segment record
                 RelationshipId = 2,
-                RelationshipName = "Customer Belongs To Segment",
                 DataSourceId = 2,
                 ProjectId = 1,
                 MappingId = 1,
@@ -883,7 +881,6 @@ public static class SeedData
                 OriginId = 4, // Supplier record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 4,
-                RelationshipName = "Supplier Provides Inventory",
                 DataSourceId = 3,
                 ProjectId = 2,
                 CreatedBy = "mike.davis@company.com",
@@ -898,7 +895,6 @@ public static class SeedData
                 OriginId = 5, // Inventory record
                 DestinationId = 6, // Warehouse record
                 RelationshipId = 5,
-                RelationshipName = "Inventory Stored In Warehouse",
                 DataSourceId = 4,
                 ProjectId = 2,
                 CreatedBy = "warehouse.manager@company.com",
@@ -913,7 +909,6 @@ public static class SeedData
                 OriginId = 7, // Shipment record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 6,
-                RelationshipName = "Shipment Contains Inventory",
                 DataSourceId = 4,
                 ProjectId = 2,
                 MappingId = 3,
@@ -931,7 +926,6 @@ public static class SeedData
                 OriginId = 8, // Legacy User record
                 DestinationId = 9, // Legacy Data record
                 RelationshipId = 7,
-                RelationshipName = "Legacy User Owns Legacy Data",
                 DataSourceId = 5,
                 ProjectId = 3,
                 CreatedBy = "system.architect@legacy.com",

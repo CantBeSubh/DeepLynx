@@ -28,9 +28,6 @@ public partial class Edge
     [Column("relationship_id")]
     public long? RelationshipId { get; set; }
 
-    [Column("relationship_name")]
-    public string? RelationshipName { get; set; }
-
     [Column("mapping_id")]
     public long? MappingId { get; set; }
 

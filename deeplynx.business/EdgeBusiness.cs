@@ -51,7 +51,6 @@ public class EdgeBusiness : IEdgeBusiness
                 OriginId = e.OriginId,
                 DestinationId = e.DestinationId,
                 RelationshipId = e.RelationshipId,
-                RelationshipName = e.RelationshipName,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
                 CreatedAt = e.CreatedAt,
@@ -82,7 +81,6 @@ public class EdgeBusiness : IEdgeBusiness
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
@@ -112,7 +110,6 @@ public class EdgeBusiness : IEdgeBusiness
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
-            RelationshipName = dto.RelationshipName,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
@@ -126,7 +123,6 @@ public class EdgeBusiness : IEdgeBusiness
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
@@ -161,7 +157,6 @@ public class EdgeBusiness : IEdgeBusiness
         edge.OriginId = dto.OriginId;
         edge.DestinationId = dto.DestinationId;
         edge.RelationshipId = dto.RelationshipId;
-        edge.RelationshipName = dto.RelationshipName;
         edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         
@@ -174,7 +169,6 @@ public class EdgeBusiness : IEdgeBusiness
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
