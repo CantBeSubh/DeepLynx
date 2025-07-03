@@ -4,6 +4,7 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Npgsql;
 using Xunit;
 
@@ -289,18 +290,19 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
-        var archivedRecordMappingBeforeDelete = await _recordMappingBusiness.GetRecordMapping(pid,  recordMapping1.Id);
+        
         var deletedResult = await _projectBusiness.ArchiveProject(pid);
         Assert.True(deletedResult);
         
-        var archivedRMUsingContext = await Context.RecordMappings.FindAsync(recordMapping1.Id);
-        var archivedRecordMapping = await _recordMappingBusiness.GetAllRecordMappings(pid, null, null);
-        var archivedClass = await Context.Classes.FindAsync(cid);
-        Assert.NotNull(archivedClass);
+        // procedure is not traced by entity framework
+        //this forces EF to sync to db on next query
+        Context.ChangeTracker.Clear();
+        
+        var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
         Assert.NotNull(archivedRecordMapping);
-        // Assert.NotNull(archivedRecordMapping.ArchivedAt);
-        // Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
-        // Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+        Assert.NotNull(archivedRecordMapping.ArchivedAt);
+        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
+        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
     }
     
     private async Task SeedTestDataAsync(bool deleteProject = false)
