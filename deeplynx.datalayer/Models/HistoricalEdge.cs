@@ -12,7 +12,7 @@ namespace deeplynx.datalayer.Models;
 [Index("OriginId", Name = "idx_historical_edges_origin_id")]
 [Index("EdgeId", Name = "idx_historical_edges_edge_id")]
 [Index("RelationshipName", Name = "idx_historical_edges_relationship_name")]
-[Index("Id", Name = "idx_edges_id")]
+[Index("Id", Name = "idx_historical_edges_id")]
 public partial class HistoricalEdge
 {
     [Key]
