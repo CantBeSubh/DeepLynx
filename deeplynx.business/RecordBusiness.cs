@@ -51,9 +51,7 @@ public class RecordBusiness : IRecordBusiness
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
                 Name = r.Name,
-                CustomId = r.CustomId,
                 ClassId = r.ClassId,
-                ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
                 CreatedBy = r.CreatedBy,
@@ -90,9 +88,7 @@ public class RecordBusiness : IRecordBusiness
             Properties = record.Properties,
             OriginalId = record.OriginalId,
             Name = record.Name,
-            CustomId = record.CustomId,
             ClassId = record.ClassId,
-            ClassName = record.ClassName,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
@@ -138,7 +134,6 @@ public class RecordBusiness : IRecordBusiness
             Properties = dto.Properties.ToString()!,
             OriginalId = dto.OriginalId,
             Name = dto.Name,
-            ClassName = dto.ClassName,
             ClassId = dto.ClassId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -154,9 +149,7 @@ public class RecordBusiness : IRecordBusiness
             Properties = record.Properties,
             OriginalId = record.OriginalId,
             Name = record.Name,
-            CustomId = record.CustomId,
             ClassId = record.ClassId,
-            ClassName = record.ClassName,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
@@ -192,7 +185,6 @@ public class RecordBusiness : IRecordBusiness
         record.Properties = dto.Properties.ToString()!;
         record.OriginalId = dto.OriginalId;
         record.Name = dto.Name;
-        record.ClassName = dto.ClassName;
         record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
@@ -209,9 +201,7 @@ public class RecordBusiness : IRecordBusiness
             Properties = record.Properties,
             OriginalId = record.OriginalId,
             Name = record.Name,
-            CustomId = record.CustomId,
             ClassId = record.ClassId,
-            ClassName = record.ClassName,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
             CreatedBy = record.CreatedBy,
