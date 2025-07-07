@@ -11,6 +11,7 @@ namespace deeplynx.datalayer.Models;
 [Index("Id", Name = "idx_edge_mappings_id")]
 [Index("OriginId", Name = "idx_edge_mappings_origin_id")]
 [Index("ProjectId", Name = "idx_edge_mappings_project_id")]
+[Index()]
 [Index("RelationshipId", Name = "idx_edge_mappings_relationship_id")]
 public partial class EdgeMapping
 {
@@ -32,6 +33,9 @@ public partial class EdgeMapping
 
     [Column("destination_id")]
     public long DestinationId { get; set; }
+    
+    [Column("data_source_id")]
+    public long DataSourceId { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
@@ -50,6 +54,10 @@ public partial class EdgeMapping
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
+    
+    [ForeignKey("DataSourceID")]
+    [InverseProperty("EdgeMappings")]
+    public virtual DataSource DataSource { get; set; } = null!;
 
     [ForeignKey("DestinationId")]
     [InverseProperty("EdgeMappingDestinations")]

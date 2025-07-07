@@ -3,6 +3,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 //todo:
@@ -33,17 +34,32 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long? classId,
         long? tagId)
     {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
         var mappingQuery = _context.RecordMappings
             .Where(m => m.ProjectId == projectId && m.ArchivedAt == null);
 
         // add filter for class or tag if specified
         if (classId.HasValue)
         {
+            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ArchivedAt == null);
+            if (rmClass == null)
+            {
+                throw new KeyNotFoundException($"Class with id {classId} not found");
+            }
             mappingQuery = mappingQuery.Where(m => m.ClassId == classId);
         }
 
         if (tagId.HasValue)
         {
+            var tag = await _context.Tags.FirstOrDefaultAsync(p => p.Id == tagId && p.ArchivedAt == null);
+            if (project == null)
+            {
+                throw new KeyNotFoundException($"Tag with id {tagId} not found");
+            }
             mappingQuery = mappingQuery.Where(m => m.TagId == tagId);
         }
             
@@ -78,6 +94,12 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long mappingId
         )
     {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
         var mapping = await _context.RecordMappings
             .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
@@ -112,6 +134,14 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long projectId, 
         RecordMappingRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
+        
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
         var mapping = new RecordMapping
         {
             RecordParams = dto.RecordParams.ToString(),
@@ -150,6 +180,14 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long mappingId,
         RecordMappingRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
+        
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -189,6 +227,11 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteRecordMapping(long projectId, long mappingId)
     {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -208,6 +251,11 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> ArchiveRecordMapping(long projectId, long mappingId)
     {
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
