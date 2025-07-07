@@ -4,9 +4,6 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Npgsql;
-using Xunit;
 
 namespace deeplynx.tests;
 
