@@ -78,10 +78,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_IfTagIdAndClassIdMissing()
     {
-        await SeedTestDataAsync(true);
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = null, TagId = null};
+        await SeedTestDataAsync();
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = null};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
-        await result.Should().ThrowAsync<Exception>();
+        await result.Should().ThrowAsync<ValidationException>();
     }
     
     [Fact]

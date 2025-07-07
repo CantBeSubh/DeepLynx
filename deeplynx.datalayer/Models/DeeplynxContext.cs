@@ -91,6 +91,8 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
 
             entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
+            
+            entity.HasOne(r => r.DataSource).WithMany(d => d.EdgeMappings).HasConstraintName("edge_mappings_data_source_id_fkey");
         });
         
         modelBuilder.Entity<HistoricalEdge>(entity =>
@@ -180,8 +182,27 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_class_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_project_id_fkey");
+            
+            entity.HasOne(r => r.DataSource).WithMany(d => d.RecordMappings).HasConstraintName("record_mapping_data_source_id_fkey");
 
-            entity.HasOne(d => d.Tag).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_tag_id_fkey");
+            entity.HasMany(r => r.Tags).WithMany(t => t.RecordMappings)
+                .UsingEntity<Dictionary<string, object>>(
+                    "RecordMappingTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .HasConstraintName("record_mapping_tags_tag_id_fkey"),
+                    l => l.HasOne<RecordMapping>().WithMany()
+                        .HasForeignKey("RecordMappingId")
+                        .HasConstraintName("record_mapping_tags_record_mapping_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("RecordMappingId", "TagId").HasName("record_mapping_tags_pkey");
+                        j.ToTable("record_mapping_tags", "deeplynx");
+                        j.HasIndex(new[] { "RecordMappingId" }, "idx_record_mapping_tags_record_mapping_id");
+                        j.HasIndex(new[] { "TagId" }, "idx_record_mapping_tags_tag_id");
+                        j.IndexerProperty<long>("RecordId").HasColumnName("record_mapping_id");
+                        j.IndexerProperty<long>("TagId").HasColumnName("tag_id");
+                    });
         });
 
         modelBuilder.Entity<Relationship>(entity =>
