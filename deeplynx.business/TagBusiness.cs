@@ -44,20 +44,20 @@ public class TagBusiness : ITagBusiness
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
-            throw new ValidationException("Name is required and cannot be empty or whitespace.");
+            throw new ValidationException("Name is required and cannot be empty or whitespace");
         }
         
         /*// Validate 'CreatedBy' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.CreatedBy))
         {
-            throw new ValidationException("Name is required and cannot be empty or whitespace.");
+            throw new ValidationException("CreatedBy is required and cannot be empty or whitespace");
         }*/
         
         var tag = new Tag
         {
             Name = tagRequestDto.Name,
             ProjectId = projectId,
-            CreatedBy = null, // TODO: handled in future by JWT.
+            CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null, // TODO: handled in future by JWT.
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
@@ -178,7 +178,7 @@ public class TagBusiness : ITagBusiness
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
-            throw new KeyNotFoundException($"Tag with {tagId} not found.");
+            throw new KeyNotFoundException($"Tag with id {tagId} not found.");
         
         _context.Tags.Remove(tag);
         await _context.SaveChangesAsync();
