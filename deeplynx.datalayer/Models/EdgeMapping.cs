@@ -66,4 +66,7 @@ public partial class EdgeMapping
     [ForeignKey("RelationshipId")]
     [InverseProperty("EdgeMappings")]
     public virtual Relationship Relationship { get; set; } = null!;
+    
+    [InverseProperty("EdgeMapping")]
+    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 }
