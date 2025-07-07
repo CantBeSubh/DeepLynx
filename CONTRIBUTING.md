@@ -19,6 +19,16 @@
 dotnet test
 ```
 
+#### Sql Procedures
+* If using Entity Framework, when the code runs an sql procedure, you need to make sure to clear the change tracker after 
+the procedure runs. That way, the context will be forced to sync with the changes the procedure made in the database. 
+To do this, add this in your test after a procedure is called:
+```
+Context.ChangeTracker.Clear();
+```
+Use the cascade delete tests in Record Mapping as a reference.
+
+
 ## Submitting Pull Requests
 When you're ready to submit your changes, follow these steps:
 
