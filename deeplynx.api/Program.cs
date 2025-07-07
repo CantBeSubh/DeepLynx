@@ -4,6 +4,16 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Builder; 
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.DependencyInjection;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +47,6 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("profile");
     });
 
-var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.xml");
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
@@ -72,20 +81,50 @@ builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
-builder.Services.AddOpenApi();
+var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer(async (document, context, cancellationToken) =>
+    {
+        document.Info.Version = "v1";
+        document.Info.Title = "DeepLynx Nexus";
+        document.Info.Description =
+            "DeepLynx Nexus Api Documentation";
+    });
+    
+    
+});
 
 var app = builder.Build();
 
+app.UseOpenApi(); 
 
-
+var customcss = File.ReadAllText("moon.css");
+app.UseStaticFiles();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
-        .WithTheme(ScalarTheme.Mars) 
-        .AddMetadata("title", "DeepLynx Nexus")
-        //.WithCustomCss("* { color: white;}")
-    );
+        .WithDarkMode(true)
+        .WithTheme(ScalarTheme.Kepler)
+        .WithTitle("DeepLynx Nexus API")
+        .WithCustomCss(customcss)
+        .AddHeaderContent(@"
+            <div class='references-header'>
+              <header class='header t-doc__header'>
+                <div class='header-container'>
+                  <div class='header-item header-item-meta'>
+                    <a class='header-item-logo'>
+                      <img
+                        alt='lynx'
+                        class='header-item-logo-image'
+                        src='/images/lynx-white.png'
+                        style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
+                    </a>
+                  </div>
+                </div>
+              </header>
+            </div>"));
 }
 
 
@@ -98,3 +137,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

@@ -8,9 +8,7 @@ public class RecordResponseDto
     public string Properties { get; set; } = null!;
     public string? OriginalId { get; set; }
     public string? Name { get; set; }
-    public string? CustomId { get; set; }
     public long? ClassId { get; set; }
-    public string? ClassName { get; set; }
     public long DataSourceId { get; set; }
     public long ProjectId { get; set; }
     public string? CreatedBy { get; set; }

@@ -1,4 +1,3 @@
-using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.tests;
 using Testcontainers.PostgreSql;
@@ -7,10 +6,8 @@ using Xunit;
 
 public class IntegrationTestBase : IAsyncLifetime
 {
-    
     private readonly PostgreSqlContainer _container; 
     protected DeeplynxContext Context { get; private set; }
-
 
     protected IntegrationTestBase()
     {
@@ -30,32 +27,30 @@ public class IntegrationTestBase : IAsyncLifetime
 
         Context = new DeeplynxContext(options);
 
-        // Ensure database is created
-        await Context.Database.EnsureCreatedAsync();
+        // Apply migrations to ensure database is created and up-to-date
+        await Context.Database.MigrateAsync();
         await SeedData.SeedDatabase(Context);
     }
 
-
     public async Task DisposeAsync()
-     {
-         await Context.DisposeAsync();
-         await _container.DisposeAsync();
-     }
+    {
+        await Context.DisposeAsync();
+        await _container.DisposeAsync();
+    }
 
-     /// <summary>
-     /// Clean database between tests
-     /// </summary>
-     protected async Task CleanDatabaseAsync()
-     {
-         var projects = await Context.Projects.ToListAsync();
-         Context.Projects.RemoveRange(projects);
-         var datasources = await Context.DataSources.ToListAsync();
-         Context.DataSources.RemoveRange(datasources);
-         var classes = await Context.Classes.ToListAsync();
-         Context.Classes.RemoveRange(classes);
-         var records = await Context.Records.ToListAsync();
-         Context.Records.RemoveRange(records);
-         await Context.SaveChangesAsync();
-     }
-    
+    /// <summary>
+    /// Clean database between tests
+    /// </summary>
+    protected async Task CleanDatabaseAsync()
+    {
+        var projects = await Context.Projects.ToListAsync();
+        Context.Projects.RemoveRange(projects);
+        var datasources = await Context.DataSources.ToListAsync();
+        Context.DataSources.RemoveRange(datasources);
+        var classes = await Context.Classes.ToListAsync();
+        Context.Classes.RemoveRange(classes);
+        var records = await Context.Records.ToListAsync();
+        Context.Records.RemoveRange(records);
+        await Context.SaveChangesAsync();
+    }
 }

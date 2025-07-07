@@ -98,12 +98,18 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        var classDto = new ClassRequestDto()
+        var timeseriesClassDto = new ClassRequestDto()
         {
             Name = "Timeseries"
         };
+        
+        var reportClassDto = new ClassRequestDto()
+        {
+            Name = "Report"
+        };
 
-        await _classBusiness.CreateClass(project.Id, classDto);
+        await _classBusiness.CreateClass(project.Id, timeseriesClassDto);
+        await _classBusiness.CreateClass(project.Id, reportClassDto);
 
         return new ProjectResponseDto
         {
