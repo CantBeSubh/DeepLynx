@@ -20,10 +20,9 @@ namespace deeplynx.interfaces
         Task CreateTimeseriesTable(string tableName, string filePath);
 
         Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
-        Task<List<Dictionary<string, object?>>> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
 
-        Task<List<Dictionary<string, object?>>> QueryEveryNRows(int rowNumber, string tableName);
+        Task<RecordResponseDto> QueryEveryNRows(string projectId, string dataSourceId, string rowNumber, string tableName);
 
-        Task<List<Dictionary<string, object?>>> GetAllTableRecords(string tableName);
+        Task<RecordResponseDto> GetAllTableRecords(string tableName, string projectId, string dataSourceId);
     }
 }

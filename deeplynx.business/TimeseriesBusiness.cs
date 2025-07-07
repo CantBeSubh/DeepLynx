@@ -1,6 +1,4 @@
-using System.ComponentModel;
 using System.Data;
-using System.Data.Common;
 using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
@@ -10,9 +8,6 @@ using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using System.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace deeplynx.business;
@@ -234,8 +229,25 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         };
 
         var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
-        
-        
+
+        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+
+        return recordResponse;
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="recordResponse"></param>
+    /// <param name="request"></param>
+    /// <param name="resultTable"></param>
+    /// <param name="projectId"></param>
+    /// <param name="dataSourceId"></param>
+    /// <param name="fileName"></param>
+    /// <exception cref="KeyNotFoundException"></exception>
+    /// <exception cref="Exception"></exception>
+    private void RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, string projectId, string dataSourceId, string fileName)
+    {
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
@@ -245,7 +257,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             // have to rely on other contexts that may be destroyed or closed. 
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
-            
+
             try
             {
                 DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
@@ -254,7 +266,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                     ["status"] = Status.Completed,
                     ["query"] = request.Query
                 };
-                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
                 if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
@@ -263,7 +275,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 record.Properties = properties.ToString();
                 record.Uri = "object://" + fileName;
                 record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                
+
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
             }
@@ -274,26 +286,25 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                     ["status"] = Status.Failed,
                     ["query"] = request.Query
                 };
-                var record= await backgroundContext.Records.FindAsync(recordResponse.Id);
+                var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
                 if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
                 }
 
                 record.Properties = properties.ToString();
-                
+
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
-                
+
                 NLog.LogManager.GetCurrentClassLogger().Error(e);
                 throw new Exception("Failed while writing report to csv and postgres");
             }
         });
-        return recordResponse;
     }
-    
+
     //todo: Determine how to structure query result depending on how UI needs it. This function will be commented out for now
-    
+
     /// <summary>
     /// Makes a JSON like response from the table. This will be replaced by a link to the csv later.
     /// </summary>
@@ -313,9 +324,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     //     }
     //     return preview;
     // }
-    
+
     //todo: Determine how to structure preview depending on how UI needs it. This function will be commented out for now
-    
+
     // private JsonObject DataTableToPreview(DataTable dt)
     // {
     //     var result = new JsonObject();
@@ -337,7 +348,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     //
     //     return result;
     // }
-    
+
     /// <summary>
     /// Converts a data table to csv.
     /// </summary>
@@ -345,7 +356,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId, string fileName) {
+    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId, string fileName)
+    {
         StringBuilder sbData = new StringBuilder();
 
         foreach (var col in dataTable.Columns)
@@ -367,17 +379,20 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 else
                 {
                     string stringColumnValue;
-                    if (column is DateTime dateTimeValue) {
+                    if (column is DateTime dateTimeValue)
+                    {
                         stringColumnValue = dateTimeValue.ToString("yyyy-MM-dd HH:mm:ss.fffffff");
-                    } else {
+                    }
+                    else
+                    {
                         stringColumnValue = $"{column}";
                     }
                     sbData.Append("\"" + stringColumnValue.Replace("\"", "\"\"") + "\",");
-                }   
+                }
             }
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
-        
+
         var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
@@ -443,64 +458,72 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     }
 
     /// <summary>
-    /// Gets the timeseries class in the project that we are setting the record in.
-    /// Creates a timeseries class if there is not one already
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching</param>
-    /// <returns></returns>
-    private async Task<ClassResponseDto> GetClassInfo(string projectId)
-    {
-        var timeseriesClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == "Timeseries" && c.ProjectId == long.Parse(projectId));
-
-        if (timeseriesClass != null)
-        {
-            return new ClassResponseDto()
-            {
-                Id = timeseriesClass.Id,
-                Name = timeseriesClass.Name,
-            };
-        }
-
-        var classDto = new ClassRequestDto()
-        {
-            Name = "Timeseries"
-        };
-
-        return await _classBusiness.CreateClass(long.Parse(projectId), classDto);
-    }
-
-    /// <summary>
     /// Generic select all for given table
     /// </summary>
-    /// <param name="timeseriesResponseDto">Table object</param>
+    /// <param name="tableName"></param>
+    /// <param name="projectId"></param>
+    /// <param name="dataSourceId"></param>
     /// <returns>All data for given table</returns>
-    public async Task<List<Dictionary<string, object?>>> GetAllTableRecords(string tableName)
+    public async Task<RecordResponseDto> GetAllTableRecords(string tableName, string projectId, string dataSourceId)
     {
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
+
         using var command = duckDBConnection.CreateCommand();
 
-        command.CommandText = $"SELECT * FROM '{tableName}'; ";
+        var request = new TimeseriesQueryRequestDto
+        {
+            Query = $"SELECT * FROM '{tableName}';"
+        };
+
+        command.CommandText = request.Query;
         using var reader = command.ExecuteReader();
+
         resultTable.Load(reader);
 
-        return DataTableToDictionary(resultTable);
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+
+        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var recordRequest = new RecordRequestDto
+        {
+            Properties = new JsonObject
+            {
+                ["status"] = Status.InProgress,
+                ["query"] = request.Query
+            },
+            Name = fileName,
+            OriginalId = queryId,
+            ClassId = reportClass.Id,
+            ClassName = reportClass.Name
+        };
+
+        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+
+        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+
+        return recordResponse;
     }
 
     /// <summary>
-    /// Takes in raw query and runs it
+    /// Queries a table and retrieves every nth row
     /// </summary>
-    /// <param name="query">The duck db query to run</param>
+    /// <param name="rowNumber"></param>
+    /// <param name="tableName"></param>
+    /// <param name="projectId"></param>
+    /// <param name="dataSourceId"></param>
     /// <returns>Data</returns>
-    public async Task<List<Dictionary<string, object?>>> QueryEveryNRows(int rowNumber, string tableName)
+    public async Task<RecordResponseDto> QueryEveryNRows(string projectId, string dataSourceId, string rowNumber, string tableName)
     {
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
         using var command = duckDBConnection.CreateCommand();
 
-        command.CommandText = $"""
+        var request = new TimeseriesQueryRequestDto
+        {
+            Query = $"""
             
             SELECT * FROM
             (
@@ -509,13 +532,36 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ) AS numbered_table
             WHERE row_num % $rowNum = 0;
             
-            """;
+            """
+        };
 
-        command.Parameters.Add(new DuckDBParameter("rowNum", rowNumber));
+        command.CommandText = request.Query;
+        command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
 
         using var reader = command.ExecuteReader();
         resultTable.Load(reader);
 
-        return DataTableToDictionary(resultTable);
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+        
+        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var recordRequest = new RecordRequestDto 
+        {
+            Properties = new JsonObject
+            {
+                ["status"] = Status.InProgress,
+                ["query"] = request.Query
+            },
+            Name = fileName,
+            OriginalId = queryId,
+            ClassId = reportClass.Id,
+            ClassName = reportClass.Name
+        };
+
+        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+
+        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+
+        return recordResponse;
     }
 }
