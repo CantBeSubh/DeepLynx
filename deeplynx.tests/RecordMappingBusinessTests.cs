@@ -12,6 +12,7 @@ namespace deeplynx.tests;
 
 public class RecordMappingBusinessTests : IntegrationTestBase
 {
+    private TagBusiness _tagBusiness;
     private RecordMappingBusiness _recordMappingBusiness = null!;
     private ProjectBusiness _projectBusiness = null!;
     private ClassBusiness _classBusiness = null!;
@@ -33,6 +34,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _relationshipBusiness = new RelationshipBusiness(Context, _edgeMappingBusiness, _edgeBusiness);
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _projectBusiness = new ProjectBusiness(Context, _classBusiness);
+        _tagBusiness = new TagBusiness(Context, _recordMappingBusiness);
     }
 
     [Fact]
@@ -292,6 +294,68 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
         
         var deletedResult = await _projectBusiness.ArchiveProject(pid);
+        Assert.True(deletedResult);
+        
+        // procedure is not traced by entity framework
+        //this forces EF to sync to db on next query
+        Context.ChangeTracker.Clear();
+        
+        var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
+        Assert.NotNull(archivedRecordMapping);
+        Assert.NotNull(archivedRecordMapping.ArchivedAt);
+        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
+        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+    }
+    
+    [Fact]
+    public async Task RecordMappingArchived_WhenTagArchived()
+    {
+        await SeedTestDataAsync();
+        var beforeArchive = DateTime.UtcNow;
+        var recordMapping1 = new RecordMapping
+        {
+            RecordParams = "{\"hello\":\"world1\"}",
+            ClassId = cid,
+            TagId = tid,
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null,
+        };
+        Context.RecordMappings.Add(recordMapping1);
+        await Context.SaveChangesAsync();
+        
+        var deletedResult = await _tagBusiness.ArchiveTag(pid, tid);
+        Assert.True(deletedResult);
+        
+        // procedure is not traced by entity framework
+        //this forces EF to sync to db on next query
+        Context.ChangeTracker.Clear();
+        
+        var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
+        Assert.NotNull(archivedRecordMapping);
+        Assert.NotNull(archivedRecordMapping.ArchivedAt);
+        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
+        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+    }
+    
+    [Fact]
+    public async Task RecordMappingArchived_WhenClassArchived()
+    {
+        await SeedTestDataAsync();
+        var beforeArchive = DateTime.UtcNow;
+        var recordMapping1 = new RecordMapping
+        {
+            RecordParams = "{\"hello\":\"world1\"}",
+            ClassId = cid,
+            TagId = tid,
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null,
+        };
+        Context.RecordMappings.Add(recordMapping1);
+        await Context.SaveChangesAsync();
+        
+        var deletedResult = await _classBusiness.ArchiveClass(pid,cid);
         Assert.True(deletedResult);
         
         // procedure is not traced by entity framework
