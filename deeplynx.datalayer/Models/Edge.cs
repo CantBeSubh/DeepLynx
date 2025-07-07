@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,9 +27,6 @@ public partial class Edge
 
     [Column("relationship_id")]
     public long? RelationshipId { get; set; }
-
-    [Column("relationship_name")]
-    public string? RelationshipName { get; set; }
 
     [Column("mapping_id")]
     public long? MappingId { get; set; }
@@ -80,4 +75,7 @@ public partial class Edge
     [ForeignKey("MappingId")]
     [InverseProperty("Edges")]
     public virtual EdgeMapping? EdgeMapping { get; set; }
+    
+    [InverseProperty("Edge")]
+    public virtual ICollection<HistoricalEdge> HistoricalEdges { get; set; } = new List<HistoricalEdge>();
 }

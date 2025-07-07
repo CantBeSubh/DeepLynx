@@ -688,9 +688,7 @@ public static class SeedData
                 Properties = @"{""customer_id"":""CUST_001"",""email"":""john.doe@email.com"",""first_name"":""John"",""last_name"":""Doe"",""phone"":""+1-555-0123"",""registration_date"":""2023-03-15T10:30:00Z"",""status"":""active"",""lifetime_value"":2850.75,""total_orders"":12}",
                 OriginalId = "CUST_001",
                 Name = "John Doe - Customer Profile",
-                CustomId = "customer_john_doe_001",
                 ClassId = 1,
-                ClassName = "Customer",
                 DataSourceId = 1,
                 ProjectId = 1,
                 MappingId = 1,
@@ -707,9 +705,7 @@ public static class SeedData
                 Properties = @"{""purchase_id"":""PUR_001"",""customer_id"":""CUST_001"",""order_number"":""ORD-2024-001234"",""purchase_date"":""2024-01-15T10:30:00Z"",""total_amount"":299.99,""currency"":""USD"",""payment_method"":""credit_card"",""payment_status"":""completed""}",
                 OriginalId = "PUR_001",
                 Name = "Purchase Order ORD-2024-001234",
-                CustomId = "purchase_order_001234",
                 ClassId = 2,
-                ClassName = "Purchase",
                 DataSourceId = 2,
                 ProjectId = 1,
                 MappingId = 2,
@@ -726,9 +722,7 @@ public static class SeedData
                 Properties = @"{""segment_id"":""SEG_PREMIUM"",""segment_name"":""Premium Customers"",""description"":""High-value customers with frequent purchases"",""customer_count"":1247,""percentage_of_base"":8.5,""marketing_budget_allocation"":0.35}",
                 OriginalId = "SEG_PREMIUM",
                 Name = "Premium Customer Segment",
-                CustomId = "segment_premium_customers",
                 ClassId = 3,
-                ClassName = "Segment",
                 DataSourceId = 2,
                 ProjectId = 1,
                 CreatedBy = "sarah.johnson@company.com",
@@ -746,9 +740,7 @@ public static class SeedData
                 Properties = @"{""supplier_id"":""SUP_ABC123"",""company_name"":""Advanced Components Corp"",""contact_person"":""Sarah Mitchell"",""email"":""sarah.mitchell@advancedcomponents.com"",""phone"":""+1-800-555-0199"",""performance_rating"":4.2,""on_time_delivery_rate"":0.95}",
                 OriginalId = "SUP_ABC123",
                 Name = "Advanced Components Corp - Supplier",
-                CustomId = "supplier_advanced_components",
                 ClassId = 5,
-                ClassName = "Supplier",
                 DataSourceId = 3,
                 ProjectId = 2,
                 MappingId = 3,
@@ -765,9 +757,7 @@ public static class SeedData
                 Properties = @"{""inventory_id"":""INV_XYZ789"",""product_code"":""WIDGET_A_001"",""supplier_id"":""SUP_ABC123"",""current_quantity"":485,""reserved_quantity"":50,""available_quantity"":435,""reorder_level"":100,""unit_cost"":12.50}",
                 OriginalId = "INV_XYZ789",
                 Name = "High-Grade Widget Assembly - Inventory",
-                CustomId = "inventory_widget_a_001",
                 ClassId = 6,
-                ClassName = "Inventory",
                 DataSourceId = 3,
                 ProjectId = 2,
                 CreatedBy = "inventory.manager@company.com",
@@ -783,9 +773,7 @@ public static class SeedData
                 Properties = @"{""warehouse_id"":""WH_EAST_001"",""name"":""East Coast Distribution Center"",""total_capacity_sqft"":125000,""current_utilization"":0.72,""available_space_sqft"":35000,""staff_count"":45,""manager"":""Robert Chen""}",
                 OriginalId = "WH_EAST_001",
                 Name = "East Coast Distribution Center",
-                CustomId = "warehouse_east_coast_dc",
                 ClassId = 7,
-                ClassName = "Warehouse",
                 DataSourceId = 4,
                 ProjectId = 2,
                 CreatedBy = "warehouse.manager@company.com",
@@ -801,9 +789,7 @@ public static class SeedData
                 Properties = @"{""shipment_id"":""SHIP_OUT_001"",""tracking_number"":""TRK123456789"",""origin_warehouse"":""WH_EAST_001"",""carrier"":""FedEx"",""service_type"":""Ground"",""shipment_date"":""2024-06-01T14:30:00Z"",""estimated_delivery"":""2024-06-03T17:00:00Z"",""status"":""delivered""}",
                 OriginalId = "SHIP_OUT_001",
                 Name = "Outbound Shipment TRK123456789",
-                CustomId = "shipment_trk123456789",
                 ClassId = 8,
-                ClassName = "Shipment",
                 DataSourceId = 4,
                 ProjectId = 2,
                 CreatedBy = "logistics.coordinator@company.com",
@@ -821,9 +807,7 @@ public static class SeedData
                 Properties = @"{""legacy_user_id"":""USR_LEG_001"",""username"":""JDOE001"",""full_name"":""JOHN DOE"",""department"":""SALES"",""role"":""MANAGER"",""migration_status"":""completed"",""migration_date"":""2024-11-20T02:00:00Z""}",
                 OriginalId = "USR_LEG_001",
                 Name = "John Doe - Legacy User Account",
-                CustomId = "legacy_user_jdoe001",
                 ClassId = 9,
-                ClassName = "LegacyUser",
                 DataSourceId = 5,
                 ProjectId = 3,
                 CreatedBy = "system.architect@legacy.com",
@@ -839,9 +823,7 @@ public static class SeedData
                 Properties = @"{""legacy_data_id"":""DATA_LEG_001"",""data_type"":""CUSTOMER_RECORDS"",""owner_user_id"":""USR_LEG_001"",""record_count"":15420,""data_size_mb"":2500.75,""migration_status"":""completed"",""validation_status"":""passed""}",
                 OriginalId = "DATA_LEG_001",
                 Name = "Legacy Customer Data Records",
-                CustomId = "legacy_data_customers_001",
                 ClassId = 10,
-                ClassName = "LegacyData",
                 DataSourceId = 6,
                 ProjectId = 3,
                 MappingId = 5,
@@ -868,7 +850,6 @@ public static class SeedData
                 OriginId = 1, // Customer record
                 DestinationId = 2, // Purchase record
                 RelationshipId = 1,
-                RelationshipName = "Customer Makes Purchase",
                 DataSourceId = 1,
                 ProjectId = 1,
                 CreatedBy = "john.smith@company.com",
@@ -883,7 +864,6 @@ public static class SeedData
                 OriginId = 1, // Customer record
                 DestinationId = 3, // Segment record
                 RelationshipId = 2,
-                RelationshipName = "Customer Belongs To Segment",
                 DataSourceId = 2,
                 ProjectId = 1,
                 MappingId = 1,
@@ -901,7 +881,6 @@ public static class SeedData
                 OriginId = 4, // Supplier record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 4,
-                RelationshipName = "Supplier Provides Inventory",
                 DataSourceId = 3,
                 ProjectId = 2,
                 CreatedBy = "mike.davis@company.com",
@@ -916,7 +895,6 @@ public static class SeedData
                 OriginId = 5, // Inventory record
                 DestinationId = 6, // Warehouse record
                 RelationshipId = 5,
-                RelationshipName = "Inventory Stored In Warehouse",
                 DataSourceId = 4,
                 ProjectId = 2,
                 CreatedBy = "warehouse.manager@company.com",
@@ -931,7 +909,6 @@ public static class SeedData
                 OriginId = 7, // Shipment record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 6,
-                RelationshipName = "Shipment Contains Inventory",
                 DataSourceId = 4,
                 ProjectId = 2,
                 MappingId = 3,
@@ -949,7 +926,6 @@ public static class SeedData
                 OriginId = 8, // Legacy User record
                 DestinationId = 9, // Legacy Data record
                 RelationshipId = 7,
-                RelationshipName = "Legacy User Owns Legacy Data",
                 DataSourceId = 5,
                 ProjectId = 3,
                 CreatedBy = "system.architect@legacy.com",
