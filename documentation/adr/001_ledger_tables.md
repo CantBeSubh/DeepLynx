@@ -2,7 +2,7 @@
 Date: 2025-07-07
 
 ## Status
-Pending
+Approved
 
 ## Context
 In DeepLynx 1.0, we made use of a ledger system in order to version our nodes (records) and edges tables. The purpose of this mechanism was to provide versioning and historical data. The approach in DL1 was to insert, update, and delete the nodes/edges table by inserting new rows into the table with the same ID and a new created_at date, using ID and created_at as a composite primary key. Data was then queried from a view which selected the record with the `MAX(created_at)` date for each unique ID. While effective at a glance, this method caused some latency on lookup and relied heavily on the performance of the `current_nodes` and `current_edges` views. Eventually we decided to make these views materialized (cached) views to somewhat improve performance, with the views being updated when new data was added to the underlying nodes and edges tables. 
