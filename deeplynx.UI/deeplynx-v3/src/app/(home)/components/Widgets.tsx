@@ -6,7 +6,7 @@ import LinksWidget from "./WidgetCards.tsx/LinksWidget";
 import GraphWidget from "./WidgetCards.tsx/GraphWidget";
 import RecentActivityWidget from "./WidgetCards.tsx/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards.tsx/ProjectOverview";
-import TeamMembersWidget from "./WidgetCards.tsx/TeamMembers";
+import TeamMembersWidget from "./WidgetCards.tsx/TeamMember";
 
 type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 
@@ -62,6 +62,7 @@ const WidgetCard = () => {
       values={widgets}
       className="space-y-4"
     >
+      {/* add ternary logic to render welcome page vs project page widgets */}
       {widgets.map((widget) => (
         <Reorder.Item
           key={widget}

@@ -3,23 +3,14 @@ import React from "react";
 const LinksWidget = () => {
   return (
     <div className="card-body">
-      <h2 className="card-title justify-between items-center">
-        Links
+      <div className="flex justify-between items-center p-4">
+        <h2 className="card-title">
+          Links
+        </h2>
         <button>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="size-6 text-secondary"
-          >
-            <path
-              fillRule="evenodd"
-              d="M12 2.25c-5.385..."
-              clipRule="evenodd"
-            />
-          </svg>
+          <PlusIcon />
         </button>
-      </h2>
+      </div>
       <div className="flex justify-between p-4">
         <div className="flex flex-col items-center">
           <svg
@@ -97,5 +88,28 @@ const LinksWidget = () => {
     </div>
   );
 };
+
+const PlusIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="oklch(44.08% 0.141 255.19)"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="white"
+    className="w-6 h-6 rounded-full"
+  >
+    <circle
+        cx="12"
+        cy="12"
+        r="12"
+        fill="btn-secondary"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 4.5v15m7.5-7.5h-15"
+    />
+  </svg>
+);
 
 export default LinksWidget;
