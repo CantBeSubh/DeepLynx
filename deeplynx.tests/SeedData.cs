@@ -375,7 +375,7 @@ public static class SeedData
     {
         var tags = new List<Tag>
         {
-            // Note: Id is automatically assigned and incremented by the database
+            // Note: Id is automatically assigned and incremented by the database. These tags will be Id 1-12 in order.
             
             // Customer Analytics Platform Tags
             new Tag { Name = "Analytics", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30), ArchivedAt = null },
