@@ -96,7 +96,7 @@ const PlusIcon = () => (
     viewBox="0 0 24 24"
     strokeWidth={1.5}
     stroke="white"
-    className="w-6 h-6 rounded-full"
+    className="w-8 h-8 rounded-full"
   >
     <circle
         cx="12"
@@ -107,7 +107,7 @@ const PlusIcon = () => (
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
-      d="M12 4.5v15m7.5-7.5h-15"
+      d="M12 8v8m4-4h-8"
     />
   </svg>
 );
