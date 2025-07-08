@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
-        [HttpPost("query")]
+        [HttpPost("Query")]
         public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
