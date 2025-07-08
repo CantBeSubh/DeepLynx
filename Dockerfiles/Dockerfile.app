@@ -19,7 +19,7 @@ COPY deeplynx.UI/deeplynx-v3/ ./
 RUN npm run build
 
 # Stage 3: Build the C# backend
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20 AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 WORKDIR /source
 
 # Copy the solution file and restore dependencies

@@ -4,7 +4,7 @@
     * Download [PostgreSQL](https://www.postgresql.org/) natively, OR
     * Download [Docker](https://docs.docker.com/engine/install/)
 
-2. .NET SDK: Ensure .NET SDK version 9.0 is installed on your system. Download [.NET 9.0](https://dotnet.microsoft.com/en-us/).
+2. .NET SDK: Ensure .NET SDK version 10.0 is installed on your system. Download [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). You can verify you are using the correct version by running `dotnet --version` in the command line.
 
 ## Docker Setup
 1. Environment variables:

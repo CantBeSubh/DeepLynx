@@ -60,18 +60,22 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("edges_pkey");
 
             entity.Property(e => e.ProjectId).HasDefaultValue(0L);
+            
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");
 
             entity.HasOne(d => d.Destination).WithMany(p => p.EdgeDestinations).HasConstraintName("edges_destination_id_fkey");
+            
+            entity.HasOne(d => d.EdgeMapping).WithMany(p => p.Edges)
+                .HasForeignKey(d => d.MappingId).IsRequired(false).HasConstraintName("edges_mapping_id_fkey");
 
             entity.HasOne(d => d.Origin).WithMany(p => p.EdgeOrigins).HasConstraintName("edges_origin_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Edges).HasConstraintName("edges_project_id_fkey");
 
             entity.HasOne(d => d.Relationship).WithMany(p => p.Edges)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("edges_relationship_id_fkey");
+                .HasForeignKey(d => d.RelationshipId).IsRequired(false).HasConstraintName("edges_relationship_id_fkey");
         });
 
         modelBuilder.Entity<EdgeMapping>(entity =>
@@ -87,6 +91,38 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
 
             entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
+        });
+        
+        modelBuilder.Entity<HistoricalEdge>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("historical_edges_pkey");
+
+            entity.Property(e => e.ProjectId).HasDefaultValue(0L);
+            
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
+                .HasForeignKey(d => d.EdgeId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("historical_edges_edge_id_fkey");
+
+            entity.HasOne(d => d.HistoricalOrigin).WithMany(p => p.HistoricalEdgeOrigins)
+                .HasConstraintName("historical_edges_origin_id_fkey");
+            
+            entity.HasOne(d => d.HistoricalDestination).WithMany(p => p.HistoricalEdgeDestinations)
+                .HasConstraintName("historical_edges_destination_id_fkey");
+        });
+
+        modelBuilder.Entity<HistoricalRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("historical_records_pkey");
+
+            entity.HasIndex(e => e.Properties, "idx_historical_records_properties").HasMethod("gin");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
+                .HasForeignKey(d => d.RecordId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("historical_records_record_id_fkey");
         });
 
         modelBuilder.Entity<Project>(entity =>
@@ -105,8 +141,10 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Class).WithMany(p => p.Records)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("records_class_id_fkey");
+                .HasForeignKey(d => d.ClassId).IsRequired(false).HasConstraintName("records_class_id_fkey");
+
+            entity.HasOne(d => d.RecordMapping).WithMany(p => p.Records)
+                .HasForeignKey(d => d.MappingId).IsRequired(false).HasConstraintName("records_mapping_id_fkey");
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 
