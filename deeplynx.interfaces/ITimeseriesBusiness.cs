@@ -21,7 +21,7 @@ namespace deeplynx.interfaces
 
         Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
 
-        Task<RecordResponseDto> QueryEveryNRows(string projectId, string dataSourceId, string rowNumber, string tableName);
+        Task<RecordResponseDto> InterpolateRows(string projectId, string dataSourceId, string rowNumber, string tableName);
 
         Task<RecordResponseDto> GetAllTableRecords(string tableName, string projectId, string dataSourceId);
     }

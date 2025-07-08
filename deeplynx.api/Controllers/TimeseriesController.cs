@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         {
             _timeseriesBusiness = timeseriesBusiness;
         }
-        
+
         /// <summary>
         /// Query timeseries 
         /// </summary>
@@ -29,7 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
         [HttpPost("query")]
-        public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
+        public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
@@ -60,7 +60,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var timeSeriesUploadInfo= await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
+                var timeSeriesUploadInfo = await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
                 return Ok(timeSeriesUploadInfo);
             }
             catch (Exception e)
@@ -151,12 +151,12 @@ namespace deeplynx.api.Controllers
         /// <param name="tableName"></param>
         /// <param name="rowNumber"></param>
         /// <returns></returns>
-        [HttpGet("get-n-rows/{tableName}/{rowNumber}")]
-        public async Task<IActionResult> QueryEveryNRows(string projectId, string dataSourceId, string tableName, string rowNumber)
+        [HttpGet("InterpolateRows")]
+        public async Task<IActionResult> InterpolateRows(string projectId, string dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.QueryEveryNRows(projectId, dataSourceId, rowNumber, tableName);
+                var timeseriesUploadRecord = await _timeseriesBusiness.InterpolateRows(projectId, dataSourceId, rowNumber, tableName);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
@@ -174,8 +174,8 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
-        [HttpGet("get-all/{tableName}")]
-        public async Task<IActionResult> GetAllTableRecords(string tableName, string projectId, string dataSourceId)
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, string projectId, string dataSourceId)
         {
             try
             {
@@ -185,29 +185,6 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, e);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="request"></param>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <returns></returns>
-        [HttpGet("query")]
-        public async Task<IActionResult> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
-        {
-            try
-            {
-                var timeseriesUploadRecord = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
-                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
-            }
-            catch (Exception e)
-            {
-                var message = $"An error occurred while processing query Error: {e}\n\n {request}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, e);
             }

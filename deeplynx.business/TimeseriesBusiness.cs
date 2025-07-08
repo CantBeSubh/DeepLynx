@@ -18,17 +18,17 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
     private IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
-    
+
     private const string UploadFolderPath = "uploads";
     private const string QueryFolderPath = "reports";
-    
+
     private static class Status
     {
         public static string Failed { get; } = "failed";
         public static string Completed { get; } = "completed";
         public static string InProgress { get; } = "in progress";
     }
-    
+
     /// <summary>
     /// Uploads a time series file and kicks off the processing for DuckDB
     /// </summary>
@@ -64,7 +64,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, filePath);
-        
+
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
@@ -165,7 +165,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, finalFilePath);
-        
+
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
@@ -204,18 +204,18 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         await using var command = duckDbConnection.CreateCommand();
         command.CommandText = request.Query;
         await using var reader = command.ExecuteReader();
-        
+
         if (!reader.HasRows)
         {
             throw new NoResultsException("Empty query results, no report needed");
         }
-        
+
         resultTable.Load(reader);
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
-        
+
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto 
+        var recordRequest = new RecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -251,7 +251,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
-        Task.Run(async() =>
+        Task.Run(async () =>
         {
             // creates a background scope to create its own context so that the background task doesn't
             // have to rely on other contexts that may be destroyed or closed. 
@@ -514,7 +514,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns>Data</returns>
-    public async Task<RecordResponseDto> QueryEveryNRows(string projectId, string dataSourceId, string rowNumber, string tableName)
+    public async Task<RecordResponseDto> InterpolateRows(string projectId, string dataSourceId, string rowNumber, string tableName)
     {
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
@@ -543,9 +543,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
-        
+
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto 
+        var recordRequest = new RecordRequestDto
         {
             Properties = new JsonObject
             {
