@@ -8,8 +8,9 @@ namespace deeplynx.interfaces
         Task<bool> ConnectAsync();
         Task CloseAsync();
         Task InstallPostgresExtensionsAsync();
-        Task<bool> ExportDataAsync(string pgParams, int project_id);
+        Task<bool> ExportDataAsync(int project_id);
         Task<bool> LoadDataAsync(int project_id);
         Task<string> ExecuteQueryAsync(KuzuDatabaseManagerQueryRequestDto request);
+        Task<string> GetNodesWithinDepthByIdAsync(KuzuDBMNodesWithinDepthRequestDto request);
     }
 }

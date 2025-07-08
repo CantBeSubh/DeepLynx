@@ -4,6 +4,7 @@ using System.Text;
 using System.Data;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.Extensions.Configuration;
 
 namespace deeplynx.graph
 {
@@ -13,15 +14,17 @@ namespace deeplynx.graph
         private kuzu_database _db;
         private kuzu_connection? _conn;
         private bool _isDatabaseInitialized = false;
-
+        private readonly string _pgParams;
 
         /// <summary>
         /// Initializes a new instance of the KuzuDatabaseManager class.
         /// </summary>
-        public KuzuDatabaseManager()
+        public KuzuDatabaseManager(IConfiguration configuration)
         {
             _db = new kuzu_database();
             _conn = new kuzu_connection();
+            _pgParams = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("DefaultConnection is not configured.");
         }
 
 
@@ -92,7 +95,7 @@ namespace deeplynx.graph
         /// <param name="pgParams">The connection parameters for the PostgreSQL database.</param>
         /// <param name="project_id">The project identifier.</param>
         /// <returns>A task representing the asynchronous export operation.</returns>
-        public async Task<bool> ExportDataAsync(string pgParams, int project_id)
+        public async Task<bool> ExportDataAsync(int project_id)
         {
 
             if (_conn == null)
@@ -105,7 +108,7 @@ namespace deeplynx.graph
             {
                 await InstallPostgresExtensionsAsync();
 
-                string attachCommand = $"ATTACH '{pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
+                string attachCommand = $"ATTACH '{_pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
                 await Task.Run(() => PerformNonQueryAsync(attachCommand));
 
                 await SetupKuzuTablesAsync();
@@ -216,6 +219,37 @@ namespace deeplynx.graph
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while setting up Kuzu tables: {e.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// Retrieves nodes and their relationships within a specified depth from a given node ID in a specified table.
+        /// </summary>
+        /// <param name="tableName">The name of the node label/table to match (e.g., "Musician", "Band").</param>
+        /// <param name="id">The ID of the node from which to start the search.</param>
+        /// <param name="depth">The maximum number of hops (depth) to search for connected nodes.</param>
+        /// <returns>A task representing the asynchronous operation, containing the result of the query as a string.</returns>
+        public async Task<string> GetNodesWithinDepthByIdAsync(KuzuDBMNodesWithinDepthRequestDto request)
+        {
+            try
+            {
+                string query = $@"
+                MATCH (a:{request.TableName}) WHERE a.id = {request.Id}
+                MATCH (a)-[r*1..{request.Depth}]-(b)
+                RETURN
+                    a AS {request.TableName}_node,
+                    r AS RECURSIVE_RELATIONSHIP,
+                    b AS {request.TableName}_related_node";
+
+                var requestDto = new KuzuDatabaseManagerQueryRequestDto { Query = query };
+
+                return await ExecuteQueryAsync(requestDto);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while retrieving nodes within depth: {e.Message}");
+                throw;
             }
         }
 
@@ -400,26 +434,75 @@ namespace deeplynx.graph
                 kuzu_flat_tuple tuple = new kuzu_flat_tuple();
                 await Task.Run(() => kuzu_query_result_get_next(result, tuple));
 
-                kuzu_value value = new kuzu_value();
-                await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 0, value));
-
-                kuzu_logical_type columnDataType = new kuzu_logical_type();
-                await Task.Run(() => kuzu_value_get_data_type(value, columnDataType));
-                var columnDataTypeId = await Task.Run(() => kuzu_data_type_get_id(columnDataType));
-
-                if (columnDataTypeId == kuzu_data_type_id.KUZU_NODE || columnDataTypeId == kuzu_data_type_id.KUZU_BOOL)
+                if (numColumns == 1)
                 {
-                    sb.AppendLine(await GetValueStringAsync(value, columnDataType));
+                    kuzu_value singleValue = new kuzu_value();
+                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 0, singleValue));
+
+                    kuzu_logical_type singleValueType = new kuzu_logical_type();
+                    await Task.Run(() => kuzu_value_get_data_type(singleValue, singleValueType));
+
+                    sb.AppendLine(await GetValueStringAsync(singleValue, singleValueType));
                 }
                 else
                 {
+                    kuzu_value bandNode = new kuzu_value();
+                    kuzu_value relatedNode = new kuzu_value();
+                    kuzu_value relationship = new kuzu_value();
+
+                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 0, bandNode));
+                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 1, relatedNode));
+                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 2, relationship));
+
+                    kuzu_logical_type bandDataType = new kuzu_logical_type();
+                    kuzu_logical_type relatedDataType = new kuzu_logical_type();
+                    kuzu_logical_type relationshipDataType = new kuzu_logical_type();
+
+                    await Task.Run(() => kuzu_value_get_data_type(bandNode, bandDataType));
+                    await Task.Run(() => kuzu_value_get_data_type(relatedNode, relatedDataType));
+                    await Task.Run(() => kuzu_value_get_data_type(relationship, relationshipDataType));
+
+                    if (!(kuzu_data_type_get_id(bandDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relatedDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relationshipDataType) == kuzu_data_type_id.KUZU_STRING))
+                    {
+                        string bandColumnName = string.Empty;
+                        string relatedColumnName = string.Empty;
+                        string relationshipColumnName = string.Empty;
+                        await Task.Run(() => kuzu_query_result_get_column_name(result, 0, out bandColumnName));
+                        await Task.Run(() => kuzu_query_result_get_column_name(result, 1, out relatedColumnName));
+                        await Task.Run(() => kuzu_query_result_get_column_name(result, 2, out relationshipColumnName));
+
+                        sb.AppendLine($"{bandColumnName}: {await GetValueStringAsync(bandNode, bandDataType)}");
+
+                        sb.AppendLine($"{relationshipColumnName}: {await GetValueStringAsync(relationship, relationshipDataType)}");
+
+                        sb.AppendLine($"{relatedColumnName}: {await GetValueStringAsync(relatedNode, relatedDataType)}");
+
+                        for (ulong i = 2; i < numColumns; i++)
+                        {
+                            kuzu_value columnValue = new kuzu_value();
+                            await Task.Run(() => kuzu_flat_tuple_get_value(tuple, i, columnValue));
+                            string columnName = string.Empty;
+                            await Task.Run(() => kuzu_query_result_get_column_name(result, i, out columnName));
+                            kuzu_logical_type columnDataType = new kuzu_logical_type();
+                            await Task.Run(() => kuzu_value_get_data_type(columnValue, columnDataType));
+                            if (!(columnName == "Band_related_node"))
+                            {
+                                sb.AppendLine($"{columnName}: {await GetValueStringAsync(columnValue, columnDataType)}");
+                            }
+                        }
+                    }
                     for (ulong i = 0; i < numColumns; i++)
                     {
                         kuzu_value columnValue = new kuzu_value();
                         await Task.Run(() => kuzu_flat_tuple_get_value(tuple, i, columnValue));
                         string columnName = string.Empty;
                         await Task.Run(() => kuzu_query_result_get_column_name(result, i, out columnName));
-                        sb.AppendLine($"{columnName}: {await GetValueStringAsync(columnValue, columnDataType)}");
+                        kuzu_logical_type columnDataType = new kuzu_logical_type();
+                        await Task.Run(() => kuzu_value_get_data_type(columnValue, columnDataType));
+                        if (!(columnName == "Band_related_node"))
+                        {
+                            sb.AppendLine($"{columnName}: {await GetValueStringAsync(columnValue, columnDataType)}");
+                        }
                     }
                     sb.AppendLine();
                 }
@@ -428,7 +511,6 @@ namespace deeplynx.graph
             }
 
             string res = sb.ToString();
-
             return res;
         }
 
@@ -457,6 +539,7 @@ namespace deeplynx.graph
                         return result;
                     });
                     return strValue;
+
                 case kuzu_data_type_id.KUZU_INT64:
                     long intValue = await Task<long>.Factory.StartNew(() =>
                     {
@@ -464,6 +547,7 @@ namespace deeplynx.graph
                         return result;
                     });
                     return intValue.ToString();
+
                 case kuzu_data_type_id.KUZU_INT32:
                     int intValue32 = await Task<int>.Factory.StartNew(() =>
                     {
@@ -471,6 +555,7 @@ namespace deeplynx.graph
                         return result;
                     });
                     return intValue32.ToString();
+
                 case kuzu_data_type_id.KUZU_FLOAT:
                     float floatValue = await Task<float>.Factory.StartNew(() =>
                     {
@@ -478,6 +563,7 @@ namespace deeplynx.graph
                         return result;
                     });
                     return floatValue.ToString();
+
                 case kuzu_data_type_id.KUZU_DOUBLE:
                     double doubleValue = await Task<double>.Factory.StartNew(() =>
                     {
@@ -485,6 +571,7 @@ namespace deeplynx.graph
                         return result;
                     });
                     return doubleValue.ToString();
+
                 case kuzu_data_type_id.KUZU_BOOL:
                     bool boolValue = await Task<bool>.Factory.StartNew(() =>
                     {
@@ -492,11 +579,11 @@ namespace deeplynx.graph
                         return result;
                     });
                     return boolValue.ToString();
+
                 case kuzu_data_type_id.KUZU_NODE:
                     return await Task.Run(() =>
                     {
                         StringBuilder sb = new StringBuilder();
-                        sb.Append("NODE:\n");
 
                         kuzu_value idValue = new kuzu_value();
                         kuzu_node_val_get_id_val(value, idValue);
@@ -526,7 +613,14 @@ namespace deeplynx.graph
                         kuzu_node_val_get_property_value_at(value, 3, originalIdValue);
                         kuzu_value_get_string(originalIdValue, out string originalId);
 
-                        sb.Append($"{{_ID: {id}, _LABEL: {label}, id: {originalId}, properties: {properties}, \"data_source_id\": {dataSourceId}, \"original_id\": \"{originalId}\"}}");
+                        sb.AppendLine("{");
+                        sb.AppendLine($"  _ID: {id},");
+                        sb.AppendLine($"  _LABEL: {label},");
+                        sb.AppendLine($"  id: {originalId},");
+                        sb.AppendLine($"  properties: {properties},");
+                        sb.AppendLine($"  data_source_id: {dataSourceId},");
+                        sb.AppendLine($"  original_id: \"{originalId}\"");
+                        sb.AppendLine("}");
 
                         return sb.ToString();
                     });
@@ -534,8 +628,6 @@ namespace deeplynx.graph
                 case kuzu_data_type_id.KUZU_REL:
                     return await Task.Run(() =>
                     {
-                        Console.WriteLine("REL:\n");
-
                         kuzu_value srcIdValue = new kuzu_value();
                         kuzu_rel_val_get_src_id_val(value, srcIdValue);
                         kuzu_value_get_int64(srcIdValue, out long srcId);
@@ -552,11 +644,50 @@ namespace deeplynx.graph
                         kuzu_rel_val_get_property_value_at(value, 0, relIdValue);
                         kuzu_value_get_int64(relIdValue, out long relId);
 
-                        return $"({srcId})-{{_LABEL: {relLabel}, _ID: {relId}}}->({dstId})";
+                        return $"{{ _LABEL: {relLabel}}}";
                     });
-                default:
-                    Console.WriteLine(dataTypeId);
 
+                case kuzu_data_type_id.KUZU_RECURSIVE_REL:
+                    StringBuilder sbRecursive = new StringBuilder();
+                    sbRecursive.AppendLine("\n");
+
+                    kuzu_value nodeList = new kuzu_value();
+                    kuzu_value relationshipList = new kuzu_value();
+
+                    kuzu_value_get_recursive_rel_node_list(value, nodeList);
+                    kuzu_value_get_recursive_rel_rel_list(value, relationshipList);
+
+                    ulong nodeCount;
+                    kuzu_value_get_list_size(nodeList, out nodeCount);
+
+                    for (ulong i = 0; i < nodeCount; i++)
+                    {
+                        kuzu_value currentNode = new kuzu_value();
+                        kuzu_value_get_list_element(nodeList, i, currentNode);
+
+                        kuzu_logical_type nodeDataType = new kuzu_logical_type();
+                        await Task.Run(() => kuzu_value_get_data_type(currentNode, nodeDataType));
+
+                        sbRecursive.AppendLine($"Node {i}: {await GetValueStringAsync(currentNode, nodeDataType)}");
+                    }
+
+                    ulong relationCount;
+                    kuzu_value_get_list_size(relationshipList, out relationCount);
+
+                    for (ulong j = 1; j < relationCount; j++)
+                    {
+                        kuzu_value currentRelation = new kuzu_value();
+                        kuzu_value_get_list_element(relationshipList, j, currentRelation);
+
+                        kuzu_logical_type relationDataType = new kuzu_logical_type();
+                        await Task.Run(() => kuzu_value_get_data_type(currentRelation, relationDataType));
+
+                        sbRecursive.AppendLine($"Relationship {j}: {await GetValueStringAsync(currentRelation, relationDataType)}");
+                    }
+
+                    return sbRecursive.ToString();
+
+                default:
                     return "Unsupported data type";
             }
         }
