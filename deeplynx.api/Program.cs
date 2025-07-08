@@ -4,16 +4,6 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi;
-using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Builder; 
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.DependencyInjection;
-
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -77,13 +67,13 @@ builder.Services.AddTransient<IRelationshipBusiness, RelationshipBusiness>();
 builder.Services.AddTransient<IRecordMappingBusiness, RecordMappingBusiness>();
 builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
 builder.Services.AddTransient<ITagBusiness, TagBusiness>();
-builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 
 var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 builder.Services.AddOpenApi(options =>
 {
+    options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
     options.AddDocumentTransformer(async (document, context, cancellationToken) =>
     {
         document.Info.Version = "v1";
