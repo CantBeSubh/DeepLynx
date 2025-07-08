@@ -8,7 +8,7 @@ namespace deeplynx.datalayer.Models;
 
 [Table("record_mappings", Schema = "deeplynx")]
 [Index("ClassId", Name = "idx_record_mappings_class_id")]
-[Index("DataSourceID", Name = "idx_record_mappings_data_source_id")]
+[Index("DataSourceId", Name = "idx_record_mappings_data_source_id")]
 [Index("Id", Name = "idx_record_mappings_id")]
 [Index("ProjectId", Name = "idx_record_mappings_project_id")]
 [Index("TagId", Name = "idx_record_mappings_tag_id")]
@@ -52,7 +52,7 @@ public partial class RecordMapping
     [InverseProperty("RecordMappings")]
     public virtual Class? Class { get; set; }
 
-    [ForeignKey("DataSourceID")]
+    [ForeignKey("DataSourceId")]
     [InverseProperty("RecordMappings")]
     public virtual DataSource DataSource { get; set; } = null!;
 

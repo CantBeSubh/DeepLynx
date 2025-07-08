@@ -2,11 +2,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using FluentAssertions;
 
 namespace deeplynx.tests;
 
+[Collection("Test Suite Collection")]
 public class RecordMappingBusinessTests : IntegrationTestBase
 {
     private TagBusiness _tagBusiness;
@@ -20,6 +22,9 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public long pid;
     public long tid;
     public long cid;
+    public long did;
+    
+    public RecordMappingBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
     
     public override async Task InitializeAsync()
     {
@@ -46,6 +51,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         result.CreatedAt.Should().BeOnOrAfter(now);
         result.ClassId.Should().Be(cid);
         result.TagId.Should().Be(tid);
+        result.DataSourceId.Should().Be(did);
     }
     
     [Fact]
@@ -61,7 +67,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public async Task CreateRecordMapping_Fails_IfNoProjectId()
     {
         await SeedTestDataAsync();
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid + 99, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -70,7 +76,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public async Task CreateRecordMapping_Fails_IfDeletedProjectId()
     {
         await SeedTestDataAsync(true);
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -79,9 +85,9 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public async Task CreateRecordMapping_Fails_IfTagIdAndClassIdMissing()
     {
         await SeedTestDataAsync();
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = null};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = null, TagId = null,  DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
-        await result.Should().ThrowAsync<ValidationException>();
+        await result.Should().ThrowAsync<InvalidRequestException>();
     }
     
     [Fact]
@@ -92,8 +98,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Context.Projects.Add(p2);
         await Context.SaveChangesAsync();
     
-        await _recordMappingBusiness.CreateRecordMapping(pid, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid});
-        await _recordMappingBusiness.CreateRecordMapping(p2.Id, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid});
+        await _recordMappingBusiness.CreateRecordMapping(pid, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did});
+        await _recordMappingBusiness.CreateRecordMapping(p2.Id, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid,  DataSourceId = did});
     
         var list = await _recordMappingBusiness.GetAllRecordMappings(pid, cid, tid);
         Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
@@ -108,6 +114,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"param1\":\"value1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null
@@ -118,6 +125,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"param2\":\"value2\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -141,6 +149,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             ClassId = cid,
             TagId = tid,
             ProjectId = pid,
+            DataSourceId = did,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null
         };
@@ -159,6 +168,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"param1\":\"value1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null
@@ -179,6 +189,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             ClassId = cid,
             TagId = tid,
             ProjectId = pid,
+            DataSourceId = did,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
             ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
@@ -198,6 +209,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"hello\":\"world1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -205,7 +217,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
         
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = await _recordMappingBusiness.UpdateRecordMapping(pid, recordMapping1.Id, dto);
         
         updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
@@ -216,7 +228,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     {
         await SeedTestDataAsync();
         
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 99, dto);
         updatedResult.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -233,6 +245,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"hello\":\"world1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -259,6 +272,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"hello\":\"world1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -283,6 +297,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"hello\":\"world1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -314,6 +329,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             RecordParams = "{\"hello\":\"world1\"}",
             ClassId = cid,
             TagId = tid,
+            DataSourceId = did,
             ProjectId = pid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null,
@@ -337,8 +353,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     
     private async Task SeedTestDataAsync(bool deleteProject = false)
     {
-        await CleanDatabaseAsync();
-        
         var project = new Project { Name = "Project 1" };
         
         if (deleteProject)
@@ -361,6 +375,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Context.Classes.Add(testClass2);
         await Context.SaveChangesAsync();
         cid = testClass.Id;
+        var dataSource1 = new DataSource { Name = "DataSource 1", ProjectId = pid };
+        Context.DataSources.Add(dataSource1);
+        await Context.SaveChangesAsync();
+        did = dataSource1.Id;
     }
     
 }

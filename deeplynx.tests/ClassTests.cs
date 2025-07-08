@@ -10,6 +10,7 @@ using Xunit;
 
 namespace deeplynx.tests;
 
+[Collection("Test Suite Collection")]
 public class ClassIntegrationTests : IntegrationTestBase
 {
     private ClassBusiness _classBusiness = null!;
@@ -17,7 +18,9 @@ public class ClassIntegrationTests : IntegrationTestBase
     private RecordMappingBusiness _recordMapping = null!;
     private RecordBusiness _recordBusiness = null!;
     private RelationshipBusiness _relationshipBusiness = null!;
-    public long pid; 
+    public long pid;
+
+    public ClassIntegrationTests(TestSuiteFixture fixture) : base(fixture) {}
 
     public override async Task InitializeAsync()
     {

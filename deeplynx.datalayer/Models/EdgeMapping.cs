@@ -55,7 +55,7 @@ public partial class EdgeMapping
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
     
-    [ForeignKey("DataSourceID")]
+    [ForeignKey("DataSourceId")]
     [InverseProperty("EdgeMappings")]
     public virtual DataSource DataSource { get; set; } = null!;
 
