@@ -27,7 +27,7 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId">(Optional) The ID of the relationship by which to filter mappings</param>
         /// <returns>A list of edge mappings based on the applied filters.</returns>
         [HttpGet("GetAllEdgeMappings")]
-        public async Task<IActionResult> GetAllEdgeMappings(
+        public async Task<ActionResult<IEnumerable<EdgeMappingResponseDto>>> GetAllEdgeMappings(
             long projectId,
             [FromQuery] long? classId = null,
             [FromQuery] long? relationshipId = null)
@@ -53,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
         /// <returns>The edge mapping associated with the given ID</returns>
         [HttpGet("GetEdgeMapping/{mappingId}")]
-        public async Task<IActionResult> GetEdgeMapping(long projectId, long mappingId)
+        public async Task<ActionResult<EdgeMappingResponseDto>> GetEdgeMapping(long projectId, long mappingId)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The edge mapping request data transfer object containing mapping details</param>
         /// <returns>The created edge mapping</returns>
         [HttpPost("CreateEdgeMapping")]
-        public async Task<IActionResult> CreateEdgeMapping(
+        public async Task<ActionResult<EdgeMappingResponseDto>> CreateEdgeMapping(
             long projectId,
             [FromBody] EdgeMappingRequestDto dto)
         {
@@ -100,7 +100,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The edge mapping request data transfer object containing updated details.</param>
         /// <returns>The updated mapping response DTO with its details.</returns>
         [HttpPut("UpdateEdgeMapping/{mappingId}")]
-        public async Task<IActionResult> UpdateEdgeMapping(
+        public async Task<ActionResult<EdgeMappingResponseDto>> UpdateEdgeMapping(
             long projectId,
             long mappingId,
             [FromBody] EdgeMappingRequestDto dto)

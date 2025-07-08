@@ -29,7 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
         [HttpPost("Query")]
-        public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace deeplynx.api.Controllers
         /// <param name="file">Timeseries file</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, IFormFile file)
+        public async Task<ActionResult<RecordResponseDto>> UploadFile(string projectId, string dataSourceId, IFormFile file)
         {
             try
             {
@@ -128,7 +128,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{TimeseriesUploadRecord}</returns>
         [HttpPost("complete-upload")]
-        public async Task<IActionResult> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
             {

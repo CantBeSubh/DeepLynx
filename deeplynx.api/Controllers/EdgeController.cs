@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdges")]
-        public async Task<IActionResult> GetAllEdges(long projectId, [FromQuery] long? dataSourceId = null)
+        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(long projectId, [FromQuery] long? dataSourceId = null)
         {
             try
             {
@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge")]
-        public async Task<IActionResult> GetEdge(
+        public async Task<ActionResult<EdgeResponseDto>> GetEdge(
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId)
@@ -76,7 +76,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edge">The edge request data transfer object containing edge details</param>
         [HttpPost("CreateEdge")]
-        public async Task<IActionResult> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
+        public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
         {
             try
             {
@@ -101,7 +101,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>The updated edge response DTO with its details</returns>
         [HttpPut("UpdateEdge")]
-        public async Task<IActionResult> UpdateEdge(
+        public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
             long projectId,
             [FromBody] EdgeRequestDto dto,
             [FromQuery] long? edgeId,

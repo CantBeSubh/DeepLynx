@@ -4,6 +4,14 @@ using deeplynx.models;
 
 namespace deeplynx.api.Controllers
 {
+    
+    /// <summary>
+    /// Controller for managing classes.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints to create, update, delete, and retrieve class information.
+    /// </remarks>
+
     [ApiController]
     [Route("api/projects/{projectId}/classes")]
     public class ClassController : ControllerBase
@@ -20,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
-        public async Task<IActionResult> GetAllClasses(long projectId)
+        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(long projectId)
         {
             try
             {
@@ -42,7 +50,7 @@ namespace deeplynx.api.Controllers
         /// <param name="classId">The ID of the class to retrieve</param>
         /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
-        public async Task<IActionResult> GetClass(long projectId, long classId)
+        public async Task<ActionResult<ClassResponseDto>> GetClass(long projectId, long classId)
         {
             try
             {
@@ -66,7 +74,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for classes</param>
         /// <returns></returns>
         [HttpPost("CreateClass")]
-        public async Task<IActionResult> CreateClass(long projectId,
+        public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
             [FromBody] ClassRequestDto dto)
         {
             try
@@ -90,7 +98,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto"></param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}")]
-        public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
+        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
             try
             {
