@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using deeplynx.graph;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,6 +72,7 @@ builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ILoginBusiness, LoginBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
 
 builder.Services.AddOpenApi();
 
@@ -82,7 +84,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
-        .WithTheme(ScalarTheme.Mars) 
+        .WithTheme(ScalarTheme.Mars)
         .AddMetadata("title", "DeepLynx Nexus")
         //.WithCustomCss("* { color: white;}")
     );

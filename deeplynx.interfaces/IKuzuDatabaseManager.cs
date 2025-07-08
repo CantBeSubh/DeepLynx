@@ -5,10 +5,11 @@ namespace deeplynx.interfaces
 {
     public interface IKuzuDatabaseManager
     {
-        Task ConnectAsync();
+        Task<bool> ConnectAsync();
         Task CloseAsync();
-        Task<bool> ExportDataAsync(string pgParams, int? project_id);
-        Task<bool> LoadDataAsync(int? project_id);
+        Task InstallPostgresExtensionsAsync();
+        Task<bool> ExportDataAsync(string pgParams, int project_id);
+        Task<bool> LoadDataAsync(int project_id);
         Task<string> ExecuteQueryAsync(KuzuDatabaseManagerQueryRequestDto request);
     }
 }

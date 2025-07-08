@@ -7,6 +7,6 @@ namespace deeplynx.models
         [Required]
         public string Query { get; set; }
 
-        public int? ProjectId { get; set; }
+        public int ProjectId { get; set; }
     }
 }

@@ -12,12 +12,12 @@ namespace deeplynx.graph
         private readonly string _kuzuDbPath = "../deeplynx.graph/kuzu_db";
         private kuzu_database _db;
         private kuzu_connection? _conn;
+        private bool _isDatabaseInitialized = false;
 
 
         /// <summary>
-        /// Initializes a new instance of the KuzuDataBusiness class.
+        /// Initializes a new instance of the KuzuDatabaseManager class.
         /// </summary>
-        /// <param name="kuzuDbPath">Path to the Kuzu database.</param>
         public KuzuDatabaseManager()
         {
             _db = new kuzu_database();
@@ -26,63 +26,104 @@ namespace deeplynx.graph
 
 
         /// <summary>
-        /// Connects to the Kuzu database.
+        /// Connects to the Kuzu database asynchronously.
+        /// Creates the database if it hasn't been initialized yet.
         /// </summary>
-        public async Task ConnectAsync()
+        /// <returns>A task representing the asynchronous connection operation.</returns>
+        public async Task<bool> ConnectAsync()
         {
             try
             {
                 kuzu_system_config config = kuzu_default_system_config();
-                var state = await Task.Run(() => kuzu_database_init(_kuzuDbPath, config, _db));
 
-                if (state == kuzu_state.KuzuError)
+                if (!_isDatabaseInitialized)
                 {
-                    Console.WriteLine("Could not create DB");
-                    return;
+                    var state = await Task.Run(() => kuzu_database_init(_kuzuDbPath, config, _db));
+
+                    if (state == kuzu_state.KuzuError)
+                    {
+                        Console.WriteLine("Could not create DB");
+                        return false;
+                    }
+
+                    _isDatabaseInitialized = true;
                 }
 
-                state = await Task.Run(() => kuzu_connection_init(_db, _conn));
-                if (state == kuzu_state.KuzuError)
+                var connectionState = await Task.Run(() => kuzu_connection_init(_db, _conn));
+                if (connectionState == kuzu_state.KuzuError)
                 {
                     Console.WriteLine("Could not connect to DB");
-                    return;
+                    return false;
                 }
 
                 Console.WriteLine("Connected to Kuzu database.");
+                return true;
             }
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while connecting to the database: {e.Message}");
+                return false;
             }
         }
 
+
+        /// <summary>
+        /// Installs the necessary PostgreSQL extensions for KuzuDB.
+        /// </summary>
+        /// <param name="pgParams">The connection parameters for the PostgreSQL database.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task InstallPostgresExtensionsAsync()
+        {
+            if (_conn == null)
+            {
+                await ConnectAsync();
+            }
+
+            await Task.Run(() => PerformNonQueryAsync("INSTALL postgres;"));
+            await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION postgres;"));
+            await Task.Run(() => PerformNonQueryAsync("INSTALL json;"));
+            await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION json;"));
+        }
 
 
         /// <summary>
         /// Main export function that checks records and edges, assigns defaults, copies data, and indicates successful export.
         /// </summary>
-        public async Task<bool> ExportDataAsync(string pgParams, int? project_id)
+        /// <param name="pgParams">The connection parameters for the PostgreSQL database.</param>
+        /// <param name="project_id">The project identifier.</param>
+        /// <returns>A task representing the asynchronous export operation.</returns>
+        public async Task<bool> ExportDataAsync(string pgParams, int project_id)
         {
+
             if (_conn == null)
             {
-                Console.WriteLine("Not connected to Kuzu. Please call the Connect method first.");
-                return false;
+                await ConnectAsync();
             }
 
             bool hasError = false;
-
             try
             {
-                await Task.Run(() => PerformNonQueryAsync("INSTALL postgres;"));
-                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION postgres;"));
-                await Task.Run(() => PerformNonQueryAsync("INSTALL json;"));
-                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION json;"));
+                await InstallPostgresExtensionsAsync();
 
                 string attachCommand = $"ATTACH '{pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
                 await Task.Run(() => PerformNonQueryAsync(attachCommand));
 
                 await SetupKuzuTablesAsync();
+
+                bool projectIdExists = await CheckIfProjectIdExistsAsync(project_id);
+
+                if (projectIdExists)
+                {
+                    Console.WriteLine($"Project ID {project_id} has already been processed. Skipping data load.");
+                    return true;
+                }
+
                 hasError = await LoadDataAsync(project_id);
+
+                if (!hasError)
+                {
+                    await CreateProjectIdNodeAsync(project_id);
+                }
 
                 if (!hasError)
                 {
@@ -99,6 +140,50 @@ namespace deeplynx.graph
             }
         }
 
+
+        /// <summary>
+        /// Checks if a specific project ID exists in the ProcessedProjectIds table.
+        /// </summary>
+        /// <param name="projectId">The project ID to check for existence.</param>
+        /// <returns>A task representing the asynchronous operation, returning true if the project ID exists, otherwise false.</returns>
+        private async Task<bool> CheckIfProjectIdExistsAsync(long projectId)
+        {
+            try
+            {
+                var query = $"MATCH (p:ProcessedProjectIds) WHERE p.project_id = {projectId} RETURN COUNT(p) > 0;";
+                var requestDto = new KuzuDatabaseManagerQueryRequestDto { Query = query };
+                var result = await ExecuteQueryAsync(requestDto);
+
+                return result.Contains("True");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while checking for project ID existence: {e.Message}");
+                return false;
+            }
+        }
+
+
+        /// <summary>
+        /// Creates a project ID node in the ProcessedProjectIds table.
+        /// </summary>
+        /// <param name="projectId">The project ID to insert as a node.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task CreateProjectIdNodeAsync(int projectId)
+        {
+            try
+            {
+                var query = $"CREATE (p:ProcessedProjectIds {{project_id: {projectId}}});";
+                await PerformNonQueryAsync(query);
+                Console.WriteLine($"Project ID {projectId} inserted into ProcessedProjectIds.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while inserting project ID: {e.Message}");
+            }
+        }
+
+
         /// <summary>
         /// Sets up the necessary tables in the Kuzu database.
         /// </summary>
@@ -106,26 +191,25 @@ namespace deeplynx.graph
         {
             try
             {
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS PERFORMS;");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS MEMBER_OF;");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS CONTAINS;");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS RELATES_TO");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS ProcessedProjectIds (project_id INT64 PRIMARY KEY);");
 
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS Song;");
-                await PerformNonQueryAsync("CREATE NODE TABLE Song (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS Album;");
-                await PerformNonQueryAsync("CREATE NODE TABLE Album (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS Musician;");
-                await PerformNonQueryAsync("CREATE NODE TABLE Musician (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS Band;");
-                await PerformNonQueryAsync("CREATE NODE TABLE Band (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
-                await PerformNonQueryAsync("DROP TABLE IF EXISTS Entity;");
-                await PerformNonQueryAsync("CREATE NODE TABLE Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Song (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
 
-                await PerformNonQueryAsync("CREATE REL TABLE RELATES_TO (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
-                await PerformNonQueryAsync("CREATE REL TABLE PERFORMS (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
-                await PerformNonQueryAsync("CREATE REL TABLE MEMBER_OF (FROM Musician TO Band, relationship_name STRING);");
-                await PerformNonQueryAsync("CREATE REL TABLE CONTAINS (FROM Album TO Song, relationship_name STRING);");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Album (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Musician (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Band (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+
+                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS RELATES_TO (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
+
+                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS PERFORMS (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
+
+                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS MEMBER_OF (FROM Musician TO Band, relationship_name STRING);");
+
+                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS CONTAINS (FROM Album TO Song, relationship_name STRING);");
 
                 Console.WriteLine("Tables setup successfully.");
             }
@@ -135,16 +219,15 @@ namespace deeplynx.graph
             }
         }
 
+
         /// <summary>
         /// Loads both records and edges into the Kuzu database for a specified project.
-        /// This method first attempts to load all relevant records and then loads the
-        /// edges that relate the records together based on the provided project ID.
         /// </summary>
         /// <param name="project_id">The project ID to filter the records and edges being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
-        public async Task<bool> LoadDataAsync(int? project_id)
+        public async Task<bool> LoadDataAsync(int project_id)
         {
-            bool hasError = false;
+            bool hasError;
 
             hasError = await LoadRecordsAsync(project_id);
             if (hasError)
@@ -156,15 +239,13 @@ namespace deeplynx.graph
             return hasError;
         }
 
+
         /// <summary>
         /// Loads records from the PostgreSQL database into the KuzuDB.
-        /// This method performs a series of COPY commands to transfer data
-        /// related to various classes (e.g., Band, Musician, etc.) and assigns
-        /// defaults where necessary.
         /// </summary>
         /// <param name="project_id">The project ID to filter the records being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
-        private async Task<bool> LoadRecordsAsync(int? project_id)
+        private async Task<bool> LoadRecordsAsync(int project_id)
         {
             bool hasError = false;
 
@@ -187,15 +268,13 @@ namespace deeplynx.graph
             return hasError;
         }
 
+
         /// <summary>
         /// Loads edges from the edges_c view into the KuzuDB.
-        /// This method performs a series of COPY commands to transfer edges
-        /// related to relationships between records and ensures that they are
-        /// correctly assigned based on the specified project ID.
         /// </summary>
         /// <param name="project_id">The project ID to filter the edges being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
-        private async Task<bool> LoadEdgesAsync(int? project_id)
+        private async Task<bool> LoadEdgesAsync(int project_id)
         {
             bool hasError = false;
 
@@ -239,6 +318,7 @@ namespace deeplynx.graph
             }
         }
 
+
         /// <summary>
         /// Executes a query on the Kuzu database and returns the formatted result.
         /// </summary>
@@ -250,8 +330,7 @@ namespace deeplynx.graph
 
             if (_conn == null)
             {
-                Console.WriteLine("Not connected to Kuzu. Please call the Connect method first.");
-                return "Error: Not connected to Kuzu.";
+                await ConnectAsync();
             }
 
             try
@@ -269,7 +348,9 @@ namespace deeplynx.graph
                 ulong numTuples = kuzu_query_result_get_num_tuples(result);
                 Console.WriteLine($"Number of tuples returned: {numTuples}");
 
-                return await FormatQueryResultAsync(result);
+                string res = await FormatQueryResultAsync(result);
+
+                return res;
             }
             catch (Exception e)
             {
@@ -326,7 +407,7 @@ namespace deeplynx.graph
                 await Task.Run(() => kuzu_value_get_data_type(value, columnDataType));
                 var columnDataTypeId = await Task.Run(() => kuzu_data_type_get_id(columnDataType));
 
-                if (columnDataTypeId == kuzu_data_type_id.KUZU_NODE)
+                if (columnDataTypeId == kuzu_data_type_id.KUZU_NODE || columnDataTypeId == kuzu_data_type_id.KUZU_BOOL)
                 {
                     sb.AppendLine(await GetValueStringAsync(value, columnDataType));
                 }
@@ -346,8 +427,12 @@ namespace deeplynx.graph
                 await Task.Run(() => kuzu_flat_tuple_destroy(tuple));
             }
 
-            return sb.ToString();
+            string res = sb.ToString();
+
+            return res;
         }
+
+
         /// <summary>
         /// Converts a Kuzu value into its string representation based on its logical type.
         /// </summary>
@@ -400,6 +485,13 @@ namespace deeplynx.graph
                         return result;
                     });
                     return doubleValue.ToString();
+                case kuzu_data_type_id.KUZU_BOOL:
+                    bool boolValue = await Task<bool>.Factory.StartNew(() =>
+                    {
+                        kuzu_value_get_bool(value, out bool result);
+                        return result;
+                    });
+                    return boolValue.ToString();
                 case kuzu_data_type_id.KUZU_NODE:
                     return await Task.Run(() =>
                     {
@@ -444,7 +536,6 @@ namespace deeplynx.graph
                     {
                         Console.WriteLine("REL:\n");
 
-
                         kuzu_value srcIdValue = new kuzu_value();
                         kuzu_rel_val_get_src_id_val(value, srcIdValue);
                         kuzu_value_get_int64(srcIdValue, out long srcId);
@@ -463,7 +554,6 @@ namespace deeplynx.graph
 
                         return $"({srcId})-{{_LABEL: {relLabel}, _ID: {relId}}}->({dstId})";
                     });
-
                 default:
                     Console.WriteLine(dataTypeId);
 
