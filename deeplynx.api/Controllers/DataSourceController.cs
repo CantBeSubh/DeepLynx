@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources")]
-        public async Task<IActionResult> GetAllDataSources(long projectId)
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}")]
-        public async Task<IActionResult> GetDataSource(long projectId, long dataSourceId)
+        public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(long projectId, long dataSourceId)
         {
             try
             {
@@ -70,7 +70,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
         [HttpPost("CreateDataSource")]
-        public async Task<IActionResult> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
+        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
         {
             try
             {

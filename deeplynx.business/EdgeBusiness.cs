@@ -50,10 +50,7 @@ public class EdgeBusiness : IEdgeBusiness
                 Id = e.Id,
                 OriginId = e.OriginId,
                 DestinationId = e.DestinationId,
-                // return empty object for properties if null
-                Properties = JsonNode.Parse(e.Properties ?? "{}") as JsonObject, 
                 RelationshipId = e.RelationshipId,
-                RelationshipName = e.RelationshipName,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
                 CreatedAt = e.CreatedAt,
@@ -83,10 +80,7 @@ public class EdgeBusiness : IEdgeBusiness
             Id = edge.Id,
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
-            // return empty object for properties if null
-            Properties = JsonNode.Parse(edge.Properties ?? "{}") as JsonObject,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
@@ -115,9 +109,7 @@ public class EdgeBusiness : IEdgeBusiness
             DestinationId = dto.DestinationId,
             ProjectId = projectId,
             DataSourceId = dataSourceId,
-            Properties = dto.Properties?.ToString(),
             RelationshipId = dto.RelationshipId,
-            RelationshipName = dto.RelationshipName,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
@@ -130,10 +122,7 @@ public class EdgeBusiness : IEdgeBusiness
             Id = edge.Id,
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
-            // return empty object for properties if null
-            Properties = JsonNode.Parse(edge.Properties ?? "{}") as JsonObject,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
@@ -167,9 +156,7 @@ public class EdgeBusiness : IEdgeBusiness
         
         edge.OriginId = dto.OriginId;
         edge.DestinationId = dto.DestinationId;
-        edge.Properties = dto.Properties?.ToString();
         edge.RelationshipId = dto.RelationshipId;
-        edge.RelationshipName = dto.RelationshipName;
         edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         
@@ -181,10 +168,7 @@ public class EdgeBusiness : IEdgeBusiness
             Id = edge.Id,
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
-            // return empty object for properties if null
-            Properties = JsonNode.Parse(edge.Properties ?? "{}") as JsonObject,
             RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,

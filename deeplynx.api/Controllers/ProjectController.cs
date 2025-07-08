@@ -25,7 +25,7 @@ namespace deeplynx.api.Controllers
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects")]
-        public async Task<IActionResult> GetAllProjects()
+        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects()
         {
             try
             {
@@ -46,7 +46,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">THe ID by which to retrieve the project</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}")]
-        public async Task<IActionResult> GetProject(long projectId)
+        public async Task<ActionResult<ProjectResponseDto>> GetProject(long projectId)
         {
             try
             {
@@ -67,7 +67,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">A data transfer object with details on the new project to be created.</param>
         /// <returns>The new project which was just created.</returns>
         [HttpPost("CreateProject")]
-        public async Task<IActionResult> CreateProject([FromBody] ProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> CreateProject([FromBody] ProjectRequestDto dto)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
         /// <returns>The project which was just updated.</returns>
         [HttpPut("UpdateProject/{projectId}")]
-        public async Task<IActionResult> UpdateProject(long projectId, [FromBody] ProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] ProjectRequestDto dto)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of the project to display stats about.</param>
         /// <returns>Project stats</returns>
         [HttpGet("ProjectStats/{projectId}")]
-        public async Task<IActionResult> ProjectStats(long projectId)
+        public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long projectId)
         {
             try
             {
