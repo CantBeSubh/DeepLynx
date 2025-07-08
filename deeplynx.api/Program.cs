@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using deeplynx.graph;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -83,6 +84,7 @@ builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
 builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
 
 var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 builder.Services.AddOpenApi(options =>
