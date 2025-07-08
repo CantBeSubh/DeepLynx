@@ -27,7 +27,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tagId">(Optional) The ID of the tag by which to filter mappings</param>
         /// <returns>A list of record mappings based on the applied filters.</returns>
         [HttpGet("GetAllRecordMappings")]
-        public async Task<IActionResult> GetAllRecordMappings(
+        public async Task<ActionResult<IEnumerable<RecordMappingResponseDto>>> GetAllRecordMappings(
             long projectId, 
             [FromQuery] long? classId = null,
             [FromQuery] long? tagId = null)
@@ -53,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <returns>The record mapping associated with the given ID</returns>
         [HttpGet("GetRecordMapping/{mappingId}")]
-        public async Task<IActionResult> GetRecordMapping(long projectId, long mappingId)
+        public async Task<ActionResult<RecordMappingResponseDto>> GetRecordMapping(long projectId, long mappingId)
         {
             try
             {
@@ -75,7 +75,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The record mapping request data transfer object containing mapping details</param>
         /// <returns>The created record mapping</returns>
         [HttpPost("CreateRecordMapping")]
-        public async Task<IActionResult> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
+        public async Task<ActionResult<RecordMappingResponseDto>> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
         {
             try
             {
@@ -98,7 +98,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The record mapping request data transfer object containing updated details.</param>
         /// <returns>The updated mapping response DTO with its details.</returns>
         [HttpPut("UpdateRecordMapping/{mappingId}")]
-        public async Task<IActionResult> UpdateRecordMapping(
+        public async Task<ActionResult<RecordMappingResponseDto>> UpdateRecordMapping(
             long projectId, 
             long mappingId, 
             [FromBody] RecordMappingRequestDto dto)
