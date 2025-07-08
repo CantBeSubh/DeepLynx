@@ -3,7 +3,7 @@ import React from "react";
 const LinksWidget = () => {
   return (
     <div className="card-body">
-      <div className="flex justify-between items-center p-4">
+      <div className="flex justify-between items-center">
         <h2 className="card-title">
           Links
         </h2>

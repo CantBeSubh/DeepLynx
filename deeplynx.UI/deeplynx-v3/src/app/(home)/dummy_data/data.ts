@@ -862,7 +862,7 @@ export const initialTableData = [
       location: "/logistics/shipping/data/2025/logistics_data.csv",
     },
   ];
-  
+
 
    /* Added sample data to pass to project detail */
    export const sampleProjectData = [

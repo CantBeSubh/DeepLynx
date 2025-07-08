@@ -47,24 +47,72 @@ const TeamMembersWidget = () => {
             </div>
 
             {!showTable ? (
-                <div className="caousel flex items-center round-box space-x-4 p-4">
-                    <div className="flex items-center space-x-2">
-                    <p className="text-base-300 mb-2"></p>
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="avatar inline-block">
-                            <div className="w-10 rounded-full">
-                            <img
-                                src={`https://i.pravatar.cc/150?img=${i + 1}`}
-                                alt="avatar"
-                            />
+                <div className="flex items-center">
+                    <div className="flex justify-between round-box space-x-4 pt-4 pb-4">
+                        <div className="flex items-center space-x-2">
+
+                            {/* Left Button */}
+                            <div className="flex items-center justify-cetner">
+                                <button className="flex-shrink-0">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke-width="1.5"
+                                        stroke="currentColor"
+                                        className="size-6">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="M15.75 19.5 8.25 12l7.5-7.5"
+                                        />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            {/* Avatar Icons */}
+                            <div className="flex-grow flex items-center space-x-2 overflow-x-auto">
+                                <p className="text-base-300 mb-2"></p>
+                                {[...Array(8)].map((_, i) => (
+                                    <div key={i} className="avatar inline-block">
+                                        <div className="w-10 rounded-full">
+                                        <img
+                                            src={`https://i.pravatar.cc/150?img=${i + 1}`}
+                                            alt="avatar"
+                                        />
+                                        </div>
+                                    </div>
+                                ))}
+                                <PlusIcon />
+                            </div>
+
+                            {/* Right Button */}
+                            <div className="flex items-center justify-center">
+                                <button className="flex-shrink-0">
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none" viewBox="0 0 24 24"
+                                        stroke-width="1.5"
+                                        stroke="currentColor"
+                                        className="size-6">
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            d="m8.25 4.5 7.5 7.5-7.5 7.5"
+                                        />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                        ))}
-                    <PlusIcon />
                     </div>
                 </div>
             ) : (
                 <div className="overflow-x-auto">
+                    <div className="flex justify-between items-center">
+                        <button className="flex space-x-2">
+                            <PlusIcon />
+                        </button>
+                    </div>
                     <table className="table">
                     {/* head */}
                         <thead>
@@ -110,7 +158,7 @@ const TeamMembersWidget = () => {
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="">Natalie Hergesheimer</div>
+                                    <div className="">Autumn Combs</div>
                                 </div>
                                 </div>
                             </td>
@@ -166,6 +214,38 @@ const TeamMembersWidget = () => {
                         </tr>
                     </tbody>
                     </table>
+                    <div className="flex justify-end">
+                        <button className="btn join-item p-2 rounded-r-none">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="2"
+                                stroke="currentColor"
+                                className="w-5 h-5">
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M15 19l-7-7 7-7"
+                                />
+                            </svg>
+                        </button>
+                        <button className="btn join-item p-2 rounded-l-none">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                strokeWidth="2"
+                                stroke="currentColor"
+                                className="w-5 h-5">
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M9 5l7 7-7 7"
+                                />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

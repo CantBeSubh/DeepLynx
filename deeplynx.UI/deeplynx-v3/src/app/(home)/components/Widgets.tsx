@@ -11,7 +11,6 @@ import TeamMembersWidget from "./WidgetCards.tsx/TeamMember";
 type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 
 // adjust logic for adding and removing widgets
-//MAKE WIDGET FOR PAGE AND PROJECT NAME
 const WidgetCard = () => {
   const [widgets, setWidgets] = useState<WidgetType[]>([
     "DataOverview",
@@ -21,16 +20,6 @@ const WidgetCard = () => {
     "ProjectOverview",
     "TeamMembers"
   ]);
-
-  // const WidgetCard = () => {
-  // const [widgets, setWidgets] = useState<WidgetType[]>([
-  //   "DataOverview",
-  //   "Graph",
-  //   "Links",
-  //   "RecentActivity",
-  //   "ProjectOverview",
-  //   "TeamMembers"
-  // ]);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
