@@ -7,12 +7,19 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\deeplynx.datalayer\deeplynx.datalayer.csproj" />
+      <ProjectReference Include="..\deeplynx.helpers\deeplynx.helpers.csproj" />
+      <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
+      <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
     <None Update="libkuzunet.dylib">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="libkuzu.dylib">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
+    </ItemGroup>
 
 </Project>
