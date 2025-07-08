@@ -30,5 +30,3 @@ deeplynx.sln.DotSettings.user
 
 TimeSeries.db
 deeplynx.graph/kuzu_db
-deeplynx.graph/libkuzu.dylib
-deeplynx.graph/libkuzunet.dylib
