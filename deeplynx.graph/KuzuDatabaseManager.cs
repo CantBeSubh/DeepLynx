@@ -154,7 +154,7 @@ namespace deeplynx.graph
             try
             {
                 var query = $"MATCH (p:ProcessedProjectIds) WHERE p.project_id = {projectId} RETURN COUNT(p) > 0;";
-                var requestDto = new KuzuDatabaseManagerQueryRequestDto { Query = query };
+                var requestDto = new KuzuDBMQueryRequestDto { Query = query };
                 var result = await ExecuteQueryAsync(requestDto);
 
                 return result.Contains("True");
@@ -242,7 +242,7 @@ namespace deeplynx.graph
                     r AS RECURSIVE_RELATIONSHIP,
                     b AS {request.TableName}_related_node";
 
-                var requestDto = new KuzuDatabaseManagerQueryRequestDto { Query = query };
+                var requestDto = new KuzuDBMQueryRequestDto { Query = query };
 
                 return await ExecuteQueryAsync(requestDto);
             }
@@ -358,7 +358,7 @@ namespace deeplynx.graph
         /// </summary>
         /// <param name="query">The Cypher query string to be executed.</param>
         /// <returns>A string containing the formatted results of the query.</returns>
-        public async Task<string> ExecuteQueryAsync(KuzuDatabaseManagerQueryRequestDto request)
+        public async Task<string> ExecuteQueryAsync(KuzuDBMQueryRequestDto request)
         {
             kuzu_query_result result = new kuzu_query_result();
 

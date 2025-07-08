@@ -24,7 +24,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request">The SQL query string to execute</param>
         /// <returns>A result set from the Kuzu database</returns>
         [HttpPost("Query")]
-        public async Task<IActionResult> QueryKuzuDatabase(int projectId, [FromBody] KuzuDatabaseManagerQueryRequestDto request)
+        public async Task<IActionResult> QueryKuzuDatabase(int projectId, [FromBody] KuzuDBMQueryRequestDto request)
         {
             if (!ModelState.IsValid)
             {
