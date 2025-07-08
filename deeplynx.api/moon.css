@@ -1,0 +1,6 @@
+ /*Document header */
+.dark-mode .header-container {
+    background: linear-gradient(to top, #000212, #1084d0);
+    border-color: grey;
+    color: #000;
+}

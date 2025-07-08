@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">(Optional) ID of project that users are associated with</param>
         /// <returns>List of user response DTOs</returns>
         [HttpGet("GetAllUsers")]
-        public async Task<IActionResult> GetAllUsers(long? projectId)
+        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(long? projectId)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user</param>
         /// <returns>User response DTO</returns>
         [HttpGet("GetUser/{userId}")]
-        public async Task<IActionResult> GetUser(long userId)
+        public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
         {
             try
             {
@@ -64,7 +64,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPost("CreateUser")]
-        public async Task<IActionResult> CreateUser([FromBody] UserRequestDto dto)
+        public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] UserRequestDto dto)
         {
             try
             {
@@ -85,7 +85,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPut("UpdateUser/{userId}")]
-        public async Task<IActionResult> UpdateClass(long userId, [FromBody] UserRequestDto dto)
+        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UserRequestDto dto)
         {
             try
             {

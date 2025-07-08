@@ -21,8 +21,12 @@
         <PackageReference Include="NLog" Version="5.4.0" />
         <PackageReference Include="Npgsql" Version="9.0.3" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-preview.5" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.4.0" />
+        <PackageReference Include="NSwag.Core" Version="14.4.0" />
+        <PackageReference Include="NSwag.Generation.AspNetCore" Version="14.4.0" />
         <PackageReference Include="Okta.AspNetCore" Version="4.6.3" />
-        <PackageReference Include="Scalar.AspNetCore" Version="2.0.30" />
+        <PackageReference Include="Scalar.AspNetCore" Version="2.5.3" />
+        <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.5.3" />
     </ItemGroup>
 
     <ItemGroup>
@@ -37,6 +41,10 @@
     <ItemGroup>
         <Folder Include="reports\" />
         <Folder Include="uploads\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="wwwroot\images\lynx-white.png" />
     </ItemGroup>
 
 </Project>

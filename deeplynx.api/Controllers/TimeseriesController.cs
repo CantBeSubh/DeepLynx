@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         {
             _timeseriesBusiness = timeseriesBusiness;
         }
-        
+
         /// <summary>
         /// Query timeseries 
         /// </summary>
@@ -28,8 +28,8 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
-        [HttpPost("query")]
-        public async Task<IActionResult> QueryTimeseries(string projectId, string dataSourceId, [FromBody]TimeseriesQueryRequestDto request)
+        [HttpPost("Query")]
+        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
@@ -56,11 +56,11 @@ namespace deeplynx.api.Controllers
         /// <param name="file">Timeseries file</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile(string projectId, string dataSourceId, IFormFile file)
+        public async Task<ActionResult<RecordResponseDto>> UploadFile(string projectId, string dataSourceId, IFormFile file)
         {
             try
             {
-                var timeSeriesUploadInfo= await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
+                var timeSeriesUploadInfo = await _timeseriesBusiness.UploadFile(projectId, dataSourceId, file);
                 return Ok(timeSeriesUploadInfo);
             }
             catch (Exception e)
@@ -121,14 +121,14 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Comeplete timeseries upload 
+        /// Complete timeseries upload 
         /// </summary>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{TimeseriesUploadRecord}</returns>
         [HttpPost("complete-upload")]
-        public async Task<IActionResult> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
             {
@@ -140,6 +140,53 @@ namespace deeplynx.api.Controllers
                 var message = $"An error occurred while completing a timeseries file upload for {request.FileName}: {e}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get every nth timeseries table row
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="tableName"></param>
+        /// <param name="rowNumber"></param>
+        /// <returns></returns>
+        [HttpGet("InterpolateRows")]
+        public async Task<IActionResult> InterpolateRows(string projectId, string dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
+        {
+            try
+            {
+                var timeseriesUploadRecord = await _timeseriesBusiness.InterpolateRows(projectId, dataSourceId, rowNumber, tableName);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e);
+            }
+        }
+
+        /// <summary>
+        /// Get all timeseries table rows
+        /// </summary>
+        /// <param name="tableName"></param>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <returns></returns>
+        [HttpGet("GetAll")]
+        public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, string projectId, string dataSourceId)
+        {
+            try
+            {
+                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(tableName, projectId, dataSourceId);
+                return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e);
             }
         }
     }

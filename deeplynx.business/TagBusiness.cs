@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
@@ -32,21 +33,35 @@ public class TagBusiness : ITagBusiness
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
+        if (tagRequestDto == null)
+            throw new ArgumentNullException(nameof(tagRequestDto));
+        
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
+        if (project == null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
-            throw new ArgumentException("Name is required and cannot be empty or whitespace.");
+            throw new ValidationException("Name is required and cannot be empty or whitespace");
         }
+        
+        /*// Validate 'CreatedBy' field
+        if (string.IsNullOrWhiteSpace(tagRequestDto.CreatedBy))
+        {
+            throw new ValidationException("CreatedBy is required and cannot be empty or whitespace");
+        }*/
         
         var tag = new Tag
         {
             Name = tagRequestDto.Name,
             ProjectId = projectId,
-            CreatedBy = null, // TODO: handled in future by JWT.
+            CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null, // TODO: handled in future by JWT.
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
-        _context.Tags.Add(tag);
+        await _context.Tags.AddAsync(tag);
         await _context.SaveChangesAsync();
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -137,7 +152,7 @@ public class TagBusiness : ITagBusiness
 
         if (tag == null)
         {
-            throw new KeyNotFoundException("Tag not found.");
+            throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
 
         return new TagResponseDto
@@ -163,7 +178,7 @@ public class TagBusiness : ITagBusiness
     {
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
-            throw new KeyNotFoundException($"Tag with {tagId} not found.");
+            throw new KeyNotFoundException($"Tag with id {tagId} not found.");
         
         _context.Tags.Remove(tag);
         await _context.SaveChangesAsync();
