@@ -1,183 +1,9 @@
-// using deeplynx.datalayer.Models;
-// using deeplynx.tests;
-// using Testcontainers.PostgreSql;
-// using Microsoft.EntityFrameworkCore;
-// using Xunit;
-//
-//
-// public class TestSuiteFixture : IAsyncLifetime
-// {
-//     private readonly PostgreSqlContainer _container; 
-//     protected DeeplynxContext Context { get; private set; }
-//     public async Task InitializeAsync()
-//     {
-//         await _container.StartAsync();
-//
-//         // Create DbContext with container connection string
-//         var options = new DbContextOptionsBuilder<DeeplynxContext>()
-//             .UseNpgsql(_container.GetConnectionString())
-//             .Options;
-//
-//         Context = new DeeplynxContext(options);
-//
-//         // Apply migrations to ensure database is created and up-to-date
-//         await Context.Database.MigrateAsync();
-//         await SeedData.SeedDatabase(Context);
-//         Console.WriteLine("Initializing database...");
-//     }
-//
-//     public async Task DisposeAsync()
-//     {
-//         await Context.DisposeAsync();
-//         await _container.DisposeAsync();
-//         Console.WriteLine("Disposing database...");
-//     }
-// }
-//
-// [CollectionDefinition("Test Suite Collection")]
-// public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
-// {
-//     // This class has no code, and is never created. Its purpose is simply
-//     // to be the place to apply [CollectionDefinition] and ICollectionFixture<> interfaces.
-// }
-//
-// [Collection("Test Suite Collection")]
-// public class IntegrationTestBase : IAsyncLifetime
-// {
-//     private readonly PostgreSqlContainer _container; 
-//     protected DeeplynxContext Context { get; private set; }
-//
-//     protected IntegrationTestBase()
-//     {
-//         _container = new PostgreSqlBuilder()
-//             .WithImage("postgres:15-alpine")
-//             .Build();
-//     }
-//
-//     public async virtual Task InitializeAsync()
-//     {
-//         
-//     }
-//
-//     public async Task DisposeAsync()
-//     {
-//         // await Context.DisposeAsync();
-//         // await _container.DisposeAsync();
-//     }
-//
-//     /// <summary>
-//     /// Clean database between tests
-//     /// </summary>
-//     protected async Task CleanDatabaseAsync()
-//     {
-//         var projects = await Context.Projects.ToListAsync();
-//         Context.Projects.RemoveRange(projects);
-//         var datasources = await Context.DataSources.ToListAsync();
-//         Context.DataSources.RemoveRange(datasources);
-//         var classes = await Context.Classes.ToListAsync();
-//         Context.Classes.RemoveRange(classes);
-//         var records = await Context.Records.ToListAsync();
-//         Context.Records.RemoveRange(records);
-//         await Context.SaveChangesAsync();
-//     }
-// }
-
-
-// using deeplynx.datalayer.Models;
-// using deeplynx.tests;
-// using Testcontainers.PostgreSql;
-// using Microsoft.EntityFrameworkCore;
-// using Xunit;
-//
-// public class TestSuiteFixture : IAsyncLifetime
-// {
-//     private readonly PostgreSqlContainer _container;
-//     public DeeplynxContext Context { get; private set; }
-//
-//     public TestSuiteFixture()
-//     {
-//         _container = new PostgreSqlBuilder()
-//             .WithImage("postgres:15-alpine")
-//             .Build();
-//     }
-//
-//     public async Task InitializeAsync()
-//     {
-//         await _container.StartAsync();
-//
-//         // Create DbContext with container connection string
-//         var options = new DbContextOptionsBuilder<DeeplynxContext>()
-//             .UseNpgsql(_container.GetConnectionString())
-//             .Options;
-//
-//         Context = new DeeplynxContext(options);
-//
-//         // Apply migrations to ensure database is created and up-to-date
-//         await Context.Database.MigrateAsync();
-//         await SeedData.SeedDatabase(Context);
-//         Console.WriteLine("Initializing database...");
-//     }
-//
-//     public async Task DisposeAsync()
-//     {
-//         await Context.DisposeAsync();
-//         await _container.DisposeAsync();
-//         Console.WriteLine("Disposing database...");
-//     }
-// }
-//
-// [CollectionDefinition("Test Suite Collection")]
-// public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
-// {
-//     // This class has no code, and is never created. Its purpose is simply
-//     // to be the place to apply [CollectionDefinition] and ICollectionFixture<> interfaces.
-// }
-//
-// [Collection("Test Suite Collection")]
-// public class IntegrationTestBase : IAsyncLifetime
-// {
-//     protected DeeplynxContext Context { get; private set; }
-//     private readonly TestSuiteFixture _fixture;
-//
-//     protected IntegrationTestBase(TestSuiteFixture fixture)
-//     {
-//         _fixture = fixture;
-//         Context = _fixture.Context;
-//     }
-//
-//     public async virtual Task InitializeAsync()
-//     {
-//         // Any test-specific initialization can be done here
-//     }
-//
-//     public async Task DisposeAsync()
-//     {
-//         // Any test-specific cleanup can be done here
-//     }
-//
-//     /// <summary>
-//     /// Clean database between tests
-//     /// </summary>
-//     protected async Task CleanDatabaseAsync()
-//     {
-//         var projects = await Context.Projects.ToListAsync();
-//         Context.Projects.RemoveRange(projects);
-//         var datasources = await Context.DataSources.ToListAsync();
-//         Context.DataSources.RemoveRange(datasources);
-//         var classes = await Context.Classes.ToListAsync();
-//         Context.Classes.RemoveRange(classes);
-//         var records = await Context.Records.ToListAsync();
-//         Context.Records.RemoveRange(records);
-//         await Context.SaveChangesAsync();
-//     }
-// }
-
-
 using deeplynx.datalayer.Models;
 using deeplynx.tests;
 using Testcontainers.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 
+// fixture to allow setting up and breaking down what is needed for each test suite
 public class TestSuiteFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container;
@@ -190,10 +16,13 @@ public class TestSuiteFixture : IAsyncLifetime
             .WithImage("postgres:15-alpine")
             .Build();
     }
-
+    
+    //Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
         await _container.StartAsync();
+        
+        // Allows the itegration test base to access the connection string to instantiate a new context
         ConnectionString = _container.GetConnectionString();
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(ConnectionString)
@@ -204,17 +33,19 @@ public class TestSuiteFixture : IAsyncLifetime
         // Apply migrations and seed database only once
         await Context.Database.MigrateAsync();
         await SeedData.SeedDatabase(Context);
-        Console.WriteLine("Initializing database...");
     }
-
+    
+    //Runs at the end of every test suite
     public async Task DisposeAsync()
     {
         await Context.DisposeAsync();
         await _container.DisposeAsync();
-        Console.WriteLine("Disposing database...");
     }
 }
 
+
+// Defines a test collection named "Test Suite Collection".
+// This collection uses the TestSuiteFixture class for setup and teardown.
 [CollectionDefinition("Test Suite Collection")]
 public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 {
@@ -222,6 +53,9 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
     // to be the place to apply [CollectionDefinition] and ICollectionFixture<> interfaces.
 }
 
+
+// Indicates that this test class is part of the "Test Suite Collection".
+// The TestSuiteFixture setup and teardown code will be applied to this class.
 [Collection("Test Suite Collection")]
 public class IntegrationTestBase : IAsyncLifetime
 {
@@ -236,22 +70,13 @@ public class IntegrationTestBase : IAsyncLifetime
             .Options);
     }
 
-    public async virtual Task InitializeAsync()
+    //Runs before every test in the test suite
+    public virtual async Task InitializeAsync()
     {
-        // var options = new DbContextOptionsBuilder<DeeplynxContext>()
-        //     .UseNpgsql(_fixture.ConnectionString)
-        //     .Options;
-        //
-        // Context = new DeeplynxContext(options);
-        //
-        // Context.ChangeTracker.Clear();
-        //
-        // // Apply migrations to ensure database is created and up-to-date
-        // await Context.Database.MigrateAsync();
-        // await SeedData.SeedDatabase(Context);
         await CleanDatabaseAsync();
     }
 
+    //Runs after every test in the test suite
     public async Task DisposeAsync()
     {
         await Context.DisposeAsync();

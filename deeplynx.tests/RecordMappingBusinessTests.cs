@@ -19,6 +19,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     private EdgeMappingBusiness _edgeMappingBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     private RelationshipBusiness _relationshipBusiness = null!;
+    private DataSourceBusiness _dataSourceBusiness = null!;
     public long pid;
     public long tid;
     public long cid;
@@ -37,6 +38,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _projectBusiness = new ProjectBusiness(Context, _classBusiness);
         _tagBusiness = new TagBusiness(Context, _recordMappingBusiness);
+        _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _recordBusiness);
     }
 
     [Fact]
@@ -44,7 +46,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     {
         await SeedTestDataAsync();
         var now = DateTime.UtcNow;
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
 
         var result = await _recordMappingBusiness.CreateRecordMapping(pid, dto);
         result.Id.Should().BeGreaterThan(0);
@@ -52,6 +54,17 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         result.ClassId.Should().Be(cid);
         result.TagId.Should().Be(tid);
         result.DataSourceId.Should().Be(did);
+    }
+    
+    [Fact]
+    public async Task CreateRecordMapping_Fails_WhenNoDataSourceId()
+    {
+        await SeedTestDataAsync();
+        var now = DateTime.UtcNow;
+        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
+
+        var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
+        await result.Should().ThrowAsync<ValidationException>();
     }
     
     [Fact]
@@ -338,6 +351,38 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
         
         var deletedResult = await _classBusiness.ArchiveClass(pid,cid);
+        Assert.True(deletedResult);
+        
+        // procedure is not traced by entity framework
+        //this forces EF to sync to db on next query
+        Context.ChangeTracker.Clear();
+        
+        var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
+        Assert.NotNull(archivedRecordMapping);
+        Assert.NotNull(archivedRecordMapping.ArchivedAt);
+        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
+        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+    }
+    
+    [Fact]
+    public async Task RecordMappingArchived_WhenDataSourceArchived()
+    {
+        await SeedTestDataAsync();
+        var beforeArchive = DateTime.UtcNow;
+        var recordMapping1 = new RecordMapping
+        {
+            RecordParams = "{\"hello\":\"world1\"}",
+            ClassId = cid,
+            TagId = tid,
+            DataSourceId = did,
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null,
+        };
+        Context.RecordMappings.Add(recordMapping1);
+        await Context.SaveChangesAsync();
+        
+        var deletedResult = await _dataSourceBusiness.ArchiveDataSource(pid,did);
         Assert.True(deletedResult);
         
         // procedure is not traced by entity framework
