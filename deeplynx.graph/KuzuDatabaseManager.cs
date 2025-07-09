@@ -5,6 +5,7 @@ using System.Data;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.Extensions.Configuration;
+using System.Globalization;
 
 namespace deeplynx.graph
 {
@@ -111,7 +112,7 @@ namespace deeplynx.graph
                 string attachCommand = $"ATTACH '{_pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
                 await Task.Run(() => PerformNonQueryAsync(attachCommand));
 
-                await SetupKuzuTablesAsync();
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS ProcessedProjectIds (project_id INT64 PRIMARY KEY);");
 
                 bool projectIdExists = await CheckIfProjectIdExistsAsync(project_id);
 
@@ -120,6 +121,8 @@ namespace deeplynx.graph
                     Console.WriteLine($"Project ID {project_id} has already been processed. Skipping data load.");
                     return true;
                 }
+
+                await SetupKuzuTablesAsync();
 
                 hasError = await LoadDataAsync(project_id);
 
@@ -188,37 +191,158 @@ namespace deeplynx.graph
 
 
         /// <summary>
-        /// Sets up the necessary tables in the Kuzu database.
+        /// Dynamically sets up the necessary tables in the Kuzu database.
         /// </summary>
         private async Task SetupKuzuTablesAsync()
         {
             try
             {
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS ProcessedProjectIds (project_id INT64 PRIMARY KEY);");
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Song (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS TableNames (id INT64, class_name STRING, PRIMARY KEY(id));");
+                await PerformNonQueryAsync("COPY TableNames FROM (LOAD FROM historical_records RETURN id, class_name);");
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Album (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS RelTableNames (origin_id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, PRIMARY KEY(origin_id));");
+                await PerformNonQueryAsync("COPY RelTableNames FROM (LOAD FROM edges_c RETURN DISTINCT origin_id, relationship_name, orig_class, dest_class);");
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Musician (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                var classNames = await GetUniqueClassNamesAsync();
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Band (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                foreach (var className in classNames)
+                {
+                    string createNodeTableQuery = $@"
+                        CREATE NODE TABLE {CapitalizeFirstLetter(className)} (
+                            id INT64,
+                            properties STRING,
+                            data_source_id INT64,
+                            original_id STRING,
+                            name STRING,
+                            class_name STRING,
+                            project_id INT64,
+                            PRIMARY KEY (id)
+                        );";
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                    await PerformNonQueryAsync(createNodeTableQuery);
+                }
 
-                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS RELATES_TO (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
+                var relationships = await GetUniqueRelationshipNamesAsync();
+                var relationshipGroups = relationships.GroupBy(r => r.RelationshipName).ToList();
 
-                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS PERFORMS (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
+                foreach (var group in relationshipGroups)
+                {
+                    var relationshipName = group.Key.ToUpper();
+                    var fromToClauses = group.Select(r => $"FROM {CapitalizeFirstLetter(r.OrigClass)} TO {CapitalizeFirstLetter(r.DestClass)}").ToList();
+                    var fromToClause = string.Join(", ", fromToClauses);
 
-                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS MEMBER_OF (FROM Musician TO Band, relationship_name STRING);");
+                    string createRelTableQuery = $@"
+                        CREATE REL TABLE IF NOT EXISTS {relationshipName} (
+                            {fromToClause},
+                            relationship_name STRING
+                        );";
 
-                await PerformNonQueryAsync("CREATE REL TABLE IF NOT EXISTS CONTAINS (FROM Album TO Song, relationship_name STRING);");
+                    await PerformNonQueryAsync(createRelTableQuery);
+                }
+
+                await PerformNonQueryAsync("CREATE NODE TABLE Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                await PerformNonQueryAsync("CREATE REL TABLE RELATES_TO (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
 
                 Console.WriteLine("Tables setup successfully.");
             }
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while setting up Kuzu tables: {e.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// Capitalizes the first letter of the input string and converts the rest to lowercase.
+        /// </summary>
+        /// <param name="input">The string to be modified.</param>
+        /// <returns>The modified string with the first letter capitalized and the rest in lowercase. If the input is null or empty, it returns the input as is.</returns>
+        private string CapitalizeFirstLetter(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
+        }
+
+
+        /// <summary>
+        /// Retrieves unique class names from the TableNames table.
+        /// </summary>
+        /// <returns>A list of unique class names.</returns>
+        private async Task<List<string>> GetUniqueClassNamesAsync()
+        {
+            try
+            {
+                string query = "MATCH (t:TableNames) WHERE t.class_name IS NOT NULL RETURN DISTINCT t.class_name;";
+                var requestDto = new KuzuDBMQueryRequestDto { Query = query };
+                string result = await ExecuteQueryAsync(requestDto);
+
+                List<string> classNames = new List<string>();
+
+                var lines = result.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var line in lines)
+                {
+                    string trimmedLine = line.Trim();
+
+                    if (!string.IsNullOrWhiteSpace(trimmedLine))
+                    {
+                        classNames.Add(trimmedLine);
+                    }
+                }
+
+                return classNames;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while retrieving unique class names: {e.Message}");
+                return new List<string>();
+            }
+        }
+
+
+        /// <summary>
+        /// Retrieves unique relationship names from the RelTableNames table.
+        /// </summary>
+        /// <returns>A list of unique relationship names.</returns>
+        private async Task<List<RelationshipInfo>> GetUniqueRelationshipNamesAsync()
+        {
+            try
+            {
+                string query = "MATCH (r:RelTableNames) WHERE r.relationship_name IS NOT NULL RETURN DISTINCT r.relationship_name AS relationship_name, r.orig_class AS orig_class, r.dest_class AS dest_class;";
+                var requestDto = new KuzuDBMQueryRequestDto { Query = query };
+                string result = await ExecuteQueryAsync(requestDto);
+
+                List<RelationshipInfo> relationships = new List<RelationshipInfo>();
+
+                var lines = result.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
+
+                for (int i = 0; i < lines.Length; i += 3)
+                {
+                    if (i + 2 < lines.Length)
+                    {
+                        var relationshipInfo = new RelationshipInfo
+                        {
+                            RelationshipName = lines[i].Trim().Split(':')[1].Trim(),
+                            OrigClass = lines[i + 1].Trim().Split(':')[1].Trim(),
+                            DestClass = lines[i + 2].Trim().Split(':')[1].Trim()
+                        };
+                        relationships.Add(relationshipInfo);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Unexpected line format at index {i}: {lines[i]}");
+                    }
+                }
+
+                return relationships;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while retrieving unique relationship names: {e.Message}");
+                return new List<RelationshipInfo>();
             }
         }
 
@@ -255,7 +379,7 @@ namespace deeplynx.graph
 
 
         /// <summary>
-        /// Loads both records and edges into the Kuzu database for a specified project.
+        /// Dynamically loads both records and edges into the Kuzu database for a specified project.
         /// </summary>
         /// <param name="project_id">The project ID to filter the records and edges being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
@@ -275,7 +399,7 @@ namespace deeplynx.graph
 
 
         /// <summary>
-        /// Loads records from the PostgreSQL database into the KuzuDB.
+        /// Dynamically loads records from the PostgreSQL database into the KuzuDB.
         /// </summary>
         /// <param name="project_id">The project ID to filter the records being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
@@ -285,11 +409,20 @@ namespace deeplynx.graph
 
             try
             {
-                await PerformNonQueryAsync($"COPY Band FROM (LOAD FROM historical_records WHERE class_name = 'band' AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
-                await PerformNonQueryAsync($"COPY Musician FROM (LOAD FROM historical_records WHERE class_name = 'musician' AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
-                await PerformNonQueryAsync($"COPY Song FROM (LOAD FROM historical_records WHERE class_name = 'song' AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
-                await PerformNonQueryAsync($"COPY Album FROM (LOAD FROM historical_records WHERE class_name = 'album' AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
-                await PerformNonQueryAsync($"COPY Entity FROM (LOAD FROM historical_records WHERE class_name IS NULL AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
+                await PerformNonQueryAsync("COPY Entity FROM (LOAD FROM historical_records WHERE class_name IS NULL AND project_id = 1 RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
+                var classNames = await GetUniqueClassNamesAsync();
+
+                foreach (var className in classNames)
+                {
+                    string copyCommand = $@"
+                        COPY {CapitalizeFirstLetter(className)} FROM (
+                            LOAD FROM historical_records
+                            WHERE class_name = '{className}' AND project_id = {project_id}
+                            RETURN id, properties, data_source_id, original_id, name, class_name, project_id
+                        );";
+
+                    await PerformNonQueryAsync(copyCommand);
+                }
 
                 Console.WriteLine("Records loaded successfully into KuzuDB.");
             }
@@ -304,7 +437,7 @@ namespace deeplynx.graph
 
 
         /// <summary>
-        /// Loads edges from the edges_c view into the KuzuDB.
+        /// Dynamically loads edges from the edges_c view into the KuzuDB.
         /// </summary>
         /// <param name="project_id">The project ID to filter the edges being loaded.</param>
         /// <returns>Returns true if there was an error during loading, otherwise false.</returns>
@@ -314,12 +447,21 @@ namespace deeplynx.graph
 
             try
             {
-                await PerformNonQueryAsync($"COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = {project_id} AND orig_class = 'musician' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Musician', to='Song');");
-                await PerformNonQueryAsync($"COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = {project_id} AND orig_class = 'band' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Band', to='Song');");
-                await PerformNonQueryAsync($"COPY PERFORMS FROM (LOAD FROM edges_c WHERE relationship_name = 'performs' AND orig_class = 'musician' AND project_id = {project_id} RETURN origin_id AS FROM, destination_id AS TO, 'performs' AS relationship_name) (from='Musician', to='Song');");
-                await PerformNonQueryAsync($"COPY PERFORMS FROM (LOAD FROM edges_c WHERE relationship_name = 'performs' AND orig_class = 'band' AND project_id = {project_id} RETURN origin_id AS FROM, destination_id AS TO, 'performs' AS relationship_name) (from='Band', to='Song');");
-                await PerformNonQueryAsync($"COPY MEMBER_OF FROM (LOAD FROM edges_c WHERE relationship_name = 'member_of' AND project_id = {project_id} RETURN origin_id, destination_id, relationship_name);");
-                await PerformNonQueryAsync($"COPY CONTAINS FROM (LOAD FROM edges_c WHERE relationship_name = 'contains' AND project_id = {project_id} RETURN origin_id, destination_id, relationship_name);");
+                await PerformNonQueryAsync("COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = 1 AND orig_class = 'musician' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Musician', to='Song');");
+                await PerformNonQueryAsync("COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = 1 AND orig_class = 'band' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Band', to='Song');");
+                var relationships = await GetUniqueRelationshipNamesAsync();
+
+                foreach (var relationship in relationships)
+                {
+                    string copyCommand = $@"
+                            COPY {relationship.RelationshipName.ToUpper()} FROM (
+                                LOAD FROM edges_c
+                                WHERE relationship_name = '{relationship.RelationshipName}' AND project_id = {project_id} AND orig_class = '{relationship.OrigClass}'
+                                RETURN origin_id AS FROM, destination_id AS TO, '{relationship.RelationshipName}' AS relationship_name
+                            ) (from='{CapitalizeFirstLetter(relationship.OrigClass)}', to='{CapitalizeFirstLetter(relationship.DestClass)}');";
+
+                    await PerformNonQueryAsync(copyCommand);
+                }
 
                 Console.WriteLine("Edges loaded successfully into KuzuDB.");
             }
@@ -379,9 +521,6 @@ namespace deeplynx.graph
                     throw new InvalidOperationException($"Error: {errorMessage}");
                 }
 
-                ulong numTuples = kuzu_query_result_get_num_tuples(result);
-                Console.WriteLine($"Number of tuples returned: {numTuples}");
-
                 string res = await FormatQueryResultAsync(result);
 
                 return res;
@@ -417,7 +556,6 @@ namespace deeplynx.graph
                 throw;
             }
         }
-
 
         /// <summary>
         /// Formats the Kuzu query result into a readable string.
@@ -585,66 +723,157 @@ namespace deeplynx.graph
                     {
                         StringBuilder sb = new StringBuilder();
 
+                        kuzu_internal_id_t internalNodeId = new kuzu_internal_id_t();
+
                         kuzu_value idValue = new kuzu_value();
                         kuzu_node_val_get_id_val(value, idValue);
-                        kuzu_value_get_int64(idValue, out long id);
+                        kuzu_value_get_internal_id(idValue, internalNodeId);
+
+                        sb.AppendLine($"  _ID: {internalNodeId.ToString()}");
 
                         kuzu_value labelValue = new kuzu_value();
                         kuzu_node_val_get_label_val(value, labelValue);
                         kuzu_value_get_string(labelValue, out string label);
 
-                        kuzu_value nameValue = new kuzu_value();
-                        kuzu_node_val_get_property_value_at(value, 4, nameValue);
-                        kuzu_value_get_string(nameValue, out string name);
+                        kuzu_node_val_get_property_size(value, out ulong propertyCount);
 
-                        kuzu_value yearValue = new kuzu_value();
-                        kuzu_node_val_get_property_value_at(value, 0, yearValue);
-                        kuzu_value_get_int64(yearValue, out long year);
-
-                        kuzu_value propertiesValue = new kuzu_value();
-                        kuzu_node_val_get_property_value_at(value, 1, propertiesValue);
-                        kuzu_value_get_string(propertiesValue, out string properties);
-
-                        kuzu_value dataSourceIdValue = new kuzu_value();
-                        kuzu_node_val_get_property_value_at(value, 2, dataSourceIdValue);
-                        kuzu_value_get_int64(dataSourceIdValue, out long dataSourceId);
-
-                        kuzu_value originalIdValue = new kuzu_value();
-                        kuzu_node_val_get_property_value_at(value, 3, originalIdValue);
-                        kuzu_value_get_string(originalIdValue, out string originalId);
-
-                        sb.AppendLine("{");
-                        sb.AppendLine($"  _ID: {id},");
                         sb.AppendLine($"  _LABEL: {label},");
-                        sb.AppendLine($"  id: {originalId},");
-                        sb.AppendLine($"  properties: {properties},");
-                        sb.AppendLine($"  data_source_id: {dataSourceId},");
-                        sb.AppendLine($"  original_id: \"{originalId}\"");
+
+                        for (ulong i = 0; i < propertyCount; i++)
+                        {
+                            kuzu_value propertyValue = new kuzu_value();
+                            kuzu_node_val_get_property_value_at(value, i, propertyValue);
+
+                            kuzu_node_val_get_property_name_at(value, i, out string propertyName);
+
+                            kuzu_logical_type propertyDataType = new kuzu_logical_type();
+                            kuzu_value_get_data_type(propertyValue, propertyDataType);
+                            var dataTypeId = kuzu_data_type_get_id(propertyDataType);
+
+                            switch (dataTypeId)
+                            {
+                                case kuzu_data_type_id.KUZU_STRING:
+                                    kuzu_value_get_string(propertyValue, out string propertyStringValue);
+                                    sb.AppendLine($"  {propertyName}: \"{propertyStringValue}\",");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_BOOL:
+                                    kuzu_value_get_bool(propertyValue, out bool boolValue);
+                                    sb.AppendLine($"  {propertyName}: {boolValue},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INT8:
+                                    kuzu_value_get_int8(propertyValue, out sbyte int8Value);
+                                    sb.AppendLine($"  {propertyName}: {int8Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INT16:
+                                    kuzu_value_get_int16(propertyValue, out short int16Value);
+                                    sb.AppendLine($"  {propertyName}: {int16Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INT32:
+                                    kuzu_value_get_int32(propertyValue, out int int32Value);
+                                    sb.AppendLine($"  {propertyName}: {int32Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INT64:
+                                    kuzu_value_get_int64(propertyValue, out long int64Value);
+                                    sb.AppendLine($"  {propertyName}: {int64Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_UINT8:
+                                    kuzu_value_get_uint8(propertyValue, out byte uint8Value);
+                                    sb.AppendLine($"  {propertyName}: {uint8Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_UINT16:
+                                    kuzu_value_get_uint16(propertyValue, out ushort uint16Value);
+                                    sb.AppendLine($"  {propertyName}: {uint16Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_UINT32:
+                                    kuzu_value_get_uint32(propertyValue, out uint uint32Value);
+                                    sb.AppendLine($"  {propertyName}: {uint32Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_UINT64:
+                                    kuzu_value_get_uint64(propertyValue, out ulong uint64Value);
+                                    sb.AppendLine($"  {propertyName}: {uint64Value},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INT128:
+                                    kuzu_int128_t int128Value = new kuzu_int128_t();
+                                    kuzu_value_get_int128(propertyValue, int128Value);
+                                    sb.AppendLine($"  {propertyName}: {int128Value}");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_FLOAT:
+                                    kuzu_value_get_float(propertyValue, out float floatValue);
+                                    sb.AppendLine($"  {propertyName}: {floatValue},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_DOUBLE:
+                                    kuzu_value_get_double(propertyValue, out double doubleValue);
+                                    sb.AppendLine($"  {propertyName}: {doubleValue},");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_INTERNAL_ID:
+                                    kuzu_internal_id_t internalId = new kuzu_internal_id_t();
+                                    kuzu_value_get_internal_id(propertyValue, internalId);
+                                    sb.AppendLine($"  {propertyName}: {internalId}");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_DATE:
+                                    kuzu_date_t dateValue = new kuzu_date_t();
+                                    kuzu_value_get_date(propertyValue, dateValue);
+                                    sb.AppendLine($"  {propertyName}: {dateValue}");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_TIMESTAMP:
+                                    kuzu_timestamp_t timestampValue = new kuzu_timestamp_t();
+                                    kuzu_value_get_timestamp(propertyValue, timestampValue);
+                                    sb.AppendLine($"  {propertyName}: {timestampValue}");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_BLOB:
+                                    kuzu_value_get_blob(propertyValue, out byte[] blobValue);
+                                    sb.AppendLine($"  {propertyName}: <blob size: {blobValue.Length}>");
+                                    break;
+
+                                case kuzu_data_type_id.KUZU_UUID:
+                                    kuzu_value_get_uuid(propertyValue, out string uuidValue);
+                                    sb.AppendLine($"  {propertyName}: {uuidValue}");
+                                    break;
+                                default:
+                                    sb.AppendLine($"  {propertyName}: <unsupported type>,");
+                                    break;
+                            }
+                        }
+
                         sb.AppendLine("}");
 
                         return sb.ToString();
                     });
-
                 case kuzu_data_type_id.KUZU_REL:
                     return await Task.Run(() =>
                     {
+                        kuzu_internal_id_t internalSrcId = new kuzu_internal_id_t();
+                        kuzu_internal_id_t internalDstId = new kuzu_internal_id_t();
+
                         kuzu_value srcIdValue = new kuzu_value();
                         kuzu_rel_val_get_src_id_val(value, srcIdValue);
-                        kuzu_value_get_int64(srcIdValue, out long srcId);
+                        kuzu_value_get_internal_id(srcIdValue, internalSrcId);
 
                         kuzu_value dstIdValue = new kuzu_value();
                         kuzu_rel_val_get_dst_id_val(value, dstIdValue);
-                        kuzu_value_get_int64(dstIdValue, out long dstId);
+                        kuzu_value_get_internal_id(dstIdValue, internalDstId);
 
                         kuzu_value labelRelValue = new kuzu_value();
                         kuzu_rel_val_get_label_val(value, labelRelValue);
                         kuzu_value_get_string(labelRelValue, out string relLabel);
 
-                        kuzu_value relIdValue = new kuzu_value();
-                        kuzu_rel_val_get_property_value_at(value, 0, relIdValue);
-                        kuzu_value_get_int64(relIdValue, out long relId);
-
-                        return $"{{ _LABEL: {relLabel}}}";
+                        return $"({internalSrcId})-{{_LABEL: {relLabel}}}->({internalDstId})";
                     });
 
                 case kuzu_data_type_id.KUZU_RECURSIVE_REL:
@@ -692,4 +921,27 @@ namespace deeplynx.graph
             }
         }
     }
+
+
+    /// <summary>
+    /// Represents information about a relationship between two classes.
+    /// </summary>
+    public class RelationshipInfo
+    {
+        public required string RelationshipName { get; set; }
+
+        public required string OrigClass { get; set; }
+
+        public required string DestClass { get; set; }
+
+        /// <summary>
+        /// Returns a string that represents the current object.
+        /// </summary>
+        /// <returns>A string that contains the relationship name, originating class, and destination class.</returns>
+        public override string ToString()
+        {
+            return $"relationship_name: {RelationshipName}, orig_class: {OrigClass}, dest_class: {DestClass}";
+        }
+    }
+
 }
