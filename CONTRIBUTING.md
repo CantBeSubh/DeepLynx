@@ -28,6 +28,10 @@ Context.ChangeTracker.Clear();
 ```
 Use the cascade delete tests in Record Mapping as a reference.
 
+#### Test Fixture
+* Make sure to implement the testing fixture in your unit test suite. This makes sure that only one container is spun up 
+for each test suite and makes the tests much more efficient. Use the Class and Record Mapping test files as a reference.
+
 
 ## Submitting Pull Requests
 When you're ready to submit your changes, follow these steps:
