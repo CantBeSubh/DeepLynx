@@ -13,6 +13,7 @@ namespace deeplynx.datalayer.Models;
 [Index("EdgeId", Name = "idx_historical_edges_edge_id")]
 [Index("RelationshipName", Name = "idx_historical_edges_relationship_name")]
 [Index("Id", Name = "idx_historical_edges_id")]
+[Index("Current", Name = "idx_historical_edges_current")]
 public partial class HistoricalEdge
 {
     [Key]
@@ -21,11 +22,11 @@ public partial class HistoricalEdge
     public long Id { get; set; }
     
     [Column("edge_id")]
-    public long? EdgeId { get; set; }
-
+    public long EdgeId { get; set; }
+    
     [Column("origin_id")]
     public long OriginId { get; set; }
-
+    
     [Column("destination_id")]
     public long DestinationId { get; set; }
 
@@ -43,6 +44,9 @@ public partial class HistoricalEdge
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("current")]
+    public bool Current { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
@@ -62,12 +66,4 @@ public partial class HistoricalEdge
     [ForeignKey("EdgeId")]
     [InverseProperty("HistoricalEdges")]
     public virtual Edge? Edge { get; set; }
-
-    [ForeignKey("DestinationId")]
-    [InverseProperty("HistoricalEdgeDestinations")]
-    public virtual HistoricalRecord HistoricalDestination { get; set; } = null!;
-
-    [ForeignKey("OriginId")]
-    [InverseProperty("HistoricalEdgeOrigins")]
-    public virtual HistoricalRecord HistoricalOrigin { get; set; } = null!;
 }

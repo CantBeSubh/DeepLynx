@@ -20,12 +20,16 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<DataSource> DataSources { get; set; }
 
     public virtual DbSet<Edge> Edges { get; set; }
+    
+    public virtual DbSet<HistoricalEdge> HistoricalEdges { get; set; }
 
     public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
+    
+    public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
 
     public virtual DbSet<RecordMapping> RecordMappings { get; set; }
 
@@ -104,12 +108,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
                 .HasForeignKey(d => d.EdgeId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("historical_edges_edge_id_fkey");
-
-            entity.HasOne(d => d.HistoricalOrigin).WithMany(p => p.HistoricalEdgeOrigins)
-                .HasConstraintName("historical_edges_origin_id_fkey");
-            
-            entity.HasOne(d => d.HistoricalDestination).WithMany(p => p.HistoricalEdgeDestinations)
-                .HasConstraintName("historical_edges_destination_id_fkey");
         });
 
         modelBuilder.Entity<HistoricalRecord>(entity =>

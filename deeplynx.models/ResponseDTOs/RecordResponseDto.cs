@@ -9,6 +9,7 @@ public class RecordResponseDto
     public string? OriginalId { get; set; }
     public string? Name { get; set; }
     public long? ClassId { get; set; }
+    public long? MappingId { get; set; }
     public long DataSourceId { get; set; }
     public long ProjectId { get; set; }
     public string? CreatedBy { get; set; }

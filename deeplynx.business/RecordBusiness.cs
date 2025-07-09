@@ -4,8 +4,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Linq.Expressions;
 
 namespace deeplynx.business;
 
@@ -33,10 +31,10 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
-        var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null);
+        var recordQuery = _context.HistoricalRecords
+            .Where(r => r.Current && r.ProjectId == projectId && r.ArchivedAt == null);
 
         if (dataSourceId.HasValue)
         {
@@ -44,16 +42,21 @@ public class RecordBusiness : IRecordBusiness
         }
         
         return await recordQuery
-            .Select(r=>new RecordResponseDto()
+            .Select(r=>new HistoricalRecordResponseDto()
             {
-                Id = r.Id,
+                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
                 Name = r.Name,
                 ClassId = r.ClassId,
+                ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
                 ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
                 CreatedBy = r.CreatedBy,
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
@@ -70,10 +73,11 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The ID of the record to retrieve</param>
     /// <returns>The record in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
+    public async Task<HistoricalRecordResponseDto> GetRecord(long projectId, long recordId)
     {
-        var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.ArchivedAt == null)
+        var record = await _context.HistoricalRecords
+            .Where(r => r.Current && r.RecordId == recordId)
+            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null)
             .FirstOrDefaultAsync();
         
         if (record == null)
@@ -81,16 +85,21 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
 
-        return new RecordResponseDto
+        return new HistoricalRecordResponseDto()
         {
-            Id = record.Id,
+            Id = record.RecordId,
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
             Name = record.Name,
             ClassId = record.ClassId,
+            ClassName = record.ClassName,
             DataSourceId = record.DataSourceId,
+            DataSourceName = record.DataSourceName,
+            MappingId = record.MappingId,
             ProjectId = record.ProjectId,
+            ProjectName = record.ProjectName,
+            Tags = record.Tags,
             CreatedBy = record.CreatedBy,
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,

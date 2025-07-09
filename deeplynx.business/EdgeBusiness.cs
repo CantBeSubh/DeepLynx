@@ -1,11 +1,7 @@
-using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json.Nodes;
-using deeplynx.helpers.exceptions;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
@@ -28,13 +24,14 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <returns>A list of edges based on the applied filters.</returns>
-    public async Task<IEnumerable<EdgeResponseDto>> GetAllEdges(
+    public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetAllEdges(
         long projectId, 
         long? dataSourceId)
     {
         // base query object to get all edges for the project
-        var edgeQuery = _context.Edges
-            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
+        // use the historical edges table to forgo joins for name retrieval
+        var edgeQuery = _context.HistoricalEdges
+            .Where(e => e.Current && e.ProjectId == projectId && e.ArchivedAt == null);
     
         // add filter for datasource if specified
         if (dataSourceId.HasValue)
@@ -45,12 +42,14 @@ public class EdgeBusiness : IEdgeBusiness
         var edges = await edgeQuery.ToListAsync();
 
         // execute query and return results
-        return edges.Select(e => new EdgeResponseDto()
+        return edges.Select(e => new HistoricalEdgeResponseDto()
             {
-                Id = e.Id,
+                Id = e.EdgeId,
                 OriginId = e.OriginId,
                 DestinationId = e.DestinationId,
                 RelationshipId = e.RelationshipId,
+                RelationshipName = e.RelationshipName,
+                MappingId = e.MappingId,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
                 CreatedAt = e.CreatedAt,
@@ -71,17 +70,19 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
-    public async Task<EdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId)
+    public async Task<HistoricalEdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId)
     {
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        var edge = await FindEdge(edgeId, originId, destinationId, true);
 
-        return new EdgeResponseDto
+        return new HistoricalEdgeResponseDto()
         {
-            Id = edge.Id,
+            Id = edge.EdgeId,
             OriginId = edge.OriginId,
             DestinationId = edge.DestinationId,
             RelationshipId = edge.RelationshipId,
+            RelationshipName = edge.RelationshipName,
             DataSourceId = edge.DataSourceId,
+            MappingId = edge.MappingId,
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
             CreatedBy = edge.CreatedBy,
@@ -235,7 +236,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
-    private async Task<Edge> FindEdge(long? edgeId, long? originId, long? destinationId)
+    private async Task<dynamic> FindEdge(
+        long? edgeId, 
+        long? originId, 
+        long? destinationId,
+        bool historical = false
+        )
     {
         if (edgeId == null && (originId == null || destinationId == null))
         {
@@ -272,6 +278,14 @@ public class EdgeBusiness : IEdgeBusiness
             }
         }
 
+        if (historical)
+        {
+            // return the historical edge if specified
+            return await _context.HistoricalEdges
+                .Where(e => e.EdgeId == edge.Id && e.Current)
+                .FirstOrDefaultAsync();;
+        }
+        
         return edge;  
     }
 }
