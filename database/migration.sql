@@ -1445,5 +1445,87 @@ BEGIN
     VALUES ('20250703215341_AddHistoricalRecordsAndEdges', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_edges DROP CONSTRAINT historical_edges_destination_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_edges DROP CONSTRAINT historical_edges_origin_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    UPDATE deeplynx.historical_records SET record_id = 0 WHERE record_id IS NULL;
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN record_id SET NOT NULL;
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN record_id SET DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN project_name TYPE text;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN data_source_name TYPE text;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_records ADD current boolean NOT NULL DEFAULT FALSE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    UPDATE deeplynx.historical_edges SET edge_id = 0 WHERE edge_id IS NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN edge_id SET NOT NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN edge_id SET DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    ALTER TABLE deeplynx.historical_edges ADD current boolean NOT NULL DEFAULT FALSE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_records_current ON deeplynx.historical_records (current);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    CREATE INDEX idx_historical_edges_current ON deeplynx.historical_edges (current);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250709214056_AdjustRecordsAndEdges') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250709214056_AdjustRecordsAndEdges', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
