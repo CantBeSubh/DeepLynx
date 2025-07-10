@@ -40,6 +40,7 @@ namespace deeplynx.business
         /// <returns>A list of data sources within the given project.</returns>
         public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId)
         {
+            DoesProjectExist(projectId);
             var dataSources = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.ArchivedAt == null).ToListAsync();
 
@@ -72,6 +73,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found</exception>
         public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.ArchivedAt == null)
                 .FirstOrDefaultAsync();
@@ -108,6 +110,7 @@ namespace deeplynx.business
         /// <returns>The created data source.</returns>
         public async Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto)
         {
+            DoesProjectExist(projectId);
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -156,6 +159,7 @@ namespace deeplynx.business
             long dataSourceId,
             DataSourceRequestDto dto)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
@@ -202,6 +206,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
         public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
@@ -222,6 +227,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
         public async Task<bool> ArchiveDataSource(long projectId, long dataSourceId)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
@@ -232,6 +238,20 @@ namespace deeplynx.business
             await _context.SaveChangesAsync();
 
             return true;
+        }
+        
+        /// <summary>
+        /// Determine if project exists
+        /// </summary>
+        /// <param name="projectId">The ID of the project we are searching for</param>
+        /// <returns>Throws error if project does not exist</returns>
+        private void DoesProjectExist(long projectId)
+        {
+            var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+            if (!project)
+            {
+                throw new KeyNotFoundException($"Project with id {projectId} not found");
+            }
         }
     }
 }
