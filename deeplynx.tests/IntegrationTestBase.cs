@@ -22,7 +22,7 @@ public class TestSuiteFixture : IAsyncLifetime
     {
         await _container.StartAsync();
         
-        // Allows the itegration test base to access the connection string to instantiate a new context
+        // Allows the integration test base to access the connection string to instantiate a new context
         ConnectionString = _container.GetConnectionString();
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(ConnectionString)
@@ -30,9 +30,8 @@ public class TestSuiteFixture : IAsyncLifetime
 
         Context = new DeeplynxContext(options);
         
-        // Apply migrations and seed database only once
+        // Apply migrations only once
         await Context.Database.MigrateAsync();
-        await SeedData.SeedDatabase(Context);
     }
     
     //Runs at the end of every test suite
@@ -73,7 +72,8 @@ public class IntegrationTestBase : IAsyncLifetime
     //Runs before every test in the test suite
     public virtual async Task InitializeAsync()
     {
-        await CleanDatabaseAsync();
+        await SeedTestDataAsync();
+        // await SeedData.SeedDatabase(Context);
     }
 
     //Runs after every test in the test suite
@@ -95,6 +95,26 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Classes.RemoveRange(classes);
         var records = await Context.Records.ToListAsync();
         Context.Records.RemoveRange(records);
+        var users = await Context.Users.ToListAsync();
+        Context.Users.RemoveRange(users);
+        var edges = await Context.Edges.ToListAsync();
+        Context.Edges.RemoveRange(edges);
+        var edgeMappings =  await Context.EdgeMappings.ToListAsync();
+        Context.EdgeMappings.RemoveRange(edgeMappings);
+        var recordMappings =  await Context.RecordMappings.ToListAsync();
+        Context.RecordMappings.RemoveRange(recordMappings);
+        var relationships = await Context.Relationships.ToListAsync();
+        Context.Relationships.RemoveRange(relationships);
+        var tags = await Context.Tags.ToListAsync();
+        Context.Tags.RemoveRange(tags);
+        var dataSources = await Context.DataSources.ToListAsync();
+        Context.DataSources.RemoveRange(dataSources);
         await Context.SaveChangesAsync();
+    }
+    
+    
+    protected virtual async Task SeedTestDataAsync()
+    {
+        await CleanDatabaseAsync();
     }
 }

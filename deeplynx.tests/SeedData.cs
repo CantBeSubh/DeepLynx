@@ -265,7 +265,7 @@ public static class SeedData
             // Customer Analytics Platform Data Sources
             new DataSource
             {
-                
+                Id = 1,
                 Name = "Customer CRM Database",
                 Description = "Primary customer relationship management database",
                 Abbreviation = "CRM_DB",
@@ -281,7 +281,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 2,
                 Name = "E-commerce Transaction API",
                 Description = "Real-time API for accessing e-commerce transaction data",
                 Abbreviation = "ECOM_API",
@@ -299,7 +299,7 @@ public static class SeedData
             // Supply Chain Optimization Data Sources
             new DataSource
             {
-               
+                Id = 3,
                 Name = "Enterprise Resource Planning System",
                 Description = "Comprehensive ERP system with supplier and inventory data",
                 Abbreviation = "ERP_SYS",
@@ -315,7 +315,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 4,
                 Name = "IoT Warehouse Sensors",
                 Description = "Real-time sensor data from warehouse facilities",
                 Abbreviation = "IOT_SENSORS",
@@ -333,7 +333,7 @@ public static class SeedData
             // Legacy System Migration Data Sources (Archived)
             new DataSource
             {
-                
+                Id = 5,
                 Name = "Legacy Mainframe Database",
                 Description = "Historical mainframe system with legacy data",
                 Abbreviation = "MAINFRAME_DB",
@@ -349,7 +349,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 6,
                 Name = "Legacy File System Archives",
                 Description = "Historical file-based data archives",
                 Abbreviation = "FILE_ARCHIVE",

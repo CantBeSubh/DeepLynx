@@ -3,22 +3,23 @@ using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
+using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
+using Moq;
 
 namespace deeplynx.tests;
 
 [Collection("Test Suite Collection")]
 public class RecordMappingBusinessTests : IntegrationTestBase
 {
-    private TagBusiness _tagBusiness;
     private RecordMappingBusiness _recordMappingBusiness = null!;
     private ProjectBusiness _projectBusiness = null!;
     private ClassBusiness _classBusiness = null!;
-    private EdgeBusiness _edgeBusiness = null!;
-    private EdgeMappingBusiness _edgeMappingBusiness = null!;
-    private RecordBusiness _recordBusiness = null!;
-    private RelationshipBusiness _relationshipBusiness = null!;
+    private Mock<IEdgeBusiness> _edgeBusiness;
+    private Mock<IEdgeMappingBusiness> _edgeMappingBusiness;
+    private Mock<IRecordBusiness> _recordBusiness;
+    private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
     private DataSourceBusiness _dataSourceBusiness = null!;
     public long pid;
     public long tid;
@@ -31,20 +32,18 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     {
         await base.InitializeAsync();
         _recordMappingBusiness = new RecordMappingBusiness(Context);
-        _edgeMappingBusiness = new EdgeMappingBusiness(Context);
-        _edgeBusiness = new EdgeBusiness(Context);
-        _recordBusiness = new RecordBusiness(Context, _edgeBusiness);
-        _relationshipBusiness = new RelationshipBusiness(Context, _edgeMappingBusiness, _edgeBusiness);
-        _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
+        _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
+        _edgeBusiness = new Mock<IEdgeBusiness>();
+        _recordBusiness = new Mock<IRecordBusiness>();
+        _relationshipBusiness = new Mock<IRelationshipBusiness>();
+        _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness, _relationshipBusiness.Object);
         _projectBusiness = new ProjectBusiness(Context, _classBusiness);
-        _tagBusiness = new TagBusiness(Context, _recordMappingBusiness);
-        _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _recordBusiness);
+        _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness.Object, _recordBusiness.Object);
     }
 
     [Fact]
     public async Task CreateRecordMapping_Success_ReturnsIdAndCreatedAt()
     {
-        await SeedTestDataAsync();
         var now = DateTime.UtcNow;
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
 
@@ -59,10 +58,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_WhenNoDataSourceId()
     {
-        await SeedTestDataAsync();
-        var now = DateTime.UtcNow;
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
-
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<ValidationException>();
     }
@@ -70,7 +66,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_IfNoRecordParams()
     {
-        await SeedTestDataAsync();
         var dto = new RecordMappingRequestDto {RecordParams = null, ClassId = cid, TagId = tid};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<ValidationException>();
@@ -79,7 +74,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_IfNoProjectId()
     {
-        await SeedTestDataAsync();
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid + 99, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
@@ -88,7 +82,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_IfDeletedProjectId()
     {
-        await SeedTestDataAsync(true);
+        var project = await Context.Projects.FindAsync(pid);
+        project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        Context.Projects.Update(project);
+        await Context.SaveChangesAsync();
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
@@ -97,7 +94,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task CreateRecordMapping_Fails_IfTagIdAndClassIdMissing()
     {
-        await SeedTestDataAsync();
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = null, TagId = null,  DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<InvalidRequestException>();
@@ -106,7 +102,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetAllRecordMappings_ReturnsOnlyForProjects()
     {
-        await SeedTestDataAsync();
         var p2 = new Project { Name = "ExtraProj" };
         Context.Projects.Add(p2);
         await Context.SaveChangesAsync();
@@ -121,7 +116,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetAllrecordMappings_ExcludesSoftDeleted()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"param1\":\"value1\"}",
@@ -155,7 +149,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetRecordMapping_Success_WhenExists()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"param1\":\"value1\"}",
@@ -175,7 +168,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetRecordMapping_Fails_IfNoProjectID()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"param1\":\"value1\"}",
@@ -195,7 +187,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetRecordMapping_Fails_IfDeletedRecordMapping()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"param1\":\"value1\"}",
@@ -216,7 +207,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UpdateRecordMapping_Success_ReturnsModifiedAt()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"hello\":\"world1\"}",
@@ -239,8 +229,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UpdateRecordMapping_Fails_IfNotFound()
     {
-        await SeedTestDataAsync();
-        
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 99, dto);
         updatedResult.Should().ThrowAsync<KeyNotFoundException>();
@@ -249,10 +237,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task ArchiveRecordMapping_Success_WhenExists()
     {
-        await SeedTestDataAsync();
         var beforeArchive = DateTime.UtcNow;
-        
-        
+    
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"hello\":\"world1\"}",
@@ -279,7 +265,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task DeleteRecordMapping_Success_WhenExists()
     {
-        await SeedTestDataAsync();
         var recordMapping1 = new RecordMapping
         {
             RecordParams = "{\"hello\":\"world1\"}",
@@ -303,7 +288,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task RecordMappingArchived_WhenProjectArchived()
     {
-        await SeedTestDataAsync();
         var beforeArchive = DateTime.UtcNow;
         var recordMapping1 = new RecordMapping
         {
@@ -335,7 +319,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task RecordMappingArchived_WhenClassArchived()
     {
-        await SeedTestDataAsync();
         var beforeArchive = DateTime.UtcNow;
         var recordMapping1 = new RecordMapping
         {
@@ -367,7 +350,6 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     [Fact]
     public async Task RecordMappingArchived_WhenDataSourceArchived()
     {
-        await SeedTestDataAsync();
         var beforeArchive = DateTime.UtcNow;
         var recordMapping1 = new RecordMapping
         {
@@ -395,16 +377,11 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
         Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
     }
-    
-    private async Task SeedTestDataAsync(bool deleteProject = false)
+
+    protected override async Task SeedTestDataAsync()
     {
+        await base.SeedTestDataAsync();
         var project = new Project { Name = "Project 1" };
-        
-        if (deleteProject)
-        {
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        }
-        
         Context.Projects.Add(project);
         
         await Context.SaveChangesAsync();

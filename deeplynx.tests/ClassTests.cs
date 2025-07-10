@@ -2,8 +2,10 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
+using Moq;
 using Npgsql;
 using Xunit;
 
@@ -14,10 +16,10 @@ namespace deeplynx.tests;
 public class ClassIntegrationTests : IntegrationTestBase
 {
     private ClassBusiness _classBusiness = null!;
-    private EdgeMappingBusiness _edgeMapping = null!;
-    private RecordMappingBusiness _recordMapping = null!;
-    private RecordBusiness _recordBusiness = null!;
-    private RelationshipBusiness _relationshipBusiness = null!;
+    private Mock<IEdgeMappingBusiness> _edgeMapping;
+    private Mock<IRecordMappingBusiness> _recordMapping;
+    private Mock<IRecordBusiness> _recordBusiness;
+    private Mock<IRelationshipBusiness> _relationshipBusiness;
     public long pid;
 
     public ClassIntegrationTests(TestSuiteFixture fixture) : base(fixture) {}
@@ -25,13 +27,16 @@ public class ClassIntegrationTests : IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _classBusiness = new ClassBusiness(Context, _edgeMapping, _recordBusiness, _recordMapping, _relationshipBusiness);
+        _recordBusiness = new Mock<IRecordBusiness>();
+        _relationshipBusiness = new Mock<IRelationshipBusiness>();
+        _recordMapping = new Mock<IRecordMappingBusiness>();
+        _edgeMapping = new Mock<IEdgeMappingBusiness>();
+        _classBusiness = new ClassBusiness(Context, _edgeMapping.Object, _recordBusiness.Object, _recordMapping.Object, _relationshipBusiness.Object);
     }
     
     [Fact]
     public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
     {
-        await SeedTestDataAsync();
         var dto = new ClassRequestDto { Name = "C1", Description = "D1", Uuid = "U1" };
     
         var result = await _classBusiness.CreateClass(pid, dto);
@@ -42,7 +47,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task CreateClassRequest_Fails_IfNoName()
     { 
-        await SeedTestDataAsync();
         var missingNameDto = new ClassRequestDto { Name = null, Description = "D", Uuid = "U" };
         var result  = async () => await _classBusiness.CreateClass(pid, missingNameDto);
         await result.Should().ThrowAsync<ValidationException>();
@@ -52,7 +56,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task CreateClass_Succeeds_IfNoDescriptionOrUuid()
     {
-        await SeedTestDataAsync();
         var dto = new ClassRequestDto { Name = "C" };
         var result = await _classBusiness.CreateClass(pid, dto);
     
@@ -63,7 +66,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task CreateClass_Fails_IfProjectNotFound()
     {
-        await SeedTestDataAsync();
         var missing = pid + 999;
         var dto = new ClassRequestDto { Name = "C" };
     
@@ -74,7 +76,10 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task CreateClass_Fails_IfProjectDeleted()
     {
-        await SeedTestDataAsync(true);
+        var project = await Context.Projects.FindAsync(pid);
+        project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        Context.Projects.Update(project);
+        await Context.SaveChangesAsync();
         var dto = new ClassRequestDto { Name = "C" };
         var result = () => _classBusiness.CreateClass(pid, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
@@ -84,7 +89,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetAllClasses_ReturnsOnlyForProject()
     {
-        await SeedTestDataAsync();
         var p2 = new Project { Name = "ExtraProj" };
         Context.Projects.Add(p2);
         await Context.SaveChangesAsync();
@@ -100,7 +104,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetAllClasses_ExcludesSoftDeleted()
     {
-        await SeedTestDataAsync();
         var class1 = new Class { Name = "Proj", ProjectId = pid};
         var class2 = new Class { Name = "Proj2", ProjectId = pid, ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
         Context.Classes.Add(class1);
@@ -114,7 +117,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetClass_Success_WhenExists()
     {
-        await SeedTestDataAsync();
         var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
         var result = await _classBusiness.GetClass(pid, created.Id);
         Assert.Equal(created.Id, result.Id);
@@ -123,7 +125,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task GetClass_Fails_IfNotFound()
     {
-        await SeedTestDataAsync();
         var result = () => _classBusiness.GetClass(pid, 9999);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -142,7 +143,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task UpdateClass_Success_ReturnsModifiedAt()
     {
-        await SeedTestDataAsync();
         var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "Old" });
         var updated = await _classBusiness.UpdateClass(pid, created.Id, new ClassRequestDto { Name = "New" });
         Assert.Equal("New", updated.Name);
@@ -152,7 +152,6 @@ public class ClassIntegrationTests : IntegrationTestBase
     [Fact]
     public async Task UpdateClass_Fails_IfNotFound()
     {
-        await SeedTestDataAsync();
         var result = () => _classBusiness.UpdateClass(pid, 9999, new ClassRequestDto { Name = "X" });
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -192,15 +191,13 @@ public class ClassIntegrationTests : IntegrationTestBase
         // Placeholder for cascading record mapping deletion
     }
     
-    private async Task SeedTestDataAsync(bool deleteProject = false)
+    
+    
+    protected override async Task SeedTestDataAsync()
     {
-        await CleanDatabaseAsync();
+        await base.SeedTestDataAsync();
         
         var project = new Project { Name = "Project 2" };
-        if (deleteProject)
-        {
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        }
         
         Context.Projects.Add(project);
         
