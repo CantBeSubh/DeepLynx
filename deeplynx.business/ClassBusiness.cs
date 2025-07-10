@@ -227,7 +227,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns></returns>
     public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
-        DoesProjectExist(long.Parse(projectId));
+        DoesProjectExist(projectId);
         var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
@@ -244,7 +244,7 @@ public class ClassBusiness : IClassBusiness
             Name = className
         };
 
-        return await CreateClass(long.Parse(projectId), classDto);
+        return await CreateClass(projectId, classDto);
     }
     
     /// <summary>
