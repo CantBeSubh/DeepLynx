@@ -14,6 +14,7 @@ namespace deeplynx.datalayer.Models;
 [Index("RelationshipName", Name = "idx_historical_edges_relationship_name")]
 [Index("Id", Name = "idx_historical_edges_id")]
 [Index("Current", Name = "idx_historical_edges_current")]
+[Index("LastUpdatedAt", Name = "idx_historical_edges_last_updated_at")]
 public partial class HistoricalEdge
 {
     [Key]
@@ -22,7 +23,7 @@ public partial class HistoricalEdge
     public long Id { get; set; }
     
     [Column("edge_id")]
-    public long EdgeId { get; set; }
+    public long? EdgeId { get; set; }
     
     [Column("origin_id")]
     public long OriginId { get; set; }
@@ -62,6 +63,9 @@ public partial class HistoricalEdge
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
+    
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime? LastUpdatedAt { get; set; }
     
     [ForeignKey("EdgeId")]
     [InverseProperty("HistoricalEdges")]

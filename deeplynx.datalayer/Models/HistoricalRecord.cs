@@ -12,6 +12,7 @@ namespace deeplynx.datalayer.Models;
 [Index("RecordId", Name = "idx_historical_records_record_id")]
 [Index("ClassName", Name = "idx_historical_records_class_name")]
 [Index("Current", Name = "idx_historical_records_current")]
+[Index("LastUpdatedAt", Name = "idx_historical_records_last_updated_at")]
 public partial class HistoricalRecord
 {
     [Key]
@@ -19,7 +20,7 @@ public partial class HistoricalRecord
     public long Id { get; set; }
     
     [Column("record_id")]
-    public long RecordId { get; set; }
+    public long? RecordId { get; set; }
 
     [Column("uri")]
     public string? Uri { get; set; }
@@ -74,6 +75,9 @@ public partial class HistoricalRecord
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
+    
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
     
     [ForeignKey("RecordId")]
     [InverseProperty("HistoricalRecords")]

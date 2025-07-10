@@ -2,7 +2,7 @@ namespace deeplynx.models;
 
 public class HistoricalEdgeResponseDto
 {
-    public long Id {get; set;}
+    public long? Id {get; set;}
     public long OriginId {get; set;}
     public long DestinationId { get; set; }
     public long? RelationshipId { get; set; }

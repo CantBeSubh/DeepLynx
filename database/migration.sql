@@ -1527,5 +1527,55 @@ BEGIN
     VALUES ('20250709214056_AdjustRecordsAndEdges', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN record_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    ALTER TABLE deeplynx.historical_records ADD last_updated_at timestamp without time zone NOT NULL DEFAULT TIMESTAMP '-infinity';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN edge_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    ALTER TABLE deeplynx.historical_edges ADD last_updated_at timestamp without time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    CREATE INDEX idx_historical_records_last_updated_at ON deeplynx.historical_records (last_updated_at);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    CREATE INDEX idx_historical_edges_last_updated_at ON deeplynx.historical_edges (last_updated_at);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710201141_AddHistoricalTimestamp') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250710201141_AddHistoricalTimestamp', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

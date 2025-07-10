@@ -2,7 +2,7 @@ namespace deeplynx.models;
 
 public class HistoricalRecordResponseDto
 {
-    public long Id { get; set; }
+    public long? Id { get; set; }
     public string? Uri { get; set; }
     public string Properties { get; set; } = null!;
     public string? OriginalId { get; set; }
