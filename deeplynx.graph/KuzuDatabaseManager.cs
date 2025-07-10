@@ -201,8 +201,8 @@ namespace deeplynx.graph
                 await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS TableNames (id INT64, class_name STRING, PRIMARY KEY(id));");
                 await PerformNonQueryAsync("COPY TableNames FROM (LOAD FROM historical_records RETURN id, class_name);");
 
-                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS RelTableNames (origin_id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, PRIMARY KEY(origin_id));");
-                await PerformNonQueryAsync("COPY RelTableNames FROM (LOAD FROM edges_c RETURN DISTINCT origin_id, relationship_name, orig_class, dest_class);");
+                await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS RelTableNames (id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, PRIMARY KEY(id));");
+                await PerformNonQueryAsync("COPY RelTableNames FROM (LOAD FROM edges_c RETURN DISTINCT id, relationship_name, orig_class, dest_class);");
 
                 var classNames = await GetUniqueClassNamesAsync();
 
@@ -242,13 +242,49 @@ namespace deeplynx.graph
                 }
 
                 await PerformNonQueryAsync("CREATE NODE TABLE Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
-                await PerformNonQueryAsync("CREATE REL TABLE RELATES_TO (FROM Musician TO Song, FROM Band TO Song, relationship_name STRING);");
+                await CreateRelatesToTableAsync();
 
                 Console.WriteLine("Tables setup successfully.");
             }
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while setting up Kuzu tables: {e.Message}");
+            }
+        }
+
+
+        /// <summary>
+        /// Creates the RELATES_TO table dynamically based on unique relationships.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task CreateRelatesToTableAsync()
+        {
+            try
+            {
+                var relationships = await GetUniqueRelationshipNamesAsync();
+                var fromToClauses = new HashSet<string>();
+
+                foreach (var relationship in relationships)
+                {
+                    string fromToClause = $"FROM {CapitalizeFirstLetter(relationship.OrigClass)} TO {CapitalizeFirstLetter(relationship.DestClass)}";
+                    fromToClauses.Add(fromToClause);
+                }
+
+                string combinedFromToClauses = string.Join(", ", fromToClauses);
+
+                string createRelTableQuery = $@"
+                    CREATE REL TABLE IF NOT EXISTS RELATES_TO (
+                        {combinedFromToClauses},
+                        relationship_name STRING
+                    );";
+
+                await PerformNonQueryAsync(createRelTableQuery);
+
+                Console.WriteLine("RELATES_TO table setup successfully.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while creating the RELATES_TO table: {e.Message}");
             }
         }
 
@@ -362,9 +398,7 @@ namespace deeplynx.graph
                 MATCH (a:{request.TableName}) WHERE a.id = {request.Id}
                 MATCH (a)-[r*1..{request.Depth}]-(b)
                 RETURN
-                    a AS {request.TableName}_node,
-                    r AS RECURSIVE_RELATIONSHIP,
-                    b AS {request.TableName}_related_node";
+                    r AS RECURSIVE_RELATIONSHIP;";
 
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
 
@@ -409,7 +443,7 @@ namespace deeplynx.graph
 
             try
             {
-                await PerformNonQueryAsync("COPY Entity FROM (LOAD FROM historical_records WHERE class_name IS NULL AND project_id = 1 RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
+                await PerformNonQueryAsync($"COPY Entity FROM (LOAD FROM historical_records WHERE class_name IS NULL AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
                 var classNames = await GetUniqueClassNamesAsync();
 
                 foreach (var className in classNames)
@@ -447,8 +481,7 @@ namespace deeplynx.graph
 
             try
             {
-                await PerformNonQueryAsync("COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = 1 AND orig_class = 'musician' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Musician', to='Song');");
-                await PerformNonQueryAsync("COPY RELATES_TO FROM (LOAD FROM edges_c WHERE relationship_name IS NULL AND project_id = 1 AND orig_class = 'band' RETURN origin_id AS FROM, destination_id AS TO, relationship_name) (from='Band', to='Song');");
+                await LoadRelatesToDataAsync(project_id);
                 var relationships = await GetUniqueRelationshipNamesAsync();
 
                 foreach (var relationship in relationships)
@@ -456,7 +489,7 @@ namespace deeplynx.graph
                     string copyCommand = $@"
                             COPY {relationship.RelationshipName.ToUpper()} FROM (
                                 LOAD FROM edges_c
-                                WHERE relationship_name = '{relationship.RelationshipName}' AND project_id = {project_id} AND orig_class = '{relationship.OrigClass}'
+                                WHERE relationship_name = '{relationship.RelationshipName}' AND project_id = {project_id} AND orig_class = '{relationship.OrigClass.ToLower()}' AND dest_class = '{relationship.DestClass.ToLower()}'
                                 RETURN origin_id AS FROM, destination_id AS TO, '{relationship.RelationshipName}' AS relationship_name
                             ) (from='{CapitalizeFirstLetter(relationship.OrigClass)}', to='{CapitalizeFirstLetter(relationship.DestClass)}');";
 
@@ -472,6 +505,43 @@ namespace deeplynx.graph
             }
 
             return hasError;
+        }
+
+
+        /// <summary>
+        /// Loads data into the RELATES_TO table based on unique relationships.
+        /// </summary>
+        /// <param name="project_id">The project ID to filter the records being loaded.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task LoadRelatesToDataAsync(int project_id)
+        {
+            try
+            {
+                var relationships = await GetUniqueRelationshipNamesAsync();
+
+                var groupedRelationships = relationships.GroupBy(r => r.OrigClass).ToList();
+
+                foreach (var group in groupedRelationships)
+                {
+                    foreach (var relationship in group)
+                    {
+                        string copyCommand = $@"
+                    COPY RELATES_TO FROM (
+                        LOAD FROM edges_c
+                        WHERE relationship_name IS NULL AND project_id = {project_id} AND orig_class = '{relationship.OrigClass.ToLower()}' AND dest_class = '{relationship.DestClass.ToLower()}'
+                        RETURN origin_id AS FROM, destination_id AS TO, relationship_name
+                    ) (from='{CapitalizeFirstLetter(relationship.OrigClass)}', to='{CapitalizeFirstLetter(relationship.DestClass)}');";
+
+                        await PerformNonQueryAsync(copyCommand);
+                    }
+                }
+
+                Console.WriteLine("Data loaded successfully into the RELATES_TO table.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while loading data into the RELATES_TO table: {e.Message}");
+            }
         }
 
 
@@ -584,36 +654,36 @@ namespace deeplynx.graph
                 }
                 else
                 {
-                    kuzu_value bandNode = new kuzu_value();
+                    kuzu_value originalNode = new kuzu_value();
                     kuzu_value relatedNode = new kuzu_value();
                     kuzu_value relationship = new kuzu_value();
 
-                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 0, bandNode));
+                    await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 0, originalNode));
                     await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 1, relatedNode));
                     await Task.Run(() => kuzu_flat_tuple_get_value(tuple, 2, relationship));
 
-                    kuzu_logical_type bandDataType = new kuzu_logical_type();
-                    kuzu_logical_type relatedDataType = new kuzu_logical_type();
+                    kuzu_logical_type originalNodeDataType = new kuzu_logical_type();
+                    kuzu_logical_type relatedNodeDataType = new kuzu_logical_type();
                     kuzu_logical_type relationshipDataType = new kuzu_logical_type();
 
-                    await Task.Run(() => kuzu_value_get_data_type(bandNode, bandDataType));
-                    await Task.Run(() => kuzu_value_get_data_type(relatedNode, relatedDataType));
+                    await Task.Run(() => kuzu_value_get_data_type(originalNode, originalNodeDataType));
+                    await Task.Run(() => kuzu_value_get_data_type(relatedNode, relatedNodeDataType));
                     await Task.Run(() => kuzu_value_get_data_type(relationship, relationshipDataType));
 
-                    if (!(kuzu_data_type_get_id(bandDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relatedDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relationshipDataType) == kuzu_data_type_id.KUZU_STRING))
+                    if (!(kuzu_data_type_get_id(originalNodeDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relatedNodeDataType) == kuzu_data_type_id.KUZU_STRING && kuzu_data_type_get_id(relationshipDataType) == kuzu_data_type_id.KUZU_STRING))
                     {
-                        string bandColumnName = string.Empty;
-                        string relatedColumnName = string.Empty;
+                        string originalNodeColumnName = string.Empty;
+                        string relatedNodeColumnName = string.Empty;
                         string relationshipColumnName = string.Empty;
-                        await Task.Run(() => kuzu_query_result_get_column_name(result, 0, out bandColumnName));
-                        await Task.Run(() => kuzu_query_result_get_column_name(result, 1, out relatedColumnName));
+                        await Task.Run(() => kuzu_query_result_get_column_name(result, 0, out originalNodeColumnName));
+                        await Task.Run(() => kuzu_query_result_get_column_name(result, 1, out relatedNodeColumnName));
                         await Task.Run(() => kuzu_query_result_get_column_name(result, 2, out relationshipColumnName));
 
-                        sb.AppendLine($"{bandColumnName}: {await GetValueStringAsync(bandNode, bandDataType)}");
+                        sb.AppendLine($"{originalNodeColumnName}: {await GetValueStringAsync(originalNode, originalNodeDataType)}");
 
                         sb.AppendLine($"{relationshipColumnName}: {await GetValueStringAsync(relationship, relationshipDataType)}");
 
-                        sb.AppendLine($"{relatedColumnName}: {await GetValueStringAsync(relatedNode, relatedDataType)}");
+                        sb.AppendLine($"{relatedNodeColumnName}: {await GetValueStringAsync(relatedNode, relatedNodeDataType)}");
 
                         for (ulong i = 2; i < numColumns; i++)
                         {
@@ -878,7 +948,6 @@ namespace deeplynx.graph
 
                 case kuzu_data_type_id.KUZU_RECURSIVE_REL:
                     StringBuilder sbRecursive = new StringBuilder();
-                    sbRecursive.AppendLine("\n");
 
                     kuzu_value nodeList = new kuzu_value();
                     kuzu_value relationshipList = new kuzu_value();
@@ -897,7 +966,7 @@ namespace deeplynx.graph
                         kuzu_logical_type nodeDataType = new kuzu_logical_type();
                         await Task.Run(() => kuzu_value_get_data_type(currentNode, nodeDataType));
 
-                        sbRecursive.AppendLine($"Node {i}: {await GetValueStringAsync(currentNode, nodeDataType)}");
+                        sbRecursive.AppendLine($"Node: \n{await GetValueStringAsync(currentNode, nodeDataType)}");
                     }
 
                     ulong relationCount;
@@ -911,7 +980,7 @@ namespace deeplynx.graph
                         kuzu_logical_type relationDataType = new kuzu_logical_type();
                         await Task.Run(() => kuzu_value_get_data_type(currentRelation, relationDataType));
 
-                        sbRecursive.AppendLine($"Relationship {j}: {await GetValueStringAsync(currentRelation, relationDataType)}");
+                        sbRecursive.AppendLine($"Relationship: {await GetValueStringAsync(currentRelation, relationDataType)}");
                     }
 
                     return sbRecursive.ToString();
