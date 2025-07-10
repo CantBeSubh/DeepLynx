@@ -1,7 +1,20 @@
-import React, { useState, ReactNode } from "react";
+import React, { useState, useRef } from "react";
 
 const TeamMembersWidget = () => {
     const [showTable, setShowTable] = useState(false);
+    const avatarContainerRef = useRef(null);
+
+    const scrollLeft = () => {
+    if (avatarContainerRef.current) {
+      avatarContainerRef.current.scrollLeft -= 100;
+    }
+  };
+
+    const scrollRight = () => {
+        if (avatarContainerRef.current) {
+        avatarContainerRef.current.scrollLeft += 100;
+        }
+    };
 
     const handleToggle = () => {
         setShowTable((prev) => !prev);
@@ -80,7 +93,7 @@ const TeamMembersWidget = () => {
 
                             {/* Left Button */}
                             <div className="flex items-center justify-cetner">
-                                <button className="flex-shrink-0">
+                                <button className="flex-shrink-0" onClick={scrollLeft}>
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         fill="none"
@@ -100,7 +113,7 @@ const TeamMembersWidget = () => {
                             {/* Avatar Icons */}
                             <div className="flex-grow flex items-center space-x-2 overflow-x-auto">
                                 <p className="text-base-300 mb-2"></p>
-                                {[...Array(8)].map((_, i) => (
+                                {[...Array(9)].map((_, i) => (
                                     <div key={i} className="avatar inline-block">
                                         <div className="w-10 rounded-full">
                                         <img
@@ -115,7 +128,7 @@ const TeamMembersWidget = () => {
 
                             {/* Right Button */}
                             <div className="flex items-center justify-center">
-                                <button className="flex-shrink-0">
+                                <button className="flex-shrink-0" onClick={scrollRight}>
                                     <svg
                                         xmlns="http://www.w3.org/2000/svg"
                                         fill="none" viewBox="0 0 24 24"
@@ -134,6 +147,7 @@ const TeamMembersWidget = () => {
                     </div>
                 </div>
             ) : (
+                // Team Members Table
                 <div className="overflow-x-auto">
                     <div className="flex justify-between items-center">
                     </div>
@@ -248,6 +262,8 @@ const TeamMembersWidget = () => {
                         </tr>
                     </tbody>
                     </table>
+
+                    {/* Table Toggle Buttons */}
                     <div className="flex justify-end">
                         <button className="btn join-item p-2 rounded-r-none">
                             <svg

@@ -12,6 +12,7 @@ import GenericTable from "@/app/(home)/components/GenericTable";
 import AvatarCell from "@/app/(home)/components/Avatar";
 import WidgetCard from "@/app/(home)/components/Widgets";
 import CreateWidget from "@/app/(home)/components/CreateWidgets";
+import {PlusIcon} from "@heroicons/react/24/outline"
 
 
 type PopularTable = {
@@ -147,18 +148,8 @@ const ProjectDetailPage = () => {
                 onClick={() => setWidgetModal(true)}
                 className="btn btn-secondary text-primary-content flex items-center"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  className="size-4"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+                <PlusIcon
+                  className="size-6"/>
                 Widget
               </button>
             </div>
