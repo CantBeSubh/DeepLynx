@@ -29,7 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
         [HttpPost("Query")]
-        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(string projectId, string dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
@@ -56,7 +56,7 @@ namespace deeplynx.api.Controllers
         /// <param name="file">Timeseries file</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("upload")]
-        public async Task<ActionResult<RecordResponseDto>> UploadFile(string projectId, string dataSourceId, IFormFile file)
+        public async Task<ActionResult<RecordResponseDto>> UploadFile(long projectId, long dataSourceId, IFormFile file)
         {
             try
             {
@@ -79,7 +79,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{UploadId}</returns>
         [HttpPost("start-upload")]
-        public IActionResult StartUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
+        public IActionResult StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace deeplynx.api.Controllers
         /// <param name="chunkNumber">Chunk number from form</param>
         /// <returns>{ChunkUploadStatus}</returns>
         [HttpPost("upload-chunk")]
-        public async Task<IActionResult> UploadChunk(string projectId, string dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
+        public async Task<IActionResult> UploadChunk(long projectId, long dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
             try
             {
@@ -128,7 +128,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{TimeseriesUploadRecord}</returns>
         [HttpPost("complete-upload")]
-        public async Task<ActionResult<RecordResponseDto>> CompleteUpload(string projectId, string dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> CompleteUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
             {
@@ -152,7 +152,7 @@ namespace deeplynx.api.Controllers
         /// <param name="rowNumber"></param>
         /// <returns></returns>
         [HttpGet("InterpolateRows")]
-        public async Task<IActionResult> InterpolateRows(string projectId, string dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
+        public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
         {
             try
             {
@@ -175,7 +175,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAll")]
-        public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, string projectId, string dataSourceId)
+        public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, long projectId, long dataSourceId)
         {
             try
             {

@@ -217,7 +217,7 @@ public class ClassBusiness : IClassBusiness
             }
         }
     }
-    
+
     /// <summary>
     /// This is used to get the general class that has been created with a project.
     /// If there is a project that does not have the class, it creates one. 
@@ -225,10 +225,10 @@ public class ClassBusiness : IClassBusiness
     /// <param name="projectId">The ID of the project we are searching</param>
     /// <param name="className"> The name of the project class to search for</param>
     /// <returns></returns>
-    public async Task<ClassResponseDto> GetClassInfo(string projectId, string className)
+    public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
         DoesProjectExist(long.Parse(projectId));
-        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == long.Parse(projectId));
+        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
         {
@@ -238,7 +238,7 @@ public class ClassBusiness : IClassBusiness
                 Name = projectClass.Name,
             };
         }
-        
+
         var classDto = new ClassRequestDto()
         {
             Name = className
