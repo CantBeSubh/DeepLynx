@@ -1577,5 +1577,41 @@ BEGIN
     VALUES ('20250710201141_AddHistoricalTimestamp', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710210437_HistoricalReferencesNoAction') THEN
+    ALTER TABLE deeplynx.historical_records DROP CONSTRAINT historical_records_record_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710210437_HistoricalReferencesNoAction') THEN
+    ALTER TABLE deeplynx.historical_records ADD CONSTRAINT historical_records_record_id_fkey FOREIGN KEY (record_id) REFERENCES deeplynx.records (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710210437_HistoricalReferencesNoAction') THEN
+    ALTER TABLE deeplynx.historical_edges DROP CONSTRAINT historical_edges_edge_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710210437_HistoricalReferencesNoAction') THEN
+    ALTER TABLE deeplynx.historical_edges ADD CONSTRAINT historical_edges_edge_id_fkey FOREIGN KEY (edge_id) REFERENCES deeplynx.edges (id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250710210437_HistoricalReferencesNoAction') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250710210437_HistoricalReferencesNoAction', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

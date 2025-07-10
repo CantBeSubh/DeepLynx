@@ -17,6 +17,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     private EdgeMappingBusiness _edgeMappingBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     private RelationshipBusiness _relationshipBusiness = null!;
+    private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     public long pid;
     public long tid;
     public long cid;
@@ -27,7 +28,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _recordMappingBusiness = new RecordMappingBusiness(Context);
         _edgeMappingBusiness = new EdgeMappingBusiness(Context);
         _edgeBusiness = new EdgeBusiness(Context);
-        _recordBusiness = new RecordBusiness(Context, _edgeBusiness);
+        _recordBusiness = new RecordBusiness(Context, _edgeBusiness, _historicalRecordBusiness);
         _relationshipBusiness = new RelationshipBusiness(Context, _edgeMappingBusiness, _edgeBusiness);
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness, _recordBusiness, _recordMappingBusiness, _relationshipBusiness);
         _projectBusiness = new ProjectBusiness(Context, _classBusiness);

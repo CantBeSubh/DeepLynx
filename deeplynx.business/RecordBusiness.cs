@@ -13,16 +13,18 @@ public class RecordBusiness : IRecordBusiness
     
     // dependant used to trigger downstream soft deletes
     private readonly IEdgeBusiness _edgeBusiness;
+    private readonly IHistoricalRecordBusiness _historicalRecordBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge operations.</param>
     /// <param name="edgeBusiness">Passed in context of downstream edge objects.</param>
-    public RecordBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness)
+    public RecordBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness, IHistoricalRecordBusiness historicalRecordBusiness)
     {
         _context = context;
         _edgeBusiness = edgeBusiness;
+        _historicalRecordBusiness = historicalRecordBusiness;
     }
     
     /// <summary>
@@ -33,37 +35,7 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>A list of records based on the applied filters.</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
-        var recordQuery = _context.HistoricalRecords
-            .Where(r => r.Current && r.ProjectId == projectId && r.ArchivedAt == null);
-
-        if (dataSourceId.HasValue)
-        {
-            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
-        }
-        
-        return await recordQuery
-            .Select(r=>new HistoricalRecordResponseDto()
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-            })
-            .ToListAsync();
+        return await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, null, true);
     }
     
     /// <summary>
@@ -75,37 +47,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
     public async Task<HistoricalRecordResponseDto> GetRecord(long projectId, long recordId)
     {
-        var record = await _context.HistoricalRecords
-            .Where(r => r.Current && r.RecordId == recordId)
-            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null)
-            .FirstOrDefaultAsync();
-        
-        if (record == null)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
-
-        return new HistoricalRecordResponseDto()
-        {
-            Id = record.RecordId,
-            Uri = record.Uri,
-            Properties = record.Properties,
-            OriginalId = record.OriginalId,
-            Name = record.Name,
-            ClassId = record.ClassId,
-            ClassName = record.ClassName,
-            DataSourceId = record.DataSourceId,
-            DataSourceName = record.DataSourceName,
-            MappingId = record.MappingId,
-            ProjectId = record.ProjectId,
-            ProjectName = record.ProjectName,
-            Tags = record.Tags,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
-        };
+        return await _historicalRecordBusiness.GetHistoricalRecord(recordId, null, true);
     }
 
     /// <summary>
@@ -150,6 +92,8 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
+        
+        await _historicalRecordBusiness.CreateHistoricalRecord(record.Id);
 
         return new RecordResponseDto
         {
@@ -203,6 +147,8 @@ public class RecordBusiness : IRecordBusiness
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
         
+        await _historicalRecordBusiness.UpdateHistoricalRecord(record.Id);
+        
         return new RecordResponseDto
         {
             Id = record.Id,
@@ -237,6 +183,8 @@ public class RecordBusiness : IRecordBusiness
         
         _context.Records.Remove(record);
         await _context.SaveChangesAsync();
+        
+        await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
         
         return true;
     }
@@ -274,6 +222,8 @@ public class RecordBusiness : IRecordBusiness
                 }
 
                 await transaction.CommitAsync();
+        
+                await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
                 return true;
             }
             catch (Exception exc)
