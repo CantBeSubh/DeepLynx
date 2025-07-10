@@ -22,14 +22,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all projects
         /// </summary>
+        /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived projects from the result</param>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects")]
-        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects()
+        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects([FromQuery] bool? hideArchived = false)
         {
             try
             {
-                var projects = await _projectBusiness.GetAllProjects();
+                var projects = await _projectBusiness.GetAllProjects(hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)

@@ -28,10 +28,15 @@ public class ProjectBusiness : IProjectBusiness
     /// </summary>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
-    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool? hideArchived)
     {
         var projects = await _context.Projects
             .Where(p => p.ArchivedAt == null).ToListAsync();
+
+        if (hideArchived == true)
+        {
+            projects = projects.Where(p => p.ArchivedAt == null).ToList();
+        }
 
         return projects
             .Select(p => new ProjectResponseDto()
