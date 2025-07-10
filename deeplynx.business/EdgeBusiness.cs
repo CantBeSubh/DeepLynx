@@ -308,8 +308,8 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId)
     {
-        var project = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
-        if (!project)
+        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
+        if (!datasource)
         {
             throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
         }
