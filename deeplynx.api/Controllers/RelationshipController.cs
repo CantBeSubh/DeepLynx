@@ -21,7 +21,7 @@ namespace deeplynx.api.Controllers
     /// <param name="projectId">ID for project which relationship is associated with</param>
     /// <returns>List of relationship response DTOs</returns>
         [HttpGet("GetAllRelationships")]
-        public async Task<IActionResult> GetAllRelationships(long projectId)
+        public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(long projectId)
         {
             try
             {
@@ -43,7 +43,7 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId">Id of relationship</param>
         /// <returns>Relationship response DTO</returns>
         [HttpGet("GetRelationship/{relationshipId}")]
-        public async Task<IActionResult> GetRelationship(long projectId, long relationshipId)
+        public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(long projectId, long relationshipId)
         {
             try
             {
@@ -67,20 +67,12 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship")]
-        public async Task<IActionResult> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
+        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { error = "Invalid input", details = ModelState });
-            }
-
             try
             {
                 var created = await _business.CreateRelationship(projectId, dto);
-                // Re-use the clean, Include-ready method
-                var full = await _business.GetRelationship(projectId, created.Id);
-
-                return Ok(full);
+                return Ok(created);
             }
             catch (Exception exc)
             {
@@ -98,13 +90,9 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}")]
-        public async Task<IActionResult> UpdateRelationship(long projectId, long relationshipId,
+        public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] RelationshipRequestDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { error = "Invalid input", details = ModelState });
-            }
             try
             {
                 var result = await _business.UpdateRelationship(projectId, relationshipId, dto);

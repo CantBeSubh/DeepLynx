@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords")]
-        public async Task<IActionResult> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">Datasource ID which record is associated with</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<IActionResult> GetRecord(long projectId, long recordId)
+        public async Task<ActionResult<RecordResponseDto>> GetRecord(long projectId, long recordId)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("CreateRecord")]
-        public async Task<IActionResult> CreateRecord(
+        public async Task<ActionResult<RecordResponseDto>> CreateRecord(
             long projectId, 
             [FromQuery] long dataSourceId,
             [FromBody] RecordRequestDto dto)
@@ -97,7 +97,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Recored request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}")]
-        public async Task<IActionResult> UpdateRecord(
+        public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
             long projectId,
             long recordId,
             [FromBody] RecordRequestDto dto)

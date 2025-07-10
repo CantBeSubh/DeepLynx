@@ -15,6 +15,6 @@ public class RelationshipResponseDto
 
     public long OriginId { get; set; }
     public long DestinationId { get; set; }
-    public ClassRelationshipRespDto? Origin { get; set; }
-    public ClassRelationshipRespDto? Destination { get; set; }
+    public ClassRelationshipResponseDto? Origin { get; set; }
+    public ClassRelationshipResponseDto? Destination { get; set; }
 }
