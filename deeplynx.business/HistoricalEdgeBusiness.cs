@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
-public class HistoricalEdgeBusiness: IHistoricalEdgeBusiness
+public class HistoricalEdgeBusiness //: IHistoricalEdgeBusiness
 {
     
 }
