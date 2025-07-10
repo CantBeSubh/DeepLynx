@@ -1,6 +1,3 @@
-using System.Data;
-using System.Text.Json.Nodes;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
 
@@ -8,17 +5,21 @@ namespace deeplynx.interfaces
 {
     public interface ITimeseriesBusiness
     {
-        Task<RecordResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file);
-        string StartUpload(string projectId, string datasourceId);
+        Task<RecordResponseDto> UploadFile(long projectId, long datasourceId, IFormFile file);
+        string StartUpload(long projectId, long datasourceId);
 
-        Task<string> UploadChunk(string projectId, string datasourceId, IFormFile chunk,
+        Task<string> UploadChunk(long projectId, long datasourceId, IFormFile chunk,
             string uploadId, int chunkNumber);
 
-        Task<RecordResponseDto> CompleteUpload(string projectId, string datasourceId,
+        Task<RecordResponseDto> CompleteUpload(long projectId, long datasourceId,
             TimeseriesUploadCompleteRequestDto request);
 
         Task CreateTimeseriesTable(string tableName, string filePath);
 
-        Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId);
+        Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long datasourceId);
+
+        Task<RecordResponseDto> InterpolateRows(long projectId, long datasourceId, string rowNumber, string tableName);
+
+        Task<RecordResponseDto> GetAllTableRecords(string tableName, long projectId, long datasourceId);
     }
 }

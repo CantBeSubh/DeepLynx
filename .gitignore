@@ -29,3 +29,4 @@ package-lock.json
 deeplynx.sln.DotSettings.user
 
 TimeSeries.db
+deeplynx.graph/kuzu_db

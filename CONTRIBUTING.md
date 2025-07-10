@@ -77,6 +77,10 @@ Below is the home for several technical "gotchas" that may be useful for other p
 * Controllers should include error handling on each route in try-catch format
 * Routes names and the corresponding Controller and Business method names should be descriptive, such as "CreateDataSource"
 * Two `Dto` object should be used within each domain: A `RequestDto` object, containing the fields which a user submits upon POST or PUT, and a `ResponseDto` object, containing the fields which should be exposed to the user upon return.
+* To ensure all `Dtos` are included in the open api auto-generated document, they should be explicitly called in the return type of controller methods: 
+```
+ public async Task<ActionResult<ClassResponseDto>> CreateClass()
+```
 * Please write unit tests for your business classes and perform postman/scalar testing for your controllers.
 
 ## Making Database Changes

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { sampleProjectData, peopleData } from "@/app/(home)/dummy_data/data";
+import { peopleData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
 import { Column, ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
@@ -11,6 +11,7 @@ import Tabs from "@/app/(home)/components/Tabs";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import AvatarCell from "@/app/(home)/components/Avatar";
 import { format } from "date-fns";
+import { getProject } from "@/app/lib/api";
 
 type PopularTable = {
   id: number;
@@ -29,15 +30,16 @@ const ProjectDetailPage = () => {
   useEffect(() => {
     if (!hasLoaded || !projectId) return;
 
-    const found = sampleProjectData.find((p) => p.id === projectId);
-
-    if (!found) return;
-
-    setProject((prev) => (prev?.id === found.id ? prev : found));
-
-    if (found.id !== project?.id) {
-      setProjectSession({ projectId: found.id, projectName: found.name });
-    }
+    const fetchProject = async () => {
+      try {
+        const data = await getProject(projectId);
+        setProject(data);
+        setProjectSession({ projectId: data.id, projectName: data.name });
+      } catch (error) {
+        console.error("Failed to fetch project:", error);
+      }
+    };
+    fetchProject();
   }, [hasLoaded, projectId, project, setProjectSession]);
 
   const popular_table_columns: Column<PopularTable>[] = [
@@ -85,13 +87,11 @@ const ProjectDetailPage = () => {
       <main>
         <div className="text-secondary-content">
           <h1 className="text-2xl">Project Name: {project.name}</h1>
-          <p className="mt-2 text-base-content">
-            For databases or systems tracking chain reactions and realated data.
-          </p>
+          <p className="mt-2 text-base-content">{project.description}</p>
           <p>
             <strong>Created: </strong>
-            {project?.created &&
-              format(new Date(project.created), "MM/dd/yyyy")}
+            {project?.createdAt &&
+              format(new Date(project.createdAt), "MM/dd/yyyy")}
           </p>
         </div>
 
@@ -99,15 +99,18 @@ const ProjectDetailPage = () => {
 
         <div className="flex w-full">
           <div className="w-full md:w-1/2 pr-4">
-            <LargeSearchBar />
-            <div className="flex justify-end">
-              <Link
-                href="#"
-                className="text-sm underline text-secondary/70 mr-3 hover:text-primary mt-1"
-              >
-                Advanced Search
-              </Link>
+            <div className="flex flex-col w-full max-w-2xl mx-auto">
+              <LargeSearchBar />
+              <div className="flex justify-end">
+                <Link
+                  href="#"
+                  className="text-sm underline text-secondary/70 mr-3 hover:text-primary mt-1"
+                >
+                  Advanced Search
+                </Link>
+              </div>
             </div>
+
             <div className="card shadow-lg mt-3">
               <div className="card-body">
                 <h2 className="card-title">Seaved Searchs</h2>

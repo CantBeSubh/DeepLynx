@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getAllProjects } from "../lib/api";
 
-import CreateProject from "@/app/(home)/components/CreateProjectsWidget";
+import CreateProject from "./components/CreateProjectsModal";
 import CreateWidget from "@/app/(home)/components/CreateWidgets";
-import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
-import { ExpandableTable } from "@/app/(home)/components/Accordion";
+import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard from "@/app/(home)/components/Widgets";
 
@@ -15,11 +15,15 @@ const Projects = () => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  const [tableData] = useState<ProjectsList[]>(sampleProjectData);
+  const [projects, setProjects] = useState([]);
 
   const handleExplore = (project: ProjectsList) => {
     router.push(`/project/${project.id}`);
   };
+
+  useEffect(() => {
+    getAllProjects().then(setProjects).catch(console.error);
+  }, []);
 
   const columns = [
     {
@@ -66,7 +70,7 @@ const Projects = () => {
           </div>
 
           <ExpandableTable
-            data={tableData}
+            data={projects}
             columns={columns}
             onExplore={handleExplore}
             renderExpandedContent={(project, onClose) => (
