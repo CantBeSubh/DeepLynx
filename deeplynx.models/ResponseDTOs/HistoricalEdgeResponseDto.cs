@@ -2,8 +2,8 @@ namespace deeplynx.models;
 
 public class HistoricalEdgeResponseDto
 {
-    public long? Id {get; set;}
-    public long OriginId {get; set;}
+    public long? Id { get; set; }
+    public long OriginId { get; set; }
     public long DestinationId { get; set; }
     public long? RelationshipId { get; set; }
     public string? RelationshipName { get; set; }
@@ -15,4 +15,5 @@ public class HistoricalEdgeResponseDto
     public string? ModifiedBy { get; set; }
     public DateTime? ModifiedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }

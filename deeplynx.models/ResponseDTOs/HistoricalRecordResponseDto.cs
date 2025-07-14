@@ -20,4 +20,5 @@ public class HistoricalRecordResponseDto
     public string? ModifiedBy { get; set; }
     public DateTime? ModifiedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
 }

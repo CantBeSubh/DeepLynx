@@ -383,6 +383,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
 
+                    b.Property<DateTime>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
+
                     b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
@@ -488,6 +492,10 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("data_source_name");
+
+                    b.Property<DateTime>("DeletedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp without time zone")
