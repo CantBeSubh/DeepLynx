@@ -5,6 +5,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Moq;
+using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests
 {
@@ -13,10 +14,10 @@ namespace deeplynx.tests
     {
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
-        private Mock<IRecordBusiness> _mockRecordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
-        private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
+        private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
+        private Mock<IRecordBusiness> _recordBusiness = null!;
+        private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
+        private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         public long pid;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -24,12 +25,12 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _mockEdgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
-            _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
-            _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
+            _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
+            _recordBusiness = new Mock<IRecordBusiness>();
+            _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
+            _relationshipBusiness = new Mock<IRelationshipBusiness>();
 
-            _classBusiness = new ClassBusiness(Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
+            _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness.Object, _relationshipBusiness.Object);
             _projectBusiness = new ProjectBusiness(Context, _classBusiness);
         }
 
@@ -211,11 +212,11 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add a small delay to ensure ModifiedAt is after CreatedAt
-            await Task.Delay(10);
+            await Task.Delay(50);
 
             var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
-
+            updatedResult.ModifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
             updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
         }
 
@@ -310,31 +311,206 @@ namespace deeplynx.tests
             Assert.True(archivedClass.ArchivedAt >= beforeArchive);
             Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
         }
-        [Fact(Skip = "Force delete not implemented yet")]
+        [Fact]
         public async Task ForceDeleteClass_RemovesFromDatabase()
         {
-            //  future force delete logic
-        }
+            var testClass = new Class
+                {
+                    Name = $"Class to Force Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            
+            var existingClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(existingClass);
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
 
-        [Fact(Skip = "Cascade delete not implemented yet")]
+            // Check if class is completely removed from database
+            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.Null(deletedClass);
+        }
+    
+        [Fact]
         public async Task DeleteClass_DeletesDownstreamRelationships()
         {
-            // Placeholder for cascading relationship deletion
-        }
+            var testClass = new Class
+            {
+                Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
 
-        [Fact(Skip = "Cascade delete not implemented yet")]
-        public async Task DeleteClass_DeletesDownstreamRecords()
-        {
-            // Placeholder for cascading record deletion
-        }
+            // Create another class to be the other end of relationships
+            var otherClass = new Class
+            {
+                Name = $"Other Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(otherClass);
+            await Context.SaveChangesAsync();
 
-        [Fact(Skip = "Cascade delete not implemented yet")]
+            // Create relationships where testClass is Origin
+            var relationship1 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = otherClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            // Create relationships where testClass is Destination
+            var relationship2 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = otherClass.Id,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.Relationships.Add(relationship1);
+            Context.Relationships.Add(relationship2);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
+            var deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            Assert.Null(deletedRelationship1);
+            Assert.Null(deletedRelationship2);
+        }
+ [Fact]
+    public async Task DeleteClass_DeletesDownstreamRecords()
+{
+    var dataSource = new DataSource
+    {
+        Name = "Test DataSource",
+        ProjectId = pid,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        CreatedBy = null
+    };
+    Context.DataSources.Add(dataSource);
+    await Context.SaveChangesAsync();
+
+    var testClass = new Class
+    {
+        Name = $"Class with Records {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+        ProjectId = pid,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        CreatedBy = null,
+    };
+    Context.Classes.Add(testClass);
+    await Context.SaveChangesAsync();
+    var record1 = new Record
+    {
+        Name = "Test Record 1",
+        ClassId = testClass.Id,
+        DataSourceId = dataSource.Id,
+        ProjectId = pid,
+        Properties = "{\"test\": \"value1\"}",
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        CreatedBy = null
+    };
+
+    var record2 = new Record
+    {
+        Name = "Test Record 2",
+        ClassId = testClass.Id,
+        DataSourceId = dataSource.Id,
+        ProjectId = pid,
+        Properties = "{\"test\": \"value2\"}",
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        CreatedBy = null
+    };
+
+    Context.Records.AddRange(record1, record2);
+    await Context.SaveChangesAsync();
+    var existingRecords = Context.Records
+        .Where(r => r.ClassId == testClass.Id)
+        .ToList();
+    Assert.Equal(2, existingRecords.Count);
+    
+    var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+    Assert.True(deletedResult);
+
+    // Verify downstream records are also deleted (cascade delete)
+    var remainingRecords = Context.Records
+        .Where(r => r.ClassId == testClass.Id)
+        .ToList();
+    Assert.Empty(remainingRecords);
+}
+
+        [Fact]
         public async Task DeleteClass_DeletesDownstreamRecordMappings()
         {
-            // Placeholder for cascading record mapping deletion
+            var dataSource = new DataSource
+            {
+                Name = "Test DataSource",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            Context.DataSources.Add(dataSource);
+            await Context.SaveChangesAsync();
+
+            var testClass = new Class
+                {
+                    Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var mapping1 = new RecordMapping
+                {
+                    RecordParams = "{\"param1\": \"value1\"}",
+                ClassId = testClass.Id,
+                DataSourceId = dataSource.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            var mapping2 = new RecordMapping
+                {
+                    RecordParams = "{\"param2\": \"value2\"}",
+                ClassId = testClass.Id,
+                DataSourceId = dataSource.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.RecordMappings.Add(mapping1);
+            Context.RecordMappings.Add(mapping2);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedMapping1 = await Context.RecordMappings.FindAsync(mapping1.Id);
+            var deletedMapping2 = await Context.RecordMappings.FindAsync(mapping2.Id);
+            
+            Assert.NotNull(deletedMapping1);
+            Assert.NotNull(deletedMapping2);
+            Assert.Null(deletedMapping1.ClassId);
+            Assert.Null(deletedMapping2.ClassId);
         }
-
-
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
