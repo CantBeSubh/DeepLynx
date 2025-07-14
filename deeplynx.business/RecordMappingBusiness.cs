@@ -29,16 +29,18 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
     /// <param name="classId">(Optional) the ID of the class by which to filter mappings</param>
     /// <param name="tagId">(Optional) the ID of the tag by which to filter mappings</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>A list of record mappings based on the applied filters.</returns>
     /// TODO: Handle return message for if no records exist 
     public async Task<IEnumerable<RecordMappingResponseDto>> GetAllRecordMappings(
         long projectId,
         long? classId,
-        long? tagId)
+        long? tagId,
+        bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId,  hideArchived);
         var mappingQuery = _context.RecordMappings
-            .Where(m => m.ProjectId == projectId && m.ArchivedAt == null);
+            .Where(m => m.ProjectId == projectId);
 
         // add filter for class or tag if specified
         if (classId.HasValue)
@@ -59,6 +61,11 @@ public class RecordMappingBusiness : IRecordMappingBusiness
                 throw new KeyNotFoundException($"Tag with id {tagId} not found");
             }
             mappingQuery = mappingQuery.Where(m => m.TagId == tagId);
+        }
+        
+        if (hideArchived)
+        {
+            mappingQuery = mappingQuery.Where(m => m.ArchivedAt == null);
         }
             
         var mappings = await mappingQuery.ToListAsync();
@@ -84,24 +91,31 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <summary>
     /// Retrieves a specific mapping by its id
     /// </summary>
-    /// <param name="mappingId">The id whereby to fetch the mapping</param>
     /// <param name="projectId">The project ID for the project to which the mapping belongs</param>
+    /// <param name="mappingId">The id whereby to fetch the mapping</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>The mapping associated with the given ID</returns>
-    /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
+    /// <exception cref="KeyNotFoundException">Returned if mapping not found or is archived</exception>
     public async Task<RecordMappingResponseDto> GetRecordMapping(
         long projectId,
-        long mappingId
+        long mappingId,
+        bool hideArchived
         )
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         
         var mapping = await _context.RecordMappings
-            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
+            .Where(m => m.Id == mappingId && m.ProjectId == projectId)
             .FirstOrDefaultAsync();
 
         if (mapping == null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
+        }
+        
+        if (hideArchived && mapping.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Mapping with id {mappingId} is archived");
         }
 
         return new RecordMappingResponseDto
@@ -259,10 +273,12 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");

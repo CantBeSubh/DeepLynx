@@ -109,7 +109,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         await _recordMappingBusiness.CreateRecordMapping(pid, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did});
         await _recordMappingBusiness.CreateRecordMapping(p2.Id, new RecordMappingRequestDto { RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid,  DataSourceId = did});
     
-        var list = await _recordMappingBusiness.GetAllRecordMappings(pid, cid, tid);
+        var list = await _recordMappingBusiness.GetAllRecordMappings(pid, cid, tid, false);
         Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
     }
     
@@ -142,7 +142,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Context.RecordMappings.Add(recordMapping2);
         await Context.SaveChangesAsync();
         
-        var list = await _recordMappingBusiness.GetAllRecordMappings(pid, cid, tid);
+        var list = await _recordMappingBusiness.GetAllRecordMappings(pid, cid, tid, true);
         Assert.DoesNotContain(list, c => c.Id == recordMapping2.Id);
     }
     
@@ -161,7 +161,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
-        var result = await _recordMappingBusiness.GetRecordMapping(pid, recordMapping1.Id);
+        var result = await _recordMappingBusiness.GetRecordMapping(pid, recordMapping1.Id, false);
         Assert.Equal(recordMapping1.Id, result.Id);
     }
     
@@ -180,7 +180,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
-        var result = () => _recordMappingBusiness.GetRecordMapping(pid + 999, recordMapping1.Id);
+        var result = () => _recordMappingBusiness.GetRecordMapping(pid + 999, recordMapping1.Id, false);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     
@@ -200,7 +200,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
-        var result = () => _recordMappingBusiness.GetRecordMapping(pid, recordMapping1.Id);
+        var result = () => _recordMappingBusiness.GetRecordMapping(pid, recordMapping1.Id, true);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     
