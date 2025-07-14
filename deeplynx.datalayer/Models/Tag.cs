@@ -40,7 +40,7 @@ public partial class Tag
     [InverseProperty("Tags")]
     public virtual Project Project { get; set; } = null!;
 
-    [InverseProperty("Tag")]
+    [InverseProperty("Tags")]
     public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
 
     [ForeignKey("TagId")]

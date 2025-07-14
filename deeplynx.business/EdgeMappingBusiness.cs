@@ -65,6 +65,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
                 RelationshipId = m.RelationshipId,
                 OriginId = m.OriginId,
                 DestinationId = m.DestinationId,
+                DataSourceId = m.DataSourceId,
                 ProjectId = m.ProjectId,
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
@@ -104,6 +105,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
@@ -130,6 +132,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             OriginParams = dto.OriginParams.ToString(),
             DestinationParams = dto.DestinationParams.ToString(),
             RelationshipId = dto.RelationshipId,
+            DataSourceId = dto.DataSourceId,
             OriginId = dto.OriginId,
             DestinationId = dto.DestinationId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -147,6 +150,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt
@@ -180,6 +184,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         mapping.RelationshipId = dto.RelationshipId;
         mapping.OriginId = dto.OriginId;
         mapping.DestinationId = dto.DestinationId;
+        mapping.DataSourceId = dto.DataSourceId;
         mapping.ProjectId = projectId;
         mapping.ModifiedBy = null; // TODO: handled in future by JWT.
         mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -195,6 +200,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
