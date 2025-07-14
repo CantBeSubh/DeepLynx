@@ -3,6 +3,8 @@ using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
+using deeplynx.helpers;
+using deeplynx.helpers.exceptions;
 
 namespace deeplynx.business;
 //todo:
@@ -28,22 +30,34 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <param name="classId">(Optional) the ID of the class by which to filter mappings</param>
     /// <param name="tagId">(Optional) the ID of the tag by which to filter mappings</param>
     /// <returns>A list of record mappings based on the applied filters.</returns>
+    /// TODO: Handle return message for if no records exist 
     public async Task<IEnumerable<RecordMappingResponseDto>> GetAllRecordMappings(
         long projectId,
         long? classId,
         long? tagId)
     {
+        DoesProjectExist(projectId);
         var mappingQuery = _context.RecordMappings
             .Where(m => m.ProjectId == projectId && m.ArchivedAt == null);
 
         // add filter for class or tag if specified
         if (classId.HasValue)
         {
+            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ArchivedAt == null);
+            if (rmClass == null)
+            {
+                throw new KeyNotFoundException($"Class with id {classId} not found");
+            }
             mappingQuery = mappingQuery.Where(m => m.ClassId == classId);
         }
 
         if (tagId.HasValue)
         {
+            var tag = await _context.Tags.FirstOrDefaultAsync(p => p.Id == tagId && p.ArchivedAt == null);
+            if (tag == null)
+            {
+                throw new KeyNotFoundException($"Tag with id {tagId} not found");
+            }
             mappingQuery = mappingQuery.Where(m => m.TagId == tagId);
         }
             
@@ -57,6 +71,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
                 ClassId = m.ClassId,
                 ProjectId = m.ProjectId,
                 TagId = m.TagId,
+                DataSourceId = m.DataSourceId,
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
                 ModifiedBy = m.ModifiedBy,
@@ -78,6 +93,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long mappingId
         )
     {
+        DoesProjectExist(projectId);
+        
         var mapping = await _context.RecordMappings
             .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
@@ -94,6 +111,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ClassId = mapping.ClassId,
             ProjectId = mapping.ProjectId,
             TagId = mapping.TagId,
+            DataSourceId = mapping.DataSourceId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
             ModifiedBy = mapping.ModifiedBy,
@@ -112,11 +130,20 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long projectId, 
         RecordMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(dto);
+
+        if (!dto.ClassId.HasValue && !dto.TagId.HasValue)
+        {
+            throw new InvalidRequestException("Both ClassID and TagID cannot be null. Please provide a value for at least one of these fields");
+        }
+        
         var mapping = new RecordMapping
         {
             RecordParams = dto.RecordParams.ToString(),
             ProjectId = projectId,
             ClassId = dto.ClassId,
+            DataSourceId = dto.DataSourceId,
             TagId = dto.TagId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -131,6 +158,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             RecordParams = JsonNode.Parse(mapping.RecordParams) as JsonObject,
             ClassId = mapping.ClassId,
             ProjectId = mapping.ProjectId,
+            DataSourceId = mapping.DataSourceId,
             TagId = mapping.TagId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt
@@ -150,6 +178,9 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long mappingId,
         RecordMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(dto);
+        
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -160,6 +191,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         mapping.RecordParams = dto.RecordParams.ToString();
         mapping.ProjectId = projectId;
         mapping.ClassId = dto.ClassId;
+        mapping.DataSourceId = dto.DataSourceId;
         mapping.TagId = dto.TagId;
         mapping.ModifiedBy = null; // TODO: handled in future by JWT.
         mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -174,6 +206,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ClassId = mapping.ClassId,
             ProjectId = mapping.ProjectId,
             TagId = mapping.TagId,
+            DataSourceId = mapping.DataSourceId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
             ModifiedBy = mapping.ModifiedBy,
@@ -189,6 +222,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteRecordMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -208,6 +242,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> ArchiveRecordMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -219,4 +254,19 @@ public class RecordMappingBusiness : IRecordMappingBusiness
 
         return true;
     }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
 }

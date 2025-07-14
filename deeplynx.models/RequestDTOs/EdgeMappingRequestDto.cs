@@ -10,6 +10,9 @@ public class EdgeMappingRequestDto
     
     [Required]
     public JsonObject DestinationParams { get; set; }
+    
+    [Required]
+    public long DataSourceId { get; set; }
 
     public long RelationshipId { get; set; }
     

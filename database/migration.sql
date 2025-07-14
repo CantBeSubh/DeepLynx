@@ -1445,3 +1445,114 @@ BEGIN
     VALUES ('20250703215341_AddHistoricalRecordsAndEdges', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    ALTER TABLE deeplynx.record_mappings DROP CONSTRAINT record_mappings_tag_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    ALTER TABLE deeplynx.record_mappings ADD data_source_id bigint NOT NULL DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    ALTER TABLE deeplynx.edge_mappings ADD data_source_id bigint NOT NULL DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    CREATE TABLE deeplynx.record_mapping_tags (
+        "RecordMappingId" bigint NOT NULL,
+        tag_id bigint NOT NULL,
+        record_mapping_id bigint NOT NULL,
+        CONSTRAINT record_mapping_tags_pkey PRIMARY KEY ("RecordMappingId", tag_id),
+        CONSTRAINT record_mapping_tags_record_mapping_id_fkey FOREIGN KEY ("RecordMappingId") REFERENCES deeplynx.record_mappings (id) ON DELETE CASCADE,
+        CONSTRAINT record_mapping_tags_tag_id_fkey FOREIGN KEY (tag_id) REFERENCES deeplynx.tags (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    CREATE INDEX idx_record_mappings_data_source_id ON deeplynx.record_mappings (data_source_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    CREATE INDEX idx_edge_mappings_data_source_id ON deeplynx.edge_mappings (data_source_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    CREATE INDEX idx_record_mapping_tags_record_mapping_id ON deeplynx.record_mapping_tags ("RecordMappingId");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    CREATE INDEX idx_record_mapping_tags_tag_id ON deeplynx.record_mapping_tags (tag_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    ALTER TABLE deeplynx.edge_mappings ADD CONSTRAINT edge_mappings_data_source_id_fkey FOREIGN KEY (data_source_id) REFERENCES deeplynx.data_sources (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    ALTER TABLE deeplynx.record_mappings ADD CONSTRAINT record_mapping_data_source_id_fkey FOREIGN KEY (data_source_id) REFERENCES deeplynx.data_sources (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708145339_UpdateRecordAndEdgeMappings') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250708145339_UpdateRecordAndEdgeMappings', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708162052_CreateArchiveCascadeForDataSources') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.archive_data_source(arc_data_source_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.data_sources SET archived_at = arc_time WHERE id = arc_data_source_id;
+                        UPDATE deeplynx.record_mappings SET archived_at = arc_time WHERE data_source_id = arc_data_source_id;
+                        UPDATE deeplynx.edge_mappings SET archived_at = arc_time WHERE data_source_id = arc_data_source_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250708162052_CreateArchiveCascadeForDataSources') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250708162052_CreateArchiveCascadeForDataSources', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+COMMIT;
+

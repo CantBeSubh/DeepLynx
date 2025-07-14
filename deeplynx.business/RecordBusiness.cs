@@ -35,6 +35,7 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>A list of records based on the applied filters.</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
+        DoesProjectExist(projectId);
         return await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, null, true);
     }
     
@@ -47,6 +48,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
     public async Task<HistoricalRecordResponseDto> GetRecord(long projectId, long recordId)
     {
+        DoesProjectExist(projectId);
         return await _historicalRecordBusiness.GetHistoricalRecord(recordId, null, true);
     }
 
@@ -61,15 +63,8 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
-        var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        
-        var ds = await _context.DataSources
-            .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.ArchivedAt == null);
-        if (ds == null)
-            throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
+       DoesProjectExist(projectId);
+       DoesDataSourceExist(dataSourceId);
         
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
@@ -122,6 +117,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
         {
@@ -176,6 +172,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
+        DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
@@ -198,6 +195,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
     {
+        DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
@@ -265,5 +263,33 @@ public class RecordBusiness : IRecordBusiness
         }
 
         return maxDepth + 1;
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId)
+    {
+        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
     }
 }
