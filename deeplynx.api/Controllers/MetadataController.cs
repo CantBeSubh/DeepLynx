@@ -30,7 +30,7 @@ public class MetadataController : ControllerBase
         try
         {
             var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, metadataRequestDto);
-            return StatusCode(StatusCodes.Status201Created, "your metadata has been received.");
+            return StatusCode(StatusCodes.Status201Created, "Your metadata has been received.");
         }
         catch (Exception exception)
         {

@@ -1,53 +1,70 @@
-using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace deeplynx.business;
 
-public class Metadatabusiness : IMetadataBusiness
+public class MetadataBusiness : IMetadataBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
+    private readonly IClassBusiness _classBusiness;
+    private readonly IRelationshipBusiness _relationshipBusiness;
+    private readonly ITagBusiness _tagBusiness;
+    private readonly IRecordBusiness _recordBusiness;
+    private readonly IEdgeBusiness _edgeBusiness;
+    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="TagBusiness"/> class.
+    /// Initializes a new instance of the <see cref="MetadataBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context to be used for tag operations.</param>
-    public Metadatabusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness)
+    /// <param name="context">The database context to be used for CRUD operations.</param>
+    /// <param name="classBusiness">The class context to be used during metadata parsing.</param>
+    /// <param name="relationshipBusiness">The relationship context to be used during metadata parsing.</param>
+    /// <param name="tagBusiness">The tag context to be used during metadata parsing.</param>
+    /// <param name="recordBusiness">The record context to be used during metadata parsing.</param>
+    /// <param name="edgeBusiness">The edge context to be used during metadata parsing.</param>
+    /// <param name="edgeMappingBusiness">The edge mapping context to be used during metadata parsing.</param>
+    public MetadataBusiness(
+        DeeplynxContext context, 
+        IClassBusiness classBusiness,
+        IRelationshipBusiness relationshipBusiness,
+        ITagBusiness tagBusiness,
+        IRecordBusiness recordBusiness,
+        IEdgeBusiness edgeBusiness,
+        IEdgeMappingBusiness edgeMappingBusiness
+        )
     {
         _context = context;
-        _recordMappingBusiness = recordMappingBusiness;
+        _classBusiness = classBusiness;
+        _relationshipBusiness = relationshipBusiness;
+        _tagBusiness = tagBusiness;
+        _recordBusiness = recordBusiness;
+        _edgeBusiness = edgeBusiness;
+        _edgeMappingBusiness = edgeMappingBusiness;
     }
 
     /// <summary>
-    /// Asynchronously creates a new tag for a specified project.
+    /// Parse new metadata for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
-    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
-    /// <returns>The created tag response DTO with saved details.</returns>
+    /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <returns>The created metadata response DTO with saved details.</returns>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
         
-        // Validate 'Name' field
-        if (string.IsNullOrWhiteSpace(metadataRequestDto.Name))
-        {
-            throw new ValidationException("Name is required and cannot be empty or whitespace");
-        }
-
         return new MetadataResponseDto() // Return validated response DTO back to user.
         {
             Id = metadataRequestDto.Id,
-            Name = metadataRequestDto.Name,
             ProjectId = metadataRequestDto.ProjectId,
+            Classes = metadataRequestDto.Classes,
+            Relationships = metadataRequestDto.Relationships,
+            Tags = metadataRequestDto.Tags,
+            Records = metadataRequestDto.Records,
+            Edges = metadataRequestDto.Edges,
             CreatedBy = metadataRequestDto.CreatedBy,
             CreatedAt = metadataRequestDto.CreatedAt
         };
