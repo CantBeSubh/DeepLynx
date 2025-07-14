@@ -34,6 +34,12 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long? classId,
         long? relationshipId)
     {
+        DoesProjectExist(projectId);
+        if (relationshipId.HasValue)
+        {
+            DoesRelationshipExist(relationshipId.Value);
+        }
+        
         var mappingQuery = _context.EdgeMappings
             .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
             
@@ -80,8 +86,9 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     public async Task<EdgeMappingResponseDto> GetEdgeMapping(
         long projectId, 
         long mappingId)
-    {
-        var mapping = await _context.EdgeMappings
+    { 
+        DoesProjectExist(projectId);
+       var mapping = await _context.EdgeMappings
             .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
             .FirstOrDefaultAsync();
 
@@ -118,6 +125,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long projectId,
         EdgeMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var mapping = new EdgeMapping
         {
             ProjectId = projectId,
@@ -162,6 +170,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long mappingId,
         EdgeMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
+       
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -207,6 +217,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteEdgeMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -226,6 +237,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> ArchiveEdgeMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -236,5 +248,33 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         await _context.SaveChangesAsync();
 
         return true;
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if relataionship exists
+    /// </summary>
+    /// <param name="relationshipId">The ID of the relationship we are searching for</param>
+    /// <returns>Throws error if relataionship does not exist</returns>
+    private void DoesRelationshipExist(long relationshipId)
+    {
+        var relationship = _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null);
+        if (!relationship)
+        {
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
+        }
     }
 }

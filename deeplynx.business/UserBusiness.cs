@@ -32,6 +32,7 @@ public class UserBusiness : IUserBusiness
         }
         else
         {
+            DoesProjectExist(projectId.Value);
             users = await _context.Users.Where(p => p.ArchivedAt == null).ToListAsync();
         }
         
@@ -158,4 +159,19 @@ public class UserBusiness : IUserBusiness
         await _context.SaveChangesAsync();
         return true;
     }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
 }

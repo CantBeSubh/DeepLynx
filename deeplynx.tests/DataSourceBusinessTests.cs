@@ -55,13 +55,14 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllDataSources_ProjectWithNoDataSources_ReturnsEmptyList()
+        public async Task GetAllDataSources_NonExistentProjectWithNoDataSources_ThrowsKeyNotFoundException()
         {
-            var result = await _dataSourceBusiness.GetAllDataSources(999);
-            var dataSources = result.ToList();
-
-            // Assert
-            Assert.Empty(dataSources);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _dataSourceBusiness.GetAllDataSources(999)); 
+            
+            Assert.Contains("Project with id 999 not found", exception.Message);
+           
         }
 
         [Fact]
@@ -493,13 +494,13 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task ArchiveDataSource_WrongProject_ThrowsKeyNotFoundException()
+        public async Task ArchiveDataSource_NonExistentProject_ThrowsKeyNotFoundException()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.ArchiveDataSource(2, 1)); 
             
-            Assert.Contains("Data Source with id 1 not found", exception.Message);
+            Assert.Contains("Project with id 2 not found", exception.Message);
         }
 
         [Fact]
