@@ -28,7 +28,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
     /// <param name="classId">(Optional) the ID of the origin or destination class by which to filter mappings</param>
     /// <param name="relationshipId">(Optional) the ID of the relationship by which to filter mappings</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default false)</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>A list of edge mappings based on the applied filters.</returns>
     public async Task<IEnumerable<EdgeMappingResponseDto>> GetAllEdgeMappings(
         long projectId,
@@ -81,7 +81,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// </summary>
     /// <param name="projectId">The project ID for the project to which the mapping belongs</param>
     /// <param name="mappingId">The id whereby to fetch the mapping</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default false)</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>The mapping associated with the given ID</returns>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found or is archived</exception>
     public async Task<EdgeMappingResponseDto> GetEdgeMapping(

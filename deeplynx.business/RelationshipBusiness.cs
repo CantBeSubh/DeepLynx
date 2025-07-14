@@ -54,7 +54,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         if (hideArchived)
         {
-            relationships = relationships.Where(c => c.ArchivedAt == null).ToList();
+            relationships = relationships.Where(r => r.ArchivedAt == null).ToList();
         }
         
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
@@ -87,7 +87,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived)
     {
         var relationship = await _context.Relationships
-            .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.ArchivedAt == null)
+            .Where(r => r.ProjectId == projectId && r.Id == relationshipId)
             .Include(r => r.Origin)
             .Include(r => r.Destination)
             .FirstOrDefaultAsync();

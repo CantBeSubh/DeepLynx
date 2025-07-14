@@ -155,7 +155,7 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> GetTagById(long projectId, long tagId, bool hideArchived)
     {
         var tag = await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
+            .Where(t => t.ProjectId == projectId && t.Id == tagId)
             .FirstOrDefaultAsync();
 
         if (tag == null)

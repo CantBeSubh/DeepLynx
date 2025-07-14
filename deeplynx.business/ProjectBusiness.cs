@@ -63,7 +63,7 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived)
     {
         var project = await _context.Projects
-            .Where(p => p.Id == projectId && p.ArchivedAt == null)
+            .Where(p => p.Id == projectId)
             .FirstOrDefaultAsync();
 
         if (project == null)

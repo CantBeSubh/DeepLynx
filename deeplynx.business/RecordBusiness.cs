@@ -40,7 +40,7 @@ public class RecordBusiness : IRecordBusiness
         bool hideArchived)
     {
         var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null);
+            .Where(r => r.ProjectId == projectId);
 
         if (dataSourceId.HasValue)
         {
@@ -49,7 +49,7 @@ public class RecordBusiness : IRecordBusiness
         
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(d => d.ArchivedAt == null);
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
         }
         
         return await recordQuery
@@ -83,7 +83,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> GetRecord(long projectId, long recordId, bool hideArchived)
     {
         var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.ArchivedAt == null)
+            .Where(r => r.Id == recordId && r.ProjectId == projectId)
             .FirstOrDefaultAsync();
         
         if (record == null)

@@ -73,7 +73,7 @@ public class ClassBusiness : IClassBusiness
     public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
         var newClass = await _context.Classes
-            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId && c.ArchivedAt == null);
+            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");

@@ -53,7 +53,10 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default false)</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<ActionResult<RecordResponseDto>> GetRecord(long projectId, long recordId, bool hideArchived = false)
+        public async Task<ActionResult<RecordResponseDto>> GetRecord(
+            long projectId, 
+            long recordId, 
+            [FromQuery] bool hideArchived = false)
         {
             try
             {

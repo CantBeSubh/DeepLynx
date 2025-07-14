@@ -42,7 +42,7 @@ namespace deeplynx.business
         public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
             var dataSources = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.ArchivedAt == null).ToListAsync();
+                .Where(d => d.ProjectId == projectId).ToListAsync();
 
             if (hideArchived)
             {
@@ -80,7 +80,7 @@ namespace deeplynx.business
         public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
         {
             var dataSource = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.ArchivedAt == null)
+                .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
                 .FirstOrDefaultAsync();
 
             if (dataSource == null || dataSource.ProjectId != projectId)

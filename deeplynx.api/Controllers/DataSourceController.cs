@@ -29,7 +29,7 @@ namespace deeplynx.api.Controllers
         [HttpGet("GetAllDataSources")]
         public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
             long projectId,
-            bool hideArchived = false)
+            [FromQuery] bool hideArchived = false)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
             long projectId,
             long dataSourceId,
-            bool hideArchived = false)
+            [FromQuery] bool hideArchived = false)
         {
             try
             {
