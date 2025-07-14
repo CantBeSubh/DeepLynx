@@ -40,7 +40,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert
@@ -56,7 +56,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid2);
+            var result = await _tagBusiness.GetAllTags(pid2, true);
             var tags = result.ToList();
 
             // Assert
@@ -67,7 +67,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert
@@ -84,7 +84,7 @@ namespace deeplynx.tests
         public async Task GetTag_ValidIds_ReturnsTag()
         {
             // Act
-            var result = await _tagBusiness.GetTagById(pid, tid);
+            var result = await _tagBusiness.GetTagById(pid, tid, false);
 
             // Assert
             Assert.NotNull(result);
@@ -101,7 +101,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, 999));
+                () => _tagBusiness.GetTagById(pid, 999, false));
             
             Assert.Contains("Tag with id 999 not found", exception.Message);
         }
@@ -111,7 +111,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, tid4)); // Tag 1 belongs to project 1, not 2
+                () => _tagBusiness.GetTagById(pid, tid4, false)); // Tag 1 belongs to project 1, not 2
             
             Assert.Contains($"Tag with id {tid4} not found", exception.Message);
         }
@@ -121,9 +121,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, tid3)); // Tag 3 of project 1 is archived
+                () => _tagBusiness.GetTagById(pid, tid3, true)); // Tag 3 of project 1 is archived
             
-            Assert.Contains($"Tag with id {tid3} not found", exception.Message);
+            Assert.Contains($"Tag with id {tid3} is archived", exception.Message);
         }
 
         #endregion
@@ -395,11 +395,11 @@ namespace deeplynx.tests
          public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
          {
              // Arrange
-             var initialCount = (await _tagBusiness.GetAllTags(pid)).Count();
+             var initialCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Act
              await _tagBusiness.ArchiveTag(pid, tid);
-             var finalCount = (await _tagBusiness.GetAllTags(pid)).Count();
+             var finalCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Assert
              Assert.Equal(initialCount - 1, finalCount);

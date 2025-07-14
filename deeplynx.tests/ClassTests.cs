@@ -96,7 +96,7 @@ public class ClassIntegrationTests : IntegrationTestBase
         await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C1" });
         await _classBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = "C2" });
     
-        var list = await _classBusiness.GetAllClasses(pid);
+        var list = await _classBusiness.GetAllClasses(pid, false);
         Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
     }
     
@@ -110,7 +110,7 @@ public class ClassIntegrationTests : IntegrationTestBase
         Context.Classes.Add(class2);
         await Context.SaveChangesAsync();
         
-        var list = await _classBusiness.GetAllClasses(pid);
+        var list = await _classBusiness.GetAllClasses(pid, true);
         Assert.DoesNotContain(list, c => c.Id == class2.Id);
     }
     
@@ -118,14 +118,15 @@ public class ClassIntegrationTests : IntegrationTestBase
     public async Task GetClass_Success_WhenExists()
     {
         var created = await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = "C" });
-        var result = await _classBusiness.GetClass(pid, created.Id);
+        var result = await _classBusiness.GetClass(pid, created.Id, false);
         Assert.Equal(created.Id, result.Id);
     }
     
     [Fact]
     public async Task GetClass_Fails_IfNotFound()
     {
-        var result = () => _classBusiness.GetClass(pid, 9999);
+        await SeedTestDataAsync();
+        var result = () => _classBusiness.GetClass(pid, 9999, false);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     

@@ -36,13 +36,19 @@ namespace deeplynx.business
         /// Retrieves all data sources for a specific project.
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId)
+        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
-            DoesProjectExist(projectId);
+            DoesProjectExist(projectId, hideArchived);
             var dataSources = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.ArchivedAt == null).ToListAsync();
+                .Where(d => d.ProjectId == projectId).ToListAsync();
 
+            if (hideArchived)
+            {
+                dataSources = dataSources.Where(d => d.ArchivedAt == null).ToList();
+            }
+            
             return dataSources
                 .Select(d => new DataSourceResponseDto()
                 {
@@ -68,18 +74,24 @@ namespace deeplynx.business
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="datasourceId">The ID of the data source</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>The data source in question</returns>
-        /// <exception cref="KeyNotFoundException">Returned if the data source is not found</exception>
-        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId)
+        /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
+        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
         {
-            DoesProjectExist(projectId);
+            DoesProjectExist(projectId, hideArchived);
             var dataSource = await _context.DataSources
-                .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.ArchivedAt == null)
+                .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
                 .FirstOrDefaultAsync();
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId)
             {
                 throw new KeyNotFoundException($"Data Source with id {datasourceId} not found");
+            }
+            
+            if (hideArchived && dataSource.ArchivedAt != null)
+            {
+                throw new KeyNotFoundException($"Data Source with id {datasourceId} is archived");
             }
 
             return new DataSourceResponseDto
@@ -266,10 +278,12 @@ namespace deeplynx.business
         /// Determine if project exists
         /// </summary>
         /// <param name="projectId">The ID of the project we are searching for</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>Throws error if project does not exist</returns>
-        private void DoesProjectExist(long projectId)
+        private void DoesProjectExist(long projectId, bool hideArchived = true)
         {
-            var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+            var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+                : _context.Projects.Any(p => p.Id == projectId);
             if (!project)
             {
                 throw new KeyNotFoundException($"Project with id {projectId} not found");

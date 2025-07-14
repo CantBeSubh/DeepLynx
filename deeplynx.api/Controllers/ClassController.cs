@@ -26,13 +26,16 @@ namespace deeplynx.api.Controllers
         /// Get all classes
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default false)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
-        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(long projectId)
+        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
+            long projectId, 
+            [FromQuery] bool hideArchived = false)
         {
             try
             {
-                var classes = await _classBusiness.GetAllClasses(projectId);
+                var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)
@@ -48,13 +51,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to retrieve</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default false)</param>
         /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
-        public async Task<ActionResult<ClassResponseDto>> GetClass(long projectId, long classId)
+        public async Task<ActionResult<ClassResponseDto>> GetClass(
+            long projectId, 
+            long classId, 
+            [FromQuery] bool hideArchived = false)
         {
             try
             {
-                var classes = await _classBusiness.GetClass(projectId, classId);
+                var classes = await _classBusiness.GetClass(projectId, classId, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)

@@ -108,6 +108,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId,
         DateTime? pointInTime,
+        bool hideArchived = true,
         bool current = false)
     {
         var recordQuery = _context.HistoricalRecords
@@ -123,6 +124,11 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             recordQuery = recordQuery
                 .Where(r => r.LastUpdatedAt <= pointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
+        }
+
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
         }
 
         var record = await recordQuery.FirstOrDefaultAsync();
