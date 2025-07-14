@@ -42,7 +42,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ValidProjectId_ReturnsActiveDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
+            var result = await _dataSourceBusiness.GetAllDataSources(1, false);
             var dataSources = result.ToList();
 
             // Assert
@@ -58,7 +58,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ProjectWithNoDataSources_ReturnsEmptyList()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(999);
+            var result = await _dataSourceBusiness.GetAllDataSources(999, false);
             var dataSources = result.ToList();
 
             // Assert
@@ -69,7 +69,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(2);
+            var result = await _dataSourceBusiness.GetAllDataSources(2, false);
             var dataSources = result.ToList();
 
             // Assert
@@ -82,7 +82,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ConfigParsing_ReturnsValidJsonObject()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
+            var result = await _dataSourceBusiness.GetAllDataSources(1, false);
             var dataSource = result.First(ds => ds.Name == "Customer CRM Database");
 
             // Assert
@@ -116,7 +116,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
+            var result = await _dataSourceBusiness.GetAllDataSources(1, false);
             var dataSource = result.First(ds => ds.Name == "Null Config Test");
 
             // Assert
@@ -132,7 +132,7 @@ namespace deeplynx.tests
         public async Task GetDataSource_ValidIds_ReturnsDataSource()
         {
             // Act
-            var result = await _dataSourceBusiness.GetDataSource(1, 1);
+            var result = await _dataSourceBusiness.GetDataSource(1, 1, false);
 
             // Assert
             Assert.NotNull(result);
@@ -151,7 +151,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(1, 999));
+                () => _dataSourceBusiness.GetDataSource(1, 999, false));
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
         }
@@ -161,7 +161,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(2, 1)); // DataSource 1 belongs to project 1, not 2
+                () => _dataSourceBusiness.GetDataSource(2, 1, false)); // DataSource 1 belongs to project 1, not 2
             
             Assert.Contains("Data Source with id 1 not found", exception.Message);
         }
@@ -171,16 +171,16 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(1, 3)); // DataSource 3 is archived
+                () => _dataSourceBusiness.GetDataSource(1, 3, true)); // DataSource 3 is archived
             
-            Assert.Contains("Data Source with id 3 not found", exception.Message);
+            Assert.Contains("Data Source with id 3 is archived", exception.Message);
         }
 
         [Fact]
         public async Task GetDataSource_ValidDataSource_ParsesConfigCorrectly()
         {
             // Act
-            var result = await _dataSourceBusiness.GetDataSource(1, 2);
+            var result = await _dataSourceBusiness.GetDataSource(1, 2, false);
 
             // Assert
             Assert.NotNull(result.Config);
@@ -505,11 +505,11 @@ namespace deeplynx.tests
         public async Task ArchiveDataSource_ArchivedDataSourceNotReturnedInGetAll()
         {
             // Arrange
-            var initialCount = (await _dataSourceBusiness.GetAllDataSources(1)).Count();
+            var initialCount = (await _dataSourceBusiness.GetAllDataSources(1, false)).Count();
 
             // Act
             await _dataSourceBusiness.ArchiveDataSource(1, 1);
-            var finalCount = (await _dataSourceBusiness.GetAllDataSources(1)).Count();
+            var finalCount = (await _dataSourceBusiness.GetAllDataSources(1, true)).Count();
 
             // Assert
             Assert.Equal(initialCount - 1, finalCount);
