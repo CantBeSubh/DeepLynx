@@ -13,8 +13,13 @@ namespace deeplynx.tests
         private DataSourceBusiness _dataSourceBusiness;
         private Mock<IEdgeBusiness> _mockEdgeBusiness;
         private Mock<IRecordBusiness> _mockRecordBusiness;
+        public long pid;
+        public long pid2;
+        public long did;
+        public long did2;
+        public long did3;
 
-        public DataSourceBusinessTests()
+        public DataSourceBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
             
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
@@ -30,11 +35,6 @@ namespace deeplynx.tests
                 _mockEdgeBusiness.Object,
                 _mockRecordBusiness.Object);
         }
-        
-        public async Task DisposeAsync()
-        {
-            await base.DisposeAsync();
-        }
 
         #region GetAllDataSources Tests
 
@@ -42,48 +42,55 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ValidProjectId_ReturnsActiveDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
+            var result = await _dataSourceBusiness.GetAllDataSources(pid);
             var dataSources = result.ToList();
 
             // Assert
             Assert.Equal(2, dataSources.Count);
-            Assert.All(dataSources, ds => Assert.Equal(1, ds.ProjectId));
+            Assert.All(dataSources, ds => Assert.Equal(pid, ds.ProjectId));
             Assert.All(dataSources, ds => Assert.Null(ds.ArchivedAt));
-            Assert.Contains(dataSources, ds => ds.Name == "Customer CRM Database");
-            Assert.Contains(dataSources, ds => ds.Name == "E-commerce Transaction API");
-            Assert.DoesNotContain(dataSources, ds => ds.Name == "Archived Data Source");
+            Assert.Contains(dataSources, ds => ds.Id == did);
+            Assert.Contains(dataSources, ds => ds.Id == did2);
+            Assert.DoesNotContain(dataSources, ds => ds.Id == did3);
         }
 
         [Fact]
-        public async Task GetAllDataSources_ProjectWithNoDataSources_ReturnsEmptyList()
+        public async Task GetAllDataSources_NonExistentProjectWithNoDataSources_ThrowsKeyNotFoundException()
         {
-            // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(999);
-            var dataSources = result.ToList();
-
-            // Assert
-            Assert.Empty(dataSources);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _dataSourceBusiness.GetAllDataSources(999)); 
+            
+            Assert.Contains("Project with id 999 not found", exception.Message);
+           
         }
 
         [Fact]
         public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
         {
+            var newProject = new Project { Name = "Project2" };
+            Context.Projects.Add(newProject);
+            await Context.SaveChangesAsync();
+            var newProjectId = newProject.Id;
+            
+            Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = newProjectId });
+            await Context.SaveChangesAsync();
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(2);
+            var result = await _dataSourceBusiness.GetAllDataSources(pid);
             var dataSources = result.ToList();
 
             // Assert
             Assert.Equal(2, dataSources.Count);
-            Assert.Equal("Enterprise Resource Planning System", dataSources.First().Name);
-            Assert.Equal(2, dataSources.First().ProjectId);
+            Assert.DoesNotContain(dataSources, ds => ds.Name == "Project 2 Data Source");
+            Assert.All(dataSources, ds => Assert.Equal(pid, ds.ProjectId));
         }
 
         [Fact]
         public async Task GetAllDataSources_ConfigParsing_ReturnsValidJsonObject()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
-            var dataSource = result.First(ds => ds.Name == "Customer CRM Database");
+            var result = await _dataSourceBusiness.GetAllDataSources(pid);
+            var dataSource = result.First(ds => ds.Id == did);
 
             // Assert
             Assert.NotNull(dataSource.Config);
@@ -105,7 +112,7 @@ namespace deeplynx.tests
                 Type = "SQL Server",
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = null,
-                ProjectId = 1,
+                ProjectId = pid,
                 CreatedBy = "john.smith@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 ModifiedBy = "db.admin@company.com",
@@ -116,7 +123,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(1);
+            var result = await _dataSourceBusiness.GetAllDataSources(pid);
             var dataSource = result.First(ds => ds.Name == "Null Config Test");
 
             // Assert
@@ -131,18 +138,19 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetDataSource_ValidIds_ReturnsDataSource()
         {
+            
             // Act
-            var result = await _dataSourceBusiness.GetDataSource(1, 1);
+            var result = await _dataSourceBusiness.GetDataSource(pid, did);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
+            Assert.Equal(did, result.Id);
             Assert.Equal("Customer CRM Database", result.Name);
             Assert.Equal("Primary customer relationship management database", result.Description);
             Assert.Equal("CRM_DB", result.Abbreviation);
             Assert.Equal("SQL Server", result.Type);
             Assert.Equal("Server=crm-prod.company.com;Database=CustomerData;", result.BaseUri);
-            Assert.Equal(1, result.ProjectId);
+            Assert.Equal(pid, result.ProjectId);
             Assert.NotNull(result.Config);
         }
 
@@ -151,7 +159,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(1, 999));
+                () => _dataSourceBusiness.GetDataSource(pid, 999));
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
         }
@@ -161,9 +169,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(2, 1)); // DataSource 1 belongs to project 1, not 2
+                () => _dataSourceBusiness.GetDataSource(pid2, did)); // DataSource belongs to project with pid, not pid2
             
-            Assert.Contains("Data Source with id 1 not found", exception.Message);
+            Assert.Contains($"Data Source with id {did} not found", exception.Message);
         }
 
         [Fact]
@@ -171,21 +179,22 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetDataSource(1, 3)); // DataSource 3 is archived
+                () => _dataSourceBusiness.GetDataSource(pid, did3)); // did3 is archived
             
-            Assert.Contains("Data Source with id 3 not found", exception.Message);
+            Assert.Contains($"Data Source with id {did3} not found", exception.Message);
         }
 
         [Fact]
         public async Task GetDataSource_ValidDataSource_ParsesConfigCorrectly()
         {
             // Act
-            var result = await _dataSourceBusiness.GetDataSource(1, 2);
+            var result = await _dataSourceBusiness.GetDataSource(pid, did);
 
             // Assert
             Assert.NotNull(result.Config);
-            Assert.Equal("v2", result.Config["api_version"]?.ToString());
-            Assert.Equal(30, result.Config["timeout"]?.GetValue<int>());
+            Assert.Equal("sqlserver", result.Config["driver"]?.ToString());
+            Assert.Equal("crm-prod.company.com", result.Config["host"]?.ToString());
+            Assert.Equal(1433, result.Config["port"]?.GetValue<int>());
         }
 
         #endregion
@@ -214,7 +223,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(1, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -224,7 +233,7 @@ namespace deeplynx.tests
             Assert.Equal("NEW_TEST", result.Abbreviation);
             Assert.Equal("PostgreSQL", result.Type);
             Assert.Equal("Server=localhost;Database=NewTest;", result.BaseUri);
-            Assert.Equal(1, result.ProjectId);
+            Assert.Equal(pid, result.ProjectId);
             Assert.NotNull(result.Config);
             Assert.Equal("postgresql", result.Config["driver"]?.ToString());
 
@@ -239,7 +248,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _dataSourceBusiness.CreateDataSource(1, null));
+                () => _dataSourceBusiness.CreateDataSource(pid, null));
         }
 
         [Fact]
@@ -248,13 +257,14 @@ namespace deeplynx.tests
             // Arrange
             var dto = new DataSourceRequestDto
             {
+                
                 Name = "No Config Data Source",
                 Description = "Data source without config",
                 Type = "File System"
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(1, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -275,7 +285,7 @@ namespace deeplynx.tests
             var beforeCreate = DateTime.UtcNow;
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(1, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
             Assert.True(result.CreatedAt >= beforeCreate);
@@ -310,11 +320,11 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(1, 1, dto);
+            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
+            Assert.Equal(did, result.Id);
             Assert.Equal("Updated Test Data Source", result.Name);
             Assert.Equal("Updated description", result.Description);
             Assert.Equal("UPD_TEST", result.Abbreviation);
@@ -324,7 +334,7 @@ namespace deeplynx.tests
             Assert.Equal("mysql", result.Config["driver"]?.ToString());
 
             // Verify it was actually updated in database
-            var updatedDataSource = await Context.DataSources.FindAsync((long)1);
+            var updatedDataSource = await Context.DataSources.FindAsync((long)did);
             Assert.Equal("Updated Test Data Source", updatedDataSource.Name);
             Assert.NotNull(updatedDataSource.ModifiedAt);
         }
@@ -341,7 +351,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(1, 999, dto));
+                () => _dataSourceBusiness.UpdateDataSource(pid, 999, dto));
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
         }
@@ -358,9 +368,9 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(2, 1, dto)); // DataSource 1 belongs to project 1
+                () => _dataSourceBusiness.UpdateDataSource(pid2, did, dto)); // did belongs to pid not pid2
             
-            Assert.Contains("Data Source with id 1 not found", exception.Message);
+            Assert.Contains($"Data Source with id {did} not found", exception.Message);
         }
 
         [Fact]
@@ -375,9 +385,9 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.UpdateDataSource(1, 3, dto)); // DataSource 3 is archived
+                () => _dataSourceBusiness.UpdateDataSource(pid, did3, dto)); // DataSource 3 is archived
             
-            Assert.Contains("Data Source with id 3 not found", exception.Message);
+            Assert.Contains($"Data Source with id {did3} not found", exception.Message);
         }
 
         [Fact]
@@ -392,7 +402,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(1, 2, dto);
+            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
 
             // Assert
             Assert.NotNull(result.Config);
@@ -407,13 +417,13 @@ namespace deeplynx.tests
         public async Task DeleteDataSource_ValidDataSource_DeletesSuccessfully()
         {
             // Act
-            var result = await _dataSourceBusiness.DeleteDataSource(1, 2);
+            var result = await _dataSourceBusiness.DeleteDataSource(pid, did);
 
             // Assert
             Assert.True(result);
 
             // Verify it was actually deleted from database
-            var deletedDataSource = await Context.DataSources.FindAsync((long)2);
+            var deletedDataSource = await Context.DataSources.FindAsync(did);
             Assert.Null(deletedDataSource);
         }
 
@@ -422,7 +432,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.DeleteDataSource(1, 999));
+                () => _dataSourceBusiness.DeleteDataSource(pid, 999));
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
         }
@@ -432,9 +442,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.DeleteDataSource(2, 1)); // DataSource 1 belongs to project 1
+                () => _dataSourceBusiness.DeleteDataSource(pid2, did)); // DataSource 1 belongs to project 1
             
-            Assert.Contains("Data Source with id 1 not found", exception.Message);
+            Assert.Contains($"Data Source with id {did} not found", exception.Message);
         }
 
         [Fact]
@@ -442,7 +452,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.DeleteDataSource(1, 3)); // DataSource 3 is archived
+                () => _dataSourceBusiness.DeleteDataSource(pid, 3)); // DataSource 3 is archived
             
             Assert.Contains("Data Source with id 3 not found", exception.Message);
         }
@@ -458,13 +468,15 @@ namespace deeplynx.tests
             var beforeArchive = DateTime.UtcNow;
 
             // Act
-            var result = await _dataSourceBusiness.ArchiveDataSource(1, 1);
+            var result = await _dataSourceBusiness.ArchiveDataSource(pid, did);
 
             // Assert
             Assert.True(result);
+            
+            Context.ChangeTracker.Clear();
 
             // Verify it was actually archived in database
-            var archivedDataSource = await Context.DataSources.FindAsync((long)1);
+            var archivedDataSource = await Context.DataSources.FindAsync(did);
             Assert.NotNull(archivedDataSource);
             Assert.NotNull(archivedDataSource.ArchivedAt);
             Assert.True(archivedDataSource.ArchivedAt >= beforeArchive);
@@ -476,19 +488,19 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.ArchiveDataSource(1, 999));
+                () => _dataSourceBusiness.ArchiveDataSource(pid, 999));
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
         }
 
         [Fact]
-        public async Task ArchiveDataSource_WrongProject_ThrowsKeyNotFoundException()
+        public async Task ArchiveDataSource_NonExistentProject_ThrowsKeyNotFoundException()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.ArchiveDataSource(2, 1)); 
             
-            Assert.Contains("Data Source with id 1 not found", exception.Message);
+            Assert.Contains("Project with id 2 not found", exception.Message);
         }
 
         [Fact]
@@ -496,7 +508,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.ArchiveDataSource(1, 3)); // DataSource 3 is already archived
+                () => _dataSourceBusiness.ArchiveDataSource(pid, 3)); // DataSource 3 is already archived
             
             Assert.Contains("Data Source with id 3 not found", exception.Message);
         }
@@ -505,11 +517,11 @@ namespace deeplynx.tests
         public async Task ArchiveDataSource_ArchivedDataSourceNotReturnedInGetAll()
         {
             // Arrange
-            var initialCount = (await _dataSourceBusiness.GetAllDataSources(1)).Count();
+            var initialCount = (await _dataSourceBusiness.GetAllDataSources(pid)).Count();
 
             // Act
-            await _dataSourceBusiness.ArchiveDataSource(1, 1);
-            var finalCount = (await _dataSourceBusiness.GetAllDataSources(1)).Count();
+            await _dataSourceBusiness.ArchiveDataSource(pid, did);
+            var finalCount = (await _dataSourceBusiness.GetAllDataSources(pid)).Count();
 
             // Assert
             Assert.Equal(initialCount - 1, finalCount);
@@ -526,6 +538,26 @@ namespace deeplynx.tests
             // In a real scenario, you might want to test with actual concurrent tasks
 
             // Arrange
+            var newDataSource = new DataSource
+            {
+                Name = "E-commerce Transaction API",
+                Description = "Real-time API for accessing e-commerce transaction data",
+                Abbreviation = "ECOM_API",
+                Type = "REST API",
+                BaseUri = "https://api.ecommerce.company.com/v2/",
+                Config =
+                    @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
+                ProjectId = pid,
+                CreatedBy = "sarah.johnson@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                ModifiedBy = "api.developer@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
+                ArchivedAt = null
+            };
+            await Context.AddAsync(newDataSource);
+            await Context.SaveChangesAsync();
+            var newDataSourceId = newDataSource.Id;
+            
             var dto1 = new DataSourceRequestDto
             {
                 Name = "Concurrent Update 1",
@@ -539,8 +571,8 @@ namespace deeplynx.tests
             };
 
             // Act
-            var task1 = await _dataSourceBusiness.UpdateDataSource(1, 1, dto1);
-            var task2 = await _dataSourceBusiness.UpdateDataSource(1, 2, dto2);
+            var task1 = await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
+            var task2 = await _dataSourceBusiness.UpdateDataSource(pid, newDataSourceId, dto2);
             
             // Assert
             var result1 = task1;
@@ -574,7 +606,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(1, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
             Assert.NotNull(result.Config);
@@ -597,11 +629,12 @@ namespace deeplynx.tests
                 {
                     ["special"] = "Value with quotes \"test\" and newlines\nand tabs\t",
                     ["unicode"] = "Unicode: 中文, العربية, русский"
-                }
+                },
+                
             };
 
             // Act
-            var result = await _dataSourceBusiness.CreateDataSource(1, dto);
+            var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
             Assert.Equal("Test with émojis 🚀 and ñ special chars", result.Name);
@@ -674,6 +707,91 @@ namespace deeplynx.tests
             Assert.Equal("modified@example.com", dto.ModifiedBy);
             Assert.Equal(now.AddDays(1), dto.ModifiedAt);
             Assert.Null(dto.ArchivedAt);
+        }
+        
+        protected override async Task SeedTestDataAsync()
+        {
+            await base.SeedTestDataAsync();
+            var project = new Project { Name = "Project 1" };
+            var project2 = new Project { Name = "Project2" };
+            Context.Projects.Add(project);
+            Context.Projects.Add(project2);
+        
+            await Context.SaveChangesAsync();
+            pid = project.Id;
+            pid2 = project2.Id;
+            
+            var dataSource = new DataSource
+            {
+                Name = "Customer CRM Database",
+                Description = "Primary customer relationship management database",
+                Abbreviation = "CRM_DB",
+                Type = "SQL Server",
+                BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
+                Config =
+                    @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
+                ProjectId = pid,
+                CreatedBy = "john.smith@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                ModifiedBy = "db.admin@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
+                ArchivedAt = null
+            };
+            var dataSource2 = new DataSource
+            {
+                Name = "Customer CRM Database",
+                Description = "Primary customer relationship management database",
+                Abbreviation = "CRM_DB",
+                Type = "SQL Server",
+                BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
+                Config =
+                    @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
+                ProjectId = pid,
+                CreatedBy = "john.smith@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                ModifiedBy = "db.admin@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
+                ArchivedAt = null
+            };
+            var dataSource3 = new DataSource
+            {
+                Name = "Customer CRM Database",
+                Description = "Primary customer relationship management database",
+                Abbreviation = "CRM_DB",
+                Type = "SQL Server",
+                BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
+                Config =
+                    @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
+                ProjectId = pid,
+                CreatedBy = "john.smith@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                ModifiedBy = "db.admin@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.DataSources.Add(dataSource);
+            Context.DataSources.Add(dataSource2);
+            Context.DataSources.Add(dataSource3);
+            await Context.SaveChangesAsync();
+            did = dataSource.Id;
+            did2 = dataSource2.Id;
+            did3 = dataSource3.Id;
+            
+            // var tag = new Tag { Name = "Tag 1", ProjectId = pid};
+            // Context.Tags.Add(tag);
+            // await Context.SaveChangesAsync();
+            // tid = tag.Id;
+            // var testClass = new Class{Name = "Class 1", ProjectId = pid};
+            // Context.Classes.Add(testClass);
+            // await Context.SaveChangesAsync();
+            // var testClass2 = new Class{Name = "Class 2", ProjectId = pid};
+            // Context.Classes.Add(testClass2);
+            // await Context.SaveChangesAsync();
+            // cid = testClass.Id;
+            // var dataSource1 = new DataSource { Name = "DataSource 1", ProjectId = pid };
+            // Context.DataSources.Add(dataSource1);
+            // await Context.SaveChangesAsync();
+            // did = dataSource1.Id;
         }
     }
 }

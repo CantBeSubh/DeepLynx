@@ -4,60 +4,75 @@ using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
+using deeplynx.graph;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddCors(o =>
+// ----------------------------------
+// CORS Configuration
+// ----------------------------------
+builder.Services.AddCors(options =>
 {
-    o.AddPolicy(
-            name: "AllowAll",
-            builder => builder.AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-        );
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") //Added this to make work in Dev env, might need to change for Prod env.
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
 });
 
+// ----------------------------------
+// Authentication
+// ----------------------------------
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = "Cookies";
-        options.DefaultChallengeScheme = "oidc";
-    })
-    .AddCookie("Cookies")
-    .AddOpenIdConnect("oidc", options =>
-    {
-        options.Authority = "https://identity-preview.inl.gov/";
-        options.ClientId = "client-id";
-        options.ClientSecret = "secret";
-        options.ResponseType = "code";
-        options.SaveTokens = true;
-        // Scopes
-        options.Scope.Clear();
-        options.Scope.Add("openid");
-        options.Scope.Add("profile");
-    });
+{
+    options.DefaultScheme = "Cookies";
+    options.DefaultChallengeScheme = "oidc";
+})
+.AddCookie("Cookies")
+.AddOpenIdConnect("oidc", options =>
+{
+    options.Authority = "https://identity-preview.inl.gov/";
+    options.ClientId = "client-id";
+    options.ClientSecret = "secret";
+    options.ResponseType = "code";
+    options.SaveTokens = true;
+    options.Scope.Clear();
+    options.Scope.Add("openid");
+    options.Scope.Add("profile");
+});
 
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
-{
-    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
-    options.JsonSerializerOptions.MaxDepth = 64; // optional
-});
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.MaxDepth = 64;
+    });
+
+// ----------------------------------
+// Dependency Injection
+// ----------------------------------
 builder.Services.AddHttpContextAccessor();
 
-// Add DbContext with connection string from appsettings.json
-var connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string"
-                                           + "'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-builder.Services.AddDbContext<DeeplynxContext>(options =>
-    options.UseNpgsql(connectionString),
-        ServiceLifetime.Transient);
+builder.Services.AddDbContext<DeeplynxContext>(
+    options => options.UseNpgsql(connectionString),
+    ServiceLifetime.Transient
+);
 
-//serves for Dependency Injection
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
@@ -69,6 +84,7 @@ builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
 builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
 
 var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 builder.Services.AddOpenApi(options =>
@@ -81,13 +97,13 @@ builder.Services.AddOpenApi(options =>
         document.Info.Description =
             "DeepLynx Nexus Api Documentation";
     });
-    
-    
+
+
 });
 
 var app = builder.Build();
 
-app.UseOpenApi(); 
+app.UseOpenApi();
 
 var customcss = File.ReadAllText("moon.css");
 app.UseStaticFiles();
@@ -119,12 +135,9 @@ if (app.Environment.IsDevelopment())
 
 
 
-
+app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
 

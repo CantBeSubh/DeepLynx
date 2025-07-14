@@ -38,8 +38,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>An object of the uploaded file information</returns>
     /// <exception cref="ArgumentException">If the file is null or has no data</exception>
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
-    public async Task<RecordResponseDto> UploadFile(string projectId, string dataSourceId, IFormFile file)
+    public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         if (file == null || file.Length == 0)
         {
             throw new ArgumentException("File is required and cannot be empty or whitespace.");
@@ -47,7 +49,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         var uploadId = Guid.NewGuid().ToString();
         string tableName = uploadId + "_" + file.FileName;
-        var filePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId + "_" + file.FileName);
+        var filePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId + "_" + file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
         var uri = "duckdb://" + tableName;
 
@@ -55,13 +57,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         {
             await file.CopyToAsync(stream);
         }
-
-        // todo: kick off file processing here (See DL-97 Sub-Tasks)
-        // start saving metadata to db
-        // import into duckdb
-        // describe table for metadata record properties
-        // after processing, new filepath should be something like
-        // "duckdb://path/to/uuid_filename"
 
         await CreateTimeseriesTable(tableName, filePath);
 
@@ -83,7 +78,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassName = recordClass.Name,
         };
 
-        return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
     }
 
     /// <summary>
@@ -92,10 +87,12 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <returns>The upload ID (guid format) for file chunks to go to the right directory</returns>
-    public string StartUpload(string projectId, string dataSourceId)
+    public string StartUpload(long projectId, long dataSourceId)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         var uploadId = Guid.NewGuid().ToString();
-        var folderPath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId);
+        var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId);
         Directory.CreateDirectory(folderPath);
 
         return uploadId;
@@ -111,15 +108,17 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="chunkNumber">the index for tracking the order to merge chunks together</param>
     /// <returns>A string to denote the status</returns>
     /// <exception cref="ArgumentException">If the chunk is null or has no data</exception>
-    public async Task<string> UploadChunk(string projectId, string dataSourceId, IFormFile chunk,
+    public async Task<string> UploadChunk(long projectId, long dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         if (chunk == null || chunk.Length == 0)
         {
             throw new ArgumentException("No chunk uploaded.");
         }
 
-        var tempFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId, uploadId, $"{chunkNumber}.part");
+        var tempFilePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId, $"{chunkNumber}.part");
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
 
@@ -133,12 +132,14 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="request">The request, which contains the UploadID and FileName</param>
     /// <returns>An object of the uploaded file information</returns>
-    public async Task<RecordResponseDto> CompleteUpload(string projectId, string dataSourceId,
+    public async Task<RecordResponseDto> CompleteUpload(long projectId, long dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
-        var folderPath = Path.Combine(UploadFolderPath, projectId, dataSourceId, request.UploadId);
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
+        var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
-        var finalFilePath = Path.Combine(UploadFolderPath, projectId, dataSourceId,
+        var finalFilePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(),
             request.UploadId + "_" + request.FileName);
         var uri = "duckdb://" + tableName;
 
@@ -184,7 +185,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassName = recordClass.Name,
         };
 
-        return await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
     }
 
     /// <summary>
@@ -195,8 +196,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns></returns>
-    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, string projectId, string dataSourceId)
+    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         var resultTable = new DataTable();
         await using var duckDbConnection = GetReadOnlyDuckDbConnection();
         await duckDbConnection.OpenAsync();
@@ -228,7 +231,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassName = reportClass.Name
         };
 
-        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
         RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
@@ -246,8 +249,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="fileName"></param>
     /// <exception cref="KeyNotFoundException"></exception>
     /// <exception cref="Exception"></exception>
-    private void RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, string projectId, string dataSourceId, string fileName)
+    private void RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
@@ -267,7 +272,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                     ["query"] = request.Query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
-                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
                 }
@@ -287,7 +292,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                     ["query"] = request.Query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
-                if (record == null || record.ProjectId != long.Parse(projectId) || record.ArchivedAt != null)
+                if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
                 }
@@ -353,17 +358,20 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// Converts a data table to csv.
     /// </summary>
     /// <param name="dataTable">A table including the results of the query</param>
-    /// <param name="projectId"></param>
-    /// <param name="dataSourceId"></param>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The data source ID</param>
+    /// <param name="fileName">The name of the file</param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, string projectId, string dataSourceId, string fileName)
+    private void DataTableToCsv(DataTable dataTable, long projectId, long dataSourceId, string fileName)
     {
-        StringBuilder sbData = new StringBuilder();
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
+        StringBuilder sbData = new();
 
         foreach (var col in dataTable.Columns)
         {
             if (col == null)
-                sbData.Append(",");
+                sbData.Append(',');
             else
                 sbData.Append("\"" + col.ToString().Replace("\"", "\"\"") + "\",");
         }
@@ -375,7 +383,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             foreach (var column in dr.ItemArray)
             {
                 if (column == null)
-                    sbData.Append(",");
+                    sbData.Append(',');
                 else
                 {
                     string stringColumnValue;
@@ -393,7 +401,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
 
-        var filePath = Path.Combine(QueryFolderPath, projectId, dataSourceId, fileName);
+        var filePath = Path.Combine(QueryFolderPath, projectId.ToString(), dataSourceId.ToString(), fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
         File.WriteAllText(filePath, sbData.ToString());
@@ -464,8 +472,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns>All data for given table</returns>
-    public async Task<RecordResponseDto> GetAllTableRecords(string tableName, string projectId, string dataSourceId)
+    public async Task<RecordResponseDto> GetAllTableRecords(string tableName, long projectId, long dataSourceId)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
@@ -499,7 +509,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassName = reportClass.Name
         };
 
-        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
         RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
@@ -514,8 +524,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns>Data</returns>
-    public async Task<RecordResponseDto> InterpolateRows(string projectId, string dataSourceId, string rowNumber, string tableName)
+    public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
@@ -558,10 +570,38 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
             ClassName = reportClass.Name
         };
 
-        var recordResponse = await _recordBusiness.CreateRecord(long.Parse(projectId), long.Parse(dataSourceId), recordRequest);
+        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
         RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId)
+    {
+        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
     }
 }
