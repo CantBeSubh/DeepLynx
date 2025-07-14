@@ -37,12 +37,18 @@ namespace deeplynx.business
         /// Retrieves all data sources for a specific project.
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId)
+        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
             var dataSources = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.ArchivedAt == null).ToListAsync();
 
+            if (hideArchived)
+            {
+                dataSources = dataSources.Where(d => d.ArchivedAt == null).ToList();
+            }
+            
             return dataSources
                 .Select(d => new DataSourceResponseDto()
                 {
@@ -68,17 +74,23 @@ namespace deeplynx.business
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="datasourceId">The ID of the data source</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>The data source in question</returns>
-        /// <exception cref="KeyNotFoundException">Returned if the data source is not found</exception>
-        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId)
+        /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
+        public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
         {
             var dataSource = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.Id == datasourceId && d.ArchivedAt == null)
                 .FirstOrDefaultAsync();
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId)
             {
                 throw new KeyNotFoundException($"Data Source with id {datasourceId} not found");
+            }
+            
+            if (hideArchived && dataSource.ArchivedAt != null)
+            {
+                throw new KeyNotFoundException($"Data Source with id {datasourceId} is archived");
             }
 
             return new DataSourceResponseDto

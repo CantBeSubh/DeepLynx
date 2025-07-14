@@ -32,8 +32,12 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
+        long projectId,
+        long? dataSourceId,
+        bool hideArchived)
     {
         var recordQuery = _context.Records
             .Where(r => r.ProjectId == projectId && r.ArchivedAt == null);
@@ -41,6 +45,11 @@ public class RecordBusiness : IRecordBusiness
         if (dataSourceId.HasValue)
         {
             recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
+        }
+        
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(d => d.ArchivedAt == null);
         }
         
         return await recordQuery
@@ -68,9 +77,10 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="projectId">The project of the record to retrieve</param>
     /// <param name="recordId">The ID of the record to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record in question</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
+    /// <exception cref="KeyNotFoundException">Returned if record not found or is archived</exception>
+    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId, bool hideArchived)
     {
         var record = await _context.Records
             .Where(r => r.Id == recordId && r.ProjectId == projectId && r.ArchivedAt == null)
@@ -79,6 +89,11 @@ public class RecordBusiness : IRecordBusiness
         if (record == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+        
+        if (hideArchived && record.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} is archived");
         }
 
         return new RecordResponseDto

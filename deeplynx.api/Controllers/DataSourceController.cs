@@ -24,13 +24,16 @@ namespace deeplynx.api.Controllers
         /// Get all data sources
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default false)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources")]
-        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId)
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
+            long projectId,
+            bool hideArchived = false)
         {
             try
             {
-                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId);
+                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId, hideArchived);
                 return Ok(dataSources);
             }
             catch (Exception exc)
@@ -46,13 +49,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default false)</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}")]
-        public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(long projectId, long dataSourceId)
+        public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
+            long projectId,
+            long dataSourceId,
+            bool hideArchived = false)
         {
             try
             {
-                var dataSource = await _dataSourceBusiness.GetDataSource(projectId, dataSourceId);
+                var dataSource = await _dataSourceBusiness.GetDataSource(projectId, dataSourceId, hideArchived);
                 return Ok(dataSource);
             }
             catch (Exception exc)

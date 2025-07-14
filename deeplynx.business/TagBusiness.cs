@@ -118,12 +118,19 @@ public class TagBusiness : ITagBusiness
     /// Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId)
+    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
-        return await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.ArchivedAt == null)
-            .Select(t => new TagResponseDto()
+        var tagQuery = _context.Tags
+            .Where(t => t.ProjectId == projectId);
+            
+        if (hideArchived)
+        {
+            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+        }
+            
+        return await tagQuery.Select(t => new TagResponseDto()
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -142,9 +149,10 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>The tag with its details.</returns>
-    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> GetTagById(long projectId, long tagId)
+    /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
+    public async Task<TagResponseDto> GetTagById(long projectId, long tagId, bool hideArchived)
     {
         var tag = await _context.Tags
             .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
@@ -153,6 +161,11 @@ public class TagBusiness : ITagBusiness
         if (tag == null)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
+        }
+        
+        if (hideArchived && tag.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
         }
 
         return new TagResponseDto

@@ -69,13 +69,16 @@ public class TagController : ControllerBase
     /// Get all tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default false)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(long projectId)
+    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
+        long projectId, 
+        [FromQuery] bool hideArchived = false)
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId);
+            var tags = await _tagBusiness.GetAllTags(projectId,  hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -91,13 +94,17 @@ public class TagController : ControllerBase
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default false)</param>
     /// <returns>The tag with its details.</returns>
     [HttpGet("GetTagById/{tagId}")]
-    public async Task<ActionResult<TagResponseDto>> GetTagById(long projectId, long tagId)
+    public async Task<ActionResult<TagResponseDto>> GetTagById(
+        long projectId, 
+        long tagId,
+        [FromQuery] bool hideArchived = false)
     {
         try
         {
-            var tag = await _tagBusiness.GetTagById(projectId, tagId);
+            var tag = await _tagBusiness.GetTagById(projectId, tagId,  hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
