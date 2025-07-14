@@ -38,7 +38,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         long? tagId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId,  hideArchived);
         var mappingQuery = _context.RecordMappings
             .Where(m => m.ProjectId == projectId);
 
@@ -102,7 +102,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         bool hideArchived
         )
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         
         var mapping = await _context.RecordMappings
             .Where(m => m.Id == mappingId && m.ProjectId == projectId)
@@ -273,10 +273,12 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");

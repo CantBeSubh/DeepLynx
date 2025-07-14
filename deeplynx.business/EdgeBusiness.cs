@@ -34,10 +34,10 @@ public class EdgeBusiness : IEdgeBusiness
         long? dataSourceId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         if (dataSourceId.HasValue)
         { 
-            DoesDataSourceExist(dataSourceId.Value);
+            DoesDataSourceExist(dataSourceId.Value,  hideArchived);
         }
        
         // base query object to get all edges for the project
@@ -302,10 +302,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
@@ -316,10 +318,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// Determine if datasource exists
     /// </summary>
     /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if datasource does not exist</returns>
-    private void DoesDataSourceExist(long datasourceId)
+    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+                : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource)
         {
             throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");

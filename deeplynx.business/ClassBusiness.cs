@@ -38,7 +38,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>A list of classes</returns>
     public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         
         var classes = await _context.Classes
             .Where(c => c.ProjectId == projectId).ToListAsync();
@@ -74,7 +74,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
     public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         var newClass = await _context.Classes
             .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
@@ -292,10 +292,12 @@ public class ClassBusiness : IClassBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");

@@ -40,7 +40,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid, false);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert
@@ -56,7 +56,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid2, false);
+            var result = await _tagBusiness.GetAllTags(pid2, true);
             var tags = result.ToList();
 
             // Assert
@@ -67,7 +67,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid, false);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert

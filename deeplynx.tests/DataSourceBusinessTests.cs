@@ -42,7 +42,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ValidProjectId_ReturnsActiveDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
             var dataSources = result.ToList();
 
             // Assert
@@ -76,7 +76,7 @@ namespace deeplynx.tests
             Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = newProjectId });
             await Context.SaveChangesAsync();
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
             var dataSources = result.ToList();
 
             // Assert

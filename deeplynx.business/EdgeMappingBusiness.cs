@@ -36,10 +36,10 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long? relationshipId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId,  hideArchived);
         if (relationshipId.HasValue)
         {
-            DoesRelationshipExist(relationshipId.Value);
+            DoesRelationshipExist(relationshipId.Value, hideArchived);
         }
         
         var mappingQuery = _context.EdgeMappings
@@ -96,7 +96,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long mappingId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         var mapping = await _context.EdgeMappings
             .Where(m => m.Id == mappingId && m.ProjectId == projectId)
             .FirstOrDefaultAsync();
@@ -268,10 +268,12 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
@@ -282,10 +284,12 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// Determine if relataionship exists
     /// </summary>
     /// <param name="relationshipId">The ID of the relationship we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if relataionship does not exist</returns>
-    private void DoesRelationshipExist(long relationshipId)
+    private void DoesRelationshipExist(long relationshipId, bool hideArchived = true)
     {
-        var relationship = _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null);
+        var relationship = hideArchived ? _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null)
+            :  _context.Relationships.Any(p => p.Id == relationshipId);
         if (!relationship)
         {
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
