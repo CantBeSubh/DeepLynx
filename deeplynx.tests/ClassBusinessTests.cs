@@ -8,15 +8,18 @@ using Moq;
 
 namespace deeplynx.tests
 {
+    [Collection("Test Suite Collection")]
     public class ClassBusinessTests : IntegrationTestBase
     {
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness;
-        private Mock<IRecordBusiness> _mockRecordBusiness;
-        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness;
-        private Mock<IRelationshipBusiness> _mockRelationshipBusiness;
+        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
+        private Mock<IRecordBusiness> _mockRecordBusiness = null!;
+        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
+        private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         public long pid;
+
+        public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
@@ -33,7 +36,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
         {
-            await SeedTestDataAsync();
             var now = DateTime.UtcNow;
             var dto = new ClassRequestDto
             {
@@ -53,7 +55,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfNoName()
         {
-            await SeedTestDataAsync();
             var dto = new ClassRequestDto { Name = null, Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
@@ -62,7 +63,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfEmptyName()
         {
-            await SeedTestDataAsync();
             var dto = new ClassRequestDto { Name = "", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
@@ -71,7 +71,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfNoProjectId()
         {
-            await SeedTestDataAsync();
             var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
@@ -80,7 +79,10 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfDeletedProjectId()
         {
-            await SeedTestDataAsync(true);
+            var project = await Context.Projects.FindAsync(pid);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            Context.Projects.Update(project);
+            await Context.SaveChangesAsync();
             var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
@@ -89,7 +91,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfDuplicateName()
         {
-            await SeedTestDataAsync();
             var duplicateName = "Duplicate Class";
             var dto = new ClassRequestDto { Name = duplicateName, Description = "Test Description" };
 
@@ -104,7 +105,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllClasses_ReturnsOnlyForProjects()
         {
-            await SeedTestDataAsync();
             var p2 = new Project { Name = "ExtraProj" };
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
@@ -119,7 +119,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllClasses_ExcludesSoftDeleted()
         {
-            await SeedTestDataAsync();
             var activeClass = new Class
             {
                 Name = $"Active Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -147,7 +146,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetClass_Success_WhenExists()
         {
-            await SeedTestDataAsync();
             var testClass = new Class
             {
                 Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -166,7 +164,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetClass_Fails_IfNoProjectID()
         {
-            await SeedTestDataAsync();
             var testClass = new Class
             {
                 Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -184,7 +181,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetClass_Fails_IfDeletedClass()
         {
-            await SeedTestDataAsync();
             var testClass = new Class
             {
                 Name = $"Deleted Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -203,7 +199,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateClass_Success_ReturnsModifiedAt()
         {
-            await SeedTestDataAsync();
             var testClass = new Class
             {
                 Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -215,6 +210,9 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
+            // Add a small delay to ensure ModifiedAt is after CreatedAt
+            await Task.Delay(10);
+
             var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
 
@@ -224,18 +222,16 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateClass_Fails_IfNotFound()
         {
-            await SeedTestDataAsync();
-
             var dto = new ClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
             var updatedResult = () => _classBusiness.UpdateClass(pid, 99, dto);
-            updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+
+            await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
         }
 
         [Fact]
         public async Task ArchiveClass_Success_WhenExists()
         {
-            await SeedTestDataAsync();
-            var beforeArchive = DateTime.UtcNow;
+            var beforeArchive = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
             var testClass = new Class
             {
@@ -250,20 +246,27 @@ namespace deeplynx.tests
             var archivedResult = await _classBusiness.ArchiveClass(pid, testClass.Id);
             Assert.True(archivedResult);
 
+            // procedure is not traced by entity framework
+            //this forces EF to sync to db on next query
+            Context.ChangeTracker.Clear();
+
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(archivedClass);
-            if (archivedClass.ArchivedAt.HasValue)
-            {
-                Assert.NotNull(archivedClass.ArchivedAt);
-                Assert.True(archivedClass.ArchivedAt >= beforeArchive);
-                Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
-            }
+            Assert.NotNull(archivedClass.ArchivedAt);
+            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
+            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+        }
+
+        [Fact]
+        public async Task ArchiveClass_Fails_IfNotFound()
+        {
+            var result = () => _classBusiness.ArchiveClass(pid, 99);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
         }
 
         [Fact]
         public async Task DeleteClass_Success_WhenExists()
         {
-            await SeedTestDataAsync();
             var testClass = new Class
             {
                 Name = $"Class to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -284,7 +287,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task ClassArchived_WhenProjectArchived()
         {
-            await SeedTestDataAsync();
             var beforeArchive = DateTime.UtcNow;
             var testClass = new Class
             {
@@ -298,31 +300,45 @@ namespace deeplynx.tests
 
             var deletedResult = await _projectBusiness.ArchiveProject(pid);
             Assert.True(deletedResult);
+            
+            //Makes sure the db is refreshed 
             Context.ChangeTracker.Clear();
 
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(archivedClass);
-
-            // Check if ArchivedAt was set (optional based on implementation)
-            if (archivedClass.ArchivedAt.HasValue)
-            {
-                Assert.NotNull(archivedClass.ArchivedAt);
-                Assert.True(archivedClass.ArchivedAt >= beforeArchive);
-                Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
-            }
+            Assert.NotNull(archivedClass.ArchivedAt);
+            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
+            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+        }
+        [Fact(Skip = "Force delete not implemented yet")]
+        public async Task ForceDeleteClass_RemovesFromDatabase()
+        {
+            //  future force delete logic
         }
 
-        private async Task SeedTestDataAsync(bool deleteProject = false)
+        [Fact(Skip = "Cascade delete not implemented yet")]
+        public async Task DeleteClass_DeletesDownstreamRelationships()
         {
-            await CleanDatabaseAsync();
+            // Placeholder for cascading relationship deletion
+        }
 
+        [Fact(Skip = "Cascade delete not implemented yet")]
+        public async Task DeleteClass_DeletesDownstreamRecords()
+        {
+            // Placeholder for cascading record deletion
+        }
+
+        [Fact(Skip = "Cascade delete not implemented yet")]
+        public async Task DeleteClass_DeletesDownstreamRecordMappings()
+        {
+            // Placeholder for cascading record mapping deletion
+        }
+
+
+        protected override async Task SeedTestDataAsync()
+        {
+            await base.SeedTestDataAsync();
             var project = new Project { Name = "Project 1" };
-
-            if (deleteProject)
-            {
-                project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            }
-
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
