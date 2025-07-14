@@ -54,6 +54,12 @@ public partial class DataSource
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
 
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]

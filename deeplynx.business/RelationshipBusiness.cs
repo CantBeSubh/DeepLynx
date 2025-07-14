@@ -29,6 +29,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <returns>A list of relationships</returns>
     public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
+        DoesProjectExist(projectId);
         var relationships = await _context.Relationships
             .Where(r => r.ProjectId == projectId)
             .Include(r => r.Origin)
@@ -86,6 +87,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found or is archived</exception>
     public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.Id == relationshipId)
             .Include(r => r.Origin)
@@ -130,11 +132,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-        {
-            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
-        }
+        DoesProjectExist(projectId);
         
         var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
         if (orignClass == null)
@@ -201,6 +199,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
@@ -258,6 +257,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -278,6 +278,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -311,4 +312,20 @@ public class RelationshipBusiness: IRelationshipBusiness
             }
         }
     }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    
 }

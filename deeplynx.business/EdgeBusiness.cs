@@ -34,6 +34,13 @@ public class EdgeBusiness : IEdgeBusiness
         long? dataSourceId,
         bool hideArchived)
     {
+        DoesProjectExist(projectId);
+        if (dataSourceId.HasValue)
+        { 
+            DoesDataSourceExist(dataSourceId.Value);
+        }
+       
+        // base query object to get all edges for the project
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
     
@@ -113,6 +120,9 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         EdgeRequestDto dto)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
+        
         var edge = new Edge
         {
             OriginId = dto.OriginId,
@@ -157,6 +167,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
@@ -202,6 +213,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -226,6 +238,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -283,5 +296,33 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return edge;  
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId)
+    {
+        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
     }
 }

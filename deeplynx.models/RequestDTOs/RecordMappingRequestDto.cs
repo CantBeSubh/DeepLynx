@@ -8,6 +8,8 @@ public class RecordMappingRequestDto
     [Required]
     public JsonObject RecordParams { get; set; }
     
+    public long DataSourceId { get; set; }
+    
     public long? ClassId { get; set; }
     
     public long? TagId { get; set; }

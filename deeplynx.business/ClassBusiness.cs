@@ -38,6 +38,8 @@ public class ClassBusiness : IClassBusiness
     /// <returns>A list of classes</returns>
     public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
+        DoesProjectExist(projectId);
+        
         var classes = await _context.Classes
             .Where(c => c.ProjectId == projectId).ToListAsync();
         
@@ -72,6 +74,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
     public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
+        DoesProjectExist(projectId);
         var newClass = await _context.Classes
             .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
@@ -109,12 +112,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-
+        DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
 
         var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
@@ -163,6 +161,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
     public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var updatedClass = await _context.Classes.FindAsync(classId);
         if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.ArchivedAt is not null)
         {
@@ -224,6 +223,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
+        DoesProjectExist(projectId);
         // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
@@ -268,6 +268,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns></returns>
     public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
+        DoesProjectExist(projectId);
         var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
@@ -285,5 +286,19 @@ public class ClassBusiness : IClassBusiness
         };
 
         return await CreateClass(projectId, classDto);
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId)
+    {
+        var project = _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
     }
 }

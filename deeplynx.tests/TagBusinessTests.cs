@@ -7,13 +7,20 @@ using Moq;
 
 namespace deeplynx.tests
 {
+    [Collection("Test Suite Collection")]
     public class TagBusinessTests : IntegrationTestBase
     {
         private DeeplynxContext _context;
         private TagBusiness _tagBusiness;
         private readonly Mock<IRecordMappingBusiness> _mockRecordMappingBusiness;
+        public long pid;
+        public long pid2;
+        public long tid;
+        public long tid2;
+        public long tid3;
+        public long tid4;
 
-        public TagBusinessTests()
+        public TagBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
         }
@@ -26,11 +33,6 @@ namespace deeplynx.tests
                 Context, 
                 _mockRecordMappingBusiness.Object);
         }
-        
-        public async Task DisposeAsync()
-        {
-            await base.DisposeAsync();
-        }
 
         #region GetAllTags Tests
 
@@ -38,32 +40,23 @@ namespace deeplynx.tests
         public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(1, false);
+            var result = await _tagBusiness.GetAllTags(pid, false);
             var tags = result.ToList();
 
             // Assert
-            Assert.Equal(4, tags.Count);
-            Assert.All(tags, ds => Assert.Equal(1, ds.ProjectId));
+            Assert.Equal(2, tags.Count);
+            Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
             Assert.All(tags, ds => Assert.Null(ds.ArchivedAt));
-            Assert.Contains(tags, ds => ds.Name == "Analytics");
-            Assert.Contains(tags, ds => ds.Name == "Marketing");
-            Assert.Contains(tags, ds => ds.Name == "Customer Data");
-            Assert.Contains(tags, ds => ds.Name == "Business Intelligence");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Logistics");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Optimization");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Real-time Monitoring");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Predictive Analytics");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Inventory Management");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Migration");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Legacy Systems");
-            Assert.DoesNotContain(tags, ds => ds.Name == "Data Transformation");
+            Assert.Contains(tags, ds => ds.Id == tid);
+            Assert.Contains(tags, ds => ds.Id == tid2);
+            Assert.DoesNotContain(tags, ds => ds.Id == tid3);
         }
 
         [Fact]
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(999, false);
+            var result = await _tagBusiness.GetAllTags(pid2, false);
             var tags = result.ToList();
 
             // Assert
@@ -74,13 +67,13 @@ namespace deeplynx.tests
         public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(2, false);
+            var result = await _tagBusiness.GetAllTags(pid, false);
             var tags = result.ToList();
 
             // Assert
-            Assert.Equal(5, tags.Count);
-            Assert.Equal("Logistics", tags.First().Name);
-            Assert.Equal(2, tags.First().ProjectId);
+            Assert.Equal(2, tags.Count);
+            Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
+            Assert.Equal(pid, tags.First().ProjectId);
         }
 
         #endregion
@@ -91,16 +84,16 @@ namespace deeplynx.tests
         public async Task GetTag_ValidIds_ReturnsTag()
         {
             // Act
-            var result = await _tagBusiness.GetTagById(1, 1, false);
+            var result = await _tagBusiness.GetTagById(pid, tid, false);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
+            Assert.Equal(tid, result.Id);
             Assert.Equal("Analytics", result.Name);
             Assert.Equal("john.smith@company.com", result.CreatedBy);
             Assert.Equal("sarah.johnson@company.com", result.ModifiedBy);
             Assert.Null( result.ArchivedAt);
-            Assert.Equal(1, result.ProjectId);
+            Assert.Equal(pid, result.ProjectId);
         }
 
         [Fact]
@@ -108,7 +101,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(1, 999, false));
+                () => _tagBusiness.GetTagById(pid, 999, false));
             
             Assert.Contains("Tag with id 999 not found", exception.Message);
         }
@@ -118,9 +111,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(2, 1, false)); // Tag 1 belongs to project 1, not 2
+                () => _tagBusiness.GetTagById(pid, tid4, false)); // Tag 1 belongs to project 1, not 2
             
-            Assert.Contains("Tag with id 1 not found", exception.Message);
+            Assert.Contains($"Tag with id {tid4} not found", exception.Message);
         }
 
         [Fact]
@@ -128,9 +121,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(3, 10, true)); // Tag 10 of project 3 is archived
+                () => _tagBusiness.GetTagById(pid, tid3, true)); // Tag 3 of project 1 is archived
             
-            Assert.Contains("Tag with id 10 is archived", exception.Message);
+            Assert.Contains($"Tag with id {tid3} is archived", exception.Message);
         }
 
         #endregion
@@ -142,7 +135,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _tagBusiness.CreateTag(1, null));
+                () => _tagBusiness.CreateTag(pid, null));
         }
 
         [Fact]
@@ -156,14 +149,14 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.CreateTag(1, dto);
+            var result = await _tagBusiness.CreateTag(pid, dto);
             
             // Assert
             Assert.NotNull(result);
             Assert.True(result.Id > 0);
             Assert.Equal("Tag One", result.Name);
             Assert.Equal("Test Suite", result.CreatedBy);
-            Assert.Equal(1, result.ProjectId);
+            Assert.Equal(pid, result.ProjectId);
 
             // Verify it was actually saved to database
             var savedTag = await Context.Tags.FindAsync(result.Id);
@@ -184,7 +177,7 @@ namespace deeplynx.tests
             var beforeCreate = DateTime.UtcNow;
 
             // Act
-            var result = await _tagBusiness.CreateTag(1, dto);
+            var result = await _tagBusiness.CreateTag(pid, dto);
 
             // Assert
             Assert.True(result.CreatedAt >= beforeCreate);
@@ -199,7 +192,7 @@ namespace deeplynx.tests
             var missingNameDto = new TagRequestDto() { Name = null, CreatedBy = "Test Suite" };
 
             var exception =
-                await Assert.ThrowsAsync<ValidationException>(() => _tagBusiness.CreateTag(1, missingNameDto));
+                await Assert.ThrowsAsync<ValidationException>(() => _tagBusiness.CreateTag(pid, missingNameDto));
             
             Assert.Contains("Name is required and cannot be empty or whitespace", exception.Message);
         }
@@ -230,17 +223,17 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _tagBusiness.UpdateTag(1, 1, dto);
+            var result = await _tagBusiness.UpdateTag(pid, tid, dto);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(1, result.Id);
+            Assert.Equal(tid, result.Id);
             Assert.Equal("Updated Test Tag", result.Name);
             Assert.Equal("john.smith@company.com", result.CreatedBy);
             Assert.NotNull(result.ModifiedAt);
 
             // Verify it was actually updated in database
-            var updatedTag = await Context.Tags.FindAsync((long)1);
+            var updatedTag = await Context.Tags.FindAsync(tid);
             Assert.Equal("Updated Test Tag", updatedTag.Name);
             Assert.NotNull(updatedTag.ModifiedAt);
         }
@@ -257,7 +250,7 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(1, 999, dto));
+                () => _tagBusiness.UpdateTag(pid, 999, dto));
 
             Assert.Contains("Tag with id 999 not found", exception.Message);
         }
@@ -274,9 +267,9 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(2, 1, dto)); // Tag 1 belongs to project 2
+                () => _tagBusiness.UpdateTag(pid2, tid, dto)); // Tag 1 belongs to project 2
 
-            Assert.Contains("Tag with id 1 not found", exception.Message);
+            Assert.Contains($"Tag with id {tid} not found", exception.Message);
         }
 
         [Fact]
@@ -291,9 +284,9 @@ namespace deeplynx.tests
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.UpdateTag(3, 10, dto)); // Tag 10 is archived
+                () => _tagBusiness.UpdateTag(pid, tid3, dto)); // Tag 3 is archived
 
-            Assert.Contains("Tag with id 10 not found", exception.Message);
+            Assert.Contains($"Tag with id {tid3} not found", exception.Message);
         }
 
         #endregion
@@ -304,13 +297,13 @@ namespace deeplynx.tests
         public async Task DeleteTag_ValidTag_DeletesSuccessfully()
         {
             // Act
-            var result = await _tagBusiness.DeleteTag(1, 2);
+            var result = await _tagBusiness.DeleteTag(pid, tid);
 
             // Assert
             Assert.True(result);
 
             // Verify it was actually deleted from database
-            var deletedTag = await Context.Tags.FindAsync((long)2);
+            var deletedTag = await Context.Tags.FindAsync(tid);
             Assert.Null(deletedTag);
         }
 
@@ -319,7 +312,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.DeleteTag(1, 999));
+                () => _tagBusiness.DeleteTag(pid, 999));
 
             Assert.Contains("Tag with id 999 not found", exception.Message);
         }
@@ -329,9 +322,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.DeleteTag(2, 1)); // Tag 1 belongs to project 1
+                () => _tagBusiness.DeleteTag(pid2, tid)); // Tag 1 belongs to project 1
 
-            Assert.Contains("Tag with id 1 not found", exception.Message);
+            Assert.Contains($"Tag with id {tid} not found", exception.Message);
         }
 
         [Fact]
@@ -339,9 +332,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.DeleteTag(3, 11)); // Tag 11 is archived
+                () => _tagBusiness.DeleteTag(pid, tid3)); // Tag 3 is archived
 
-            Assert.Contains("Tag with id 11 not found", exception.Message);
+            Assert.Contains($"Tag with id {tid3} not found", exception.Message);
         }
 
         #endregion
@@ -355,13 +348,13 @@ namespace deeplynx.tests
              var beforeArchive = DateTime.UtcNow;
 
              // Act
-             var result = await _tagBusiness.ArchiveTag(1, 1);
+             var result = await _tagBusiness.ArchiveTag(pid, tid);
 
              // Assert
              Assert.True(result);
 
              // Verify it was actually archived in database
-             var archivedTag = await Context.Tags.FindAsync((long)1);
+             var archivedTag = await Context.Tags.FindAsync(tid);
              Assert.NotNull(archivedTag);
              Assert.NotNull(archivedTag.ArchivedAt);
              Assert.True(archivedTag.ArchivedAt >= beforeArchive);
@@ -373,7 +366,7 @@ namespace deeplynx.tests
          {
              // Act & Assert
              var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                 () => _tagBusiness.ArchiveTag(1, 999));
+                 () => _tagBusiness.ArchiveTag(pid, 999));
 
              Assert.Contains("Tag with id 999 not found", exception.Message);
          }
@@ -383,9 +376,9 @@ namespace deeplynx.tests
          {
              // Act & Assert
              var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                 () => _tagBusiness.ArchiveTag(2, 1));
+                 () => _tagBusiness.ArchiveTag(pid2, tid));
 
-             Assert.Contains("Tag with id 1 not found", exception.Message);
+             Assert.Contains($"Tag with id {tid} not found", exception.Message);
          }
 
          [Fact]
@@ -393,20 +386,20 @@ namespace deeplynx.tests
          {
              // Act & Assert
              var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                 () => _tagBusiness.ArchiveTag(3, 12)); // Tag 12 is already archived
+                 () => _tagBusiness.ArchiveTag(pid, tid3)); // Tag 3 is already archived
 
-             Assert.Contains("Tag with id 12 not found", exception.Message);
+             Assert.Contains($"Tag with id {tid3} not found", exception.Message);
          }
 
          [Fact]
          public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
          {
              // Arrange
-             var initialCount = (await _tagBusiness.GetAllTags(1, true)).Count();
+             var initialCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Act
-             await _tagBusiness.ArchiveTag(1, 1);
-             var finalCount = (await _tagBusiness.GetAllTags(1, true)).Count();
+             await _tagBusiness.ArchiveTag(pid, tid);
+             var finalCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Assert
              Assert.Equal(initialCount - 1, finalCount);
@@ -436,8 +429,8 @@ namespace deeplynx.tests
              };
 
              // Act
-             var task1 = await _tagBusiness.UpdateTag(1, 1, dto1);
-             var task2 = await _tagBusiness.UpdateTag(1, 2, dto2);
+             var task1 = await _tagBusiness.UpdateTag(pid, tid, dto1);
+             var task2 = await _tagBusiness.UpdateTag(pid, tid2, dto2);
 
              // Assert
              var result1 = task1;
@@ -445,7 +438,6 @@ namespace deeplynx.tests
 
              Assert.Equal("Concurrent Tag Update 1", result1.Name);
              Assert.Equal("Concurrent Tag Update 2", result2.Name);
-
          }
 
          [Fact]
@@ -459,7 +451,7 @@ namespace deeplynx.tests
              };
 
              // Act
-             var result = await _tagBusiness.CreateTag(1, dto);
+             var result = await _tagBusiness.CreateTag(pid, dto);
 
              // Assert
              Assert.Equal("Test with émojis 🚀 and ñ special chars 中文", result.Name);
@@ -512,5 +504,62 @@ namespace deeplynx.tests
           }
           
          #endregion
+
+         protected override async Task SeedTestDataAsync()
+         {
+             await base.SeedTestDataAsync();
+             var project = new Project { Name = "Project 1" };
+             var project2 = new Project { Name = "Project2" };
+             Context.Projects.Add(project);
+             Context.Projects.Add(project2);
+        
+             await Context.SaveChangesAsync();
+             pid = project.Id;
+             pid2 = project2.Id;
+             
+             var tag = new Tag
+             {
+                 Name = "Analytics", ProjectId = pid, CreatedBy = "john.smith@company.com",
+                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 ModifiedBy = "sarah.johnson@company.com",
+                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
+                 ArchivedAt = null
+             };
+             
+             var tag2 = new Tag
+             {
+                 Name = "Analytics 2", ProjectId = pid, CreatedBy = "john.smith@company.com",
+                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 ModifiedBy = "sarah.johnson@company.com",
+                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
+                 ArchivedAt = null
+             };
+             var tag3 = new Tag
+             {
+                 Name = "Analytics 3", ProjectId = pid, CreatedBy = "john.smith@company.com",
+                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 ModifiedBy = "sarah.johnson@company.com",
+                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
+                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+             };
+             var tag4 = new Tag
+             {
+                 Name = "Analytics 4", ProjectId = pid2, CreatedBy = "john.smith@company.com",
+                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 ModifiedBy = "sarah.johnson@company.com",
+                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
+                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+             };
+             await Context.Tags.AddAsync(tag);
+             await Context.Tags.AddAsync(tag2);
+             await Context.Tags.AddAsync(tag3);
+             await Context.Tags.AddAsync(tag4);
+             await Context.SaveChangesAsync();
+             tid =  tag.Id;
+             tid2 = tag2.Id;
+             tid3 = tag3.Id;
+             tid4 = tag4.Id;
+             
+         }
     }
 }

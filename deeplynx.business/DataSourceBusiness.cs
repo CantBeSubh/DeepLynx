@@ -1,11 +1,10 @@
+using System.Data;
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Linq.Expressions;
 
 namespace deeplynx.business
 {
@@ -41,6 +40,7 @@ namespace deeplynx.business
         /// <returns>A list of data sources within the given project.</returns>
         public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
+            DoesProjectExist(projectId);
             var dataSources = await _context.DataSources
                 .Where(d => d.ProjectId == projectId).ToListAsync();
 
@@ -79,6 +79,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
         public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
                 .FirstOrDefaultAsync();
@@ -120,6 +121,7 @@ namespace deeplynx.business
         /// <returns>The created data source.</returns>
         public async Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto)
         {
+            DoesProjectExist(projectId);
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -168,6 +170,7 @@ namespace deeplynx.business
             long dataSourceId,
             DataSourceRequestDto dto)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
@@ -214,6 +217,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
         public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
@@ -234,16 +238,54 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
         public async Task<bool> ArchiveDataSource(long projectId, long dataSourceId)
         {
+            DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+            // set archivedAt timestamp
+            var archivedAt = DateTime.UtcNow;
+            
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // run the archive data source procedure, which archives this datasource
+                    // and all child objects with data_source_id as a foreign key
+                    var archived = await _context.Database.ExecuteSqlRawAsync(
+                        "CALL deeplynx.archive_data_source({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", dataSourceId,
+                        archivedAt);
 
-            dataSource.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.DataSources.Update(dataSource);
-            await _context.SaveChangesAsync();
+                    if (archived == 0) // if 0 records were updated, assume a failure
+                    {
+                        throw new DependencyDeletionException(
+                            $"unable to archive data source {dataSourceId} or its downstream dependents.");
+                    }
 
-            return true;
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception exc)
+                {
+                    await transaction.RollbackAsync();
+                    throw new DependencyDeletionException(
+                        $"unable to archive data source {dataSourceId} or its downstream dependents: {exc}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Determine if project exists
+        /// </summary>
+        /// <param name="projectId">The ID of the project we are searching for</param>
+        /// <returns>Throws error if project does not exist</returns>
+        private void DoesProjectExist(long projectId)
+        {
+            var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+            if (!project)
+            {
+                throw new KeyNotFoundException($"Project with id {projectId} not found");
+            }
         }
     }
 }
