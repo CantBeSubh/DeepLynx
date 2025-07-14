@@ -36,7 +36,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
     {
         DoesProjectExist(projectId);
-        return await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, null, true);
+        return await _historicalRecordBusiness.GetAllHistoricalRecords(projectId, dataSourceId, null, true, true);
     }
     
     /// <summary>
@@ -175,15 +175,31 @@ public class RecordBusiness : IRecordBusiness
         DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+        // we should be able to delete a record even if it's been archived
+        if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-        
-        _context.Records.Remove(record);
-        await _context.SaveChangesAsync();
-        
-        await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
-        
-        return true;
+
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // adjust the historical record first as join for information won't be possible once record is deleted
+                await _historicalRecordBusiness.DeleteHistoricalRecord(record.Id);
+
+                // delete record
+                _context.Records.Remove(record);
+                await _context.SaveChangesAsync();
+
+                // if everything goes according to plan, commit the transaction
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to delete record {recordId} or its downstream dependents: {exc}");
+            }
+        }
     }
     
     /// <summary>
