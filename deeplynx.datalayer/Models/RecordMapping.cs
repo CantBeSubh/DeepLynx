@@ -8,6 +8,7 @@ namespace deeplynx.datalayer.Models;
 
 [Table("record_mappings", Schema = "deeplynx")]
 [Index("ClassId", Name = "idx_record_mappings_class_id")]
+[Index("DataSourceId", Name = "idx_record_mappings_data_source_id")]
 [Index("Id", Name = "idx_record_mappings_id")]
 [Index("ProjectId", Name = "idx_record_mappings_project_id")]
 [Index("TagId", Name = "idx_record_mappings_tag_id")]
@@ -22,6 +23,9 @@ public partial class RecordMapping
 
     [Column("class_id")]
     public long? ClassId { get; set; }
+    
+    [Column("data_source_id")]
+    public long DataSourceId { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
@@ -48,13 +52,16 @@ public partial class RecordMapping
     [InverseProperty("RecordMappings")]
     public virtual Class? Class { get; set; }
 
+    [ForeignKey("DataSourceId")]
+    [InverseProperty("RecordMappings")]
+    public virtual DataSource DataSource { get; set; } = null!;
+
     [ForeignKey("ProjectId")]
     [InverseProperty("RecordMappings")]
     public virtual Project Project { get; set; } = null!;
-
-    [ForeignKey("TagId")]
+    
     [InverseProperty("RecordMappings")]
-    public virtual Tag? Tag { get; set; }
+    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     
     [InverseProperty("RecordMapping")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

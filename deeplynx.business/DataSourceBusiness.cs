@@ -1,11 +1,10 @@
+using System.Data;
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Linq.Expressions;
 
 namespace deeplynx.business
 {
@@ -226,12 +225,35 @@ namespace deeplynx.business
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+            // set archivedAt timestamp
+            var archivedAt = DateTime.UtcNow;
+            
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // run the archive data source procedure, which archives this datasource
+                    // and all child objects with data_source_id as a foreign key
+                    var archived = await _context.Database.ExecuteSqlRawAsync(
+                        "CALL deeplynx.archive_data_source({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", dataSourceId,
+                        archivedAt);
 
-            dataSource.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            _context.DataSources.Update(dataSource);
-            await _context.SaveChangesAsync();
+                    if (archived == 0) // if 0 records were updated, assume a failure
+                    {
+                        throw new DependencyDeletionException(
+                            $"unable to archive data source {dataSourceId} or its downstream dependents.");
+                    }
 
-            return true;
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception exc)
+                {
+                    await transaction.RollbackAsync();
+                    throw new DependencyDeletionException(
+                        $"unable to archive data source {dataSourceId} or its downstream dependents: {exc}");
+                }
+            }
         }
     }
 }
