@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250710201141_AddHistoricalTimestamp")]
-    partial class AddHistoricalTimestamp
+    [Migration("20250714142350_AdjustRecordsAndEdges")]
+    partial class AdjustRecordsAndEdges
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
