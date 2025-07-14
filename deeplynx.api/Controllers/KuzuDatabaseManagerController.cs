@@ -48,13 +48,14 @@ namespace deeplynx.api.Controllers
             }
         }
 
+
         /// <summary>
-        /// Get Nodes Within Depth
+        /// Query N Layers
         /// </summary>
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <param name="request">The request object containing the parameters for the query.</param>
         /// <returns>A result set containing the nodes and their relationships.</returns>
-        [HttpPost("nodes-within-depth")]
+        [HttpPost("Query-N-Layers")]
         public async Task<IActionResult> GetNodesWithinDepth(int projectId, [FromBody] KuzuDBMNodesWithinDepthRequestDto request)
         {
             if (!ModelState.IsValid)
