@@ -34,6 +34,13 @@ RUN dotnet build -c Release -o /app/build
 FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
+# Install tools needed for entrypoint.sh
+RUN apk --no-check-certificate add postgresql-client
+
+# Copy the entrypoint script
+COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Stage 4: Create the final image
 FROM node:lts-alpine3.20 AS final
 
@@ -53,4 +60,5 @@ COPY --from=frontend-build /app/package.json ./package.json
 RUN npm install --production
 
 # Set the command point to run the application
+# Currently overriden by entrypoint.sh
 CMD [ "npm", "start" ]
