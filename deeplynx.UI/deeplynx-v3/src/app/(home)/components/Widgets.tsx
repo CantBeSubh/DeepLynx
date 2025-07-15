@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, ReactNode } from "react";
 import { Reorder } from "framer-motion";
 import DataOverviewWidget from "./WidgetCards.tsx/DataOverviewWidget";
@@ -8,18 +9,13 @@ import RecentActivityWidget from "./WidgetCards.tsx/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards.tsx/ProjectOverview";
 import TeamMembersWidget from "./WidgetCards.tsx/TeamMember";
 
-type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
+export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
+interface WidgetCardProps {
+  widgets: WidgetType[];
+}
 
-// adjust logic for adding and removing widgets
-const WidgetCard = () => {
-  const [widgets, setWidgets] = useState<WidgetType[]>([
-    "DataOverview",
-    "Graph",
-    "Links",
-    "RecentActivity",
-    "ProjectOverview",
-    "TeamMembers"
-  ]);
+const WidgetCard: React.FC<WidgetCardProps> = ({ widgets }) => {
+  const [currentWidgets, setCurrentWidgets] = useState<WidgetType[]>(widgets);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
@@ -40,19 +36,20 @@ const WidgetCard = () => {
 
       case "TeamMembers":
         return <TeamMembersWidget />;
+
+      default:
+        return null;
     }
   };
 
-  // Styling for Links Widget
   return (
     <Reorder.Group
       axis="y"
-      onReorder={setWidgets}
-      values={widgets}
+      onReorder={setCurrentWidgets}
+      values={currentWidgets}
       className="space-y-4"
     >
-      {/* add ternary logic to render welcome page vs project page widgets */}
-      {widgets.map((widget) => (
+      {currentWidgets.map((widget) => (
         <Reorder.Item
           key={widget}
           value={widget}

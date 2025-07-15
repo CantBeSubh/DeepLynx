@@ -1,20 +1,11 @@
 import React, { useState, useRef } from "react";
+import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
+// import AddTeamMember from "@/app/(home)/components/AddTeamMember";
 
 const TeamMembersWidget = () => {
     const [showTable, setShowTable] = useState(false);
     const avatarContainerRef = useRef(null);
-
-    const scrollLeft = () => {
-    if (avatarContainerRef.current) {
-      avatarContainerRef.current.scrollLeft -= 100;
-    }
-  };
-
-    const scrollRight = () => {
-        if (avatarContainerRef.current) {
-        avatarContainerRef.current.scrollLeft += 100;
-        }
-    };
+    const [avatarModal, setAvatarModal] = useState(false);
 
     const handleToggle = () => {
         setShowTable((prev) => !prev);
@@ -53,35 +44,13 @@ const TeamMembersWidget = () => {
                 </h2>
                 <button onClick={handleToggle} className="btn btn-sm btn-ghost">
                     {showTable ? (
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
+                        <ChevronDownIcon
                             className="size-6 rotate-180"
-                            >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                            />
-                        </svg>
+                        />
                     ) : (
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={1.5}
-                            stroke="currentColor"
+                        <ChevronDownIcon
                             className="size-6"
-                            >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                            />
-                        </svg>
+                        />
                     )}
                 </button>
             </div>
@@ -93,27 +62,18 @@ const TeamMembersWidget = () => {
 
                             {/* Left Button */}
                             <div className="flex items-center justify-cetner">
-                                <button className="flex-shrink-0" onClick={scrollLeft}>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                        stroke="currentColor"
-                                        className="size-6">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M15.75 19.5 8.25 12l7.5-7.5"
-                                        />
-                                    </svg>
+                                <button className="flex-shrink-0">
+                                {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
+                                    <ChevronLeftIcon
+                                        className="size-6"
+                                    />
                                 </button>
                             </div>
 
                             {/* Avatar Icons */}
                             <div className="flex-grow flex items-center space-x-2 overflow-x-auto">
                                 <p className="text-base-300 mb-2"></p>
-                                {[...Array(9)].map((_, i) => (
+                                {[...Array(8)].map((_, i) => (
                                     <div key={i} className="avatar inline-block">
                                         <div className="w-10 rounded-full">
                                         <img
@@ -123,24 +83,20 @@ const TeamMembersWidget = () => {
                                         </div>
                                     </div>
                                 ))}
-                                <PlusIcon />
+                                <button
+                                    onClick={() => setAvatarModal(true)}
+                                    className="btn btn-secondary text-primary-content flex items-center">
+                                    <PlusIcon />
+                                </button>
                             </div>
 
                             {/* Right Button */}
                             <div className="flex items-center justify-center">
-                                <button className="flex-shrink-0" onClick={scrollRight}>
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24"
-                                        strokeWidth="1.5"
-                                        stroke="currentColor"
-                                        className="size-6">
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="m8.25 4.5 7.5 7.5-7.5 7.5"
-                                        />
-                                    </svg>
+                                <button className="flex-shrink-0">
+                                {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
+                                    <ChevronRightIcon
+                                        className="size-6"
+                                    />
                                 </button>
                             </div>
                         </div>
@@ -158,14 +114,18 @@ const TeamMembersWidget = () => {
                             <th className="pl-17 flex items-center">
                                 Name
                                 <div className="pl-2">
-                                    <DownArrow />
+                                    <ChevronDownIcon
+                                        className="size-5"
+                                    />
                                 </div>
                             </th>
                             <th>Role</th>
                             <th className="flex items-center">
                                 Last Login
                                 <div className="pl-2">
-                                    <DownArrow />
+                                    <ChevronDownIcon
+                                        className="size-5"
+                                    />
                                 </div>
                             </th>
                             <th></th>
@@ -323,23 +283,6 @@ const PlusIcon = () => (
       d="M12 8v8m4-4h-8"
     />
   </svg>
-);
-
-const DownArrow = () => (
-    <svg
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        strokeWidth={2}
-        stroke="currentColor"
-        className="size-4"
-        >
-        <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m19.5 8.25-7.5 7.5-7.5-7.5"
-        />
-    </svg>
 );
 
 export default TeamMembersWidget;

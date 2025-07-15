@@ -10,8 +10,8 @@ import Link from "next/link";
 import Tabs from "@/app/(home)/components/Tabs";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import AvatarCell from "@/app/(home)/components/Avatar";
-import WidgetCard from "@/app/(home)/components/Widgets";
 import CreateWidget from "@/app/(home)/components/CreateWidgets";
+import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import {PlusIcon} from "@heroicons/react/24/outline"
 
 
@@ -30,6 +30,7 @@ const ProjectDetailPage = () => {
   const [project, setProject] = useState<ProjectsList | null>(null);
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
   const [widgetModal, setWidgetModal] = useState(false);
+  const projectWidgets: WidgetType[] = ["RecentActivity", "ProjectOverview", "TeamMembers"];
 
   useEffect(() => {
     if (!hasLoaded || !projectId) return;
@@ -153,7 +154,7 @@ const ProjectDetailPage = () => {
                 Widget
               </button>
             </div>
-          <WidgetCard />
+          <WidgetCard widgets={projectWidgets}/>
         </div>
         </div>
 

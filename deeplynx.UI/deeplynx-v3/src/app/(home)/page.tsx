@@ -2,14 +2,13 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import CreateProject from "@/app/(home)/components/CreateProjectsWidget";
 import CreateWidget from "@/app/(home)/components/CreateWidgets";
 import { sampleProjectData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/Accordion";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
-import WidgetCard from "@/app/(home)/components/Widgets";
+import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import {PlusIcon, Cog6ToothIcon} from "@heroicons/react/24/outline";
 
 const Projects = () => {
@@ -17,6 +16,7 @@ const Projects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [tableData] = useState<ProjectsList[]>(sampleProjectData);
+  const homeWidgets: WidgetType[] = ["DataOverview", "Graph", "Links"];
 
   const handleExplore = (project: ProjectsList) => {
     router.push(`/project/${project.id}`);
@@ -93,7 +93,7 @@ const Projects = () => {
               Widget
             </button>
           </div>
-          <WidgetCard />
+          <WidgetCard widgets={homeWidgets} />
         </div>
       </div>
 
