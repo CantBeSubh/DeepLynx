@@ -9,11 +9,25 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 {
     private readonly DeeplynxContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HistoricalRecordBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context used for the record operations.</param>
     public HistoricalRecordBusiness(DeeplynxContext context)
     {
         _context = context;
     }
 
+    /// <summary>
+    /// Retrieves all Historical Records for a specific project and datasource
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
+    /// <param name="pointInTime">(Optional) Find the most current records that existed before this point in time</param>
+    /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
+    /// <param name="current">(Optional) Find only the most current records. Overrides point in time.</param>
+    /// <returns>An array of records</returns>
+    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllHistoricalRecords(
         long projectId,
         long? dataSourceId = null,
@@ -72,8 +86,13 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             })
             .ToListAsync();
     }
-
-
+    
+    /// <summary>
+    /// Show the historical updates of a specific record
+    /// </summary>
+    /// <param name="recordId">The ID of the record to list history for</param>
+    /// <returns>An array of record instances for the given record</returns>
+    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId)
     {
         return await _context.HistoricalRecords
@@ -103,6 +122,16 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Find an record at a given point in time
+    /// </summary>
+    /// <param name="recordId">The ID of the record to retrieve</param>
+    /// <param name="pointInTime">(Optional) Find the most current record that existed before this point in time</param>
+    /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
+    /// <param name="current">(Optional) Find only the most current record. Overrides point in time.</param>
+    /// <returns>A record that matches the applied filters.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
+    /// TODO: create an endpoint for this
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId,
         DateTime? pointInTime,
@@ -159,6 +188,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         };
     }
 
+    /// <summary>
+    /// Create a historical record based on a record ID.
+    /// </summary>
+    /// <param name="recordId">The newly created record to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical record instead </returns>
+    /// <exception cref="Exception">Returned if create fails</exception>
     public async Task<bool> CreateHistoricalRecord(long recordId)
     {
         // insert the appropriate data using insert into select.
@@ -199,6 +234,13 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         return true;
     }
+    
+    /// <summary>
+    /// Update a historical record based on a record ID.
+    /// </summary>
+    /// <param name="recordId">The newly updated record to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical record instead </returns>
+    /// <exception cref="Exception">Returned if update fails</exception>
     public async Task<bool> UpdateHistoricalRecord(long recordId)
     {
         // set all previous instances of "current" for this record id to false
@@ -245,6 +287,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         return true;
     }
 
+    /// <summary>
+    /// Archive a historical record based on a record ID.
+    /// </summary>
+    /// <param name="recordId">The newly archived record to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical record instead </returns>
+    /// <exception cref="Exception">Returned if archive fails</exception>
     public async Task<bool> ArchiveHistoricalRecord(long recordId)
     {
         // set all previous instances of "current" for this record id to false

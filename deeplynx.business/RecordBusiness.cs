@@ -29,7 +29,7 @@ public class RecordBusiness : IRecordBusiness
     /// Retrieves all records for a specific project and datasource.
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
-    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(

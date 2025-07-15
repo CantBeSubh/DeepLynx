@@ -5,19 +5,34 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
+
 public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
 {
     private readonly DeeplynxContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HistoricalEdgeBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context used for the edge operations.</param>
     public HistoricalEdgeBusiness(DeeplynxContext context)
     {
         _context = context;
     }
 
+    /// <summary>
+    /// Retrieves all Historical Edges for a specific project and datasource
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="pointInTime">(Optional) Find the most current edges that existed before this point in time</param>
+    /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
+    /// <param name="current">(Optional) Find only the most current edges. Overrides point in time.</param>
+    /// <returns>An array of edges</returns>
+    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetAllHistoricalEdges(
         long projectId,
         long? dataSourceId = null,
-        DateTime? poinInTime = null,
+        DateTime? pointInTime = null,
         bool hideArchived = true,
         bool current = true)
     {
@@ -40,11 +55,11 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         }
         
         // specification for "current" should override any supplied pointInTime
-        if (poinInTime.HasValue && !current)
+        if (pointInTime.HasValue && !current)
         {
             // compare timestamp to the most recent update
             edgeQuery = edgeQuery
-                .Where(e => e.LastUpdatedAt <= poinInTime)
+                .Where(e => e.LastUpdatedAt <= pointInTime)
                 .OrderByDescending(e => e.LastUpdatedAt);
         }
 
@@ -68,6 +83,12 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Show the historical updates of a specific edge
+    /// </summary>
+    /// <param name="edgeId">The ID of the edge to list history for</param>
+    /// <returns>An array of edge instances for the given edge</returns>
+    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetHistoryForEdge(long edgeId)
     {
         return await _context.HistoricalEdges
@@ -92,6 +113,16 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Find an edge at a given point in time
+    /// </summary>
+    /// <param name="edgeId">The ID of the edge to retrieve</param>
+    /// <param name="pointInTime">(Optional) Find the most current edge that existed before this point in time</param>
+    /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
+    /// <param name="current">(Optional) Find only the most current edge. Overrides point in time.</param>
+    /// <returns>An edge that matches the applied filters.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if edge not found</exception>
+    /// /// TODO: create an endpoint for this
     public async Task<HistoricalEdgeResponseDto> GetHistoricalEdge(
         long edgeId,
         DateTime? pointInTime,
@@ -143,6 +174,12 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         };
     }
 
+    /// <summary>
+    /// Create a historical edge based on an edge ID.
+    /// </summary>
+    /// <param name="edgeId">The newly created edge to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical edge instead </returns>
+    /// <exception cref="Exception">Returned if creation fails</exception>
     public async Task<bool> CreateHistoricalEdge(long edgeId)
     {
         // insert the appropriate data using insert into select
@@ -178,6 +215,12 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         return true;
     }
     
+    /// <summary>
+    /// Update a historical edge based on an edge ID.
+    /// </summary>
+    /// <param name="edgeId">The newly updated edge to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical edge instead </returns>
+    /// <exception cref="Exception">Returned if update fails</exception>
     public async Task<bool> UpdateHistoricalEdge(long edgeId)
     {
         // set all previous instances of "current" for this edge id to false
@@ -218,6 +261,12 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         return true;
     }
     
+    /// <summary>
+    /// Archive a historical edge based on an edge ID.
+    /// </summary>
+    /// <param name="edgeId">The newly archived edge to be recorded historically</param>
+    /// <returns>Boolean indicating success. TODO: maybe return historical edge instead </returns>
+    /// <exception cref="Exception">Returned if archive fails</exception>
     public async Task<bool> ArchiveHistoricalEdge(long edgeId)
     {
         // set all previous instances of "current" for this edge id to false
