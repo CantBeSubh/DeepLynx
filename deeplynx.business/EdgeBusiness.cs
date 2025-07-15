@@ -8,14 +8,19 @@ namespace deeplynx.business;
 public class EdgeBusiness : IEdgeBusiness
 {
     private readonly DeeplynxContext _context;
+    
+    // dependent used to trigger downstream actions
+    private readonly IHistoricalEdgeBusiness _historicalEdgeBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EdgeBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge operations.</param>
-    public EdgeBusiness(DeeplynxContext context)
+    /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
+    public EdgeBusiness(DeeplynxContext context, IHistoricalEdgeBusiness historicalEdgeBusiness)
     {
         _context = context;
+        _historicalEdgeBusiness = historicalEdgeBusiness;
     }
 
     /// <summary>
@@ -31,82 +36,32 @@ public class EdgeBusiness : IEdgeBusiness
         bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        if (dataSourceId.HasValue)
-        { 
-            DoesDataSourceExist(dataSourceId.Value,  hideArchived);
-        }
-       
-        // base query object to get all edges for the project
-        // use the historical edges table to forgo joins for name retrieval
-        var edgeQuery = _context.HistoricalEdges
-            .Where(e => e.Current && e.ProjectId == projectId);
-    
-        if (dataSourceId.HasValue)
-        {
-            edgeQuery = edgeQuery.Where(e => e.DataSourceId == dataSourceId);
-        }
-        
-        if (hideArchived)
-        {
-            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
-        }
-        
-        var edges = await edgeQuery.ToListAsync();
-
-        return edges.Select(e => new HistoricalEdgeResponseDto()
-            {
-                Id = e.EdgeId,
-                OriginId = e.OriginId,
-                DestinationId = e.DestinationId,
-                RelationshipId = e.RelationshipId,
-                RelationshipName = e.RelationshipName,
-                MappingId = e.MappingId,
-                DataSourceId = e.DataSourceId,
-                ProjectId = e.ProjectId,
-                CreatedAt = e.CreatedAt,
-                CreatedBy = e.CreatedBy,
-                ModifiedAt = e.ModifiedAt,
-                ModifiedBy = e.ModifiedBy,
-                ArchivedAt = e.ArchivedAt,
-            })
-            .ToList();
+        return await _historicalEdgeBusiness.GetAllHistoricalEdges(
+            projectId, dataSourceId, null, hideArchived, true);
     }
 
     /// <summary>
     /// Retrieves a specific edge by its origin and destination IDs
     /// OR Retrieves an edge by its id
     /// </summary>
+    /// <param name="projectId">The project of the edge to retrieve</param>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or is archived</exception>
-    public async Task<HistoricalEdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId, bool hideArchived)
+    public async Task<HistoricalEdgeResponseDto> GetEdge(
+        long projectId, 
+        long? edgeId, 
+        long? originId, 
+        long? destinationId, 
+        bool hideArchived)
     {
-        var edge = await FindEdge(edgeId, originId, destinationId, true);
-        
-        if (hideArchived && edge.ArchivedAt != null)
-        {
-            throw new KeyNotFoundException($"Edge with id {edgeId} is archived");
-        }
-
-        return new HistoricalEdgeResponseDto()
-        {
-            Id = edge.EdgeId,
-            OriginId = edge.OriginId,
-            DestinationId = edge.DestinationId,
-            RelationshipId = edge.RelationshipId,
-            RelationshipName = edge.RelationshipName,
-            DataSourceId = edge.DataSourceId,
-            MappingId = edge.MappingId,
-            ProjectId = edge.ProjectId,
-            CreatedAt = edge.CreatedAt,
-            CreatedBy = edge.CreatedBy,
-            ModifiedAt = edge.ModifiedAt,
-            ModifiedBy = edge.ModifiedBy,
-            ArchivedAt = edge.ArchivedAt,
-        };
+        DoesProjectExist(projectId, hideArchived);
+        Edge edge = await FindEdge(edgeId, originId, destinationId, true);
+        return await _historicalEdgeBusiness.GetHistoricalEdge(
+            edge.Id, null, hideArchived, true);
     }
 
     /// <summary>
@@ -137,6 +92,9 @@ public class EdgeBusiness : IEdgeBusiness
         
         _context.Edges.Add(edge);
         await _context.SaveChangesAsync();
+        
+        // add historical edge
+        await _historicalEdgeBusiness.CreateHistoricalEdge(edge.Id);
         
         return new EdgeResponseDto
         {
@@ -170,7 +128,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         DoesProjectExist(projectId);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
@@ -184,6 +142,9 @@ public class EdgeBusiness : IEdgeBusiness
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
+        
+        // update historical edge
+        await _historicalEdgeBusiness.UpdateHistoricalEdge(edge.Id);
         
         return new EdgeResponseDto
         {
@@ -216,7 +177,7 @@ public class EdgeBusiness : IEdgeBusiness
     {
         DoesProjectExist(projectId);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
 
@@ -241,13 +202,17 @@ public class EdgeBusiness : IEdgeBusiness
     {
         DoesProjectExist(projectId);
         // find edge and perform error handling if not found
-        var edge = await FindEdge(edgeId, originId, destinationId);
+        Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
             throw new KeyNotFoundException("Edge may have been moved, archived or deleted.");
 
         edge.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
+        
+        // update historical edge
+        await _historicalEdgeBusiness.ArchiveHistoricalEdge(edge.Id);
+        
         return edge.Id;
     }
     

@@ -19,7 +19,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         long? dataSourceId = null,
         DateTime? pointInTime = null,
         bool hideArchived = true,
-        bool current = false)
+        bool current = true)
     {
         var recordQuery = _context.HistoricalRecords
             .Where(r => r.ProjectId == projectId);
@@ -161,7 +161,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
     public async Task<bool> CreateHistoricalRecord(long recordId)
     {
-        // insert the appropriate data using insert into select
+        // insert the appropriate data using insert into select.
         // due to the complexity of the query, execute the query
         // using raw SQL instead of via entity framework
         var query = @"
