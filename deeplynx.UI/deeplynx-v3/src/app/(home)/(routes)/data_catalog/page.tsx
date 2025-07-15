@@ -1,16 +1,11 @@
 "use client";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
-import { fileTableData } from "@/app/(home)/dummy_data/data";
 import GenericTable from "@/app/(home)/components/GenericTable";
-import {
-  Column,
-  TableRow,
-  FileViewerTableRow,
-  ProjectsList,
-} from "@/app/(home)/types/types";
+import { fileTableData } from "@/app/(home)/dummy_data/data";
+import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
 
 const DataCatalog = () => {

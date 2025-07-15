@@ -37,3 +37,19 @@ export type ProjectsList = {
     lastViewed: string;
     createdAt: string;
   };
+  
+  export type PopularTable = {
+    id: number;
+    name: string;
+    image: string;
+    nickname: string;
+    visibility: string;
+  };
+  
+  export type MySearchsTable = {
+    id: number;
+    name: string;
+    filters: string[];
+    createdAt: string;
+    sortable?: boolean;
+  }
