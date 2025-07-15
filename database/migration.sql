@@ -1688,5 +1688,45 @@ BEGIN
     VALUES ('20250714142350_AdjustRecordsAndEdges', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250715142433_FixHistoricalFKs') THEN
+    UPDATE deeplynx.historical_records SET record_id = 0 WHERE record_id IS NULL;
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN record_id SET NOT NULL;
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN record_id SET DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250715142433_FixHistoricalFKs') THEN
+    UPDATE deeplynx.historical_edges SET edge_id = 0 WHERE edge_id IS NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN edge_id SET NOT NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN edge_id SET DEFAULT 0;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250715142433_FixHistoricalFKs') THEN
+    ALTER TABLE deeplynx.historical_edges ADD CONSTRAINT historical_edges_edge_id_fkey FOREIGN KEY (edge_id) REFERENCES deeplynx.edges (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250715142433_FixHistoricalFKs') THEN
+    ALTER TABLE deeplynx.historical_records ADD CONSTRAINT historical_records_record_id_fkey FOREIGN KEY (record_id) REFERENCES deeplynx.records (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250715142433_FixHistoricalFKs') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250715142433_FixHistoricalFKs', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

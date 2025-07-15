@@ -23,7 +23,7 @@ public partial class HistoricalEdge
     public long Id { get; set; }
     
     [Column("edge_id")]
-    public long? EdgeId { get; set; }
+    public long EdgeId { get; set; }
     
     [Column("origin_id")]
     public long OriginId { get; set; }
@@ -69,5 +69,5 @@ public partial class HistoricalEdge
     
     [ForeignKey("EdgeId")]
     [InverseProperty("HistoricalEdges")]
-    public virtual Edge? Edge { get; set; }
+    public virtual Edge Edge { get; set; } = null!;
 }

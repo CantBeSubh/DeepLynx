@@ -20,7 +20,7 @@ public partial class HistoricalRecord
     public long Id { get; set; }
     
     [Column("record_id")]
-    public long? RecordId { get; set; }
+    public long RecordId { get; set; }
 
     [Column("uri")]
     public string? Uri { get; set; }
@@ -81,5 +81,5 @@ public partial class HistoricalRecord
     
     [ForeignKey("RecordId")]
     [InverseProperty("HistoricalRecords")]
-    public virtual Record? Record { get; set; }
+    public virtual Record Record { get; set; } = null!;
 }

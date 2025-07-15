@@ -108,7 +108,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
-                .HasForeignKey(d => d.EdgeId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasForeignKey(d => d.EdgeId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("historical_edges_edge_id_fkey");
         });
 
@@ -121,7 +121,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             
             entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
-                .HasForeignKey(d => d.RecordId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasForeignKey(d => d.RecordId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("historical_records_record_id_fkey");
         });
 
