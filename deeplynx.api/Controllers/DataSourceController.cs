@@ -24,12 +24,12 @@ namespace deeplynx.api.Controllers
         /// Get all data sources
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources")]
         public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
             long projectId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -49,13 +49,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
             long projectId,
             long dataSourceId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
