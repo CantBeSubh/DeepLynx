@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { fileTableData } from "@/app/(home)/dummy_data/data";
-import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
+import ListView from "./ListView";
 
 const DataCatalog = () => {
   const router = useRouter();
@@ -49,32 +50,6 @@ const DataCatalog = () => {
     }
   }, [activeFilters]);
 
-  const getHighlightedCell = (text: unknown, queries: string[]) => {
-    const safeText = String(text); // ⛑ force conversion to string
-
-    if (!queries.length) return { content: safeText, matched: false };
-
-    const lowerText = safeText.toLowerCase();
-    const match = queries.find((q) => lowerText.includes(q.toLowerCase()));
-
-    if (!match) return { content: safeText, matched: false };
-
-    const regex = new RegExp(`(${match})`, "gi");
-    const parts = safeText.split(regex);
-
-    const content = parts.map((part, index) =>
-      regex.test(part) ? (
-        <span key={index} className="font-bold text-info-content rounded px-1">
-          {part}
-        </span>
-      ) : (
-        part
-      )
-    );
-
-    return { content, matched: true };
-  };
-
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
     if (
@@ -104,103 +79,6 @@ const DataCatalog = () => {
 
   const activeSearchTerms = activeFilters.map((f) => f.term.toLowerCase());
 
-  // Define columns for the GenericTable
-  const columns: Column<FileViewerTableRow>[] = [
-    {
-      data: "fileName",
-      cell: (row: FileViewerTableRow) => {
-        const fileName = getHighlightedCell(row.fileName, activeSearchTerms);
-        const fileDescription = getHighlightedCell(
-          row.fileDescription,
-          activeSearchTerms
-        );
-        const cellBg =
-          fileName.matched || fileDescription.matched ? "bg-info/40" : "";
-        return (
-          <div className={`p-2 rounded ${cellBg}`}>
-            <div className="font-bold">{fileName.content}</div>
-            <div className="text-sm text-base-300">
-              {fileDescription.content}
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      sortable: false,
-      cell: (row: FileViewerTableRow) => {
-        const cellData = getHighlightedCell(row.fileType, activeSearchTerms);
-        return (
-          <div>
-            <div
-              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
-            >
-              <div>{cellData.content}</div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      sortable: false,
-      cell: (row: FileViewerTableRow) => {
-        const cellData = getHighlightedCell(row.tags, activeSearchTerms);
-        return (
-          <div>
-            <div
-              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
-            >
-              <div>{cellData.content}</div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      sortable: false,
-      cell: (row: FileViewerTableRow) => {
-        const cellData = getHighlightedCell(row.timeseries, activeSearchTerms);
-        return (
-          <div>
-            <div
-              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
-            >
-              <div>{cellData.content}</div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      sortable: false,
-      cell: (row: FileViewerTableRow) => {
-        const cellData = getHighlightedCell(row.lastEdit, activeSearchTerms);
-        return (
-          <div>
-            <div
-              className={`p-2 rounded ${cellData.matched ? "bg-info/40" : ""}`}
-            >
-              <div>{cellData.content}</div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      sortable: false,
-      cell: (row: FileViewerTableRow) => (
-        <div className="flex justify-end mr-10">
-          <button
-            className="btn btn-primary-content btn-outline"
-            onClick={() => router.push(`/file_details/${row.id}`)}
-          >
-            Explore
-          </button>
-        </div>
-      ),
-    },
-  ];
-
   // If the component has not mounted yet, return null to avoid rendering
   if (!hasMounted) {
     return null;
@@ -211,68 +89,23 @@ const DataCatalog = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-secondary-content">
-            {hasMounted ? `Project Name: ${projectName}` : "Loading..."}
+            Data Catalog
           </h1>
         </div>
       </div>
       <div className="divider"></div>
-      <div className="flex justify-center">
-        {/* Search bar for filtering files */}
-        <LargeSearchBar
-          onEnter={handleSearch} // Call handleSearch on Enter key
-          placeholder="Search table ..."
-          value={searchTerm} // Controlled input for search term
-          onChange={(e) => setSearchTerm(e.target.value)} // Update search term on input change
-        />
-      </div>
-      {/* Display active filters */}
-      {activeFilters.length > 0 && (
-        <div className="max-w-3xl mx-auto mb-6 mt-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {activeFilters.map((filter) => (
-              <div
-                key={filter.id}
-                className="bg-base-200 rounded-full px-3 py-1 flex items-center gap-2 text-sm"
-              >
-                <span>Filtered by: {filter.term}</span>
-                <button
-                  onClick={() => removeFilter(filter.id)} // Remove filter on button click
-                  className="hover:text-error"
-                >
-                  x
-                </button>
-              </div>
-            ))}
-            {/* Button to clear all active filters if more than one is applied */}
-            {activeFilters.length > 1 && (
-              <button
-                onClick={clearAllFilters}
-                className="text-sm hover:underline ml-2"
-              >
-                Clear all
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      {/* Show message if no results found based on active filters */}
-      {activeFilters.length > 0 && tableData.length === 0 && (
-        <div>
-          <p>No results found.</p>
-        </div>
-      )}
-      {/* Show number of matches found based on active filters */}
-      {activeFilters.length >= 1 && (
-        <div className="border-b border-base-200">
-          <h2>Found {tableData.length} matches</h2>
-        </div>
-      )}
-      {/* Render the GenericTable with filtered data */}
-      <GenericTable
-        columns={columns}
-        data={tableData}
-        rowClassName="border-separate border-spacing-y-2"
+      <LargeSearchBar
+        placeholder="Seach records ..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        onEnter={handleSearch}
+        activeFilters={activeFilters}
+        onRemoveFilter={removeFilter}
+        onClearAll={clearAllFilters}
+        resultCount={tableData.length}
+        showResultsMessage={activeFilters.length > 0}
       />
+      <ListView records={tableData} activeSearchTerms={activeSearchTerms} />
     </div>
   );
 };

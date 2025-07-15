@@ -19,6 +19,7 @@ export type FileViewerTableRow = {
     select?: boolean;
     tags: string[];
     lastEdit: string;
+    associatedRecords?: string[];
   };
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;
