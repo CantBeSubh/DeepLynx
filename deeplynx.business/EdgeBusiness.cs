@@ -169,6 +169,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
+    /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<long> DeleteEdge(
         long projectId, 
         long? edgeId,

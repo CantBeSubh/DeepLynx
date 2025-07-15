@@ -176,6 +176,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The record in question</param>
     /// <returns>Boolean indicating record was deleted</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
+    /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
         DoesProjectExist(projectId);
