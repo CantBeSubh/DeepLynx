@@ -113,7 +113,7 @@ namespace deeplynx.tests
             await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
             await _classBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
 
-            var list = await _classBusiness.GetAllClasses(pid);
+            var list = await _classBusiness.GetAllClasses(pid,true);
             Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
         }
 
@@ -140,7 +140,7 @@ namespace deeplynx.tests
             Context.Classes.Add(archivedClass);
             await Context.SaveChangesAsync();
 
-            var list = await _classBusiness.GetAllClasses(pid);
+            var list = await _classBusiness.GetAllClasses(pid,true);
             Assert.DoesNotContain(list, c => c.Id == archivedClass.Id);
         }
 
@@ -158,7 +158,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var result = await _classBusiness.GetClass(pid, testClass.Id);
+            var result = await _classBusiness.GetClass(pid, testClass.Id,true);
             Assert.Equal(testClass.Id, result.Id);
         }
 
@@ -175,7 +175,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var result = () => _classBusiness.GetClass(pid + 999, testClass.Id);
+            var result = () => _classBusiness.GetClass(pid + 999, testClass.Id,true);
             await result.Should().ThrowAsync<KeyNotFoundException>();
         }
 
@@ -193,7 +193,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var result = () => _classBusiness.GetClass(pid, testClass.Id);
+            var result = () => _classBusiness.GetClass(pid, testClass.Id,true);
             await result.Should().ThrowAsync<KeyNotFoundException>();
         }
 
