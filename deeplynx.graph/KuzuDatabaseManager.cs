@@ -224,12 +224,24 @@ namespace deeplynx.graph
                     string createNodeTableQuery = $@"
                         CREATE NODE TABLE {CapitalizeFirstLetter(className)} (
                             id INT64,
+                            uri STRING,
+                            record_id INT64,
                             properties STRING,
                             data_source_id INT64,
                             original_id STRING,
+                            class_id INT64,
                             name STRING,
+                            mapping_id INT64,
                             class_name STRING,
                             project_id INT64,
+                            project_name INT64,
+                            data_source_name INT64,
+                            tags STRING,
+                            created_by STRING,
+                            created_at TIMESTAMP,
+                            modified_by STRING,
+                            modified_at TIMESTAMP,
+                            archived_at TIMESTAMP,
                             PRIMARY KEY (id)
                         );";
 
@@ -250,11 +262,34 @@ namespace deeplynx.graph
                             {fromToClause},
                             relationship_name STRING
                         );";
-
+                    Console.WriteLine("1: " + createRelTableQuery);
                     await PerformNonQueryAsync(createRelTableQuery);
                 }
 
-                await PerformNonQueryAsync("CREATE NODE TABLE Entity (id INT64, properties STRING, data_source_id INT64, original_id STRING, name STRING, class_name STRING, project_id INT64, PRIMARY KEY (id));");
+                await PerformNonQueryAsync(@"
+                    CREATE NODE TABLE Entity (
+                        id INT64,
+                        uri STRING,
+                        record_id INT64,
+                        properties STRING,
+                        data_source_id INT64,
+                        original_id STRING,
+                        class_id INT64,
+                        name STRING,
+                        mapping_id INT64,
+                        class_name STRING,
+                        project_id INT64,
+                        project_name INT64,
+                        data_source_name INT64,
+                        tags STRING,
+                        created_by STRING,
+                        created_at TIMESTAMP,
+                        modified_by STRING,
+                        modified_at TIMESTAMP,
+                        archived_at TIMESTAMP,
+                        PRIMARY KEY (id)
+                    );"
+                );
                 await CreateRelatesToTableAsync();
 
                 Console.WriteLine("Tables setup in KuzuDB.");
@@ -308,6 +343,8 @@ namespace deeplynx.graph
         /// <returns>The modified string with the first letter capitalized and the rest in lowercase. If the input is null or empty, it returns the input as is.</returns>
         private string CapitalizeFirstLetter(string input)
         {
+            input = input.Replace(" ", "_");
+
             if (string.IsNullOrEmpty(input))
                 return input;
 
@@ -457,7 +494,31 @@ namespace deeplynx.graph
 
             try
             {
-                await PerformNonQueryAsync($"COPY Entity FROM (LOAD FROM historical_records WHERE class_name IS NULL AND project_id = {project_id} RETURN id, properties, data_source_id, original_id, name, class_name, project_id);");
+                await PerformNonQueryAsync($@"
+                    COPY Entity FROM (LOAD FROM historical_records
+                        WHERE class_name IS NULL AND project_id = {project_id}
+                        RETURN
+                            id,
+                            uri,
+                            record_id,
+                            properties,
+                            data_source_id,
+                            original_id,
+                            class_id,
+                            name,
+                            mapping_id,
+                            class_name,
+                            project_id,
+                            project_name,
+                            data_source_name,
+                            tags,
+                            created_by,
+                            created_at,
+                            modified_by,
+                            modified_at,
+                            archived_at
+                    );"
+                );
                 var classNames = await GetUniqueClassNamesAsync();
 
                 foreach (var className in classNames)
@@ -466,7 +527,26 @@ namespace deeplynx.graph
                         COPY {CapitalizeFirstLetter(className)} FROM (
                             LOAD FROM historical_records
                             WHERE class_name = '{className}' AND project_id = {project_id}
-                            RETURN id, properties, data_source_id, original_id, name, class_name, project_id
+                            RETURN
+                                id,
+                                uri,
+                                record_id,
+                                properties,
+                                data_source_id,
+                                original_id,
+                                class_id,
+                                name,
+                                mapping_id,
+                                class_name,
+                                project_id,
+                                project_name,
+                                data_source_name,
+                                tags,
+                                created_by,
+                                created_at,
+                                modified_by,
+                                modified_at,
+                                archived_at
                         );";
 
                     await PerformNonQueryAsync(copyCommand);
@@ -503,10 +583,9 @@ namespace deeplynx.graph
                     string copyCommand = $@"
                             COPY {relationship.RelationshipName.ToUpper()} FROM (
                                 LOAD FROM edges_c
-                                WHERE relationship_name = '{relationship.RelationshipName}' AND project_id = {project_id} AND orig_class = '{relationship.OrigClass.ToLower()}' AND dest_class = '{relationship.DestClass.ToLower()}'
+                                WHERE relationship_name =~ '(?i){relationship.RelationshipName}' AND project_id = {project_id} AND orig_class =~ '(?i){relationship.OrigClass}' AND dest_class =~ '(?i){relationship.DestClass}'
                                 RETURN origin_id AS FROM, destination_id AS TO, '{relationship.RelationshipName}' AS relationship_name
                             ) (from='{CapitalizeFirstLetter(relationship.OrigClass)}', to='{CapitalizeFirstLetter(relationship.DestClass)}');";
-
                     await PerformNonQueryAsync(copyCommand);
                 }
 
@@ -831,11 +910,6 @@ namespace deeplynx.graph
                                 kuzu_value propertyValue = new kuzu_value();
                                 kuzu_node_val_get_property_value_at(value, i, propertyValue);
 
-                                if (await Task.Run(() => kuzu_value_is_null(propertyValue)))
-                                {
-                                    continue;
-                                }
-
                                 kuzu_node_val_get_property_name_at(value, i, out string propertyName);
                                 kuzu_logical_type propertyDataType = new kuzu_logical_type();
                                 kuzu_value_get_data_type(propertyValue, propertyDataType);
@@ -982,8 +1056,15 @@ namespace deeplynx.graph
                         return await Task.Run(() =>
                         {
                             kuzu_timestamp_t result = new kuzu_timestamp_t();
+                            tm timestamp = new tm();
+                            kuzu_date_t date = new kuzu_date_t();
+                            kuzu_timestamp_sec_t seconds = new kuzu_timestamp_sec_t();
+
                             kuzu_value_get_timestamp(value, result);
-                            return result?.ToString() ?? "NULL";
+                            kuzu_timestamp_to_tm(result, timestamp);
+                            kuzu_timestamp_sec_from_tm(timestamp, seconds);
+
+                            return seconds?.ToDate() ?? "NULL";
                         });
 
                     case kuzu_data_type_id.KUZU_BLOB:
