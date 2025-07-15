@@ -19,6 +19,7 @@ namespace deeplynx.tests
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         public long pid;
+        public long did;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -315,8 +316,8 @@ namespace deeplynx.tests
         public async Task ForceDeleteClass_RemovesFromDatabase()
         {
             var testClass = new Class
-                {
-                    Name = $"Class to Force Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            {
+                Name = $"Class to Force Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null,
@@ -392,83 +393,63 @@ namespace deeplynx.tests
             Assert.Null(deletedRelationship1);
             Assert.Null(deletedRelationship2);
         }
- [Fact]
-    public async Task DeleteClass_DeletesDownstreamRecords()
-{
-    var dataSource = new DataSource
-    {
-        Name = "Test DataSource",
-        ProjectId = pid,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        CreatedBy = null
-    };
-    Context.DataSources.Add(dataSource);
-    await Context.SaveChangesAsync();
+        [Fact]
+        public async Task DeleteClass_DeletesDownstreamRecords()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Records {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            var record1 = new Record
+            {
+                Name = "Test Record 1",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                Properties = "{\"test\": \"value1\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
 
-    var testClass = new Class
-    {
-        Name = $"Class with Records {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-        ProjectId = pid,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        CreatedBy = null,
-    };
-    Context.Classes.Add(testClass);
-    await Context.SaveChangesAsync();
-    var record1 = new Record
-    {
-        Name = "Test Record 1",
-        ClassId = testClass.Id,
-        DataSourceId = dataSource.Id,
-        ProjectId = pid,
-        Properties = "{\"test\": \"value1\"}",
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        CreatedBy = null
-    };
+            var record2 = new Record
+            {
+                Name = "Test Record 2",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                Properties = "{\"test\": \"value2\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
 
-    var record2 = new Record
-    {
-        Name = "Test Record 2",
-        ClassId = testClass.Id,
-        DataSourceId = dataSource.Id,
-        ProjectId = pid,
-        Properties = "{\"test\": \"value2\"}",
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        CreatedBy = null
-    };
-
-    Context.Records.AddRange(record1, record2);
-    await Context.SaveChangesAsync();
-    var existingRecords = Context.Records
-        .Where(r => r.ClassId == testClass.Id)
-        .ToList();
-    Assert.Equal(2, existingRecords.Count);
+            Context.Records.AddRange(record1, record2);
+            await Context.SaveChangesAsync();
+            var existingRecords = Context.Records
+                .Where(r => r.ClassId == testClass.Id)
+                .ToList();
+            Assert.Equal(2, existingRecords.Count);
     
-    var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-    Assert.True(deletedResult);
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
 
-    // Verify downstream records are also deleted (cascade delete)
-    var remainingRecords = Context.Records
-        .Where(r => r.ClassId == testClass.Id)
-        .ToList();
-    Assert.Empty(remainingRecords);
-}
+            // Verify downstream records are also deleted (cascade delete)
+            var remainingRecords = Context.Records
+                .Where(r => r.ClassId == testClass.Id)
+                .ToList();
+            Assert.Empty(remainingRecords);
+        }
 
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRecordMappings()
         {
-            var dataSource = new DataSource
-            {
-                Name = "Test DataSource",
-                ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
-            };
-            Context.DataSources.Add(dataSource);
-            await Context.SaveChangesAsync();
-
             var testClass = new Class
-                {
-                    Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            {
+                Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null,
@@ -477,20 +458,20 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             var mapping1 = new RecordMapping
-                {
-                    RecordParams = "{\"param1\": \"value1\"}",
+            {
+                RecordParams = "{\"param1\": \"value1\"}",
                 ClassId = testClass.Id,
-                DataSourceId = dataSource.Id,
+                DataSourceId = did,
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
             };
 
             var mapping2 = new RecordMapping
-                {
-                    RecordParams = "{\"param2\": \"value2\"}",
+            {
+                RecordParams = "{\"param2\": \"value2\"}",
                 ClassId = testClass.Id,
-                DataSourceId = dataSource.Id,
+                DataSourceId = did,
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
@@ -518,6 +499,16 @@ namespace deeplynx.tests
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
+            var dataSource = new DataSource()
+            {
+                Name = "Test Datasource",
+                ProjectId = project.Id,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            Context.DataSources.Add(dataSource);
+            await Context.SaveChangesAsync();
+            did = dataSource.Id;
         }
     }
 }
