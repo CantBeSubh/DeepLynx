@@ -66,7 +66,17 @@ public class kuzu_timestamp_sec_t : global::System.IDisposable {
     } 
   }
 
-  public kuzu_timestamp_sec_t() : this(kuzunetPINVOKE.new_kuzu_timestamp_sec_t(), true) {
+  public string ToDate()
+  {
+    DateTime epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    DateTime dateTime = epoch.AddSeconds((double)value);
+
+    return dateTime.ToString("yyyy-MM-dd HH:mm:ss");
+
+  }
+
+  public kuzu_timestamp_sec_t() : this(kuzunetPINVOKE.new_kuzu_timestamp_sec_t(), true)
+  {
   }
 
 }
