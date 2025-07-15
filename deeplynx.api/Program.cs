@@ -85,6 +85,8 @@ builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
+builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
+builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
 
 var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 builder.Services.AddOpenApi(options =>
