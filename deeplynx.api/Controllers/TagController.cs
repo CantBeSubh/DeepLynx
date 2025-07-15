@@ -58,7 +58,7 @@ public class TagController : ControllerBase
         }
         catch (Exception exception)
         {
-            var message = $"An unexpected error occurred while creating this class.: {exception}";
+            var message = $"An unexpected error occurred while creating these tags: {exception}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
