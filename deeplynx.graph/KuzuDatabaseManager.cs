@@ -142,6 +142,7 @@ namespace deeplynx.graph
                 if (!hasError)
                 {
                     await CreateProjectIdNodeAsync(project_id);
+                    await UpdateDefaultNamesAsync();
                 }
 
                 if (!hasError)
@@ -262,7 +263,7 @@ namespace deeplynx.graph
                             {fromToClause},
                             relationship_name STRING
                         );";
-                    Console.WriteLine("1: " + createRelTableQuery);
+
                     await PerformNonQueryAsync(createRelTableQuery);
                 }
 
@@ -396,7 +397,7 @@ namespace deeplynx.graph
         {
             try
             {
-                string query = "MATCH (r:RelTableNames) WHERE r.relationship_name IS NOT NULL RETURN DISTINCT r.relationship_name AS relationship_name, r.orig_class AS orig_class, r.dest_class AS dest_class;";
+                string query = "MATCH (r:RelTableNames) WHERE r.relationship_name IS NOT NULL AND r.orig_class IS NOT NULL AND r.dest_class IS NOT NULL RETURN DISTINCT r.relationship_name AS relationship_name, r.orig_class AS orig_class, r.dest_class AS dest_class;";
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
                 string result = await ExecuteQueryAsync(requestDto);
 
@@ -598,6 +599,28 @@ namespace deeplynx.graph
             }
 
             return hasError;
+        }
+
+
+        /// <summary>
+        /// Updates default names in the RELATES_TO table and Entity table.
+        /// Sets relationship_name to 'relates_to' where it is NULL and class_name to 'entity' where it is NULL.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private async Task UpdateDefaultNamesAsync()
+        {
+            try
+            {
+                await PerformNonQueryAsync("MATCH ()-[r:RELATES_TO]-() WHERE r.relationship_name IS NULL SET r.relationship_name = 'relates_to';");
+
+                await PerformNonQueryAsync("MATCH (e:Entity) WHERE e.class_name IS NULL SET e.class_name = 'entity';");
+
+                Console.WriteLine("Default names updated successfully.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while updating default names: {e.Message}");
+            }
         }
 
 
