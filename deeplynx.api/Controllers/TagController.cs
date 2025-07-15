@@ -41,6 +41,28 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+    
+    /// <summary>
+    /// Creates many tags
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <returns>The created tag with its details.</returns>
+    [HttpPost("BulkCreateTag")]
+    public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(long projectId, [FromBody] BulkTagRequestDto tagRequestDto)
+    {
+        try
+        {
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tagRequestDto);
+            return Ok(bulkTagResponseDto);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An unexpected error occurred while creating this class.: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
     /// Update a tag

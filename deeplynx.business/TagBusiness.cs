@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
@@ -67,6 +68,43 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             CreatedBy = tag.CreatedBy,
             CreatedAt = tag.CreatedAt
+        };
+    }
+
+    public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
+    {
+        var tags = new List<Tag>();
+        var tagResponses = new List<TagResponseDto>();
+        foreach (var tagRequestDto in bulkTagRequestDto.Tags)
+        {
+            var tag = new Tag
+            {
+                Name = tagRequestDto.Name,
+                ProjectId = projectId,
+                CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            tags.Add(tag);
+        }
+        await _context.Tags.AddRangeAsync(tags);
+        await _context.SaveChangesAsync();
+
+        foreach (var tag in tags)
+        {
+            var tagResponseDto = new TagResponseDto
+            {
+                Id = tag.Id,
+                Name = tag.Name,
+                ProjectId = tag.ProjectId,
+                CreatedBy = tag.CreatedBy,
+                CreatedAt = tag.CreatedAt
+            };
+            tagResponses.Add(tagResponseDto);
+        }
+        
+        return new BulkTagResponseDto
+        {
+            Tags = tagResponses
         };
     }
 
