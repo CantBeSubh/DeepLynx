@@ -26,12 +26,12 @@ namespace deeplynx.api.Controllers
         /// Get all classes
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
         public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
             long projectId, 
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -51,13 +51,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="classId">The ID of the class to retrieve</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
         public async Task<ActionResult<ClassResponseDto>> GetClass(
             long projectId, 
             long classId, 
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {

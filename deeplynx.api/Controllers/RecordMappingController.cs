@@ -25,14 +25,14 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
         /// <param name="classId">(Optional) The ID of the class by which to filter mappings</param>
         /// <param name="tagId">(Optional) The ID of the tag by which to filter mappings</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>A list of record mappings based on the applied filters.</returns>
         [HttpGet("GetAllRecordMappings")]
         public async Task<ActionResult<IEnumerable<RecordMappingResponseDto>>> GetAllRecordMappings(
             long projectId, 
             [FromQuery] long? classId = null,
             [FromQuery] long? tagId = null,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -53,13 +53,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <param name="mappingId">The ID whereby to fetch the record mapping</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>The record mapping associated with the given ID</returns>
         [HttpGet("GetRecordMapping/{mappingId}")]
         public async Task<ActionResult<RecordMappingResponseDto>> GetRecordMapping(
             long projectId, 
             long mappingId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {

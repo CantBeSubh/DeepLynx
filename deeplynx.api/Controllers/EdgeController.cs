@@ -26,13 +26,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
         /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdges")]
         public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(
             long projectId,
             [FromQuery] long? dataSourceId = null,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -53,14 +53,14 @@ namespace deeplynx.api.Controllers
         /// <param name="edgeId">The id whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge")]
         public async Task<ActionResult<EdgeResponseDto>> GetEdge(
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
