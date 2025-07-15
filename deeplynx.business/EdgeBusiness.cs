@@ -27,24 +27,35 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
     public async Task<IEnumerable<EdgeResponseDto>> GetAllEdges(
         long projectId, 
-        long? dataSourceId)
+        long? dataSourceId,
+        bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
+        if (dataSourceId.HasValue)
+        { 
+            DoesDataSourceExist(dataSourceId.Value,  hideArchived);
+        }
+       
         // base query object to get all edges for the project
         var edgeQuery = _context.Edges
-            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
+            .Where(e => e.ProjectId == projectId);
     
-        // add filter for datasource if specified
         if (dataSourceId.HasValue)
         {
             edgeQuery = edgeQuery.Where(e => e.DataSourceId == dataSourceId);
         }
         
+        if (hideArchived)
+        {
+            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
+        }
+        
         var edges = await edgeQuery.ToListAsync();
 
-        // execute query and return results
         return edges.Select(e => new EdgeResponseDto()
             {
                 Id = e.Id,
@@ -69,11 +80,17 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="edgeId">The id whereby to fetch the edge</param>
     /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
-    /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
-    public async Task<EdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId)
+    /// <exception cref="KeyNotFoundException">Returned if edge not found or is archived</exception>
+    public async Task<EdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId, bool hideArchived)
     {
         var edge = await FindEdge(edgeId, originId, destinationId);
+        
+        if (hideArchived && edge.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Edge with id {edgeId} is archived");
+        }
 
         return new EdgeResponseDto
         {
@@ -103,6 +120,9 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         EdgeRequestDto dto)
     {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
+        
         var edge = new Edge
         {
             OriginId = dto.OriginId,
@@ -147,6 +167,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
@@ -192,6 +213,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -216,6 +238,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
+        DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         var edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -273,5 +296,37 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return edge;  
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
+    {
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+                : _context.DataSources.Any(p => p.Id == datasourceId);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
     }
 }

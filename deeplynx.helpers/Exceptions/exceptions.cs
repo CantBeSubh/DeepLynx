@@ -9,3 +9,8 @@ public class NoResultsException : Exception
 {
     public NoResultsException(string message) : base(message) { }
 }
+
+public class InvalidRequestException : Exception
+{
+    public InvalidRequestException(string message) : base(message) { }
+}

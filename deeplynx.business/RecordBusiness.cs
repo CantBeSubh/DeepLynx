@@ -32,15 +32,25 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(long projectId, long? dataSourceId = null)
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
+        long projectId,
+        long? dataSourceId,
+        bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null);
+            .Where(r => r.ProjectId == projectId);
 
         if (dataSourceId.HasValue)
         {
             recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
+        }
+        
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
         }
         
         return await recordQuery
@@ -68,17 +78,24 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="projectId">The project of the record to retrieve</param>
     /// <param name="recordId">The ID of the record to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record in question</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId)
+    /// <exception cref="KeyNotFoundException">Returned if record not found or is archived</exception>
+    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId, bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId && r.ArchivedAt == null)
+            .Where(r => r.Id == recordId && r.ProjectId == projectId)
             .FirstOrDefaultAsync();
         
         if (record == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+        
+        if (hideArchived && record.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} is archived");
         }
 
         return new RecordResponseDto
@@ -110,15 +127,8 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
     {
-        var project = await _context.Projects
-            .FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        
-        var ds = await _context.DataSources
-            .FirstOrDefaultAsync(d => d.Id == dataSourceId && d.ArchivedAt == null);
-        if (ds == null)
-            throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
+       DoesProjectExist(projectId);
+       DoesDataSourceExist(dataSourceId);
         
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
@@ -169,6 +179,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
         {
@@ -221,6 +232,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
+        DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
@@ -241,6 +253,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
     {
+        DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
@@ -306,5 +319,37 @@ public class RecordBusiness : IRecordBusiness
         }
 
         return maxDepth + 1;
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
+    {
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+                : _context.DataSources.Any(p => p.Id == datasourceId);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
     }
 }

@@ -5,8 +5,8 @@ namespace deeplynx.interfaces;
 
 public interface IProjectBusiness
 {
-    Task<IEnumerable<ProjectResponseDto>> GetAllProjects();
-    Task<ProjectResponseDto> GetProject(long projectId);
+    Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool hideArchived);
+    Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived);
     Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto);
     Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto);
     Task<bool> DeleteProject(long projectId);
