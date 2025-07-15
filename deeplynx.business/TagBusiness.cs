@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,11 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
         DoesProjectExist(projectId);
+        var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
+        if (existingTag != null)
+        {
+            throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
+        }
         if (tagRequestDto == null)
             throw new ArgumentNullException(nameof(tagRequestDto));
         
@@ -71,12 +77,29 @@ public class TagBusiness : ITagBusiness
         };
     }
 
+    /// <summary>
+    /// Asynchronously creates new tags for a specified project.
+    /// Note: Will error out with foreign key constraint violation if project is not found.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
     {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(bulkTagRequestDto);
+        
         var tags = new List<Tag>();
         var tagResponses = new List<TagResponseDto>();
         foreach (var tagRequestDto in bulkTagRequestDto.Tags)
         {
+            ValidationHelper.ValidateModel(tagRequestDto);
+            var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
+            if (existingTag != null)
+            {
+                throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
+            }
+            
             var tag = new Tag
             {
                 Name = tagRequestDto.Name,
