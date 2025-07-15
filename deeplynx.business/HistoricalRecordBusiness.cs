@@ -22,7 +22,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         bool current = false)
     {
         var recordQuery = _context.HistoricalRecords
-            .Where(r => r.ProjectId == projectId);
+            .Where(r => r.ProjectId == projectId & r.DeletedAt == null);
 
         if (dataSourceId.HasValue)
         {
@@ -128,7 +128,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null & r.DeletedAt == null);
         }
 
         var record = await recordQuery.FirstOrDefaultAsync();
@@ -168,7 +168,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // due to the complexity of the query, execute the query
         // using raw SQL instead of via entity framework
         var query = @"
-            INSERT INTO historical_records (
+            INSERT INTO deeplynx.historical_records (
                 record_id, uri, name, properties, original_id, 
                 class_id, mapping_id, data_source_id, project_id, 
                 created_by, created_at, 
@@ -177,12 +177,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at,
                    r.created_at AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
-            FROM records r
-            JOIN record_tags rt ON r.id = rt.record_id
-            JOIN tags t ON t.id = rt.tag_id
-            JOIN classes c ON c.id = r.class_id
-            JOIN data_sources d ON d.id = r.data_source_id
-            JOIN projects p ON p.id = r.project_id
+            FROM deeplynx.records r
+            LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+            LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+            LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+            JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+            JOIN deeplynx.projects p ON p.id = r.project_id
             WHERE r.id = @RecordId
             GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, 
                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
@@ -213,7 +213,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // due to the complexity of the query, execute the query
         // using raw SQL instead of via entity framework
         var query = @"
-            INSERT INTO historical_records (
+            INSERT INTO deeplynx.historical_records (
                 record_id, uri, name, properties, original_id, 
                 class_id, mapping_id, data_source_id, project_id, 
                 created_by, created_at, modified_by, modified_at, current,
@@ -222,12 +222,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at, r.modified_by, r.modified_at, TRUE,
                    r.modified_at AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
-            FROM records r
-            JOIN record_tags rt ON r.id = rt.record_id
-            JOIN tags t ON t.id = rt.tag_id
-            JOIN classes c ON c.id = r.class_id
-            JOIN data_sources d ON d.id = r.data_source_id
-            JOIN projects p ON p.id = r.project_id
+            FROM deeplynx.records r
+            LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+            LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+            LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+            JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+            JOIN deeplynx.projects p ON p.id = r.project_id
             WHERE r.id = @RecordId
             GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, 
                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
@@ -259,7 +259,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // due to the complexity of the query, execute the query
         // using raw SQL instead of via entity framework
         var query = @"
-            INSERT INTO historical_records (
+            INSERT INTO deeplynx.historical_records (
                 record_id, uri, name, properties, original_id, 
                 class_id, mapping_id, data_source_id, project_id, 
                 created_by, created_at, modified_by, modified_at, archived_at, current,
@@ -268,12 +268,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at, r.modified_by, r.modified_at, r.archived_at, TRUE,
                    r.archived_at AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
-            FROM records r
-            JOIN record_tags rt ON r.id = rt.record_id
-            JOIN tags t ON t.id = rt.tag_id
-            JOIN classes c ON c.id = r.class_id
-            JOIN data_sources d ON d.id = r.data_source_id
-            JOIN projects p ON p.id = r.project_id
+            FROM deeplynx.records r
+            LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+            LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+            LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+            JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+            JOIN deeplynx.projects p ON p.id = r.project_id
             WHERE r.id = @RecordId
             GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, 
                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
@@ -305,7 +305,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // due to the complexity of the query, execute the query
         // using raw SQL instead of via entity framework
         var query = @"
-            INSERT INTO historical_records (
+            INSERT INTO deeplynx.historical_records (
                 record_id, uri, name, properties, original_id, 
                 class_id, mapping_id, data_source_id, project_id, 
                 created_by, created_at, modified_by, modified_at, 
@@ -314,24 +314,25 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             SELECT r.id, r.uri, r.name, r.properties, r.original_id, 
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at, r.modified_by, r.modified_at, 
-                   r.archived_at, r.deleted_at, TRUE,
-                   r.archived_at AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
-            FROM records r
-            JOIN record_tags rt ON r.id = rt.record_id
-            JOIN tags t ON t.id = rt.tag_id
-            JOIN classes c ON c.id = r.class_id
-            JOIN data_sources d ON d.id = r.data_source_id
-            JOIN projects p ON p.id = r.project_id
+                   r.archived_at, @DeletedAt, TRUE,
+                   @DeletedAt AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
+            FROM deeplynx.records r
+            LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+            LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+            LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+            JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+            JOIN deeplynx.projects p ON p.id = r.project_id
             WHERE r.id = @RecordId
             GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, 
                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                      r.created_by, r.created_at, r.modified_by, r.modified_at, 
-                     r.archived_at, r.deleted_at,
-                     c.name, d.name, p.name;";
+                     r.archived_at, c.name, d.name, p.name;";
 
         var recordIdParam = new Npgsql.NpgsqlParameter("@RecordId", recordId);
+        var deletedAtParam = new Npgsql.NpgsqlParameter(
+            "@DeletedAt", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified));
 
-        var deleted = await _context.Database.ExecuteSqlRawAsync(query, recordIdParam);
+        var deleted = await _context.Database.ExecuteSqlRawAsync(query, [recordIdParam, deletedAtParam]);
 
         if (deleted == 0) // if 0 records were deleted, assume a failure
         {

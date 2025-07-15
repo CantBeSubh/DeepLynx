@@ -65,7 +65,7 @@ public partial class HistoricalEdge
     public DateTime? ArchivedAt { get; set; }
 
     [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime DeletedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
     
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime? LastUpdatedAt { get; set; }
