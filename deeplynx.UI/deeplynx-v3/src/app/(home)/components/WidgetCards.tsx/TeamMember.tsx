@@ -84,8 +84,8 @@ const TeamMembersWidget = () => {
                                     </div>
                                 ))}
                                 <button
-                                    onClick={() => setAvatarModal(true)}
-                                    className="btn btn-secondary text-primary-content flex items-center">
+                                    // onClick={() => setAvatarModal(true)}
+                                    className="">
                                     <PlusIcon />
                                 </button>
                             </div>
