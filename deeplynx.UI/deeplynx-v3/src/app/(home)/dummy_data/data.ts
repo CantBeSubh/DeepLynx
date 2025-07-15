@@ -1004,3 +1004,99 @@ export const peopleData = [
       visibility: "Public"
   }
 ];
+
+export const mySavedSearches = [
+  {
+    id: 1,
+    name: "Water Quality",
+    filters: ["LakeFS", "Timeseries", "River"],
+    createdAt: "5-12-1994"
+  },
+  {
+    id: 2,
+    name: "Alien Sightings",
+    filters: ["UFO", "Area 51", "Conspiracy"],
+    createdAt: "7-4-2020"
+  },
+  {
+    id: 3,
+    name: "Best Pizza Places",
+    filters: ["Cheese", "Pepperoni", "Deep Dish"],
+    createdAt: "3-14-2021"
+  },
+  {
+    id: 4,
+    name: "Cat Memes",
+    filters: ["Funny", "Cats", "Internet Gold"],
+    createdAt: "1-1-2022"
+  },
+  {
+    id: 5,
+    name: "Time Travel Theories",
+    filters: ["Wormholes", "Paradoxes", "Sci-Fi"],
+    createdAt: "10-21-2015"
+  }
+];
+
+export const myRecentSearches = [
+  {
+    id: 1,
+    name: "Mountain Climbing",
+    filters: ["Everest", "Gear", "Techniques"],
+    createdAt: "8-15-2018"
+  },
+  {
+    id: 2,
+    name: "Vintage Cars",
+    filters: ["Classic", "Restoration", "Shows"],
+    createdAt: "11-22-2019"
+  },
+  {
+    id: 3,
+    name: "Space Exploration",
+    filters: ["NASA", "Mars", "Rockets"],
+    createdAt: "4-12-2021"
+  },
+  {
+    id: 4,
+    name: "Cooking Recipes",
+    filters: ["Italian", "Desserts", "Healthy"],
+    createdAt: "6-30-2020"
+  },
+  {
+    id: 5,
+    name: "Photography Tips",
+    filters: ["Lighting", "Portraits", "Editing"],
+    createdAt: "9-5-2022"
+  },
+  {
+    id: 6,
+    name: "Gardening Ideas",
+    filters: ["Vegetables", "Flowers", "DIY"],
+    createdAt: "3-18-2023"
+  },
+  {
+    id: 7,
+    name: "Travel Destinations",
+    filters: ["Europe", "Beaches", "Adventure"],
+    createdAt: "2-14-2021"
+  },
+  {
+    id: 8,
+    name: "Fitness Workouts",
+    filters: ["Cardio", "Strength", "Yoga"],
+    createdAt: "5-25-2022"
+  },
+  {
+    id: 9,
+    name: "Historical Events",
+    filters: ["WWII", "Ancient Rome", "Revolutions"],
+    createdAt: "7-4-2021"
+  },
+  {
+    id: 10,
+    name: "Tech Gadgets",
+    filters: ["Smartphones", "Wearables", "Innovations"],
+    createdAt: "12-1-2020"
+  }
+];
