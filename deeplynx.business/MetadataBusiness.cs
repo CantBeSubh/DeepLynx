@@ -59,7 +59,7 @@ public class MetadataBusiness : IMetadataBusiness
         return new MetadataResponseDto() // Return validated response DTO back to user.
         {
             Id = metadataRequestDto.Id,
-            ProjectId = metadataRequestDto.ProjectId,
+            ProjectId = projectId,
             Classes = metadataRequestDto.Classes,
             Relationships = metadataRequestDto.Relationships,
             Tags = metadataRequestDto.Tags,
