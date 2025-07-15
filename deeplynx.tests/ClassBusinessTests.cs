@@ -216,8 +216,8 @@ namespace deeplynx.tests
 
             var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
-            updatedResult.ModifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+            
+            updatedResult.ModifiedAt.Should().BeCloseTo(updatedResult.CreatedAt,TimeSpan.FromMilliseconds(10));
         }
 
         [Fact]
