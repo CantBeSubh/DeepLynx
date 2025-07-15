@@ -25,14 +25,14 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
         /// <param name="classId">(Optional) The ID of the origin or destination class by which to filter mappings</param>
         /// <param name="relationshipId">(Optional) The ID of the relationship by which to filter mappings</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>A list of edge mappings based on the applied filters.</returns>
         [HttpGet("GetAllEdgeMappings")]
         public async Task<ActionResult<IEnumerable<EdgeMappingResponseDto>>> GetAllEdgeMappings(
             long projectId,
             [FromQuery] long? classId = null,
             [FromQuery] long? relationshipId = null,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -53,13 +53,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="mappingId">The ID whereby to fetch the edge mapping</param>
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edge mappings from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived edge mappings from the result (Default true)</param>
         /// <returns>The edge mapping associated with the given ID</returns>
         [HttpGet("GetEdgeMapping/{mappingId}")]
         public async Task<ActionResult<EdgeMappingResponseDto>> GetEdgeMapping(
             long projectId, 
             long mappingId, 
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {

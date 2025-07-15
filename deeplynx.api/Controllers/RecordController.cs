@@ -24,13 +24,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -50,13 +50,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
         /// <param name="recordId">Datasource ID which record is associated with</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
         public async Task<ActionResult<RecordResponseDto>> GetRecord(
             long projectId, 
             long recordId, 
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {

@@ -19,12 +19,12 @@ namespace deeplynx.api.Controllers
     /// Get all relationships 
     /// </summary>
     /// <param name="projectId">ID for project which relationship is associated with</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default false)</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
     /// <returns>List of relationship response DTOs</returns>
         [HttpGet("GetAllRelationships")]
         public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
         long projectId,
-        [FromQuery] bool hideArchived = false)
+        [FromQuery] bool hideArchived = true)
         {
             try
             {
@@ -44,13 +44,13 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="relationshipId">Id of relationship</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default false)</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
         /// <returns>Relationship response DTO</returns>
         [HttpGet("GetRelationship/{relationshipId}")]
         public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
             long projectId, 
             long relationshipId,
-            [FromQuery] bool hideArchived = false)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
