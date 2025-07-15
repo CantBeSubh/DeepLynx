@@ -22,7 +22,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         bool current = false)
     {
         var recordQuery = _context.HistoricalRecords
-            .Where(r => r.ProjectId == projectId & r.DeletedAt == null);
+            .Where(r => r.ProjectId == projectId);
 
         if (dataSourceId.HasValue)
         {
@@ -68,8 +68,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                DeletedAt = r.DeletedAt
+                ArchivedAt = r.ArchivedAt
             })
             .ToListAsync();
     }
@@ -99,8 +98,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                DeletedAt = r.DeletedAt
+                ArchivedAt = r.ArchivedAt
             })
             .ToListAsync();
     }
@@ -128,7 +126,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null & r.DeletedAt == null);
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
         }
 
         var record = await recordQuery.FirstOrDefaultAsync();
@@ -157,8 +155,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
-            DeletedAt = record.DeletedAt
+            ArchivedAt = record.ArchivedAt
         };
     }
 
@@ -289,56 +286,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             throw new Exception($"Unable to archive historical record with id {recordId}");
         }
 
-        await _context.SaveChangesAsync();
-
-        return true;
-    }
-    
-    public async Task<bool> DeleteHistoricalRecord(long recordId)
-    {
-        // set all previous instances of "current" for this record id to false
-        await _context.HistoricalRecords
-            .Where(r => r.RecordId == recordId)
-            .ExecuteUpdateAsync(s => s.SetProperty(r => r.Current, false));
-
-        // insert the appropriate data using insert into select
-        // due to the complexity of the query, execute the query
-        // using raw SQL instead of via entity framework
-        var query = @"
-            INSERT INTO deeplynx.historical_records (
-                record_id, uri, name, properties, original_id, 
-                class_id, mapping_id, data_source_id, project_id, 
-                created_by, created_at, modified_by, modified_at, 
-                archived_at, deleted_at, current,
-                last_updated_at, class_name, data_source_name, project_name, tags)
-            SELECT r.id, r.uri, r.name, r.properties, r.original_id, 
-                   r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
-                   r.created_by, r.created_at, r.modified_by, r.modified_at, 
-                   r.archived_at, @DeletedAt, TRUE,
-                   @DeletedAt AS last_updated_at, c.name, d.name, p.name, jsonb_agg(t.name)
-            FROM deeplynx.records r
-            LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
-            LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
-            LEFT JOIN deeplynx.classes c ON c.id = r.class_id
-            JOIN deeplynx.data_sources d ON d.id = r.data_source_id
-            JOIN deeplynx.projects p ON p.id = r.project_id
-            WHERE r.id = @RecordId
-            GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, 
-                     r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
-                     r.created_by, r.created_at, r.modified_by, r.modified_at, 
-                     r.archived_at, c.name, d.name, p.name;";
-
-        var recordIdParam = new Npgsql.NpgsqlParameter("@RecordId", recordId);
-        var deletedAtParam = new Npgsql.NpgsqlParameter(
-            "@DeletedAt", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified));
-
-        var deleted = await _context.Database.ExecuteSqlRawAsync(query, [recordIdParam, deletedAtParam]);
-
-        if (deleted == 0) // if 0 records were deleted, assume a failure
-        {
-            throw new Exception($"Unable to delete historical record with id {recordId}");
-        }
-        
         await _context.SaveChangesAsync();
 
         return true;

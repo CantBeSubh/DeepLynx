@@ -180,28 +180,11 @@ public class RecordBusiness : IRecordBusiness
         // we should be able to delete a record even if it's been archived
         if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
-
-        using (var transaction = await _context.Database.BeginTransactionAsync())
-        {
-            try
-            {
-                // adjust the historical record first as join for information won't be possible once record is deleted
-                await _historicalRecordBusiness.DeleteHistoricalRecord(record.Id);
-
-                // delete record
-                _context.Records.Remove(record);
-                await _context.SaveChangesAsync();
-
-                // if everything goes according to plan, commit the transaction
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception exc)
-            {
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to delete record {recordId} or its downstream dependents: {exc}");
-            }
-        }
+        
+        _context.Records.Remove(record);
+        await _context.SaveChangesAsync();
+        
+        return true;
     }
     
     /// <summary>

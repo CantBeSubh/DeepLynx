@@ -12,5 +12,4 @@ public interface IHistoricalRecordBusiness
     Task<bool> CreateHistoricalRecord(long recordId);
     Task<bool> UpdateHistoricalRecord(long recordId);
     Task<bool> ArchiveHistoricalRecord(long recordId);
-    Task<bool> DeleteHistoricalRecord(long recordId);
 }

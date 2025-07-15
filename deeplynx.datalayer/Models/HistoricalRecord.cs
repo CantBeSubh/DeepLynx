@@ -75,9 +75,6 @@ public partial class HistoricalRecord
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
-
-    [Column("deleted_at", TypeName = "timestamp without time zone")]
-    public DateTime? DeletedAt { get; set; }
     
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }

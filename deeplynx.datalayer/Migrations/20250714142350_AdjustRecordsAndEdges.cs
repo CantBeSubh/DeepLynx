@@ -82,20 +82,6 @@ namespace deeplynx.datalayer.Migrations
                 nullable: false,
                 defaultValueSql: "CURRENT_TIMESTAMP");
 
-            migrationBuilder.AddColumn<DateTime>(
-                name: "deleted_at",
-                schema: "deeplynx",
-                table: "historical_records",
-                type: "timestamp without time zone",
-                nullable: true);
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "deleted_at",
-                schema: "deeplynx",
-                table: "historical_edges",
-                type: "timestamp without time zone",
-                nullable: true);
-
             migrationBuilder.CreateIndex(
                 name: "idx_historical_records_last_updated_at",
                 schema: "deeplynx",
