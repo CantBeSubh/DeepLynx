@@ -43,8 +43,14 @@ public partial class HistoricalEdge
     [Column("data_source_id")]
     public long DataSourceId { get; set; }
 
+    [Column("data_source_name")]
+    public string DataSourceName { get; set; }
+
     [Column("project_id")]
     public long ProjectId { get; set; }
+
+    [Column("project_name")]
+    public string ProjectName { get; set; }
     
     [Column("current")]
     public bool Current { get; set; }

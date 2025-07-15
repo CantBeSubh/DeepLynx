@@ -9,7 +9,9 @@ public class HistoricalEdgeResponseDto
     public string? RelationshipName { get; set; }
     public long? MappingId { get; set; }
     public long DataSourceId { get; set; }
+    public string DataSourceName { get; set; }
     public long ProjectId { get; set; }
+    public string ProjectName { get; set; }
     public string? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? ModifiedBy { get; set; }
