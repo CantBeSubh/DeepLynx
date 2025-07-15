@@ -50,6 +50,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get edge 
         /// </summary>
+        /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="edgeId">The id whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
@@ -57,6 +58,7 @@ namespace deeplynx.api.Controllers
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge")]
         public async Task<ActionResult<EdgeResponseDto>> GetEdge(
+            long projectId, 
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId,
@@ -64,7 +66,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edge = await _edgeBusiness.GetEdge(edgeId, originId, destinationId, hideArchived);
+                var edge = await _edgeBusiness.GetEdge(projectId, edgeId, originId, destinationId, hideArchived);
                 return Ok(edge);
             }
             catch (Exception exc)
