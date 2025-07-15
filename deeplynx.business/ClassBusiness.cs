@@ -30,13 +30,26 @@ public class ClassBusiness : IClassBusiness
         _relationshipBusiness = relationshipBusiness;
     }
 
-    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId)
+    /// <summary>
+    /// Retrieves all classes
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <returns>A list of classes</returns>
+    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         
-        return await _context.Classes
-            .Where(c => c.ProjectId == projectId && c.ArchivedAt == null)
-            .Select(c => new ClassResponseDto
+        var classes = await _context.Classes
+            .Where(c => c.ProjectId == projectId).ToListAsync();
+        
+        if (hideArchived)
+        {
+            classes = classes.Where(c => c.ArchivedAt == null).ToList();
+        }
+        
+        return classes 
+            .Select(c => new ClassResponseDto()
             {
                 Id = c.Id,
                 Name = c.Name,
@@ -48,18 +61,30 @@ public class ClassBusiness : IClassBusiness
                 ModifiedBy = c.ModifiedBy,
                 ModifiedAt = c.ModifiedAt,
                 ArchivedAt = c.ArchivedAt,
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<ClassResponseDto> GetClass(long projectId, long classId)
+    /// <summary>
+    /// Retrieves a specific class by ID
+    /// </summary>
+    /// <param name="projectId">The ID by which to retrieve the class</param>
+    /// <param name="classId">The ID of the class to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <returns>The given class to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
+    public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
-        DoesProjectExist(projectId);
+        DoesProjectExist(projectId, hideArchived);
         var newClass = await _context.Classes
-            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId && c.ArchivedAt == null);
+            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
+        }
+        
+        if (hideArchived && newClass.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Class with id {classId} is archived");
         }
 
         return new ClassResponseDto
@@ -77,6 +102,14 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
+    /// <summary>
+    /// Creates a new class based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="dto">A data transfer object with details on the new class to be created.</param>
+    /// <returns>The new class which was just created.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found</exception>
+    /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
         DoesProjectExist(projectId);
@@ -118,6 +151,14 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
+    /// <summary>
+    /// Updates an existing class by its ID.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs.</param>
+    /// <param name="classId">The ID of the class to update.</param>
+    /// <param name="dto">The class request data transfer object containing updated class details.</param>
+    /// <returns>The updated class response DTO with its details</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
     public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
     {
         DoesProjectExist(projectId);
@@ -252,10 +293,12 @@ public class ClassBusiness : IClassBusiness
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
     /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
     {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
         if (!project)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");

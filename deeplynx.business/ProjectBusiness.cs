@@ -26,12 +26,17 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Retrieves all projects
     /// </summary>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
-    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects()
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool hideArchived)
     {
-        var projects = await _context.Projects
-            .Where(p => p.ArchivedAt == null).ToListAsync();
+        var projects = await _context.Projects.ToListAsync();
+
+        if (hideArchived)
+        {
+            projects = projects.Where(p => p.ArchivedAt == null).ToList();
+        }
 
         return projects
             .Select(p => new ProjectResponseDto()
@@ -52,17 +57,23 @@ public class ProjectBusiness : IProjectBusiness
     /// Retrieves a specific project by ID
     /// </summary>
     /// <param name="projectId">The ID by which to retrieve the project</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>The given project to return</returns>
-    /// <exception cref="KeyNotFoundException">Returned if project not found</exception>
-    public async Task<ProjectResponseDto> GetProject(long projectId)
+    /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
+    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived)
     {
         var project = await _context.Projects
-            .Where(p => p.Id == projectId && p.ArchivedAt == null)
+            .Where(p => p.Id == projectId)
             .FirstOrDefaultAsync();
 
         if (project == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+        
+        if (hideArchived && project.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} is archived");
         }
 
         return new ProjectResponseDto
