@@ -25,6 +25,7 @@ export type FileViewerTableRow = {
 export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
+    accessor?: any;
     header?: string;
     data?: keyof T;
     sortable?: boolean;

@@ -589,6 +589,7 @@ export const initialTableData = [
       select: false,
       tags: ["Climate", "Temperature", "Precipitation"],
       lastEdit: "2025-05-15",
+      associatedRecords: ["weather_data.csv", "employee_records.xlsx", "project_proposal.xdoc"]
     },
     {
       id: 2,
@@ -601,6 +602,7 @@ export const initialTableData = [
       select: false,
       tags: ["Finance", "Retail", "Monthly Report"],
       lastEdit: "2025-05-12",
+      associatedRecords: ["sales_report.pdf", "inventory_list.csv"]
     },
     {
       id: 3,
@@ -613,6 +615,7 @@ export const initialTableData = [
       select: false,
       tags: ["HR", "Employee Data"],
       lastEdit: "2025-05-10",
+      associatedRecords: ["meeting_minutes.docx", "budget_overview.xlsx", "client_feedback.txt"]
     },
     {
       id: 4,
@@ -625,6 +628,7 @@ export const initialTableData = [
       select: false,
       tags: ["Inventory", "Stock", "Warehouse"],
       lastEdit: "2025-05-08",
+      associatedRecords: ["product_catalog.pdf"]
     },
     {
       id: 5,
@@ -649,6 +653,7 @@ export const initialTableData = [
       select: false,
       tags: ["Customer Feedback", "Surveys", "Ratings"],
       lastEdit: "2025-05-20",
+      associatedRecords: ["annual_review.docx", "marketing_plan.pptx", "financial_statement.xlsx", "team_roster.csv"]
     },
     {
       id: 7,
@@ -661,6 +666,7 @@ export const initialTableData = [
       select: false,
       tags: ["Finance", "Quarterly Report", "Income Statement", "Balance Sheet"],
       lastEdit: "2025-05-22",
+      associatedRecords: ["research_paper.pdf", "project_timeline.xlsx"]
     },
     {
       id: 8,
@@ -673,6 +679,7 @@ export const initialTableData = [
       select: false,
       tags: ["Marketing", "Campaign Analysis", "Performance Metrics"],
       lastEdit: "2025-05-25",
+      associatedRecords: ["user_guide.docx", "error_log.txt", "feature_request.csv"]
     },
     {
       id: 9,
@@ -685,6 +692,7 @@ export const initialTableData = [
       select: false,
       tags: ["Research", "Articles", "Ongoing Projects"],
       lastEdit: "2025-05-17",
+      associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
     {
       id: 10,
@@ -697,6 +705,7 @@ export const initialTableData = [
       select: false,
       tags: ["Logistics", "Shipping Routes", "Delivery Times", "Carrier Information"],
       lastEdit: "2025-05-19",
+      associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
   ];
 
@@ -1100,3 +1109,15 @@ export const myRecentSearches = [
     createdAt: "12-1-2020"
   }
 ];
+
+export const dropDownProjects = [
+  "Aurora Initiative",
+  "Quantum Quest",
+  "This is going to be a little long",
+  "Nubela Nexus",
+  "Phoenix Protocol",
+  "Starlight Symphony",
+  "Echo Ensigma", 
+  "Zenith Zephyr",
+  
+]

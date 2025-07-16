@@ -63,8 +63,6 @@ const ListView: React.FC<ListViewProps> = ({
             record.fileDescription,
             activeSearchTerms
           );
-          const type = getHighlightedCell(record.fileType, activeSearchTerms);
-          const tags = getHighlightedCell(record.tags, activeSearchTerms);
           const date = getHighlightedCell(
             record.dateModified,
             activeSearchTerms
@@ -90,28 +88,17 @@ const ListView: React.FC<ListViewProps> = ({
                   {date.content}
                 </div>
                 <div className="ml-4">
-                  <span className="font-bold">File Type: </span> {type.content}
+                  <span className="font-bold">File Type: </span>{" "}
+                  {record.fileType}
                 </div>
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
-                {record.tags.map((tag, index) => {
-                  const tagHighlight = getHighlightedCell(
-                    tag,
-                    activeSearchTerms
-                  );
-
-                  return (
-                    <span
-                      key={index}
-                      className={`badge ml-2 ${
-                        tagHighlight.matched ? "bg-info" : ""
-                      }`}
-                    >
-                      {tagHighlight.content}
-                    </span>
-                  );
-                })}
+                {record.tags.map((tag, index) => (
+                  <span key={index} className={`badge ml-2`}>
+                    {tag}
+                  </span>
+                ))}
               </div>
               <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>
