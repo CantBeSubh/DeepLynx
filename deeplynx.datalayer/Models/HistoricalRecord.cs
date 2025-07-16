@@ -11,6 +11,8 @@ namespace deeplynx.datalayer.Models;
 [Index("Id", Name = "idx_historical_records_id")]
 [Index("RecordId", Name = "idx_historical_records_record_id")]
 [Index("ClassName", Name = "idx_historical_records_class_name")]
+[Index("Current", Name = "idx_historical_records_current")]
+[Index("LastUpdatedAt", Name = "idx_historical_records_last_updated_at")]
 public partial class HistoricalRecord
 {
     [Key]
@@ -18,7 +20,7 @@ public partial class HistoricalRecord
     public long Id { get; set; }
     
     [Column("record_id")]
-    public long? RecordId { get; set; }
+    public long RecordId { get; set; }
 
     [Column("uri")]
     public string? Uri { get; set; }
@@ -45,16 +47,19 @@ public partial class HistoricalRecord
     public long DataSourceId { get; set; }
     
     [Column("data_source_name")]
-    public long DataSourceName { get; set; }
+    public string DataSourceName { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
     
     [Column("project_name")]
-    public long ProjectName { get; set; }
+    public string ProjectName { get; set; }
     
     [Column("tags", TypeName = "jsonb")]
     public string Tags { get; set; } = null!;
+    
+    [Column("current")]
+    public bool Current { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
@@ -71,13 +76,10 @@ public partial class HistoricalRecord
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
     
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+    
     [ForeignKey("RecordId")]
     [InverseProperty("HistoricalRecords")]
-    public virtual Record? Record { get; set; }
-    
-    [InverseProperty("HistoricalDestination")]
-    public virtual ICollection<HistoricalEdge> HistoricalEdgeDestinations { get; set; } = new List<HistoricalEdge>();
-
-    [InverseProperty("HistoricalOrigin")]
-    public virtual ICollection<HistoricalEdge> HistoricalEdgeOrigins { get; set; } = new List<HistoricalEdge>();
+    public virtual Record Record { get; set; } = null!;
 }
