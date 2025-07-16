@@ -36,13 +36,15 @@ public class TagBusiness : ITagBusiness
     public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
         DoesProjectExist(projectId);
+        if (tagRequestDto == null)
+            throw new ArgumentNullException(nameof(tagRequestDto));
+        
+        
         var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
         if (existingTag != null)
         {
             throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
         }
-        if (tagRequestDto == null)
-            throw new ArgumentNullException(nameof(tagRequestDto));
         
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))

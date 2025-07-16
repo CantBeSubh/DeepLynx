@@ -27,7 +27,8 @@ namespace deeplynx.datalayer.Migrations
                 type: "bigint",
                 nullable: true,
                 oldClrType: typeof(long),
-                oldType: "bigint");
+                oldType: "bigint",
+                oldNullable: false);
 
             migrationBuilder.AlterColumn<long>(
                 name: "destination_id",
@@ -36,7 +37,8 @@ namespace deeplynx.datalayer.Migrations
                 type: "bigint",
                 nullable: true,
                 oldClrType: typeof(long),
-                oldType: "bigint");
+                oldType: "bigint",
+                oldNullable: false);
 
             migrationBuilder.AddForeignKey(
                 name: "relationships_destination_id_fkey",
@@ -45,7 +47,8 @@ namespace deeplynx.datalayer.Migrations
                 column: "destination_id",
                 principalSchema: "deeplynx",
                 principalTable: "classes",
-                principalColumn: "id");
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
                 name: "relationships_origin_id_fkey",
@@ -54,7 +57,8 @@ namespace deeplynx.datalayer.Migrations
                 column: "origin_id",
                 principalSchema: "deeplynx",
                 principalTable: "classes",
-                principalColumn: "id");
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />

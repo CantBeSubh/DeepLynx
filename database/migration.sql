@@ -1782,14 +1782,14 @@ END $EF$;
 DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_destination_id_fkey FOREIGN KEY (destination_id) REFERENCES deeplynx.classes (id);
+    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_destination_id_fkey FOREIGN KEY (destination_id) REFERENCES deeplynx.classes (id) ON DELETE CASCADE;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_origin_id_fkey FOREIGN KEY (origin_id) REFERENCES deeplynx.classes (id);
+    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_origin_id_fkey FOREIGN KEY (origin_id) REFERENCES deeplynx.classes (id) ON DELETE CASCADE;
     END IF;
 END $EF$;
 
