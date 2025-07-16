@@ -25,15 +25,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Filter records 
         /// </summary>
-        /// <param name="dto">The filter request dto</param>
+        /// <param name="filterArray">Array of strings</param>
         /// <returns>List of class response DTOs</returns>
         [HttpPost("Filter")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> FilterRecords(
-            [FromBody] FilterRequestDto dto)
+            [FromBody] string[] filterArray)
         {
             try
             {
-                var records = await _filterBusiness.FilterRecords(dto);
+                var records = await _filterBusiness.FilterRecords(filterArray);
                 return Ok(records);
             }
             catch (Exception exc)

@@ -28,19 +28,15 @@ public class FilterBusiness : IFilterBusiness
     /// </summary>
     /// <param name="filterRequest">Filter Request DTO</param>
     /// <returns>A list of record response dtos that match provided filters</returns>
-    public async Task<IEnumerable<RecordResponseDto>> FilterRecords(FilterRequestDto filterRequest)
+    /// TODO: Partial match with combined strings Example: "Reactor Care" should return entries with "Reactor Core" as the name or description
+    public async Task<IEnumerable<RecordResponseDto>> FilterRecords(string[] filterRequest)
     {
         var query = _context.HistoricalRecords.AsQueryable();
-
-        if (!string.IsNullOrEmpty(filterRequest.Name))
-        {
-            query = query.Where(c => c.Name == filterRequest.Name);
-        }
-
-        if (!string.IsNullOrEmpty(filterRequest.Description))
-        {
-            query = query.Where(c => c.Description == filterRequest.Description);
-        }
+    
+        // Check database for partial match, ignore case
+        query = query.Where(c => filterRequest.Any(filter =>
+            c.Name.ToLower().Contains(filter.ToLower()) ||
+            c.Description.ToLower().Contains(filter.ToLower())));
         
         var records = await query.ToListAsync();
 

@@ -4,5 +4,5 @@ namespace deeplynx.interfaces;
 
 public interface IFilterBusiness
 {
-    Task<IEnumerable<RecordResponseDto>> FilterRecords(FilterRequestDto filterRequest);
+    Task<IEnumerable<RecordResponseDto>> FilterRecords(string[] filterRequest);
 }
