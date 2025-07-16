@@ -4,8 +4,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using System.Linq.Expressions;
 
 namespace deeplynx.business;
 
@@ -13,64 +11,33 @@ public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
     
-    // dependant used to trigger downstream soft deletes
-    private readonly IEdgeBusiness _edgeBusiness;
+    // dependent used to trigger downstream actions
+    private readonly IHistoricalRecordBusiness _historicalRecordBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context used for the edge operations.</param>
-    /// <param name="edgeBusiness">Passed in context of downstream edge objects.</param>
-    public RecordBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness)
+    /// <param name="context">The database context used for the record operations.</param>
+    /// <param name="edgeBusiness">Passed in context of historical record objects.</param>
+    public RecordBusiness(DeeplynxContext context, IHistoricalRecordBusiness historicalRecordBusiness)
     {
         _context = context;
-        _edgeBusiness = edgeBusiness;
+        _historicalRecordBusiness = historicalRecordBusiness;
     }
     
     /// <summary>
     /// Retrieves all records for a specific project and datasource.
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
-    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
+    /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
-        long projectId,
-        long? dataSourceId,
-        bool hideArchived)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(
+        long projectId, long? dataSourceId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        var recordQuery = _context.Records
-            .Where(r => r.ProjectId == projectId);
-
-        if (dataSourceId.HasValue)
-        {
-            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
-        }
-        
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
-        }
-        
-        return await recordQuery
-            .Select(r=>new RecordResponseDto()
-            {
-                Id = r.Id,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                DataSourceId = r.DataSourceId,
-                ProjectId = r.ProjectId,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-            })
-            .ToListAsync();
+        return await _historicalRecordBusiness.GetAllHistoricalRecords(
+            projectId, dataSourceId, null, hideArchived, true);
     }
     
     /// <summary>
@@ -80,40 +47,13 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The ID of the record to retrieve</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record in question</returns>
-    /// <exception cref="KeyNotFoundException">Returned if record not found or is archived</exception>
-    public async Task<RecordResponseDto> GetRecord(long projectId, long recordId, bool hideArchived)
+    /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
+    public async Task<HistoricalRecordResponseDto> GetRecord(
+        long projectId, long recordId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        var record = await _context.Records
-            .Where(r => r.Id == recordId && r.ProjectId == projectId)
-            .FirstOrDefaultAsync();
-        
-        if (record == null)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
-        
-        if (hideArchived && record.ArchivedAt != null)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} is archived");
-        }
-
-        return new RecordResponseDto
-        {
-            Id = record.Id,
-            Uri = record.Uri,
-            Properties = record.Properties,
-            OriginalId = record.OriginalId,
-            Name = record.Name,
-            ClassId = record.ClassId,
-            DataSourceId = record.DataSourceId,
-            ProjectId = record.ProjectId,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
-        };
+        return await _historicalRecordBusiness.GetHistoricalRecord(
+            recordId, null, hideArchived, true);
     }
 
     /// <summary>
@@ -151,6 +91,9 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
+        
+        // add historical record
+        await _historicalRecordBusiness.CreateHistoricalRecord(record.Id);
 
         return new RecordResponseDto
         {
@@ -205,6 +148,9 @@ public class RecordBusiness : IRecordBusiness
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
         
+        // update historical record
+        await _historicalRecordBusiness.UpdateHistoricalRecord(record.Id);
+        
         return new RecordResponseDto
         {
             Id = record.Id,
@@ -230,12 +176,14 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="recordId">The record in question</param>
     /// <returns>Boolean indicating record was deleted</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to delete was not found.</exception>
+    /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
         DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+        // we should be able to delete a record even if it's been archived
+        if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
         _context.Records.Remove(record);
@@ -278,6 +226,8 @@ public class RecordBusiness : IRecordBusiness
                 }
 
                 await transaction.CommitAsync();
+        
+                await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
                 return true;
             }
             catch (Exception exc)

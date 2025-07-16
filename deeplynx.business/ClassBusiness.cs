@@ -204,16 +204,17 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> DeleteClass(long projectId, long classId)
     {
         var project = await _context.Projects.FindAsync(projectId);
-
         if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
-        _context.Projects.Remove(project);
-        await _context.SaveChangesAsync();
+        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId && c.ArchivedAt == null);
+        if (classToDelete == null)
+            throw new KeyNotFoundException($"Class with id {classId} not found");
 
+        _context.Classes.Remove(classToDelete);
+        await _context.SaveChangesAsync();
         return true;
     }
-
     /// <summary>
     /// Archive (soft delete) a class by id. This also archives downstream dependents.
     /// </summary>
