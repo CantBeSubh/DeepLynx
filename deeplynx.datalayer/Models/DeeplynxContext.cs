@@ -209,9 +209,13 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-            entity.HasOne(d => d.Destination).WithMany(p => p.RelationshipDestinations).HasConstraintName("relationships_destination_id_fkey");
+            entity.HasOne(d => d.Destination).WithMany(p => p.RelationshipDestinations)
+                .HasForeignKey(d => d.DestinationId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("relationships_destination_id_fkey");
 
-            entity.HasOne(d => d.Origin).WithMany(p => p.RelationshipOrigins).HasConstraintName("relationships_origin_id_fkey");
+            entity.HasOne(d => d.Origin).WithMany(p => p.RelationshipOrigins)
+                .HasForeignKey(d => d.OriginId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("relationships_origin_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Relationships).HasConstraintName("relationships_project_id_fkey");
         });

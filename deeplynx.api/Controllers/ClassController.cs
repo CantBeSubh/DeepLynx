@@ -98,6 +98,29 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// Create many classes
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="dto">The request DTO for classes</param>
+        /// <returns></returns>
+        [HttpPost("BulkCreateClasses")]
+        public async Task<ActionResult<BulkClassResponseDto>> BulkCreateClass(long projectId,
+            [FromBody] BulkClassRequestDto dto)
+        {
+            try
+            {
+                var newClasses = await _classBusiness.BulkCreateClass(projectId, dto);
+                return Ok(newClasses);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while creating these classes: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Update a class
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>

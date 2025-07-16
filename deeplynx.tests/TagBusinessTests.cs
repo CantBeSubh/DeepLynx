@@ -3,6 +3,7 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
+using FluentAssertions;
 using Moq;
 
 namespace deeplynx.tests
@@ -184,6 +185,35 @@ namespace deeplynx.tests
             Assert.True(result.CreatedAt <= DateTime.UtcNow);
             // CreatedBy can be null in current implementation (TODO: JWT implementation)
             Assert.Equal(result.CreatedBy, dto.CreatedBy);
+        }
+
+        [Fact]
+        public async Task CreateTag_Success_OnBulkCreate()
+        {
+            var tagDtos = new List<TagRequestDto>();
+            
+            var dto1 = new TagRequestDto
+            {
+                Name = "Test Tag 1",
+                CreatedBy = "Test Suite"
+            };
+            var dto2 = new TagRequestDto
+            {
+                Name = "Test Tag 2",
+                CreatedBy = "Test Suite"
+            };
+            tagDtos.Add(dto1);
+            tagDtos.Add(dto2);
+
+            var bulkDto = new BulkTagRequestDto
+            {
+                Tags = tagDtos
+            };
+            
+            var result = await _tagBusiness.BulkCreateTags(pid, bulkDto);
+            result.Tags.Should().HaveCount(2);
+            result.Tags.First().Name.Should().Be("Test Tag 1");
+            result.Tags.Last().Name.Should().Be("Test Tag 2");
         }
                 
         [Fact]
