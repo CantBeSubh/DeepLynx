@@ -136,11 +136,6 @@ public class RelationshipBusiness: IRelationshipBusiness
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
         
-        if ((dto.OriginId != null && dto.DestinationId == null) || (dto.DestinationId != null && dto.OriginId == null))
-        {
-            throw new Exception("Cannot contain an originId without a destinationId or visa versa");
-        }
-        
         if (dto.OriginId != null)
         { 
             var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
@@ -229,10 +224,6 @@ public class RelationshipBusiness: IRelationshipBusiness
         foreach (var relationshipDto in bulkRelationshipRequestDto.Relationships)
         {
             ValidationHelper.ValidateModel(relationshipDto);
-            if ((relationshipDto.OriginId != null && relationshipDto.DestinationId == null) || (relationshipDto.DestinationId != null && relationshipDto.OriginId == null))
-            {
-                throw new Exception("Cannot contain an originId without a destinationId or visa versa");
-            }
             
             if (relationshipDto.OriginId != null)
             { 
