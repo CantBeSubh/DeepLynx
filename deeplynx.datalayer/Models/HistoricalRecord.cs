@@ -27,6 +27,9 @@ public partial class HistoricalRecord
     
     [Column("name")]
     public string? Name { get; set; }
+    
+    [Column("description")]
+    public string? Description { get; set; }
 
     [Column("properties", TypeName = "jsonb")]
     public string Properties { get; set; } = null!;

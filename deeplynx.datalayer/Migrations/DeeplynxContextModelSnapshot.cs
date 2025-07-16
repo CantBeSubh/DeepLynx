@@ -499,6 +499,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("data_source_name");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("last_updated_at");
@@ -652,6 +656,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<long?>("MappingId")
                         .HasColumnType("bigint")
