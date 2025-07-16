@@ -42,7 +42,6 @@ const GridView = <T extends object>({
   return (
     <div className="h-150 overflow-x-auto">
       <table className="table table-pin-rows table-pin-cols">
-        {/* Headers */}
         <thead>
           <tr>
             {columns.map((column, index) => (
@@ -56,25 +55,26 @@ const GridView = <T extends object>({
           </tr>
         </thead>
         <tbody>
-          {/* Table Rows */}
-          {data.map((row, rowIndex) => {
-            return (
-              <tr key={rowIndex}>
-                {columns.map((column, colIndex) => {
-                  return (
-                    <td
-                      key={colIndex}
-                      className="text-base-content border border-base-200"
-                    >
-                      {column.cell
-                        ? column.cell(row)
-                        : (row[column.data as keyof T] as React.ReactNode)}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
+          {data.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {columns.map((column, colIndex) => {
+                const rawValue = column.data
+                  ? (row[column.data as keyof T] as unknown)
+                  : "";
+
+                return (
+                  <td
+                    key={colIndex}
+                    className="text-base-content border border-base-200"
+                  >
+                    {column.cell
+                      ? column.cell(row)
+                      : getHighlightedCell(rawValue, activeSearchTerms).content}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>

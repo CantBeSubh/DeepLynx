@@ -1121,3 +1121,48 @@ export const dropDownProjects = [
   "Zenith Zephyr",
   
 ]
+
+import { RecentRecord } from "../(routes)/data_catalog/RecentRecordsCard";
+
+export const recentRecordsData: RecentRecord[] = [
+  {
+    id: 1,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 2,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 3,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 4,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 5,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+];

@@ -114,8 +114,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
       {/* Filter Chips */}
       {activeFilters.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 mt-3 ml-1">
-          {activeFilters.map((filter) => (
-            <div className="bg-base-200 rounded-full px-3 py-1 flex items-center gap-2 text-sm">
+          {activeFilters.map((filter, index) => (
+            <div
+              key={index}
+              className="bg-base-200 rounded-full px-3 py-1 flex items-center gap-2 text-sm"
+            >
               <span>Filtered by: {filter.term}</span>
               {onRemoveFilter && (
                 <button

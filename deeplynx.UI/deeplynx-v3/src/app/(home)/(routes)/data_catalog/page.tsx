@@ -2,14 +2,27 @@
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { useEffect, useState } from "react";
-import { dropDownProjects, fileTableData } from "@/app/(home)/dummy_data/data";
+import {
+  dropDownProjects,
+  fileTableData,
+  recentRecordsData,
+} from "@/app/(home)/dummy_data/data";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
-import { QueueListIcon, TableCellsIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowUturnLeftIcon,
+  BackwardIcon,
+  EyeIcon,
+  PlusIcon,
+  QueueListIcon,
+  TableCellsIcon,
+} from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
+import ExpandableTagsCell from "./ExpandableTagCell";
+import AssociatedRecordsCell from "./AssociatedRecordsCell";
 
 const DataCatalog = () => {
   const router = useRouter();
@@ -24,6 +37,7 @@ const DataCatalog = () => {
   >([]);
   const [nextFilterId, setNextFilterId] = useState<number>(1);
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
+  const [showAll, setShowAll] = useState(false);
 
   // Effect to set project name from localStorage and mark the component as mounted
   useEffect(() => {
@@ -102,57 +116,11 @@ const DataCatalog = () => {
     },
     {
       header: "Tags",
-      cell: (row) => {
-        const [expanded, setExpanded] = useState(false);
-        const tagsToShow = expanded ? row.tags : row.tags.slice(0, 3);
-
-        return (
-          <div className="flex flex-wrap gap-1">
-            {tagsToShow.map((tag, index) => (
-              <span className="badge text-sm" key={index}>
-                {tag}
-              </span>
-            ))}
-            {row.tags.length > 3 && !expanded && (
-              <button
-                className="text-sm badge badge-secondary badge-outline text-secondary ml-2"
-                onClick={() => setExpanded(true)}
-              >
-                See more
-              </button>
-            )}
-          </div>
-        );
-      },
+      cell: (row) => <ExpandableTagsCell tags={row.tags} />,
     },
     {
       header: "Associated Records",
-      cell: (row) => {
-        const [expanded, setExpanded] = useState(false);
-        const recordsToShow = expanded
-          ? row.associatedRecords
-          : row.associatedRecords?.slice(0, 2) || [];
-
-        return (
-          <div className="flex flex-col gap-2">
-            {recordsToShow?.map((rec, index) => (
-              <a key={index} className="text-blue-600 underline text-sm">
-                {rec}
-              </a>
-            ))}
-            {row.associatedRecords &&
-              row.associatedRecords.length > 3 &&
-              !expanded && (
-                <button
-                  className="text-sm flex badge text-blue-600 ml-2"
-                  onClick={() => setExpanded(true)}
-                >
-                  See more
-                </button>
-              )}
-          </div>
-        );
-      },
+      cell: (row) => <AssociatedRecordsCell records={row.associatedRecords} />,
     },
     {
       header: "Last Edited",
@@ -176,7 +144,7 @@ const DataCatalog = () => {
         </div>
       </div>
       <div className="divider"></div>
-      <div className="flex justify-between items-center gap-4 mb-4">
+      <div className="flex justify-between gap-4 mb-4">
         <LargeSearchBar
           placeholder="Seach by name and description ... happy?"
           value={searchTerm}
@@ -189,35 +157,77 @@ const DataCatalog = () => {
           showResultsMessage={activeFilters.length > 0}
           className="md:w-1/4"
         />
-        <div className="flex">
-          <button
-            className={`btn btn-sm ${
-              viewMode === "list" ? "btn-primary" : "btn-ghost"
-            }`}
-            onClick={() => setViewMode("list")}
-          >
-            <QueueListIcon className="size-7" />
+
+        <div className="flex gap-4">
+          {showAll ? (
+            <button
+              className="btn btn-outline btn-primary"
+              onClick={() => {
+                setShowAll(false);
+                setViewMode("list");
+                clearAllFilters();
+              }}
+            >
+              <ArrowUturnLeftIcon className="size-6" />
+              Show Recent Records
+            </button>
+          ) : (
+            <button
+              className="btn btn-outline btn-primary"
+              onClick={() => {
+                clearAllFilters();
+                setViewMode("list");
+                setShowAll(true);
+              }}
+            >
+              <EyeIcon className="size-6" />
+              Explore All Records
+            </button>
+          )}
+          <button className="btn btn-primary text-white">
+            <PlusIcon className="size-6" />
+            Record
           </button>
-          <button
-            className={`btn btn-sm ${
-              viewMode === "table" ? "btn-primary" : "btn-ghost"
-            }`}
-            onClick={() => setViewMode("table")}
-          >
-            <TableCellsIcon className="size-7" />
-          </button>
+          {(activeFilters.length > 0 || showAll) && (
+            <div className="flex gap-1">
+              <button
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
+                onClick={() => setViewMode("list")}
+              >
+                <QueueListIcon className="size-7" />
+              </button>
+              <button
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
+                onClick={() => setViewMode("table")}
+              >
+                <TableCellsIcon className="size-7" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
-      {viewMode === "list" ? (
-        <ListView records={tableData} activeSearchTerms={activeSearchTerms} />
+      {activeFilters.length > 0 || showAll ? (
+        <>
+          {viewMode === "list" ? (
+            <ListView
+              records={tableData}
+              activeSearchTerms={activeSearchTerms}
+            />
+          ) : (
+            <GridView
+              columns={gridViewColumns}
+              data={tableData}
+              activeSearchTerms={activeSearchTerms}
+            />
+          )}
+        </>
       ) : (
-        <GridView
-          columns={gridViewColumns}
-          data={tableData}
-          activeSearchTerms={activeSearchTerms}
-        />
+        <RecentRecordsCard records={recentRecordsData} />
       )}
-      {/* {activeSearchTerms < 1 && (<RecentRecordsCard records={[]} />)} */}
     </div>
   );
 };
