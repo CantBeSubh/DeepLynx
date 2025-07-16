@@ -6,10 +6,16 @@ namespace deeplynx.interfaces;
 
 public interface IEdgeBusiness
 {
-    Task<IEnumerable<EdgeResponseDto>> GetAllEdges(long projectId, long? dataSourceId);
-    Task<EdgeResponseDto> GetEdge(long? edgeId, long? originId, long? destinationId);
-    Task<EdgeResponseDto> CreateEdge(long projectId, long dataSourceId, EdgeRequestDto edge);
-    Task<EdgeResponseDto> UpdateEdge(long projectId, EdgeRequestDto edge, long? edgeId, long? originId, long? destinationId);
-    Task<long> DeleteEdge(long projectId, long? edgeId, long? originId, long? destinationId);
-    Task<long> ArchiveEdge(long projectId, long? edgeId, long? originId, long? destinationId);
+    Task<IEnumerable<HistoricalEdgeResponseDto>> GetAllEdges(
+        long projectId, long? dataSourceId, bool hideArchived);
+    Task<HistoricalEdgeResponseDto> GetEdge(
+        long projectId, long? edgeId, long? originId, long? destinationId, bool hideArchived);
+    Task<EdgeResponseDto> CreateEdge(
+        long projectId, long dataSourceId, EdgeRequestDto edge);
+    Task<EdgeResponseDto> UpdateEdge(
+        long projectId, EdgeRequestDto edge, long? edgeId, long? originId, long? destinationId);
+    Task<long> DeleteEdge(
+        long projectId, long? edgeId, long? originId, long? destinationId);
+    Task<long> ArchiveEdge(
+        long projectId, long? edgeId, long? originId, long? destinationId);
 }

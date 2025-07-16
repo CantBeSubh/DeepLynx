@@ -20,12 +20,16 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<DataSource> DataSources { get; set; }
 
     public virtual DbSet<Edge> Edges { get; set; }
+    
+    public virtual DbSet<HistoricalEdge> HistoricalEdges { get; set; }
 
     public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
+    
+    public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
 
     public virtual DbSet<RecordMapping> RecordMappings { get; set; }
 
@@ -91,6 +95,8 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
 
             entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
+            
+            entity.HasOne(r => r.DataSource).WithMany(d => d.EdgeMappings).HasConstraintName("edge_mappings_data_source_id_fkey");
         });
         
         modelBuilder.Entity<HistoricalEdge>(entity =>
@@ -102,14 +108,8 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
-                .HasForeignKey(d => d.EdgeId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasForeignKey(d => d.EdgeId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("historical_edges_edge_id_fkey");
-
-            entity.HasOne(d => d.HistoricalOrigin).WithMany(p => p.HistoricalEdgeOrigins)
-                .HasConstraintName("historical_edges_origin_id_fkey");
-            
-            entity.HasOne(d => d.HistoricalDestination).WithMany(p => p.HistoricalEdgeDestinations)
-                .HasConstraintName("historical_edges_destination_id_fkey");
         });
 
         modelBuilder.Entity<HistoricalRecord>(entity =>
@@ -121,7 +121,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             
             entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
-                .HasForeignKey(d => d.RecordId).IsRequired(false).OnDelete(DeleteBehavior.SetNull)
+                .HasForeignKey(d => d.RecordId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("historical_records_record_id_fkey");
         });
 
@@ -180,8 +180,27 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_class_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_project_id_fkey");
+            
+            entity.HasOne(r => r.DataSource).WithMany(d => d.RecordMappings).HasConstraintName("record_mapping_data_source_id_fkey");
 
-            entity.HasOne(d => d.Tag).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_tag_id_fkey");
+            entity.HasMany(r => r.Tags).WithMany(t => t.RecordMappings)
+                .UsingEntity<Dictionary<string, object>>(
+                    "RecordMappingTag",
+                    r => r.HasOne<Tag>().WithMany()
+                        .HasForeignKey("TagId")
+                        .HasConstraintName("record_mapping_tags_tag_id_fkey"),
+                    l => l.HasOne<RecordMapping>().WithMany()
+                        .HasForeignKey("RecordMappingId")
+                        .HasConstraintName("record_mapping_tags_record_mapping_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("RecordMappingId", "TagId").HasName("record_mapping_tags_pkey");
+                        j.ToTable("record_mapping_tags", "deeplynx");
+                        j.HasIndex(new[] { "RecordMappingId" }, "idx_record_mapping_tags_record_mapping_id");
+                        j.HasIndex(new[] { "TagId" }, "idx_record_mapping_tags_tag_id");
+                        j.IndexerProperty<long>("RecordId").HasColumnName("record_mapping_id");
+                        j.IndexerProperty<long>("TagId").HasColumnName("tag_id");
+                    });
         });
 
         modelBuilder.Entity<Relationship>(entity =>

@@ -1,11 +1,8 @@
-using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using deeplynx.helpers;
 
 namespace deeplynx.business;
@@ -33,11 +30,26 @@ public class ClassBusiness : IClassBusiness
         _relationshipBusiness = relationshipBusiness;
     }
 
-    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId)
+    /// <summary>
+    /// Retrieves all classes
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <returns>A list of classes</returns>
+    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
-        return await _context.Classes
-            .Where(c => c.ProjectId == projectId && c.ArchivedAt == null)
-            .Select(c => new ClassResponseDto
+        DoesProjectExist(projectId, hideArchived);
+        
+        var classes = await _context.Classes
+            .Where(c => c.ProjectId == projectId).ToListAsync();
+        
+        if (hideArchived)
+        {
+            classes = classes.Where(c => c.ArchivedAt == null).ToList();
+        }
+        
+        return classes 
+            .Select(c => new ClassResponseDto()
             {
                 Id = c.Id,
                 Name = c.Name,
@@ -49,17 +61,30 @@ public class ClassBusiness : IClassBusiness
                 ModifiedBy = c.ModifiedBy,
                 ModifiedAt = c.ModifiedAt,
                 ArchivedAt = c.ArchivedAt,
-            })
-            .ToListAsync();
+            });
     }
 
-    public async Task<ClassResponseDto> GetClass(long projectId, long classId)
+    /// <summary>
+    /// Retrieves a specific class by ID
+    /// </summary>
+    /// <param name="projectId">The ID by which to retrieve the class</param>
+    /// <param name="classId">The ID of the class to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <returns>The given class to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
+    public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var newClass = await _context.Classes
-            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId && c.ArchivedAt == null);
+            .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
+        }
+        
+        if (hideArchived && newClass.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Class with id {classId} is archived");
         }
 
         return new ClassResponseDto
@@ -77,14 +102,17 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
+    /// <summary>
+    /// Creates a new class based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="dto">A data transfer object with details on the new class to be created.</param>
+    /// <returns>The new class which was just created.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found</exception>
+    /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
     {
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-
+        DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
 
         var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
@@ -123,8 +151,17 @@ public class ClassBusiness : IClassBusiness
         };
     }
 
+    /// <summary>
+    /// Updates an existing class by its ID.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs.</param>
+    /// <param name="classId">The ID of the class to update.</param>
+    /// <param name="dto">The class request data transfer object containing updated class details.</param>
+    /// <returns>The updated class response DTO with its details</returns>
+    /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
     public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var updatedClass = await _context.Classes.FindAsync(classId);
         if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.ArchivedAt is not null)
         {
@@ -167,16 +204,17 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> DeleteClass(long projectId, long classId)
     {
         var project = await _context.Projects.FindAsync(projectId);
-
         if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
-        _context.Projects.Remove(project);
-        await _context.SaveChangesAsync();
+        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId && c.ArchivedAt == null);
+        if (classToDelete == null)
+            throw new KeyNotFoundException($"Class with id {classId} not found");
 
+        _context.Classes.Remove(classToDelete);
+        await _context.SaveChangesAsync();
         return true;
     }
-
     /// <summary>
     /// Archive (soft delete) a class by id. This also archives downstream dependents.
     /// </summary>
@@ -186,6 +224,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
+        DoesProjectExist(projectId);
         // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
@@ -220,7 +259,7 @@ public class ClassBusiness : IClassBusiness
             }
         }
     }
-    
+
     /// <summary>
     /// This is used to get the general class that has been created with a project.
     /// If there is a project that does not have the class, it creates one. 
@@ -228,9 +267,10 @@ public class ClassBusiness : IClassBusiness
     /// <param name="projectId">The ID of the project we are searching</param>
     /// <param name="className"> The name of the project class to search for</param>
     /// <returns></returns>
-    public async Task<ClassResponseDto> GetClassInfo(string projectId, string className)
+    public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
-        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == long.Parse(projectId));
+        DoesProjectExist(projectId);
+        var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
         {
@@ -240,12 +280,28 @@ public class ClassBusiness : IClassBusiness
                 Name = projectClass.Name,
             };
         }
-        
+
         var classDto = new ClassRequestDto()
         {
             Name = className
         };
 
-        return await CreateClass(long.Parse(projectId), classDto);
+        return await CreateClass(projectId, classDto);
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
     }
 }

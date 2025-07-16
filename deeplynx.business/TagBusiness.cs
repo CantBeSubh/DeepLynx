@@ -33,14 +33,10 @@ public class TagBusiness : ITagBusiness
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
     {
+        DoesProjectExist(projectId);
         if (tagRequestDto == null)
             throw new ArgumentNullException(nameof(tagRequestDto));
         
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
@@ -84,6 +80,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, TagRequestDto tagRequestDto)
     {
+        DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
         {
@@ -118,12 +115,20 @@ public class TagBusiness : ITagBusiness
     /// Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId)
+    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
-        return await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.ArchivedAt == null)
-            .Select(t => new TagResponseDto()
+        DoesProjectExist(projectId, hideArchived);
+        var tagQuery = _context.Tags
+            .Where(t => t.ProjectId == projectId);
+            
+        if (hideArchived)
+        {
+            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+        }
+            
+        return await tagQuery.Select(t => new TagResponseDto()
             {
                 Id = t.Id,
                 Name = t.Name,
@@ -142,17 +147,24 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>The tag with its details.</returns>
-    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> GetTagById(long projectId, long tagId)
+    /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
+    public async Task<TagResponseDto> GetTagById(long projectId, long tagId, bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var tag = await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.Id == tagId && t.ArchivedAt == null)
+            .Where(t => t.ProjectId == projectId && t.Id == tagId)
             .FirstOrDefaultAsync();
 
         if (tag == null)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
+        }
+        
+        if (hideArchived && tag.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
         }
 
         return new TagResponseDto
@@ -176,6 +188,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> DeleteTag(long projectId, long tagId)
     {
+        DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
             throw new KeyNotFoundException($"Tag with id {tagId} not found.");
@@ -194,6 +207,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> ArchiveTag(long projectId, long tagId)
     {
+        DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
 
         if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
@@ -204,4 +218,21 @@ public class TagBusiness : ITagBusiness
         await _context.SaveChangesAsync();
         return true;
     }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
 }

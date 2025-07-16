@@ -22,14 +22,15 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all projects
         /// </summary>
+        /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects")]
-        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects()
+        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects([FromQuery] bool hideArchived = true)
         {
             try
             {
-                var projects = await _projectBusiness.GetAllProjects();
+                var projects = await _projectBusiness.GetAllProjects(hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)
@@ -44,13 +45,16 @@ namespace deeplynx.api.Controllers
         /// Get a project
         /// </summary>
         /// <param name="projectId">THe ID by which to retrieve the project</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}")]
-        public async Task<ActionResult<ProjectResponseDto>> GetProject(long projectId)
+        public async Task<ActionResult<ProjectResponseDto>> GetProject(
+            long projectId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var project = await _projectBusiness.GetProject(projectId);
+                var project = await _projectBusiness.GetProject(projectId, hideArchived);
                 return Ok(project);
             }
             catch (Exception exc)

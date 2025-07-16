@@ -28,14 +28,22 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
     /// <param name="classId">(Optional) the ID of the origin or destination class by which to filter mappings</param>
     /// <param name="relationshipId">(Optional) the ID of the relationship by which to filter mappings</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>A list of edge mappings based on the applied filters.</returns>
     public async Task<IEnumerable<EdgeMappingResponseDto>> GetAllEdgeMappings(
         long projectId,
         long? classId,
-        long? relationshipId)
+        long? relationshipId,
+        bool hideArchived)
     {
+        DoesProjectExist(projectId,  hideArchived);
+        if (relationshipId.HasValue)
+        {
+            DoesRelationshipExist(relationshipId.Value, hideArchived);
+        }
+        
         var mappingQuery = _context.EdgeMappings
-            .Where(e => e.ProjectId == projectId && e.ArchivedAt == null);
+            .Where(e => e.ProjectId == projectId);
             
             // add filter for class or tag if specified                                  
             if (classId.HasValue)                                                        
@@ -46,6 +54,11 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             if (relationshipId.HasValue)                                                          
             {                                                                            
                 mappingQuery = mappingQuery.Where(m => m.RelationshipId == relationshipId);                
+            }
+            
+            if (hideArchived)
+            {
+                mappingQuery = mappingQuery.Where(m => m.ArchivedAt == null);
             }
             
             var mappings = await mappingQuery.ToListAsync();
@@ -59,6 +72,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
                 RelationshipId = m.RelationshipId,
                 OriginId = m.OriginId,
                 DestinationId = m.DestinationId,
+                DataSourceId = m.DataSourceId,
                 ProjectId = m.ProjectId,
                 CreatedBy = m.CreatedBy,
                 CreatedAt = m.CreatedAt,
@@ -72,21 +86,29 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <summary>
     /// Retrieves a specific mapping by its id
     /// </summary>
-    /// <param name="mappingId">The id whereby to fetch the mapping</param>
     /// <param name="projectId">The project ID for the project to which the mapping belongs</param>
+    /// <param name="mappingId">The id whereby to fetch the mapping</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result</param>
     /// <returns>The mapping associated with the given ID</returns>
-    /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
+    /// <exception cref="KeyNotFoundException">Returned if mapping not found or is archived</exception>
     public async Task<EdgeMappingResponseDto> GetEdgeMapping(
         long projectId, 
-        long mappingId)
+        long mappingId,
+        bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var mapping = await _context.EdgeMappings
-            .Where(m => m.Id == mappingId && m.ProjectId == projectId && m.ArchivedAt == null)
+            .Where(m => m.Id == mappingId && m.ProjectId == projectId)
             .FirstOrDefaultAsync();
 
         if (mapping == null)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
+        }
+        
+        if (hideArchived && mapping.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Mapping with id {mappingId} is archived");
         }
 
         return new EdgeMappingResponseDto
@@ -97,6 +119,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
@@ -116,12 +139,14 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long projectId,
         EdgeMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var mapping = new EdgeMapping
         {
             ProjectId = projectId,
             OriginParams = dto.OriginParams.ToString(),
             DestinationParams = dto.DestinationParams.ToString(),
             RelationshipId = dto.RelationshipId,
+            DataSourceId = dto.DataSourceId,
             OriginId = dto.OriginId,
             DestinationId = dto.DestinationId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -139,6 +164,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt
@@ -158,6 +184,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         long mappingId,
         EdgeMappingRequestDto dto)
     {
+        DoesProjectExist(projectId);
+       
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -170,6 +198,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         mapping.RelationshipId = dto.RelationshipId;
         mapping.OriginId = dto.OriginId;
         mapping.DestinationId = dto.DestinationId;
+        mapping.DataSourceId = dto.DataSourceId;
         mapping.ProjectId = projectId;
         mapping.ModifiedBy = null; // TODO: handled in future by JWT.
         mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -185,6 +214,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             RelationshipId = mapping.RelationshipId,
             OriginId = mapping.OriginId,
             DestinationId = mapping.DestinationId,
+            DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
             CreatedBy = mapping.CreatedBy,
             CreatedAt = mapping.CreatedAt,
@@ -201,6 +231,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteEdgeMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -220,6 +251,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> ArchiveEdgeMapping(long projectId, long mappingId)
     {
+        DoesProjectExist(projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
         if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
@@ -230,5 +262,37 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         await _context.SaveChangesAsync();
 
         return true;
+    }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    /// <summary>
+    /// Determine if relataionship exists
+    /// </summary>
+    /// <param name="relationshipId">The ID of the relationship we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if relataionship does not exist</returns>
+    private void DoesRelationshipExist(long relationshipId, bool hideArchived = true)
+    {
+        var relationship = hideArchived ? _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null)
+            :  _context.Relationships.Any(p => p.Id == relationshipId);
+        if (!relationship)
+        {
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
+        }
     }
 }

@@ -17,8 +17,45 @@ namespace deeplynx.api.Controllers
             _kuzuDatabaseManager = kuzuDatabaseManager;
         }
 
+
         /// <summary>
-        /// Query Kuzu database
+        /// Export data
+        /// </summary>
+        /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
+        /// <returns>A status indicating the success or failure of the export operation.</returns>
+        [HttpPost("Export")]
+        public async Task<IActionResult> ExportData(int projectId)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                await _kuzuDatabaseManager.ConnectAsync();
+
+                bool exportSuccess = await _kuzuDatabaseManager.ExportDataAsync(projectId);
+                if (exportSuccess)
+                {
+                    return Ok("Data export completed successfully.");
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Data export failed.");
+                }
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while exporting data to the Kuzu database: {e.Message}";
+                LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+
+        /// <summary>
+        /// Query kuzu
         /// </summary>
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <param name="request">The SQL query string to execute</param>
@@ -48,13 +85,14 @@ namespace deeplynx.api.Controllers
             }
         }
 
+
         /// <summary>
-        /// Get Nodes Within Depth
+        /// Query n layers
         /// </summary>
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <param name="request">The request object containing the parameters for the query.</param>
         /// <returns>A result set containing the nodes and their relationships.</returns>
-        [HttpPost("nodes-within-depth")]
+        [HttpPost("Query-N-Layers")]
         public async Task<IActionResult> GetNodesWithinDepth(int projectId, [FromBody] KuzuDBMNodesWithinDepthRequestDto request)
         {
             if (!ModelState.IsValid)

@@ -24,13 +24,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords")]
-        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
+            long projectId,
+            [FromQuery] long? dataSourceId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId);
+                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -46,13 +50,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
         /// <param name="recordId">Datasource ID which record is associated with</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<ActionResult<RecordResponseDto>> GetRecord(long projectId, long recordId)
+        public async Task<ActionResult<RecordResponseDto>> GetRecord(
+            long projectId, 
+            long recordId, 
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var record = await _recordBusiness.GetRecord(projectId, recordId);
+                var record = await _recordBusiness.GetRecord(projectId, recordId, hideArchived);
                 return Ok(record);
             }
             catch (Exception exc)

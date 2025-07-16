@@ -265,7 +265,7 @@ public static class SeedData
             // Customer Analytics Platform Data Sources
             new DataSource
             {
-                
+                Id = 1,
                 Name = "Customer CRM Database",
                 Description = "Primary customer relationship management database",
                 Abbreviation = "CRM_DB",
@@ -281,7 +281,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 2,
                 Name = "E-commerce Transaction API",
                 Description = "Real-time API for accessing e-commerce transaction data",
                 Abbreviation = "ECOM_API",
@@ -299,7 +299,7 @@ public static class SeedData
             // Supply Chain Optimization Data Sources
             new DataSource
             {
-               
+                Id = 3,
                 Name = "Enterprise Resource Planning System",
                 Description = "Comprehensive ERP system with supplier and inventory data",
                 Abbreviation = "ERP_SYS",
@@ -315,7 +315,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 4,
                 Name = "IoT Warehouse Sensors",
                 Description = "Real-time sensor data from warehouse facilities",
                 Abbreviation = "IOT_SENSORS",
@@ -333,7 +333,7 @@ public static class SeedData
             // Legacy System Migration Data Sources (Archived)
             new DataSource
             {
-                
+                Id = 5,
                 Name = "Legacy Mainframe Database",
                 Description = "Historical mainframe system with legacy data",
                 Abbreviation = "MAINFRAME_DB",
@@ -349,7 +349,7 @@ public static class SeedData
             },
             new DataSource
             {
-                
+                Id = 6,
                 Name = "Legacy File System Archives",
                 Description = "Historical file-based data archives",
                 Abbreviation = "FILE_ARCHIVE",
@@ -535,6 +535,7 @@ public static class SeedData
                 RelationshipId = 1,
                 OriginId = 1,
                 DestinationId = 2,
+                DataSourceId = 1,
                 ProjectId = 1,
                 CreatedBy = "john.smith@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
@@ -550,6 +551,7 @@ public static class SeedData
                 RelationshipId = 2,
                 OriginId = 1,
                 DestinationId = 3,
+                DataSourceId = 2,
                 ProjectId = 1,
                 CreatedBy = "sarah.johnson@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
@@ -567,6 +569,7 @@ public static class SeedData
                 RelationshipId = 4,
                 OriginId = 5,
                 DestinationId = 6,
+                DataSourceId = 3,
                 ProjectId = 2,
                 CreatedBy = "mike.davis@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
@@ -583,6 +586,7 @@ public static class SeedData
                 DestinationParams = @"{""class_name"":""LegacyData"",""primary_key"":""legacy_data_id"",""foreign_key"":""owner_user_id"",""migration_priority"":{""critical_data_first"":true}}",
                 RelationshipId = 7,
                 OriginId = 9,
+                DataSourceId = 4,
                 DestinationId = 10,
                 ProjectId = 3,
                 CreatedBy = "system.architect@legacy.com",
@@ -609,6 +613,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""customers"",""primary_key_field"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name, status FROM customers WHERE status = 'active'""},""field_mappings"":{""customer_id"":""customer_id"",""email"":""email"",""first_name"":""first_name"",""last_name"":""last_name""}}",
                 ClassId = 1,
                 ProjectId = 1,
+                DataSourceId = 1,
                 TagId = 3,
                 CreatedBy = "john.smith@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
@@ -622,6 +627,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""purchases"",""primary_key_field"":""purchase_id"",""extraction_query"":""SELECT purchase_id, customer_id, order_number, purchase_date, total_amount FROM purchases""},""aggregation_rules"":{""customer_metrics"":{""total_purchases"":""COUNT(*) GROUP BY customer_id"",""avg_order_value"":""AVG(total_amount) GROUP BY customer_id""}}}",
                 ClassId = 2,
                 ProjectId = 1,
+                DataSourceId = 2,
                 TagId = 1,
                 CreatedBy = "sarah.johnson@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
@@ -637,6 +643,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""suppliers"",""primary_key_field"":""supplier_id"",""extraction_query"":""SELECT supplier_id, company_name, performance_rating FROM suppliers WHERE status = 'active'""},""performance_calculations"":{""overall_score"":""(performance_rating + quality_score + on_time_delivery_rate * 5) / 3""}}",
                 ClassId = 5,
                 ProjectId = 2,
+                DataSourceId = 3,
                 TagId = 5,
                 CreatedBy = "mike.davis@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
@@ -650,6 +657,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""inventory"",""primary_key_field"":""inventory_id"",""extraction_query"":""SELECT inventory_id, product_code, current_quantity, reorder_level FROM inventory""},""inventory_calculations"":{""stock_status"":""CASE WHEN current_quantity <= reorder_level THEN 'reorder_needed' ELSE 'normal' END""}}",
                 ClassId = 6,
                 ProjectId = 2,
+                DataSourceId = 4,
                 TagId = 9,
                 CreatedBy = "inventory.manager@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
@@ -665,6 +673,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""LEGACY.USERS"",""primary_key_field"":""USR_ID"",""extraction_query"":""SELECT USR_ID, USR_NAME, USR_DEPT FROM LEGACY.USERS WHERE STATUS = 'A'""},""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""field_name_mapping"":{""USR_ID"":""legacy_user_id"",""USR_NAME"":""user_name""}}}",
                 ClassId = 9,
                 ProjectId = 3,
+                DataSourceId = 5,
                 TagId = 10,
                 CreatedBy = "system.architect@legacy.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),

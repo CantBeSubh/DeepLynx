@@ -10,9 +10,12 @@ services:
         environment:
            NODE_ENV: production
            DATABASE_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+        volumes:
+            - ./database:/database
         depends_on:
             postgres:
                 condition: service_healthy
+        entrypoint: /usr/local/bin/entrypoint.sh
     postgres:
         env_file:
             - .env
@@ -21,9 +24,7 @@ services:
             dockerfile: Dockerfiles/Dockerfile.db.local
         ports:
             - "5432:5432"
-        volumes:
-            - ./database/migration.sql:/docker-entrypoint-initdb.d/migration.sql
-        healthcheck:
+        healthcheck:    
             test: |
                 while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
                     echo "$(date) - waiting for database to start"
