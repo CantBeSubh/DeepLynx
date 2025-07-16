@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +39,13 @@ public class TagBusiness : ITagBusiness
         if (tagRequestDto == null)
             throw new ArgumentNullException(nameof(tagRequestDto));
         
+        
+        var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
+        if (existingTag != null)
+        {
+            throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
+        }
+        
         // Validate 'Name' field
         if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
         {
@@ -67,6 +76,60 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             CreatedBy = tag.CreatedBy,
             CreatedAt = tag.CreatedAt
+        };
+    }
+
+    /// <summary>
+    /// Asynchronously creates new tags for a specified project.
+    /// Note: Will error out with foreign key constraint violation if project is not found.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <returns>The created tag response DTO with saved details.</returns>
+    public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
+    {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(bulkTagRequestDto);
+        
+        var tags = new List<Tag>();
+        var tagResponses = new List<TagResponseDto>();
+        foreach (var tagRequestDto in bulkTagRequestDto.Tags)
+        {
+            ValidationHelper.ValidateModel(tagRequestDto);
+            var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
+            if (existingTag != null)
+            {
+                throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
+            }
+            
+            var tag = new Tag
+            {
+                Name = tagRequestDto.Name,
+                ProjectId = projectId,
+                CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            tags.Add(tag);
+        }
+        await _context.Tags.AddRangeAsync(tags);
+        await _context.SaveChangesAsync();
+
+        foreach (var tag in tags)
+        {
+            var tagResponseDto = new TagResponseDto
+            {
+                Id = tag.Id,
+                Name = tag.Name,
+                ProjectId = tag.ProjectId,
+                CreatedBy = tag.CreatedBy,
+                CreatedAt = tag.CreatedAt
+            };
+            tagResponses.Add(tagResponseDto);
+        }
+        
+        return new BulkTagResponseDto
+        {
+            Tags = tagResponses
         };
     }
 
