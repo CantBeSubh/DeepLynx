@@ -334,6 +334,9 @@ namespace deeplynx.tests
             var deletedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.Null(deletedClass);
         }
+        
+        // TODO: add test to confirm relationship can be created with null classes (both one null and two nulls)
+        // TODO: add test to confirm cascade doesn't throw weird errors when rels with null class are involved
     
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRelationships()
@@ -359,7 +362,7 @@ namespace deeplynx.tests
             Context.Classes.Add(otherClass);
             await Context.SaveChangesAsync();
 
-            // Create relationships where testClass is Origin
+            // Create relationship where testClass is Origin
             var relationship1 = new Relationship
             {
                 Name = "Test Relationship 1",
@@ -370,7 +373,7 @@ namespace deeplynx.tests
                 CreatedBy = null
             };
 
-            // Create relationships where testClass is Destination
+            // Create relationship where testClass is Destination
             var relationship2 = new Relationship
             {
                 Name = "Test Relationship 2",
@@ -380,9 +383,46 @@ namespace deeplynx.tests
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
             };
+            
+            // TODO: pull these cases into the aforementioned todos
+            // Create relationship where testClass is Origin and dest is null
+            var relationship3 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            // Create relationship where testClass is Destination and orig is null
+            var relationship4 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where orig and dest are null
+            var relationship5 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
 
             Context.Relationships.Add(relationship1);
             Context.Relationships.Add(relationship2);
+            Context.Relationships.Add(relationship3);
+            Context.Relationships.Add(relationship4);
+            Context.Relationships.Add(relationship5);
             await Context.SaveChangesAsync();
 
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
@@ -390,8 +430,14 @@ namespace deeplynx.tests
 
             var deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
             var deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var deletedRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+            var deletedRelationship4 = await Context.Relationships.FindAsync(relationship4.Id);
+            var intactRelationship5 = await Context.Relationships.FindAsync(relationship5.Id);
             Assert.Null(deletedRelationship1);
             Assert.Null(deletedRelationship2);
+            Assert.Null(deletedRelationship3);
+            Assert.Null(deletedRelationship4);
+            Assert.NotNull(intactRelationship5);
         }
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRecords()

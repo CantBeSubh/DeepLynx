@@ -1190,11 +1190,13 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Class", "Destination")
                         .WithMany("RelationshipDestinations")
                         .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("relationships_destination_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
                         .WithMany("RelationshipOrigins")
                         .HasForeignKey("OriginId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("relationships_origin_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
