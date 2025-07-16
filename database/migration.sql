@@ -1750,5 +1750,27 @@ BEGIN
     VALUES ('20250715151108_AddProjectAndSourceNames', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    ALTER TABLE deeplynx.records ADD description text;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    ALTER TABLE deeplynx.historical_records ADD description text;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250716174942_AddDescriptionToRecords', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
