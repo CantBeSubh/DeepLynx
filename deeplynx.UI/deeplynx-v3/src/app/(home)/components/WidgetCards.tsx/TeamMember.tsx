@@ -1,11 +1,10 @@
-import React, { useState, useRef } from "react";
-import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
-// import AddTeamMember from "@/app/(home)/components/AddTeamMember";
+import React, { useState } from "react";
+import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, PlusCircleIcon} from "@heroicons/react/24/outline";
+import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 
-const TeamMembersWidget = () => {
+const TeamMembersWidget: React.FC = () => {
     const [showTable, setShowTable] = useState(false);
-    const avatarContainerRef = useRef(null);
-    const [avatarModal, setAvatarModal] = useState(false);
+    const avatars = Array.from({ length: 30 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
 
     const handleToggle = () => {
         setShowTable((prev) => !prev);
@@ -56,52 +55,53 @@ const TeamMembersWidget = () => {
             </div>
 
             {!showTable ? (
-                <div className="flex items-center">
-                    <div className="flex justify-between round-box space-x-4 pt-4 pb-4">
-                        <div className="flex items-center space-x-2">
+                <AvatarCarousel avatars={avatars} />
+                // <div className="flex items-center justify-center w-full">
+                //     <div className="flex items-center justify-between round-box pt-4 pb-4 w-full">
+                //         <div className="flex items-center space-x-2 w-full">
 
-                            {/* Left Button */}
-                            <div className="flex items-center justify-cetner">
-                                <button className="flex-shrink-0">
-                                {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
-                                    <ChevronLeftIcon
-                                        className="size-6"
-                                    />
-                                </button>
-                            </div>
+                //             {/* Left Button */}
+                //             <div className="flex items-center">
+                //                 <button className="flex-shrink-0">
+                //                 {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
+                //                     <ChevronLeftIcon
+                //                         className="size-6 mr-4"
+                //                     />
+                //                 </button>
+                //             </div>
 
-                            {/* Avatar Icons */}
-                            <div className="flex-grow flex items-center space-x-2 overflow-x-auto">
-                                <p className="text-base-300 mb-2"></p>
-                                {[...Array(8)].map((_, i) => (
-                                    <div key={i} className="avatar inline-block">
-                                        <div className="w-10 rounded-full">
-                                        <img
-                                            src={`https://i.pravatar.cc/150?img=${i + 1}`}
-                                            alt="avatar"
-                                        />
-                                        </div>
-                                    </div>
-                                ))}
-                                <button
-                                    // onClick={() => setAvatarModal(true)}
-                                    className="">
-                                    <PlusIcon />
-                                </button>
-                            </div>
+                //             {/* Avatar Icons */}
+                //             <div className="flex items-center justify-center space-x-2">
+                //                 <p className="text-base-300 mb-2"></p>
+                //                 {[...Array(9)].map((_, i) => (
+                //                     <div key={i} className="avatar inline-block">
+                //                         <div className="w-13 rounded-full">
+                //                         <img
+                //                             src={`https://i.pravatar.cc/150?img=${i + 1}`}
+                //                             alt="avatar"
+                //                         />
+                //                         </div>
+                //                     </div>
+                //                 ))}
+                //                 <button
+                //                     // onClick={() => setAvatarModal(true)}
+                //                     className="">
+                //                     <PlusIcon/>
+                //                 </button>
+                //             </div>
 
-                            {/* Right Button */}
-                            <div className="flex items-center justify-center">
-                                <button className="flex-shrink-0">
-                                {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
-                                    <ChevronRightIcon
-                                        className="size-6"
-                                    />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                //             {/* Right Button */}
+                //             <div className="flex items-center">
+                //                 <button className="flex-shrink-0">
+                //                 {/* <button onClick={handleToggle} className="flex-shrink-0"> */}
+                //                     <ChevronRightIcon
+                //                         className="size-6 ml-4"
+                //                     />
+                //                 </button>
+                //             </div>
+                //         </div>
+                //     </div>
+                // </div>
             ) : (
                 // Team Members Table
                 <div className="overflow-x-auto">
@@ -269,7 +269,7 @@ const PlusIcon = () => (
     viewBox="0 0 24 24"
     strokeWidth={1.5}
     stroke="white"
-    className="w-8 h-8 rounded-full"
+    className="w-9 h-9 rounded-full"
   >
     <circle
         cx="12"
