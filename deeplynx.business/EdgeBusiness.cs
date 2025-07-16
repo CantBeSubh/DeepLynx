@@ -1,5 +1,6 @@
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 
@@ -106,6 +107,69 @@ public class EdgeBusiness : IEdgeBusiness
             ProjectId = edge.ProjectId,
             CreatedAt = edge.CreatedAt,
             CreatedBy = edge.CreatedBy
+        };
+    }
+    
+    /// <summary>
+    /// Asynchronously creates new edges for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the edge belongs</param>
+    /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+    /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
+    /// <returns>The created edge response DTO with saved details.</returns>
+    public async Task<BulkEdgeResponseDto> BulkCreateEdges(
+        long projectId, 
+        long dataSourceId, 
+        BulkEdgeRequestDto bulkDto)
+    {
+        DoesProjectExist(projectId);
+        DoesDataSourceExist(dataSourceId);
+        ValidationHelper.ValidateModel(bulkDto);
+        
+        var edges = new List<Edge>();
+        var edgeResponses = new List<EdgeResponseDto>();
+        foreach (var dto in bulkDto.Edges)
+        {
+            ValidationHelper.ValidateModel(dto);
+            
+            var edge = new Edge
+            {
+                OriginId = dto.OriginId,
+                DestinationId = dto.DestinationId,
+                ProjectId = projectId,
+                DataSourceId = dataSourceId,
+                RelationshipId = dto.RelationshipId,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null // TODO: Implement user ID here when JWT tokens are ready
+            };
+            edges.Add(edge);
+        }
+
+        await _context.Edges.AddRangeAsync(edges);
+        await _context.SaveChangesAsync();
+
+        foreach (var edge in edges)
+        {
+            // add historical edge
+            await _historicalEdgeBusiness.CreateHistoricalEdge(edge.Id);
+
+            var edgeResponse = new EdgeResponseDto
+            {
+                Id = edge.Id,
+                OriginId = edge.OriginId,
+                DestinationId = edge.DestinationId,
+                RelationshipId = edge.RelationshipId,
+                DataSourceId = edge.DataSourceId,
+                ProjectId = edge.ProjectId,
+                CreatedAt = edge.CreatedAt,
+                CreatedBy = edge.CreatedBy
+            };
+            edgeResponses.Add(edgeResponse);
+        }
+
+        return new BulkEdgeResponseDto
+        {
+            Edges = edgeResponses
         };
     }
 

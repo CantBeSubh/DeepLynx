@@ -105,7 +105,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("BulkCreateRecords")]
-        public async Task<ActionResult<RecordResponseDto>> BulkCreateRecords(
+        public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
             long projectId, 
             [FromQuery] long dataSourceId,
             [FromBody] BulkRecordRequestDto dto)
