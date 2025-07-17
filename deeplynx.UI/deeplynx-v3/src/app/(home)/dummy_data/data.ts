@@ -589,6 +589,7 @@ export const initialTableData = [
       select: false,
       tags: ["Climate", "Temperature", "Precipitation"],
       lastEdit: "2025-05-15",
+      associatedRecords: ["weather_data.csv", "employee_records.xlsx", "project_proposal.xdoc"]
     },
     {
       id: 2,
@@ -601,6 +602,7 @@ export const initialTableData = [
       select: false,
       tags: ["Finance", "Retail", "Monthly Report"],
       lastEdit: "2025-05-12",
+      associatedRecords: ["sales_report.pdf", "inventory_list.csv"]
     },
     {
       id: 3,
@@ -613,6 +615,7 @@ export const initialTableData = [
       select: false,
       tags: ["HR", "Employee Data"],
       lastEdit: "2025-05-10",
+      associatedRecords: ["meeting_minutes.docx", "budget_overview.xlsx", "client_feedback.txt"]
     },
     {
       id: 4,
@@ -625,6 +628,7 @@ export const initialTableData = [
       select: false,
       tags: ["Inventory", "Stock", "Warehouse"],
       lastEdit: "2025-05-08",
+      associatedRecords: ["product_catalog.pdf"]
     },
     {
       id: 5,
@@ -649,6 +653,7 @@ export const initialTableData = [
       select: false,
       tags: ["Customer Feedback", "Surveys", "Ratings"],
       lastEdit: "2025-05-20",
+      associatedRecords: ["annual_review.docx", "marketing_plan.pptx", "financial_statement.xlsx", "team_roster.csv"]
     },
     {
       id: 7,
@@ -661,6 +666,7 @@ export const initialTableData = [
       select: false,
       tags: ["Finance", "Quarterly Report", "Income Statement", "Balance Sheet"],
       lastEdit: "2025-05-22",
+      associatedRecords: ["research_paper.pdf", "project_timeline.xlsx"]
     },
     {
       id: 8,
@@ -673,6 +679,7 @@ export const initialTableData = [
       select: false,
       tags: ["Marketing", "Campaign Analysis", "Performance Metrics"],
       lastEdit: "2025-05-25",
+      associatedRecords: ["user_guide.docx", "error_log.txt", "feature_request.csv"]
     },
     {
       id: 9,
@@ -685,6 +692,7 @@ export const initialTableData = [
       select: false,
       tags: ["Research", "Articles", "Ongoing Projects"],
       lastEdit: "2025-05-17",
+      associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
     {
       id: 10,
@@ -697,6 +705,7 @@ export const initialTableData = [
       select: false,
       tags: ["Logistics", "Shipping Routes", "Delivery Times", "Carrier Information"],
       lastEdit: "2025-05-19",
+      associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
   ];
 
@@ -1003,4 +1012,157 @@ export const peopleData = [
       nickname: "JD",
       visibility: "Public"
   }
+];
+
+export const mySavedSearches = [
+  {
+    id: 1,
+    name: "Water Quality",
+    filters: ["LakeFS", "Timeseries", "River"],
+    createdAt: "5-12-1994"
+  },
+  {
+    id: 2,
+    name: "Alien Sightings",
+    filters: ["UFO", "Area 51", "Conspiracy"],
+    createdAt: "7-4-2020"
+  },
+  {
+    id: 3,
+    name: "Best Pizza Places",
+    filters: ["Cheese", "Pepperoni", "Deep Dish"],
+    createdAt: "3-14-2021"
+  },
+  {
+    id: 4,
+    name: "Cat Memes",
+    filters: ["Funny", "Cats", "Internet Gold"],
+    createdAt: "1-1-2022"
+  },
+  {
+    id: 5,
+    name: "Time Travel Theories",
+    filters: ["Wormholes", "Paradoxes", "Sci-Fi"],
+    createdAt: "10-21-2015"
+  }
+];
+
+export const myRecentSearches = [
+  {
+    id: 1,
+    name: "Mountain Climbing",
+    filters: ["Everest", "Gear", "Techniques"],
+    createdAt: "8-15-2018"
+  },
+  {
+    id: 2,
+    name: "Vintage Cars",
+    filters: ["Classic", "Restoration", "Shows"],
+    createdAt: "11-22-2019"
+  },
+  {
+    id: 3,
+    name: "Space Exploration",
+    filters: ["NASA", "Mars", "Rockets"],
+    createdAt: "4-12-2021"
+  },
+  {
+    id: 4,
+    name: "Cooking Recipes",
+    filters: ["Italian", "Desserts", "Healthy"],
+    createdAt: "6-30-2020"
+  },
+  {
+    id: 5,
+    name: "Photography Tips",
+    filters: ["Lighting", "Portraits", "Editing"],
+    createdAt: "9-5-2022"
+  },
+  {
+    id: 6,
+    name: "Gardening Ideas",
+    filters: ["Vegetables", "Flowers", "DIY"],
+    createdAt: "3-18-2023"
+  },
+  {
+    id: 7,
+    name: "Travel Destinations",
+    filters: ["Europe", "Beaches", "Adventure"],
+    createdAt: "2-14-2021"
+  },
+  {
+    id: 8,
+    name: "Fitness Workouts",
+    filters: ["Cardio", "Strength", "Yoga"],
+    createdAt: "5-25-2022"
+  },
+  {
+    id: 9,
+    name: "Historical Events",
+    filters: ["WWII", "Ancient Rome", "Revolutions"],
+    createdAt: "7-4-2021"
+  },
+  {
+    id: 10,
+    name: "Tech Gadgets",
+    filters: ["Smartphones", "Wearables", "Innovations"],
+    createdAt: "12-1-2020"
+  }
+];
+
+export const dropDownProjects = [
+  "Aurora Initiative",
+  "Quantum Quest",
+  "This is going to be a little long",
+  "Nubela Nexus",
+  "Phoenix Protocol",
+  "Starlight Symphony",
+  "Echo Ensigma", 
+  "Zenith Zephyr",
+  
+]
+
+import { RecentRecord } from "../(routes)/data_catalog/RecentRecordsCard";
+
+export const recentRecordsData: RecentRecord[] = [
+  {
+    id: 1,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 2,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 3,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 4,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
+  {
+    id: 5,
+    name: "Groundwater pH Monitoring – Teton Valley (2023)",
+    className: "Timeseries",
+    lastEdited: "5-29-2025",
+    fileType: "CSV",
+    projectName: "Kevin's Lame Project",
+  },
 ];

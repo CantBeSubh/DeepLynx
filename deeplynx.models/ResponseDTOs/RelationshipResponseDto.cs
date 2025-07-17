@@ -13,8 +13,8 @@ public class RelationshipResponseDto
     public DateTime? ModifiedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }
 
-    public long OriginId { get; set; }
-    public long DestinationId { get; set; }
-    public ClassRelationshipRespDto? Origin { get; set; }
-    public ClassRelationshipRespDto? Destination { get; set; }
+    public long? OriginId { get; set; }
+    public long? DestinationId { get; set; }
+    public ClassRelationshipResponseDto? Origin { get; set; }
+    public ClassRelationshipResponseDto? Destination { get; set; }
 }

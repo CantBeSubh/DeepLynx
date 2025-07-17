@@ -20,7 +20,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new tag for a specified project.
+    /// Creates a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
@@ -41,9 +41,31 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+    
+    /// <summary>
+    /// Creates many tags
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <returns>The created tag with its details.</returns>
+    [HttpPost("BulkCreateTag")]
+    public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(long projectId, [FromBody] BulkTagRequestDto tagRequestDto)
+    {
+        try
+        {
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tagRequestDto);
+            return Ok(bulkTagResponseDto);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An unexpected error occurred while creating these tags: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 
     /// <summary>
-    /// Updates an existing tag for a specified project.
+    /// Update a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to update.</param>
@@ -66,16 +88,19 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves all tags for a specified project.
+    /// Get all tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(long projectId)
+    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
+        long projectId, 
+        [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId);
+            var tags = await _tagBusiness.GetAllTags(projectId,  hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)
@@ -87,17 +112,21 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieves a specific tag by its ID for a specified project.
+    /// Get a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
     [HttpGet("GetTagById/{tagId}")]
-    public async Task<ActionResult<TagResponseDto>> GetTagById(long projectId, long tagId)
+    public async Task<ActionResult<TagResponseDto>> GetTagById(
+        long projectId, 
+        long tagId,
+        [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tag = await _tagBusiness.GetTagById(projectId, tagId);
+            var tag = await _tagBusiness.GetTagById(projectId, tagId,  hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
@@ -109,7 +138,7 @@ public class TagController : ControllerBase
     }
 
     /// <summary>
-    /// Deletes a specific tag by its ID for a specified project.
+    /// Delete a tag
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
@@ -131,7 +160,7 @@ public class TagController : ControllerBase
     }
     
     /// <summary>
-    /// Archives a specific tag by its ID for a specified project.
+    /// Archive a tag 
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>

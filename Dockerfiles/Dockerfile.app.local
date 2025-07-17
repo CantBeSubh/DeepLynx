@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine3.20 AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 
 # Set the working directory
 WORKDIR /source
@@ -37,6 +37,13 @@ WORKDIR /app/backend
 # Copy the published backend code
 COPY --from=publish /app/publish .
 
+# Install tools needed for entrypoint.sh
+RUN apk --no-check-certificate add postgresql-client
+
+# Copy the entrypoint script
+COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Set the working directory for the frontend
 WORKDIR /app/frontend
 
@@ -61,4 +68,5 @@ RUN yarn
 RUN npm run build
 
 # Set the command point to run the application
+# Currently overriden by entrypoint.sh
 CMD ["npm", "start"]

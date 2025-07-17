@@ -16,16 +16,19 @@ namespace deeplynx.api.Controllers
         }
 
     /// <summary>
-    /// Get all Relationships from the database
+    /// Get all relationships 
     /// </summary>
-    /// <param name="projectId"></param>
-    /// <returns></returns>
+    /// <param name="projectId">ID for project which relationship is associated with</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
+    /// <returns>List of relationship response DTOs</returns>
         [HttpGet("GetAllRelationships")]
-        public async Task<IActionResult> GetAll(long projectId)
+        public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
+        long projectId,
+        [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var relationships = await _business.GetAllRelationships(projectId);
+                var relationships = await _business.GetAllRelationships(projectId,  hideArchived);
                 return Ok(relationships);
             }
             catch (Exception exc)
@@ -37,17 +40,21 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get one Relationship from DB
+        /// Get a relationship
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
-        [HttpGet("GetAllRelationships/{relationshipId}")]
-        public async Task<IActionResult> Get(long projectId, long relationshipId)
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Id of relationship</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
+        /// <returns>Relationship response DTO</returns>
+        [HttpGet("GetRelationship/{relationshipId}")]
+        public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
+            long projectId, 
+            long relationshipId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                return Ok(await _business.GetRelationship(projectId, relationshipId));
+                return Ok(await _business.GetRelationship(projectId, relationshipId, hideArchived));
             }
             catch (KeyNotFoundException ex)
             {
@@ -61,26 +68,18 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create one Relationship
+        /// Create a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship")]
-        public async Task<IActionResult> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
+        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { error = "Invalid input", details = ModelState });
-            }
-
             try
             {
                 var created = await _business.CreateRelationship(projectId, dto);
-                // Re-use the clean, Include-ready method
-                var full = await _business.GetRelationship(projectId, created.Id);
-
-                return Ok(full);
+                return Ok(created);
             }
             catch (Exception exc)
             {
@@ -89,22 +88,40 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Create many relationships 
+        /// </summary>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
+        [HttpPost("BulkCreateRelationships")]
+        public async Task<ActionResult<BulkRelationshipResponseDto>> BulkCreateRelationships(long projectId, [FromBody] BulkRelationshipRequestDto dto)
+        {
+            try
+            {
+                var created = await _business.BulkCreateRelationships(projectId, dto);
+                return Ok(created);
+            }
+            catch (Exception exc)
+            {
+                var message = $"Unexpected error while creating relationships: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
-        /// Update Relationship
+        /// Update a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}")]
-        public async Task<IActionResult> UpdateRelationship(long projectId, long relationshipId,
+        public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] RelationshipRequestDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(new { error = "Invalid input", details = ModelState });
-            }
             try
             {
                 var result = await _business.UpdateRelationship(projectId, relationshipId, dto);
@@ -119,11 +136,11 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Delete Relationship
+        /// Delete a relationship
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <returns>Relationship was successfully deleted.</returns>
         [HttpDelete("DeleteRelationship/{relationshipId}")]
         public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
@@ -141,11 +158,11 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archive Relationship
+        /// Archive a relationship 
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="relationshipId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="relationshipId">Relationship ID</param>
+        /// <returns>Relationship was successfully archived.</returns>
         [HttpDelete("ArchiveRelationship/{relationshipId}")]
         public async Task<IActionResult> ArchiveRelationship(long projectId, long relationshipId)
         {

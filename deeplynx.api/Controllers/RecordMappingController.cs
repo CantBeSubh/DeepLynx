@@ -20,22 +20,24 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all record mappings for a specific project and (optionally) class and/or tag
+        /// Get all record mapping
         /// </summary>
         /// <param name="projectId">The ID of the project whose mappings are to be retrieved</param>
         /// <param name="classId">(Optional) The ID of the class by which to filter mappings</param>
         /// <param name="tagId">(Optional) The ID of the tag by which to filter mappings</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>A list of record mappings based on the applied filters.</returns>
         [HttpGet("GetAllRecordMappings")]
-        public async Task<IActionResult> GetAllRecordMappings(
+        public async Task<ActionResult<IEnumerable<RecordMappingResponseDto>>> GetAllRecordMappings(
             long projectId, 
             [FromQuery] long? classId = null,
-            [FromQuery] long? tagId = null)
+            [FromQuery] long? tagId = null,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var rMappings = await _rMappingBusiness
-                    .GetAllRecordMappings(projectId, classId, tagId);
+                    .GetAllRecordMappings(projectId, classId, tagId, hideArchived);
                 return Ok(rMappings);
             }
             catch (Exception exc)
@@ -47,17 +49,21 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Retrieves a specific record mapping by ID
+        /// Get a record mapping
         /// </summary>
-        /// <param name="mappingId">The ID whereby to fetch the record mapping</param>
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
+        /// <param name="mappingId">The ID whereby to fetch the record mapping</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>The record mapping associated with the given ID</returns>
         [HttpGet("GetRecordMapping/{mappingId}")]
-        public async Task<IActionResult> GetRecordMapping(long projectId, long mappingId)
+        public async Task<ActionResult<RecordMappingResponseDto>> GetRecordMapping(
+            long projectId, 
+            long mappingId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var rMapping = await _rMappingBusiness.GetRecordMapping(projectId, mappingId);
+                var rMapping = await _rMappingBusiness.GetRecordMapping(projectId, mappingId, hideArchived);
                 return Ok(rMapping);
             }
             catch (Exception exc)
@@ -69,13 +75,13 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Asynchronously creates a new record mapping for a specified project.
+        /// Create a record mapping
         /// </summary>
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <param name="dto">The record mapping request data transfer object containing mapping details</param>
         /// <returns>The created record mapping</returns>
         [HttpPost("CreateRecordMapping")]
-        public async Task<IActionResult> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
+        public async Task<ActionResult<RecordMappingResponseDto>> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
         {
             try
             {
@@ -91,14 +97,14 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Updates an existing record mapping by its ID.
+        /// Update a record mapping 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the record mapping belongs.</param>
         /// <param name="mappingId">The ID of the record mapping to update.</param>
         /// <param name="dto">The record mapping request data transfer object containing updated details.</param>
         /// <returns>The updated mapping response DTO with its details.</returns>
         [HttpPut("UpdateRecordMapping/{mappingId}")]
-        public async Task<IActionResult> UpdateRecordMapping(
+        public async Task<ActionResult<RecordMappingResponseDto>> UpdateRecordMapping(
             long projectId, 
             long mappingId, 
             [FromBody] RecordMappingRequestDto dto)
@@ -117,7 +123,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific record mapping by its ID.
+        /// Delete a record mapping 
         /// </summary>
         /// <param name="mappingId">The ID of the record mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
@@ -139,7 +145,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific record mapping by its ID.
+        /// Archive a record mapping 
         /// </summary>
         /// <param name="mappingId">The ID of the record mapping to archive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>

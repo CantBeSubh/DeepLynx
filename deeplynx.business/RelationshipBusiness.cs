@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -20,10 +21,18 @@ public class RelationshipBusiness: IRelationshipBusiness
         _edgeBusiness = edgeBusiness;
         _context = context;
     }
-    public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId)
+    
+    /// <summary>
+    /// Retrieves all relationships
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result</param>
+    /// <returns>A list of relationships</returns>
+    public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
-        var rawData = await _context.Relationships
-            .Where(r => r.ProjectId == projectId && r.ArchivedAt == null)
+        DoesProjectExist(projectId, hideArchived);
+        var relationships = await _context.Relationships
+            .Where(r => r.ProjectId == projectId)
             .Include(r => r.Origin)
             .Include(r => r.Destination)
             .Select(r => new
@@ -40,12 +49,18 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.ArchivedAt,
                 r.OriginId,
                 r.DestinationId,
-                Origin = r.Origin == null ? null : new ClassRelationshipRespDto { Id = r.Origin.Id, Name = r.Origin.Name },
-                Destination = r.Destination == null ? null : new ClassRelationshipRespDto { Id = r.Destination.Id, Name = r.Destination.Name }
+                Origin = r.Origin == null ? null : new ClassRelationshipResponseDto { Id = r.Origin.Id, Name = r.Origin.Name },
+                Destination = r.Destination == null ? null : new ClassRelationshipResponseDto { Id = r.Destination.Id, Name = r.Destination.Name }
             })
             .ToListAsync();
+        
+        if (hideArchived)
+        {
+            relationships = relationships.Where(r => r.ArchivedAt == null).ToList();
+        }
+        
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
-        var result = rawData.Select(r => new RelationshipResponseDto
+        return relationships.Select(r => new RelationshipResponseDto
         {
             Id = r.Id,
             Name = r.Name,
@@ -62,13 +77,20 @@ public class RelationshipBusiness: IRelationshipBusiness
             Destination = r.Destination,
             ArchivedAt = r.ArchivedAt,
         });
-
-        return result;
     }
-    public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId)
+    /// <summary>
+    /// Retrieves a specific relationship by ID
+    /// </summary>
+    /// <param name="projectId">The ID by which to retrieve the class</param>
+    /// <param name="relationshipId">The ID of the relationship to retrieve</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
+    /// <returns>The given relationship to return</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship not found or is archived</exception>
+    public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived)
     {
+        DoesProjectExist(projectId, hideArchived);
         var relationship = await _context.Relationships
-            .Where(r => r.ProjectId == projectId && r.Id == relationshipId && r.ArchivedAt == null)
+            .Where(r => r.ProjectId == projectId && r.Id == relationshipId)
             .Include(r => r.Origin)
             .Include(r => r.Destination)
             .FirstOrDefaultAsync();
@@ -76,6 +98,11 @@ public class RelationshipBusiness: IRelationshipBusiness
         if (relationship == null)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
+        }
+        
+        if (hideArchived && relationship.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} is archived");
         }
 
         return new RelationshipResponseDto
@@ -91,28 +118,40 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedAt = relationship.ModifiedAt,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId,
-            Origin = relationship.Origin == null ? null : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null ? null : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name },
+            Origin = relationship.Origin == null ? null : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+            Destination = relationship.Destination == null ? null : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name },
             ArchivedAt = relationship.ArchivedAt,
         };
     }
+    
+    /// <summary>
+    /// Creates a new relationship based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
+    /// <returns>The new relationship which was just created.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
     {
-        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId && p.ArchivedAt == null);
-        if (project == null)
-        {
-            throw new KeyNotFoundException($"Project with ID {projectId} not found.");
-        }
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(dto);
         
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
-        if (orignClass == null)
-        {
-            throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
+        if (dto.OriginId != null)
+        { 
+            var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
+            if (originClass == null)
+            {
+                throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
+            }
         }
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
-        if (destinationClass == null)
+
+        if (dto.DestinationId != null)
         {
-            throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
+            if (destinationClass == null)
+            {
+                throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
+            }
         }
         
         var relationship = new Relationship
@@ -131,12 +170,21 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         _context.Relationships.Add(relationship);
         await _context.SaveChangesAsync();
-        await _context.Entry(relationship)
-            .Reference(r => r.Origin)
-            .LoadAsync();
-        await _context.Entry(relationship)
-            .Reference(r => r.Destination)
-            .LoadAsync();
+
+        if (dto.OriginId != null)
+        {
+            await _context.Entry(relationship)
+                .Reference(r => r.Origin)
+                .LoadAsync();
+        }
+
+        if (dto.DestinationId != null)
+        {
+            await _context.Entry(relationship)
+                .Reference(r => r.Destination)
+                .LoadAsync();
+        }
+        
         return new RelationshipResponseDto
         {
             Id = relationship.Id,
@@ -152,15 +200,124 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = relationship.DestinationId,
             Origin = relationship.Origin == null
                 ? null
-                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+                : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
             Destination = relationship.Destination == null
                 ? null
-                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+                : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
         };
     }
 
+    /// <summary>
+    /// Creates a new relationship based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs</param>
+    /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
+    /// <returns>The new relationship which was just created.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
+    public async Task<BulkRelationshipResponseDto> BulkCreateRelationships(long projectId, BulkRelationshipRequestDto bulkRelationshipRequestDto)
+    {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(bulkRelationshipRequestDto);
+        
+        var relationships = new List<Relationship>();
+        var relationshipResponses = new List<RelationshipResponseDto>();
+        foreach (var relationshipDto in bulkRelationshipRequestDto.Relationships)
+        {
+            ValidationHelper.ValidateModel(relationshipDto);
+            
+            if (relationshipDto.OriginId != null)
+            { 
+                var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.OriginId && c.ArchivedAt == null);
+                if (originClass == null)
+                {
+                    throw new KeyNotFoundException($"Origin class with ID {relationshipDto.OriginId} not found.");
+                }
+            }
+
+            if (relationshipDto.DestinationId != null)
+            {
+                var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.DestinationId && c.ArchivedAt == null);
+                if (destinationClass == null)
+                {
+                    throw new KeyNotFoundException($"Destination class with ID {relationshipDto.DestinationId} not found.");
+                }
+            }
+            
+            var relationship = new Relationship
+            {
+                Name = relationshipDto.Name,
+                Description = relationshipDto.Description,
+                Uuid = relationshipDto.Uuid,
+                OriginId = relationshipDto.OriginId,
+                DestinationId = relationshipDto.DestinationId,
+                ProjectId = projectId,
+                CreatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
+                ModifiedBy =null  // TODO: Implement user ID here when JWT tokens are ready
+            };
+            relationships.Add(relationship);
+        }
+
+        await _context.Relationships.AddRangeAsync(relationships);
+        await _context.SaveChangesAsync();
+
+        foreach (var relationship in relationships)
+        {
+            if (relationship.OriginId != null)
+            {
+                await _context.Entry(relationship)
+                    .Reference(r => r.Origin)
+                    .LoadAsync();
+            }
+
+            if (relationship.DestinationId != null)
+            {
+                await _context.Entry(relationship)
+                    .Reference(r => r.Destination)
+                    .LoadAsync();
+            }
+            
+            var relationshipResponseDto = new RelationshipResponseDto
+            {
+                Id = relationship.Id,
+                Name = relationship.Name,
+                Description = relationship.Description,
+                Uuid = relationship.Uuid,
+                ProjectId = relationship.ProjectId,
+                CreatedBy = relationship.CreatedBy,
+                CreatedAt = relationship.CreatedAt,
+                ModifiedBy = relationship.ModifiedBy,
+                ModifiedAt = relationship.ModifiedAt,
+                OriginId = relationship.OriginId,
+                DestinationId = relationship.DestinationId,
+                Origin = relationship.Origin == null
+                    ? null
+                    : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+                Destination = relationship.Destination == null
+                    ? null
+                    : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+            };
+            relationshipResponses.Add(relationshipResponseDto);
+        }
+
+        return new BulkRelationshipResponseDto
+        {
+            Relationships = relationshipResponses,
+        };
+    }
+
+    /// <summary>
+    /// Updates an existing relationship by its ID.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
+    /// <param name="relationshipId">The ID of the relationship to update.</param>
+    /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
+    /// <returns>The updated relationship response DTO with its details</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
@@ -202,10 +359,10 @@ public class RelationshipBusiness: IRelationshipBusiness
             DestinationId = relationship.DestinationId,
             Origin = relationship.Origin == null
                 ? null
-                : new ClassRelationshipRespDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
+                : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
             Destination = relationship.Destination == null
                 ? null
-                : new ClassRelationshipRespDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+                : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
         };
     }
 
@@ -218,6 +375,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -238,6 +396,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
+        DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -271,4 +430,22 @@ public class RelationshipBusiness: IRelationshipBusiness
             }
         }
     }
+    
+    /// <summary>
+    /// Determine if project exists
+    /// </summary>
+    /// <param name="projectId">The ID of the project we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if project does not exist</returns>
+    private void DoesProjectExist(long projectId, bool hideArchived = true)
+    {
+        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
+            : _context.Projects.Any(p => p.Id == projectId);
+        if (!project)
+        {
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        }
+    }
+    
+    
 }

@@ -4,6 +4,14 @@ using deeplynx.models;
 
 namespace deeplynx.api.Controllers
 {
+    
+    /// <summary>
+    /// Controller for managing classes.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints to create, update, delete, and retrieve class information.
+    /// </remarks>
+
     [ApiController]
     [Route("api/projects/{projectId}/classes")]
     public class ClassController : ControllerBase
@@ -15,16 +23,19 @@ namespace deeplynx.api.Controllers
             _classBusiness = classBusiness;
         }
         /// <summary>
-        /// Get all classes from DB
+        /// Get all classes
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+        /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses")]
-        public async Task<IActionResult> GetAllClasses(long projectId)
+        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
+            long projectId, 
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var classes = await _classBusiness.GetAllClasses(projectId);
+                var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)
@@ -38,15 +49,19 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="classId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="classId">The ID of the class to retrieve</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
+        /// <returns>Class response DTO</returns>
         [HttpGet("GetClass/{classId}")]
-        public async Task<IActionResult> GetClass(long projectId, long classId)
+        public async Task<ActionResult<ClassResponseDto>> GetClass(
+            long projectId, 
+            long classId, 
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var classes = await _classBusiness.GetClass(projectId, classId);
+                var classes = await _classBusiness.GetClass(projectId, classId, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)
@@ -62,11 +77,11 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Create a class
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dto"></param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="dto">The request DTO for classes</param>
         /// <returns></returns>
         [HttpPost("CreateClass")]
-        public async Task<IActionResult> CreateClass(long projectId,
+        public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
             [FromBody] ClassRequestDto dto)
         {
             try
@@ -81,9 +96,39 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-
+        
+        /// <summary>
+        /// Create many classes
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="dto">The request DTO for classes</param>
+        /// <returns></returns>
+        [HttpPost("BulkCreateClasses")]
+        public async Task<ActionResult<BulkClassResponseDto>> BulkCreateClass(long projectId,
+            [FromBody] BulkClassRequestDto dto)
+        {
+            try
+            {
+                var newClasses = await _classBusiness.BulkCreateClass(projectId, dto);
+                return Ok(newClasses);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while creating these classes: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Update a class
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// /// <param name="classId">The ID of the class to update</param>
+        /// <param name="dto"></param>
+        /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}")]
-        public async Task<IActionResult> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
+        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
         {
             try
             {
@@ -99,7 +144,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific class by its ID.
+        /// Deletes a class.
         /// </summary>
         /// <param name="classId">The ID of the class to delete.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -121,7 +166,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a specific class by its ID.
+        /// Archives a class.
         /// </summary>
         /// <param name="classId">The ID of the class to archive.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>

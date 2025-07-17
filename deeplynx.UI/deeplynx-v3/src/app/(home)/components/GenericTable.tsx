@@ -19,7 +19,9 @@ type GenericTableProps<T extends object> = {
   bordered?: boolean;
   searchBar?: boolean;
   actionButtons?: boolean;
-  rowClassName?: string | ((row: T, index: number) => string);
+  rowClassName?: string | ((row: T, index: number) => string); // Allows certain rows get styled based on conditions ex: rowClassName={(row) => (row.status === "error" ? "bg-red-100" : "")}
+  tableClassName?: string; // This is for table styling such as grid style
+  gridView?: boolean;
 };
 
 const GenericTable = <T extends object>({
@@ -34,6 +36,8 @@ const GenericTable = <T extends object>({
   searchBar = false, // Default value for searchBar
   actionButtons = false, // Default value for actionButtons
   rowClassName,
+  tableClassName,
+  gridView = false,
 }: GenericTableProps<T>) => {
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -232,14 +236,22 @@ const GenericTable = <T extends object>({
           </div>
         )}
       </div>
-      <table className={`table ${bordered ? "table-bordered" : ""}`}>
+      <table
+        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${
+          tableClassName ?? ""
+        }`}
+      >
         <thead>
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
                 className={`text-base-content ${
+                  gridView ? "border border-base-200 bg-info/30" : ""
+                } ${
                   column.sortable !== false ? "cursor-pointer select-none" : ""
+                } ${
+                  column.data === "id" ? "sticky left-0 z-10 bg-info-80" : ""
                 }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
@@ -268,10 +280,15 @@ const GenericTable = <T extends object>({
         </thead>
         <tbody>
           {currentData.map((row, rowIndex) => {
-            const isPrivate = (row as any).visibility === "Private";
+            const isPrivate = row["visibility" as keyof T] === "Private";
+            const rowId = row["id" as keyof T];
+            const key =
+              typeof rowId === "string" || typeof rowId === "number"
+                ? rowId
+                : rowIndex;
             return (
               <tr
-                key={(row as any).id ?? rowIndex}
+                key={key}
                 className={`${
                   typeof rowClassName === "function"
                     ? rowClassName(row, rowIndex)
@@ -283,7 +300,16 @@ const GenericTable = <T extends object>({
                 }`}
               >
                 {columns.map((column, colIndex) => (
-                  <td key={colIndex} className="text-base-content">
+                  <td
+                    key={colIndex}
+                    className={`${
+                      column.data === "id"
+                        ? "sticky left-0 z-10 bg-info-80"
+                        : ""
+                    } ${
+                      gridView ? "border border-base-200" : ""
+                    } text-base-content`}
+                  >
                     {column.cell
                       ? column.cell(row)
                       : (row[column.data as keyof T] as React.ReactNode)}

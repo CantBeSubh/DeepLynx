@@ -8,7 +8,9 @@ public class RecordMappingRequestDto
     [Required]
     public JsonObject RecordParams { get; set; }
     
-    public int? ClassId { get; set; }
+    public long DataSourceId { get; set; }
     
-    public int? TagId { get; set; }
+    public long? ClassId { get; set; }
+    
+    public long? TagId { get; set; }
 }

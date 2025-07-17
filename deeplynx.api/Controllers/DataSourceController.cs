@@ -21,16 +21,19 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all data sources for a specific project.
+        /// Get all data sources
         /// </summary>
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources")]
-        public async Task<IActionResult> GetAllDataSources(long projectId)
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
+            long projectId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId);
+                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId, hideArchived);
                 return Ok(dataSources);
             }
             catch (Exception exc)
@@ -42,17 +45,21 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific data source by ID
+        /// Get a data source
         /// </summary>
         /// <param name="dataSourceId">The ID whereby to fetch the data source</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>The data source associated with the given ID</returns>
         [HttpGet("GetDataSource/{dataSourceId}")]
-        public async Task<IActionResult> GetDataSource(long projectId, long dataSourceId)
+        public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
+            long projectId,
+            long dataSourceId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var dataSource = await _dataSourceBusiness.GetDataSource(projectId, dataSourceId);
+                var dataSource = await _dataSourceBusiness.GetDataSource(projectId, dataSourceId, hideArchived);
                 return Ok(dataSource);
             }
             catch (Exception exc)
@@ -64,13 +71,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously creates a new data source for a specified project.
+        /// Create a data source 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
         [HttpPost("CreateDataSource")]
-        public async Task<IActionResult> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
+        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
         {
             try
             {
@@ -86,7 +93,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Asynchronously updates an existing data source.
+        /// Update a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to update</param>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
@@ -112,7 +119,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a specific data source by its ID.
+        /// Deletes a data source
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
@@ -136,7 +143,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific data source by its ID.
+        /// Archive a data source 
         /// </summary>
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>

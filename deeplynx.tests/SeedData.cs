@@ -1,4 +1,5 @@
 using deeplynx.datalayer.Models;
+using Microsoft.EntityFrameworkCore;
 using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests;
@@ -14,10 +15,10 @@ public static class SeedData
         await SeedDataSources(context);
         await SeedTags(context);
         await SeedRelationships(context);
-        await SeedRecords(context);
-        await SeedEdges(context);
         await SeedEdgeMappings(context);
         await SeedRecordMappings(context);
+        await SeedRecords(context);
+        await SeedEdges(context);
     }
 
     // Users
@@ -366,6 +367,7 @@ public static class SeedData
 
         await context.DataSources.AddRangeAsync(dataSources);
         await context.SaveChangesAsync();
+        //await context.Database.ExecuteSqlRawAsync($"select setval(pg_get_serial_sequence('data_sources', 'id'), (select max(id) from data_sources))");
     }
 
     // Tags
@@ -373,23 +375,25 @@ public static class SeedData
     {
         var tags = new List<Tag>
         {
+            // Note: Id is automatically assigned and incremented by the database. These tags will be Id 1-12 in order.
+            
             // Customer Analytics Platform Tags
-            new Tag { Id = 1, Name = "Analytics", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30), ArchivedAt = null },
-            new Tag { Id = 2, Name = "Marketing", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
-            new Tag { Id = 3, Name = "Customer Data", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), ModifiedBy = "data.analyst@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20), ArchivedAt = null },
-            new Tag { Id = 4, Name = "Business Intelligence", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), ArchivedAt = null },
+            new Tag { Name = "Analytics", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30), ArchivedAt = null },
+            new Tag { Name = "Marketing", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
+            new Tag { Name = "Customer Data", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), ModifiedBy = "data.analyst@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20), ArchivedAt = null },
+            new Tag { Name = "Business Intelligence", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), ArchivedAt = null },
 
             // Supply Chain Optimization Tags
-            new Tag { Id = 5, Name = "Logistics", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), ModifiedBy = "supply.manager@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10), ArchivedAt = null },
-            new Tag { Id = 6, Name = "Optimization", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
-            new Tag { Id = 7, Name = "Real-time Monitoring", ProjectId = 2, CreatedBy = "supply.manager@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), ModifiedBy = "iot.specialist@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5), ArchivedAt = null },
-            new Tag { Id = 8, Name = "Predictive Analytics", ProjectId = 2, CreatedBy = "data.scientist@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), ModifiedBy = "mike.davis@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3), ArchivedAt = null },
-            new Tag { Id = 9, Name = "Inventory Management", ProjectId = 2, CreatedBy = "warehouse.admin@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
+            new Tag { Name = "Logistics", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), ModifiedBy = "supply.manager@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10), ArchivedAt = null },
+            new Tag { Name = "Optimization", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
+            new Tag { Name = "Real-time Monitoring", ProjectId = 2, CreatedBy = "supply.manager@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), ModifiedBy = "iot.specialist@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5), ArchivedAt = null },
+            new Tag { Name = "Predictive Analytics", ProjectId = 2, CreatedBy = "data.scientist@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), ModifiedBy = "mike.davis@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3), ArchivedAt = null },
+            new Tag { Name = "Inventory Management", ProjectId = 2, CreatedBy = "warehouse.admin@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
 
             // Legacy System Migration Tags (Archived)
-            new Tag { Id = 10, Name = "Migration", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
-            new Tag { Id = 11, Name = "Legacy Systems", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), ModifiedBy = "data.migration@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
-            new Tag { Id = 12, Name = "Data Transformation", ProjectId = 3, CreatedBy = "data.migration@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-2), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) }
+            new Tag { Name = "Migration", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
+            new Tag { Name = "Legacy Systems", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), ModifiedBy = "data.migration@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
+            new Tag { Name = "Data Transformation", ProjectId = 3, CreatedBy = "data.migration@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-2), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) }
         };
 
         await context.Tags.AddRangeAsync(tags);
@@ -517,294 +521,6 @@ public static class SeedData
         await context.SaveChangesAsync();
     }
 
-    // Records
-    public static async Task SeedRecords(DeeplynxContext context)
-    {
-        var records = new List<Record>
-        {
-            new Record
-            {
-                Id = 1,
-                Uri = "crm://customers/CUST_001",
-                Properties = @"{""customer_id"":""CUST_001"",""email"":""john.doe@email.com"",""first_name"":""John"",""last_name"":""Doe"",""phone"":""+1-555-0123"",""registration_date"":""2023-03-15T10:30:00Z"",""status"":""active"",""lifetime_value"":2850.75,""total_orders"":12}",
-                OriginalId = "CUST_001",
-                Name = "John Doe - Customer Profile",
-                CustomId = "customer_john_doe_001",
-                ClassId = 1,
-                ClassName = "Customer",
-                DataSourceId = 1,
-                ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "crm.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
-            },
-            new Record
-            {
-                Id = 2,
-                Uri = "ecommerce://purchases/PUR_001",
-                Properties = @"{""purchase_id"":""PUR_001"",""customer_id"":""CUST_001"",""order_number"":""ORD-2024-001234"",""purchase_date"":""2024-01-15T10:30:00Z"",""total_amount"":299.99,""currency"":""USD"",""payment_method"":""credit_card"",""payment_status"":""completed""}",
-                OriginalId = "PUR_001",
-                Name = "Purchase Order ORD-2024-001234",
-                CustomId = "purchase_order_001234",
-                ClassId = 2,
-                ClassName = "Purchase",
-                DataSourceId = 2,
-                ProjectId = 1,
-                CreatedBy = "ecommerce.api@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "order.processor@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-8),
-                ArchivedAt = null
-            },
-            new Record
-            {
-                Id = 3,
-                Uri = "marketing://segments/SEG_PREMIUM",
-                Properties = @"{""segment_id"":""SEG_PREMIUM"",""segment_name"":""Premium Customers"",""description"":""High-value customers with frequent purchases"",""customer_count"":1247,""percentage_of_base"":8.5,""marketing_budget_allocation"":0.35}",
-                OriginalId = "SEG_PREMIUM",
-                Name = "Premium Customer Segment",
-                CustomId = "segment_premium_customers",
-                ClassId = 3,
-                ClassName = "Segment",
-                DataSourceId = 2,
-                ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3),
-                ArchivedAt = null
-            },
-
-            // Supply Chain Optimization Records
-            new Record
-            {
-                Id = 4,
-                Uri = "erp://suppliers/SUP_ABC123",
-                Properties = @"{""supplier_id"":""SUP_ABC123"",""company_name"":""Advanced Components Corp"",""contact_person"":""Sarah Mitchell"",""email"":""sarah.mitchell@advancedcomponents.com"",""phone"":""+1-800-555-0199"",""performance_rating"":4.2,""on_time_delivery_rate"":0.95}",
-                OriginalId = "SUP_ABC123",
-                Name = "Advanced Components Corp - Supplier",
-                CustomId = "supplier_advanced_components",
-                ClassId = 5,
-                ClassName = "Supplier",
-                DataSourceId = 3,
-                ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-6),
-                ArchivedAt = null
-            },
-            new Record
-            {
-                Id = 5,
-                Uri = "inventory://items/INV_XYZ789",
-                Properties = @"{""inventory_id"":""INV_XYZ789"",""product_code"":""WIDGET_A_001"",""supplier_id"":""SUP_ABC123"",""current_quantity"":485,""reserved_quantity"":50,""available_quantity"":435,""reorder_level"":100,""unit_cost"":12.50}",
-                OriginalId = "INV_XYZ789",
-                Name = "High-Grade Widget Assembly - Inventory",
-                CustomId = "inventory_widget_a_001",
-                ClassId = 6,
-                ClassName = "Inventory",
-                DataSourceId = 3,
-                ProjectId = 2,
-                CreatedBy = "inventory.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "warehouse.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-1),
-                ArchivedAt = null
-            },
-            new Record
-            {
-                Id = 6,
-                Uri = "warehouses://facilities/WH_EAST_001",
-                Properties = @"{""warehouse_id"":""WH_EAST_001"",""name"":""East Coast Distribution Center"",""total_capacity_sqft"":125000,""current_utilization"":0.72,""available_space_sqft"":35000,""staff_count"":45,""manager"":""Robert Chen""}",
-                OriginalId = "WH_EAST_001",
-                Name = "East Coast Distribution Center",
-                CustomId = "warehouse_east_coast_dc",
-                ClassId = 7,
-                ClassName = "Warehouse",
-                DataSourceId = 4,
-                ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
-                ModifiedBy = "facility.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-4),
-                ArchivedAt = null
-            },
-            new Record
-            {
-                Id = 7,
-                Uri = "logistics://shipments/SHIP_OUT_001",
-                Properties = @"{""shipment_id"":""SHIP_OUT_001"",""tracking_number"":""TRK123456789"",""origin_warehouse"":""WH_EAST_001"",""carrier"":""FedEx"",""service_type"":""Ground"",""shipment_date"":""2024-06-01T14:30:00Z"",""estimated_delivery"":""2024-06-03T17:00:00Z"",""status"":""delivered""}",
-                OriginalId = "SHIP_OUT_001",
-                Name = "Outbound Shipment TRK123456789",
-                CustomId = "shipment_trk123456789",
-                ClassId = 8,
-                ClassName = "Shipment",
-                DataSourceId = 4,
-                ProjectId = 2,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ModifiedBy = "delivery.tracker@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-7),
-                ArchivedAt = null
-            },
-
-            // Legacy System Migration Records (Archived)
-            new Record
-            {
-                Id = 8,
-                Uri = "legacy://users/USR_LEG_001",
-                Properties = @"{""legacy_user_id"":""USR_LEG_001"",""username"":""JDOE001"",""full_name"":""JOHN DOE"",""department"":""SALES"",""role"":""MANAGER"",""migration_status"":""completed"",""migration_date"":""2024-11-20T02:00:00Z""}",
-                OriginalId = "USR_LEG_001",
-                Name = "John Doe - Legacy User Account",
-                CustomId = "legacy_user_jdoe001",
-                ClassId = 9,
-                ClassName = "LegacyUser",
-                DataSourceId = 5,
-                ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
-            },
-            new Record
-            {
-                Id = 9,
-                Uri = "legacy://data/DATA_LEG_001",
-                Properties = @"{""legacy_data_id"":""DATA_LEG_001"",""data_type"":""CUSTOMER_RECORDS"",""owner_user_id"":""USR_LEG_001"",""record_count"":15420,""data_size_mb"":2500.75,""migration_status"":""completed"",""validation_status"":""passed""}",
-                OriginalId = "DATA_LEG_001",
-                Name = "Legacy Customer Data Records",
-                CustomId = "legacy_data_customers_001",
-                ClassId = 10,
-                ClassName = "LegacyData",
-                DataSourceId = 6,
-                ProjectId = 3,
-                CreatedBy = "data.migration@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
-                ModifiedBy = "migration.validator@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
-            }
-        };
-        await context.Records.AddRangeAsync(records);
-        await context.SaveChangesAsync();
-    }
-
-    // Edges
-    public static async Task SeedEdges(DeeplynxContext context)
-    {
-        var edges = new List<Edge>
-        {
-            // Customer Analytics Platform Edges
-            new Edge
-            {
-                Id = 1,
-                OriginId = 1, // Customer record
-                DestinationId = 2, // Purchase record
-                Properties = @"{""customer_id"":""CUST_001"",""purchase_id"":""PUR_001"",""purchase_date"":""2024-01-15T10:30:00Z"",""purchase_amount"":299.99,""confidence_score"":0.98}",
-                RelationshipId = 1,
-                RelationshipName = "Customer Makes Purchase",
-                DataSourceId = 1,
-                ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "data.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                ArchivedAt = null
-            },
-            new Edge
-            {
-                Id = 2,
-                OriginId = 1, // Customer record
-                DestinationId = 3, // Segment record
-                Properties = @"{""customer_id"":""CUST_001"",""segment_id"":""SEG_PREMIUM"",""assignment_date"":""2024-02-01T09:00:00Z"",""segment_score"":0.87,""assignment_reason"":""high_value_purchases""}",
-                RelationshipId = 2,
-                RelationshipName = "Customer Belongs To Segment",
-                DataSourceId = 2,
-                ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-25),
-                ArchivedAt = null
-            },
-
-            // Supply Chain Optimization Edges
-            new Edge
-            {
-                Id = 3,
-                OriginId = 4, // Supplier record
-                DestinationId = 5, // Inventory record
-                Properties = @"{""supplier_id"":""SUP_ABC123"",""inventory_id"":""INV_XYZ789"",""supply_date"":""2024-05-15T08:00:00Z"",""quantity_supplied"":500,""unit_cost"":12.50,""quality_grade"":""A""}",
-                RelationshipId = 4,
-                RelationshipName = "Supplier Provides Inventory",
-                DataSourceId = 3,
-                ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
-            },
-            new Edge
-            {
-                Id = 4,
-                OriginId = 5, // Inventory record
-                DestinationId = 6, // Warehouse record
-                Properties = @"{""inventory_id"":""INV_XYZ789"",""warehouse_id"":""WH_EAST_001"",""location_zone"":""A-1-3"",""storage_date"":""2024-05-16T10:00:00Z"",""current_quantity"":485}",
-                RelationshipId = 5,
-                RelationshipName = "Inventory Stored In Warehouse",
-                DataSourceId = 4,
-                ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "logistics.coordinator@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-12),
-                ArchivedAt = null
-            },
-            new Edge
-            {
-                Id = 5,
-                OriginId = 7, // Shipment record
-                DestinationId = 5, // Inventory record
-                Properties = @"{""shipment_id"":""SHIP_OUT_001"",""inventory_id"":""INV_XYZ789"",""quantity_shipped"":50,""shipment_date"":""2024-06-01T14:30:00Z"",""tracking_number"":""TRK123456789""}",
-                RelationshipId = 6,
-                RelationshipName = "Shipment Contains Inventory",
-                DataSourceId = 4,
-                ProjectId = 2,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
-                ModifiedBy = "mike.davis@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
-            },
-
-            // Legacy System Migration Edges (Archived)
-            new Edge
-            {
-                Id = 6,
-                OriginId = 8, // Legacy User record
-                DestinationId = 9, // Legacy Data record
-                Properties = @"{""legacy_user_id"":""USR_LEG_001"",""legacy_data_id"":""DATA_LEG_001"",""ownership_type"":""primary"",""migration_status"":""completed"",""validation_status"":""passed""}",
-                RelationshipId = 7,
-                RelationshipName = "Legacy User Owns Legacy Data",
-                DataSourceId = 5,
-                ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
-            }
-        };
-
-        await context.Edges.AddRangeAsync(edges);
-        await context.SaveChangesAsync();
-    }
-
     // Edge Mappings
     public static async Task SeedEdgeMappings(DeeplynxContext context)
     {
@@ -819,6 +535,7 @@ public static class SeedData
                 RelationshipId = 1,
                 OriginId = 1,
                 DestinationId = 2,
+                DataSourceId = 1,
                 ProjectId = 1,
                 CreatedBy = "john.smith@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
@@ -834,6 +551,7 @@ public static class SeedData
                 RelationshipId = 2,
                 OriginId = 1,
                 DestinationId = 3,
+                DataSourceId = 2,
                 ProjectId = 1,
                 CreatedBy = "sarah.johnson@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
@@ -851,6 +569,7 @@ public static class SeedData
                 RelationshipId = 4,
                 OriginId = 5,
                 DestinationId = 6,
+                DataSourceId = 3,
                 ProjectId = 2,
                 CreatedBy = "mike.davis@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
@@ -867,6 +586,7 @@ public static class SeedData
                 DestinationParams = @"{""class_name"":""LegacyData"",""primary_key"":""legacy_data_id"",""foreign_key"":""owner_user_id"",""migration_priority"":{""critical_data_first"":true}}",
                 RelationshipId = 7,
                 OriginId = 9,
+                DataSourceId = 4,
                 DestinationId = 10,
                 ProjectId = 3,
                 CreatedBy = "system.architect@legacy.com",
@@ -893,6 +613,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""customers"",""primary_key_field"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name, status FROM customers WHERE status = 'active'""},""field_mappings"":{""customer_id"":""customer_id"",""email"":""email"",""first_name"":""first_name"",""last_name"":""last_name""}}",
                 ClassId = 1,
                 ProjectId = 1,
+                DataSourceId = 1,
                 TagId = 3,
                 CreatedBy = "john.smith@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
@@ -906,6 +627,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""purchases"",""primary_key_field"":""purchase_id"",""extraction_query"":""SELECT purchase_id, customer_id, order_number, purchase_date, total_amount FROM purchases""},""aggregation_rules"":{""customer_metrics"":{""total_purchases"":""COUNT(*) GROUP BY customer_id"",""avg_order_value"":""AVG(total_amount) GROUP BY customer_id""}}}",
                 ClassId = 2,
                 ProjectId = 1,
+                DataSourceId = 2,
                 TagId = 1,
                 CreatedBy = "sarah.johnson@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
@@ -921,6 +643,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""suppliers"",""primary_key_field"":""supplier_id"",""extraction_query"":""SELECT supplier_id, company_name, performance_rating FROM suppliers WHERE status = 'active'""},""performance_calculations"":{""overall_score"":""(performance_rating + quality_score + on_time_delivery_rate * 5) / 3""}}",
                 ClassId = 5,
                 ProjectId = 2,
+                DataSourceId = 3,
                 TagId = 5,
                 CreatedBy = "mike.davis@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
@@ -934,6 +657,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""inventory"",""primary_key_field"":""inventory_id"",""extraction_query"":""SELECT inventory_id, product_code, current_quantity, reorder_level FROM inventory""},""inventory_calculations"":{""stock_status"":""CASE WHEN current_quantity <= reorder_level THEN 'reorder_needed' ELSE 'normal' END""}}",
                 ClassId = 6,
                 ProjectId = 2,
+                DataSourceId = 4,
                 TagId = 9,
                 CreatedBy = "inventory.manager@company.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
@@ -949,6 +673,7 @@ public static class SeedData
                 RecordParams = @"{""record_extraction"":{""source_table"":""LEGACY.USERS"",""primary_key_field"":""USR_ID"",""extraction_query"":""SELECT USR_ID, USR_NAME, USR_DEPT FROM LEGACY.USERS WHERE STATUS = 'A'""},""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""field_name_mapping"":{""USR_ID"":""legacy_user_id"",""USR_NAME"":""user_name""}}}",
                 ClassId = 9,
                 ProjectId = 3,
+                DataSourceId = 5,
                 TagId = 10,
                 CreatedBy = "system.architect@legacy.com",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
@@ -961,4 +686,270 @@ public static class SeedData
         await context.RecordMappings.AddRangeAsync(recordMappings);
         await context.SaveChangesAsync();
     }
+    
+    // Records
+    public static async Task SeedRecords(DeeplynxContext context)
+    {
+        var records = new List<Record>
+        {
+            new Record
+            {
+                Id = 1,
+                Uri = "crm://customers/CUST_001",
+                Properties = @"{""customer_id"":""CUST_001"",""email"":""john.doe@email.com"",""first_name"":""John"",""last_name"":""Doe"",""phone"":""+1-555-0123"",""registration_date"":""2023-03-15T10:30:00Z"",""status"":""active"",""lifetime_value"":2850.75,""total_orders"":12}",
+                OriginalId = "CUST_001",
+                Name = "John Doe - Customer Profile",
+                ClassId = 1,
+                DataSourceId = 1,
+                ProjectId = 1,
+                MappingId = 1,
+                CreatedBy = "john.smith@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                ModifiedBy = "crm.system@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
+                ArchivedAt = null
+            },
+            new Record
+            {
+                Id = 2,
+                Uri = "ecommerce://purchases/PUR_001",
+                Properties = @"{""purchase_id"":""PUR_001"",""customer_id"":""CUST_001"",""order_number"":""ORD-2024-001234"",""purchase_date"":""2024-01-15T10:30:00Z"",""total_amount"":299.99,""currency"":""USD"",""payment_method"":""credit_card"",""payment_status"":""completed""}",
+                OriginalId = "PUR_001",
+                Name = "Purchase Order ORD-2024-001234",
+                ClassId = 2,
+                DataSourceId = 2,
+                ProjectId = 1,
+                MappingId = 2,
+                CreatedBy = "ecommerce.api@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                ModifiedBy = "order.processor@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-8),
+                ArchivedAt = null
+            },
+            new Record
+            {
+                Id = 3,
+                Uri = "marketing://segments/SEG_PREMIUM",
+                Properties = @"{""segment_id"":""SEG_PREMIUM"",""segment_name"":""Premium Customers"",""description"":""High-value customers with frequent purchases"",""customer_count"":1247,""percentage_of_base"":8.5,""marketing_budget_allocation"":0.35}",
+                OriginalId = "SEG_PREMIUM",
+                Name = "Premium Customer Segment",
+                ClassId = 3,
+                DataSourceId = 2,
+                ProjectId = 1,
+                CreatedBy = "sarah.johnson@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
+                ModifiedBy = "marketing.analyst@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3),
+                ArchivedAt = null
+            },
+
+            // Supply Chain Optimization Records
+            new Record
+            {
+                Id = 4,
+                Uri = "erp://suppliers/SUP_ABC123",
+                Properties = @"{""supplier_id"":""SUP_ABC123"",""company_name"":""Advanced Components Corp"",""contact_person"":""Sarah Mitchell"",""email"":""sarah.mitchell@advancedcomponents.com"",""phone"":""+1-800-555-0199"",""performance_rating"":4.2,""on_time_delivery_rate"":0.95}",
+                OriginalId = "SUP_ABC123",
+                Name = "Advanced Components Corp - Supplier",
+                ClassId = 5,
+                DataSourceId = 3,
+                ProjectId = 2,
+                MappingId = 3,
+                CreatedBy = "mike.davis@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                ModifiedBy = "supply.manager@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-6),
+                ArchivedAt = null
+            },
+            new Record
+            {
+                Id = 5,
+                Uri = "inventory://items/INV_XYZ789",
+                Properties = @"{""inventory_id"":""INV_XYZ789"",""product_code"":""WIDGET_A_001"",""supplier_id"":""SUP_ABC123"",""current_quantity"":485,""reserved_quantity"":50,""available_quantity"":435,""reorder_level"":100,""unit_cost"":12.50}",
+                OriginalId = "INV_XYZ789",
+                Name = "High-Grade Widget Assembly - Inventory",
+                ClassId = 6,
+                DataSourceId = 3,
+                ProjectId = 2,
+                CreatedBy = "inventory.manager@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                ModifiedBy = "warehouse.system@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-1),
+                ArchivedAt = null
+            },
+            new Record
+            {
+                Id = 6,
+                Uri = "warehouses://facilities/WH_EAST_001",
+                Properties = @"{""warehouse_id"":""WH_EAST_001"",""name"":""East Coast Distribution Center"",""total_capacity_sqft"":125000,""current_utilization"":0.72,""available_space_sqft"":35000,""staff_count"":45,""manager"":""Robert Chen""}",
+                OriginalId = "WH_EAST_001",
+                Name = "East Coast Distribution Center",
+                ClassId = 7,
+                DataSourceId = 4,
+                ProjectId = 2,
+                CreatedBy = "warehouse.manager@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
+                ModifiedBy = "facility.admin@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-4),
+                ArchivedAt = null
+            },
+            new Record
+            {
+                Id = 7,
+                Uri = "logistics://shipments/SHIP_OUT_001",
+                Properties = @"{""shipment_id"":""SHIP_OUT_001"",""tracking_number"":""TRK123456789"",""origin_warehouse"":""WH_EAST_001"",""carrier"":""FedEx"",""service_type"":""Ground"",""shipment_date"":""2024-06-01T14:30:00Z"",""estimated_delivery"":""2024-06-03T17:00:00Z"",""status"":""delivered""}",
+                OriginalId = "SHIP_OUT_001",
+                Name = "Outbound Shipment TRK123456789",
+                ClassId = 8,
+                DataSourceId = 4,
+                ProjectId = 2,
+                CreatedBy = "logistics.coordinator@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
+                ModifiedBy = "delivery.tracker@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-7),
+                ArchivedAt = null
+            },
+
+            // Legacy System Migration Records (Archived)
+            new Record
+            {
+                Id = 8,
+                Uri = "legacy://users/USR_LEG_001",
+                Properties = @"{""legacy_user_id"":""USR_LEG_001"",""username"":""JDOE001"",""full_name"":""JOHN DOE"",""department"":""SALES"",""role"":""MANAGER"",""migration_status"":""completed"",""migration_date"":""2024-11-20T02:00:00Z""}",
+                OriginalId = "USR_LEG_001",
+                Name = "John Doe - Legacy User Account",
+                ClassId = 9,
+                DataSourceId = 5,
+                ProjectId = 3,
+                CreatedBy = "system.architect@legacy.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                ModifiedBy = "migration.lead@legacy.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+            },
+            new Record
+            {
+                Id = 9,
+                Uri = "legacy://data/DATA_LEG_001",
+                Properties = @"{""legacy_data_id"":""DATA_LEG_001"",""data_type"":""CUSTOMER_RECORDS"",""owner_user_id"":""USR_LEG_001"",""record_count"":15420,""data_size_mb"":2500.75,""migration_status"":""completed"",""validation_status"":""passed""}",
+                OriginalId = "DATA_LEG_001",
+                Name = "Legacy Customer Data Records",
+                ClassId = 10,
+                DataSourceId = 6,
+                ProjectId = 3,
+                MappingId = 5,
+                CreatedBy = "data.migration@legacy.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
+                ModifiedBy = "migration.validator@legacy.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+            }
+        };
+        await context.Records.AddRangeAsync(records);
+        await context.SaveChangesAsync();
+    }
+
+    // Edges
+    public static async Task SeedEdges(DeeplynxContext context)
+    {
+        var edges = new List<Edge>
+        {
+            // Customer Analytics Platform Edges
+            new Edge
+            {
+                Id = 1,
+                OriginId = 1, // Customer record
+                DestinationId = 2, // Purchase record
+                RelationshipId = 1,
+                DataSourceId = 1,
+                ProjectId = 1,
+                CreatedBy = "john.smith@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                ModifiedBy = "data.analyst@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
+                ArchivedAt = null
+            },
+            new Edge
+            {
+                Id = 2,
+                OriginId = 1, // Customer record
+                DestinationId = 3, // Segment record
+                RelationshipId = 2,
+                DataSourceId = 2,
+                ProjectId = 1,
+                MappingId = 1,
+                CreatedBy = "sarah.johnson@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                ModifiedBy = "marketing.analyst@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-25),
+                ArchivedAt = null
+            },
+
+            // Supply Chain Optimization Edges
+            new Edge
+            {
+                Id = 3,
+                OriginId = 4, // Supplier record
+                DestinationId = 5, // Inventory record
+                RelationshipId = 4,
+                DataSourceId = 3,
+                ProjectId = 2,
+                CreatedBy = "mike.davis@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                ModifiedBy = "supply.manager@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
+                ArchivedAt = null
+            },
+            new Edge
+            {
+                Id = 4,
+                OriginId = 5, // Inventory record
+                DestinationId = 6, // Warehouse record
+                RelationshipId = 5,
+                DataSourceId = 4,
+                ProjectId = 2,
+                CreatedBy = "warehouse.manager@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                ModifiedBy = "logistics.coordinator@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-12),
+                ArchivedAt = null
+            },
+            new Edge
+            {
+                Id = 5,
+                OriginId = 7, // Shipment record
+                DestinationId = 5, // Inventory record
+                RelationshipId = 6,
+                DataSourceId = 4,
+                ProjectId = 2,
+                MappingId = 3,
+                CreatedBy = "logistics.coordinator@company.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
+                ModifiedBy = "mike.davis@company.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
+                ArchivedAt = null
+            },
+
+            // Legacy System Migration Edges (Archived)
+            new Edge
+            {
+                Id = 6,
+                OriginId = 8, // Legacy User record
+                DestinationId = 9, // Legacy Data record
+                RelationshipId = 7,
+                DataSourceId = 5,
+                ProjectId = 3,
+                CreatedBy = "system.architect@legacy.com",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                ModifiedBy = "migration.lead@legacy.com",
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+            }
+        };
+
+        await context.Edges.AddRangeAsync(edges);
+        await context.SaveChangesAsync();
+    }
+
+    
 }

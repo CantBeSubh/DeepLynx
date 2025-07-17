@@ -19,6 +19,29 @@
 dotnet test
 ```
 
+#### Sql Procedures
+* If using Entity Framework, when the code runs an sql procedure, you need to make sure to clear the change tracker after 
+the procedure runs. That way, the context will be forced to sync with the changes the procedure made in the database. 
+To do this, add this in your test after a procedure is called:
+```
+Context.ChangeTracker.Clear();
+```
+Use the cascade delete tests in Record Mapping as a reference.
+
+#### Test Fixture
+* Make sure to include the testing fixture in your unit test suite. This makes sure that only one container is spun up 
+for each test suite and makes the tests much more efficient. 
+```csharp
+public ClassIntegrationTests(TestSuiteFixture fixture) : base(fixture) {}
+```
+
+* You will also need to add this annotation to your test class:
+
+```
+[Collection("Test Suite Collection")] 
+```
+
+
 ## Submitting Pull Requests
 When you're ready to submit your changes, follow these steps:
 
@@ -63,6 +86,10 @@ Below is the home for several technical "gotchas" that may be useful for other p
 * Controllers should include error handling on each route in try-catch format
 * Routes names and the corresponding Controller and Business method names should be descriptive, such as "CreateDataSource"
 * Two `Dto` object should be used within each domain: A `RequestDto` object, containing the fields which a user submits upon POST or PUT, and a `ResponseDto` object, containing the fields which should be exposed to the user upon return.
+* To ensure all `Dtos` are included in the open api auto-generated document, they should be explicitly called in the return type of controller methods: 
+```
+ public async Task<ActionResult<ClassResponseDto>> CreateClass()
+```
 * Please write unit tests for your business classes and perform postman/scalar testing for your controllers.
 
 ## Making Database Changes

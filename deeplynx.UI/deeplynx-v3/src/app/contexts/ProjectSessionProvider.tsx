@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 
 // Define shape of a project session
@@ -61,10 +62,10 @@ export const ProjectSessionProvider = ({
   }, []);
 
   // On project update, persist to localStorage
-  const setProject = (project: ProjectSession) => {
+  const setProject = useCallback((project: ProjectSession) => {
     setProjectState(project);
     localStorage.setItem("projectSession", JSON.stringify(project));
-  };
+  }, []);
 
   return (
     <ProjectSessionContext.Provider value={{ project, setProject, hasLoaded }}>

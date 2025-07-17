@@ -20,6 +20,7 @@ const AvatarCell: React.FC<AvatarCellProps> = ({ name, image }) => {
       ) : (
         <div className="avatar">
           <div className="w-10 rounded-full">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={image} alt={name} onError={() => setImgError(true)} />
           </div>
         </div>

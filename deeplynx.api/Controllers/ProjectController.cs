@@ -20,16 +20,17 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves all projects
+        /// Get all projects
         /// </summary>
+        /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects")]
-        public async Task<IActionResult> GetAllProjects()
+        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects([FromQuery] bool hideArchived = true)
         {
             try
             {
-                var projects = await _projectBusiness.GetAllProjects();
+                var projects = await _projectBusiness.GetAllProjects(hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)
@@ -41,16 +42,19 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Retrieves a specific project by ID
+        /// Get a project
         /// </summary>
         /// <param name="projectId">THe ID by which to retrieve the project</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}")]
-        public async Task<IActionResult> GetProject(long projectId)
+        public async Task<ActionResult<ProjectResponseDto>> GetProject(
+            long projectId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var project = await _projectBusiness.GetProject(projectId);
+                var project = await _projectBusiness.GetProject(projectId, hideArchived);
                 return Ok(project);
             }
             catch (Exception exc)
@@ -62,12 +66,12 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Creates a new project based on the data transfer object supplied.
+        /// Create a project
         /// </summary>
         /// <param name="dto">A data transfer object with details on the new project to be created.</param>
         /// <returns>The new project which was just created.</returns>
         [HttpPost("CreateProject")]
-        public async Task<IActionResult> CreateProject([FromBody] ProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> CreateProject([FromBody] ProjectRequestDto dto)
         {
             try
             {
@@ -83,13 +87,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Updates an existing project by ID
+        /// Update a project
         /// </summary>
         /// <param name="projectId">The ID of the project to update</param>
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
         /// <returns>The project which was just updated.</returns>
         [HttpPut("UpdateProject/{projectId}")]
-        public async Task<IActionResult> UpdateProject(long projectId, [FromBody] ProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] ProjectRequestDto dto)
         {
             try
             {
@@ -105,7 +109,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Delete a project by ID. This also cascades to downstream dependents.
+        /// Delete a project
         /// </summary>
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
@@ -126,7 +130,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Archive (soft delete) a project by ID. This also cascades to downstream dependents.
+        /// Archive a project
         /// </summary>
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
@@ -147,12 +151,12 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Retrieve stats for a given project
+        /// Get project stats 
         /// </summary>
         /// <param name="projectId">ID of the project to display stats about.</param>
         /// <returns>Project stats</returns>
         [HttpGet("ProjectStats/{projectId}")]
-        public async Task<IActionResult> ProjectStats(long projectId)
+        public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long projectId)
         {
             try
             {

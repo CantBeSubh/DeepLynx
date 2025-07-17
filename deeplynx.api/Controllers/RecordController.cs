@@ -20,17 +20,21 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get All Records
+        /// Get all records
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which records are associated with</param>
+        /// <param name="dataSourceId">Datasource ID which records are associated with</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+        /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords")]
-        public async Task<IActionResult> GetAllRecords(long projectId, [FromQuery] long? dataSourceId)
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
+            long projectId,
+            [FromQuery] long? dataSourceId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId);
+                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -42,17 +46,21 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get one Record from DB
+        /// Get a record
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="recordId"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="recordId">Datasource ID which record is associated with</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+        /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}")]
-        public async Task<IActionResult> GetRecord(long projectId, long recordId)
+        public async Task<ActionResult<RecordResponseDto>> GetRecord(
+            long projectId, 
+            long recordId, 
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var record = await _recordBusiness.GetRecord(projectId, recordId);
+                var record = await _recordBusiness.GetRecord(projectId, recordId, hideArchived);
                 return Ok(record);
             }
             catch (Exception exc)
@@ -64,14 +72,14 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Create a Record
+        /// Create a record
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="dataSourceId">Datasource ID which record is associated with</param>
+        /// <param name="dto">Record request DTO</param>
+        /// <returns>Record response DTO</returns>
         [HttpPost("CreateRecord")]
-        public async Task<IActionResult> CreateRecord(
+        public async Task<ActionResult<RecordResponseDto>> CreateRecord(
             long projectId, 
             [FromQuery] long dataSourceId,
             [FromBody] RecordRequestDto dto)
@@ -90,14 +98,40 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Update Record
+        /// Create many records
         /// </summary>
-        /// <param name="projectId"></param>
-        /// <param name="recordId"></param>
-        /// <param name="dto"></param>
-        /// <returns></returns>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="dataSourceId">Datasource ID which record is associated with</param>
+        /// <param name="dto">Record request DTO</param>
+        /// <returns>Record response DTO</returns>
+        [HttpPost("BulkCreateRecords")]
+        public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
+            long projectId, 
+            [FromQuery] long dataSourceId,
+            [FromBody] BulkRecordRequestDto dto)
+        {
+            try
+            {
+                var records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, dto);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while creating records: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Update a record
+        /// </summary>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="recordId">ID of record to be upated</param>
+        /// <param name="dto">Recored request DTO</param>
+        /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}")]
-        public async Task<IActionResult> UpdateRecord(
+        public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
             long projectId,
             long recordId,
             [FromBody] RecordRequestDto dto)
@@ -116,7 +150,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Deletes a specific record by its ID.
+        /// Delete a record 
         /// </summary>
         /// <param name="recordId">The ID of the record to delete.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
@@ -138,7 +172,7 @@ namespace deeplynx.api.Controllers
         }
             
         /// <summary>
-        /// Archives a specific record by its ID.
+        /// Archive a record
         /// </summary>
         /// <param name="recordId">The ID of the record to archive.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>

@@ -1,0 +1,650 @@
+using System.ComponentModel.DataAnnotations;
+using deeplynx.business;
+using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
+using deeplynx.models;
+using FluentAssertions;
+using Moq;
+using Record = deeplynx.datalayer.Models.Record;
+
+namespace deeplynx.tests
+{
+    [Collection("Test Suite Collection")]
+    public class ClassBusinessTests : IntegrationTestBase
+    {
+        private ClassBusiness _classBusiness = null!;
+        private ProjectBusiness _projectBusiness = null!;
+        private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
+        private Mock<IRecordBusiness> _recordBusiness = null!;
+        private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
+        private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
+        public long pid;
+        public long did;
+
+        public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
+
+        public override async Task InitializeAsync()
+        {
+            await base.InitializeAsync();
+            _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
+            _recordBusiness = new Mock<IRecordBusiness>();
+            _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
+            _relationshipBusiness = new Mock<IRelationshipBusiness>();
+
+            _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness.Object, _relationshipBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _classBusiness);
+        }
+
+        [Fact]
+        public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
+        {
+            var now = DateTime.UtcNow;
+            var dto = new ClassRequestDto
+            {
+                Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
+
+            var result = await _classBusiness.CreateClass(pid, dto);
+            result.Id.Should().BeGreaterThan(0);
+            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.Name.Should().Be(dto.Name);
+            result.Description.Should().Be(dto.Description);
+            result.ProjectId.Should().Be(pid);
+        }
+
+        [Fact]
+        public async Task CreateClasses_Success_OnBulkCreate()
+        {
+            var classDtos = new List<ClassRequestDto>();
+            
+            var dto1 = new ClassRequestDto
+            {
+                Name = $"Test Class 1",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
+            var dto2 = new ClassRequestDto
+            {
+                Name = $"Test Class 2",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
+            classDtos.Add(dto1);
+            classDtos.Add(dto2);
+            var bulkDto = new BulkClassRequestDto
+            {
+                BulkClassRequests = classDtos
+            };
+
+            var result = await _classBusiness.BulkCreateClass(pid, bulkDto);
+            result.Classes.Should().HaveCount(2);
+            result.Classes.First().Name.Should().Be("Test Class 1");
+            result.Classes.Last().Name.Should().Be("Test Class 2");
+        }
+
+        [Fact]
+        public async Task CreateClass_Fails_IfNoName()
+        {
+            var dto = new ClassRequestDto { Name = null, Description = "Test Description" };
+            var result = () => _classBusiness.CreateClass(pid, dto);
+            await result.Should().ThrowAsync<ValidationException>();
+        }
+
+        [Fact]
+        public async Task CreateClass_Fails_IfEmptyName()
+        {
+            var dto = new ClassRequestDto { Name = "", Description = "Test Description" };
+            var result = () => _classBusiness.CreateClass(pid, dto);
+            await result.Should().ThrowAsync<ValidationException>();
+        }
+
+        [Fact]
+        public async Task CreateClass_Fails_IfNoProjectId()
+        {
+            var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
+            var result = () => _classBusiness.CreateClass(pid + 99, dto);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task CreateClass_Fails_IfDeletedProjectId()
+        {
+            var project = await Context.Projects.FindAsync(pid);
+            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            Context.Projects.Update(project);
+            await Context.SaveChangesAsync();
+            var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
+            var result = () => _classBusiness.CreateClass(pid, dto);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task CreateClass_Fails_IfDuplicateName()
+        {
+            var duplicateName = "Duplicate Class";
+            var dto = new ClassRequestDto { Name = duplicateName, Description = "Test Description" };
+
+            // Create first class
+            await _classBusiness.CreateClass(pid, dto);
+
+            // Try to create duplicate
+            var result = () => _classBusiness.CreateClass(pid, dto);
+            await result.Should().ThrowAsync<Exception>();
+        }
+
+        [Fact]
+        public async Task GetAllClasses_ReturnsOnlyForProjects()
+        {
+            var p2 = new Project { Name = "ExtraProj" };
+            Context.Projects.Add(p2);
+            await Context.SaveChangesAsync();
+
+            await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
+            await _classBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
+
+            var list = await _classBusiness.GetAllClasses(pid,true);
+            Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
+        }
+
+        [Fact]
+        public async Task GetAllClasses_ExcludesSoftDeleted()
+        {
+            var activeClass = new Class
+            {
+                Name = $"Active Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            var archivedClass = new Class
+            {
+                Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(activeClass);
+            Context.Classes.Add(archivedClass);
+            await Context.SaveChangesAsync();
+
+            var list = await _classBusiness.GetAllClasses(pid,true);
+            Assert.DoesNotContain(list, c => c.Id == archivedClass.Id);
+        }
+
+        [Fact]
+        public async Task GetClass_Success_WhenExists()
+        {
+            var testClass = new Class
+            {
+                Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var result = await _classBusiness.GetClass(pid, testClass.Id,true);
+            Assert.Equal(testClass.Id, result.Id);
+        }
+
+        [Fact]
+        public async Task GetClass_Fails_IfNoProjectID()
+        {
+            var testClass = new Class
+            {
+                Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var result = () => _classBusiness.GetClass(pid + 999, testClass.Id,true);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task GetClass_Fails_IfDeletedClass()
+        {
+            var testClass = new Class
+            {
+                Name = $"Deleted Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var result = () => _classBusiness.GetClass(pid, testClass.Id,true);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task UpdateClass_Success_ReturnsModifiedAt()
+        {
+            var testClass = new Class
+            {
+                Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Add a small delay to ensure ModifiedAt is after CreatedAt
+            await Task.Delay(50);
+
+            var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
+            var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
+            
+            updatedResult.ModifiedAt.Should().BeCloseTo(updatedResult.CreatedAt,TimeSpan.FromMilliseconds(10));
+        }
+
+        [Fact]
+        public async Task UpdateClass_Fails_IfNotFound()
+        {
+            var dto = new ClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
+            var updatedResult = () => _classBusiness.UpdateClass(pid, 99, dto);
+
+            await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task ArchiveClass_Success_WhenExists()
+        {
+            var beforeArchive = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+            var testClass = new Class
+            {
+                Name = $"Class to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var archivedResult = await _classBusiness.ArchiveClass(pid, testClass.Id);
+            Assert.True(archivedResult);
+
+            // procedure is not traced by entity framework
+            //this forces EF to sync to db on next query
+            Context.ChangeTracker.Clear();
+
+            var archivedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(archivedClass);
+            Assert.NotNull(archivedClass.ArchivedAt);
+            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
+            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+        }
+
+        [Fact]
+        public async Task ArchiveClass_Fails_IfNotFound()
+        {
+            var result = () => _classBusiness.ArchiveClass(pid, 99);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task DeleteClass_Success_WhenExists()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.Null(deletedClass);
+        }
+
+        [Fact]
+        public async Task ClassArchived_WhenProjectArchived()
+        {
+            var beforeArchive = DateTime.UtcNow;
+            var testClass = new Class
+            {
+                Name = $"Class in Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _projectBusiness.ArchiveProject(pid);
+            Assert.True(deletedResult);
+            
+            //Makes sure the db is refreshed 
+            Context.ChangeTracker.Clear();
+
+            var archivedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(archivedClass);
+            Assert.NotNull(archivedClass.ArchivedAt);
+            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
+            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+        }
+        [Fact]
+        public async Task ForceDeleteClass_RemovesFromDatabase()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class to Force Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            
+            var existingClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(existingClass);
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            // Check if class is completely removed from database
+            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.Null(deletedClass);
+        }
+
+        [Fact]
+        public async Task DeleteClass_DeletesRelationshipsWithANullClass()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            
+            var relationship1 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where testClass is Destination and orig is null
+            var relationship2 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where orig and dest are null
+            var relationship3 = new Relationship
+            {
+                Name = "Test Relationship 3",
+                OriginId = null,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            Context.Relationships.Add(relationship1);
+            Context.Relationships.Add(relationship2);
+            Context.Relationships.Add(relationship3);
+            await Context.SaveChangesAsync();
+            
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+            
+            var  deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            var  deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
+            var  deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var  intactRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+            
+            Assert.Null(deletedClass);
+            Assert.Null(deletedRelationship1);
+            Assert.Null(deletedRelationship2);
+            Assert.NotNull(intactRelationship3);
+        }
+    
+        [Fact]
+        public async Task DeleteClass_DeletesDownstreamRelationships()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Create another class to be the other end of relationships
+            var otherClass = new Class
+            {
+                Name = $"Other Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(otherClass);
+            await Context.SaveChangesAsync();
+
+            // Create relationship where testClass is Origin
+            var relationship1 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = otherClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            // Create relationship where testClass is Destination
+            var relationship2 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = otherClass.Id,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where testClass is Origin and dest is null
+            var relationship3 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            // Create relationship where testClass is Destination and orig is null
+            var relationship4 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where orig and dest are null
+            var relationship5 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.Relationships.Add(relationship1);
+            Context.Relationships.Add(relationship2);
+            Context.Relationships.Add(relationship3);
+            Context.Relationships.Add(relationship4);
+            Context.Relationships.Add(relationship5);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
+            var deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var deletedRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+            var deletedRelationship4 = await Context.Relationships.FindAsync(relationship4.Id);
+            var intactRelationship5 = await Context.Relationships.FindAsync(relationship5.Id);
+            Assert.Null(deletedRelationship1);
+            Assert.Null(deletedRelationship2);
+            Assert.Null(deletedRelationship3);
+            Assert.Null(deletedRelationship4);
+            Assert.NotNull(intactRelationship5);
+        }
+        [Fact]
+        public async Task DeleteClass_DeletesDownstreamRecords()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Records {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            var record1 = new Record
+            {
+                Name = "Test Record 1",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                Properties = "{\"test\": \"value1\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            var record2 = new Record
+            {
+                Name = "Test Record 2",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                Properties = "{\"test\": \"value2\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.Records.AddRange(record1, record2);
+            await Context.SaveChangesAsync();
+            var existingRecords = Context.Records
+                .Where(r => r.ClassId == testClass.Id)
+                .ToList();
+            Assert.Equal(2, existingRecords.Count);
+    
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            // Verify downstream records are also deleted (cascade delete)
+            var remainingRecords = Context.Records
+                .Where(r => r.ClassId == testClass.Id)
+                .ToList();
+            Assert.Empty(remainingRecords);
+        }
+
+        [Fact]
+        public async Task DeleteClass_DeletesDownstreamRecordMappings()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var mapping1 = new RecordMapping
+            {
+                RecordParams = "{\"param1\": \"value1\"}",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            var mapping2 = new RecordMapping
+            {
+                RecordParams = "{\"param2\": \"value2\"}",
+                ClassId = testClass.Id,
+                DataSourceId = did,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.RecordMappings.Add(mapping1);
+            Context.RecordMappings.Add(mapping2);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedMapping1 = await Context.RecordMappings.FindAsync(mapping1.Id);
+            var deletedMapping2 = await Context.RecordMappings.FindAsync(mapping2.Id);
+            
+            Assert.NotNull(deletedMapping1);
+            Assert.NotNull(deletedMapping2);
+            Assert.Null(deletedMapping1.ClassId);
+            Assert.Null(deletedMapping2.ClassId);
+        }
+        protected override async Task SeedTestDataAsync()
+        {
+            await base.SeedTestDataAsync();
+            var project = new Project { Name = "Project 1" };
+            Context.Projects.Add(project);
+            await Context.SaveChangesAsync();
+            pid = project.Id;
+            var dataSource = new DataSource()
+            {
+                Name = "Test Datasource",
+                ProjectId = project.Id,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            Context.DataSources.Add(dataSource);
+            await Context.SaveChangesAsync();
+            did = dataSource.Id;
+        }
+    }
+}

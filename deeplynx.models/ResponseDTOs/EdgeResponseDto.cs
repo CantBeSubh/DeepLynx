@@ -7,9 +7,8 @@ public class EdgeResponseDto
     public long Id { get; set; }
     public long OriginId { get; set; } 
     public long DestinationId { get; set; }
-    public JsonObject? Properties { get; set; }
     public long? RelationshipId { get; set; }
-    public string? RelationshipName { get; set; }
+    public long? MappingId { get; set; }
     public long DataSourceId { get; set; }
     public long ProjectId { get; set; }
     public string? CreatedBy { get; set; }

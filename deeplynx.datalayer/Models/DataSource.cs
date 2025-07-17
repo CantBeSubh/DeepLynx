@@ -13,6 +13,7 @@ public partial class DataSource
 {
     [Key]
     [Column("id")]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     public long Id { get; set; }
 
     [Column("name")]
@@ -53,6 +54,12 @@ public partial class DataSource
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
 
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]
