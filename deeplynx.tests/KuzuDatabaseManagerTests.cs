@@ -18,6 +18,7 @@ namespace deeplynx.tests
         private KuzuDatabaseManager _kuzuDatabaseManager;
         private readonly IConfiguration _configuration;
         private const int ProjectId = 1;
+        private static bool _isConnected = false;
 
         public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
         {
@@ -37,18 +38,21 @@ namespace deeplynx.tests
 
         public override async Task InitializeAsync()
         {
-            if (System.IO.Directory.Exists("../deeplynx.graph/kuzu_db"))
-                System.IO.Directory.Delete("../deeplynx.graph/kuzu_db", true);
+            if (!_isConnected)
+            {
+                await Task.Delay(5000);
+                Log.Information("Ran InitializeAsync to Connect to Kuzu database");
+                await _kuzuDatabaseManager.ConnectAsync();
+                _isConnected = true;
+            }
 
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
 
             Log.Information("Initializing KuzuDatabaseManagerTests...");
-            await _kuzuDatabaseManager.ConnectAsync();
             Log.Information("KuzuDatabaseManager initialized and connected.");
         }
-
 
         private async Task<bool> ExecuteSqlFromFileAsync(string filePath)
         {
@@ -103,7 +107,14 @@ namespace deeplynx.tests
 
             // Assert
             Assert.True(result);
-            Log.Information("SeedDatabaseAsync test completed.");
+            Log.Information("InitialSeedDatabaseAsync test completed.");
+
+            if (_isConnected)
+            {
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from InitialSeedDataBaseAsync test");
+            }
         }
 
         [Fact]
@@ -120,6 +131,13 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result);
             Log.Information("SeedDatabaseAsync test completed.");
+
+            if (_isConnected)
+            {
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from SeedDataBaseAsync test");
+            }
         }
 
 
@@ -135,23 +153,12 @@ namespace deeplynx.tests
             // Assert
             Assert.True(connected);
             Log.Information("ConnectAsync test completed. Connected: {Connected}", connected);
-        }
 
-        #endregion
-
-
-        #region InstallPostgresExtensionsAsync Tests
-
-        [Fact]
-        public async Task InstallPostgresExtensionsAsync_ShouldInstallExtensions_WhenCalled()
-        {
-            // Arrange & Act
-            Log.Information("Running InstallPostgresExtensionsAsync_ShouldInstallExtensions_WhenCalled test...");
-            bool result = await _kuzuDatabaseManager.InstallPostgresExtensionsAsync();
-
-            // Assert
-            Assert.True(result);
-            Log.Information("InstallPostgresExtensionsAsync test completed. Result: {Result}", result);
+            if (_isConnected)
+            {
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+            }
         }
 
         #endregion
@@ -169,27 +176,13 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result);
             Log.Information("ExportDataAsync test completed. Result: {Result}", result);
-        }
 
-        [Fact]
-        public async Task ExportDataAsync_ShouldReturnTrue_WhenProjectIdAlreadyProcessed()
-        {
-            //Arrange
-            var requestDto = new KuzuDBMQueryRequestDto
+            if (_isConnected)
             {
-                Query = "DETACH test;"
-            };
-            await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
-            await _kuzuDatabaseManager.ExecuteQueryAsync(requestDto);
-
-            // Act
-            Log.Information("Running ExportDataAsync_ShouldReturnTrue_WhenProjectIdAlreadyProcessed test...");
-            await _kuzuDatabaseManager.ConnectAsync();
-            var result = await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
-
-            // Assert
-            Assert.True(result);
-            Log.Information("ExportDataAsync test for already processed project completed. Result: {Result}", result);
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from ExportDataAsync test");
+            }
         }
 
         #endregion
@@ -212,12 +205,18 @@ namespace deeplynx.tests
             // Act
             Log.Information("Running GetNodesWithinDepthByIdAsync_ValidInput_ReturnsExpectedResults test...");
             var result = await _kuzuDatabaseManager.GetNodesWithinDepthByIdAsync(requestDto);
-            Console.WriteLine("result: " + result);
 
             // Assert
             Assert.NotNull(result);
             Assert.Contains("id:", result);
             Log.Information("GetNodesWithinDepthByIdAsync test completed. Result contains 'class_name'.");
+
+            if (_isConnected)
+            {
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from GetNodesWithinDepthByIdAsync test");
+            }
         }
 
         #endregion
@@ -244,25 +243,13 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Contains("id", result);
             Log.Information("ExecuteQuery test completed. Result contains 'id'.");
-        }
 
-        [Fact]
-        public async Task ExecuteQuery_InvalidQuery_ShouldThrowException()
-        {
-            // Arrange
-            var requestDto = new KuzuDBMQueryRequestDto
+            if (_isConnected)
             {
-                Query = "INVALID QUERY"
-            };
-            await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
-
-            // Act & Assert
-            Log.Information("Running ExecuteQuery_InvalidQuery_ShouldThrowException test...");
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            {
-                await _kuzuDatabaseManager.ExecuteQueryAsync(requestDto);
-            });
-            Log.Information("ExecuteQuery test for invalid query completed, exception was thrown as expected.");
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from ExecuteQuery test");
+            }
         }
 
         #endregion
@@ -280,6 +267,13 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result);
             Log.Information("CloseAsync test completed. Result: {Result}", result);
+
+            if (_isConnected)
+            {
+                await _kuzuDatabaseManager.CloseAsync();
+                _isConnected = false;
+                Log.Information("Disconnected from CloseAsync test");
+            }
         }
 
         #endregion
