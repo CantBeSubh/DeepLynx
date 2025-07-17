@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal"
 import {ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
 import {PlusCircleIcon} from "@heroicons/react/24/solid";
@@ -48,7 +49,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                         {currentAvatars.map((avatar, i) => (
                             <div key={i} className="avatar inline-block">
                                 <div className="w-12 rounded-full">
-                                    <img
+                                    <Image
                                         src={avatar}
                                         alt="avatar"
                                     />

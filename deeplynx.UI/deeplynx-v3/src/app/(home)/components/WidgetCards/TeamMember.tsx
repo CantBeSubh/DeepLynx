@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from 'next/image';
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal"
 import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
 import {PlusCircleIcon} from "@heroicons/react/24/solid";
@@ -77,7 +78,7 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                 <div className="avatar">
                                     <div className="mask mask-circle h-10 w-10">
-                                    <img
+                                    <Image
                                         src="https://img.daisyui.com/images/profile/demo/2@94.webp"
                                         alt="Avatar Tailwind CSS Component" />
                                     </div>
@@ -99,7 +100,7 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                 <div className="avatar">
                                     <div className="mask mask-circle h-10 w-10">
-                                    <img
+                                    <Image
                                         src="https://img.daisyui.com/images/profile/demo/3@94.webp"
                                         alt="Avatar Tailwind CSS Component" />
                                     </div>
@@ -121,7 +122,7 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="avatar">
                                         <div className="mask mask-circle h-10 w-10">
-                                            <img
+                                            <Image
                                                 src="https://img.daisyui.com/images/profile/demo/4@94.webp"
                                                 alt="Avatar Tailwind CSS Component" />
                                         </div>
@@ -143,7 +144,7 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="avatar">
                                         <div className="mask mask-circle h-10 w-10">
-                                            <img
+                                            <Image
                                                 src="https://img.daisyui.com/images/profile/demo/5@94.webp"
                                                 alt="Avatar Tailwind CSS Component" />
                                         </div>

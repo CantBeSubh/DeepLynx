@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import Image from 'next/image';
 import {CircleStackIcon, DocumentChartBarIcon, LinkIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
 
 const RecentActivityWidget = () => {
@@ -15,8 +16,9 @@ const RecentActivityWidget = () => {
               </div>
             </span>
             <div className="h-10 w-10 rounded-full">
-              <img
-                src="https://img.daisyui.com/images/profile/demo/1@94.webp"/>
+              <Image
+                src="https://img.daisyui.com/images/profile/demo/1@94.webp"
+                alt="avatar" />
             </div>
           </div>
           <div>
@@ -34,9 +36,9 @@ const RecentActivityWidget = () => {
               </div>
             </span>
             <div className="h-10 w-10 rounded-full">
-              <img
+              <Image
                 src="https://img.daisyui.com/images/profile/demo/batperson@192.webp"
-              />
+                alt="avatar" />
             </div>
           </div>
           <div className="pt-2">
@@ -52,8 +54,9 @@ const RecentActivityWidget = () => {
               </div>
             </span>
             <div className="h-10 w-10 rounded-full">
-              <img
-                src="https://img.daisyui.com/images/profile/demo/4@94.webp"/>
+              <Image
+                src="https://img.daisyui.com/images/profile/demo/4@94.webp"
+                alt="avatar" />
             </div>
           </div>
           <div>
@@ -71,8 +74,9 @@ const RecentActivityWidget = () => {
               </div>
             </span>
             <div className="h-10 w-10 rounded-full">
-              <img
-                src="https://img.daisyui.com/images/profile/demo/3@94.webp"/>
+              <Image
+                src="https://img.daisyui.com/images/profile/demo/3@94.webp"
+                alt="avatar" />
             </div>
           </div>
           <div>
