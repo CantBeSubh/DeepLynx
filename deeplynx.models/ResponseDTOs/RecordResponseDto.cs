@@ -17,4 +17,6 @@ public class RecordResponseDto
     public string? ModifiedBy { get; set; }
     public DateTime? ModifiedAt { get; set; }
     public DateTime? ArchivedAt { get; set; }
+    
+    public string? Description { get; set; }
 }

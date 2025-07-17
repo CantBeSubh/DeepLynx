@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250716174942_AddDescriptionToRecords")]
+    partial class AddDescriptionToRecords
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,26 +66,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "TagId" }, "idx_record_tags_tag_id");
 
                     b.ToTable("record_tags", "deeplynx");
-                });
-
-            modelBuilder.Entity("UserProject", b =>
-                {
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("user_id");
-
-                    b.Property<long>("ProjectId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("project_id");
-
-                    b.HasKey("UserId", "ProjectId")
-                        .HasName("user_project_pkey");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_user_project_project_id");
-
-                    b.HasIndex(new[] { "UserId" }, "idx_user_project_user_id");
-
-                    b.ToTable("user_project", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
@@ -835,7 +818,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<long?>("DestinationId")
+                    b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
@@ -852,7 +835,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OriginId")
+                    b.Property<long>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
 
@@ -999,23 +982,6 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("record_tags_tag_id_fkey");
-                });
-
-            modelBuilder.Entity("UserProject", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.Project", null)
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("user_project_project_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.User", null)
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("user_project_user_id_fkey");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
@@ -1236,12 +1202,14 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("RelationshipDestinations")
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("relationships_destination_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
                         .WithMany("RelationshipOrigins")
                         .HasForeignKey("OriginId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("relationships_origin_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
