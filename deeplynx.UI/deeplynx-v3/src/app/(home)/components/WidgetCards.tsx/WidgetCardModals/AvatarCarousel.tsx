@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon, PlusCircleIcon} from "@heroicons/react/24/outline";
+import {ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
+import {PlusCircleIcon} from "@heroicons/react/24/solid";
 
 interface AvatarCarouselProps {
     avatars: string[];
 }
 
 const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
-    const avatarsPerPage = 9;
-    // const totalAvatars = 30;
+    // Ratio to account for the size of the avatars, plus icon, and arrows
+    const avatarsPerPage = Math.floor(((window.innerWidth * 0.30)-(24+24+24+32.5))/50);
     const [currentPage, setCurrentPage] = useState(0);
 
     const totalPages = Math.ceil(avatars.length / avatarsPerPage);
@@ -25,7 +26,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
     };
 
     const startIdx = currentPage * avatarsPerPage;
-    const endIdx = startIdx + avatarsPerPage;
+    const endIdx = startIdx + avatarsPerPage - 1;
     const currentAvatars = avatars.slice(startIdx, endIdx);
 
     return (
@@ -35,7 +36,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                     {/* Left Button */}
                     <div className="flex items-center">
                         <button onClick={handlePrev} className="flex-shrink-0">
-                            <ChevronLeftIcon className="size-6 mr-4" />
+                            <ChevronLeftIcon className="size-6" />
                         </button>
                     </div>
 
@@ -53,14 +54,15 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                             </div>
                         ))}
                         <button className="">
-                            <PlusIcon />
+                            <PlusCircleIcon
+                                className="w-10 h-10 text-secondary" />
                         </button>
                     </div>
 
                     {/* Right Button */}
                     <div className="flex items-center">
                         <button onClick={handleNext} className="flex-shrink-0">
-                            <ChevronRightIcon className="size-6 ml-4" />
+                            <ChevronRightIcon className="size-6" />
                         </button>
                     </div>
                 </div>
@@ -68,28 +70,5 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
         </div>
     );
 };
-
-const PlusIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="oklch(44.08% 0.141 255.19)"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="white"
-    className="w-9 h-9 rounded-full"
-  >
-    <circle
-        cx="12"
-        cy="12"
-        r="12"
-        fill="btn-secondary"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M12 8v8m4-4h-8"
-    />
-  </svg>
-);
 
 export default AvatarCarousel;

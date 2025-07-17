@@ -9,14 +9,12 @@ import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/Accordion";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-// import CreateWidget from "@/app/(home)/components/CreateWidgets";
 import {PlusIcon, Cog6ToothIcon} from "@heroicons/react/24/outline";
 
 const Projects = () => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  // const [linkModal, setLinkModal] = useState(false);
   const [tableData] = useState<ProjectsList[]>(sampleProjectData);
   const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
 
@@ -111,11 +109,6 @@ const Projects = () => {
         onClose={() => setWidgetModal(false)}
       />
 
-      {/* Add Links Modal
-      <CreateLink
-        isOpen={linkModal}
-        onClose={() => setLinkModal(false)}
-      /> */}
     </div>
   );
 };

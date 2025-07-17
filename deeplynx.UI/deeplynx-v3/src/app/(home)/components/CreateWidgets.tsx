@@ -22,12 +22,12 @@ const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
             <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Name" // Placeholder for project name input
-                className="input input-primary w-full" // Input styling
+                placeholder="Name"
+                className="input input-primary w-full"
               />
               <textarea
-                placeholder="Description" // Placeholder for widget description
-                className="textarea textarea-primary w-full" // Textarea styling
+                placeholder="Description"
+                className="textarea textarea-primary w-full"
               />
               <div className="bg-base-200 p-4 rounded-xl">
                 {" "}
