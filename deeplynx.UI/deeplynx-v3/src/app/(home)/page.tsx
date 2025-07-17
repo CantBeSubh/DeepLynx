@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { getAllProjects } from "../lib/api";
 
 import CreateProject from "./components/CreateProjectsModal";
-import CreateWidget from "@/app/(home)/components/CreateWidgets";
+import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";

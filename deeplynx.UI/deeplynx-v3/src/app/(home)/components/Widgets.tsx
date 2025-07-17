@@ -2,12 +2,12 @@
 
 import React, { useState, ReactNode } from "react";
 import { Reorder } from "framer-motion";
-import DataOverviewWidget from "./WidgetCards.tsx/DataOverviewWidget";
-import LinksWidget from "./WidgetCards.tsx/LinksWidget";
-import GraphWidget from "./WidgetCards.tsx/GraphWidget";
-import RecentActivityWidget from "./WidgetCards.tsx/RecentActivity";
-import ProjectOverviewWidget from "./WidgetCards.tsx/ProjectOverview";
-import TeamMembersWidget from "./WidgetCards.tsx/TeamMember";
+import DataOverviewWidget from "./WidgetCards/DataOverviewWidget";
+import LinksWidget from "./WidgetCards/LinksWidget";
+import GraphWidget from "./WidgetCards/GraphWidget";
+import RecentActivityWidget from "./WidgetCards/RecentActivity";
+import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
+import TeamMembersWidget from "./WidgetCards/TeamMember";
 
 export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 interface WidgetCardProps {
