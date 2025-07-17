@@ -51,6 +51,12 @@ public partial class HistoricalRecord
     
     [Column("data_source_name")]
     public string DataSourceName { get; set; }
+    
+    [Column("object_storage_id")]
+    public long ObjectStorageId { get; set; }
+    
+    [Column("object_storage_name")]
+    public string ObjectStorageName { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }

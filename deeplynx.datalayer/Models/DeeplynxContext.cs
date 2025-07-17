@@ -21,15 +21,17 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<Edge> Edges { get; set; }
     
+    public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
+
     public virtual DbSet<HistoricalEdge> HistoricalEdges { get; set; }
 
-    public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
+    public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
+
+    public virtual DbSet<ObjectStorage> ObjectStorages { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
-    
-    public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
 
     public virtual DbSet<RecordMapping> RecordMappings { get; set; }
 
@@ -125,6 +127,15 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("historical_records_record_id_fkey");
         });
 
+        modelBuilder.Entity<ObjectStorage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("object_storage_pkey");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages).HasConstraintName("object_storage_project_id_fkey");
+        });
+
         modelBuilder.Entity<Project>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("projects_pkey");
@@ -149,6 +160,8 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Records).HasConstraintName("records_project_id_fkey");
+
+            entity.HasOne(d => d.ObjectStorage).WithMany(p => p.Records).HasConstraintName("records_object_storage_id_fkey");
 
             entity.HasMany(d => d.Tags).WithMany(p => p.Records)
                 .UsingEntity<Dictionary<string, object>>(

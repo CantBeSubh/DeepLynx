@@ -43,6 +43,9 @@ public partial class Record
 
     [Column("data_source_id")]
     public long DataSourceId { get; set; }
+    
+    [Column("object_storage_id")]
+    public long ObjectStorageId { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
@@ -73,6 +76,10 @@ public partial class Record
     [ForeignKey("DataSourceId")]
     [InverseProperty("Records")]
     public virtual DataSource DataSource { get; set; } = null!;
+    
+    [ForeignKey("ObjectStorageId")]
+    [InverseProperty("Records")]
+    public virtual ObjectStorage ObjectStorage { get; set; } = null!;
 
     [InverseProperty("Destination")]
     public virtual ICollection<Edge> EdgeDestinations { get; set; } = new List<Edge>();
