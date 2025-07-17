@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal"
 import {ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
 import {PlusCircleIcon} from "@heroicons/react/24/solid";
 
@@ -7,6 +8,7 @@ interface AvatarCarouselProps {
 }
 
 const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
+    const [addMemberModal, setAddMemberModal] = useState(false);
     // Ratio to account for the size of the avatars, plus icon, and arrows
     const avatarsPerPage = Math.floor(((window.innerWidth * 0.30)-(24+24+24+32.5))/50);
     const [currentPage, setCurrentPage] = useState(0);
@@ -53,7 +55,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                                 </div>
                             </div>
                         ))}
-                        <button className="">
+                        <button onClick={() => setAddMemberModal(true)}>
                             <PlusCircleIcon
                                 className="w-10 h-10 text-secondary" />
                         </button>
@@ -67,6 +69,12 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Create Link Modal */}
+            <AddMember
+                isOpen={addMemberModal}
+                onClose={() => setAddMemberModal(false)}
+            />
         </div>
     );
 };

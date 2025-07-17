@@ -1,10 +1,12 @@
 import React, { useState } from "react";
+import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal"
 import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
 import {PlusCircleIcon} from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 
 const TeamMembersWidget: React.FC = () => {
     const [showTable, setShowTable] = useState(false);
+    const [addMemberModal, setAddMemberModal] = useState(false);
     const avatars = Array.from({ length: 30 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
 
     const handleToggle = () => {
@@ -18,7 +20,7 @@ const TeamMembersWidget: React.FC = () => {
                     Team Members
                     {/* Show Plus Icon only when table is shown */}
                     {showTable && (
-                        <button className="ml-1">
+                        <button onClick={() => setAddMemberModal(true)} className="ml-1">
                             <PlusCircleIcon
                                 className="w-7 h-7 text-secondary" />
                         </button>
@@ -173,6 +175,13 @@ const TeamMembersWidget: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Create Link Modal */}
+            <AddMember
+                isOpen={addMemberModal}
+                onClose={() => setAddMemberModal(false)}
+            />
+
         </div>
     );
 };
