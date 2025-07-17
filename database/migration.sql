@@ -1753,51 +1753,45 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships DROP CONSTRAINT relationships_destination_id_fkey;
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    ALTER TABLE deeplynx.records ADD description text;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships DROP CONSTRAINT relationships_origin_id_fkey;
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    ALTER TABLE deeplynx.historical_records ADD description text;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716174942_AddDescriptionToRecords') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250716174942_AddDescriptionToRecords', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716185238_MakeClassesOptionalForRelationships') THEN
     ALTER TABLE deeplynx.relationships ALTER COLUMN origin_id DROP NOT NULL;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716185238_MakeClassesOptionalForRelationships') THEN
     ALTER TABLE deeplynx.relationships ALTER COLUMN destination_id DROP NOT NULL;
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_destination_id_fkey FOREIGN KEY (destination_id) REFERENCES deeplynx.classes (id) ON DELETE CASCADE;
-    END IF;
-END $EF$;
-
-DO $EF$
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
-    ALTER TABLE deeplynx.relationships ADD CONSTRAINT relationships_origin_id_fkey FOREIGN KEY (origin_id) REFERENCES deeplynx.classes (id) ON DELETE CASCADE;
-    END IF;
-END $EF$;
-
-DO $EF$
-BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716015955_MakeRelationshipClassesNullable') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716185238_MakeClassesOptionalForRelationships') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-    VALUES ('20250716015955_MakeRelationshipClassesNullable', '10.0.0-preview.5.25277.114');
+    VALUES ('20250716185238_MakeClassesOptionalForRelationships', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
 COMMIT;
