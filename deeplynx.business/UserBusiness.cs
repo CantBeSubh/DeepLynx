@@ -39,13 +39,11 @@ public class UserBusiness : IUserBusiness
         else
         {
             DoesProjectExist(projectId.Value);
-
-            //user_project is a linking table and cannot be accessed with EF 
+            
             users = await _context.Users
-                .FromSqlRaw(@"SELECT u.* FROM deeplynx.users u
-                            INNER JOIN deeplynx.user_project up ON u.Id = up.user_id
-                            WHERE up.project_id = {0} AND u.archived_at IS NULL", projectId)
-                .ToListAsync();
+                .Where(u => u.Projects.Any(p => p.Id == projectId))
+                .ToListAsync(); 
+
         }
 
         return users.Select(p => new UserResponseDto()
@@ -105,11 +103,6 @@ public class UserBusiness : IUserBusiness
             project.Users.Add(user);
             _context.SaveChanges();
         }
-        
-        //user_project is a linking table and cannot be accessed with EF 
-        await _context.Database.ExecuteSqlRawAsync(
-            "INSERT INTO deeplynx.user_project (user_id, project_id) VALUES ({0}, {1})",
-            user.Id, dto.ProjectId);
 
         return new UserResponseDto()
         {
