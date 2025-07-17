@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { peopleData } from "@/app/(home)/dummy_data/data";
 import { useParams } from "next/navigation";
-import { Column, ProjectsList } from "@/app/(home)/types/types";
+import { Column, PopularTable, ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import Link from "next/link";
@@ -12,14 +12,7 @@ import GenericTable from "@/app/(home)/components/GenericTable";
 import AvatarCell from "@/app/(home)/components/Avatar";
 import { format } from "date-fns";
 import { getProject } from "@/app/lib/api";
-
-type PopularTable = {
-  id: number;
-  name: string;
-  image: string;
-  nickname: string;
-  visibility: string;
-};
+import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
@@ -41,43 +34,6 @@ const ProjectDetailPage = () => {
     };
     fetchProject();
   }, [hasLoaded, projectId, project, setProjectSession]);
-
-  const popular_table_columns: Column<PopularTable>[] = [
-    {
-      header: "Created by",
-      cell: (row) => <AvatarCell name={row.name} image={row.image} />,
-    },
-    {
-      header: "Search nickname",
-      data: "nickname",
-    },
-    {
-      header: "Visibility",
-      data: "visibility",
-    },
-  ];
-
-  const tabData = [
-    {
-      label: "Recent",
-      content: <GenericTable columns={[]} data={[]} />,
-    },
-    {
-      label: "Popular",
-      content: (
-        <GenericTable
-          columns={popular_table_columns}
-          data={peopleData}
-          enablePagination
-          rowsPerPage={5}
-        />
-      ),
-    },
-    {
-      label: "My Searchs",
-      content: <></>,
-    },
-  ];
 
   if (!hasLoaded) return <p className="p-4">Loading session...</p>;
   if (!project) return <p className="p-4">No project found.</p>;
@@ -114,7 +70,7 @@ const ProjectDetailPage = () => {
             <div className="card shadow-lg mt-3">
               <div className="card-body">
                 <h2 className="card-title">Seaved Searchs</h2>
-                <Tabs tabs={tabData} className="tabs tabs-border" />
+                <SavedSearchesTabs />
               </div>
             </div>
           </div>
