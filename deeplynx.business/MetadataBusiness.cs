@@ -1,6 +1,8 @@
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
@@ -52,6 +54,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, MetadataRequestDto metadataRequestDto)
     {
+        var parsedMetadata = await ParseMetadata(metadataRequestDto,  projectId);
         DoesProjectExist(projectId);
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
@@ -85,4 +88,202 @@ public class MetadataBusiness : IMetadataBusiness
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
     }
+    
+    public async Task<BulkMetadataRequestDto> ParseMetadata(MetadataRequestDto dto, long projectId)
+    {
+        BulkClassRequestDto? classRequestDtos = null;
+        if (dto.Classes != null && dto.Classes.Any())
+        {
+            classRequestDtos = new BulkClassRequestDto
+            {
+                BulkClassRequests = new List<ClassRequestDto>()
+            };
+            
+            foreach (var metaClass in dto.Classes)
+            {
+                if (metaClass is not JsonObject obj)
+                    throw new InvalidOperationException("Metadata request is not structured for classes so that Dto can correctly parse it");
+
+
+                if (!obj.TryGetPropertyValue("name", out JsonNode? nameNode) ||
+                    nameNode is not JsonValue nameValue ||
+                    string.IsNullOrWhiteSpace(nameValue.ToString()))
+                {
+                    throw new InvalidOperationException("Name is missing or empty for a class");
+                }
+                
+                var className = nameValue.ToString();
+                
+                var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == className);
+                if (existingClass == null)
+                {
+                     String? description = null;
+                     if (obj.TryGetPropertyValue("description", out JsonNode? descNode) &&
+                         descNode is JsonValue descValue &&
+                         !string.IsNullOrWhiteSpace(descValue.ToString()))
+                     {
+                         description = descValue.ToString();
+                     }
+                     classRequestDtos.BulkClassRequests.Add(new ClassRequestDto
+                     {
+                         Name = className,
+                         Description = description
+                     });
+
+                }
+            }
+        }
+        BulkRelationshipRequestDto? relationshipRequestDtos = null;
+        if (dto.Relationships != null && dto.Relationships.Any())
+        {
+            relationshipRequestDtos = new BulkRelationshipRequestDto
+            {
+                Relationships = new List<RelationshipRequestDto>()
+            };
+
+            foreach (var metaRelationship in dto.Relationships)
+            {
+                if (metaRelationship is not JsonObject obj)
+                    throw new InvalidOperationException("Metadata request is not structured for relationships so that Dto can correctly parse it");
+                
+                if (!obj.TryGetPropertyValue("name", out JsonNode? nameNode) ||
+                    nameNode is not JsonValue nameValue ||
+                    string.IsNullOrWhiteSpace(nameValue.ToString()))
+                {
+                    throw new InvalidOperationException("Name is missing or empty for a relationship");
+                }
+                var relationshipName = nameValue.ToString();
+                var existingRelationship = await _context.Classes.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == relationshipName);
+                if (existingRelationship == null)
+                {
+                    String? description = null;
+                    if (obj.TryGetPropertyValue("description", out JsonNode? descNode) &&
+                        descNode is JsonValue descValue &&
+                        !string.IsNullOrWhiteSpace(descValue.ToString()))
+                    {
+                        description = descValue.ToString();
+                    }
+                    
+                    relationshipRequestDtos.Relationships.Add(new RelationshipRequestDto
+                    {
+                        Name = relationshipName,
+                        Description = description
+                    });
+                }
+            }
+        }
+        
+        BulkTagRequestDto? tagRequestDtos = null;
+        if (dto.Tags != null && dto.Tags.Any())
+        {
+            tagRequestDtos = new BulkTagRequestDto
+            {
+                Tags = new List<TagRequestDto>()
+            };
+
+            foreach (var metaTag in dto.Tags)
+            {
+                if (metaTag is not JsonObject obj)
+                    throw new InvalidOperationException("Metadata request is not structured for tags so that Dto can correctly parse it");
+                
+                if (IsStringFieldNullOrEmpty(obj, "name"))
+                {
+                    throw new InvalidOperationException("Name is missing or empty for a tag");
+                }
+
+                obj.TryGetPropertyValue("name", out JsonNode? nameNodes);
+                var tagName = nameNodes.AsValue().ToString();
+                var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagName);
+                if (existingTag == null)
+                {
+                    tagRequestDtos.Tags.Add(new TagRequestDto
+                    {
+                        Name = tagName
+                    });
+                }
+            }
+        }
+        //Todo: Change logic in this function so that each entity is saved after 
+        //it is parsed. We will need to implement a transaction.
+        BulkEdgeRequestDto? edgeRequestDtos = null;
+        if (dto.Edges != null && dto.Edges.Any())
+        {
+            edgeRequestDtos = new BulkEdgeRequestDto
+            {
+                Edges = new List<EdgeRequestDto>()
+            };
+
+            foreach (var metaEdge in dto.Edges)
+            {
+                if (metaEdge is not JsonObject obj)
+                    throw new InvalidOperationException("Metadata request is not structured for edges so that Dto can correctly parse it");
+
+                if (IsStringFieldNullOrEmpty(obj, "origin_name") || IsStringFieldNullOrEmpty(obj, "destination_name"))
+                {
+                    throw new InvalidOperationException("Origin and/or destination name is missing or empty for an edge");
+                }
+                obj.TryGetPropertyValue("origin_name", out JsonNode? originNameNode);
+                obj.TryGetPropertyValue("destination_name", out JsonNode? destinationNameNode);
+                var originName = originNameNode.AsValue().ToString();
+                var destinationName = destinationNameNode.AsValue().ToString();
+                var originExists = await _context.Records.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == originName);
+                if (originExists == null)
+                    throw new KeyNotFoundException($"Edge references an origin record with name {originName} that does not exist in project {projectId} ");
+                
+                var destinationExists = await _context.Records.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == destinationName);
+                if (destinationExists == null)
+                    throw new KeyNotFoundException($"Edge references a destination record with name {destinationName} that does not exist in project {projectId}");
+                
+                String? relationshipName = null;
+                long? relationshipId = null;
+                if (!IsStringFieldNullOrEmpty(obj, "relationship_name"))
+                {
+                    obj.TryGetPropertyValue("relationship_name", out JsonNode? descriptionNode);
+                    relationshipName = descriptionNode.AsValue().ToString();
+
+                    var relationshipExists = await _context.Relationships.FirstOrDefaultAsync(r =>
+                        r.ProjectId == projectId && r.Name == relationshipName);
+
+                    if (relationshipExists != null)
+                    {
+                        relationshipId = relationshipExists.Id;
+                    }
+                    else
+                    {
+                        var relationshipRequestDto = new RelationshipRequestDto()
+                        {
+                            Name = relationshipName
+                        };
+                        var relationshipResponse = await _relationshipBusiness.CreateRelationship(projectId, relationshipRequestDto);
+                        relationshipId = relationshipResponse.Id;
+                    }
+                }
+                
+                edgeRequestDtos.Edges.Add(new  EdgeRequestDto
+                {
+                    DestinationId = destinationExists.Id,
+                    OriginId = originExists.Id,
+                    RelationshipId = relationshipId,
+                    RelationshipName = relationshipName
+                });
+            }
+        }
+
+        return new BulkMetadataRequestDto
+        {
+            Classes = classRequestDtos,
+            Relationships = relationshipRequestDtos,
+            Tags = tagRequestDtos,
+            Edges = edgeRequestDtos
+        };
+    }
+    
+    
+    private bool IsStringFieldNullOrEmpty(JsonObject json, string propertyName)
+    {
+        return !json.TryGetPropertyValue(propertyName, out JsonNode? node) ||
+               node is not JsonValue value ||
+               string.IsNullOrWhiteSpace(value.ToString());
+    }
+
 }
