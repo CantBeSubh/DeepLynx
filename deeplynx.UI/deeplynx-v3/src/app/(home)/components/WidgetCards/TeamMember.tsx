@@ -79,8 +79,10 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="avatar">
                                     <div className="mask mask-circle h-10 w-10">
                                     <Image
-                                        src="https://img.daisyui.com/images/profile/demo/2@94.webp"
-                                        alt="Avatar Tailwind CSS Component" />
+                                        src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                                        alt="Avatar Tailwind CSS Component"
+                                        width="300"
+                                        height="300"/>
                                     </div>
                                 </div>
                                 <div>
@@ -101,8 +103,10 @@ const TeamMembersWidget: React.FC = () => {
                                 <div className="avatar">
                                     <div className="mask mask-circle h-10 w-10">
                                     <Image
-                                        src="https://img.daisyui.com/images/profile/demo/3@94.webp"
-                                        alt="Avatar Tailwind CSS Component" />
+                                        src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                                        alt="Avatar Tailwind CSS Component"
+                                        width="300"
+                                        height="300"/>
                                     </div>
                                 </div>
                                 <div>
@@ -123,8 +127,10 @@ const TeamMembersWidget: React.FC = () => {
                                     <div className="avatar">
                                         <div className="mask mask-circle h-10 w-10">
                                             <Image
-                                                src="https://img.daisyui.com/images/profile/demo/4@94.webp"
-                                                alt="Avatar Tailwind CSS Component" />
+                                                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                                                alt="Avatar Tailwind CSS Component"
+                                                width="300"
+                                                height="300"/>
                                         </div>
                                     </div>
                                     <div>
@@ -145,8 +151,10 @@ const TeamMembersWidget: React.FC = () => {
                                     <div className="avatar">
                                         <div className="mask mask-circle h-10 w-10">
                                             <Image
-                                                src="https://img.daisyui.com/images/profile/demo/5@94.webp"
-                                                alt="Avatar Tailwind CSS Component" />
+                                                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                                                alt="Avatar Tailwind CSS Component"
+                                                width="300"
+                                                height="300"/>
                                         </div>
                                     </div>
                                     <div>

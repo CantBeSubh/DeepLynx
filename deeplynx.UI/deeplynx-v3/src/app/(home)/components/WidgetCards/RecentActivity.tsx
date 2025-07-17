@@ -17,8 +17,10 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="https://img.daisyui.com/images/profile/demo/1@94.webp"
-                alt="avatar" />
+                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                alt="avatar"
+                width="300"
+                height="300"/>
             </div>
           </div>
           <div>
@@ -37,8 +39,10 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="https://img.daisyui.com/images/profile/demo/batperson@192.webp"
-                alt="avatar" />
+                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                alt="avatar"
+                width="300"
+                height="300"/>
             </div>
           </div>
           <div className="pt-2">
@@ -55,8 +59,10 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="https://img.daisyui.com/images/profile/demo/4@94.webp"
-                alt="avatar" />
+                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                alt="avatar"
+                width="300"
+                height="300"/>
             </div>
           </div>
           <div>
@@ -75,8 +81,10 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="https://img.daisyui.com/images/profile/demo/3@94.webp"
-                alt="avatar" />
+                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                alt="avatar"
+                width="300"
+                height="300"/>
             </div>
           </div>
           <div>

@@ -52,6 +52,8 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
                                     <Image
                                         src={avatar}
                                         alt="avatar"
+                                        width="300"
+                                        height="300"
                                     />
                                 </div>
                             </div>
