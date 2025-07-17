@@ -29,9 +29,6 @@ const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
                 placeholder="Description"
                 className="textarea textarea-primary w-full"
               />
-              <div className="bg-base-200 p-4 rounded-xl">
-                {" "}
-              </div>
             </form>
             {/* Modal Action Buttons */}
             <div className="modal-action">
