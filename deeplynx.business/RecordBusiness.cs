@@ -70,6 +70,9 @@ public class RecordBusiness : IRecordBusiness
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
         
+        if(dto.Properties == null)
+            throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
+        
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
