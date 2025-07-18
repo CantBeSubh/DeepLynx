@@ -132,8 +132,8 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a project
         /// </summary>
-        /// <param name="projectId">ID of the project to delete.</param>
-        /// <returns>Boolean true on successful deletion.</returns>
+        /// <param name="projectId">ID of the project to archive.</param>
+        /// <returns>A message stating the project was successfully archived.</returns>
         [HttpDelete("ArchiveProject/{projectId}")]
         public async Task<IActionResult> ArchiveProject(long projectId)
         {
@@ -145,6 +145,27 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving project {projectId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unarchive a project
+        /// </summary>
+        /// <param name="projectId">ID of the project to unarchive.</param>
+        /// <returns>A message stating the project was successfully unarchived.</returns>
+        [HttpPut("UnarchiveProject/{projectId}")]
+        public async Task<IActionResult> UnarchiveProject(long projectId)
+        {
+            try
+            {
+                await _projectBusiness.UnarchiveProject(projectId);
+                return Ok(new { message = $"Unarchived project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving project {projectId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

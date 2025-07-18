@@ -144,7 +144,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Deletes a class.
+        /// Delete a class
         /// </summary>
         /// <param name="classId">The ID of the class to delete.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -166,7 +166,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives a class.
+        /// Archive a class
         /// </summary>
         /// <param name="classId">The ID of the class to archive.</param>
         /// <param name="projectId">The ID of the project to which the class belongs.</param>
@@ -182,6 +182,28 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving class {classId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unarchive a class
+        /// </summary>
+        /// <param name="classId">The ID of the class to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the class belongs.</param>
+        /// <returns>A message stating the class was successfully unarchived.</returns>
+        [HttpPut("UnarchiveClass/{classId}")]
+        public async Task<IActionResult> UnarchiveClass(long projectId, long classId)
+        {
+            try
+            {
+                await _classBusiness.UnarchiveClass(projectId, classId);
+                return Ok(new { message = $"Unarchived class {classId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving class {classId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

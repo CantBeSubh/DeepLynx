@@ -145,9 +145,9 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Archive a data source 
         /// </summary>
-        /// <param name="dataSourceId">The ID of the data source to delete.</param>
+        /// <param name="dataSourceId">The ID of the data source to archive.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
-        /// <returns>A message stating the data source was successfully deleted.</returns>
+        /// <returns>A message stating the data source was successfully archived.</returns>
         [HttpDelete("ArchiveDataSource/{dataSourceId}")]
         public async Task<IActionResult> ArchiveDataSource(
             long dataSourceId, 
@@ -161,6 +161,30 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving data source {dataSourceId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unarchive a data source 
+        /// </summary>
+        /// <param name="dataSourceId">The ID of the data source to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <returns>A message stating the data source was successfully unarchived.</returns>
+        [HttpPut("UnarchiveDataSource/{dataSourceId}")]
+        public async Task<IActionResult> UnarchiveDataSource(
+            long dataSourceId, 
+            long projectId)
+        {
+            try
+            {
+                await _dataSourceBusiness.UnarchiveDataSource(projectId, dataSourceId);
+                return Ok(new { message = $"Unarchived data source {dataSourceId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving data source {dataSourceId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

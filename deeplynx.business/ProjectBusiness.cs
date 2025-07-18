@@ -233,6 +233,48 @@ public class ProjectBusiness : IProjectBusiness
             }
         }
     }
+    
+    /// <summary>
+    /// Unarchive a project by id. This also unarchives downstream dependents.
+    /// </summary>
+    /// <param name="projectId">ID of the project to unarchive.</param>
+    /// <returns>Boolean true when successfully unarchived.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if project is not found.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
+    public async Task<bool> UnarchiveProject(long projectId)
+    {
+        var project = await _context.Projects.FindAsync(projectId);
+
+        if (project == null || project.ArchivedAt is null)
+            throw new KeyNotFoundException("Project not found or is not archived.");
+
+        // run unarchive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the unarchive project procedure, which unarchives this project
+                // and all child objects with project_id as a foreign key
+                var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.unarchive_project({0}::INTEGER)", projectId);
+
+                if (unarchived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException(
+                        $"unable to unarchive project {projectId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException(
+                    $"unable to unarchive project {projectId} or its downstream dependents: {exc}");
+            }
+        }
+    }
 
     /// <summary>
     /// Retrieves project stats

@@ -180,4 +180,26 @@ public class TagController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
+    
+    /// <summary>
+    /// Unarchive a tag 
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to unarchive.</param>
+    /// <returns> A message stating the tag was successfully unarchived.</returns>
+    [HttpPut("UnarchiveTag/{tagId}")]
+    public async Task<IActionResult> UnarchiveTag(long projectId, long tagId)
+    {
+        try
+        {
+            await _tagBusiness.UnarchiveTag(projectId, tagId);
+            return Ok(new { message = $"Tag unarchived successfully" });
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while unarchiving tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
 }

@@ -259,7 +259,7 @@ public class RecordBusiness : IRecordBusiness
     /// Archive a metadata record.
     /// </summary>
     /// <param name="projectId">The project to which the record belongs</param>
-    /// <param name="recordId">The record in question</param>
+    /// <param name="recordId">The record to be archived</param>
     /// <returns>Boolean indicating record was archived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
@@ -286,6 +286,47 @@ public class RecordBusiness : IRecordBusiness
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Unarchive a metadata record.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record to be unarchived</param>
+    /// <returns>Boolean indicating record was unarchived</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
+    public async Task<bool> UnarchiveRecord(long projectId, long recordId)
+    {
+        DoesProjectExist(projectId);
+        var record = await _context.Records.FindAsync(recordId);
+        
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is not archived.");
+
+        // run unarchive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the unarchive record procedure, which unarchives this record
+                // and all child objects with record_id as a foreign key
+                var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.unarchive_record({0}::INTEGER)", recordId);
+
+                if (unarchived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to unarchive record {recordId} or its downstream dependents.");
                 }
 
                 await transaction.CommitAsync();

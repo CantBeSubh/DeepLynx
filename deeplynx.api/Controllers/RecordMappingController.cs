@@ -165,5 +165,27 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Unarchive a record mapping 
+        /// </summary>
+        /// <param name="mappingId">The ID of the record mapping to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+        /// <returns>A message stating the record mapping was successfully unarchived.</returns>
+        [HttpPut("UnarchiveRecordMapping/{mappingId}")]
+        public async Task<IActionResult> UnarchiveRecordMapping(long projectId, long mappingId)
+        {
+            try
+            {
+                await _rMappingBusiness.UnarchiveRecordMapping(projectId, mappingId);
+                return Ok(new { message = $"Unarchived record mapping {mappingId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving record mapping {mappingId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
