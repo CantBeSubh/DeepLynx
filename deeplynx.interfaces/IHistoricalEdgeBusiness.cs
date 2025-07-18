@@ -11,7 +11,4 @@ public interface IHistoricalEdgeBusiness
     Task<IEnumerable<HistoricalEdgeResponseDto>> GetHistoryForEdge(long edgeId);
     Task<HistoricalEdgeResponseDto> GetHistoricalEdge(
         long edgeId, DateTime? pointInTime, bool hideArchived, bool current);
-    Task<bool> CreateHistoricalEdge(long edgeId);
-    Task<bool> UpdateHistoricalEdge(long edgeId);
-    Task<bool> ArchiveHistoricalEdge(long edgeId);
 }

@@ -9,9 +9,7 @@ public class RelationshipRequestDto
     public string? Description { get; set; }
     public string? Uuid { get; set; }
     
-    [Required]
-    public long OriginId { get; set; }
+    public long? OriginId { get; set; }
     
-    [Required]
-    public long DestinationId { get; set; }
+    public long? DestinationId { get; set; }
 }

@@ -88,6 +88,28 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Create many relationships 
+        /// </summary>
+        /// <param name="projectId">ID for project relationship is associated with</param>
+        /// <param name="dto">Relationship request DTO</param>
+        /// <returns>Relationship response DTO</returns>
+        [HttpPost("BulkCreateRelationships")]
+        public async Task<ActionResult<BulkRelationshipResponseDto>> BulkCreateRelationships(long projectId, [FromBody] BulkRelationshipRequestDto dto)
+        {
+            try
+            {
+                var created = await _business.BulkCreateRelationships(projectId, dto);
+                return Ok(created);
+            }
+            catch (Exception exc)
+            {
+                var message = $"Unexpected error while creating relationships: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Update a relationship 

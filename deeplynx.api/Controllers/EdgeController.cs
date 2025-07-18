@@ -98,6 +98,28 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Create many edges 
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the edge belongs</param>
+        /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
+        /// <param name="edge">The edge request data transfer object containing edge details</param>
+        [HttpPost("BulkCreateEdges")]
+        public async Task<ActionResult<BulkEdgeResponseDto>> BulkCreateEdges(long projectId, [Required] long dataSourceId, [FromBody] BulkEdgeRequestDto edge)
+        {
+            try
+            {
+                var createdEdge = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edge);
+                return Ok(createdEdge);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while creating edges: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Update edge

@@ -1,12 +1,21 @@
 import React, { useRef, useState } from "react";
 
 // Define the props for the LargeSearchBar component
+interface Filter {
+  id: number;
+  term: string;
+}
 interface LargeSearchBarProps {
   placeholder?: string;
   className?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onEnter?: (value: string) => void;
   value?: string;
+  activeFilters?: Filter[];
+  onRemoveFilter?: (id: number) => void;
+  onClearAll?: () => void;
+  resultCount?: number;
+  showResultsMessage?: boolean;
 }
 
 const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
@@ -15,6 +24,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   onChange,
   onEnter,
   value,
+  activeFilters = [],
+  onRemoveFilter,
+  onClearAll,
+  resultCount,
+  showResultsMessage,
 }) => {
   const [internalValue, setInternalValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -40,59 +54,103 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   };
 
   return (
-    <div className={`relative w-full max-w-3xl ${className}`}>
-      <svg
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"
-        />
-      </svg>
-      <input
-        type="text"
-        placeholder={placeholder}
-        className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
-        onChange={
-          isControlled ? onChange : (e) => setInternalValue(e.target.value)
-        }
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && onEnter) {
-            onEnter((e.target as HTMLInputElement).value);
-          }
-        }}
-        value={currentValue}
-        ref={inputRef}
-      />
-      {/* Clear button - only show when there's text */}
-      {currentValue && (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute right-4 top-1/2 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
-          aria-label="Clear search"
+    <div className={`${className}`}>
+      <div className="relative">
+        <svg
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+          <path
             strokeLinecap="round"
             strokeLinejoin="round"
+            strokeWidth="2"
+            d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"
+          />
+        </svg>
+        <input
+          type="text"
+          placeholder={placeholder}
+          className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
+          onChange={
+            isControlled ? onChange : (e) => setInternalValue(e.target.value)
+          }
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && onEnter) {
+              onEnter((e.target as HTMLInputElement).value);
+            }
+          }}
+          value={currentValue}
+          ref={inputRef}
+        />
+        {/* Clear button - only show when there's text */}
+        {currentValue && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
+            aria-label="Clear search"
           >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        )}
+      </div>
+
+      {/* Filter Chips */}
+      {activeFilters.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 mt-3 ml-1">
+          {activeFilters.map((filter, index) => (
+            <div
+              key={index}
+              className="bg-base-200 rounded-full px-3 py-1 flex items-center gap-2 text-sm"
+            >
+              <span>Filtered by: {filter.term}</span>
+              {onRemoveFilter && (
+                <button
+                  className="hover:text-error"
+                  onClick={() => onRemoveFilter(filter.id)}
+                >
+                  X
+                </button>
+              )}
+            </div>
+          ))}
+          {activeFilters.length > 1 && onClearAll && (
+            <button
+              className="text-sm hover:underline ml-2"
+              onClick={onClearAll}
+            >
+              Clear All
+            </button>
+          )}
+        </div>
+      )}
+      {/* Results message */}
+      {showResultsMessage && (
+        <div className="mt-4 ml-1">
+          {activeFilters.length > 0 && resultCount === 0 ? (
+            <p>No results found.</p>
+          ) : (
+            <div className="border-b border-base-200">
+              <h2>Found {resultCount} matches</h2>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
