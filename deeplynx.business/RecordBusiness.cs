@@ -70,6 +70,9 @@ public class RecordBusiness : IRecordBusiness
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
         
+        if(dto.Properties == null)
+            throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
+        
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
@@ -271,7 +274,7 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
         // set archivedAt timestamp
-        var archivedAt = DateTime.UtcNow;
+        var archivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -281,9 +284,9 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
+                    "CALL deeplynx.archive_record(@p0::INTEGER, @p1::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
 
-                if (archived == 0) // if 0 records were updated, assume a failure
+                if (archived <= 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents.");
                 }
