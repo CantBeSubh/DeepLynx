@@ -91,9 +91,6 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
-        
-        // add historical record
-        await _historicalRecordBusiness.CreateHistoricalRecord(record.Id);
 
         return new RecordResponseDto
         {
@@ -153,14 +150,9 @@ public class RecordBusiness : IRecordBusiness
 
        await _context.Records.AddRangeAsync(records);
        await _context.SaveChangesAsync();
-        
-        
 
         foreach (var record in records)
         {
-            // add historical record
-            await _historicalRecordBusiness.CreateHistoricalRecord(record.Id);
-            
             var recordResponse = new RecordResponseDto
             {
                 Id = record.Id,
@@ -221,9 +213,6 @@ public class RecordBusiness : IRecordBusiness
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
-        
-        // update historical record
-        await _historicalRecordBusiness.UpdateHistoricalRecord(record.Id);
         
         return new RecordResponseDto
         {
@@ -300,8 +289,6 @@ public class RecordBusiness : IRecordBusiness
                 }
 
                 await transaction.CommitAsync();
-        
-                await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
                 return true;
             }
             catch (Exception exc)

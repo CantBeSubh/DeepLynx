@@ -94,9 +94,6 @@ public class EdgeBusiness : IEdgeBusiness
         _context.Edges.Add(edge);
         await _context.SaveChangesAsync();
         
-        // add historical edge
-        await _historicalEdgeBusiness.CreateHistoricalEdge(edge.Id);
-        
         return new EdgeResponseDto
         {
             Id = edge.Id,
@@ -150,9 +147,6 @@ public class EdgeBusiness : IEdgeBusiness
 
         foreach (var edge in edges)
         {
-            // add historical edge
-            await _historicalEdgeBusiness.CreateHistoricalEdge(edge.Id);
-
             var edgeResponse = new EdgeResponseDto
             {
                 Id = edge.Id,
@@ -206,9 +200,6 @@ public class EdgeBusiness : IEdgeBusiness
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
-        
-        // update historical edge
-        await _historicalEdgeBusiness.UpdateHistoricalEdge(edge.Id);
         
         return new EdgeResponseDto
         {
@@ -274,9 +265,6 @@ public class EdgeBusiness : IEdgeBusiness
         edge.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
-        
-        // update historical edge
-        await _historicalEdgeBusiness.ArchiveHistoricalEdge(edge.Id);
         
         return edge.Id;
     }
