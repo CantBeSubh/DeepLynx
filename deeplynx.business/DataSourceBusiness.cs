@@ -220,7 +220,7 @@ namespace deeplynx.business
             DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
             _context.DataSources.Remove(dataSource);

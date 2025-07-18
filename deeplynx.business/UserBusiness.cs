@@ -130,7 +130,7 @@ public class UserBusiness : IUserBusiness
     {
         var user = await _context.Users.FindAsync(userId);
 
-        if (user == null || user.ArchivedAt is not null)
+        if (user == null)
             throw new KeyNotFoundException($"User with id {userId} not found.");
     
         _context.Users.Remove(user);

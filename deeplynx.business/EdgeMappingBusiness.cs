@@ -235,7 +235,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         DoesProjectExist(projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId)
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
         _context.EdgeMappings.Remove(mapping);

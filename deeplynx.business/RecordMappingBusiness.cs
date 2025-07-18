@@ -240,7 +240,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         DoesProjectExist(projectId);
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId)
             throw new KeyNotFoundException($"Record Mapping with id {mappingId} not found");
 
         _context.RecordMappings.Remove(mapping);

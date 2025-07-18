@@ -357,16 +357,6 @@ namespace deeplynx.tests
             Assert.Contains($"Tag with id {tid} not found", exception.Message);
         }
 
-        [Fact]
-        public async Task DeleteTag_ArchivedTag_ThrowsKeyNotFoundException()
-        {
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.DeleteTag(pid, tid3)); // Tag 3 is archived
-
-            Assert.Contains($"Tag with id {tid3} not found", exception.Message);
-        }
-
         #endregion
         
          #region ArchiveTag Tests

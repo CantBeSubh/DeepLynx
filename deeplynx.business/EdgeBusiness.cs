@@ -234,7 +234,7 @@ public class EdgeBusiness : IEdgeBusiness
         DoesProjectExist(projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
+        if (edge == null || edge.ProjectId != projectId) 
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
 
         _context.Edges.Remove(edge);
