@@ -148,7 +148,7 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">ID of user</param>
         /// <returns>Data overview DTO</returns>
         [HttpGet("GetDataOverview/{userId}")]
-        public async Task<ActionResult<UserResponseDto>> GetDataOverview(long userId)
+        public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
         {
             try
             {
@@ -157,7 +157,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
+                var message = $"An unexpected error occurred while fetching user {userId} data overview: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -202,7 +202,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while deleting user {userId}: {exc}";
+                var message = $"An error occurred while removing user {userId} from project {projectId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
