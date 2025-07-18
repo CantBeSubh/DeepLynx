@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAllProjects } from "../lib/api";
+import { getAllProjects } from "../lib/projects_services";
 
 import CreateProject from "./components/CreateProjectsModal";
 import CreateWidget from "@/app/(home)/components/CreateWidgets";

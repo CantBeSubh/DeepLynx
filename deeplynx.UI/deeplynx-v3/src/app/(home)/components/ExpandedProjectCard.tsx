@@ -2,7 +2,7 @@
 import React from "react";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
-import { getProjectStats } from "@/app/lib/api";
+import { getProjectStats } from "@/app/lib/projects_services";
 import { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
 import Image from "next/image";
@@ -87,7 +87,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
       {/* Stats */}
       {!stats ? (
-        <div className="text-center text-base-content">Loading stats...</div>
+        <div className="text-center text-base-content">No stats found ...</div>
       ) : (
         <div className="grid grid-cols-3 gap-4 mt-4">
           {[
@@ -98,13 +98,15 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
                 "M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z",
             },
             {
-              title: "Data Records",
+              title: "Records",
+              // title: "Data Records",
               value: stats?.records,
               iconPath:
                 "M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125",
             },
             {
-              title: "Connections",
+              title: "Data Sources",
+              // title: "Connections",
               value: stats?.connections,
               iconPath:
                 "M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",

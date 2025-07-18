@@ -9,17 +9,35 @@ export type DataSourceTableRow = {
   };
 
 export type FileViewerTableRow = {
-    id: number;
-    fileName: string;
-    fileDescription: string;
-    fileType: string;
-    timeseries: boolean;
-    fileSize: number;
-    dateModified: string;
-    select?: boolean;
-    tags: string[];
-    lastEdit: string;
-    associatedRecords?: string[];
+  id: number;
+  uri: string | null;
+  properties: string;
+  originalId: string;
+  name: string;
+  classId: number;
+  className: string;
+  mappingId: string | null;
+  dataSourceId: number;
+  dataSourceName: string;
+  projectId: number;
+  projectName: string;
+  tags: string[];
+  createdBy: string | null;
+  createdAt: string;
+  modifiedBy: string | null;
+  modifiedAt: string | null;
+  archivedAt: string | null;
+    // id: number;
+    // fileName: string;
+    // fileDescription: string;
+    // fileType: string;
+    // timeseries: boolean;
+    // fileSize: number;
+    // dateModified: string;
+    // select?: boolean;
+    // tags: string[];
+    // lastEdit: string;
+    // associatedRecords?: string[];
   };
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;

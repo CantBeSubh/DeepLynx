@@ -57,25 +57,22 @@ const ListView: React.FC<ListViewProps> = ({
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
       <ul className="list">
-        {records.map((record) => {
-          const name = getHighlightedCell(record.fileName, activeSearchTerms);
-          const desc = getHighlightedCell(
-            record.fileDescription,
-            activeSearchTerms
-          );
-          const date = getHighlightedCell(
-            record.dateModified,
-            activeSearchTerms
-          );
+        {records.map((record, index) => {
+          const name = getHighlightedCell(record.name, activeSearchTerms);
+          // const desc = getHighlightedCell(
+          //   record.fileDescription,
+          //   activeSearchTerms
+          // );
+          const date = getHighlightedCell(record.modifiedAt, activeSearchTerms);
 
           return (
-            <li key={record.id} className="py-4 border-b border-base-content">
+            <li key={index} className="py-4 border-b border-base-content">
               <div className={`font-bold text-base-content mb-1  `}>
                 {name.content}
               </div>
-              <span className="text-sm">{desc.content}</span>
+              {/* <span className="text-sm">{desc.content}</span> */}
               <div className="flex pt-2">
-                {record.timeseries && (
+                {record.className && (
                   <span className="font-bold">
                     Class:
                     <span className="badge badge-sm text-xs ml-2">
@@ -87,10 +84,10 @@ const ListView: React.FC<ListViewProps> = ({
                   <span className="font-bold">Last Edited: </span>{" "}
                   {date.content}
                 </div>
-                <div className="ml-4">
+                {/* <div className="ml-4">
                   <span className="font-bold">File Type: </span>{" "}
                   {record.fileType}
-                </div>
+                </div> */}
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
@@ -100,7 +97,7 @@ const ListView: React.FC<ListViewProps> = ({
                   </span>
                 ))}
               </div>
-              <div className="pt-2">
+              {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>
                 {record.associatedRecords?.map((record, index) => (
                   <Link
@@ -111,7 +108,7 @@ const ListView: React.FC<ListViewProps> = ({
                     {record}
                   </Link>
                 ))}
-              </div>
+              </div> */}
             </li>
           );
         })}

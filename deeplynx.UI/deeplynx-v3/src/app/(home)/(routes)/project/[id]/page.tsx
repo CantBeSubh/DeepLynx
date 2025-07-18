@@ -1,18 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { peopleData } from "@/app/(home)/dummy_data/data";
-import { useParams } from "next/navigation";
-import { Column, PopularTable, ProjectsList } from "@/app/(home)/types/types";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import Link from "next/link";
-import Tabs from "@/app/(home)/components/Tabs";
-import GenericTable from "@/app/(home)/components/GenericTable";
-import AvatarCell from "@/app/(home)/components/Avatar";
-import { format } from "date-fns";
-import { getProject } from "@/app/lib/api";
 import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
+import { ProjectsList } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { getProject } from "@/app/lib/projects_services";
+import { format } from "date-fns";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
