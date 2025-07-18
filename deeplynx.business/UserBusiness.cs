@@ -163,6 +163,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>The user which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the user was not found.</exception>
     /// TODO: Decide if we want to update to null if null value is given in the DTO
+    /// TODO: Decide if we want to allow add/remove to a project in this update method 
     public async Task<UserResponseDto> UpdateUser(long userId, UserRequestDto dto)
     {
         var user = await _context.Users
