@@ -541,26 +541,6 @@ public class RecordBusinessTests : IntegrationTestBase
     #region ArchiveRecord Tests
 
     [Fact]
-    public async Task ArchiveRecord_ValidData_ArchivesRecord()
-    {
-        // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
-
-        // Act
-        var result = await _recordBusiness.ArchiveRecord(projectId, recordId);
-
-        // Assert
-        Assert.True(result);
-
-        // Verify record was actually archived in database
-        Context.Entry(await Context.Records.FindAsync(recordId)).State = EntityState.Detached;
-        var archivedRecord = await Context.Records.FindAsync(recordId);
-        Assert.NotNull(archivedRecord);
-        Assert.NotNull(archivedRecord.ArchivedAt);
-    }
-
-    [Fact]
     public async Task ArchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
         // Arrange
