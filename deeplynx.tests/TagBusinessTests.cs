@@ -535,6 +535,64 @@ namespace deeplynx.tests
           
          #endregion
 
+         #region UnarchiveTag Tests
+
+         [Fact]
+         public async Task UnarchiveTag_ValidArchivedTag_UnarchivesSuccessfully()
+         {
+             var archivedTag = new Tag
+             {
+                 Name = "Archived Tag",
+                 ProjectId = pid,
+                 CreatedBy = "Test Suite",
+                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-5), DateTimeKind.Unspecified),
+                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+             };
+             await Context.Tags.AddAsync(archivedTag);
+             await Context.SaveChangesAsync();
+
+             var tagId = archivedTag.Id;
+
+             var result = await _tagBusiness.UnarchiveTag(pid, tagId);
+
+             Assert.True(result);
+             Context.ChangeTracker.Clear();
+             var refreshed = await Context.Tags.FindAsync(tagId);
+             Assert.NotNull(refreshed);
+             Assert.Null(refreshed.ArchivedAt);
+         }
+
+         [Fact]
+         public async Task UnarchiveTag_NonExistentTag_ThrowsKeyNotFoundException()
+         {
+             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                 () => _tagBusiness.UnarchiveTag(pid, 99999));
+
+             Assert.Contains("Tag with id 99999 not found", exception.Message);
+         }
+
+         [Fact]
+         public async Task UnarchiveTag_WrongProject_ThrowsKeyNotFoundException()
+         {
+             // tid4 is archived and belongs to pid2
+             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                 () => _tagBusiness.UnarchiveTag(pid, tid4)); // Calling with pid (wrong project)
+
+             Assert.Contains($"Tag with id {tid4} not found", exception.Message);
+         }
+
+         [Fact]
+         public async Task UnarchiveTag_AlreadyActive_ThrowsKeyNotFoundException()
+         {
+             // tid is already active
+             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                 () => _tagBusiness.UnarchiveTag(pid, tid));
+
+             Assert.Contains($"Tag with id {tid} not found", exception.Message);
+         }
+
+         #endregion
+         
          protected override async Task SeedTestDataAsync()
          {
              await base.SeedTestDataAsync();

@@ -2,13 +2,14 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 
-namespace deeplynx.tests.business;
+namespace deeplynx.tests;
 
 [Collection("Test Suite Collection")]
 public class RecordBusinessTests : IntegrationTestBase
@@ -634,4 +635,72 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    #region UnarchiveRecord Tests
+
+    [Fact]
+    public async Task UnarchiveRecord_ValidArchivedRecord_UnarchivesSuccessfully()
+    {
+        var projectId = 100L;
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
+            ProjectId = projectId,
+            DataSourceId = 100,
+            ClassId = 100,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-2), DateTimeKind.Unspecified)
+        };
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
+
+        var result = await _recordBusiness.UnarchiveRecord(projectId, archivedRecord.Id);
+        
+        //this forces EF to sync to db on next query
+        Context.ChangeTracker.Clear();
+
+        Assert.True(result);
+        var reloaded = await Context.Records.FindAsync(archivedRecord.Id);
+        Assert.NotNull(reloaded);
+        Assert.Null(reloaded.ArchivedAt);
+    }
+
+    [Fact]
+    public async Task UnarchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
+    {
+        var projectId = 100L;
+        var invalidRecordId = 999L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnarchiveRecord(projectId, invalidRecordId));
+    }
+
+    [Fact]
+    public async Task UnarchiveRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
+    {
+        var differentProjectId = 999L;
+        var recordId = 100L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnarchiveRecord(differentProjectId, recordId));
+    }
+
+    [Fact]
+    public async Task UnarchiveRecord_AlreadyUnarchived_ThrowsKeyNotFoundException()
+    {
+        var projectId = 100L;
+        var recordId = 100L;
+
+        // Confirm record is not archived
+        var existing = await Context.Records.FindAsync(recordId);
+        existing.ArchivedAt = null;
+        await Context.SaveChangesAsync();
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnarchiveRecord(projectId, recordId));
+    }
+
+    #endregion
+    
 }
