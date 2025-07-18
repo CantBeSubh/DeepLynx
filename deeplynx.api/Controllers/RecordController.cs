@@ -98,6 +98,32 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// Create many records
+        /// </summary>
+        /// <param name="projectId">Project ID which record is associated with</param>
+        /// <param name="dataSourceId">Datasource ID which record is associated with</param>
+        /// <param name="dto">Record request DTO</param>
+        /// <returns>Record response DTO</returns>
+        [HttpPost("BulkCreateRecords")]
+        public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
+            long projectId, 
+            [FromQuery] long dataSourceId,
+            [FromBody] BulkRecordRequestDto dto)
+        {
+            try
+            {
+                var records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, dto);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while creating records: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Update a record
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>

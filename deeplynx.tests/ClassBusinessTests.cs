@@ -55,6 +55,36 @@ namespace deeplynx.tests
         }
 
         [Fact]
+        public async Task CreateClasses_Success_OnBulkCreate()
+        {
+            var classDtos = new List<ClassRequestDto>();
+            
+            var dto1 = new ClassRequestDto
+            {
+                Name = $"Test Class 1",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
+            var dto2 = new ClassRequestDto
+            {
+                Name = $"Test Class 2",
+                Description = "Test Description",
+                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+            };
+            classDtos.Add(dto1);
+            classDtos.Add(dto2);
+            var bulkDto = new BulkClassRequestDto
+            {
+                BulkClassRequests = classDtos
+            };
+
+            var result = await _classBusiness.BulkCreateClass(pid, bulkDto);
+            result.Classes.Should().HaveCount(2);
+            result.Classes.First().Name.Should().Be("Test Class 1");
+            result.Classes.Last().Name.Should().Be("Test Class 2");
+        }
+
+        [Fact]
         public async Task CreateClass_Fails_IfNoName()
         {
             var dto = new ClassRequestDto { Name = null, Description = "Test Description" };
@@ -334,6 +364,70 @@ namespace deeplynx.tests
             var deletedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.Null(deletedClass);
         }
+
+        [Fact]
+        public async Task DeleteClass_DeletesRelationshipsWithANullClass()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+            
+            var relationship1 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where testClass is Destination and orig is null
+            var relationship2 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where orig and dest are null
+            var relationship3 = new Relationship
+            {
+                Name = "Test Relationship 3",
+                OriginId = null,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            Context.Relationships.Add(relationship1);
+            Context.Relationships.Add(relationship2);
+            Context.Relationships.Add(relationship3);
+            await Context.SaveChangesAsync();
+            
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+            
+            var  deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            var  deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
+            var  deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var  intactRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+            
+            Assert.Null(deletedClass);
+            Assert.Null(deletedRelationship1);
+            Assert.Null(deletedRelationship2);
+            Assert.NotNull(intactRelationship3);
+        }
     
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRelationships()
@@ -359,7 +453,7 @@ namespace deeplynx.tests
             Context.Classes.Add(otherClass);
             await Context.SaveChangesAsync();
 
-            // Create relationships where testClass is Origin
+            // Create relationship where testClass is Origin
             var relationship1 = new Relationship
             {
                 Name = "Test Relationship 1",
@@ -370,7 +464,7 @@ namespace deeplynx.tests
                 CreatedBy = null
             };
 
-            // Create relationships where testClass is Destination
+            // Create relationship where testClass is Destination
             var relationship2 = new Relationship
             {
                 Name = "Test Relationship 2",
@@ -380,9 +474,45 @@ namespace deeplynx.tests
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
             };
+            
+            // Create relationship where testClass is Origin and dest is null
+            var relationship3 = new Relationship
+            {
+                Name = "Test Relationship 1",
+                OriginId = testClass.Id,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            // Create relationship where testClass is Destination and orig is null
+            var relationship4 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = testClass.Id,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+            
+            // Create relationship where orig and dest are null
+            var relationship5 = new Relationship
+            {
+                Name = "Test Relationship 2",
+                OriginId = null,
+                DestinationId = null,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
 
             Context.Relationships.Add(relationship1);
             Context.Relationships.Add(relationship2);
+            Context.Relationships.Add(relationship3);
+            Context.Relationships.Add(relationship4);
+            Context.Relationships.Add(relationship5);
             await Context.SaveChangesAsync();
 
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
@@ -390,8 +520,14 @@ namespace deeplynx.tests
 
             var deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
             var deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var deletedRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+            var deletedRelationship4 = await Context.Relationships.FindAsync(relationship4.Id);
+            var intactRelationship5 = await Context.Relationships.FindAsync(relationship5.Id);
             Assert.Null(deletedRelationship1);
             Assert.Null(deletedRelationship2);
+            Assert.Null(deletedRelationship3);
+            Assert.Null(deletedRelationship4);
+            Assert.NotNull(intactRelationship5);
         }
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRecords()

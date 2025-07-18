@@ -91,9 +91,6 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
-        
-        // add historical record
-        await _historicalRecordBusiness.CreateHistoricalRecord(record.Id);
 
         return new RecordResponseDto
         {
@@ -109,6 +106,75 @@ public class RecordBusiness : IRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+        };
+    }
+    
+    /// <summary>
+    /// Create new records
+    /// </summary>
+    /// <param name="projectId">The ID of the project under which to create the record</param>
+    /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
+    /// <param name="bulkDto">The data transfer object containing details on the records to be created</param>
+    /// <returns>The newly created metadata record</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
+    /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
+    public async Task<BulkRecordResponseDto> BulkCreateRecords(long projectId, long dataSourceId, BulkRecordRequestDto bulkDto)
+    {
+       DoesProjectExist(projectId);
+       DoesDataSourceExist(dataSourceId);
+        
+       var records = new List<Record>();
+       var recordResponses = new List<RecordResponseDto>();
+       foreach (var dto in bulkDto.Records)
+       {
+           var maxDepth = CalculateJsonMaxDepth(dto.Properties);
+           if (maxDepth > 3)
+           {
+               throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
+           }
+            
+           var record = new Record
+           {
+               ProjectId = projectId,
+               DataSourceId = dataSourceId,
+               Uri = dto.Uri,
+               Properties = dto.Properties.ToString()!,
+               OriginalId = dto.OriginalId,
+               Name = dto.Name,
+               ClassId = dto.ClassId,
+               CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+               CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+           };
+           records.Add(record);
+       }
+
+       await _context.Records.AddRangeAsync(records);
+       await _context.SaveChangesAsync();
+
+        foreach (var record in records)
+        {
+            var recordResponse = new RecordResponseDto
+            {
+                Id = record.Id,
+                Uri = record.Uri,
+                Properties = record.Properties,
+                OriginalId = record.OriginalId,
+                Name = record.Name,
+                ClassId = record.ClassId,
+                DataSourceId = record.DataSourceId,
+                ProjectId = record.ProjectId,
+                CreatedBy = record.CreatedBy,
+                CreatedAt = record.CreatedAt,
+                ModifiedBy = record.ModifiedBy,
+                ModifiedAt = record.ModifiedAt,
+            };
+            
+            recordResponses.Add(recordResponse);
+        }
+
+        return new BulkRecordResponseDto()
+        {
+            Records = recordResponses,
         };
     }
 
@@ -147,9 +213,6 @@ public class RecordBusiness : IRecordBusiness
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
-        
-        // update historical record
-        await _historicalRecordBusiness.UpdateHistoricalRecord(record.Id);
         
         return new RecordResponseDto
         {
@@ -226,8 +289,6 @@ public class RecordBusiness : IRecordBusiness
                 }
 
                 await transaction.CommitAsync();
-        
-                await _historicalRecordBusiness.ArchiveHistoricalRecord(record.Id);
                 return true;
             }
             catch (Exception exc)

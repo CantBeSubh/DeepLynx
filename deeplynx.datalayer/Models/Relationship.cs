@@ -28,10 +28,10 @@ public partial class Relationship
     public string? Uuid { get; set; }
 
     [Column("origin_id")]
-    public long OriginId { get; set; }
+    public long? OriginId { get; set; }
 
     [Column("destination_id")]
-    public long DestinationId { get; set; }
+    public long? DestinationId { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }

@@ -150,6 +150,71 @@ public class ClassBusiness : IClassBusiness
             ModifiedAt = newClass.ModifiedAt
         };
     }
+    
+    /// <summary>
+    /// Creates a new classes based on the data transfer object supplied.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="dto">A data transfer object with details on the new class to be created.</param>
+    /// <returns>The new class which was just created.</returns>
+    /// <exception cref="Exception">Returned if class already exists</exception>
+    public async Task<BulkClassResponseDto> BulkCreateClass(long projectId, BulkClassRequestDto bulkDto)
+    {
+        DoesProjectExist(projectId);
+        ValidationHelper.ValidateModel(bulkDto);
+        
+        var newClasses = new List<Class>();
+        var classResponses = new List<ClassResponseDto>();
+        foreach (var dto in bulkDto.BulkClassRequests)
+        {
+            ValidationHelper.ValidateModel(dto);
+            var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
+            if (existingClass != null)
+            {
+                throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
+            }
+
+            var newClass = new Class
+            {
+                ProjectId = projectId,
+                Name = dto.Name,
+                Description = dto.Description,
+                Uuid = dto.Uuid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+                ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+
+            };
+            newClasses.Add(newClass);
+        }
+
+        await _context.Classes.AddRangeAsync(newClasses);
+        await _context.SaveChangesAsync();
+
+        foreach (var newClass in newClasses)
+        {
+            var classResponse = new ClassResponseDto
+            {
+                Id = newClass.Id,
+                Name = newClass.Name,
+                Description = newClass.Description,
+                Uuid = newClass.Uuid,
+                ProjectId = newClass.ProjectId,
+                CreatedBy = newClass.CreatedBy,
+                CreatedAt = newClass.CreatedAt,
+                ModifiedBy = newClass.ModifiedBy,
+                ModifiedAt = newClass.ModifiedAt
+            };
+            
+            classResponses.Add(classResponse);
+        }
+
+        return new BulkClassResponseDto
+        {
+           Classes = classResponses,
+        };
+    }
 
     /// <summary>
     /// Updates an existing class by its ID.

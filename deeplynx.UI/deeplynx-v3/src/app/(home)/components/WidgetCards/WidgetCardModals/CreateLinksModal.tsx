@@ -1,10 +1,10 @@
-interface CreateWidgetModalProps {
+interface CreateLinkModalProps {
   isOpen: boolean; // Indicates whether the modal is open
   onClose: () => void; // Function to call when closing the modal
 }
 
 // Main CreateWidget component
-const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
+const CreateLink = ({ isOpen, onClose }: CreateLinkModalProps) => {
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}
@@ -16,22 +16,19 @@ const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
             {" "}
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              Create New Widget {/* Header for the modal */}
+              Create New Link {/* Header for the modal */}
             </h3>
             {/* Form for creating a new widget */}
             <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Name" // Placeholder for project name input
-                className="input input-primary w-full" // Input styling
+                placeholder="Label"
+                className="input input-primary w-full"
               />
-              <textarea
-                placeholder="Description" // Placeholder for widget description
-                className="textarea textarea-primary w-full" // Textarea styling
+              <input
+                placeholder="Link"
+                className="input input-primary w-full"
               />
-              <div className="bg-base-200 p-4 rounded-xl">
-                {" "}
-              </div>
             </form>
             {/* Modal Action Buttons */}
             <div className="modal-action">
@@ -50,4 +47,4 @@ const CreateWidget = ({ isOpen, onClose }: CreateWidgetModalProps) => {
   );
 };
 
-export default CreateWidget;
+export default CreateLink;

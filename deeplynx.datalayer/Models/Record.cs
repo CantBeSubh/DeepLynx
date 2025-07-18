@@ -31,7 +31,10 @@ public partial class Record
 
     [Column("name")]
     public string? Name { get; set; }
-
+    
+    [Column("description")]
+    public string? Description { get; set; }
+    
     [Column("class_id")]
     public long? ClassId { get; set; }
     

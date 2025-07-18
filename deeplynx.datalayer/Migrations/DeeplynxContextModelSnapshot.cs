@@ -499,6 +499,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("data_source_name");
 
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("last_updated_at");
@@ -652,6 +656,10 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<long?>("MappingId")
                         .HasColumnType("bigint")
@@ -807,7 +815,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<long>("DestinationId")
+                    b.Property<long?>("DestinationId")
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
@@ -824,7 +832,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("OriginId")
+                    b.Property<long?>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
 
@@ -1191,14 +1199,12 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("RelationshipDestinations")
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("relationships_destination_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
                         .WithMany("RelationshipOrigins")
                         .HasForeignKey("OriginId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("relationships_origin_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")

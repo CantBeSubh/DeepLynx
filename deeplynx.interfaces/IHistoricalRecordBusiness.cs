@@ -10,7 +10,4 @@ public interface IHistoricalRecordBusiness
     Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId);
     Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId, DateTime? pointInTime, bool hideArchived, bool current);
-    Task<bool> CreateHistoricalRecord(long recordId);
-    Task<bool> UpdateHistoricalRecord(long recordId);
-    Task<bool> ArchiveHistoricalRecord(long recordId);
 }
