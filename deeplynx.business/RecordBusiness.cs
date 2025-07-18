@@ -248,7 +248,6 @@ public class RecordBusiness : IRecordBusiness
         DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        // we should be able to delete a record even if it's been archived
         if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         

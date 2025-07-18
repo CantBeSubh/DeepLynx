@@ -269,10 +269,10 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> DeleteClass(long projectId, long classId)
     {
         var project = await _context.Projects.FindAsync(projectId);
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
-        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId && c.ArchivedAt == null);
+        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId);
         if (classToDelete == null)
             throw new KeyNotFoundException($"Class with id {classId} not found");
 

@@ -179,7 +179,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
         _context.Projects.Remove(project);

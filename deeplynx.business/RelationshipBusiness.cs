@@ -378,7 +378,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
-        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
+        if (relationship == null || relationship.ProjectId != projectId)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
 
         _context.Relationships.Remove(relationship);

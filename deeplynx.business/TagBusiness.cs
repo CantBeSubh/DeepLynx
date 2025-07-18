@@ -253,7 +253,7 @@ public class TagBusiness : ITagBusiness
     {
         DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId)
             throw new KeyNotFoundException($"Tag with id {tagId} not found.");
         
         _context.Tags.Remove(tag);
