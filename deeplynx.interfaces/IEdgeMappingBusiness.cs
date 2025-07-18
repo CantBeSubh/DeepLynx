@@ -12,4 +12,5 @@ public interface IEdgeMappingBusiness
     Task<EdgeMappingResponseDto> UpdateEdgeMapping(long projectId, long mappingId, EdgeMappingRequestDto dto);
     Task<bool> DeleteEdgeMapping(long projectId, long mappingId);
     Task<bool> ArchiveEdgeMapping(long projectId, long mappingId);
+    Task<bool> UnarchiveEdgeMapping(long projectId, long mappingId);
 }

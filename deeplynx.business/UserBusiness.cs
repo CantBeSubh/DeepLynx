@@ -161,6 +161,28 @@ public class UserBusiness : IUserBusiness
     }
     
     /// <summary>
+    /// Unarchive a user by id.
+    /// </summary>
+    /// <param name="userId">ID of the user to unarchive.</param>
+    /// <returns>Boolean true when successfully unarchived.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if user is not found.</exception>
+    public async Task<bool> UnarchiveUser(long userId)
+    {
+        var user = await _context.Users
+            .Where(p => p.Id == userId && p.ArchivedAt != null)
+            .FirstOrDefaultAsync();
+        
+        if (user == null)
+            throw new KeyNotFoundException("Archived user not found.");
+
+        user.ArchivedAt = null;
+    
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>

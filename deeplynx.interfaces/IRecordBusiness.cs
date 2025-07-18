@@ -11,4 +11,5 @@ public interface IRecordBusiness
     Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId);
     Task<bool> ArchiveRecord(long projectId, long recordId);
+    Task<bool> UnarchiveRecord(long projectId, long recordId);
 }

@@ -392,7 +392,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="relationshipId">The ID of the relationship to archive</param>
-    /// <returns>Boolean true on successful deletion</returns>
+    /// <returns>Boolean true on successful archive</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
@@ -427,6 +427,47 @@ public class RelationshipBusiness: IRelationshipBusiness
             {
                 await transaction.RollbackAsync();
                 throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents: {exc}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Unarchive a specific relationship by ID
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
+    /// <param name="relationshipId">The ID of the relationship to unarchive</param>
+    /// <returns>Boolean true on successful unarchive action</returns>
+    /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
+    public async Task<bool> UnarchiveRelationship(long projectId, long relationshipId)
+    {
+        DoesProjectExist(projectId);
+        var relationship = await _context.Relationships.FindAsync(relationshipId);
+
+        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is null)
+            throw new KeyNotFoundException($"Relationship with id {relationshipId} not found or is not archived.");
+        
+        // run unarchive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the unarchive relationship procedure, which unarchives this relationship
+                // and all child objects with relationship_id as a foreign key
+                var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.unarchive_relationship({0}::INTEGER)", relationshipId);
+
+                if (unarchived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to unarchive relationship {relationshipId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to unarchive relationship {relationshipId} or its downstream dependents: {exc}");
             }
         }
     }

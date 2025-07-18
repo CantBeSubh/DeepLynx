@@ -228,6 +228,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// </summary>
     /// <param name="mappingId">The ID of the mapping to delete</param>
     /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+    /// <returns>Boolean true on successful deletion.</returns>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> DeleteEdgeMapping(long projectId, long mappingId)
     {
@@ -248,6 +249,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// </summary>
     /// <param name="mappingId">The ID of the mapping to archive</param>
     /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+    /// <returns>Boolean true on successful archive.</returns>
     /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
     public async Task<bool> ArchiveEdgeMapping(long projectId, long mappingId)
     {
@@ -258,6 +260,28 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
         mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.EdgeMappings.Update(mapping);
+        await _context.SaveChangesAsync();
+
+        return true;
+    }
+    
+    /// <summary>
+    /// Unarchives a specific mapping by its ID
+    /// </summary>
+    /// <param name="mappingId">The ID of the mapping to unarchive</param>
+    /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+    /// <returns>Boolean true on successful unarchive.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if mapping not found</exception>
+    public async Task<bool> UnarchiveEdgeMapping(long projectId, long mappingId)
+    {
+        DoesProjectExist(projectId);
+        var mapping = await _context.EdgeMappings.FindAsync(mappingId);
+
+        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is null)
+            throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found or is not archived.");
+
+        mapping.ArchivedAt = null;
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
 

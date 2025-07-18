@@ -249,6 +249,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="edgeId">The ID of the edge to archive</param>
     /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
     /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
+    /// <returns>The ID of the edge that was archived.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<long> ArchiveEdge(
         long projectId, 
@@ -270,11 +271,40 @@ public class EdgeBusiness : IEdgeBusiness
     }
     
     /// <summary>
+    /// Unarchives a specific edge by its ID or origin/destination.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+    /// <param name="edgeId">The ID of the edge to unarchive</param>
+    /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
+    /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
+    /// <returns>The ID of the edge that was unarchived.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
+    public async Task<long> UnarchiveEdge(
+        long projectId, 
+        long? edgeId,
+        long? originId, 
+        long? destinationId)
+    {
+        DoesProjectExist(projectId);
+        // find edge and perform error handling if not found
+        Edge edge = await FindEdge(edgeId, originId, destinationId);
+        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is null) 
+            throw new KeyNotFoundException("Edge to unarchive not found or is not archived.");
+
+        edge.ArchivedAt = null;
+        _context.Edges.Update(edge);
+        await _context.SaveChangesAsync();
+        
+        return edge.Id;
+    }
+    
+    /// <summary>
     /// Private method to facilitate boilerplate code for finding edges by ID or origindestination
     /// </summary>
     /// <param name="edgeId">The id whereby to fetch the edge</param>
-    /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
-    /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
+    /// <param name="originId">The origin ID by which to fetch the edge if no ID</param>
+    /// <param name="destinationId">The destination ID by which to fetch the edge if no ID</param>
+    /// <param name="historical">Boolean indicating whether to look for a historical edge</param>
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     private async Task<dynamic> FindEdge(
@@ -295,14 +325,13 @@ public class EdgeBusiness : IEdgeBusiness
         if (edgeId != null)
         {
             edge = await _context.Edges
-                .Where(e => e.Id == edgeId && e.ArchivedAt == null)
+                .Where(e => e.Id == edgeId)
                 .FirstOrDefaultAsync();
         }
         else
         {
             edge = await _context.Edges
                 .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
-                .Where(e => e.ArchivedAt == null)
                 .FirstOrDefaultAsync();
         }
 

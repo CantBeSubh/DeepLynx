@@ -13,4 +13,5 @@ public interface IUserBusiness
     Task<UserResponseDto> UpdateUser(long userId, UserRequestDto dto);
     Task<bool> DeleteUser(long userId);
     Task<bool> ArchiveUser(long userId);
+    Task<bool> UnarchiveUser(long userId);
 }
