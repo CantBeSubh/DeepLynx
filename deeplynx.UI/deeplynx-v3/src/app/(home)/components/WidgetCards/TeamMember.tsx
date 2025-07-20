@@ -4,11 +4,11 @@ import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddM
 import {ChevronDownIcon, ChevronRightIcon, ChevronLeftIcon} from "@heroicons/react/24/outline";
 import {PlusCircleIcon} from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
+import {peopleData} from "@/app/(home)/dummy_data/data";
 
 const TeamMembersWidget: React.FC = () => {
     const [showTable, setShowTable] = useState(false);
     const [addMemberModal, setAddMemberModal] = useState(false);
-    const avatars = Array.from({ length: 30 }, (_, i) => `https://i.pravatar.cc/150?img=${i + 1}`);
 
     const handleToggle = () => {
         setShowTable((prev) => !prev);
@@ -41,7 +41,7 @@ const TeamMembersWidget: React.FC = () => {
             </div>
 
             {!showTable ? (
-                <AvatarCarousel avatars={avatars} />
+                <AvatarCarousel people={peopleData} />
             ) : (
                 // Team Members Table
                 <div className="overflow-x-auto">
@@ -72,102 +72,34 @@ const TeamMembersWidget: React.FC = () => {
                             </tr>
                         </thead>
                     <tbody>
-                        {/* row 1 */}
-                        <tr>
-                            <td>
-                                <div className="flex items-center gap-3">
-                                <div className="avatar">
-                                    <div className="mask mask-circle h-10 w-10">
-                                    <Image
-                                        src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
-                                        alt="Avatar Tailwind CSS Component"
-                                        width="300"
-                                        height="300"/>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="">Jaren Brownlee</div>
-                                </div>
-                                </div>
-                            </td>
-                        <td>
-                            Admin
-                            <br />
-                        </td>
-                        <td>2025-06-30T14:48:00</td>
-                        </tr>
-                        {/* row 2 */}
-                        <tr>
-                            <td>
-                                <div className="flex items-center gap-3">
-                                <div className="avatar">
-                                    <div className="mask mask-circle h-10 w-10">
-                                    <Image
-                                        src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
-                                        alt="Avatar Tailwind CSS Component"
-                                        width="300"
-                                        height="300"/>
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="">Autumn Combs</div>
-                                </div>
-                                </div>
-                            </td>
-                        <td>
-                            Editor
-                            <br />
-                        </td>
-                        <td>2025-06-30T14:48:00</td>
-                        </tr>
-                        {/* row 3 */}
-                        <tr>
-                            <td>
-                                <div className="flex items-center gap-3">
+                        {/* row 0 */}
+                        {peopleData.map(person => (
+                            <tr>
+                                <td>
+                                    <div className="flex items-center gap-3">
                                     <div className="avatar">
                                         <div className="mask mask-circle h-10 w-10">
-                                            <Image
-                                                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
-                                                alt="Avatar Tailwind CSS Component"
-                                                width="300"
-                                                height="300"/>
+                                        <Image
+                                            src={person.image}
+                                            alt={`${person.name} avatar`}
+                                            width="300"
+                                            height="300"/>
                                         </div>
                                     </div>
                                     <div>
-                                        <div className="">Jason Kuipers</div>
+                                        <div className="">{person.name}</div>
                                     </div>
-                                </div>
-                            </td>
-                        <td>
-                            Developer
-                            <br />
-                        </td>
-                        <td>2025-06-29T14:48:00</td>
-                        </tr>
-                        {/* row 4 */}
-                        <tr>
+                                    </div>
+                                </td>
                             <td>
-                                <div className="flex items-center gap-3">
-                                    <div className="avatar">
-                                        <div className="mask mask-circle h-10 w-10">
-                                            <Image
-                                                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
-                                                alt="Avatar Tailwind CSS Component"
-                                                width="300"
-                                                height="300"/>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="">Isaac Huffman</div>
-                                    </div>
+                                <div>
+                                    <div className="">{person.role}</div>
                                 </div>
+                                <br />
                             </td>
-                        <td>
-                            Viewer
-                            <br />
-                        </td>
-                        <td>2025-06-27T10:00:00</td>
-                        </tr>
+                            <td>2025-06-30T14:48:00</td>
+                            </tr>
+                        ))}
                     </tbody>
                     </table>
 
@@ -190,7 +122,6 @@ const TeamMembersWidget: React.FC = () => {
                 isOpen={addMemberModal}
                 onClose={() => setAddMemberModal(false)}
             />
-
         </div>
     );
 };
