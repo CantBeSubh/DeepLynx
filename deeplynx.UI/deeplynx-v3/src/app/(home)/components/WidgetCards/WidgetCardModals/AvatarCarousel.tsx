@@ -83,7 +83,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ people }) => {
                     </div>
 
                     {/* Right Button */}
-                    <div className="flex items-center">
+                    <div className="flex items-center mr-4">
                         <button onClick={handleNext} className="flex-shrink-0">
                             <ChevronRightIcon className="size-6" />
                         </button>
