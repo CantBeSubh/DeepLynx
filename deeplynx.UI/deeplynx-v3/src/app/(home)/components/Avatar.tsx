@@ -3,13 +3,14 @@
 import React, { useState } from "react";
 
 interface AvatarCellProps {
-  name: string;
+  name?: string;
   image?: string;
+  showName?: boolean;
 }
 
-const AvatarCell: React.FC<AvatarCellProps> = ({ name, image }) => {
+const AvatarCell: React.FC<AvatarCellProps> = ({ name, image, showName }) => {
   const [imgError, setImgError] = useState(false);
-  const fallbackLetter = name.charAt(0).toUpperCase();
+  const fallbackLetter = name?.charAt(0).toUpperCase();
 
   return (
     <div className="flex items-center space-x-3">
@@ -25,7 +26,7 @@ const AvatarCell: React.FC<AvatarCellProps> = ({ name, image }) => {
           </div>
         </div>
       )}
-      <p>{name}</p>
+      {showName && <p>{name}</p>}
     </div>
   );
 };

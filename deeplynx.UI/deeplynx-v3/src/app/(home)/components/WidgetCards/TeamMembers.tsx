@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Image from "next/image";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
@@ -7,6 +6,7 @@ import { peopleData } from "@/app/(home)/dummy_data/data";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
 import { Column } from "@/app/(home)/types/types";
 import GenericTable from "../GenericTable";
+import AvatarCell from "../Avatar";
 
 const TeamMembersWidget: React.FC = () => {
     const [showTable, setShowTable] = useState(false);
@@ -24,12 +24,7 @@ const TeamMembersWidget: React.FC = () => {
                 <div className="flex items-center gap-3">
                     <div className="avatar">
                         <div className="mask mask-circle h-10 w-10">
-                            <Image
-                                src={row.image}
-                                alt={`${row.name} avatar`}
-                                width="300"
-                                height="300"
-                            />
+                            <AvatarCell name= {row.name} image= {row.image} />
                         </div>
                     </div>
                     <div>{row.name}</div>

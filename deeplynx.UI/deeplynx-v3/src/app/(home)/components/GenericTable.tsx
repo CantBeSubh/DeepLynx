@@ -6,6 +6,7 @@ import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
 import { Column } from "@/app/(home)/types/types";
 import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { LockClosedIcon } from "@heroicons/react/24/outline";
 
 // Define the props for the GenericTable component
 type GenericTableProps<T extends object> = {
@@ -320,20 +321,7 @@ const GenericTable = <T extends object>({
                     className="text-right pr-4 text-secondary"
                     title="Private - request access"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                      />
-                    </svg>
+                    <LockClosedIcon className="size-6" />
                   </td>
                 )}
               </tr>

@@ -35,7 +35,9 @@ const SavedSearchesTabs = () => {
   const popular_table_columns: Column<PopularTable>[] = [
     {
       header: "Created by",
-      cell: (row) => <AvatarCell name={row.name} image={row.image} />,
+      cell: (row) => (
+        <AvatarCell name={row.name} image={row.image} showName={true} />
+      ),
     },
     {
       header: "Search nickname",
