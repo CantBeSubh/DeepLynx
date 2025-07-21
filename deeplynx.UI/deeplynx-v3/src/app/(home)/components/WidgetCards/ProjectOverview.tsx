@@ -18,9 +18,9 @@ const ProjectOverviewWidget = () => {
   } | null>(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchStats = async (projectId: string) => {
       try {
-        const data = await getProjectStats(project?.projectId!);
+        const data = await getProjectStats(projectId);
         setStats({
           classes: data.classes,
           records: data.records,
@@ -30,8 +30,9 @@ const ProjectOverviewWidget = () => {
         console.error("Failed to fetch project stats:", error);
       }
     };
-    fetchStats();
-  }, []);
+    if (project?.projectId) fetchStats(project.projectId);
+  }, [project?.projectId]);
+
   return (
     <div className="card-body">
       <h2 className="card-title">Project Overview</h2>

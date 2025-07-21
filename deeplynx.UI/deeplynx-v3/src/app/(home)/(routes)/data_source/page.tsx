@@ -37,14 +37,15 @@ const DataSource = () => {
   // Check if any row is selected
   const isAnyRowSelected = tableData.some((row) => row.select);
   // Check if a row is active
-  const isRowAcitve = (obj: TableRow) => ("active" in obj ? obj.active : false);
+  const isRowAcitve = (obj: DataSourceTableRow) =>
+    "active" in obj ? obj.active : false;
 
   // Define columns for the GenericTable
   const columns: Column<DataSourceTableRow>[] = [
     {
       header: "Select",
       data: "select", // data for select checkbox
-      cell: (row: TableRow) => (
+      cell: (row: DataSourceTableRow) => (
         <label>
           <input
             type="checkbox"
@@ -70,7 +71,7 @@ const DataSource = () => {
     {
       header: "Active",
       data: "active", // data for active status
-      cell: (row: TableRow) => (
+      cell: (row: DataSourceTableRow) => (
         <input
           type="checkbox"
           checked={isRowAcitve(row)} // Control checkbox based on row's active status

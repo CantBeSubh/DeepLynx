@@ -50,14 +50,14 @@ const DataCatalog = () => {
 
       try {
         const data = await getAllProjects();
-        const projectString = data.map((d: { name: any }) => d.name);
+        const projectString = data.map((d: { name: number }) => d.name);
         setProjects(projectString);
       } catch (error) {
         console.error("Failed to fetch records:", error);
       }
     };
     fetchProjects();
-  }, []);
+  }, [project?.projectId, hasLoaded]);
 
   useEffect(() => {
     const fetchRecords = async () => {
