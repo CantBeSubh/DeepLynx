@@ -1,6 +1,5 @@
 import React from "react";
 import { FileViewerTableRow } from "../../types/types";
-import Link from "next/link";
 
 export type RecordsListView = {
   id: number;
@@ -59,6 +58,7 @@ const ListView: React.FC<ListViewProps> = ({
       <ul className="list">
         {records.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
+          // We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight serch term in description
           // const desc = getHighlightedCell(
           //   record.fileDescription,
           //   activeSearchTerms
@@ -70,6 +70,7 @@ const ListView: React.FC<ListViewProps> = ({
               <div className={`font-bold text-base-content mb-1  `}>
                 {name.content}
               </div>
+              {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight serch term in description */}
               {/* <span className="text-sm">{desc.content}</span> */}
               <div className="flex pt-2">
                 {record.className && (
