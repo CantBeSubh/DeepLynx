@@ -4,7 +4,7 @@
 %module kuzunet
 %{
 /* Put header files here or function declarations like below */
-#include "../KuzuFiles/kuzu.h"
+#include "../../KuzuFiles/kuzu.h"
 %}
 
 

@@ -9,6 +9,7 @@ using Serilog;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using DotNetEnv;
 
 namespace deeplynx.tests
 {
@@ -22,6 +23,8 @@ namespace deeplynx.tests
 
         public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
         {
+            Env.Load("../.env");
+
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()
@@ -41,7 +44,6 @@ namespace deeplynx.tests
             if (!_isConnected)
             {
                 await Task.Delay(5000);
-                Log.Information("Ran InitializeAsync to Connect to Kuzu database");
                 await _kuzuDatabaseManager.ConnectAsync();
                 _isConnected = true;
             }
@@ -50,8 +52,6 @@ namespace deeplynx.tests
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
 
-            Log.Information("Initializing KuzuDatabaseManagerTests...");
-            Log.Information("KuzuDatabaseManager initialized and connected.");
         }
 
         private async Task<bool> ExecuteSqlFromFileAsync(string filePath)
@@ -96,41 +96,38 @@ namespace deeplynx.tests
             }
         }
 
-
-        [Fact]
+        [SkippableFact]
         public async Task InitalSeedDatabaseAsync()
         {
+
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange
             bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
             // Act
-            Log.Information("Running SeedDatabaseAsync test...");
 
             // Assert
             Assert.True(result);
-            Log.Information("InitialSeedDatabaseAsync test completed.");
 
             if (_isConnected)
             {
                 await _kuzuDatabaseManager.CloseAsync();
                 _isConnected = false;
-                Log.Information("Disconnected from InitialSeedDataBaseAsync test");
             }
         }
 
-        [Fact]
+        [SkippableFact]
         public async Task SeedDatabaseAsync()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
             await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
             bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
 
-            // Act
-            Log.Information("Running SeedDatabaseAsync test...");
-
             // Assert
             Assert.True(result);
-            Log.Information("SeedDatabaseAsync test completed.");
 
             if (_isConnected)
             {
@@ -143,16 +140,16 @@ namespace deeplynx.tests
 
         #region ConnectAsync Tests
 
-        [Fact]
+        [SkippableFact]
         public async Task ConnectAsync_ShouldInitializeDatabase_WhenNotInitialized()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange & Act
-            Log.Information("Running ConnectAsync_ShouldInitializeDatabase_WhenNotInitialized test...");
             bool connected = await _kuzuDatabaseManager.ConnectAsync();
 
             // Assert
             Assert.True(connected);
-            Log.Information("ConnectAsync test completed. Connected: {Connected}", connected);
 
             if (_isConnected)
             {
@@ -166,22 +163,21 @@ namespace deeplynx.tests
 
         #region ExportDataAsync Tests
 
-        [Fact]
+        [SkippableFact]
         public async Task ExportDataAsync_ShouldReturnTrue_WhenExportIsSuccessful()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange & Act
-            Log.Information("Running ExportDataAsync_ShouldReturnTrue_WhenExportIsSuccessful test...");
             bool result = await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
 
             // Assert
             Assert.True(result);
-            Log.Information("ExportDataAsync test completed. Result: {Result}", result);
 
             if (_isConnected)
             {
                 await _kuzuDatabaseManager.CloseAsync();
                 _isConnected = false;
-                Log.Information("Disconnected from ExportDataAsync test");
             }
         }
 
@@ -190,9 +186,11 @@ namespace deeplynx.tests
 
         #region GetNodesWithinDepthByIdAsync Tests
 
-        [Fact]
+        [SkippableFact]
         public async Task GetNodesWithinDepthByIdAsync_ValidInput_ReturnsExpectedResults()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange
             var requestDto = new KuzuDBMNodesWithinDepthRequestDto
             {
@@ -203,19 +201,16 @@ namespace deeplynx.tests
             await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
 
             // Act
-            Log.Information("Running GetNodesWithinDepthByIdAsync_ValidInput_ReturnsExpectedResults test...");
             var result = await _kuzuDatabaseManager.GetNodesWithinDepthByIdAsync(requestDto);
 
             // Assert
             Assert.NotNull(result);
             Assert.Contains("id:", result);
-            Log.Information("GetNodesWithinDepthByIdAsync test completed. Result contains 'class_name'.");
 
             if (_isConnected)
             {
                 await _kuzuDatabaseManager.CloseAsync();
                 _isConnected = false;
-                Log.Information("Disconnected from GetNodesWithinDepthByIdAsync test");
             }
         }
 
@@ -224,55 +219,52 @@ namespace deeplynx.tests
 
         #region ExecuteQuery Tests
 
-        [Fact]
+        [SkippableFact]
         public async Task ExecuteQuery_ValidQuery_ReturnsExpectedResults()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange
             var requestDto = new KuzuDBMQueryRequestDto
             {
-                Query = @"MATCH (m:Musician) RETURN m LIMIT 1;"
+                Query = @"CREATE NODE TABLE Celebrity(name STRING PRIMARY KEY);
+                    ALTER TABLE Follows ADD FROM User TO Celebrity;"
             };
             await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
 
             // Act
-            Log.Information("Running ExecuteQuery_ValidQuery_ReturnsExpectedResults test...");
             var result = await _kuzuDatabaseManager.ExecuteQueryAsync(requestDto);
-
 
             // Assert
             Assert.NotNull(result);
             Assert.Contains("id", result);
-            Log.Information("ExecuteQuery test completed. Result contains 'id'.");
 
             if (_isConnected)
             {
                 await _kuzuDatabaseManager.CloseAsync();
                 _isConnected = false;
-                Log.Information("Disconnected from ExecuteQuery test");
             }
         }
 
         #endregion
 
-
         #region CloseAsync Tests
 
-        [Fact]
+        [SkippableFact]
         public async Task CloseAsync_ShouldCloseConnection_WhenCalled()
         {
+            Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
+
             // Arrange & Act
-            Log.Information("Running CloseAsync_ShouldCloseConnection_WhenCalled test...");
             bool result = await _kuzuDatabaseManager.CloseAsync();
 
             // Assert
             Assert.True(result);
-            Log.Information("CloseAsync test completed. Result: {Result}", result);
 
             if (_isConnected)
             {
                 await _kuzuDatabaseManager.CloseAsync();
                 _isConnected = false;
-                Log.Information("Disconnected from CloseAsync test");
             }
         }
 
