@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
 import { getProjectStats } from "@/app/lib/projects_services";
-import { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
 import Image from "next/image";
 

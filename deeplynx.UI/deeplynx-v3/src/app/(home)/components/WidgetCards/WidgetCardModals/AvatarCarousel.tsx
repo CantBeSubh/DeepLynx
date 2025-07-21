@@ -6,6 +6,14 @@ import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddM
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 
+interface Person {
+  id: number;
+  name: string;
+  image: string;
+  nickname: string;
+  visibility: string;
+  role: string;
+}
 interface AvatarCarouselProps {
   avatars: string[];
 }

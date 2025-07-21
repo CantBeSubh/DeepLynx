@@ -13,4 +13,5 @@ public interface IRecordMappingBusiness
     Task<RecordMappingResponseDto> UpdateRecordMapping(long projectId, long mappingId, RecordMappingRequestDto dto);
     Task<bool> DeleteRecordMapping(long projectId, long mappingId);
     Task<bool> ArchiveRecordMapping(long projectId, long mappingId);
+    Task<bool> UnarchiveRecordMapping(long projectId, long mappingId);
 }

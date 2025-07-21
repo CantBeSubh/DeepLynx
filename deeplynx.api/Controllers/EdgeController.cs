@@ -181,12 +181,12 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Archives edge
+        /// Archive an edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs.</param>
         /// <param name="edgeId">The ID of the edge to archive</param>
         /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
-        /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
+        /// <param name="destinationId">The destination ID of the edge to archive if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully archived.</returns>
         [HttpDelete("ArchiveEdge")]
         public async Task<IActionResult> ArchiveEdge(
@@ -203,6 +203,34 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving edge: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unarchive an edge
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the edge belongs.</param>
+        /// <param name="edgeId">The ID of the edge to unarchive</param>
+        /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
+        /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
+        /// <returns>A message stating the edge was successfully unarchived.</returns>
+        [HttpPut("UnarchiveEdge")]
+        public async Task<IActionResult> UnarchiveEdge(
+            long projectId,
+            [FromQuery] long? edgeId,
+            [FromQuery] long? originId, 
+            [FromQuery] long? destinationId)
+        {
+            try
+            {
+                edgeId = await _edgeBusiness.UnarchiveEdge(projectId, edgeId, originId, destinationId);
+                return Ok(new { message = $"Unarchived edge {edgeId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving edge: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

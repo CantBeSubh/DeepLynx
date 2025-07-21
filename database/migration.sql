@@ -2264,5 +2264,98 @@ BEGIN
     VALUES ('20250717210948_HistoricalTriggers', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.unarchive_project(arc_project_id INTEGER)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.projects SET archived_at = NULL WHERE id = arc_project_id;
+                        UPDATE deeplynx.data_sources SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.records SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.edges SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.classes SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.relationships SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.edge_mappings SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.record_mappings SET archived_at = NULL WHERE project_id = arc_project_id;
+                        UPDATE deeplynx.tags SET archived_at = NULL WHERE project_id = arc_project_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.unarchive_record(arc_record_id INTEGER)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.records SET archived_at = NULL WHERE id = arc_record_id;
+                        UPDATE deeplynx.edges SET archived_at = NULL WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.unarchive_class(arc_class_id INTEGER)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.classes SET archived_at = NULL WHERE id = arc_class_id;
+                        UPDATE deeplynx.relationships SET archived_at = NULL WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                        UPDATE deeplynx.edge_mappings SET archived_at = NULL WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                        UPDATE deeplynx.record_mappings SET archived_at = NULL WHERE class_id = arc_class_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.unarchive_relationship(arc_rel_id INTEGER)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.relationships SET archived_at = NULL WHERE id = arc_rel_id;
+                        UPDATE deeplynx.edge_mappings SET archived_at = NULL WHERE relationship_id = arc_rel_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+
+                    CREATE OR REPLACE PROCEDURE deeplynx.unarchive_data_source(arc_data_source_id INTEGER)
+                    LANGUAGE plpgsql AS $$
+                    BEGIN
+                        UPDATE deeplynx.data_sources SET archived_at = NULL WHERE id = arc_data_source_id;
+                        UPDATE deeplynx.record_mappings SET archived_at = NULL WHERE data_source_id = arc_data_source_id;
+                        UPDATE deeplynx.edge_mappings SET archived_at = NULL WHERE data_source_id = arc_data_source_id;
+                    END;
+                    $$;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250718151844_AddUnarchiveStoredProcedures', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

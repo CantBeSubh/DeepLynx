@@ -377,6 +377,62 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
         Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
     }
+    
+    #region UnarchiveRecordMapping Tests
+
+    [Fact]
+    public async Task UnarchiveRecordMapping_Success_WhenArchivedAndValid()
+    {
+        var archivedMapping = new RecordMapping
+        {
+            RecordParams = "{\"key\":\"value\"}",
+            ProjectId = pid,
+            ClassId = cid,
+            TagId = tid,
+            DataSourceId = did,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-1), DateTimeKind.Unspecified)
+        };
+        Context.RecordMappings.Add(archivedMapping);
+        await Context.SaveChangesAsync();
+        
+        var result = await _recordMappingBusiness.UnarchiveRecordMapping(pid, archivedMapping.Id);
+
+        Assert.True(result);
+        var refreshed = await Context.RecordMappings.FindAsync(archivedMapping.Id);
+        Assert.NotNull(refreshed);
+        Assert.Null(refreshed.ArchivedAt);
+    }
+
+    [Fact]
+    public async Task UnarchiveRecordMapping_Fails_IfNotFound()
+    {
+        var result = () => _recordMappingBusiness.UnarchiveRecordMapping(pid, 99999);
+        await result.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage("Record Mapping with id 99999 not found or is not archived.");
+    }
+
+    [Fact]
+    public async Task UnarchiveRecordMapping_Fails_IfNotArchived()
+    {
+        var mapping = new RecordMapping
+        {
+            RecordParams = "{\"key\":\"value\"}",
+            ProjectId = pid,
+            ClassId = cid,
+            TagId = tid,
+            DataSourceId = did,
+            ArchivedAt = null
+        };
+        Context.RecordMappings.Add(mapping);
+        await Context.SaveChangesAsync();
+
+        var result = () => _recordMappingBusiness.UnarchiveRecordMapping(pid, mapping.Id);
+        await result.Should().ThrowAsync<KeyNotFoundException>()
+            .WithMessage($"Record Mapping with id {mapping.Id} not found or is not archived.");
+    }
+
+    #endregion
 
     protected override async Task SeedTestDataAsync()
     {

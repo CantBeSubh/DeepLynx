@@ -14,4 +14,5 @@ public interface IRelationshipBusiness
     Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto);
     Task<bool> DeleteRelationship(long projectId, long relationshipId);
     Task<bool> ArchiveRelationship(long projectId, long relationshipId);
+    Task<bool> UnarchiveRelationship(long projectId, long relationshipId);
 }
