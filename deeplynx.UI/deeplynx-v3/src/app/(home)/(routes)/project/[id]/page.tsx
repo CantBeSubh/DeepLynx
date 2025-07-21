@@ -78,7 +78,7 @@ const ProjectDetailPage = () => {
                 <SavedSearchesTabs />
               </div>
             </div>
-          </div>
+          </div> 
 
           <div className="w-full md:w-1/2 px-4">
             <div className="flex justify-between items-center justify-end mb-4">

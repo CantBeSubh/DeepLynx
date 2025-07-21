@@ -80,7 +80,7 @@ const SavedSearchesTabs = () => {
   ];
 
   return (
-        <Tabs tabs={tabData} className="tabs tabs-border" />
+    <Tabs tabs={tabData} className="tabs tabs-border" />
   );
 };
 
