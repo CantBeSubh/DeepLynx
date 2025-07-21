@@ -5,7 +5,12 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { fileTableData } from "@/app/(home)/dummy_data/data";
-import { FileViewerTableRow, TableRow, Column } from "@/app/(home)/types/types";
+import {
+  FileViewerTableRow,
+  TableRow,
+  Column,
+  DataSourceTableRow,
+} from "@/app/(home)/types/types";
 
 const FileViewer = () => {
   // State to manage the file table data
@@ -33,13 +38,13 @@ const FileViewer = () => {
   const columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      cell: (row: TableRow) => (
+      cell: (row) => (
         <label>
           <input
             type="checkbox"
             className="checkbox checkbox-info"
             checked={row.select || false} // Control checkbox based on row's select status
-            onChange={() => handleSelectChange(row.id as number)} // Handle checkbox change
+            onChange={() => handleSelectChange(row.id)} // Handle checkbox change
           />
         </label>
       ),
@@ -50,12 +55,12 @@ const FileViewer = () => {
     },
     {
       header: "File Name",
-      data: "fileName", // data for file name column
+      data: "name", // data for file name column
     },
     {
       header: "Timeseries",
       data: "timeseries", // data for timeseries column
-      cell: (row: TableRow) => {
+      cell: (row: FileViewerTableRow) => {
         const isChecked = "timeseries" in row ? row.timeseries : false; // Check if the row has timeseries data
         return (
           <input
@@ -73,7 +78,7 @@ const FileViewer = () => {
     },
     {
       header: "Date Modified",
-      data: "dateModified", // data for date modified column
+      data: "modifiedAt", // data for date modified column
     },
   ];
 
@@ -81,7 +86,7 @@ const FileViewer = () => {
   const timeseries_columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      cell: (row: TableRow) => (
+      cell: (row) => (
         <label>
           <input
             type="checkbox"
@@ -98,7 +103,7 @@ const FileViewer = () => {
     },
     {
       header: "File Name",
-      data: "fileName", // data for file name column
+      data: "name", // data for file name column
     },
     {
       header: "File Size (KB)",
@@ -106,7 +111,7 @@ const FileViewer = () => {
     },
     {
       header: "Date Modified",
-      data: "dateModified", // data for date modified column
+      data: "modifiedAt", // data for date modified column
     },
   ];
 

@@ -1,4 +1,4 @@
-import { createProject } from "@/app/lib/api";
+import { createProject } from "@/app/lib/projects_services";
 import { useState } from "react";
 
 interface CreateProjectsModalProps {

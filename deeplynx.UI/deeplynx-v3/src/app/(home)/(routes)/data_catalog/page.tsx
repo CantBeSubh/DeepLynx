@@ -1,34 +1,30 @@
 "use client";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { useEffect, useState } from "react";
-import {
-  dropDownProjects,
-  fileTableData,
-  recentRecordsData,
-} from "@/app/(home)/dummy_data/data";
+import { recentRecordsData } from "@/app/(home)/dummy_data/data";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { getAllRecords } from "@/app/lib/record_services";
+import { getAllProjects } from "@/app/lib/projects_services";
 import {
   ArrowUturnLeftIcon,
-  BackwardIcon,
   EyeIcon,
   PlusIcon,
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
-import ExpandableTagsCell from "./ExpandableTagCell";
-import AssociatedRecordsCell from "./AssociatedRecordsCell";
 
 const DataCatalog = () => {
   const router = useRouter();
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
-  const [tableData, setTableData] =
-    useState<FileViewerTableRow[]>(fileTableData);
+  const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
   const [projectName, setProjectName] = useState<string>("");
   const [hasMounted, setHasMounted] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -38,6 +34,8 @@ const DataCatalog = () => {
   const [nextFilterId, setNextFilterId] = useState<number>(1);
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(false);
+  const { project, hasLoaded } = useProjectSession();
+  const [projects, setProjects] = useState([]);
 
   // Effect to set project name from localStorage and mark the component as mounted
   useEffect(() => {
@@ -47,25 +45,60 @@ const DataCatalog = () => {
   }, []);
 
   useEffect(() => {
-    if (activeFilters.length === 0) {
-      setTableData(fileTableData);
-    } else {
-      const filtered = fileTableData.filter((row) => {
-        return activeFilters.some((filter) => {
-          const query = filter.term.toLowerCase();
-          return (
-            row.fileName.toLowerCase().includes(query) ||
-            row.fileDescription.toLowerCase().includes(query) ||
-            row.fileType.toLowerCase().includes(query) ||
-            row.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-            (row.timeseries ? "yes" : "no").includes(query) ||
-            row.lastEdit.toLowerCase().includes(query)
-          );
+    const fetchProjects = async () => {
+      if (!hasLoaded || !project?.projectId) return;
+
+      try {
+        const data = await getAllProjects();
+        const projectString = data.map((d: { name: number }) => d.name);
+        setProjects(projectString);
+      } catch (error) {
+        console.error("Failed to fetch records:", error);
+      }
+    };
+    fetchProjects();
+  }, [project?.projectId, hasLoaded]);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!hasLoaded || !project?.projectId) return;
+
+      try {
+        const data = await getAllRecords(project.projectId);
+        const transformedRecords = data.map((d: { tags: string }) => {
+          return {
+            ...d,
+            tags: JSON.parse(d.tags),
+          };
         });
-      });
-      setTableData(filtered);
-    }
-  }, [activeFilters]);
+        setTableData(transformedRecords);
+      } catch (error) {
+        console.error("Failled to fetch records:", error);
+      }
+    };
+    fetchRecords();
+  }, [hasLoaded, project?.projectId]);
+
+  // useEffect(() => {
+  //   if (activeFilters.length === 0) {
+  //     setTableData(fileTableData);
+  //   } else {
+  //     const filtered = fileTableData.filter((row) => {
+  //       return activeFilters.some((filter) => {
+  //         const query = filter.term.toLowerCase();
+  //         return (
+  //           row.fileName.toLowerCase().includes(query) ||
+  //           row.fileDescription.toLowerCase().includes(query) ||
+  //           row.fileType.toLowerCase().includes(query) ||
+  //           row.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+  //           (row.timeseries ? "yes" : "no").includes(query) ||
+  //           row.lastEdit.toLowerCase().includes(query)
+  //         );
+  //       });
+  //     });
+  //     setTableData(filtered);
+  //   }
+  // }, [activeFilters]);
 
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
@@ -103,13 +136,13 @@ const DataCatalog = () => {
     },
     {
       header: "Record Name",
-      data: "fileName",
+      data: "name",
     },
     {
       header: "Class",
       cell: (row) =>
-        row.timeseries ? (
-          <span className="badge text-sm">TimeSeries</span>
+        row.className ? (
+          <span className="badge text-sm">{row.className}</span>
         ) : (
           <span></span>
         ),
@@ -118,13 +151,13 @@ const DataCatalog = () => {
       header: "Tags",
       cell: (row) => <ExpandableTagsCell tags={row.tags} />,
     },
-    {
-      header: "Associated Records",
-      cell: (row) => <AssociatedRecordsCell records={row.associatedRecords} />,
-    },
+    // {
+    //   header: "Associated Records",
+    //   cell: (row) => <AssociatedRecordsCell records={row.associatedRecords} />,
+    // },
     {
       header: "Last Edited",
-      data: "dateModified",
+      data: "modifiedAt",
     },
   ];
 
@@ -140,7 +173,7 @@ const DataCatalog = () => {
           <h1 className="text-2xl font-bold text-secondary-content">
             Data Catalog
           </h1>
-          <ProjectDropdown projects={dropDownProjects} />
+          <ProjectDropdown projects={projects} />
         </div>
       </div>
       <div className="divider"></div>
