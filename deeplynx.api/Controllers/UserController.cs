@@ -143,6 +143,72 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// Get data overview for user
+        /// </summary>
+        /// <param name="userId">ID of user</param>
+        /// <returns>Data overview DTO</returns>
+        [HttpGet("GetDataOverview/{userId}")]
+        public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
+        {
+            try
+            {
+                var user = await _userBusiness.GetUserOverview(userId);
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while fetching user {userId} data overview: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        
+        }
+        
+        /// <summary>
+        /// Add user to project
+        /// </summary>
+        /// <param name="userId">Id of user to be added</param>
+        /// /// <param name="projectId">Id of project to add user to</param>
+        /// <returns>Success message</returns>
+        [HttpPost("AddUserToProject")]
+        public async Task<IActionResult> AddUserToProject(long userId, long projectId)
+        {
+            try
+            { 
+                await _userBusiness.AddUserToProject(userId, projectId);
+                return Ok(new { message = $"Added user {userId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while adding user {userId} to project {projectId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Remove user from project
+        /// </summary>
+        /// <param name="userId">Id of user to be removed</param>
+        /// /// <param name="projectId">Id of project to remove user from</param>
+        /// <returns>Success message</returns>
+        [HttpPost("RemoveUserFromProject")]
+        public async Task<IActionResult> RemoveUserFromProject(long userId, long projectId)
+        {
+            try
+            { 
+                await _userBusiness.RemoveUserFromProject(userId, projectId);
+                return Ok(new { message = $"Removed user {userId} from project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while removing user {userId} from project {projectId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Unarchive a user 
         /// </summary>
         /// <param name="userId">The ID of the user to unarchive.</param>
