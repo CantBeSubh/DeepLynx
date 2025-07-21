@@ -35,6 +35,35 @@ const TeamMembersWidget: React.FC = () => {
     const endIdx = startIdx + usersPerPage;
     const currentUsers = peopleData.slice(startIdx, endIdx);
 
+    const teamMemberColumns: Column<any>[] = [
+        {
+            header: "Name",
+            cell: (row) => (
+                <div className="flex items-center gap-3">
+                    <div className="avatar">
+                        <div className="mask mask-circle h-10 w-10">
+                            <Image
+                                src={row.image}
+                                alt={`${row.name} avatar`}
+                                width="300"
+                                height="300"
+                            />
+                        </div>
+                    </div>
+                    <div>{row.name}</div>
+                </div>
+            ),
+        },
+        {
+            header: "Role",
+            data: "role",
+        },
+        {
+            header: "Last Login",
+            data: "lastLogin",
+        },
+    ];
+
     return (
         <div className="card-body">
             <div className="flex justify-between">

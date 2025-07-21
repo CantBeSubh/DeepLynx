@@ -69,7 +69,7 @@ const SavedSearchesTabs = () => {
       ),
     },
     {
-      label: "My Searchs",
+      label: "My Searches",
       content: (
         <GenericTable
           columns={my_search_table_columns}
