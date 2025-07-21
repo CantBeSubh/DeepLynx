@@ -21,12 +21,46 @@ namespace deeplynx.graph
         /// <summary>
         /// Initializes a new instance of the KuzuDatabaseManager class.
         /// </summary>
-        public KuzuDatabaseManager(IConfiguration configuration)
+         public KuzuDatabaseManager(IConfiguration configuration)
         {
             _db = new kuzu_database();
             _conn = new kuzu_connection();
-            _pgParams = configuration.GetConnectionString("DefaultConnection")
+
+            // Transform the connection string
+            string originalConnectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("DefaultConnection is not configured.");
+            _pgParams = TransformConnectionString(originalConnectionString);
+        }
+
+
+        /// <summary>
+        /// Transforms a connection string from the format "User ID=...;Password=...;Database=...;Server=...;Port=..." 
+        /// to the format "dbname=... user=... host=... password=... port=...".
+        /// </summary>
+        /// <param name="input">The original connection string to transform.</param>
+        /// <returns>The transformed connection string.</returns>
+        private string TransformConnectionString(string input)
+        {
+            var keyValuePairs = input.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var dictionary = new Dictionary<string, string>();
+
+            foreach (var pair in keyValuePairs)
+            {
+                var parts = pair.Split(new[] { '=' }, 2);
+                if (parts.Length == 2)
+                {
+                    dictionary[parts[0].Trim()] = parts[1].Trim();
+                }
+            }
+
+            // Build the transformed connection string
+            var transformed = $"dbname={dictionary["Database"]} " +
+                              $"user={dictionary["User ID"]} " +
+                              $"host={dictionary["Server"]} " +
+                              $"password={dictionary["Password"]} " +
+                              $"port={dictionary["Port"]}";
+
+            return transformed;
         }
 
 
@@ -453,8 +487,17 @@ namespace deeplynx.graph
                     b AS Related_Node;";
 
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
+                var result = await ExecuteQueryAsync(requestDto);
 
-                return await ExecuteQueryAsync(requestDto);
+                if (result.Contains("id"))
+                {
+                    return result;
+                }
+                else
+                {
+                    return $"There are no relationships for the {request.TableName} with id {request.Id} that are in project your project.";
+                }
+
             }
             catch (Exception e)
             {
