@@ -285,7 +285,7 @@ public class RecordBusiness : IRecordBusiness
                 var archived = await _context.Database.ExecuteSqlRawAsync(
                     "CALL deeplynx.archive_record(@p0::INTEGER, @p1::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
 
-                if (archived <= 0) // if 0 records were updated, assume a failure
+                if (archived == 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents.");
                 }
