@@ -41,14 +41,14 @@ const ProjectOverviewWidget = () => {
           <div className="stat-title text-secondary">Linked Sources</div>
           <div className="stat-value text-secondary flex items-center">
             <LinkIcon className="size-7 mr-2" />
-            {stats?.linkedSources}
+            {stats?.linkedSources ? stats.linkedSources : 0 }
           </div>
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">Records</div>
           <div className="stat-value text-secondary flex items-center">
             <CircleStackIcon className="size-8 mr-2" />
-            {stats?.records}
+            {stats?.records ? stats.records : 0 }
           </div>
         </div>
       </div>
@@ -57,14 +57,14 @@ const ProjectOverviewWidget = () => {
           <div className="stat-title text-secondary">Classes</div>
           <div className="stat-value text-secondary flex items-center">
             <RectangleGroupIcon className="size-8 mr-2" />
-            {stats?.classes}
+            {stats?.classes ? stats.classes : 0 }
           </div>
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">Connections</div>
           <div className="stat-value text-secondary flex items-center">
             <ArrowsRightLeftIcon className="size-8 mr-2" />
-            {stats?.connections}
+            {stats?.connections ? stats.connections : 0 }
           </div>
         </div>
       </div>

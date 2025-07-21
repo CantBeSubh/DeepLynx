@@ -38,7 +38,7 @@ const SavedSearchesTabs = () => {
       cell: (row) => <AvatarCell name={row.name} image={row.image} />,
     },
     {
-      header: "Search nickname",
+      header: "Search Nickname",
       data: "nickname",
     },
     {
@@ -69,7 +69,7 @@ const SavedSearchesTabs = () => {
       ),
     },
     {
-      label: "My Searchs",
+      label: "My Searches",
       content: (
         <GenericTable
           columns={my_search_table_columns}
@@ -80,12 +80,7 @@ const SavedSearchesTabs = () => {
   ];
 
   return (
-    <div className="card shadow-lg mt-3">
-      <div className="card-body">
-        <h2 className="card-title">Seaved Searchs</h2>
-        <Tabs tabs={tabData} className="tabs tabs-border" />
-      </div>
-    </div>
+    <Tabs tabs={tabData} className="tabs tabs-border" />
   );
 };
 
