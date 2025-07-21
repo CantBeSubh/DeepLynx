@@ -1,10 +1,9 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
+import AvatarCell from "../../Avatar";
 
 interface Person {
   id: number;
@@ -15,18 +14,29 @@ interface Person {
   role: string;
 }
 interface AvatarCarouselProps {
-  avatars: string[];
+  people: Person[];
 }
 
-const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
+const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ people }) => {
   const [addMemberModal, setAddMemberModal] = useState(false);
-  // Ratio to account for the size of the avatars, plus icon, and arrows
-  const avatarsPerPage = Math.floor(
-    (window.innerWidth * 0.3 - (24 + 24 + 24 + 32.5)) / 50
-  );
+  const [avatarsPerPage, setAvatarsPerPage] = useState(1);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const totalPages = Math.ceil(avatars.length / avatarsPerPage);
+  useEffect(() => {
+    const handleResize = () => {
+      const newAvatarsPerPage = Math.floor(
+        (window.innerWidth * 0.3 - (24 + 24 + 24 + 32.5)) / 50
+      );
+      setAvatarsPerPage(newAvatarsPerPage);
+    };
+
+    window.addEventListener("resize", handleResize);
+    handleResize(); // Initially sets avatar per page
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const totalPages = Math.ceil(people.length / avatarsPerPage);
 
   const handleNext = () => {
     if (currentPage < totalPages - 1) {
@@ -41,8 +51,8 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
   };
 
   const startIdx = currentPage * avatarsPerPage;
-  const endIdx = startIdx + avatarsPerPage - 1;
-  const currentAvatars = avatars.slice(startIdx, endIdx);
+  const endIdx = startIdx + avatarsPerPage;
+  const currentAvatars = people.slice(startIdx, endIdx);
 
   return (
     <div className="flex items-center justify-center w-full">
@@ -58,10 +68,14 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
           {/* Avatar Icons */}
           <div className="flex items-center justify-center space-x-3">
             <p className="text-base-300 mb-2"></p>
-            {currentAvatars.map((avatar, i) => (
-              <div key={i} className="avatar inline-block">
-                <div className="w-12 rounded-full">
-                  <Image src={avatar} alt="avatar" width="300" height="300" />
+            {currentAvatars.map((person, index) => (
+              <div key={index} className="avatar inline-block">
+                <div>
+                  <AvatarCell
+                    name={person.name}
+                    image={person.image}
+                    showName={false}
+                  />
                 </div>
               </div>
             ))}
@@ -71,7 +85,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ avatars }) => {
           </div>
 
           {/* Right Button */}
-          <div className="flex items-center">
+          <div className="flex items-center mr-4">
             <button onClick={handleNext} className="flex-shrink-0">
               <ChevronRightIcon className="size-6" />
             </button>
