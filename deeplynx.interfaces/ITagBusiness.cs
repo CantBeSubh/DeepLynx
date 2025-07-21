@@ -14,4 +14,5 @@ public interface ITagBusiness
     Task<TagResponseDto> GetTagById(long projectId, long tagId, bool hideArchived);
     Task<bool> DeleteTag(long projectId, long tagId);
     Task<bool> ArchiveTag(long projectId, long tagId);
+    Task<bool> UnarchiveTag(long projectId, long tagId);
 }

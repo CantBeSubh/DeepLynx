@@ -20,4 +20,6 @@ public interface IEdgeBusiness
         long projectId, long? edgeId, long? originId, long? destinationId);
     Task<long> ArchiveEdge(
         long projectId, long? edgeId, long? originId, long? destinationId);
+    Task<long> UnarchiveEdge(
+        long projectId, long? edgeId, long? originId, long? destinationId);
 }

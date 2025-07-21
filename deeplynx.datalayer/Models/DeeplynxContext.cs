@@ -245,6 +245,25 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
+            entity.HasMany(u => u.Projects).WithMany(p => p.Users)
+                .UsingEntity<Dictionary<string, object>>(
+                    "UserProject",
+                    u => u.HasOne<Project>().WithMany()
+                        .HasForeignKey("ProjectId")
+                        .HasConstraintName("user_project_project_id_fkey"),
+                    p => p.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("user_project_user_id_fkey"),
+                    j =>
+                    {
+                        j.HasKey("UserId", "ProjectId").HasName("user_project_pkey");
+                        j.ToTable("user_project", "deeplynx");
+                        j.HasIndex(new[] { "UserId" }, "idx_user_project_user_id");
+                        j.HasIndex(new[] { "ProjectId" }, "idx_user_project_project_id");
+                        j.IndexerProperty<long>("UserId").HasColumnName("user_id");
+                        j.IndexerProperty<long>("ProjectId").HasColumnName("project_id");
+                    });
+
         });
 
         OnModelCreatingPartial(modelBuilder);

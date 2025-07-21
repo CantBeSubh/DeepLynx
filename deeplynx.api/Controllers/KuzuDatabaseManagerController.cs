@@ -12,6 +12,10 @@ namespace deeplynx.api.Controllers
     {
         private readonly IKuzuDatabaseManager _kuzuDatabaseManager;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="KuzuDatabaseManagerController"/> class
+        /// </summary>
+        /// <param name="kuzuDatabaseManager">The business logic interface for handling kuzu database operations.</param>
         public KuzuDatabaseManagerController(IKuzuDatabaseManager kuzuDatabaseManager)
         {
             _kuzuDatabaseManager = kuzuDatabaseManager;

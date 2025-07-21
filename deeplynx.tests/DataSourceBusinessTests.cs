@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Moq;
@@ -708,6 +709,62 @@ namespace deeplynx.tests
             Assert.Equal(now.AddDays(1), dto.ModifiedAt);
             Assert.Null(dto.ArchivedAt);
         }
+        
+        #region UnarchiveDataSource Tests
+        
+        [Fact]
+        public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
+        {
+            var archivedDataSource = new DataSource
+            {
+                Name = "Archived Test DataSource",
+                Description = "Previously archived",
+                Type = "Test",
+                ProjectId = pid,
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.DataSources.Add(archivedDataSource);
+            await Context.SaveChangesAsync();
+            var archivedId = archivedDataSource.Id;
+
+            var result = await _dataSourceBusiness.UnarchiveDataSource(pid, archivedId);
+
+            Assert.True(result);
+
+            Context.ChangeTracker.Clear();
+            var reloaded = await Context.DataSources.FindAsync(archivedId);
+            Assert.NotNull(reloaded);
+            Assert.Null(reloaded.ArchivedAt);
+        }
+
+        [Fact]
+        public async Task UnarchiveDataSource_NonExistent_ThrowsKeyNotFoundException()
+        {
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _dataSourceBusiness.UnarchiveDataSource(pid, 99999));
+            
+            Assert.Contains("Data Source with id 99999 not found", ex.Message);
+        }
+
+        [Fact]
+        public async Task UnarchiveDataSource_WrongProject_ThrowsKeyNotFoundException()
+        {
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _dataSourceBusiness.UnarchiveDataSource(pid2, did3));  // did3 is archived and belongs to pid
+            
+            Assert.Contains($"Data Source with id {did3} not found", ex.Message);
+        }
+
+        [Fact]
+        public async Task UnarchiveDataSource_NotArchived_ThrowsKeyNotFoundException()
+        {
+            var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _dataSourceBusiness.UnarchiveDataSource(pid, did)); // did is not archived
+            
+            Assert.Contains($"Data Source with id {did} not found", ex.Message);
+        }
+        
+        #endregion
         
         protected override async Task SeedTestDataAsync()
         {

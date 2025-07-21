@@ -65,6 +65,26 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("record_tags", "deeplynx");
                 });
 
+            modelBuilder.Entity("UserProject", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("UserId", "ProjectId")
+                        .HasName("user_project_pkey");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_user_project_project_id");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_user_project_user_id");
+
+                    b.ToTable("user_project", "deeplynx");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
                 {
                     b.Property<long>("Id")
@@ -1054,6 +1074,23 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("record_tags_tag_id_fkey");
+                });
+
+            modelBuilder.Entity("UserProject", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_project_project_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_project_user_id_fkey");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>

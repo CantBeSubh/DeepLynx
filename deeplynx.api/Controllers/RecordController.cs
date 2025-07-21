@@ -128,7 +128,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
         /// <param name="recordId">ID of record to be upated</param>
-        /// <param name="dto">Recored request DTO</param>
+        /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}")]
         public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
@@ -188,6 +188,28 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving record {recordId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unarchive a record
+        /// </summary>
+        /// <param name="recordId">The ID of the record to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the record belongs.</param>
+        /// <returns>A message stating the record was successfully unarchived.</returns>
+        [HttpPut("UnarchiveRecord/{recordId}")]
+        public async Task<IActionResult> UnarchiveRecord(long projectId, long recordId)
+        {
+            try
+            {
+                await _recordBusiness.UnarchiveRecord(projectId, recordId);
+                return Ok(new { message = $"Unarchived record {recordId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving record {recordId}: {exc}";
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
