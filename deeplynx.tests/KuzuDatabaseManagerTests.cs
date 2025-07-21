@@ -153,7 +153,6 @@ namespace deeplynx.tests
             Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled. Set ENABLE_KUZU to true to run these tests.");
 
             // Arrange & Act
-            Console.WriteLine("what");
             bool connected = await _kuzuDatabaseManager.ConnectAsync();
 
             // Assert
