@@ -269,10 +269,10 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> DeleteClass(long projectId, long classId)
     {
         var project = await _context.Projects.FindAsync(projectId);
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null)
             throw new KeyNotFoundException($"Project with id {projectId} not found.");
 
-        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId && c.ArchivedAt == null);
+        var classToDelete = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ProjectId == projectId);
         if (classToDelete == null)
             throw new KeyNotFoundException($"Class with id {classId} not found");
 
@@ -280,9 +280,11 @@ public class ClassBusiness : IClassBusiness
         await _context.SaveChangesAsync();
         return true;
     }
+    
     /// <summary>
     /// Archive (soft delete) a class by id. This also archives downstream dependents.
     /// </summary>
+    /// <param name="projectId">ID of the project to which the class belongs.</param>
     /// <param name="classId">ID of the class to archive.</param>
     /// <returns>Boolean true on successful archival.</returns>
     /// <exception cref="KeyNotFoundException">Thrown if class is not found.</exception>
@@ -321,6 +323,49 @@ public class ClassBusiness : IClassBusiness
             {
                 await transaction.RollbackAsync();
                 throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Unarchive a class by id. This also unarchives downstream dependents.
+    /// </summary>
+    /// <param name="projectId">ID of the project to which the class belongs.</param>
+    /// <param name="classId">ID of the class to unarchive.</param>
+    /// <returns>Boolean true on successful unarchive.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if class is not found.</exception>
+    /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
+    public async Task<bool> UnarchiveClass(long projectId, long classId)
+    {
+        DoesProjectExist(projectId);
+        // using dbClass since "class" is a reserved word
+        var dbClass = await _context.Classes.FindAsync(classId);
+
+        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is null)
+            throw new KeyNotFoundException("Class not found or is not archived.");
+
+        // run unarchive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the unarchive class procedure, which unarchives this class
+                // and all child objects with class_id as a foreign key
+                var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.unarchive_class({0}::INTEGER)", classId);
+
+                if (unarchived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to unarchive class {classId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to unarchive class {classId} or its downstream dependents: {exc}");
             }
         }
     }

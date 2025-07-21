@@ -196,7 +196,7 @@ public class UserBusiness : IUserBusiness
     {
         var user = await _context.Users.FindAsync(userId);
 
-        if (user == null || user.ArchivedAt is not null)
+        if (user == null)
             throw new KeyNotFoundException($"User with id {userId} not found.");
     
         _context.Users.Remove(user);
@@ -220,6 +220,28 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+    
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Unarchive a user by id.
+    /// </summary>
+    /// <param name="userId">ID of the user to unarchive.</param>
+    /// <returns>Boolean true when successfully unarchived.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if user is not found.</exception>
+    public async Task<bool> UnarchiveUser(long userId)
+    {
+        var user = await _context.Users
+            .Where(p => p.Id == userId && p.ArchivedAt != null)
+            .FirstOrDefaultAsync();
+        
+        if (user == null)
+            throw new KeyNotFoundException("Archived user not found.");
+
+        user.ArchivedAt = null;
     
         _context.Users.Update(user);
         await _context.SaveChangesAsync();

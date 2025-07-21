@@ -253,7 +253,7 @@ public class TagBusiness : ITagBusiness
     {
         DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId)
             throw new KeyNotFoundException($"Tag with id {tagId} not found.");
         
         _context.Tags.Remove(tag);
@@ -277,6 +277,27 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
 
         tag.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Tags.Update(tag);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Unarchives a specific tag by its ID for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to unarchive.</param>
+    /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
+    public async Task<bool> UnarchiveTag(long projectId
+        , long tagId)
+    {
+        DoesProjectExist(projectId);
+        var tag = await _context.Tags.FindAsync(tagId);
+
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is not archived.");
+
+        tag.ArchivedAt = null;
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         return true;

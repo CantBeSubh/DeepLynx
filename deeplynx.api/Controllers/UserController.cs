@@ -207,5 +207,26 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Unarchive a user 
+        /// </summary>
+        /// <param name="userId">The ID of the user to unarchive.</param>
+        /// <returns>A message stating the user was successfully unarchived.</returns>
+        [HttpPut("UnarchiveUser/{userId}")]
+        public async Task<IActionResult> UnarchiveUser(long userId)
+        {
+            try
+            {
+                await _userBusiness.UnarchiveUser(userId);
+                return Ok(new { message = $"Unarchived user {userId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving user {userId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }

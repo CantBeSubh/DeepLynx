@@ -192,6 +192,28 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Unarchive a record
+        /// </summary>
+        /// <param name="recordId">The ID of the record to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the record belongs.</param>
+        /// <returns>A message stating the record was successfully unarchived.</returns>
+        [HttpPut("UnarchiveRecord/{recordId}")]
+        public async Task<IActionResult> UnarchiveRecord(long projectId, long recordId)
+        {
+            try
+            {
+                await _recordBusiness.UnarchiveRecord(projectId, recordId);
+                return Ok(new { message = $"Unarchived record {recordId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving record {recordId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
 

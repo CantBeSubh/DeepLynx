@@ -18,4 +18,5 @@ public interface IUserBusiness
     Task<bool>  RemoveUserFromProject(long userId, long projectId);
     
     Task<DataOverviewDto> GetUserOverview(long userId);
+    Task<bool> UnarchiveUser(long userId);
 }

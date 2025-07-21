@@ -694,7 +694,6 @@ public static class SeedData
         {
             new Record
             {
-                Id = 1,
                 Uri = "crm://customers/CUST_001",
                 Properties = @"{""customer_id"":""CUST_001"",""email"":""john.doe@email.com"",""first_name"":""John"",""last_name"":""Doe"",""phone"":""+1-555-0123"",""registration_date"":""2023-03-15T10:30:00Z"",""status"":""active"",""lifetime_value"":2850.75,""total_orders"":12}",
                 OriginalId = "CUST_001",
@@ -711,7 +710,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 2,
                 Uri = "ecommerce://purchases/PUR_001",
                 Properties = @"{""purchase_id"":""PUR_001"",""customer_id"":""CUST_001"",""order_number"":""ORD-2024-001234"",""purchase_date"":""2024-01-15T10:30:00Z"",""total_amount"":299.99,""currency"":""USD"",""payment_method"":""credit_card"",""payment_status"":""completed""}",
                 OriginalId = "PUR_001",
@@ -728,7 +726,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 3,
                 Uri = "marketing://segments/SEG_PREMIUM",
                 Properties = @"{""segment_id"":""SEG_PREMIUM"",""segment_name"":""Premium Customers"",""description"":""High-value customers with frequent purchases"",""customer_count"":1247,""percentage_of_base"":8.5,""marketing_budget_allocation"":0.35}",
                 OriginalId = "SEG_PREMIUM",
@@ -746,7 +743,6 @@ public static class SeedData
             // Supply Chain Optimization Records
             new Record
             {
-                Id = 4,
                 Uri = "erp://suppliers/SUP_ABC123",
                 Properties = @"{""supplier_id"":""SUP_ABC123"",""company_name"":""Advanced Components Corp"",""contact_person"":""Sarah Mitchell"",""email"":""sarah.mitchell@advancedcomponents.com"",""phone"":""+1-800-555-0199"",""performance_rating"":4.2,""on_time_delivery_rate"":0.95}",
                 OriginalId = "SUP_ABC123",
@@ -763,7 +759,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 5,
                 Uri = "inventory://items/INV_XYZ789",
                 Properties = @"{""inventory_id"":""INV_XYZ789"",""product_code"":""WIDGET_A_001"",""supplier_id"":""SUP_ABC123"",""current_quantity"":485,""reserved_quantity"":50,""available_quantity"":435,""reorder_level"":100,""unit_cost"":12.50}",
                 OriginalId = "INV_XYZ789",
@@ -779,7 +774,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 6,
                 Uri = "warehouses://facilities/WH_EAST_001",
                 Properties = @"{""warehouse_id"":""WH_EAST_001"",""name"":""East Coast Distribution Center"",""total_capacity_sqft"":125000,""current_utilization"":0.72,""available_space_sqft"":35000,""staff_count"":45,""manager"":""Robert Chen""}",
                 OriginalId = "WH_EAST_001",
@@ -795,7 +789,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 7,
                 Uri = "logistics://shipments/SHIP_OUT_001",
                 Properties = @"{""shipment_id"":""SHIP_OUT_001"",""tracking_number"":""TRK123456789"",""origin_warehouse"":""WH_EAST_001"",""carrier"":""FedEx"",""service_type"":""Ground"",""shipment_date"":""2024-06-01T14:30:00Z"",""estimated_delivery"":""2024-06-03T17:00:00Z"",""status"":""delivered""}",
                 OriginalId = "SHIP_OUT_001",
@@ -813,7 +806,6 @@ public static class SeedData
             // Legacy System Migration Records (Archived)
             new Record
             {
-                Id = 8,
                 Uri = "legacy://users/USR_LEG_001",
                 Properties = @"{""legacy_user_id"":""USR_LEG_001"",""username"":""JDOE001"",""full_name"":""JOHN DOE"",""department"":""SALES"",""role"":""MANAGER"",""migration_status"":""completed"",""migration_date"":""2024-11-20T02:00:00Z""}",
                 OriginalId = "USR_LEG_001",
@@ -829,7 +821,6 @@ public static class SeedData
             },
             new Record
             {
-                Id = 9,
                 Uri = "legacy://data/DATA_LEG_001",
                 Properties = @"{""legacy_data_id"":""DATA_LEG_001"",""data_type"":""CUSTOMER_RECORDS"",""owner_user_id"":""USR_LEG_001"",""record_count"":15420,""data_size_mb"":2500.75,""migration_status"":""completed"",""validation_status"":""passed""}",
                 OriginalId = "DATA_LEG_001",

@@ -220,7 +220,7 @@ namespace deeplynx.business
             DoesProjectExist(projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
-            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+            if (dataSource == null || dataSource.ProjectId != projectId)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
 
             _context.DataSources.Remove(dataSource);
@@ -270,6 +270,48 @@ namespace deeplynx.business
                     await transaction.RollbackAsync();
                     throw new DependencyDeletionException(
                         $"unable to archive data source {dataSourceId} or its downstream dependents: {exc}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Unarchives a specific data source by its ID.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs.</param>
+        /// <param name="dataSourceId">The ID of the data source to unarchive</param>
+        /// <returns>Boolean true on successful unarchive action.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
+        public async Task<bool> UnarchiveDataSource(long projectId, long dataSourceId)
+        {
+            DoesProjectExist(projectId);
+            var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is null)
+                throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found or is not archived.");
+            
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // run the unarchive data source procedure, which unarchives this datasource
+                    // and all child objects with data_source_id as a foreign key
+                    var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                        "CALL deeplynx.unarchive_data_source({0}::INTEGER)", dataSourceId);
+
+                    if (unarchived == 0) // if 0 records were updated, assume a failure
+                    {
+                        throw new DependencyDeletionException(
+                            $"unable to unarchive data source {dataSourceId} or its downstream dependents.");
+                    }
+
+                    await transaction.CommitAsync();
+                    return true;
+                }
+                catch (Exception exc)
+                {
+                    await transaction.RollbackAsync();
+                    throw new DependencyDeletionException(
+                        $"unable to unarchive data source {dataSourceId} or its downstream dependents: {exc}");
                 }
             }
         }

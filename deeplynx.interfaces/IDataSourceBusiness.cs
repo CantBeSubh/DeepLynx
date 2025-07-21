@@ -13,5 +13,6 @@ namespace deeplynx.interfaces
         Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, DataSourceRequestDto dto);
         Task<bool> DeleteDataSource(long projectId, long dataSourceId);
         Task<bool> ArchiveDataSource(long projectId, long dataSourceId);
+        Task<bool> UnarchiveDataSource(long projectId, long dataSourceId);
     }
 }
