@@ -40,7 +40,7 @@ const SavedSearchesTabs = () => {
       ),
     },
     {
-      header: "Search nickname",
+      header: "Search Nickname",
       data: "nickname",
     },
     {
@@ -82,12 +82,7 @@ const SavedSearchesTabs = () => {
   ];
 
   return (
-    <div className="card shadow-lg mt-3">
-      <div className="card-body">
-        <h2 className="card-title">Seaved Searchs</h2>
         <Tabs tabs={tabData} className="tabs tabs-border" />
-      </div>
-    </div>
   );
 };
 

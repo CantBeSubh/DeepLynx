@@ -5,8 +5,8 @@ import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 import { peopleData } from "@/app/(home)/dummy_data/data";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
 import { Column } from "@/app/(home)/types/types";
-import GenericTable from "../GenericTable";
 import AvatarCell from "../Avatar";
+import GenericTable from "../GenericTable";
 
 const TeamMembersWidget: React.FC = () => {
     const [showTable, setShowTable] = useState(false);

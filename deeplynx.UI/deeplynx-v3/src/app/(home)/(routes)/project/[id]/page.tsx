@@ -74,7 +74,7 @@ const ProjectDetailPage = () => {
 
             <div className="card shadow-lg mt-3">
               <div className="card-body">
-                <h2 className="card-title">Seaved Searchs</h2>
+                <h2 className="card-title">Saved Searches</h2>
                 <SavedSearchesTabs />
               </div>
             </div>
