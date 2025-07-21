@@ -9,7 +9,6 @@ import {
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 import { peopleData } from "@/app/(home)/dummy_data/data";
-import GenericTable from "../GenericTable";
 
 const TeamMembersWidget: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
@@ -64,77 +63,76 @@ const TeamMembersWidget: React.FC = () => {
         <AvatarCarousel people={peopleData} />
       ) : (
         // Team Member Table
-        // <div className="overflow-x-auto">
-        //     <table className="table">
-        //         <thead>
-        //             <tr className="text-secondary-content">
-        //                 <th className="pl-17 flex items-center">
-        //                     Name
-        //                     <div className="pl-2">
-        //                         <ChevronDownIcon className="size-5" />
-        //                     </div>
-        //                 </th>
-        //                 <th>Role</th>
-        //                 <th className="flex items-center">
-        //                     Last Login
-        //                     <div className="pl-2">
-        //                         <ChevronDownIcon className="size-5" />
-        //                     </div>
-        //                 </th>
-        //                 <th></th>
-        //             </tr>
-        //         </thead>
-        //         <tbody>
-        //             {currentUsers.map(person => (
-        //                 <tr key={person.id}>
-        //                     <td>
-        //                         <div className="flex items-center gap-3">
-        //                             <div className="avatar">
-        //                                 <div className="mask mask-circle h-10 w-10">
-        //                                     <Image
-        //                                         src={person.image}
-        //                                         alt={`${person.name} avatar`}
-        //                                         width="300"
-        //                                         height="300"
-        //                                     />
-        //                                 </div>
-        //                             </div>
-        //                             <div>
-        //                                 <div className="">{person.name}</div>
-        //                             </div>
-        //                         </div>
-        //                     </td>
-        //                     <td>
-        //                         <div>
-        //                             <div className="">{person.role}</div>
-        //                         </div>
-        //                         <br />
-        //                     </td>
-        //                     <td>2025-06-30T14:48:00</td>
-        //                 </tr>
-        //             ))}
-        //         </tbody>
-        //     </table>
+        <div className="overflow-x-auto">
+          <table className="table">
+            <thead>
+              <tr className="text-secondary-content">
+                <th className="pl-17 flex items-center">
+                  Name
+                  <div className="pl-2">
+                    <ChevronDownIcon className="size-5" />
+                  </div>
+                </th>
+                <th>Role</th>
+                <th className="flex items-center">
+                  Last Login
+                  <div className="pl-2">
+                    <ChevronDownIcon className="size-5" />
+                  </div>
+                </th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentUsers.map((person) => (
+                <tr key={person.id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="avatar">
+                        <div className="mask mask-circle h-10 w-10">
+                          <Image
+                            src={person.image}
+                            alt={`${person.name} avatar`}
+                            width="300"
+                            height="300"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="">{person.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div>
+                      <div className="">{person.role}</div>
+                    </div>
+                    <br />
+                  </td>
+                  <td>2025-06-30T14:48:00</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-        //     {/* Table Toggle Buttons*/}
-        //     <div className="flex justify-end">
-        //         <button
-        //             className="btn join-item p-2 rounded-r-none"
-        //             onClick={handlePrev}
-        //             disabled={currentPage === 0}
-        //         >
-        //             <ChevronLeftIcon className="size-6" />
-        //         </button>
-        //         <button
-        //             className="btn join-item p-2 rounded-l-none"
-        //             onClick={handleNext}
-        //             disabled={currentPage === totalPages- 1}
-        //         >
-        //             <ChevronRightIcon className="size-6" />
-        //         </button>
-        //     </div>
-        // </div>
-        <GenericTable columns={[]} data={[]} />
+          {/* Table Toggle Buttons*/}
+          <div className="flex justify-end">
+            <button
+              className="btn join-item p-2 rounded-r-none"
+              onClick={handlePrev}
+              disabled={currentPage === 0}
+            >
+              <ChevronLeftIcon className="size-6" />
+            </button>
+            <button
+              className="btn join-item p-2 rounded-l-none"
+              onClick={handleNext}
+              disabled={currentPage === totalPages - 1}
+            >
+              <ChevronRightIcon className="size-6" />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Create Link Modal */}
