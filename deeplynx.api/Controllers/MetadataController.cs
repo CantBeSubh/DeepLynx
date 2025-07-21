@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("api/projects/{projectId}/metadata")]
+[Route("api/projects/{projectId}/datasources/{dataSourceId}/metadata")]
 [ApiController]
 public class MetadataController : ControllerBase
 {
@@ -23,14 +23,16 @@ public class MetadataController : ControllerBase
     /// Parses metadata
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
+    /// 
     [HttpPost("CreateMetadata")]
-    public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(long projectId, [FromBody] MetadataRequestDto metadataRequestDto)
+    public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(long projectId, long dataSourceId, [FromBody] MetadataRequestDto metadataRequestDto)
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, metadataRequestDto);
-            return StatusCode(StatusCodes.Status201Created, "Your metadata has been received.");
+            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, dataSourceId, metadataRequestDto);
+            return Ok(createdMetadata);
         }
         catch (Exception exception)
         {
