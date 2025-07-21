@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 
-namespace deeplynx.tests.business;
+namespace deeplynx.tests;
 
 [Collection("Test Suite Collection")]
 public class RecordBusinessTests : IntegrationTestBase
