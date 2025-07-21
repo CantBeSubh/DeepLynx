@@ -1,12 +1,11 @@
 "use client";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import {
-  dropDownProjects,
-  fileTableData,
-  recentRecordsData,
-} from "@/app/(home)/dummy_data/data";
+import { recentRecordsData } from "@/app/(home)/dummy_data/data";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { getAllRecords } from "@/app/lib/record_services";
+import { getAllProjects } from "@/app/lib/projects_services";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -16,14 +15,11 @@ import {
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import AssociatedRecordsCell from "./AssociatedRecordsCell";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
-import { getAllRecords } from "@/app/lib/record_services";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 const DataCatalog = () => {
   const router = useRouter();
@@ -39,12 +35,28 @@ const DataCatalog = () => {
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(false);
   const { project, hasLoaded } = useProjectSession();
+  const [projects, setProjects] = useState([]);
 
   // Effect to set project name from localStorage and mark the component as mounted
   useEffect(() => {
     setHasMounted(true);
     const storedName = localStorage.getItem("selectedProjectName");
     if (storedName) setProjectName(storedName);
+  }, []);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!hasLoaded || !project?.projectId) return;
+
+      try {
+        const data = await getAllProjects();
+        const projectString = data.map((d: { name: any }) => d.name);
+        setProjects(projectString);
+      } catch (error) {
+        console.error("Failed to fetch records:", error);
+      }
+    };
+    fetchProjects();
   }, []);
 
   useEffect(() => {
@@ -161,7 +173,7 @@ const DataCatalog = () => {
           <h1 className="text-2xl font-bold text-secondary-content">
             Data Catalog
           </h1>
-          <ProjectDropdown projects={dropDownProjects} />
+          <ProjectDropdown projects={projects} />
         </div>
       </div>
       <div className="divider"></div>

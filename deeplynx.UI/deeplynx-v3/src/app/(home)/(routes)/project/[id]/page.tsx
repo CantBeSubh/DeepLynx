@@ -1,20 +1,29 @@
 "use client";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
+import React, { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getProject } from "@/app/lib/projects_services";
-import { format } from "date-fns";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
+import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
+import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { format } from "date-fns";
+import { getProject } from "@/app/lib/projects_services";
+import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
 
 const ProjectDetailPage = () => {
   const { id } = useParams();
   const projectId = id?.toString();
   const [project, setProject] = useState<ProjectsList | null>(null);
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
+  const [widgetModal, setWidgetModal] = useState(false);
+  const projectWidgets: WidgetType[] = [
+    "RecentActivity",
+    "ProjectOverview",
+    "TeamMembers",
+  ];
 
   useEffect(() => {
     if (!hasLoaded || !projectId) return;
@@ -70,8 +79,30 @@ const ProjectDetailPage = () => {
               </div>
             </div>
           </div>
-          <div>Other half here: 👇</div>
+
+          <div className="w-full md:w-1/2 px-4">
+            <div className="flex justify-between items-center justify-end mb-4">
+              <button className="btn btn-outline btn-secondary flex items-center mr-2">
+                <Cog6ToothIcon className="size-6" />
+                Customize
+              </button>
+              <button
+                onClick={() => setWidgetModal(true)}
+                className="btn btn-secondary text-primary-content flex items-center"
+              >
+                <PlusIcon className="size-6" />
+                Widget
+              </button>
+            </div>
+            <WidgetCard widgets={projectWidgets} />
+          </div>
         </div>
+
+        {/* Create Widget Modal */}
+        <CreateWidget
+          isOpen={widgetModal}
+          onClose={() => setWidgetModal(false)}
+        />
       </main>
     </div>
   );
