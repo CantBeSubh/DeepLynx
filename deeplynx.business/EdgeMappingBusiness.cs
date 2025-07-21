@@ -305,11 +305,11 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     }
     
     /// <summary>
-    /// Determine if relataionship exists
+    /// Determine if relationship exists
     /// </summary>
     /// <param name="relationshipId">The ID of the relationship we are searching for</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if relataionship does not exist</returns>
+    /// <returns>Throws error if relationship does not exist</returns>
     private void DoesRelationshipExist(long relationshipId, bool hideArchived = true)
     {
         var relationship = hideArchived ? _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null)

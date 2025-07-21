@@ -15,6 +15,14 @@ public class ClassBusiness : IClassBusiness
     private readonly IRecordMappingBusiness _recordMappingBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context to be used for class operations</param>
+    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects</param>
+    /// <param name="recordBusiness">Passed in context of record objects</param>
+    /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
+    /// <param name="relationshipBusiness">Passed in context of relationship objects</param>
     public ClassBusiness(
         DeeplynxContext context,
         IEdgeMappingBusiness edgeMappingBusiness,
@@ -155,7 +163,7 @@ public class ClassBusiness : IClassBusiness
     /// Creates a new classes based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
-    /// <param name="dto">A data transfer object with details on the new class to be created.</param>
+    /// <param name="bulkDto">A data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<BulkClassResponseDto> BulkCreateClass(long projectId, BulkClassRequestDto bulkDto)
@@ -376,7 +384,7 @@ public class ClassBusiness : IClassBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching</param>
     /// <param name="className"> The name of the project class to search for</param>
-    /// <returns></returns>
+    /// <returns>Class DTO of the found or created class</returns>
     public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
         DoesProjectExist(projectId);

@@ -128,7 +128,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
         /// <param name="recordId">ID of record to be upated</param>
-        /// <param name="dto">Recored request DTO</param>
+        /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}")]
         public async Task<ActionResult<RecordResponseDto>> UpdateRecord(

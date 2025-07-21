@@ -16,6 +16,7 @@ public class FilterBusiness : IFilterBusiness
     /// <summary>
     /// Filter record request
     /// </summary>
+    /// <param name="context">The database context to be used for filter operations.</param>
     public FilterBusiness(
         DeeplynxContext context
         )

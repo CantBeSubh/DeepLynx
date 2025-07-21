@@ -15,6 +15,12 @@ public class RelationshipBusiness: IRelationshipBusiness
       private readonly IEdgeMappingBusiness _edgeMappingBusiness;
       private readonly IEdgeBusiness _edgeBusiness;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RelationshipBusiness"/> class.
+    /// </summary>
+    /// <param name="context">The database context used for the relationship operations.</param>
+    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects.</param>
+    /// <param name="edgeBusiness">Passed in context of edge objects.</param>
     public RelationshipBusiness(DeeplynxContext context, IEdgeMappingBusiness edgeMappingBusiness, IEdgeBusiness edgeBusiness)
     {
         _edgeMappingBusiness = edgeMappingBusiness;
@@ -211,7 +217,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
-    /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
+    /// <param name="bulkRelationshipRequestDto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<BulkRelationshipResponseDto> BulkCreateRelationships(long projectId, BulkRelationshipRequestDto bulkRelationshipRequestDto)

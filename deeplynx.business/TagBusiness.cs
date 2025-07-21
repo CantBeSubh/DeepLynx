@@ -20,6 +20,7 @@ public class TagBusiness : ITagBusiness
     /// Initializes a new instance of the <see cref="TagBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
+    /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
     public TagBusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness)
     {
         _context = context;
@@ -84,7 +85,7 @@ public class TagBusiness : ITagBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <param name="bulkTagRequestDto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
     {
