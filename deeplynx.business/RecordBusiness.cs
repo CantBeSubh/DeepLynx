@@ -18,7 +18,7 @@ public class RecordBusiness : IRecordBusiness
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
-    /// <param name="edgeBusiness">Passed in context of historical record objects.</param>
+    /// <param name="historicalRecordBusiness">Passed in context of historical record objects.</param>
     public RecordBusiness(DeeplynxContext context, IHistoricalRecordBusiness historicalRecordBusiness)
     {
         _context = context;

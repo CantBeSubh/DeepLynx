@@ -10,6 +10,10 @@ namespace deeplynx.api.Controllers
     {
         private readonly IUserBusiness _userBusiness;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UserController"/> class
+        /// </summary>
+        /// <param name="userBusiness">The business logic interface for handling user operations.</param>
         public UserController(IUserBusiness userBusiness)
         {
             _userBusiness = userBusiness;

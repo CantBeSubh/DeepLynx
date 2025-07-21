@@ -10,6 +10,10 @@ namespace deeplynx.api.Controllers
     {
         private readonly IRelationshipBusiness _business;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="RelationshipController"/> class
+        /// </summary>
+        /// <param name="business">The business logic interface for handling relationship operations.</param>
         public RelationshipController(IRelationshipBusiness business)
         {
             _business = business;

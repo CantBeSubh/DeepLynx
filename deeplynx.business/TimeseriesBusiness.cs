@@ -193,8 +193,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// The connection is read only so any write operations will be blocked.
     /// </summary>
     /// <param name="request"> The request which includes the query string</param>
-    /// <param name="projectId"></param>
-    /// <param name="dataSourceId"></param>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The data source ID</param>
     /// <returns></returns>
     public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
     {
@@ -239,16 +239,16 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     }
 
     /// <summary>
-    /// 
+    /// Runs a timeseries query to generate a csv from a DataTable
     /// </summary>
-    /// <param name="recordResponse"></param>
-    /// <param name="request"></param>
-    /// <param name="resultTable"></param>
-    /// <param name="projectId"></param>
-    /// <param name="dataSourceId"></param>
-    /// <param name="fileName"></param>
-    /// <exception cref="KeyNotFoundException"></exception>
-    /// <exception cref="Exception"></exception>
+    /// <param name="recordResponse">The record response DTO</param>
+    /// <param name="request">The timeseries query request DTO</param>
+    /// <param name="resultTable">The table with time series records to be written</param>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The data source ID</param>
+    /// <param name="fileName">The name of the file to be written</param>
+    /// <exception cref="KeyNotFoundException">Thrown when the record cannot be found</exception>
+    /// <exception cref="Exception">Thrown if the report cannot be written</exception>
     private void RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
     {
         DoesProjectExist(projectId);
@@ -422,7 +422,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// </summary>
     /// <param name="tableName">Timeseries table name</param>
     /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
-    /// <returns></returns>
     public async Task CreateTimeseriesTable(string tableName, string filePath)
     {
         await using var duckDbConnection = GetDuckDbConnection();
@@ -438,7 +437,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// Gets all the column names and types from the table
     /// </summary>
     /// <param name="tableName">Timeseries table name</param>
-    /// <returns></returns>
+    /// <returns>JSON array of columns</returns>
     private async Task<JsonArray> GetColumnsFromDb(string tableName)
     {
         var columns = new JsonArray();

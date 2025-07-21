@@ -18,6 +18,10 @@ namespace deeplynx.api.Controllers
     {
         private readonly IClassBusiness _classBusiness;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClassController"/> class
+        /// </summary>
+        /// <param name="classBusiness">The business logic interface for handling class operations.</param>
         public ClassController(IClassBusiness classBusiness)
         {
             _classBusiness = classBusiness;
@@ -79,7 +83,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="dto">The request DTO for classes</param>
-        /// <returns></returns>
+        /// <returns>Class response DTOs</returns>
         [HttpPost("CreateClass")]
         public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
             [FromBody] ClassRequestDto dto)
@@ -102,7 +106,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="dto">The request DTO for classes</param>
-        /// <returns></returns>
+        /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses")]
         public async Task<ActionResult<BulkClassResponseDto>> BulkCreateClass(long projectId,
             [FromBody] BulkClassRequestDto dto)
@@ -125,7 +129,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// /// <param name="classId">The ID of the class to update</param>
-        /// <param name="dto"></param>
+        /// <param name="dto">The request DTO for the class</param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}")]
         public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
