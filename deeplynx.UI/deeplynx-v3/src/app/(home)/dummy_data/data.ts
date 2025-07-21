@@ -947,70 +947,80 @@ export const peopleData = [
       name: "Peter",
       image: "/images/peter.png",
       nickname: "Teton Country",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Project Manager"
   },
   {
       id: 2,
       name: "Victor",
       image: "/images/victor.png",
       nickname: "New Cheese it!",
-      visibility: "Project"
+      visibility: "Project",
+      role: "Developer"
   },
   {
       id: 3,
       name: "Jaren (J2)",
       image: "/images/j2.png",
       nickname: "Minivan",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Developer"
   },
   {
       id: 4,
       name: "Daniel",
       image: "/images/daniel.png",
       nickname: "Soccer games",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Developer"
   },
   {
       id: 5,
       name: "Jason",
       image: "/images/jason.png",
       nickname: "I hate this place",
-      visibility: "Private"
+      visibility: "Private",
+      role: "Developer"
   },
   {
       id: 10,
       name: "Jeren (J1)",
       image: "/images/j1.png",
       nickname: "Mermaid Tails",
-      visibility: "Project"
+      visibility: "Project",
+      role: "Developer"
   },
   {
       id: 6,
       name: "Natalie",
       image: "/images/natalie.png",
       nickname: "What color?",
-      visibility: "Private"
+      visibility: "Private",
+      role: "Developer"
   },
   {
       id: 7,
       name: "Henry White",
       image: "/images/henry_white.jpg",
       nickname: "Hank",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Viewer"
   },
   {
       id: 8,
       name: "Isabella Martinez",
       image: "/images/isabella_martinez.jpg",
       nickname: "Izzy",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Developer"
   },
   {
       id: 9,
       name: "Jack Davis",
       image: "/images/jack_davis.jpg",
       nickname: "JD",
-      visibility: "Public"
+      visibility: "Public",
+      role: "Developer"
   }
 ];
 

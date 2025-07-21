@@ -17,7 +17,7 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                src="/images/j2.png"
                 alt="avatar"
                 width="300"
                 height="300"/>
@@ -39,7 +39,7 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                src="/images/natalie.png"
                 alt="avatar"
                 width="300"
                 height="300"/>
@@ -59,7 +59,7 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                src="/images/jason.png"
                 alt="avatar"
                 width="300"
                 height="300"/>
@@ -81,7 +81,7 @@ const RecentActivityWidget = () => {
             </span>
             <div className="h-10 w-10 rounded-full">
               <Image
-                src="/Users/combam1/codez/Nexus/Nexus/deeplynx.UI/deeplynx-v3/public/images/jason.png"
+                src="/images/victor.png"
                 alt="avatar"
                 width="300"
                 height="300"/>
@@ -89,7 +89,7 @@ const RecentActivityWidget = () => {
           </div>
           <div>
             <div className="pt-2">
-              <b>Isaac Huffman</b> created a new connection between weather_data.csv and project_timeline.docx
+              <b>Victor Walker</b> created a new connection between weather_data.csv and project_timeline.docx
             </div>
           </div>
         </li>
