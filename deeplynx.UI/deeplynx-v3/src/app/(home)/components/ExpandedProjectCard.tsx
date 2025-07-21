@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getProjectStats } from "@/app/lib/projects_services";
 import { peopleData } from "../dummy_data/data";
 import Image from "next/image";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 
 interface Props {
   project: ProjectsList;
@@ -49,20 +50,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           </p>
         </div>
         <button onClick={onClose} aria-label="Close details">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="size-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18 18 6M6 6l12 12"
-            />
-          </svg>
+          <XMarkIcon className="size-6" />
         </button>
       </div>
 
