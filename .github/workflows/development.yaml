@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: develop
 
       # Builds the required image
       - shell: bash
@@ -24,12 +26,10 @@ jobs:
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}
-          NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}
-          NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}
-          NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
+          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
+          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
+          OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
           # Print all environment variables
           echo "ACR_SP_USER=$ACR_SP_USER"
@@ -71,6 +71,8 @@ jobs:
       # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: develop
 
       #Download kubectl
       - uses: azure/setup-kubectl@v3
@@ -111,10 +113,6 @@ jobs:
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
-          POSTGRES_DBHOST: ${{ vars.POSTGRES_DBHOST }}
-          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
-          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           # Print all environment variables
           echo "CI_REGISTRY=$CI_REGISTRY"

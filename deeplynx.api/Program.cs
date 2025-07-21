@@ -79,7 +79,7 @@ builder.Services.AddTransient<ITagBusiness, TagBusiness>();
 builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
 builder.Services.AddTransient<IUserBusiness, UserBusiness>();
 builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
-builder.Services.AddTransient<IFilterBusiness, FilterBusiness>();
+builder.Services.AddTransient<IQueryBusiness, QueryBusiness>();
 builder.Services.AddTransient<IMetadataBusiness, MetadataBusiness>();
 builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
 builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
@@ -101,7 +101,7 @@ builder.Services.AddOpenApi(options =>
             new OpenApiTag { Name = "DataSource", Description = "Manages data sources, including their creation, retrieval, updating, and deletion." },
             new OpenApiTag { Name = "Edge", Description = "Oversees relationships between entities, allowing for the creation, retrieval, updating, and deletion of edges." },
             new OpenApiTag { Name = "EdgeMapping", Description = "Manages mappings of edges to entities, allowing for creation, updating, retrieval, and deletion." },
-            new OpenApiTag { Name = "Filter", Description = "Facilitates data filtering operations for efficient data retrieval and management." },
+            new OpenApiTag { Name = "Query", Description = "Facilitates data filtering operations for efficient data retrieval and management." },
             new OpenApiTag { Name = "HistoricalEdge", Description = "Handles operations related to historical edges, including retrieval and analysis of past relationships." },
             new OpenApiTag { Name = "HistoricalRecord", Description = "Manages operations related to historical records, including retrieval and analysis of past records." },
             new OpenApiTag { Name = "KuzuDatabaseManager", Description = "Oversees operations related to Kuzu database management, including data export and querying." },

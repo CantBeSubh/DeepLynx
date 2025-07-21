@@ -1,6 +1,18 @@
 # Stage 1: Build the C# backend
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 
+# Define build arguments
+ARG NEXT_PUBLIC_OKTA_CLIENT_ID
+ARG NEXT_PUBLIC_OKTA_ISSUER
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_REDIRECT_LINK
+
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
+ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
+
 # Set the working directory
 WORKDIR /source
 
@@ -60,7 +72,7 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
 # Copy the frontend code
-COPY deeplynx.UI/deeplynx-v3/ ./
+COPY deeplynx.UI/ ./
 
 # Install dependencies
 RUN rm -rf node_modules package-lock.json

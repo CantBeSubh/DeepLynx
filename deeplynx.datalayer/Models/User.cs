@@ -28,4 +28,9 @@ public partial class User
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     
+    [InverseProperty("User")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 }
