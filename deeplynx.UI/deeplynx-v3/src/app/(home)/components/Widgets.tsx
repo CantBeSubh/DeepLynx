@@ -1,19 +1,21 @@
 "use client";
+
 import React, { useState, ReactNode } from "react";
 import { Reorder } from "framer-motion";
-import DataOverviewWidget from "./DataOverviewWidget";
-import LinksWidget from "./LinksWidget";
-import GraphWidget from "./GraphWidget";
+import DataOverviewWidget from "./WidgetCards/DataOverviewWidget";
+import LinksWidget from "./WidgetCards/LinksWidget";
+import GraphWidget from "./WidgetCards/GraphWidget";
+import RecentActivityWidget from "./WidgetCards/RecentActivity";
+import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
+import TeamMembersWidget from "./WidgetCards/TeamMember";
 
-type WidgetType = "DataOverview" | "Links" | "Graph";
+export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
+interface WidgetCardProps {
+  widgets: WidgetType[];
+}
 
-// adjust logic for adding and removing widgets
-const WidgetCard = () => {
-  const [widgets, setWidgets] = useState<WidgetType[]>([
-    "DataOverview",
-    "Graph",
-    "Links",
-  ]);
+const WidgetCard: React.FC<WidgetCardProps> = ({ widgets }) => {
+  const [currentWidgets, setCurrentWidgets] = useState<WidgetType[]>(widgets);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
@@ -25,18 +27,29 @@ const WidgetCard = () => {
 
       case "Graph":
         return <GraphWidget />;
+
+      case "RecentActivity":
+        return <RecentActivityWidget />;
+
+      case "ProjectOverview":
+        return <ProjectOverviewWidget />;
+
+      case "TeamMembers":
+        return <TeamMembersWidget />;
+
+      default:
+        return null;
     }
   };
 
-  // Styling for Links Widget
   return (
     <Reorder.Group
       axis="y"
-      onReorder={setWidgets}
-      values={widgets}
+      onReorder={setCurrentWidgets}
+      values={currentWidgets}
       className="space-y-4"
     >
-      {widgets.map((widget) => (
+      {currentWidgets.map((widget) => (
         <Reorder.Item
           key={widget}
           value={widget}

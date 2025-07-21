@@ -1,9 +1,8 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
 import { getProjectStats } from "@/app/lib/api";
-import { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
 import Image from "next/image";
 
@@ -73,12 +72,12 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           .slice(0, Math.floor(Math.random() * 6) + 2)
           .map((person) => (
             <div key={person.id} className="avatar inline-block">
-              <div className="w-10 rounded-full">
-                <img
+              <div className="w-10 h-10 relative overflow-hidden rounded-full">
+                <Image
                   src={person.image}
                   alt={person.name}
-                  width={10}
-                  height={0}
+                  fill
+                  className="object-cover"
                 />
               </div>
             </div>

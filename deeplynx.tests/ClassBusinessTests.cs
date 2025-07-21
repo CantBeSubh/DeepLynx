@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
@@ -628,6 +629,78 @@ namespace deeplynx.tests
             Assert.Null(deletedMapping1.ClassId);
             Assert.Null(deletedMapping2.ClassId);
         }
+        
+        #region UnarchiveClass Tests
+        
+        [Fact]
+        public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
+        {
+            var testClass = new Class
+            {
+                Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var result = await _classBusiness.UnarchiveClass(pid, testClass.Id);
+            Assert.True(result);
+            
+            //this forces EF to sync to db on next query
+            Context.ChangeTracker.Clear();
+            
+            var updated = await Context.Classes.FindAsync(testClass.Id);
+            Assert.Null(updated.ArchivedAt);
+        }
+
+        [Fact]
+        public async Task UnarchiveClass_Throws_IfClassNotFound()
+        {
+            var act = () => _classBusiness.UnarchiveClass(pid, 99999);
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task UnarchiveClass_Throws_IfClassProjectMismatch()
+        {
+            var otherProject = new Project { Name = "Other Project" };
+            Context.Projects.Add(otherProject);
+            await Context.SaveChangesAsync();
+
+            var testClass = new Class
+            {
+                Name = "Class from other project",
+                ProjectId = otherProject.Id,
+                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var act = () => _classBusiness.UnarchiveClass(pid, testClass.Id);
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+        }
+
+        [Fact]
+        public async Task UnarchiveClass_Throws_IfClassNotArchived()
+        {
+            var testClass = new Class
+            {
+                Name = "Active Class",
+                ProjectId = pid,
+                ArchivedAt = null
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var act = () => _classBusiness.UnarchiveClass(pid, testClass.Id);
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+        }
+        
+        # endregion
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
