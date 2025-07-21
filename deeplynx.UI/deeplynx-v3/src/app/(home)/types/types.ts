@@ -80,3 +80,13 @@ export type ProjectsList = {
     createdAt: string;
     sortable?: boolean;
   }
+
+  export type TeamMember = {
+    id: number;
+    name: string;
+    image: string;
+    nickname: string;
+    visibility: string;
+    role: string;
+    lastLogin: string;
+};

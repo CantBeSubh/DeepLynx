@@ -939,7 +939,8 @@ export const peopleData = [
       image: "/images/peter.png",
       nickname: "Teton Country",
       visibility: "Public",
-      role: "Project Manager"
+      role: "Project Manager",
+      lastLogin: "2025-07-20",
   },
   {
       id: 2,
@@ -947,7 +948,8 @@ export const peopleData = [
       image: "/images/victor.png",
       nickname: "New Cheese it!",
       visibility: "Project",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 3,
@@ -955,7 +957,8 @@ export const peopleData = [
       image: "/images/j2.png",
       nickname: "Minivan",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 4,
@@ -963,7 +966,8 @@ export const peopleData = [
       image: "/images/daniel.png",
       nickname: "Soccer games",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 5,
@@ -971,7 +975,8 @@ export const peopleData = [
       image: "/images/jason.png",
       nickname: "I hate this place",
       visibility: "Private",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 10,
@@ -979,7 +984,8 @@ export const peopleData = [
       image: "/images/j1.png",
       nickname: "Mermaid Tails",
       visibility: "Project",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 6,
@@ -987,7 +993,8 @@ export const peopleData = [
       image: "/images/natalie.png",
       nickname: "What color?",
       visibility: "Private",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 7,
@@ -995,7 +1002,8 @@ export const peopleData = [
       image: "/images/henry_white.jpg",
       nickname: "Hank",
       visibility: "Public",
-      role: "Viewer"
+      role: "Viewer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 8,
@@ -1003,7 +1011,8 @@ export const peopleData = [
       image: "/images/isabella_martinez.jpg",
       nickname: "Izzy",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 9,
@@ -1011,7 +1020,8 @@ export const peopleData = [
       image: "/images/jack_davis.jpg",
       nickname: "JD",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   }
 ];
 
