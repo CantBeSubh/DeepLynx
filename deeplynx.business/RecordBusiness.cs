@@ -32,12 +32,45 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        return await _historicalRecordBusiness.GetAllHistoricalRecords(
-            projectId, dataSourceId, null, hideArchived, true);
+        var recordQuery = _context.Records
+            .Where(r => r.ProjectId == projectId);
+
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+        }
+        
+        var records = await recordQuery
+            .Include(r => r.Tags)
+            .ToListAsync();
+
+        return records
+            .Select(r => new RecordResponseDto()
+            {
+                Id = r.Id,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Tags = r.Tags.Select(t => new RecordTagDto()
+                {
+                    Id = t.Id,
+                    Name = t.Name
+                }).ToList()
+            });
     }
     
     /// <summary>
@@ -48,12 +81,48 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<HistoricalRecordResponseDto> GetRecord(
+    public async Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        return await _historicalRecordBusiness.GetHistoricalRecord(
-            recordId, null, hideArchived, true);
+        
+        var record = await _context.Records
+            .Where(r => r.ProjectId == projectId && r.Id == recordId)
+            .Include(r => r.Tags)
+            .FirstOrDefaultAsync();
+
+        if (record == null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+
+        if (hideArchived && record.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} is archived");
+        }
+
+        return new RecordResponseDto
+        {
+            Id = record.Id,
+            Description = record.Description,
+            Uri = record.Uri,
+            Properties = record.Properties,
+            OriginalId = record.OriginalId,
+            Name = record.Name,
+            ClassId = record.ClassId,
+            DataSourceId = record.DataSourceId,
+            ProjectId = record.ProjectId,
+            CreatedBy = record.CreatedBy,
+            CreatedAt = record.CreatedAt,
+            ModifiedBy = record.ModifiedBy,
+            ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
+            Tags = record.Tags.Select(t => new RecordTagDto()
+            {
+                Id = t.Id,
+                Name = t.Name
+            }).ToList()
+        };
     }
 
     /// <summary>
@@ -78,7 +147,7 @@ public class RecordBusiness : IRecordBusiness
         {
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
-            
+        
         var record = new Record
         {
             ProjectId = projectId,
@@ -87,6 +156,7 @@ public class RecordBusiness : IRecordBusiness
             Properties = dto.Properties.ToString()!,
             OriginalId = dto.OriginalId,
             Name = dto.Name,
+            Description = dto.Description,
             ClassId = dto.ClassId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -98,6 +168,7 @@ public class RecordBusiness : IRecordBusiness
         return new RecordResponseDto
         {
             Id = record.Id,
+            Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
@@ -109,6 +180,7 @@ public class RecordBusiness : IRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
         };
     }
     
@@ -144,6 +216,7 @@ public class RecordBusiness : IRecordBusiness
                Properties = dto.Properties.ToString()!,
                OriginalId = dto.OriginalId,
                Name = dto.Name,
+               Description = dto.Description,
                ClassId = dto.ClassId,
                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -159,6 +232,7 @@ public class RecordBusiness : IRecordBusiness
             var recordResponse = new RecordResponseDto
             {
                 Id = record.Id,
+                Description = record.Description,
                 Uri = record.Uri,
                 Properties = record.Properties,
                 OriginalId = record.OriginalId,
@@ -170,6 +244,7 @@ public class RecordBusiness : IRecordBusiness
                 CreatedAt = record.CreatedAt,
                 ModifiedBy = record.ModifiedBy,
                 ModifiedAt = record.ModifiedAt,
+                ArchivedAt = record.ArchivedAt,
             };
             
             recordResponses.Add(recordResponse);
@@ -208,6 +283,7 @@ public class RecordBusiness : IRecordBusiness
         record.Properties = dto.Properties.ToString()!;
         record.OriginalId = dto.OriginalId;
         record.Name = dto.Name;
+        record.Description = dto.Description;
         record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
@@ -220,6 +296,7 @@ public class RecordBusiness : IRecordBusiness
         return new RecordResponseDto
         {
             Id = record.Id,
+            Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
@@ -231,6 +308,7 @@ public class RecordBusiness : IRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
         };
         
     }

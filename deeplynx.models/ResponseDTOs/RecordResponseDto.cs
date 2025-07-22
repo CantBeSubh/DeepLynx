@@ -1,6 +1,12 @@
 namespace deeplynx.models;
 using System.Text.Json.Nodes;
 
+public class RecordTagDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; }
+}
+
 public class RecordResponseDto
 {
     public long Id { get; set; }
@@ -19,4 +25,5 @@ public class RecordResponseDto
     public DateTime? ArchivedAt { get; set; }
     
     public string? Description { get; set; }
+    public ICollection<RecordTagDto> Tags { get; set; }
 }

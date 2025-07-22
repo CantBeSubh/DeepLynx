@@ -27,7 +27,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
     /// <param name="current">(Optional) Find only the most current records. Overrides point in time.</param>
     /// <returns>An array of records</returns>
-    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllHistoricalRecords(
         long projectId,
         long? dataSourceId = null,
@@ -92,7 +91,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// </summary>
     /// <param name="recordId">The ID of the record to list history for</param>
     /// <returns>An array of record instances for the given record</returns>
-    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId)
     {
         return await _context.HistoricalRecords
@@ -131,7 +129,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="current">(Optional) Find only the most current record. Overrides point in time.</param>
     /// <returns>A record that matches the applied filters.</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    /// TODO: create an endpoint for this
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId,
         DateTime? pointInTime,
