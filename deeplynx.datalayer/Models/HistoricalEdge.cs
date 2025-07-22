@@ -71,7 +71,7 @@ public partial class HistoricalEdge
     public DateTime? ArchivedAt { get; set; }
     
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
-    public DateTime? LastUpdatedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
     
     [ForeignKey("EdgeId")]
     [InverseProperty("HistoricalEdges")]
