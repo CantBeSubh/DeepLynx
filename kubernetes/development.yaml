@@ -26,6 +26,14 @@ spec:
           env:
             - name: DATABASE_CONNECTION_STRING
               value: ${DATABASE_CONNECTION_STRING}
+            - name: POSTGRES_DBHOST
+              value: ${POSTGRES_DBHOST}
+            - name: POSTGRES_DB
+              value: ${POSTGRES_DB}
+            - name: POSTGRES_USER
+              value: ${POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              value: ${POSTGRES_PASSWORD}
           resources:
             limits:
               memory: "4Gi"
