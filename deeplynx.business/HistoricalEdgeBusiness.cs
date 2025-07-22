@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
-
 public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
 {
     private readonly DeeplynxContext _context;
@@ -87,12 +86,20 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// Show the historical updates of a specific edge
     /// </summary>
     /// <param name="edgeId">The ID of the edge to list history for</param>
+    /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
+    /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <returns>An array of edge instances for the given edge</returns>
     /// TODO: create an endpoint for this
-    public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetHistoryForEdge(long edgeId)
+    public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetHistoryForEdge(
+        long? edgeId,
+        long? originId, 
+        long? destinationId)
     {
+        var foundEdge = await FindEdge(edgeId, originId, destinationId);
+        var foundEdgeId = foundEdge.EdgeId;
+        
         return await _context.HistoricalEdges
-            .Where(e => e.EdgeId == edgeId)
+            .Where(e => e.EdgeId == foundEdgeId)
             .OrderByDescending(e => e.LastUpdatedAt)
             .Select(e => new HistoricalEdgeResponseDto()
             {
@@ -117,6 +124,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// Find an edge at a given point in time
     /// </summary>
     /// <param name="edgeId">The ID of the edge to retrieve</param>
+    /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
+    /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <param name="pointInTime">(Optional) Find the most current edge that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
     /// <param name="current">(Optional) Find only the most current edge. Overrides point in time.</param>
@@ -124,13 +133,18 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found</exception>
     /// /// TODO: create an endpoint for this
     public async Task<HistoricalEdgeResponseDto> GetHistoricalEdge(
-        long edgeId,
+        long? edgeId,
+        long? originId, 
+        long? destinationId,
         DateTime? pointInTime,
         bool hideArchived = true,
         bool current = true)
     {
+        var foundEdge = await FindEdge(edgeId, originId, destinationId);
+        var foundEdgeId = foundEdge.EdgeId;
+        
         var edgeQuery = _context.HistoricalEdges
-            .Where(e => e.EdgeId == edgeId);
+            .Where(e => e.EdgeId == foundEdgeId);
 
         if (current)
         {
@@ -153,7 +167,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
 
         if (edge == null)
         {
-            throw new KeyNotFoundException($"Edge with id {edgeId} not found at point in time {pointInTime}.");
+            throw new KeyNotFoundException($"Edge with id {foundEdgeId} not found at point in time {pointInTime}.");
         }
 
         return new HistoricalEdgeResponseDto()
@@ -172,5 +186,59 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             ModifiedAt = edge.ModifiedAt,
             ArchivedAt = edge.ArchivedAt
         };
+    }
+    
+    /// <summary>
+    /// Private method to facilitate boilerplate code for finding edges by ID or origindestination
+    /// </summary>
+    /// <param name="edgeId">The id whereby to fetch the edge</param>
+    /// <param name="originId">The origin ID by which to fetch the edge if no ID</param>
+    /// <param name="destinationId">The destination ID by which to fetch the edge if no ID</param>
+    /// <param name="historical">Boolean indicating whether to look for a historical edge</param>
+    /// <returns>The edge associated with the given id or origin/destination combo</returns>
+    /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
+    private async Task<HistoricalEdge> FindEdge(
+        long? edgeId, 
+        long? originId, 
+        long? destinationId
+        )
+    {
+        if (edgeId == null && (originId == null || destinationId == null))
+        {
+            throw new KeyNotFoundException("Please supply either an edgeID or an originID and destinationID");
+        }
+        
+        HistoricalEdge edge = null;
+
+        // search for edge either by id or origin + destination
+        if (edgeId != null)
+        {
+            edge = await _context.HistoricalEdges
+                .Where(e => e.EdgeId == edgeId)
+                .Where(e => e.Current)
+                .FirstOrDefaultAsync();
+        }
+        else
+        {
+            edge = await _context.HistoricalEdges
+                .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
+                .Where(e => e.Current)
+                .FirstOrDefaultAsync();
+        }
+
+        // throw an error if edge not found
+        if (edge == null)
+        {
+            if (edgeId != null)
+            {
+                throw new KeyNotFoundException($"Historical edge with id {edgeId} not found");
+            }
+            else
+            {
+                throw new KeyNotFoundException($"Historical edge with origin {originId} and destination {destinationId} not found");
+            }
+        }
+        
+        return edge;  
     }
 }

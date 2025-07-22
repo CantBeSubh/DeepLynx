@@ -29,7 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="current">(Optional) Find only the most current records. Overrides point in time (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllHistoricalRecords")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetAllRecords(
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetAllHistoricalRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] DateTime? pointInTime,
@@ -83,7 +83,7 @@ namespace deeplynx.api.Controllers
         /// Get history for a record
         /// </summary>
         /// <param name="recordId">ID of record to search on </param>
-        /// <returns>Record response DTO</returns>
+        /// <returns>A list of previous record versions</returns>
         [HttpGet("GetRecordHistory/{recordId}")]
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetRecordHistory(long recordId)
         {
