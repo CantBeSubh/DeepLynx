@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get all edges at a point in time (defaults to current)
+        /// Get all edges at a point in time
         /// </summary>
         /// <param name="projectId">Project ID which edges are associated with</param>
         /// <param name="dataSourceId">(Optional) Datasource ID which edges are associated with</param>
@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get an edge at a point in time (defaults to current)
+        /// Get an edge at a point in time
         /// </summary>
         /// <param name="edgeId">The ID whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
@@ -84,7 +84,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get history for an edge
+        /// Get edge history
         /// </summary>
         /// <param name="edgeId">The ID whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>

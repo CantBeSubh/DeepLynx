@@ -9,19 +9,15 @@ namespace deeplynx.business;
 public class EdgeBusiness : IEdgeBusiness
 {
     private readonly DeeplynxContext _context;
-    
-    // dependent used to trigger downstream actions
-    private readonly IHistoricalEdgeBusiness _historicalEdgeBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EdgeBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge operations.</param>
     /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
-    public EdgeBusiness(DeeplynxContext context, IHistoricalEdgeBusiness historicalEdgeBusiness)
+    public EdgeBusiness(DeeplynxContext context)
     {
         _context = context;
-        _historicalEdgeBusiness = historicalEdgeBusiness;
     }
 
     /// <summary>

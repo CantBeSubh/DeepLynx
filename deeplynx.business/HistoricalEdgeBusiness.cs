@@ -56,14 +56,22 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue && !current)
         {
-            // compare timestamp to the most recent update
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
+            // compare the timestamp to the most recent update
             edgeQuery = edgeQuery
-                .Where(e => e.LastUpdatedAt <= pointInTime)
-                .OrderByDescending(e => e.LastUpdatedAt);
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
+                .OrderByDescending(r => r.LastUpdatedAt);
         }
+        
+        var edges = await edgeQuery
+            .GroupBy(e => e.EdgeId)
+            .Select(g => g.OrderByDescending(e => e.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
 
-        return await edgeQuery
-            .Select(e => new HistoricalEdgeResponseDto()
+        return edges
+            .Select(e => new HistoricalEdgeResponseDto
             {
                 Id = e.EdgeId,
                 OriginId = e.OriginId,
@@ -77,9 +85,9 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
                 CreatedAt = e.CreatedAt,
                 ModifiedBy = e.ModifiedBy,
                 ModifiedAt = e.ModifiedAt,
-                ArchivedAt = e.ArchivedAt
-            })
-            .ToListAsync();
+                ArchivedAt = e.ArchivedAt,
+                LastUpdatedAt = e.LastUpdatedAt
+            });
     }
 
     /// <summary>
@@ -115,7 +123,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
                 CreatedAt = e.CreatedAt,
                 ModifiedBy = e.ModifiedBy,
                 ModifiedAt = e.ModifiedAt,
-                ArchivedAt = e.ArchivedAt
+                ArchivedAt = e.ArchivedAt,
+                LastUpdatedAt = e.LastUpdatedAt
             })
             .ToListAsync();
     }
@@ -151,11 +160,16 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             edgeQuery = edgeQuery.Where(e => e.Current);
         }
 
+        // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue && !current)
         {
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
+            // compare the timestamp to the most recent update
             edgeQuery = edgeQuery
-                .Where(e => e.LastUpdatedAt <= pointInTime)
-                .OrderByDescending(e => e.LastUpdatedAt);
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
+                .OrderByDescending(r => r.LastUpdatedAt);
         }
 
         if (hideArchived)
@@ -184,7 +198,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             CreatedAt = edge.CreatedAt,
             ModifiedBy = edge.ModifiedBy,
             ModifiedAt = edge.ModifiedAt,
-            ArchivedAt = edge.ArchivedAt
+            ArchivedAt = edge.ArchivedAt,
+            LastUpdatedAt = edge.LastUpdatedAt,
         };
     }
     

@@ -20,7 +20,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get all records at a point in time (defaults to current)
+        /// Get all records at a point in time
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="dataSourceId">(Optional) Datasource ID which records are associated with</param>
@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get a record at a point in time (defaults to current)
+        /// Get a record at a point in time
         /// </summary>
         /// <param name="recordId">ID of record to search on</param>
         /// <param name="pointInTime">(Optional) Find the most current records that existed before this point in time</param>
@@ -80,7 +80,7 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get history for a record
+        /// Get record history
         /// </summary>
         /// <param name="recordId">ID of record to search on </param>
         /// <returns>A list of previous record versions</returns>

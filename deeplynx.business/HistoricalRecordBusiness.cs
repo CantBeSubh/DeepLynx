@@ -55,13 +55,21 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue && !current)
         {
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
             // compare the timestamp to the most recent update
             recordQuery = recordQuery
-                .Where(r => r.LastUpdatedAt <= pointInTime)
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
+        
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
 
-        return await recordQuery
+        return records
             .Select(r => new HistoricalRecordResponseDto()
             {
                 Id = r.RecordId,
@@ -81,9 +89,9 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt
-            })
-            .ToListAsync();
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
     }
     
     /// <summary>
@@ -115,7 +123,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
             })
             .ToListAsync();
     }
@@ -145,8 +154,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         if (pointInTime.HasValue && !current)
         {
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
+            // compare the timestamp to the most recent update
             recordQuery = recordQuery
-                .Where(r => r.LastUpdatedAt <= pointInTime)
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
 
@@ -181,7 +194,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt
+            ArchivedAt = record.ArchivedAt,
+            LastUpdatedAt = record.LastUpdatedAt,
         };
     }
 }

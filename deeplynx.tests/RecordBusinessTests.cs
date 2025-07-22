@@ -15,18 +15,13 @@ namespace deeplynx.tests;
 public class RecordBusinessTests : IntegrationTestBase
 {
     private RecordBusiness _recordBusiness;
-    private readonly Mock<IHistoricalRecordBusiness> _mockHistoricalRecordBusiness;
-    
-    public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture)
-    {
-        _mockHistoricalRecordBusiness = new Mock<IHistoricalRecordBusiness>();
-        
-    }
+
+    public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _recordBusiness = new RecordBusiness(Context, _mockHistoricalRecordBusiness.Object);
+        _recordBusiness = new RecordBusiness(Context);
     }
 
     protected override async Task SeedTestDataAsync()
@@ -59,6 +54,14 @@ public class RecordBusinessTests : IntegrationTestBase
             ProjectId = 100,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+
+        var testTag = new Tag
+        {
+            Id = 100,
+            Name = "Test Tag",
+            ProjectId = 100,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
         
         var testRecord = new Record
         {
@@ -68,13 +71,15 @@ public class RecordBusinessTests : IntegrationTestBase
             ProjectId = 100,
             DataSourceId = 100,
             ClassId = 100,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags =  new List<Tag> { testTag }
         };
 
         Context.Projects.Add(project);
         Context.DataSources.Add(dataSource);
         Context.Classes.Add(testClass);
         Context.Records.Add(testRecord);
+        Context.Tags.Add(testTag);
         await Context.SaveChangesAsync();
     }
 
@@ -85,19 +90,6 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var projectId = 100L;
-        var expectedRecords = new List<HistoricalRecordResponseDto>
-        {
-            new HistoricalRecordResponseDto
-            {
-                Id = 100,
-                Name = "Test Record",
-                ProjectId = projectId
-            }
-        };
-
-        _mockHistoricalRecordBusiness
-            .Setup(x => x.GetAllHistoricalRecords(projectId, null, null, true, true))
-            .ReturnsAsync(expectedRecords);
 
         // Act
         var result = await _recordBusiness.GetAllRecords(projectId, null, true);
@@ -106,7 +98,23 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal("Test Record", result.First().Name);
-        _mockHistoricalRecordBusiness.Verify(x => x.GetAllHistoricalRecords(projectId, null, null, true, true), Times.Once);
+    }
+    
+    [Fact]
+    public async Task GetAllRecords_ReturnsTags()
+    {
+        // Arrange
+        var projectId = 100L;
+
+        // Act
+        var result = await _recordBusiness.GetAllRecords(projectId, null, true);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.NotNull(result.First().Tags);
+        Assert.Equal("Test Tag", result.First().Tags.First().Name);
+        Assert.Single(result);
+        Assert.Equal("Test Record", result.First().Name);
     }
 
     [Fact]
@@ -115,20 +123,6 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = 100L;
         var dataSourceId = 100L;
-        var expectedRecords = new List<HistoricalRecordResponseDto>
-        {
-            new HistoricalRecordResponseDto
-            {
-                Id = 100,
-                Name = "Test Record",
-                ProjectId = projectId,
-                DataSourceId = dataSourceId
-            }
-        };
-
-        _mockHistoricalRecordBusiness
-            .Setup(x => x.GetAllHistoricalRecords(projectId, dataSourceId, null, true, true))
-            .ReturnsAsync(expectedRecords);
 
         // Act
         var result = await _recordBusiness.GetAllRecords(projectId, dataSourceId, true);
@@ -137,9 +131,8 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(result);
         Assert.Single(result);
         Assert.Equal(dataSourceId, result.First().DataSourceId);
-        _mockHistoricalRecordBusiness.Verify(x => x.GetAllHistoricalRecords(projectId, dataSourceId, null, true, true), Times.Once);
     }
-
+    
     [Fact]
     public async Task GetAllRecords_InvalidProjectId_ThrowsKeyNotFoundException()
     {
@@ -161,16 +154,6 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = 100L;
         var recordId = 100L;
-        var expectedRecord = new HistoricalRecordResponseDto
-        {
-            Id = recordId,
-            Name = "Test Record",
-            ProjectId = projectId
-        };
-
-        _mockHistoricalRecordBusiness
-            .Setup(x => x.GetHistoricalRecord(recordId, null, true, true))
-            .ReturnsAsync(expectedRecord);
 
         // Act
         var result = await _recordBusiness.GetRecord(projectId, recordId, true);
@@ -179,7 +162,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(result);
         Assert.Equal(recordId, result.Id);
         Assert.Equal("Test Record", result.Name);
-        _mockHistoricalRecordBusiness.Verify(x => x.GetHistoricalRecord(recordId, null, true, true), Times.Once);
     }
 
     [Fact]
@@ -399,6 +381,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
             Uri = "updated://uri",
             OriginalId = "updated-123",
+            Description = "Updated Description",
             ClassId = 100
         };
 
@@ -410,12 +393,20 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("Updated Test Record", result.Name);
         Assert.Equal("updated://uri", result.Uri);
         Assert.Equal("updated-123", result.OriginalId);
+        Assert.Equal("Updated Description", result.Description);
         Assert.NotNull(result.ModifiedAt);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
         Assert.NotNull(updatedRecord);
         Assert.Equal("Updated Test Record", updatedRecord.Name);
+        
+        // Verify that get function gets updated version
+        var getResult = await _recordBusiness.GetRecord(projectId, recordId, true);
+        Assert.NotNull(getResult);
+        Assert.Equal("Updated Test Record", getResult.Name);
+        Assert.Equal("Updated Description", getResult.Description);
+        Assert.NotNull(getResult.ModifiedAt);
     }
 
     [Fact]

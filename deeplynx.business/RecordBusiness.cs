@@ -10,19 +10,14 @@ namespace deeplynx.business;
 public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
-    
-    // dependent used to trigger downstream actions
-    private readonly IHistoricalRecordBusiness _historicalRecordBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
-    /// <param name="historicalRecordBusiness">Passed in context of historical record objects.</param>
-    public RecordBusiness(DeeplynxContext context, IHistoricalRecordBusiness historicalRecordBusiness)
+    public RecordBusiness(DeeplynxContext context)
     {
         _context = context;
-        _historicalRecordBusiness = historicalRecordBusiness;
     }
     
     /// <summary>
