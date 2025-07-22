@@ -1,10 +1,10 @@
 "use client";
-import React, { useState } from "react";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/(home)/components/GenericTable";
-import ModeIcon from "@mui/icons-material/Mode";
 import { initialTableData } from "@/app/(home)/dummy_data/data";
-import { DataSourceTableRow, TableRow, Column } from "@/app/(home)/types/types";
+import { Column, DataSourceTableRow, TableRow } from "@/app/(home)/types/types";
+import { PencilIcon } from "@heroicons/react/24/outline";
+import { PlusCircleIcon } from "@heroicons/react/24/solid";
+import { useState } from "react";
 
 const DataSource = () => {
   // State to manage table data
@@ -84,7 +84,7 @@ const DataSource = () => {
       header: "Edit",
       cell: (row: TableRow) => (
         <button className="btn btn-ghost btn-xs btn-secondary">
-          <ModeIcon className="text-accent" /> {/* Edit icon */}
+          <PencilIcon className="size-6 text-accent" /> {/* Edit icon */}
         </button>
       ),
     },
@@ -94,11 +94,7 @@ const DataSource = () => {
     <div>
       <div>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-secondary-content">
-            Data Source
-          </h1>
-          <i className="text-sm text-secondary-content">User</i>{" "}
-          {/* Placeholder for user info */}
+          <h1 className="text-2xl font-bold text-info-content">Data Source</h1>
         </div>
 
         {/* Render the GenericTable with defined columns and data */}
@@ -112,11 +108,12 @@ const DataSource = () => {
           rowsPerPage={10} // Set rows per page
           actionButtons // Enable action buttons
           searchBar // Enable search bar
+          gridView
         />
       </div>
       {/* Button to add new items, positioned at the bottom right */}
       <button className="fixed bottom-10 right-10">
-        <AddCircleIcon className="text-accent" fontSize="large" />{" "}
+        <PlusCircleIcon className="size-15 text-accent" />
         {/* Add icon */}
       </button>
     </div>

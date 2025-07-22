@@ -9,7 +9,11 @@ import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
 import Tabs from "./Tabs";
 
-const SavedSearchesTabs = () => {
+interface SavedSearchProps {
+  className?: string;
+}
+
+const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -35,7 +39,12 @@ const SavedSearchesTabs = () => {
   const popular_table_columns: Column<PopularTable>[] = [
     {
       header: "Created by",
-      cell: (row) => <AvatarCell name={row.name} image={row.image} />,
+      cell: (row) => (
+        <div className="flex gap-4 items-center">
+          <AvatarCell name={row.name} image={row.image} />
+          {row.name}
+        </div>
+      ),
     },
     {
       header: "Search Nickname",
@@ -80,7 +89,12 @@ const SavedSearchesTabs = () => {
   ];
 
   return (
-    <Tabs tabs={tabData} className="tabs tabs-border" />
+    <div className="card shadow-lg mt-3">
+      <div className="card-body">
+        <h2 className="card-title">Saved Searches</h2>
+        <Tabs tabs={tabData} className="tabs tabs-border" />
+      </div>
+    </div>
   );
 };
 
