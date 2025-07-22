@@ -4,7 +4,7 @@ import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 import { peopleData } from "@/app/(home)/dummy_data/data";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
-import { Column } from "@/app/(home)/types/types";
+import { Column, TeamMember } from "@/app/(home)/types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 
@@ -16,7 +16,7 @@ const TeamMembersWidget: React.FC = () => {
         setShowTable((prev) => !prev);
     };
 
-    const teamMemberColumns: Column<any>[] = [
+    const teamMemberColumns: Column<TeamMember>[] = [
         {
             header: "Name",
             data: "name",
