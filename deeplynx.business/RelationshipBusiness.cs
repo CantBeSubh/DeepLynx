@@ -142,6 +142,12 @@ public class RelationshipBusiness: IRelationshipBusiness
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
         
+        var existingRelationship = await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
+        if (existingRelationship != null)
+        {
+            throw new Exception($"Relationship for project {projectId} with name {dto.Name} already exists");
+        }
+        
         if (dto.OriginId != null)
         { 
             var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
