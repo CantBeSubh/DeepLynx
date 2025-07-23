@@ -42,7 +42,7 @@ const Projects = () => {
     <div className="bg-base-100">
       {/* Header */}
       <div className="flex justify-between items-center px-4 py-4">
-        <h1 className="text-2xl font-bold text-secondary-content">
+        <h1 className="text-2xl font-bold text-info-content">
           Welcome Back Kevin
         </h1>
       </div>
@@ -52,7 +52,7 @@ const Projects = () => {
       <div className="flex w-full">
         <div className="w-full md:w-1/2 px-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-secondary-content text-lg font-semibold">
+            <h3 className="text-info-content text-lg font-semibold">
               Your Projects
             </h3>
 

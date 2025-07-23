@@ -20,6 +20,7 @@ import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
+import SavedSearchesTabs from "../../components/SavedSearches";
 
 const DataCatalog = () => {
   const router = useRouter();
@@ -170,9 +171,7 @@ const DataCatalog = () => {
     <div>
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-secondary-content">
-            Data Catalog
-          </h1>
+          <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown projects={projects} />
         </div>
       </div>
@@ -259,7 +258,14 @@ const DataCatalog = () => {
           )}
         </>
       ) : (
-        <RecentRecordsCard records={recentRecordsData} />
+        <div className="flex w-full gap-8">
+          <div className="w-2/3">
+            <RecentRecordsCard records={recentRecordsData} />
+          </div>
+          <div className="w-1/3">
+            <SavedSearchesTabs className="" />
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
+import { UserCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import React from "react";
 import SideMenu from "./SideMenu";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Handle menu togle
@@ -19,7 +18,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Banner/Header */}
       <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
         <Image
-          src="/images/lynx.png"
+          src="/images/lynx-white.png"
           alt="Logo"
           height={20}
           width={150}
@@ -33,18 +32,21 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             maskRepeat: "no-repeat",
           }}
         />
-        <label className="toggle text-neutral">
+        {/* <label className="toggle text-neutral">
           <input type="checkbox" value="dark" className="theme-controller" />
 
           <SunIcon className="size-4" />
 
           <MoonIcon className="size-4" />
-        </label>
-        <details className="menu dropdown">
-          <summary className="btn m-1">
-            <AccountCircleIcon />
-          </summary>
-          <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
+        </label> */}
+        <div className="dropdown">
+          <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+            <UserCircleIcon className="size-10" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+          >
             <li>
               <a className="text-secondary-content">Item 1</a>
             </li>
@@ -52,7 +54,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <button className="text-secondary-content">Logout</button>
             </li>
           </ul>
-        </details>
+        </div>
       </header>
 
       {/* Page Content */}
