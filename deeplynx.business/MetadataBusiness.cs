@@ -11,9 +11,9 @@ public class MetadataBusiness : IMetadataBusiness
     private readonly DeeplynxContext _context;
     private readonly IClassBusiness _classBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
-    private readonly ITagBusiness _tagBusiness;
     private readonly IRecordBusiness _recordBusiness;
     private readonly IEdgeBusiness _edgeBusiness;
+    private readonly ITagBusiness _tagBusiness;
     private readonly IEdgeMappingBusiness _edgeMappingBusiness;
 
     /// <summary>
@@ -28,7 +28,6 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="edgeMappingBusiness">The edge mapping context to be used during metadata parsing.</param>
     public MetadataBusiness(
         DeeplynxContext context, 
-        IServiceProvider provider,
         IClassBusiness classBusiness,
         IRelationshipBusiness relationshipBusiness,
         ITagBusiness tagBusiness,
@@ -47,11 +46,11 @@ public class MetadataBusiness : IMetadataBusiness
     }
 
     /// <summary>
-    /// Parse new metadata for a specified project.
-    /// Note: Will error out with foreign key constraint violation if project is not found.
+    /// Call the parse and perform pre-processing and final data return validation of all metadata
+    /// Note: Will error out with foreign key constraint violation if project or data source is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
-    /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
@@ -65,34 +64,42 @@ public class MetadataBusiness : IMetadataBusiness
         return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
     }
 
-    public async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto dto, long dataSourceId, long projectId)
+    /// <summary>
+    /// Individually call the bulk create functions of all metadata fields
+    /// Note: Will error out with foreign key constraint violation if project or data source is not found.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
+    /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <returns>The created metadata response DTO with saved details.</returns>
+    public async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
 
-        if (dto.Classes != null)
+        if (metadataRequestDto.Classes != null)
         {
-            List<ClassRequestDto> classes = DeserializeJsonArray<ClassRequestDto>(dto.Classes);
+            List<ClassRequestDto> classes = DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
             List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
             metadataResponseDto.Classes = classResponseDtos;
         }
         
-        if (dto.Relationships != null)
+        if (metadataRequestDto.Relationships != null)
         {
-            List<RelationshipRequestDto> relationships = DeserializeJsonArray<RelationshipRequestDto>(dto.Relationships);
+            List<RelationshipRequestDto> relationships = DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
             List<RelationshipResponseDto> relationshipResponseDtos = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
             metadataResponseDto.Relationships = relationshipResponseDtos;
         }
         
-        if (dto.Records != null)
+        if (metadataRequestDto.Records != null)
         {
-            List<RecordRequestDto> records = DeserializeJsonArray<RecordRequestDto>(dto.Records);
+            List<RecordRequestDto> records = DeserializeJsonArray<RecordRequestDto>(metadataRequestDto.Records);
             List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
             metadataResponseDto.Records = recordResponseDtos;
         }
         
-        if (dto.Edges != null)
+        if (metadataRequestDto.Edges != null)
         {
-            List<EdgeRequestDto> edges = DeserializeJsonArray<EdgeRequestDto>(dto.Edges);
+            List<EdgeRequestDto> edges = DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
             List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId,  edges);
             metadataResponseDto.Edges = edgeResponseDtos;
         }
@@ -100,10 +107,17 @@ public class MetadataBusiness : IMetadataBusiness
         return metadataResponseDto;
     }
 
+    /// <summary>
+    /// Deserialize input json into list of generic object type
+    /// </summary>
+    /// <param name="jsonArray">The input json to be serialized to an object</param>
+    /// <returns>List of serialized objects parsed from json</returns>
+    /// <note>Due to possible null reference return, returns an empty generic list on failure.</note>
     public List<T> DeserializeJsonArray<T>(JsonArray jsonArray)
     {
         string jsonString = jsonArray.ToString();
-        return JsonSerializer.Deserialize<List<T>>(jsonString);
+        var result = JsonSerializer.Deserialize<List<T>>(jsonString);
+        return result ?? new List<T>();
     }
     
     /// <summary>
