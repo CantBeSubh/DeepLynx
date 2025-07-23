@@ -97,14 +97,14 @@ namespace deeplynx.api.Controllers
         /// Create many relationships 
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
-        /// <param name="dto">Relationship request DTO</param>
+        /// <param name="relationships">Relationship request DTOs</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("BulkCreateRelationships")]
-        public async Task<ActionResult<BulkRelationshipResponseDto>> BulkCreateRelationships(long projectId, [FromBody] BulkRelationshipRequestDto dto)
+        public async Task<ActionResult<BulkRelationshipResponseDto>> BulkCreateRelationships(long projectId, [FromBody] List<RelationshipRequestDto> relationships)
         {
             try
             {
-                var created = await _business.BulkCreateRelationships(projectId, dto);
+                var created = await _business.BulkCreateRelationships(projectId, relationships);
                 return Ok(created);
             }
             catch (Exception exc)
