@@ -76,28 +76,28 @@ public class MetadataBusiness : IMetadataBusiness
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
 
-        if (metadataRequestDto.Classes != null)
+        if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
             List<ClassRequestDto> classes = DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
             List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
             metadataResponseDto.Classes = classResponseDtos;
         }
         
-        if (metadataRequestDto.Relationships != null)
+        if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
         {
             List<RelationshipRequestDto> relationships = DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
             List<RelationshipResponseDto> relationshipResponseDtos = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
             metadataResponseDto.Relationships = relationshipResponseDtos;
         }
         
-        if (metadataRequestDto.Records != null)
+        if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
             List<RecordRequestDto> records = DeserializeJsonArray<RecordRequestDto>(metadataRequestDto.Records);
             List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
             metadataResponseDto.Records = recordResponseDtos;
         }
         
-        if (metadataRequestDto.Edges != null)
+        if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
         {
             List<EdgeRequestDto> edges = DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
             List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId,  edges);
