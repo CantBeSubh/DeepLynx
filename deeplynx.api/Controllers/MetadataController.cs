@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("api/projects/{projectId}/metadata")]
+[Route("api/projects/{projectId}/datasources/{dataSourceId}/metadata")]
 [ApiController]
 public class MetadataController : ControllerBase
 {
@@ -33,7 +33,7 @@ public class MetadataController : ControllerBase
     {
         try
         {
-            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, metadataRequestDto);
+            var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, dataSourceId, metadataRequestDto);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
