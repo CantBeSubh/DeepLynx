@@ -694,4 +694,100 @@ public class RecordBusinessTests : IntegrationTestBase
 
     #endregion
     
+    #region Attach/Unattach Tag Tests
+
+    [Fact]
+    public async Task AttachTag_SuccessfullyAttachesTagToRecord()
+    {
+        var projectId = 100L;
+
+        var newTag = new Tag
+        {
+            Id = 101,
+            Name = "Tag to Attach",
+            ProjectId = projectId,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.Tags.Add(newTag);
+
+        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == 100);
+        record.Tags.Clear(); // ensure tag not already attached
+        await Context.SaveChangesAsync();
+
+        var result = await _recordBusiness.AttachTag(projectId, record.Id, newTag.Id);
+
+        Assert.True(result);
+        var updatedRecord = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
+        Assert.Contains(updatedRecord.Tags, t => t.Id == newTag.Id);
+    }
+
+    [Fact]
+    public async Task AttachTag_RecordNotFound_ThrowsKeyNotFound()
+    {
+        var projectId = 100L;
+        var validTagId = 100L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.AttachTag(projectId, 9999L, validTagId));
+    }
+
+    [Fact]
+    public async Task AttachTag_TagNotFound_ThrowsKeyNotFound()
+    {
+        var projectId = 100L;
+        var validRecordId = 100L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.AttachTag(projectId, validRecordId, 9999L));
+    }
+
+    [Fact]
+    public async Task AttachTag_AlreadyAttached_ThrowsException()
+    {
+        var projectId = 100L;
+        var recordId = 100L;
+        var tagId = 100L;
+
+        await Assert.ThrowsAsync<Exception>(() =>
+            _recordBusiness.AttachTag(projectId, recordId, tagId));
+    }
+
+    [Fact]
+    public async Task UnattachTag_SuccessfullyDetachesTagFromRecord()
+    {
+        var projectId = 100L;
+        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == 100L);
+        var tagId = 100L;
+        Assert.Contains(record.Tags, t => t.Id == tagId);
+
+        var result = await _recordBusiness.UnattachTag(projectId, record.Id, tagId);
+
+        Assert.True(result);
+        var refreshed = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
+        Assert.DoesNotContain(refreshed.Tags, t => t.Id == tagId);
+    }
+
+    [Fact]
+    public async Task UnattachTag_RecordNotFound_ThrowsKeyNotFound()
+    {
+        var projectId = 100L;
+        var tagId = 100L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnattachTag(projectId, 9999L, tagId));
+    }
+
+    [Fact]
+    public async Task UnattachTag_TagNotFound_ThrowsKeyNotFound()
+    {
+        var projectId = 100L;
+        var recordId = 100L;
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnattachTag(projectId, recordId, 9999L));
+    }
+
+    #endregion
+
+    
 }

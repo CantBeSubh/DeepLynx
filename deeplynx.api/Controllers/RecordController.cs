@@ -214,6 +214,52 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+
+        /// <summary>
+        /// Attach a tag to a record
+        /// </summary>
+        /// <param name="projectId">The ID of the project.</param>
+        /// <param name="recordId">The ID of the record.</param>
+        /// <param name="tagId">The ID of the tag.</param>
+        /// <returns>A message stating the tag was successfully attached to the record.</returns>
+        [HttpPost("AttachTag/{recordId}")]
+        public async Task<IActionResult> AttachTag(long projectId, long recordId, [FromQuery] long tagId)
+        {
+            try
+            {
+                await _recordBusiness.AttachTag(projectId, recordId, tagId);
+                return Ok(new { message = $"Tag {tagId} attached to record {recordId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while attaching tag {tagId} to record {recordId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Unattach a tag to a record
+        /// </summary>
+        /// <param name="projectId">The ID of the project.</param>
+        /// <param name="recordId">The ID of the record.</param>
+        /// <param name="tagId">The ID of the tag.</param>
+        /// <returns>A message stating the tag was successfully unattached from the record.</returns>
+        [HttpPost("UnattachTag/{recordId}")]
+        public async Task<IActionResult> UnattachTag(long projectId, long recordId, [FromQuery] long tagId)
+        {
+            try
+            {
+                await _recordBusiness.UnattachTag(projectId, recordId, tagId);
+                return Ok(new { message = $"Tag {tagId} unattached from record {recordId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unattaching tag {tagId} from record {recordId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
 

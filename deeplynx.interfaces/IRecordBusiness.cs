@@ -17,4 +17,6 @@ public interface IRecordBusiness
     Task<bool> DeleteRecord(long projectId, long recordId);
     Task<bool> ArchiveRecord(long projectId, long recordId);
     Task<bool> UnarchiveRecord(long projectId, long recordId);
+    Task<bool> AttachTag(long projectId, long recordId, long tagId);
+    Task<bool> UnattachTag(long projectId, long recordId, long tagId);
 }
