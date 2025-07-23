@@ -226,55 +226,54 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="bulkRelationshipRequestDto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<BulkRelationshipResponseDto> BulkCreateRelationships(long projectId, BulkRelationshipRequestDto bulkRelationshipRequestDto)
+    public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> relationshipRequestDtos)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkRelationshipRequestDto);
         
-        var relationships = new List<Relationship>();
-        var relationshipResponses = new List<RelationshipResponseDto>();
-        foreach (var relationshipDto in bulkRelationshipRequestDto.Relationships)
+        var relationshipEntities = new List<Relationship>();
+        foreach (var relationshipRequestDto in relationshipRequestDtos)
         {
-            ValidationHelper.ValidateModel(relationshipDto);
+            ValidationHelper.ValidateModel(relationshipRequestDto);
             
-            if (relationshipDto.OriginId != null)
+            if (relationshipRequestDto.OriginId != null)
             { 
-                var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.OriginId && c.ArchivedAt == null);
+                var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipRequestDto.OriginId && c.ArchivedAt == null);
                 if (originClass == null)
                 {
-                    throw new KeyNotFoundException($"Origin class with ID {relationshipDto.OriginId} not found.");
+                    throw new KeyNotFoundException($"Origin class with ID {relationshipRequestDto.OriginId} not found.");
                 }
             }
 
-            if (relationshipDto.DestinationId != null)
+            if (relationshipRequestDto.DestinationId != null)
             {
-                var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.DestinationId && c.ArchivedAt == null);
+                var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipRequestDto.DestinationId && c.ArchivedAt == null);
                 if (destinationClass == null)
                 {
-                    throw new KeyNotFoundException($"Destination class with ID {relationshipDto.DestinationId} not found.");
+                    throw new KeyNotFoundException($"Destination class with ID {relationshipRequestDto.DestinationId} not found.");
                 }
             }
             
             var relationship = new Relationship
             {
-                Name = relationshipDto.Name,
-                Description = relationshipDto.Description,
-                Uuid = relationshipDto.Uuid,
-                OriginId = relationshipDto.OriginId,
-                DestinationId = relationshipDto.DestinationId,
+                Name = relationshipRequestDto.Name,
+                Description = relationshipRequestDto.Description,
+                Uuid = relationshipRequestDto.Uuid,
+                OriginId = relationshipRequestDto.OriginId,
+                DestinationId = relationshipRequestDto.DestinationId,
                 ProjectId = projectId,
                 CreatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
                 ModifiedBy =null  // TODO: Implement user ID here when JWT tokens are ready
             };
-            relationships.Add(relationship);
+            relationshipEntities.Add(relationship);
         }
 
-        await _context.Relationships.AddRangeAsync(relationships);
+        await _context.Relationships.AddRangeAsync(relationshipEntities);
         await _context.SaveChangesAsync();
 
-        foreach (var relationship in relationships)
+        var relationshipResponseDtos = new List<RelationshipResponseDto>();
+        foreach (var relationship in relationshipEntities)
         {
             if (relationship.OriginId != null)
             {
@@ -310,13 +309,10 @@ public class RelationshipBusiness: IRelationshipBusiness
                     ? null
                     : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
             };
-            relationshipResponses.Add(relationshipResponseDto);
+            relationshipResponseDtos.Add(relationshipResponseDto);
         }
 
-        return new BulkRelationshipResponseDto
-        {
-            Relationships = relationshipResponses,
-        };
+        return relationshipResponseDtos;
     }
 
     /// <summary>

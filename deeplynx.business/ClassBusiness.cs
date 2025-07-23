@@ -163,65 +163,61 @@ public class ClassBusiness : IClassBusiness
     /// Creates a new classes based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
-    /// <param name="bulkDto">A data transfer object with details on the new class to be created.</param>
+    /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<BulkClassResponseDto> BulkCreateClass(long projectId, BulkClassRequestDto bulkDto)
+    public async Task<List<ClassResponseDto>> BulkCreateClass(long projectId, List<ClassRequestDto> classRequestDtos)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkDto);
         
-        var newClasses = new List<Class>();
-        var classResponses = new List<ClassResponseDto>();
-        foreach (var dto in bulkDto.BulkClassRequests)
+        var classDatabaseEntities = new List<Class>();
+        foreach (var classRequestDto in classRequestDtos)
         {
-            ValidationHelper.ValidateModel(dto);
-            var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
+            ValidationHelper.ValidateModel(classRequestDto);
+            var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == classRequestDto.Name);
             if (existingClass != null)
             {
-                throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
+                throw new Exception($"Class for project {projectId} with name {classRequestDto.Name} already exists");
             }
 
             var newClass = new Class
             {
                 ProjectId = projectId,
-                Name = dto.Name,
-                Description = dto.Description,
-                Uuid = dto.Uuid,
+                Name = classRequestDto.Name,
+                Description = classRequestDto.Description,
+                Uuid = classRequestDto.Uuid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
                 ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
 
             };
-            newClasses.Add(newClass);
+            classDatabaseEntities.Add(newClass);
         }
 
-        await _context.Classes.AddRangeAsync(newClasses);
+        await _context.Classes.AddRangeAsync(classDatabaseEntities);
         await _context.SaveChangesAsync();
 
-        foreach (var newClass in newClasses)
+        var classResponseDtos = new List<ClassResponseDto>();
+        foreach (var nexusClass in classDatabaseEntities)
         {
             var classResponse = new ClassResponseDto
             {
-                Id = newClass.Id,
-                Name = newClass.Name,
-                Description = newClass.Description,
-                Uuid = newClass.Uuid,
-                ProjectId = newClass.ProjectId,
-                CreatedBy = newClass.CreatedBy,
-                CreatedAt = newClass.CreatedAt,
-                ModifiedBy = newClass.ModifiedBy,
-                ModifiedAt = newClass.ModifiedAt
+                Id = nexusClass.Id,
+                Name = nexusClass.Name,
+                Description = nexusClass.Description,
+                Uuid = nexusClass.Uuid,
+                ProjectId = nexusClass.ProjectId,
+                CreatedBy = nexusClass.CreatedBy,
+                CreatedAt = nexusClass.CreatedAt,
+                ModifiedBy = nexusClass.ModifiedBy,
+                ModifiedAt = nexusClass.ModifiedAt
             };
             
-            classResponses.Add(classResponse);
+            classResponseDtos.Add(classResponse);
         }
 
-        return new BulkClassResponseDto
-        {
-           Classes = classResponses,
-        };
+        return classResponseDtos;
     }
 
     /// <summary>
