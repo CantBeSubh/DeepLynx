@@ -58,7 +58,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, MetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
         if (metadataRequestDto == null)
