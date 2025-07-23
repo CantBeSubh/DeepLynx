@@ -188,7 +188,6 @@ public class MetadataBusiness : IMetadataBusiness
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 erroredObjects.Add(record);
             }
         }
