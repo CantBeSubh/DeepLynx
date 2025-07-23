@@ -1,3 +1,4 @@
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { useRef, useState } from "react";
 
 // Define the props for the LargeSearchBar component
@@ -56,20 +57,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   return (
     <div className={`${className}`}>
       <div className="relative">
-        <svg
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M21 21l-4.35-4.35m1.35-5.15a7 7 0 1 1-14 0 7 7 0 0 1 14 0z"
-          />
-        </svg>
+        <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral size-6" />
         <input
           type="text"
           placeholder={placeholder}
@@ -93,20 +81,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
             aria-label="Clear search"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <XMarkIcon className="size-6" />
           </button>
         )}
       </div>

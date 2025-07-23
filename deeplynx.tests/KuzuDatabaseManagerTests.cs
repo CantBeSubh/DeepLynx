@@ -23,7 +23,7 @@ namespace deeplynx.tests
 
         public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
         {
-            Env.Load("../.env");
+            Env.Load();
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -36,21 +36,28 @@ namespace deeplynx.tests
                 .AddJsonFile("appsettings.json");
 
             _configuration = builder.Build();
-            _kuzuDatabaseManager = new KuzuDatabaseManager(_configuration);
+            bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
+
+            if (enableKuzu)
+            {
+                _kuzuDatabaseManager = new KuzuDatabaseManager(_configuration);
+            }
         }
 
         public override async Task InitializeAsync()
         {
-            if (!_isConnected)
+            bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
+
+            if (!_isConnected && enableKuzu)
             {
                 await Task.Delay(5000);
                 await _kuzuDatabaseManager.ConnectAsync();
                 _isConnected = true;
-            }
 
-            await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
-            await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
-            await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
+                await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
+                await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
+                await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
+            }
 
         }
 
@@ -227,8 +234,7 @@ namespace deeplynx.tests
             // Arrange
             var requestDto = new KuzuDBMQueryRequestDto
             {
-                Query = @"CREATE NODE TABLE Celebrity(name STRING PRIMARY KEY);
-                    ALTER TABLE Follows ADD FROM User TO Celebrity;"
+                Query = @"MATCH (m:Musician) RETURN m LIMIT 1;"
             };
             await _kuzuDatabaseManager.ExportDataAsync(ProjectId);
 

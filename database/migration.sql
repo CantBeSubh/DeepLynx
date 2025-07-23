@@ -1797,6 +1797,41 @@ END $EF$;
 
 DO $EF$
 BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716230454_UserProjectLink') THEN
+    CREATE TABLE deeplynx.user_project (
+        user_id bigint NOT NULL,
+        project_id bigint NOT NULL,
+        CONSTRAINT user_project_pkey PRIMARY KEY (user_id, project_id),
+        CONSTRAINT user_project_project_id_fkey FOREIGN KEY (project_id) REFERENCES deeplynx.projects (id) ON DELETE CASCADE,
+        CONSTRAINT user_project_user_id_fkey FOREIGN KEY (user_id) REFERENCES deeplynx.users (id) ON DELETE CASCADE
+    );
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716230454_UserProjectLink') THEN
+    CREATE INDEX idx_user_project_project_id ON deeplynx.user_project (project_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716230454_UserProjectLink') THEN
+    CREATE INDEX idx_user_project_user_id ON deeplynx.user_project (user_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250716230454_UserProjectLink') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250716230454_UserProjectLink', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250717210948_HistoricalTriggers') THEN
 
                     CREATE OR REPLACE FUNCTION deeplynx.update_modified_at()
@@ -2355,6 +2390,23 @@ BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250718151844_AddUnarchiveStoredProcedures') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
     VALUES ('20250718151844_AddUnarchiveStoredProcedures', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250722185325_FixHistEdgeLastUpdatedDate') THEN
+    UPDATE deeplynx.historical_edges SET last_updated_at = TIMESTAMP '-infinity' WHERE last_updated_at IS NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN last_updated_at SET NOT NULL;
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN last_updated_at SET DEFAULT TIMESTAMP '-infinity';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250722185325_FixHistEdgeLastUpdatedDate') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250722185325_FixHistEdgeLastUpdatedDate', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
 COMMIT;

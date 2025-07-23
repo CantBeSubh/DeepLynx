@@ -8,9 +8,9 @@ import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import Link from "next/link";
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import {Cog6ToothIcon, PlusIcon} from "@heroicons/react/24/outline"
+import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
-import { getProject } from "@/app/lib/api";
+import { getProject } from "@/app/lib/projects_services";
 import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
 
 const ProjectDetailPage = () => {
@@ -19,7 +19,11 @@ const ProjectDetailPage = () => {
   const [project, setProject] = useState<ProjectsList | null>(null);
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
   const [widgetModal, setWidgetModal] = useState(false);
-  const projectWidgets: WidgetType[] = ["RecentActivity", "ProjectOverview", "TeamMembers"];
+  const projectWidgets: WidgetType[] = [
+    "RecentActivity",
+    "ProjectOverview",
+    "TeamMembers",
+  ];
 
   useEffect(() => {
     if (!hasLoaded || !projectId) return;
@@ -70,38 +74,35 @@ const ProjectDetailPage = () => {
 
             <div className="card shadow-lg mt-3">
               <div className="card-body">
-                <h2 className="card-title">Seaved Searchs</h2>
+                <h2 className="card-title">Saved Searches</h2>
                 <SavedSearchesTabs />
               </div>
             </div>
-          </div>
+          </div> 
 
           <div className="w-full md:w-1/2 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
-                <Cog6ToothIcon
-                  className="size-6"/>
+                <Cog6ToothIcon className="size-6" />
                 Customize
               </button>
               <button
                 onClick={() => setWidgetModal(true)}
                 className="btn btn-secondary text-primary-content flex items-center"
               >
-                <PlusIcon
-                  className="size-6"/>
+                <PlusIcon className="size-6" />
                 Widget
               </button>
             </div>
-          <WidgetCard widgets={projectWidgets}/>
-        </div>
+            <WidgetCard widgets={projectWidgets} />
+          </div>
         </div>
 
         {/* Create Widget Modal */}
-      <CreateWidget
-        isOpen={widgetModal}
-        onClose={() => setWidgetModal(false)}
-      />
-
+        <CreateWidget
+          isOpen={widgetModal}
+          onClose={() => setWidgetModal(false)}
+        />
       </main>
     </div>
   );

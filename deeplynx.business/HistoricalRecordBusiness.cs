@@ -27,7 +27,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
     /// <param name="current">(Optional) Find only the most current records. Overrides point in time.</param>
     /// <returns>An array of records</returns>
-    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllHistoricalRecords(
         long projectId,
         long? dataSourceId = null,
@@ -56,13 +55,21 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue && !current)
         {
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
             // compare the timestamp to the most recent update
             recordQuery = recordQuery
-                .Where(r => r.LastUpdatedAt <= pointInTime)
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
+        
+        var records = await recordQuery
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
+            .ToListAsync();
 
-        return await recordQuery
+        return records
             .Select(r => new HistoricalRecordResponseDto()
             {
                 Id = r.RecordId,
@@ -82,9 +89,9 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt
-            })
-            .ToListAsync();
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
     }
     
     /// <summary>
@@ -92,7 +99,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// </summary>
     /// <param name="recordId">The ID of the record to list history for</param>
     /// <returns>An array of record instances for the given record</returns>
-    /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId)
     {
         return await _context.HistoricalRecords
@@ -117,7 +123,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
             })
             .ToListAsync();
     }
@@ -131,7 +138,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="current">(Optional) Find only the most current record. Overrides point in time.</param>
     /// <returns>A record that matches the applied filters.</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    /// TODO: create an endpoint for this
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId,
         DateTime? pointInTime,
@@ -148,8 +154,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         if (pointInTime.HasValue && !current)
         {
+            // convert the point in time to timestamp without timezone
+            var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
+            
+            // compare the timestamp to the most recent update
             recordQuery = recordQuery
-                .Where(r => r.LastUpdatedAt <= pointInTime)
+                .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
 
@@ -184,7 +194,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt
+            ArchivedAt = record.ArchivedAt,
+            LastUpdatedAt = record.LastUpdatedAt,
         };
     }
 }
