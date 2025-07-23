@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         /// Get edge 
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
-        /// <param name="edgeId">The id whereby to fetch the edge</param>
+        /// <param name="edgeId">The ID whereby to fetch the edge</param>
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>

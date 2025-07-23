@@ -26,4 +26,5 @@ public class RecordRequestDto : AbstractNexusCoreDataRequestDto
     [JsonPropertyName("class_name")]
     public string? ClassName { get; set; }
     
+    public string? Description { get; set; }
 }

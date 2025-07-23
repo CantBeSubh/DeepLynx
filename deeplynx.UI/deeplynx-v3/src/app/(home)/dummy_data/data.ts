@@ -580,131 +580,122 @@ export const initialTableData = [
   export const fileTableData = [
     {
       id: 1,
-      fileName: "weather_data.csv",
-      fileDescription: "Contains historical weather data including temperature, precipitation, and wind speed.",
+      name: "weather_data.csv",
+      desc: "Contains historical weather data including temperature, precipitation, and wind speed.",
       fileType: "CSV",
       timeseries: true,
       fileSize: 124,
-      dateModified: "2025-04-01",
+      modifiedAt: "2025-04-01",
       select: false,
       tags: ["Climate", "Temperature", "Precipitation"],
-      lastEdit: "2025-05-15",
       associatedRecords: ["weather_data.csv", "employee_records.xlsx", "project_proposal.xdoc"]
     },
     {
       id: 2,
-      fileName: "sales_report.pdf",
-      fileDescription: "Monthly sales report for the retail division, including revenue and units sold.",
+      name: "sales_report.pdf",
+      desc: "Monthly sales report for the retail division, including revenue and units sold.",
       fileType: "PDF",
       timeseries: true,
       fileSize: 98,
-      dateModified: "2025-04-02",
+      modifiedAt: "2025-04-02",
       select: false,
       tags: ["Finance", "Retail", "Monthly Report"],
-      lastEdit: "2025-05-12",
       associatedRecords: ["sales_report.pdf", "inventory_list.csv"]
     },
     {
       id: 3,
-      fileName: "employee_records.xlsx",
-      fileDescription: "Details of all employees including personal information and employment history.",
+      name: "employee_records.xlsx",
+      desc: "Details of all employees including personal information and employment history.",
       fileType: "Excel",
       timeseries: false,
       fileSize: 112,
-      dateModified: "2025-04-03",
+      modifiedAt: "2025-04-03",
       select: false,
       tags: ["HR", "Employee Data"],
-      lastEdit: "2025-05-10",
       associatedRecords: ["meeting_minutes.docx", "budget_overview.xlsx", "client_feedback.txt"]
     },
     {
       id: 4,
-      fileName: "inventory_list.csv",
-      fileDescription: "List of all inventory items with quantities and storage locations.",
+      name: "inventory_list.csv",
+      desc: "List of all inventory items with quantities and storage locations.",
       fileType: "CSV",
       timeseries: true,
       fileSize: 145,
-      dateModified: "2025-04-04",
+      modifiedAt: "2025-04-04",
       select: false,
       tags: ["Inventory", "Stock", "Warehouse"],
-      lastEdit: "2025-05-08",
       associatedRecords: ["product_catalog.pdf"]
     },
     {
       id: 5,
-      fileName: "project_timeline.docx",
-      fileDescription: "Timeline of the current projects with key milestones and deadlines.",
+      name: "project_timeline.docx",
+      desc: "Timeline of the current projects with key milestones and deadlines.",
       fileType: "Word Document",
       timeseries: false,
       fileSize: 87,
-      dateModified: "2025-04-05",
+      modifiedAt: "2025-04-05",
       select: false,
       tags: ["Project Management", "Timeline", "Milestones"],
-      lastEdit: "2025-05-18",
+      associatedRecords: ["research_paper.pdf", "project_timeline.xlsx"]
     },
     {
       id: 6,
-      fileName: "customer_feedback.txt",
-      fileDescription: "Customer feedback and ratings collected from various surveys.",
+      name: "customer_feedback.txt",
+      desc: "Customer feedback and ratings collected from various surveys.",
       fileType: "Text File",
       timeseries: false,
       fileSize: 130,
-      dateModified: "2025-04-06",
+      modifiedAt: "2025-04-06",
       select: false,
       tags: ["Customer Feedback", "Surveys", "Ratings"],
-      lastEdit: "2025-05-20",
       associatedRecords: ["annual_review.docx", "marketing_plan.pptx", "financial_statement.xlsx", "team_roster.csv"]
     },
     {
       id: 7,
-      fileName: "financial_summary.pdf",
-      fileDescription: "Quarterly financial summary including income statement and balance sheet.",
+      name: "financial_summary.pdf",
+      desc: "Quarterly financial summary including income statement and balance sheet.",
       fileType: "PDF",
       timeseries: false,
       fileSize: 154,
-      dateModified: "2025-04-07",
+      modifiedAt: "2025-04-07",
       select: false,
       tags: ["Finance", "Quarterly Report", "Income Statement", "Balance Sheet"],
-      lastEdit: "2025-05-22",
       associatedRecords: ["research_paper.pdf", "project_timeline.xlsx"]
     },
     {
       id: 8,
-      fileName: "marketing_analysis.pptx",
-      fileDescription: "Analysis of recent marketing campaigns and their performance metrics.",
+      name: "marketing_analysis.pptx",
+      desc: "Analysis of recent marketing campaigns and their performance metrics.",
       fileType: "PowerPoint",
       timeseries: true,
       fileSize: 102,
-      dateModified: "2025-04-08",
+      modifiedAt: "2025-04-08",
       select: false,
       tags: ["Marketing", "Campaign Analysis", "Performance Metrics"],
-      lastEdit: "2025-05-25",
       associatedRecords: ["user_guide.docx", "error_log.txt", "feature_request.csv"]
     },
     {
       id: 9,
-      fileName: "research_papers.docx",
-      fileDescription: "Collection of research papers and articles related to the ongoing projects.",
+      name: "research_papers.docx",
+      desc: "Collection of research papers and articles related to the ongoing projects.",
       fileType: "Word Document",
       timeseries: true,
       fileSize: 121,
-      dateModified: "2025-04-09",
+      modifiedAt: "2025-04-09",
       select: false,
       tags: ["Research", "Articles", "Ongoing Projects"],
-      lastEdit: "2025-05-17",
       associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
     {
       id: 10,
-      fileName: "logistics_data.csv",
-      fileDescription: "Logistics data including shipping routes, delivery times, and carrier information.",
+      name: "logistics_data.csv",
+      desc: "Logistics data including shipping routes, delivery times, and carrier information.",
       fileType: "CSV",
       timeseries: true,
       fileSize: 110,
-      dateModified: "2025-04-10",
+      modifiedAt: "2025-04-10",
       select: false,
       tags: ["Logistics", "Shipping Routes", "Delivery Times", "Carrier Information"],
-      lastEdit: "2025-05-19",
       associatedRecords: ["training_materials.pptx", "survey_results.xlsx", "development_notes.docx", "release_notes.txt", "design_mockups.pdf"]
     },
   ];
@@ -948,7 +939,8 @@ export const peopleData = [
       image: "/images/peter.png",
       nickname: "Teton Country",
       visibility: "Public",
-      role: "Project Manager"
+      role: "Project Manager",
+      lastLogin: "2025-07-20",
   },
   {
       id: 2,
@@ -956,7 +948,8 @@ export const peopleData = [
       image: "/images/victor.png",
       nickname: "New Cheese it!",
       visibility: "Project",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 3,
@@ -964,7 +957,8 @@ export const peopleData = [
       image: "/images/j2.png",
       nickname: "Minivan",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 4,
@@ -972,7 +966,8 @@ export const peopleData = [
       image: "/images/daniel.png",
       nickname: "Soccer games",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 5,
@@ -980,7 +975,8 @@ export const peopleData = [
       image: "/images/jason.png",
       nickname: "I hate this place",
       visibility: "Private",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 10,
@@ -988,7 +984,8 @@ export const peopleData = [
       image: "/images/j1.png",
       nickname: "Mermaid Tails",
       visibility: "Project",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 6,
@@ -996,7 +993,8 @@ export const peopleData = [
       image: "/images/natalie.png",
       nickname: "What color?",
       visibility: "Private",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 7,
@@ -1004,7 +1002,8 @@ export const peopleData = [
       image: "/images/henry_white.jpg",
       nickname: "Hank",
       visibility: "Public",
-      role: "Viewer"
+      role: "Viewer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 8,
@@ -1012,7 +1011,8 @@ export const peopleData = [
       image: "/images/isabella_martinez.jpg",
       nickname: "Izzy",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   },
   {
       id: 9,
@@ -1020,7 +1020,8 @@ export const peopleData = [
       image: "/images/jack_davis.jpg",
       nickname: "JD",
       visibility: "Public",
-      role: "Developer"
+      role: "Developer",
+      lastLogin: "2025-07-20",
   }
 ];
 

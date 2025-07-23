@@ -1,7 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { getAllProjects } from "@/app/lib/projects_services";
+import { FileViewerTableRow } from "../../types/types";
 
-const ProjectDropdown = ({ projects }: { projects: string[] }) => {
+interface ProjectDropdownProps {
+  projects: string[];
+}
+
+const ProjectDropdown: React.FC<ProjectDropdownProps> = ({ projects }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProjects, setSelectedProjects] = useState<string[]>([

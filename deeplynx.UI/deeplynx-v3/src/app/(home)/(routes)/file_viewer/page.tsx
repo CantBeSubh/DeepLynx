@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useState } from "react";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { fileTableData } from "@/app/(home)/dummy_data/data";
-import { FileViewerTableRow, TableRow, Column } from "@/app/(home)/types/types";
+import {
+  FileViewerTableRow,
+  TableRow,
+  Column,
+  DataSourceTableRow,
+} from "@/app/(home)/types/types";
+import { PlusCircleIcon } from "@heroicons/react/24/solid";
 
 const FileViewer = () => {
   // State to manage the file table data
@@ -33,13 +38,13 @@ const FileViewer = () => {
   const columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      cell: (row: TableRow) => (
+      cell: (row) => (
         <label>
           <input
             type="checkbox"
             className="checkbox checkbox-info"
             checked={row.select || false} // Control checkbox based on row's select status
-            onChange={() => handleSelectChange(row.id as number)} // Handle checkbox change
+            onChange={() => handleSelectChange(row.id)} // Handle checkbox change
           />
         </label>
       ),
@@ -50,12 +55,12 @@ const FileViewer = () => {
     },
     {
       header: "File Name",
-      data: "fileName", // data for file name column
+      data: "name", // data for file name column
     },
     {
       header: "Timeseries",
       data: "timeseries", // data for timeseries column
-      cell: (row: TableRow) => {
+      cell: (row: FileViewerTableRow) => {
         const isChecked = "timeseries" in row ? row.timeseries : false; // Check if the row has timeseries data
         return (
           <input
@@ -73,7 +78,7 @@ const FileViewer = () => {
     },
     {
       header: "Date Modified",
-      data: "dateModified", // data for date modified column
+      data: "modifiedAt", // data for date modified column
     },
   ];
 
@@ -81,7 +86,7 @@ const FileViewer = () => {
   const timeseries_columns: Column<FileViewerTableRow>[] = [
     {
       header: "Select",
-      cell: (row: TableRow) => (
+      cell: (row) => (
         <label>
           <input
             type="checkbox"
@@ -98,7 +103,7 @@ const FileViewer = () => {
     },
     {
       header: "File Name",
-      data: "fileName", // data for file name column
+      data: "name", // data for file name column
     },
     {
       header: "File Size (KB)",
@@ -106,7 +111,7 @@ const FileViewer = () => {
     },
     {
       header: "Date Modified",
-      data: "dateModified", // data for date modified column
+      data: "modifiedAt", // data for date modified column
     },
   ];
 
@@ -126,6 +131,7 @@ const FileViewer = () => {
             isAnyRowSelected={isAnyRowSelected} // Check if any row is selected
             deleteSelectedRows={deleteSelectedRows} // Function to delete selected rows
             enablePagination // Enable pagination
+            gridView
           />
         </div>
       ),
@@ -142,6 +148,7 @@ const FileViewer = () => {
             rowsPerPage={10} // Set rows per page
             filterPlaceholder="Filter Table..." // Placeholder for filter input
             searchBar
+            gridView
           />
         </div>
       ),
@@ -152,7 +159,7 @@ const FileViewer = () => {
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-secondary-content">Files</h1>{" "}
+        <h1 className="text-2xl font-bold text-info-content">Files</h1>{" "}
         {/* Main title */}
       </div>
 
@@ -161,8 +168,7 @@ const FileViewer = () => {
 
       {/* Button to add new items, positioned at the bottom right */}
       <button className="fixed bottom-10 right-10">
-        <AddCircleIcon className="text-accent" sx={{ fontSize: 60 }} />{" "}
-        {/* Add icon */}
+        <PlusCircleIcon className="size-15 text-accent" /> {/* Add icon */}
       </button>
     </div>
   );

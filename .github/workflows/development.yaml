@@ -58,6 +58,10 @@ jobs:
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+          POSTGRES_DBHOST: ${{ secrets.POSTGRES_DBHOST }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
