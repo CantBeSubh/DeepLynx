@@ -5,6 +5,8 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.Extensions.DependencyInjection;
+using NLog;
+using System.Reflection;
 
 namespace deeplynx.business;
 
@@ -186,6 +188,7 @@ public class MetadataBusiness : IMetadataBusiness
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 erroredObjects.Add(record);
             }
         }
