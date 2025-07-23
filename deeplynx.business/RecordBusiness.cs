@@ -415,6 +415,69 @@ public class RecordBusiness : IRecordBusiness
         }
     }
 
+
+    /// <summary>
+    /// Attaches a tag to a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
+    public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
+    {
+        DoesProjectExist(projectId);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+        
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+        
+        // ensure the tag is not already attached to the record
+        _context.Records.Include(r => r.Tags);
+        if (record.Tags.Any(t => t.Id == tagId))
+            throw new Exception($"Tag with id {tagId} is already attached to record {recordId}");
+        
+        record.Tags.Add(tag);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Unattach a tag from a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
+    {
+        DoesProjectExist(projectId);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+        
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+        
+        record.Tags.Remove(tag);
+        _context.SaveChanges();
+        return true;
+    }
+
     /// <summary>
     /// Private method used to calculate json depth of properties (should be <3)
     /// </summary>
