@@ -5,7 +5,6 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Writers;
 
 namespace deeplynx.business;
 
@@ -61,6 +60,7 @@ public class MetadataBusiness : IMetadataBusiness
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
+        //TODO: validate dataSourceID
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
         
@@ -81,37 +81,9 @@ public class MetadataBusiness : IMetadataBusiness
         };
     }
 
-    public async Task<(List<ClassResponseDto> classResponseDtos, List<string> erroredClassnames)> ParseClassMetadata(List<ClassRequestDto> classes, long projectId )
-    {
-        List<ClassResponseDto> classResponseDtos = new List<ClassResponseDto>();
-        List<string> erroredClassnames = new List<string>();
-
-        using var scope = _provider.CreateScope();
-        var scopedClassBusiness = scope.ServiceProvider.GetRequiredService<IClassBusiness>();
-        foreach (var nexusClass in classes)
-        {
-            if (string.IsNullOrWhiteSpace(nexusClass.Name))
-                throw new ValidationException("Name is missing or empty for a class"); 
-            
-            try
-            {
-                Console.WriteLine($"Processing class {nexusClass.Name}");
-                ClassResponseDto result = await scopedClassBusiness.CreateClass(projectId, nexusClass);
-                classResponseDtos.Add(result);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                erroredClassnames.Add(nexusClass.Name);
-            }
-        }
-        return (classResponseDtos, erroredClassnames);
-    } 
-
-    
     public async Task<List<ClassResponseDto>> ParseMetadata(MetadataRequestDto dto, long projectId)
     {
-        Console.WriteLine("Parsing metadata");
+        MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
         List<ClassResponseDto> classResponseDtos = new List<ClassResponseDto>();
         List<string> erroredClassnames = new List<string>();
         if (dto.Classes != null)
@@ -122,6 +94,8 @@ public class MetadataBusiness : IMetadataBusiness
 
             (classResponseDtos,  erroredClassnames) = await ParseClassMetadata(classes, projectId);
         }
+        
+        //metadataResponseDto.Classes = classResponseDtos;
 
         return classResponseDtos;
 
@@ -270,7 +244,36 @@ public class MetadataBusiness : IMetadataBusiness
             Edges = edgeRequestDtos
         };
         */
+        //return metadataResponseDto;
     }
+    
+    public async Task<(List<ClassResponseDto> classResponseDtos, List<string> erroredClassnames)> ParseClassMetadata(List<ClassRequestDto> classes, long projectId )
+    {
+        List<ClassResponseDto> classResponseDtos = new List<ClassResponseDto>();
+        List<string> erroredClassnames = new List<string>();
+
+        using var scope = _provider.CreateScope();
+        var scopedClassBusiness = scope.ServiceProvider.GetRequiredService<IClassBusiness>();
+        foreach (var nexusClass in classes)
+        {
+            if (string.IsNullOrWhiteSpace(nexusClass.Name))
+                throw new ValidationException("Name is missing or empty for a class"); 
+            
+            try
+            {
+                Console.WriteLine($"Processing class {nexusClass.Name}");
+                ClassResponseDto result = await scopedClassBusiness.CreateClass(projectId, nexusClass);
+                classResponseDtos.Add(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                erroredClassnames.Add(nexusClass.Name);
+            }
+        }
+        return (classResponseDtos, erroredClassnames);
+    }  
+    //TODO: parse function for every business layer to be called in ParseMetadata
     
     private bool IsStringFieldNullOrEmpty(JsonObject json, string propertyName)
     {
