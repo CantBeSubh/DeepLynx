@@ -64,188 +64,53 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
         
-        ParseMetadata(metadataRequestDto, projectId);
-        
-        return new MetadataResponseDto() // Return validated response DTO back to user.
-        {
-            Id = metadataRequestDto.Id,
-            ProjectId = projectId,
-            /*Classes = metadataRequestDto.Classes,
-            Relationships = metadataRequestDto.Relationships,
-            Tags = metadataRequestDto.Tags,
-            Records = metadataRequestDto.Records,
-            Edges = metadataRequestDto.Edges,
-            */
-            CreatedBy = metadataRequestDto.CreatedBy,
-            CreatedAt = metadataRequestDto.CreatedAt
-        };
+        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
     }
 
-    public async Task<List<ClassResponseDto>> ParseMetadata(MetadataRequestDto dto, long projectId)
+    public async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto dto, long dataSourceId, long projectId)
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
-        List<ClassResponseDto> classResponseDtos = new List<ClassResponseDto>();
-        List<string> erroredClassnames = new List<string>();
+
         if (dto.Classes != null)
         {
+            List<ClassResponseDto> classResponseDtos = new List<ClassResponseDto>();
+            List<string> erroredClassnames = new List<string>();
             JsonArray jsonArray = dto.Classes;
             string jsonString = jsonArray.ToString();
             List<ClassRequestDto> classes = JsonSerializer.Deserialize<List<ClassRequestDto>>(jsonString);
 
             (classResponseDtos,  erroredClassnames) = await ParseClassMetadata(classes, projectId);
+            metadataResponseDto.Classes = classResponseDtos;
         }
         
-        //metadataResponseDto.Classes = classResponseDtos;
-
-        return classResponseDtos;
-
-        /*
-        BulkRelationshipRequestDto? relationshipRequestDtos = null;
-        if (dto.Relationships != null && dto.Relationships.Any())
+        if (dto.Relationships != null)
         {
-            relationshipRequestDtos = new BulkRelationshipRequestDto
-            {
-                Relationships = new List<RelationshipRequestDto>()
-            };
+            List<RelationshipResponseDto> relationshipResponseDtos = new List<RelationshipResponseDto>();
+            List<RelationshipRequestDto> erroredObjects = new List<RelationshipRequestDto>();
+            JsonArray jsonArray = dto.Relationships;
+            string jsonString = jsonArray.ToString();
+            List<RelationshipRequestDto> relationships = JsonSerializer.Deserialize<List<RelationshipRequestDto>>(jsonString);
 
-            foreach (var metaRelationship in dto.Relationships)
-            {
-                if (metaRelationship is not JsonObject obj)
-                    throw new InvalidOperationException("Metadata request is not structured for relationships so that Dto can correctly parse it");
-                
-                if (!obj.TryGetPropertyValue("name", out JsonNode? nameNode) ||
-                    nameNode is not JsonValue nameValue ||
-                    string.IsNullOrWhiteSpace(nameValue.ToString()))
-                {
-                    throw new InvalidOperationException("Name is missing or empty for a relationship");
-                }
-                var relationshipName = nameValue.ToString();
-                var existingRelationship = await _context.Classes.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == relationshipName);
-                if (existingRelationship == null)
-                {
-                    String? description = null;
-                    if (obj.TryGetPropertyValue("description", out JsonNode? descNode) &&
-                        descNode is JsonValue descValue &&
-                        !string.IsNullOrWhiteSpace(descValue.ToString()))
-                    {
-                        description = descValue.ToString();
-                    }
-                    
-                    relationshipRequestDtos.Relationships.Add(new RelationshipRequestDto
-                    {
-                        Name = relationshipName,
-                        Description = description
-                    });
-                }
-            }
+            (relationshipResponseDtos, erroredObjects) = await ParseRelationshipMetadata(relationships, projectId);
         }
         
-        BulkTagRequestDto? tagRequestDtos = null;
-        if (dto.Tags != null && dto.Tags.Any())
+        if (dto.Edges != null)
         {
-            tagRequestDtos = new BulkTagRequestDto
-            {
-                Tags = new List<TagRequestDto>()
-            };
+            List<EdgeResponseDto> edgeResponseDtos = new List<EdgeResponseDto>();
+            List<EdgeRequestDto> erroredObjects = new List<EdgeRequestDto>();
+            JsonArray jsonArray = dto.Edges;
+            string jsonString = jsonArray.ToString();
+            List<EdgeRequestDto> edges = JsonSerializer.Deserialize<List<EdgeRequestDto>>(jsonString);
 
-            foreach (var metaTag in dto.Tags)
-            {
-                if (metaTag is not JsonObject obj)
-                    throw new InvalidOperationException("Metadata request is not structured for tags so that Dto can correctly parse it");
-                
-                if (IsStringFieldNullOrEmpty(obj, "name"))
-                {
-                    throw new InvalidOperationException("Name is missing or empty for a tag");
-                }
-
-                obj.TryGetPropertyValue("name", out JsonNode? nameNodes);
-                var tagName = nameNodes.AsValue().ToString();
-                var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagName);
-                if (existingTag == null)
-                {
-                    tagRequestDtos.Tags.Add(new TagRequestDto
-                    {
-                        Name = tagName
-                    });
-                }
-            }
-        }
-        //Todo: Change logic in this function so that each entity is saved after 
-        //it is parsed. We will need to implement a transaction.
-        BulkEdgeRequestDto? edgeRequestDtos = null;
-        if (dto.Edges != null && dto.Edges.Any())
-        {
-            edgeRequestDtos = new BulkEdgeRequestDto
-            {
-                Edges = new List<EdgeRequestDto>()
-            };
-
-            foreach (var metaEdge in dto.Edges)
-            {
-                if (metaEdge is not JsonObject obj)
-                    throw new InvalidOperationException("Metadata request is not structured for edges so that Dto can correctly parse it");
-
-                if (IsStringFieldNullOrEmpty(obj, "origin_name") || IsStringFieldNullOrEmpty(obj, "destination_name"))
-                {
-                    throw new InvalidOperationException("Origin and/or destination name is missing or empty for an edge");
-                }
-                obj.TryGetPropertyValue("origin_name", out JsonNode? originNameNode);
-                obj.TryGetPropertyValue("destination_name", out JsonNode? destinationNameNode);
-                var originName = originNameNode.AsValue().ToString();
-                var destinationName = destinationNameNode.AsValue().ToString();
-                var originExists = await _context.Records.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == originName);
-                if (originExists == null)
-                    throw new KeyNotFoundException($"Edge references an origin record with name {originName} that does not exist in project {projectId} ");
-                
-                var destinationExists = await _context.Records.FirstOrDefaultAsync(r => r.ProjectId == projectId && r.Name == destinationName);
-                if (destinationExists == null)
-                    throw new KeyNotFoundException($"Edge references a destination record with name {destinationName} that does not exist in project {projectId}");
-                
-                String? relationshipName = null;
-                long? relationshipId = null;
-                if (!IsStringFieldNullOrEmpty(obj, "relationship_name"))
-                {
-                    obj.TryGetPropertyValue("relationship_name", out JsonNode? descriptionNode);
-                    relationshipName = descriptionNode.AsValue().ToString();
-
-                    var relationshipExists = await _context.Relationships.FirstOrDefaultAsync(r =>
-                        r.ProjectId == projectId && r.Name == relationshipName);
-
-                    if (relationshipExists != null)
-                    {
-                        relationshipId = relationshipExists.Id;
-                    }
-                    else
-                    {
-                        var relationshipRequestDto = new RelationshipRequestDto()
-                        {
-                            Name = relationshipName
-                        };
-                        var relationshipResponse = await _relationshipBusiness.CreateRelationship(projectId, relationshipRequestDto);
-                        relationshipId = relationshipResponse.Id;
-                    }
-                }
-                
-                edgeRequestDtos.Edges.Add(new  EdgeRequestDto
-                {
-                    DestinationId = destinationExists.Id,
-                    OriginId = originExists.Id,
-                    RelationshipId = relationshipId,
-                    RelationshipName = relationshipName
-                });
-            }
+            (edgeResponseDtos, erroredObjects) = await ParseEdgeMetadata(edges, dataSourceId, projectId);
         }
 
-        return new BulkMetadataRequestDto
-        {
-            //Classes = classRequestDtos,
-            Relationships = relationshipRequestDtos,
-            Tags = tagRequestDtos,
-            Edges = edgeRequestDtos
-        };
-        */
-        //return metadataResponseDto;
+        return metadataResponseDto;
     }
+    
+    /*******************************************
+     * Individual per-business parse functions *
+     *******************************************/
     
     public async Task<(List<ClassResponseDto> classResponseDtos, List<string> erroredClassnames)> ParseClassMetadata(List<ClassRequestDto> classes, long projectId )
     {
@@ -261,7 +126,6 @@ public class MetadataBusiness : IMetadataBusiness
             
             try
             {
-                Console.WriteLine($"Processing class {nexusClass.Name}");
                 ClassResponseDto result = await scopedClassBusiness.CreateClass(projectId, nexusClass);
                 classResponseDtos.Add(result);
             }
@@ -273,15 +137,51 @@ public class MetadataBusiness : IMetadataBusiness
         }
         return (classResponseDtos, erroredClassnames);
     }  
-    //TODO: parse function for every business layer to be called in ParseMetadata
     
-    private bool IsStringFieldNullOrEmpty(JsonObject json, string propertyName)
+    public async Task<(List<RelationshipResponseDto> classResponseDtos, List<RelationshipRequestDto> erroredObjects)> ParseRelationshipMetadata(List<RelationshipRequestDto> relationships, long projectId )
     {
-        return !json.TryGetPropertyValue(propertyName, out JsonNode? node) ||
-               node is not JsonValue value ||
-               string.IsNullOrWhiteSpace(value.ToString());
-    }
+        List<RelationshipResponseDto> relationshipResponseDtos = new List<RelationshipResponseDto>();
+        List<RelationshipRequestDto> erroredObjects = new List<RelationshipRequestDto>();
+
+        using var scope = _provider.CreateScope();
+        var scopedRelationshipBusiness = scope.ServiceProvider.GetRequiredService<IRelationshipBusiness>();
+        foreach (var relationship in relationships)
+        {
+            try
+            {
+                RelationshipResponseDto result = await scopedRelationshipBusiness.CreateRelationship(projectId, relationship);
+                relationshipResponseDtos.Add(result);
+            }
+            catch (Exception ex)
+            {
+                erroredObjects.Add(relationship);
+            }
+        }
+        return (relationshipResponseDtos, erroredObjects);
+    }  
     
+    public async Task<(List<EdgeResponseDto> edgeResponseDtos, List<EdgeRequestDto> erroredObjects)> ParseEdgeMetadata(List<EdgeRequestDto> edges, long dataSourceId, long projectId )
+    {
+        List<EdgeResponseDto> edgeResponseDtos = new List<EdgeResponseDto>();
+        List<EdgeRequestDto> erroredObjects = new List<EdgeRequestDto>();
+
+        using var scope = _provider.CreateScope();
+        var scopedEdgeBusiness = scope.ServiceProvider.GetRequiredService<IEdgeBusiness>();
+        foreach (var edge in edges)
+        {
+            try
+            {
+                EdgeResponseDto result = await scopedEdgeBusiness.CreateEdge(projectId, dataSourceId, edge);
+                edgeResponseDtos.Add(result);
+            }
+            catch (Exception ex)
+            {
+                erroredObjects.Add(edge);
+            }
+        }
+        return (edgeResponseDtos, erroredObjects);
+    }  
+   
     /// <summary>
     /// Determine if project exists
     /// </summary>
