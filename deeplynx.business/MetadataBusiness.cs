@@ -94,6 +94,7 @@ public class MetadataBusiness : IMetadataBusiness
             List<RelationshipRequestDto> relationships = JsonSerializer.Deserialize<List<RelationshipRequestDto>>(jsonString);
 
             (relationshipResponseDtos, erroredObjects) = await ParseRelationshipMetadata(relationships, projectId);
+            metadataResponseDto.Relationships = relationshipResponseDtos;
         }
         
         if (dto.Records != null)
@@ -105,6 +106,7 @@ public class MetadataBusiness : IMetadataBusiness
             List<RecordRequestDto> records = JsonSerializer.Deserialize<List<RecordRequestDto>>(jsonString);
 
             (recordResponseDtos, erroredObjects) = await ParseRecordMetadata(records, dataSourceId, projectId);
+            metadataResponseDto.Records = recordResponseDtos;
         }
         
         if (dto.Edges != null)
@@ -116,6 +118,7 @@ public class MetadataBusiness : IMetadataBusiness
             List<EdgeRequestDto> edges = JsonSerializer.Deserialize<List<EdgeRequestDto>>(jsonString);
 
             (edgeResponseDtos, erroredObjects) = await ParseEdgeMetadata(edges, dataSourceId, projectId);
+            metadataResponseDto.Edges = edgeResponseDtos;
         }
 
         return metadataResponseDto;
