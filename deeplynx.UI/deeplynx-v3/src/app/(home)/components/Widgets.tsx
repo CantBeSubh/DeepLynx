@@ -7,7 +7,7 @@ import LinksWidget from "./WidgetCards/LinksWidget";
 import GraphWidget from "./WidgetCards/GraphWidget";
 import RecentActivityWidget from "./WidgetCards/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
-import TeamMembersWidget from "./WidgetCards/TeamMember";
+import TeamMembersWidget from "./WidgetCards/TeamMembers";
 
 export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 interface WidgetCardProps {

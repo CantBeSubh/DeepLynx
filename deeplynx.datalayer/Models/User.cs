@@ -25,5 +25,7 @@ public partial class User
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
     
+    [InverseProperty("Users")]
+    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     
 }

@@ -10,19 +10,14 @@ namespace deeplynx.business;
 public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
-    
-    // dependent used to trigger downstream actions
-    private readonly IHistoricalRecordBusiness _historicalRecordBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
-    /// <param name="edgeBusiness">Passed in context of historical record objects.</param>
-    public RecordBusiness(DeeplynxContext context, IHistoricalRecordBusiness historicalRecordBusiness)
+    public RecordBusiness(DeeplynxContext context)
     {
         _context = context;
-        _historicalRecordBusiness = historicalRecordBusiness;
     }
     
     /// <summary>
@@ -32,12 +27,45 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllRecords(
+    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        return await _historicalRecordBusiness.GetAllHistoricalRecords(
-            projectId, dataSourceId, null, hideArchived, true);
+        var recordQuery = _context.Records
+            .Where(r => r.ProjectId == projectId);
+
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+        }
+        
+        var records = await recordQuery
+            .Include(r => r.Tags)
+            .ToListAsync();
+
+        return records
+            .Select(r => new RecordResponseDto()
+            {
+                Id = r.Id,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Tags = r.Tags.Select(t => new RecordTagDto()
+                {
+                    Id = t.Id,
+                    Name = t.Name
+                }).ToList()
+            });
     }
     
     /// <summary>
@@ -48,12 +76,48 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>The record in question</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
-    public async Task<HistoricalRecordResponseDto> GetRecord(
+    public async Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
-        return await _historicalRecordBusiness.GetHistoricalRecord(
-            recordId, null, hideArchived, true);
+        
+        var record = await _context.Records
+            .Where(r => r.ProjectId == projectId && r.Id == recordId)
+            .Include(r => r.Tags)
+            .FirstOrDefaultAsync();
+
+        if (record == null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+
+        if (hideArchived && record.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} is archived");
+        }
+
+        return new RecordResponseDto
+        {
+            Id = record.Id,
+            Description = record.Description,
+            Uri = record.Uri,
+            Properties = record.Properties,
+            OriginalId = record.OriginalId,
+            Name = record.Name,
+            ClassId = record.ClassId,
+            DataSourceId = record.DataSourceId,
+            ProjectId = record.ProjectId,
+            CreatedBy = record.CreatedBy,
+            CreatedAt = record.CreatedAt,
+            ModifiedBy = record.ModifiedBy,
+            ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
+            Tags = record.Tags.Select(t => new RecordTagDto()
+            {
+                Id = t.Id,
+                Name = t.Name
+            }).ToList()
+        };
     }
 
     /// <summary>
@@ -70,12 +134,15 @@ public class RecordBusiness : IRecordBusiness
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
         
+        if(dto.Properties == null)
+            throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
+        
         var maxDepth = CalculateJsonMaxDepth(dto.Properties);
         if (maxDepth > 3)
         {
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
-            
+        
         var record = new Record
         {
             ProjectId = projectId,
@@ -84,6 +151,7 @@ public class RecordBusiness : IRecordBusiness
             Properties = dto.Properties.ToString()!,
             OriginalId = dto.OriginalId,
             Name = dto.Name,
+            Description = dto.Description,
             ClassId = dto.ClassId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -95,6 +163,7 @@ public class RecordBusiness : IRecordBusiness
         return new RecordResponseDto
         {
             Id = record.Id,
+            Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
@@ -106,6 +175,7 @@ public class RecordBusiness : IRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
         };
     }
     
@@ -141,6 +211,7 @@ public class RecordBusiness : IRecordBusiness
                Properties = dto.Properties.ToString()!,
                OriginalId = dto.OriginalId,
                Name = dto.Name,
+               Description = dto.Description,
                ClassId = dto.ClassId,
                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
@@ -156,6 +227,7 @@ public class RecordBusiness : IRecordBusiness
             var recordResponse = new RecordResponseDto
             {
                 Id = record.Id,
+                Description = record.Description,
                 Uri = record.Uri,
                 Properties = record.Properties,
                 OriginalId = record.OriginalId,
@@ -167,6 +239,7 @@ public class RecordBusiness : IRecordBusiness
                 CreatedAt = record.CreatedAt,
                 ModifiedBy = record.ModifiedBy,
                 ModifiedAt = record.ModifiedAt,
+                ArchivedAt = record.ArchivedAt,
             };
             
             recordResponses.Add(recordResponse);
@@ -205,6 +278,7 @@ public class RecordBusiness : IRecordBusiness
         record.Properties = dto.Properties.ToString()!;
         record.OriginalId = dto.OriginalId;
         record.Name = dto.Name;
+        record.Description = dto.Description;
         record.ClassId = dto.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
@@ -217,6 +291,7 @@ public class RecordBusiness : IRecordBusiness
         return new RecordResponseDto
         {
             Id = record.Id,
+            Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
@@ -228,6 +303,7 @@ public class RecordBusiness : IRecordBusiness
             CreatedAt = record.CreatedAt,
             ModifiedBy = record.ModifiedBy,
             ModifiedAt = record.ModifiedAt,
+            ArchivedAt = record.ArchivedAt,
         };
         
     }
@@ -245,7 +321,6 @@ public class RecordBusiness : IRecordBusiness
         DoesProjectExist(projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        // we should be able to delete a record even if it's been archived
         if (record == null || record.ProjectId != projectId)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
@@ -259,7 +334,7 @@ public class RecordBusiness : IRecordBusiness
     /// Archive a metadata record.
     /// </summary>
     /// <param name="projectId">The project to which the record belongs</param>
-    /// <param name="recordId">The record in question</param>
+    /// <param name="recordId">The record to be archived</param>
     /// <returns>Boolean indicating record was archived</returns>
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
@@ -271,7 +346,7 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
         // set archivedAt timestamp
-        var archivedAt = DateTime.UtcNow;
+        var archivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -281,7 +356,7 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
+                    "CALL deeplynx.archive_record(@p0::INTEGER, @p1::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
@@ -297,6 +372,110 @@ public class RecordBusiness : IRecordBusiness
                 throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
+    }
+    
+    /// <summary>
+    /// Unarchive a metadata record.
+    /// </summary>
+    /// <param name="projectId">The project to which the record belongs</param>
+    /// <param name="recordId">The record to be unarchived</param>
+    /// <returns>Boolean indicating record was unarchived</returns>
+    /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
+    public async Task<bool> UnarchiveRecord(long projectId, long recordId)
+    {
+        DoesProjectExist(projectId);
+        var record = await _context.Records.FindAsync(recordId);
+        
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is not archived.");
+
+        // run unarchive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                // run the unarchive record procedure, which unarchives this record
+                // and all child objects with record_id as a foreign key
+                var unarchived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.unarchive_record({0}::INTEGER)", recordId);
+
+                if (unarchived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException($"unable to unarchive record {recordId} or its downstream dependents.");
+                }
+
+                await transaction.CommitAsync();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// Attaches a tag to a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
+    public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
+    {
+        DoesProjectExist(projectId);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+        
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+        
+        // ensure the tag is not already attached to the record
+        _context.Records.Include(r => r.Tags);
+        if (record.Tags.Any(t => t.Id == tagId))
+            throw new Exception($"Tag with id {tagId} is already attached to record {recordId}");
+        
+        record.Tags.Add(tag);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Unattach a tag from a record
+    /// </summary>
+    /// <param name="projectId">Project ID for the record and tag</param>
+    /// <param name="recordId">The ID of the record</param>
+    /// <param name="tagId">The ID of the tag</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
+    public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
+    {
+        DoesProjectExist(projectId);
+
+        // include tags in record return and find record
+        var recordQueryable = _context.Records.Include(r => r.Tags);
+        var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+        
+        // find tag
+        var tag = await _context.Tags.FindAsync(tagId);
+        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+            throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
+        
+        record.Tags.Remove(tag);
+        _context.SaveChanges();
+        return true;
     }
 
     /// <summary>

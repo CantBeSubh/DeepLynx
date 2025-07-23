@@ -1,7 +1,9 @@
+using deeplynx.datalayer.Migrations;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace deeplynx.business;
 
@@ -22,27 +24,35 @@ public class UserBusiness : IUserBusiness
     /// <summary>
     /// Retrieves all users
     /// </summary>
+    /// /// <param name="projectId">Optional ID for project</param>
     /// <returns>A list of users, or a list of users for a project</returns>
     public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId)
     {
         List<User> users;
+
         if (projectId == null)
         {
-            users = await _context.Users.Where(p => p.ArchivedAt == null).ToListAsync();
+            users = await _context.Users
+                .Where(p => p.ArchivedAt == null)
+                .ToListAsync();
         }
         else
         {
             DoesProjectExist(projectId.Value);
-            users = await _context.Users.Where(p => p.ArchivedAt == null).ToListAsync();
+            
+            users = await _context.Users
+                .Where(u => u.Projects.Any(p => p.Id == projectId))
+                .ToListAsync(); 
+
         }
-        
-        return users
-            .Select(p => new UserResponseDto()
-            {
-                Name = p.Name,
-                Email = p.Email
-            });
+
+        return users.Select(p => new UserResponseDto()
+        {
+            Name = p.Name,
+            Email = p.Email
+        });
     }
+
 
     /// <summary>
     /// Retrieves a specific user by ID
@@ -77,18 +87,72 @@ public class UserBusiness : IUserBusiness
     {
         var user = new User
         {
-          Name = dto.Name,
-          Email = dto.Email,
+            Name = dto.Name,
+            Email = dto.Email,
         };
-    
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
         
+        DoesProjectExist(dto.ProjectId.Value);
+        
+        var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
+
+        if (project != null)
+        {
+            project.Users.Add(user);
+            _context.SaveChanges();
+        }
+
         return new UserResponseDto()
         {
             Name = user.Name,
             Email = user.Email,
         };
+    }
+
+    /// <summary>
+    /// Adds user to project
+    /// </summary>
+    /// <param name="userId">Id of user to be added</param>
+    /// /// <param name="projectId">Id of project to add user to</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool>  AddUserToProject(long userId, long projectId)
+    {
+        DoesProjectExist(projectId);
+        
+        var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+        if (project != null && user != null)
+        {
+            project.Users.Add(user); 
+            _context.SaveChanges();
+        }
+
+        return true; 
+    }
+    
+    /// <summary>
+    /// Removes user from project
+    /// </summary>
+    /// <param name="userId">Id of user to be removed</param>
+    /// /// <param name="projectId">Id of project to remove user from</param>
+    /// <returns>True if successful</returns>
+    public async Task<bool>  RemoveUserFromProject(long userId, long projectId)
+    {
+        DoesProjectExist(projectId);
+        
+        var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+
+        if (project != null && user != null)
+        {
+            project.Users.Remove(user); 
+            _context.SaveChanges();
+        }
+
+        return true; 
     }
     
     /// <summary>
@@ -98,6 +162,8 @@ public class UserBusiness : IUserBusiness
     /// <param name="dto">A data transfer object with details on the user to be updated.</param>
     /// <returns>The user which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the user was not found.</exception>
+    /// TODO: Decide if we want to update to null if null value is given in the DTO
+    /// TODO: Decide if we want to allow add/remove to a project in this update method 
     public async Task<UserResponseDto> UpdateUser(long userId, UserRequestDto dto)
     {
         var user = await _context.Users
@@ -130,7 +196,7 @@ public class UserBusiness : IUserBusiness
     {
         var user = await _context.Users.FindAsync(userId);
 
-        if (user == null || user.ArchivedAt is not null)
+        if (user == null)
             throw new KeyNotFoundException($"User with id {userId} not found.");
     
         _context.Users.Remove(user);
@@ -161,6 +227,28 @@ public class UserBusiness : IUserBusiness
     }
     
     /// <summary>
+    /// Unarchive a user by id.
+    /// </summary>
+    /// <param name="userId">ID of the user to unarchive.</param>
+    /// <returns>Boolean true when successfully unarchived.</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if user is not found.</exception>
+    public async Task<bool> UnarchiveUser(long userId)
+    {
+        var user = await _context.Users
+            .Where(p => p.Id == userId && p.ArchivedAt != null)
+            .FirstOrDefaultAsync();
+        
+        if (user == null)
+            throw new KeyNotFoundException("Archived user not found.");
+
+        user.ArchivedAt = null;
+    
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
     /// Determine if project exists
     /// </summary>
     /// <param name="projectId">The ID of the project we are searching for</param>
@@ -172,6 +260,37 @@ public class UserBusiness : IUserBusiness
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
+    }
+    
+    /// <summary>
+    /// Retrieves data overview counts for a user
+    /// </summary>
+    /// /// <param name="userId">user id</param>
+    /// <returns>Data overview object</returns>
+    public async Task<DataOverviewDto> GetUserOverview(long userId)
+    {
+      
+        // Filtering projects by a user
+        var projectsTotal = _context.Projects
+            .Include(p => p.Users)
+            .Count(p => p.Users.Any(u => u.Id == userId));
+
+        var datasources = _context.DataSources
+            .Count(d => d.Project.Users.Any(u => u.Id == userId)); 
+        
+        var records = _context.Records
+            .Count(d => d.Project.Users.Any(u => u.Id == userId)); 
+        
+        var tags = _context.Tags
+            .Count(d => d.Project.Users.Any(u => u.Id == userId)); 
+        
+        return new DataOverviewDto
+        {
+            Projects = projectsTotal,
+            Connections = datasources, 
+            Records = records, 
+            Tags = tags
+            };
     }
     
 }

@@ -167,5 +167,27 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Unarchive a specific edge mapping
+        /// </summary>
+        /// <param name="mappingId">The ID of the edge mapping to unarchive.</param>
+        /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
+        /// <returns>A message stating the edge mapping was successfully unarchived.</returns>
+        [HttpPut("UnarchiveEdgeMapping/{mappingId}")]
+        public async Task<IActionResult> UnarchiveEdgeMapping(long projectId, long mappingId)
+        {
+            try
+            {
+                await _eMappingBusiness.UnarchiveEdgeMapping(projectId, mappingId);
+                return Ok(new { message = $"Unarchived edge mapping {mappingId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while unarchiving edge mapping {mappingId}: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
