@@ -28,7 +28,7 @@ namespace deeplynx.tests
         {
             var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
-            var envFilePath = Path.Combine(projectRoot, ".env_sample");
+            var envFilePath = Path.Combine(projectRoot, ".env");
 
             Env.Load(envFilePath);
 
@@ -154,7 +154,7 @@ namespace deeplynx.tests
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
 
                 // Arrange
                 await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");

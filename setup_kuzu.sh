@@ -24,11 +24,12 @@ add_to_bashrc() {
 
     local bashrcPath="$HOME/.bashrc"
     local bashProfilePath="$HOME/.bash_profile"
+    local zshrc="$HOME/.zshrc"
     local lineToAdd="export $variable=$value:\$$variable"
 
     if [ -e "$bashrcPath" ]; then
         if ! grep -qF "$lineToAdd" "$bashrcPath"; then
-            echo "$lineToAdd" >> "$bashrcPath"
+            echo -e "\n$lineToAdd" >> "$bashrcPath"
             echo "Added '$lineToAdd' to $bashrcPath."
         else
             echo "The line '$lineToAdd' already exists in $bashrcPath."
@@ -37,10 +38,19 @@ add_to_bashrc() {
 
     if [ -e "$bashProfilePath" ]; then
         if ! grep -qF "$lineToAdd" "$bashProfilePath"; then
-            echo "$lineToAdd" >> "$bashProfilePath"
+            echo -e  "\n$lineToAdd" >> "$bashProfilePath"
             echo "Added '$lineToAdd' to $bashProfilePath."
         else
             echo "The line '$lineToAdd' already exists in $bashProfilePath."
+        fi
+    fi
+    
+    if [ -e "$zshrc" ]; then
+        if ! grep -qF "$lineToAdd" "$zshrc"; then
+            echo -e  "\n$lineToAdd" >> "$zshrc"
+            echo "Added '$lineToAdd' to $zshrc."
+        else
+            echo "The line '$lineToAdd' already exists in $zshrc."
         fi
     fi
 }
