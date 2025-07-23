@@ -223,7 +223,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
-    /// <param name="bulkRelationshipRequestDto">A data transfer object with details on the new relationship to be created.</param>
+    /// <param name="relationshipRequestDtos">A list of relationship data transfer objects with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> relationshipRequestDtos)
