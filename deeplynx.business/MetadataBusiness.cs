@@ -94,6 +94,17 @@ public class MetadataBusiness : IMetadataBusiness
             (relationshipResponseDtos, erroredObjects) = await ParseRelationshipMetadata(relationships, projectId);
         }
         
+        if (dto.Records != null)
+        {
+            List<RecordResponseDto> recordResponseDtos = new List<RecordResponseDto>();
+            List<RecordRequestDto> erroredObjects = new List<RecordRequestDto>();
+            JsonArray jsonArray = dto.Records;
+            string jsonString = jsonArray.ToString();
+            List<RecordRequestDto> records = JsonSerializer.Deserialize<List<RecordRequestDto>>(jsonString);
+
+            (recordResponseDtos, erroredObjects) = await ParseRecordMetadata(records, dataSourceId, projectId);
+        }
+        
         if (dto.Edges != null)
         {
             List<EdgeResponseDto> edgeResponseDtos = new List<EdgeResponseDto>();
@@ -131,7 +142,6 @@ public class MetadataBusiness : IMetadataBusiness
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
                 erroredClassnames.Add(nexusClass.Name);
             }
         }
@@ -158,6 +168,28 @@ public class MetadataBusiness : IMetadataBusiness
             }
         }
         return (relationshipResponseDtos, erroredObjects);
+    }  
+    
+    public async Task<(List<RecordResponseDto> recordResponseDtos, List<RecordRequestDto> erroredObjects)> ParseRecordMetadata(List<RecordRequestDto> records, long dataSourceId, long projectId )
+    {
+        List<RecordResponseDto> recordResponseDtos = new List<RecordResponseDto>();
+        List<RecordRequestDto> erroredObjects = new List<RecordRequestDto>();
+
+        using var scope = _provider.CreateScope();
+        var scopedRecordBusiness = scope.ServiceProvider.GetRequiredService<IRecordBusiness>();
+        foreach (var record in records)
+        {
+            try
+            {
+                RecordResponseDto result = await scopedRecordBusiness.CreateRecord(projectId, dataSourceId, record);
+                recordResponseDtos.Add(result);
+            }
+            catch (Exception ex)
+            {
+                erroredObjects.Add(record);
+            }
+        }
+        return (recordResponseDtos, erroredObjects);
     }  
     
     public async Task<(List<EdgeResponseDto> edgeResponseDtos, List<EdgeRequestDto> erroredObjects)> ParseEdgeMetadata(List<EdgeRequestDto> edges, long dataSourceId, long projectId )
