@@ -51,12 +51,14 @@ public class MetadataBusiness : IMetadataBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
-        //TODO: validate dataSourceID
+        DoesDataSourceExist(dataSourceId);
+        
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
         
@@ -119,4 +121,20 @@ public class MetadataBusiness : IMetadataBusiness
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
     }   
+    
+    /// <summary>
+    /// Determine if datasource exists
+    /// </summary>
+    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
+    /// <returns>Throws error if datasource does not exist</returns>
+    private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
+    {
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+            : _context.DataSources.Any(p => p.Id == datasourceId);
+        if (!datasource)
+        {
+            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+        }
+    }
 }
