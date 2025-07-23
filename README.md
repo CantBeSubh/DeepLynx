@@ -38,6 +38,21 @@ Docker users can skip the steps in [Load the Database](#load-the-database), as `
     * Install the .NET Entity Framework CLI tool globally:
         * `dotnet tool install --global dotnet-ef`
 
+4. Setup Kuzu:
+    * After completing the above steps, run the `setup_kuzu.sh` script to set up the Kuzu environment and copy necessary files. To do this, follow these steps:
+        1. Open a terminal and make sure you're in the Nexus root directory.
+        2. Make the script executable by running:
+            ```bash
+            chmod +x setup_kuzu.sh
+            ```
+        3. Execute the script with the following command:
+            ```bash
+            ./setup_kuzu.sh
+            ```
+        4. This script will copy the necessary library files, update your environment variables, and clean up any temporary directories.
+        5. To run the KuzuDatabaseManagerTests change the ENABLE_KUZU variable in .env_sample to True.
+        6. Open a new terminal and Kuzu should work fine.
+
 ## Development
 
 ### Load the Database

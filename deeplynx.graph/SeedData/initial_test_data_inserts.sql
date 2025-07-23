@@ -57,38 +57,3 @@ INSERT INTO record_tags (record_id, tag_id) VALUES
 ((SELECT id FROM records WHERE name = 'test' LIMIT 1), (SELECT id FROM tags WHERE name = 'tag1' LIMIT 1)),
 ((SELECT id FROM records WHERE name = 'test' LIMIT 1), (SELECT id FROM tags WHERE name = 'tag2' LIMIT 1)),
 ((SELECT id FROM records WHERE name = 'test' LIMIT 1), (SELECT id FROM tags WHERE name = 'tag3' LIMIT 1));
-
--- -- historical records
-INSERT INTO historical_records (
-	record_id, uri, name, properties, original_id, class_id, mapping_id, data_source_id, project_id, created_by, created_at,
-	last_updated_at, class_name, data_source_name, project_name, tags, current)
-SELECT r.id, r.uri, r.name, r.properties, r.original_id, r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.created_by, r.created_at,
-		r.created_at, c.name, d.name, p.name, jsonb_agg(t.name), TRUE
-FROM records r
-JOIN record_tags rt ON r.id = rt.record_id
-JOIN tags t ON t.id = rt.tag_id
-JOIN classes c ON c.id = r.class_id
-JOIN data_sources d ON d.id = r.data_source_id
-JOIN projects p ON p.id = r.project_id
-GROUP BY r.id, r.uri, r.name, r.properties, r.original_id, r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.created_by, r.created_at,
-		r.created_at, c.name, d.name, p.name;
-
-INSERT INTO deeplynx.historical_edges (
-		edge_id, origin_id, destination_id, mapping_id,
-		relationship_id, data_source_id, project_id,
-		created_at, created_by, current,
-		relationship_name, data_source_name, project_name)
-	SELECT e.id, e.origin_id, e.destination_id, e.mapping_id,
-		e.relationship_id, e.data_source_id, e.project_id,
-		e.created_at, e.created_by, TRUE,
-		r.name, d.name, p.name
-	FROM deeplynx.edges e
-	LEFT JOIN deeplynx.relationships r ON r.id = e.relationship_id
-	JOIN deeplynx.data_sources d ON d.id = e.data_source_id
-	JOIN deeplynx.projects p ON p.id = e.project_id
-	WHERE e.id = (SELECT id FROM edges WHERE origin_id = (SELECT id FROM records WHERE name = 'test'));
-
-SELECT * FROM historical_edges;
-
-DELETE FROM historical_records WHERE id = 1;
-ALTER SEQUENCE deeplynx.historical_records_id_seq RESTART WITH 1;
