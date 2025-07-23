@@ -9,11 +9,11 @@ public class MetadataResponseDto
     public long ProjectId { get; set; }
     
     public long DataSourceId { get; set; }
-    public BulkClassResponseDto? Classes { get; set; }
-    public BulkRelationshipResponseDto? Relationships { get; set; }
-    public BulkTagResponseDto? Tags { get; set; }
-    public BulkRecordResponseDto? Records { get; set; }
-    public BulkEdgeResponseDto? Edges { get; set; }
+    public List<ClassResponseDto>? Classes { get; set; }
+    public List<RelationshipResponseDto>? Relationships { get; set; }
+    public List<TagResponseDto>? Tags { get; set; }
+    public List<RecordResponseDto>? Records { get; set; }
+    public List<EdgeResponseDto>? Edges { get; set; }
     public string? CreatedBy { get; set; }
     [JsonIgnore]
     public DateTime CreatedAt { get; set; }
