@@ -5,14 +5,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.Extensions.Options;
-using Microsoft.OpenApi;
-using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.OpenApi.Models;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,13 +52,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.MaxDepth = 64;
     });
 
-// ----------------------------------
-// Dependency Injection
-// ----------------------------------
+/*
+╔════════════════════════════╗
+║  Dependency Injection      ║
+╚════════════════════════════╝
+*/
 builder.Services.AddHttpContextAccessor();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = ConnectionStringsProvider.GetPostgresConnectionString(builder.Configuration);
 
 builder.Services.AddDbContext<DeeplynxContext>(
     options => options.UseNpgsql(connectionString),
