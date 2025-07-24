@@ -293,4 +293,44 @@ public class UserBusiness : IUserBusiness
             };
     }
     
+    /// <summary>
+    /// Retrieves current records for projects, ordered by last_updated_at first 
+    /// </summary>
+    /// <param name="projectId">An array of project ids</param>
+    /// <returns>An array of records</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectId)
+    {
+        
+        var recordQuery = _context.HistoricalRecords.AsQueryable(); 
+        recordQuery = recordQuery.Where(r => r.Current);
+        recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+        recordQuery = recordQuery.OrderByDescending(r => r.LastUpdatedAt);
+        var records = recordQuery.Where(c => projectId.Contains(c.ProjectId));
+        
+       
+        return records
+            .Select(r => new HistoricalRecordResponseDto()
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+    
 }

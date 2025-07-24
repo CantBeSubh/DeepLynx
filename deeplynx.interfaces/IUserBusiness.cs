@@ -19,4 +19,7 @@ public interface IUserBusiness
     
     Task<DataOverviewDto> GetUserOverview(long userId);
     Task<bool> UnarchiveUser(long userId);
+    
+    Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
+        long[] projectId);
 }
