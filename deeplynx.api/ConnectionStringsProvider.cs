@@ -22,12 +22,12 @@ public static class ConnectionStringsProvider
             !string.IsNullOrEmpty(postgresServer) &&
             !string.IsNullOrEmpty(postgresPort))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info("Using .env Postgres connection credentials");
+            NLog.LogManager.GetCurrentClassLogger().Info("Using .env postgres connection credentials");
             return $"User ID={postgresUser};Password={postgresPassword};Database={postgresDatabaseName};Server={postgresServer};Port={postgresPort};";
         }
         else if (!string.IsNullOrEmpty(defaultConnectionString))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info(".env Postgres connection variables not configured. Falling back to default postgres connection credentials");
+            NLog.LogManager.GetCurrentClassLogger().Info(".env postgres connection variables not configured. Falling back to default postgres connection credentials");
             return defaultConnectionString;
         }
         else
