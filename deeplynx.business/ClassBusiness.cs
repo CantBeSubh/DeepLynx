@@ -4,6 +4,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -166,58 +167,44 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<List<ClassResponseDto>> BulkCreateClass(long projectId, List<ClassRequestDto> classRequestDtos)
+    public async Task<bool> BulkCreateClass(long projectId, List<ClassRequestDto> classRequestDtos)
     {
         DoesProjectExist(projectId);
         
-        var classDatabaseEntities = new List<Class>();
-        foreach (var classRequestDto in classRequestDtos)
+        // Bulk insert into classes; if there is a name collision, update the description and uuid if present
+        var sql = @"
+            INSERT INTO deeplynx.classes (project_id, name, description, uuid, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                description = COALESCE(EXCLUDED.description, classes.description),
+                uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
+                modified_at = @now
+        ";
+
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            ValidationHelper.ValidateModel(classRequestDto);
-            var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == classRequestDto.Name);
-            if (existingClass != null)
-            {
-                throw new Exception($"Class for project {projectId} with name {classRequestDto.Name} already exists");
-            }
-
-            var newClass = new Class
-            {
-                ProjectId = projectId,
-                Name = classRequestDto.Name,
-                Description = classRequestDto.Description,
-                Uuid = classRequestDto.Uuid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
-                ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
-
-            };
-            classDatabaseEntities.Add(newClass);
-        }
-
-        await _context.Classes.AddRangeAsync(classDatabaseEntities);
-        await _context.SaveChangesAsync();
-
-        var classResponseDtos = new List<ClassResponseDto>();
-        foreach (var nexusClass in classDatabaseEntities)
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(classRequestDtos.SelectMany((dto, i) => new[]
         {
-            var classResponse = new ClassResponseDto
-            {
-                Id = nexusClass.Id,
-                Name = nexusClass.Name,
-                Description = nexusClass.Description,
-                Uuid = nexusClass.Uuid,
-                ProjectId = nexusClass.ProjectId,
-                CreatedBy = nexusClass.CreatedBy,
-                CreatedAt = nexusClass.CreatedAt,
-                ModifiedBy = nexusClass.ModifiedBy,
-                ModifiedAt = nexusClass.ModifiedAt
-            };
-            
-            classResponseDtos.Add(classResponse);
-        }
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", classRequestDtos.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+        var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
 
-        return classResponseDtos;
+        return true;
     }
 
     /// <summary>
@@ -243,8 +230,6 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Uuid = dto.Uuid;
         updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
-        updatedClass.CreatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-        updatedClass.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
@@ -256,8 +241,6 @@ public class ClassBusiness : IClassBusiness
             Description = updatedClass.Description,
             Uuid = updatedClass.Uuid,
             ProjectId = updatedClass.ProjectId,
-            CreatedBy = updatedClass.CreatedBy,
-            CreatedAt = updatedClass.CreatedAt,
             ModifiedBy = updatedClass.ModifiedBy,
             ModifiedAt = updatedClass.ModifiedAt,
         };

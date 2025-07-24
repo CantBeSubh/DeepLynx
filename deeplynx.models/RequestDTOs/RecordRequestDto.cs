@@ -4,9 +4,8 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class RecordRequestDto : AbstractNexusCoreDataRequestDto
+public class RecordRequestDto
 {
-    
     [JsonPropertyName("uri")]
     public string? Uri { get; set; }
     
@@ -26,5 +25,6 @@ public class RecordRequestDto : AbstractNexusCoreDataRequestDto
     [JsonPropertyName("class_name")]
     public string? ClassName { get; set; }
     
+    [JsonPropertyName("description")]
     public string? Description { get; set; }
 }

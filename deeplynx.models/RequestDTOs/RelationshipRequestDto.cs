@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class RelationshipRequestDto : AbstractNexusCoreDataRequestDto
+public class RelationshipRequestDto
 {
     [Required]
     [JsonPropertyName("name")]

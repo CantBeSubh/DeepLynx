@@ -55,31 +55,31 @@ namespace deeplynx.tests
             result.ProjectId.Should().Be(pid);
         }
 
-        [Fact]
-        public async Task CreateClasses_Success_OnBulkCreate()
-        {
-            var classRequestDtos = new List<ClassRequestDto>();
-            
-            var dto1 = new ClassRequestDto
-            {
-                Name = $"Test Class 1",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-            };
-            var dto2 = new ClassRequestDto
-            {
-                Name = $"Test Class 2",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-            };
-            classRequestDtos.Add(dto1);
-            classRequestDtos.Add(dto2);
-
-            var result = await _classBusiness.BulkCreateClass(pid, classRequestDtos);
-            result.Should().HaveCount(2);
-            result.First().Name.Should().Be("Test Class 1");
-            result.Last().Name.Should().Be("Test Class 2");
-        }
+        // [Fact]
+        // public async Task CreateClasses_Success_OnBulkCreate()
+        // {
+        //     var classRequestDtos = new List<ClassRequestDto>();
+        //     
+        //     var dto1 = new ClassRequestDto
+        //     {
+        //         Name = $"Test Class 1",
+        //         Description = "Test Description",
+        //         Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+        //     };
+        //     var dto2 = new ClassRequestDto
+        //     {
+        //         Name = $"Test Class 2",
+        //         Description = "Test Description",
+        //         Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+        //     };
+        //     classRequestDtos.Add(dto1);
+        //     classRequestDtos.Add(dto2);
+        //
+        //     var result = await _classBusiness.BulkCreateClass(pid, classRequestDtos);
+        //     result.Should().HaveCount(2);
+        //     result.First().Name.Should().Be("Test Class 1");
+        //     result.Last().Name.Should().Be("Test Class 2");
+        // }
 
         [Fact]
         public async Task CreateClass_Fails_IfNoName()

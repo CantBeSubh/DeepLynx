@@ -11,10 +11,9 @@ public class MetadataBusiness : IMetadataBusiness
     private readonly DeeplynxContext _context;
     private readonly IClassBusiness _classBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
+    private readonly ITagBusiness _tagBusiness;
     private readonly IRecordBusiness _recordBusiness;
     private readonly IEdgeBusiness _edgeBusiness;
-    private readonly ITagBusiness _tagBusiness;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetadataBusiness"/> class.
@@ -25,15 +24,13 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="tagBusiness">The tag context to be used during metadata parsing.</param>
     /// <param name="recordBusiness">The record context to be used during metadata parsing.</param>
     /// <param name="edgeBusiness">The edge context to be used during metadata parsing.</param>
-    /// <param name="edgeMappingBusiness">The edge mapping context to be used during metadata parsing.</param>
     public MetadataBusiness(
         DeeplynxContext context, 
         IClassBusiness classBusiness,
         IRelationshipBusiness relationshipBusiness,
         ITagBusiness tagBusiness,
         IRecordBusiness recordBusiness,
-        IEdgeBusiness edgeBusiness,
-        IEdgeMappingBusiness edgeMappingBusiness
+        IEdgeBusiness edgeBusiness
         )
     {
         _context = context;
@@ -42,7 +39,6 @@ public class MetadataBusiness : IMetadataBusiness
         _tagBusiness = tagBusiness;
         _recordBusiness = recordBusiness;
         _edgeBusiness = edgeBusiness;
-        _edgeMappingBusiness = edgeMappingBusiness;
     }
 
     /// <summary>
@@ -72,15 +68,17 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    public async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
+    private async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
 
         if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
             List<ClassRequestDto> classes = DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
-            List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
-            metadataResponseDto.Classes = classResponseDtos;
+            // List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
+            // metadataResponseDto.Classes = classResponseDtos;
+            // TODO: if we expect to bulk insert 10k+ rows at a time, implement chunking/batching or a binary COPY
+            bool test = await _classBusiness.BulkCreateClass(projectId, classes);
         }
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
@@ -113,7 +111,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="jsonArray">The input json to be serialized to an object</param>
     /// <returns>List of serialized objects parsed from json</returns>
     /// <note>Due to possible null reference return, returns an empty list of generic type on failure.</note>
-    public List<T> DeserializeJsonArray<T>(JsonArray jsonArray)
+    private List<T> DeserializeJsonArray<T>(JsonArray jsonArray)
     {
         string jsonString = jsonArray.ToString();
         var result = JsonSerializer.Deserialize<List<T>>(jsonString);
