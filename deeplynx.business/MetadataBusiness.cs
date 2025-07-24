@@ -1,8 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
+using deeplynx.helpers.json;
 
 namespace deeplynx.business;
 
@@ -74,7 +73,7 @@ public class MetadataBusiness : IMetadataBusiness
 
         if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
-            List<ClassRequestDto> classes = DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
+            List<ClassRequestDto> classes = JsonSerialization.DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
             // List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
             // metadataResponseDto.Classes = classResponseDtos;
             // TODO: if we expect to bulk insert 10k+ rows at a time, implement chunking/batching or a binary COPY
@@ -84,21 +83,21 @@ public class MetadataBusiness : IMetadataBusiness
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
         {
-            List<RelationshipRequestDto> relationships = DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
+            List<RelationshipRequestDto> relationships = JsonSerialization.DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
             List<RelationshipResponseDto> relationshipResponseDtos = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
             metadataResponseDto.Relationships = relationshipResponseDtos;
         }
         
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
-            List<RecordRequestDto> records = DeserializeJsonArray<RecordRequestDto>(metadataRequestDto.Records);
+            List<RecordRequestDto> records = JsonSerialization.DeserializeJsonArray<RecordRequestDto>(metadataRequestDto.Records);
             List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
             metadataResponseDto.Records = recordResponseDtos;
         }
         
         if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
         {
-            List<EdgeRequestDto> edges = DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
+            List<EdgeRequestDto> edges = JsonSerialization.DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
             List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
             metadataResponseDto.Edges = edgeResponseDtos;
         }
@@ -106,19 +105,6 @@ public class MetadataBusiness : IMetadataBusiness
         return metadataResponseDto;
     }
 
-    /// <summary>
-    /// Deserialize input json into list of generic object type
-    /// </summary>
-    /// <param name="jsonArray">The input json to be serialized to an object</param>
-    /// <returns>List of serialized objects parsed from json</returns>
-    /// <note>Due to possible null reference return, returns an empty list of generic type on failure.</note>
-    private List<T> DeserializeJsonArray<T>(JsonArray jsonArray)
-    {
-        string jsonString = jsonArray.ToString();
-        var result = JsonSerializer.Deserialize<List<T>>(jsonString);
-        return result ?? new List<T>();
-    }
-    
     /// <summary>
     /// Determine if project exists
     /// </summary>
