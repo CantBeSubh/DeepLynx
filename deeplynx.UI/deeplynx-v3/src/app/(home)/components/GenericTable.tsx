@@ -1,11 +1,14 @@
+import { Column } from "@/app/(home)/types/types";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FolderIcon,
+  LockClosedIcon,
+  PresentationChartLineIcon,
+  TrashIcon,
+} from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import SearchInput from "./SearchInput";
-import DeleteIcon from "@mui/icons-material/Delete";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import DriveFileMoveOutlineIcon from "@mui/icons-material/DriveFileMoveOutline";
-import { Column } from "@/app/(home)/types/types";
-import KeyboardArrowUpIcon from "@mui/icons-material/KeyboardArrowUp";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 // Define the props for the GenericTable component
 type GenericTableProps<T extends object> = {
@@ -222,16 +225,16 @@ const GenericTable = <T extends object>({
         {actionButtons && (
           <div className="p-2">
             <button className="mr-2 text-secondary">
-              <DriveFileMoveOutlineIcon fontSize="medium" />
+              <FolderIcon className="size-6" />
             </button>
             <button className="mr-2 text-secondary">
-              <TimelineIcon fontSize="medium" />
+              <PresentationChartLineIcon className="size-6" />
             </button>
             <button
               onClick={deleteSelectedRows}
               className={!isAnyRowSelected ? "text-base-100" : "text-accent"}
             >
-              <DeleteIcon fontSize="medium" />
+              <TrashIcon className="size-6" />
             </button>
           </div>
         )}
@@ -246,7 +249,7 @@ const GenericTable = <T extends object>({
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`text-base-content ${
+                className={`text-base-content  ${
                   gridView ? "border border-base-200 bg-info/30" : ""
                 } ${
                   column.sortable !== false ? "cursor-pointer select-none" : ""
@@ -263,17 +266,19 @@ const GenericTable = <T extends object>({
                   setSortConfig({ key: column.data as keyof T, direction });
                 }}
               >
-                {column.header}
-                {sortConfig?.key === column.data &&
-                  column.sortable !== false && (
-                    <span>
-                      {sortConfig?.direction === "asc" ? (
-                        <KeyboardArrowUpIcon />
-                      ) : (
-                        <KeyboardArrowDownIcon />
-                      )}
-                    </span>
-                  )}
+                <div className="flex items-center gap-1">
+                  {column.header}
+                  {sortConfig?.key === column.data &&
+                    column.sortable !== false && (
+                      <>
+                        {sortConfig?.direction === "asc" ? (
+                          <ChevronUpIcon className="size-5" />
+                        ) : (
+                          <ChevronDownIcon className="size-5" />
+                        )}
+                      </>
+                    )}
+                </div>
               </th>
             ))}
           </tr>
@@ -288,7 +293,7 @@ const GenericTable = <T extends object>({
                 : rowIndex;
             return (
               <tr
-                key={key}
+                key={rowIndex}
                 className={`${
                   typeof rowClassName === "function"
                     ? rowClassName(row, rowIndex)
@@ -320,20 +325,7 @@ const GenericTable = <T extends object>({
                     className="text-right pr-4 text-secondary"
                     title="Private - request access"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-6"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
-                      />
-                    </svg>
+                    <LockClosedIcon className="size-6" />
                   </td>
                 )}
               </tr>

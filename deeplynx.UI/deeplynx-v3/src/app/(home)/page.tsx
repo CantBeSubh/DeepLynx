@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAllProjects } from "../lib/api";
+import { getAllProjects } from "../lib/projects_services";
 
 import CreateProject from "./components/CreateProjectsModal";
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
@@ -10,7 +10,7 @@ import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import {PlusIcon, Cog6ToothIcon} from "@heroicons/react/24/outline";
+import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 
 const Projects = () => {
   const router = useRouter();
@@ -42,7 +42,7 @@ const Projects = () => {
     <div className="bg-base-100">
       {/* Header */}
       <div className="flex justify-between items-center px-4 py-4">
-        <h1 className="text-2xl font-bold text-secondary-content">
+        <h1 className="text-2xl font-bold text-info-content">
           Welcome Back Kevin
         </h1>
       </div>
@@ -52,22 +52,20 @@ const Projects = () => {
       <div className="flex w-full">
         <div className="w-full md:w-1/2 px-4">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-secondary-content text-lg font-semibold">
+            <h3 className="text-info-content text-lg font-semibold">
               Your Projects
             </h3>
 
             <div className="flex gap-2">
               <button className="btn btn-outline btn-secondary flex items-center gap-1">
-                <PlusIcon
-                  className="size-6"/>
+                <PlusIcon className="size-6" />
                 <span>Record</span>
               </button>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="btn btn-secondary text-primary-content flex items-center gap-1"
               >
-                <PlusIcon
-                  className="size-6"/>
+                <PlusIcon className="size-6" />
                 <span>Project</span>
               </button>
             </div>
@@ -86,15 +84,14 @@ const Projects = () => {
         <div className="w-full md:w-1/2 px-4">
           <div className="flex justify-between items-center justify-end mb-4">
             <button className="btn btn-outline btn-secondary flex items-center mr-2">
-              <Cog6ToothIcon
-                  className="size-6"/>
+              <Cog6ToothIcon className="size-6" />
               Customize
             </button>
             <button
               onClick={() => setWidgetModal(true)}
-              className="btn btn-secondary text-primary-content flex items-center">
-              <PlusIcon
-                  className="size-6"/>
+              className="btn btn-secondary text-primary-content flex items-center"
+            >
+              <PlusIcon className="size-6" />
               Widget
             </button>
           </div>
@@ -113,7 +110,6 @@ const Projects = () => {
         isOpen={widgetModal}
         onClose={() => setWidgetModal(false)}
       />
-
     </div>
   );
 };

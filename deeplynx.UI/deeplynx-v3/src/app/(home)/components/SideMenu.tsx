@@ -1,25 +1,27 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 
-// Importing Material-UI icons
-import ListAltOutlinedIcon from "@mui/icons-material/ListAltOutlined";
-import TimelineIcon from "@mui/icons-material/Timeline";
-import FindInPageOutlinedIcon from "@mui/icons-material/FindInPageOutlined";
-import CoronavirusOutlinedIcon from "@mui/icons-material/CoronavirusOutlined";
-import InboxIcon from "@mui/icons-material/Inbox";
-import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-import KeyboardArrowLeftTwoToneIcon from "@mui/icons-material/KeyboardArrowLeftTwoTone";
-import KeyboardArrowRightTwoToneIcon from "@mui/icons-material/KeyboardArrowRightTwoTone";
-import HomeIcon from "@mui/icons-material/Home";
-import SettingsIcon from "@mui/icons-material/Settings";
-import HelpIcon from "@mui/icons-material/Help";
-import ContactMainIcon from "@mui/icons-material/ContactMail";
-import BugReportIcon from "@mui/icons-material/BugReport";
+// Importing Hero-UI icons
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import {
+  ArrowsPointingOutIcon,
+  BookmarkSquareIcon,
+  BugAntIcon,
+  CalendarDaysIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon,
+  DocumentIcon,
+  HomeIcon,
+  InboxIcon,
+  ListBulletIcon,
+  PresentationChartLineIcon,
+  QuestionMarkCircleIcon,
+} from "@heroicons/react/24/outline";
 
 // Define the props for the SideMenu component
 interface SideMenuProps {
@@ -105,9 +107,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       <div className="flex justify-end">
         <button onClick={toggleMenu} className="p-2">
           {isCollapsed ? (
-            <KeyboardArrowRightTwoToneIcon />
+            <ChevronRightIcon className="size-6" />
           ) : (
-            <KeyboardArrowLeftTwoToneIcon />
+            <ChevronLeftIcon className="size-6" />
           )}
         </button>
       </div>
@@ -120,7 +122,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("/", e)}
             className={getItemClass("/")}
           >
-            <HomeIcon />
+            <HomeIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Home Dashboard</p>}
           </Link>
         </li>
@@ -139,7 +141,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             }
             className={getItemClass(`/project/${project?.projectId}`)}
           >
-            <ListAltOutlinedIcon />
+            <ListBulletIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Project Management</p>}
           </Link>
         </li>
@@ -149,7 +151,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("#ontology", e)}
             className={getItemClass("#ontology")}
           >
-            <CoronavirusOutlinedIcon />
+            <ArrowsPointingOutIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Ontology</p>}
           </Link>
         </li>
@@ -159,7 +161,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("/data_source", e)}
             className={getItemClass("/data_source")}
           >
-            <InboxIcon />
+            <InboxIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Data Source</p>}
           </Link>
         </li>
@@ -169,7 +171,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("/data_catalog", e)}
             className={getItemClass("/data_catalog")}
           >
-            <InboxIcon />
+            <InboxIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Data Catalog</p>}
           </Link>
         </li>
@@ -179,7 +181,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("#saved-searches", e)}
             className={getItemClass("#saved-searches")}
           >
-            <SellOutlinedIcon />
+            <BookmarkSquareIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Saved Searches</p>}
           </Link>
         </li>
@@ -189,7 +191,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("#events", e)}
             className={getItemClass("#events")}
           >
-            <CalendarMonthOutlinedIcon />
+            <CalendarDaysIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Events</p>}
           </Link>
         </li>
@@ -199,7 +201,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("#timeseries-viewer", e)}
             className={getItemClass("#timeseries-viewer")}
           >
-            <TimelineIcon />
+            <PresentationChartLineIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">Timeseries Viewer</p>}
           </Link>
         </li>
@@ -209,7 +211,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             onClick={(e) => handleItemClick("/file_viewer", e)}
             className={getItemClass("/file_viewer")}
           >
-            <FindInPageOutlinedIcon />
+            <DocumentIcon className="size-6" />
             {!isCollapsed && <p className="ml-2">File Viewer</p>}
           </Link>
         </li>
@@ -226,17 +228,17 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               onClick={(e) => handleItemClick("/settings", e)}
               className={getItemClass("/settings")}
             >
-              <SettingsIcon />
+              <Cog6ToothIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Settings</p>}
             </Link>
           </li>
           <li className="mt-2">
             <Link
-              href="/help"
+              href="#"
               onClick={(e) => handleItemClick("/help", e)}
               className={getItemClass("/help")}
             >
-              <HelpIcon />
+              <QuestionMarkCircleIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Help</p>}
             </Link>
           </li>
@@ -246,7 +248,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               onClick={(e) => handleItemClick("/contact", e)}
               className={getItemClass("/contact")}
             >
-              <ContactMainIcon />
+              <ChatBubbleLeftRightIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Contact</p>}
             </Link>
           </li>
@@ -256,7 +258,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               onClick={(e) => handleItemClick("/fileBug", e)}
               className={getItemClass("/fileBug")}
             >
-              <BugReportIcon />
+              <BugAntIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">File A Bug</p>}
             </Link>
           </li>

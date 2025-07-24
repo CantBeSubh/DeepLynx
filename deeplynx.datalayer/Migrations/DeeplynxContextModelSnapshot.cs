@@ -416,7 +416,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("edge_id");
 
-                    b.Property<DateTime?>("LastUpdatedAt")
+                    b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("last_updated_at");
 

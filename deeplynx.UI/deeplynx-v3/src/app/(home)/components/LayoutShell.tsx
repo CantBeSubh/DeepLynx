@@ -1,9 +1,9 @@
 "use client";
 
-import React from "react";
+import { UserCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import React from "react";
 import SideMenu from "./SideMenu";
-import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Handle menu togle
@@ -18,7 +18,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Banner/Header */}
       <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
         <Image
-          src="/images/lynx.png"
+          src="/images/lynx-white.png"
           alt="Logo"
           height={20}
           width={150}
@@ -32,54 +32,21 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             maskRepeat: "no-repeat",
           }}
         />
-        <label className="toggle text-neutral">
+        {/* <label className="toggle text-neutral">
           <input type="checkbox" value="dark" className="theme-controller" />
 
-          <svg
-            aria-label="sun"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-          >
-            <g
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              strokeWidth="2"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle cx="12" cy="12" r="4"></circle>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="m4.93 4.93 1.41 1.41"></path>
-              <path d="m17.66 17.66 1.41 1.41"></path>
-              <path d="M2 12h2"></path>
-              <path d="M20 12h2"></path>
-              <path d="m6.34 17.66-1.41 1.41"></path>
-              <path d="m19.07 4.93-1.41 1.41"></path>
-            </g>
-          </svg>
+          <SunIcon className="size-4" />
 
-          <svg
-            aria-label="moon"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
+          <MoonIcon className="size-4" />
+        </label> */}
+        <div className="dropdown">
+          <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+            <UserCircleIcon className="size-10" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
           >
-            <g
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              strokeWidth="2"
-              fill="none"
-              stroke="currentColor"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-            </g>
-          </svg>
-        </label>
-        <details className="menu dropdown">
-          <summary className="btn m-1">
-            <AccountCircleIcon />
-          </summary>
-          <ul className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm">
             <li>
               <a className="text-secondary-content">Item 1</a>
             </li>
@@ -87,7 +54,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <button className="text-secondary-content">Logout</button>
             </li>
           </ul>
-        </details>
+        </div>
       </header>
 
       {/* Page Content */}

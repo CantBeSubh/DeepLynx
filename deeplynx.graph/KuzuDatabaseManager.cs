@@ -6,16 +6,18 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.Extensions.Configuration;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace deeplynx.graph
 {
     public class KuzuDatabaseManager : IKuzuDatabaseManager
     {
         private readonly string _kuzuDbPath = "../deeplynx.graph/kuzu_db";
-        private kuzu_database _db;
+        private kuzu_database? _db;
         private kuzu_connection? _conn;
         private bool _isDatabaseInitialized = false;
         private readonly string _pgParams;
+        private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
 
 
         /// <summary>
@@ -25,8 +27,42 @@ namespace deeplynx.graph
         {
             _db = new kuzu_database();
             _conn = new kuzu_connection();
-            _pgParams = configuration.GetConnectionString("DefaultConnection")
+
+            // Transform the connection string
+            string originalConnectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("DefaultConnection is not configured.");
+            _pgParams = TransformConnectionString(originalConnectionString);
+        }
+
+
+        /// <summary>
+        /// Transforms a connection string from the format "User ID=...;Password=...;Database=...;Server=...;Port=..." 
+        /// to the format "dbname=... user=... host=... password=... port=...".
+        /// </summary>
+        /// <param name="input">The original connection string to transform.</param>
+        /// <returns>The transformed connection string.</returns>
+        private string TransformConnectionString(string input)
+        {
+            var keyValuePairs = input.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var dictionary = new Dictionary<string, string>();
+
+            foreach (var pair in keyValuePairs)
+            {
+                var parts = pair.Split(new[] { '=' }, 2);
+                if (parts.Length == 2)
+                {
+                    dictionary[parts[0].Trim()] = parts[1].Trim();
+                }
+            }
+
+            // Build the transformed connection string
+            var transformed = $"dbname={dictionary["Database"]} " +
+                              $"user={dictionary["User ID"]} " +
+                              $"host={dictionary["Server"]} " +
+                              $"password={dictionary["Password"]} " +
+                              $"port={dictionary["Port"]}";
+
+            return transformed;
         }
 
 
@@ -37,6 +73,16 @@ namespace deeplynx.graph
         /// <returns>A task representing the asynchronous connection operation.</returns>
         public async Task<bool> ConnectAsync()
         {
+            if (_conn != null)
+            {
+                Console.WriteLine("Already connected to Kuzu database.");
+                return true;
+            }
+            
+            Console.WriteLine("Getting connect lock");
+            await _connectionLock.WaitAsync();
+            Console.WriteLine("Connect lock acquired");
+
             try
             {
                 kuzu_system_config config = kuzu_default_system_config();
@@ -69,6 +115,11 @@ namespace deeplynx.graph
                 Console.WriteLine($"An error occurred while connecting to the database: {e.Message}");
                 return false;
             }
+            finally
+            {
+                _connectionLock.Release();
+                Console.WriteLine("Released connect lock");
+            }
         }
 
 
@@ -79,19 +130,20 @@ namespace deeplynx.graph
         /// <returns>Returns false if an error occurred and true if not.</returns>
         public async Task<bool> InstallPostgresExtensionsAsync()
         {
-            if (_conn == null)
-            {
-                await ConnectAsync();
-            }
+            Console.WriteLine("Installing Postgres and Json extenstions.");
             try
             {
+                if (_conn == null)
+                {
+                    await ConnectAsync();
+                }
+
                 await Task.Run(() => PerformNonQueryAsync("INSTALL postgres;"));
                 await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION postgres;"));
                 await Task.Run(() => PerformNonQueryAsync("INSTALL json;"));
                 await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION json;"));
 
                 Console.WriteLine("Installed Postgres and Json extensions.");
-
                 return true;
             }
             catch (Exception e)
@@ -99,7 +151,6 @@ namespace deeplynx.graph
                 Console.WriteLine($"An error occurred when installing the Postgres and Json extensions: {e}");
                 return false;
             }
-
         }
 
 
@@ -112,18 +163,23 @@ namespace deeplynx.graph
         public async Task<bool> ExportDataAsync(int project_id)
         {
 
-            if (_conn == null)
-            {
-                await ConnectAsync();
-            }
+            Console.WriteLine("Attempting to acquire export data lock...");
+            await _connectionLock.WaitAsync();
+            Console.WriteLine("Export Data lock acquired.");
 
-            bool hasError = false;
             try
             {
+                if (_conn == null)
+                {
+                    await ConnectAsync();
+                }
+
+                bool hasError = false;
+
                 await InstallPostgresExtensionsAsync();
 
                 string attachCommand = $"ATTACH '{_pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
-                await Task.Run(() => PerformNonQueryAsync(attachCommand));
+                await PerformNonQueryAsync(attachCommand);
 
                 await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS ProcessedProjectIds (project_id INT64 PRIMARY KEY);");
 
@@ -157,6 +213,11 @@ namespace deeplynx.graph
             {
                 Console.WriteLine($"An error occurred during the export: {e.Message}");
                 return false;
+            }
+            finally
+            {
+                _connectionLock.Release();
+                Console.WriteLine("Export Lock Released");
             }
         }
 
@@ -442,6 +503,10 @@ namespace deeplynx.graph
         /// <returns>A task representing the asynchronous operation, containing the result of the query as a string.</returns>
         public async Task<string> GetNodesWithinDepthByIdAsync(KuzuDBMNodesWithinDepthRequestDto request)
         {
+            Console.WriteLine("Getting nodes withing lock.");
+            await _connectionLock.WaitAsync();
+            Console.WriteLine("Nodes Within Lock Acquired");
+
             try
             {
                 string query = $@"
@@ -453,13 +518,27 @@ namespace deeplynx.graph
                     b AS Related_Node;";
 
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
+                var result = await ExecuteQueryAsync(requestDto);
 
-                return await ExecuteQueryAsync(requestDto);
+                if (result.Contains("id"))
+                {
+                    return result;
+                }
+                else
+                {
+                    return $"There are no relationships for the {request.TableName} with id {request.Id} that are in project your project.";
+                }
+
             }
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while retrieving nodes within depth: {e.Message}");
                 throw;
+            }
+            finally
+            {
+                _connectionLock.Release();
+                Console.WriteLine("Nodes within lock released.");
             }
         }
 
@@ -520,6 +599,7 @@ namespace deeplynx.graph
                             archived_at
                     );"
                 );
+
                 var classNames = await GetUniqueClassNamesAsync();
 
                 foreach (var className in classNames)
@@ -548,7 +628,7 @@ namespace deeplynx.graph
                                 modified_by,
                                 modified_at,
                                 archived_at
-                        );";
+                    );";
 
                     await PerformNonQueryAsync(copyCommand);
                 }
@@ -565,6 +645,7 @@ namespace deeplynx.graph
         }
 
 
+
         /// <summary>
         /// Dynamically loads edges from the edges_c view into the KuzuDB.
         /// </summary>
@@ -573,7 +654,6 @@ namespace deeplynx.graph
         private async Task<bool> LoadEdgesAsync(int project_id)
         {
             bool hasError = false;
-
             try
             {
                 await LoadRelatesToDataAsync(project_id);
@@ -600,6 +680,69 @@ namespace deeplynx.graph
 
             return hasError;
         }
+
+
+        public async Task<bool> UpdateRelationshipInEdgeAsync(string originTableName, long originNodeId, string relatedTableName, long relatedNodeId, string newRelationshipType, string oldRelationshipType)
+        {
+            Console.WriteLine("Getting update relationship edges lock");
+            await _connectionLock.WaitAsync();
+            Console.WriteLine("Acquired update relationship edges lock.");
+
+            try
+            {
+                string createRelTableQuery = $@"
+                    CREATE REL TABLE IF NOT EXISTS {newRelationshipType} (
+                        FROM {originTableName}
+                        TO {relatedTableName},
+                        relationship_name STRING
+                    );";
+                await PerformNonQueryAsync(createRelTableQuery);
+                Console.WriteLine($"Ensured the REL TABLE {newRelationshipType} exists.");
+
+                try
+                {
+                    string alterRelTableQuery = $@"
+                        ALTER TABLE {newRelationshipType} ADD IF NOT EXISTS FROM {originTableName} TO {relatedTableName};";
+                    Console.WriteLine($"Executing query: {alterRelTableQuery}");
+                    await PerformNonQueryAsync(alterRelTableQuery);
+                    Console.WriteLine($"Ensured the REL TABLE {newRelationshipType} includes FROM {originTableName} TO {relatedTableName}.");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Failed to alter relationship table: {e.Message}. Skipping this step.");
+                }
+
+
+                string updateQuery = $@"
+                    MATCH (a:{originTableName}), (b:{relatedTableName})
+                    WHERE a.id = {originNodeId} AND b.id = {relatedNodeId}
+                    CREATE (a)-[:{newRelationshipType}]->(b);";
+                await PerformNonQueryAsync(updateQuery);
+
+                Console.WriteLine($"Updated relationship from {originTableName} with ID {originNodeId} to {relatedTableName} with ID {relatedNodeId} as {newRelationshipType}.");
+
+                string deleteQuery = $@"
+                    MATCH (a:{originTableName})-[r:{oldRelationshipType}]->(b:{relatedTableName})
+                    WHERE a.id = {originNodeId} AND b.id = {relatedNodeId}
+                    DELETE r;";
+                await PerformNonQueryAsync(updateQuery);
+
+                Console.WriteLine($"Deleted the relationship from the {oldRelationshipType} table.");
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while updating the relationship: {e.Message}");
+                return false;
+            }
+            finally
+            {
+                _connectionLock.Release();
+                Console.WriteLine("Update relationship in edges lock released.");
+            }
+        }
+
 
 
         /// <summary>
@@ -666,13 +809,21 @@ namespace deeplynx.graph
         /// <returns>Returns false if there is no connection or if an error occurred and true if not.</returns>
         public async Task<bool> CloseAsync()
         {
+            Console.WriteLine("Getting Close lock");
+            await _connectionLock.WaitAsync();
+            Console.WriteLine("Close lock acquired");
+
             try
             {
-                if (_conn != null)
+                if (_conn != null && _db != null)
                 {
-                    await Task.Run(() => kuzu_connection_destroy(_conn));
+                    _conn.Dispose();
                     _conn = null;
-                    Console.WriteLine("Closed the Kuzu connection.");
+
+                    _db.Dispose();
+                    _db = null;
+
+                    Console.WriteLine("Closed the Kuzu connection and database.");
                     return true;
                 }
                 return false;
@@ -681,6 +832,11 @@ namespace deeplynx.graph
             {
                 Console.WriteLine($"An error occurred while closing the Kuzu connection: {e.Message}");
                 return false;
+            }
+            finally
+            {
+                _connectionLock.Release();
+                Console.WriteLine("Close lock released");
             }
         }
 
