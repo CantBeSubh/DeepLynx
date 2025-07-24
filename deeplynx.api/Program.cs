@@ -59,7 +59,7 @@ builder.Services.AddControllers()
 */
 builder.Services.AddHttpContextAccessor();
 
-var connectionString = ConnectionStringsProvider.GetPostgresConnectionString(builder.Configuration);
+var connectionString = NexusConnectionsProvider.GetPostgresConnectionString(builder.Configuration);
 
 builder.Services.AddDbContext<DeeplynxContext>(
     options => options.UseNpgsql(connectionString),
