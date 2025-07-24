@@ -52,9 +52,11 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.MaxDepth = 64;
     });
 
-// ----------------------------------
-// Dependency Injection
-// ----------------------------------
+/*
+╔════════════════════════════╗
+║  Dependency Injection      ║
+╚════════════════════════════╝
+*/
 builder.Services.AddHttpContextAccessor();
 
 var connectionString = ConnectionStringsProvider.GetPostgresConnectionString(builder.Configuration);
