@@ -1,5 +1,5 @@
-using System.Text.Json.Nodes;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
@@ -46,13 +46,14 @@ public class MetadataBusiness : IMetadataBusiness
     }
 
     /// <summary>
-    /// Call the parse and perform pre-processing and final data return validation of all metadata
-    /// Note: Will error out with foreign key constraint violation if project or data source is not found.
+    /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
+    /// <exception cref="KeyNotFoundException">If project is not found.</exception>
+    /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
@@ -65,8 +66,7 @@ public class MetadataBusiness : IMetadataBusiness
     }
 
     /// <summary>
-    /// Individually call the bulk create functions of all metadata fields
-    /// Note: Will error out with foreign key constraint violation if project or data source is not found.
+    /// Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
@@ -112,7 +112,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="jsonArray">The input json to be serialized to an object</param>
     /// <returns>List of serialized objects parsed from json</returns>
-    /// <note>Due to possible null reference return, returns an empty generic list on failure.</note>
+    /// <note>Due to possible null reference return, returns an empty list of generic type on failure.</note>
     public List<T> DeserializeJsonArray<T>(JsonArray jsonArray)
     {
         string jsonString = jsonArray.ToString();
