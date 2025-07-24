@@ -24,7 +24,7 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: ConnectionSettings__DefaultConnection
+            - name: ConnectionStrings__DefaultConnection
               value: ${DATABASE_CONNECTION_STRING}
             - name: POSTGRES_DBHOST
               value: ${POSTGRES_DBHOST}
