@@ -28,7 +28,6 @@ public static class SeedData
         {
             new User
             {
-                Id = 1,
                 Name = "John Smith",
                 Email = "john.smith@company.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword1",
@@ -36,7 +35,6 @@ public static class SeedData
             },
             new User
             {
-                Id = 2,
                 Name = "Sarah Johnson",
                 Email = "sarah.johnson@company.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword2",
@@ -44,7 +42,6 @@ public static class SeedData
             },
             new User
             {
-                Id = 3,
                 Name = "Mike Davis",
                 Email = "mike.davis@company.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword3",
@@ -52,7 +49,6 @@ public static class SeedData
             },
             new User
             {
-                Id = 4,
                 Name = "System Architect",
                 Email = "system.architect@legacy.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword4",
@@ -71,7 +67,6 @@ public static class SeedData
         {
             new Project
             {
-                Id = 1,
                 Name = "Customer Analytics Platform",
                 Abbreviation = "CAP",
                 Description = "Comprehensive customer data analysis and segmentation platform for marketing insights",
@@ -83,7 +78,6 @@ public static class SeedData
             },
             new Project
             {
-                Id = 2,
                 Name = "Supply Chain Optimization",
                 Abbreviation = "SCO",
                 Description = "Real-time supply chain monitoring and optimization system with predictive analytics",
@@ -95,7 +89,6 @@ public static class SeedData
             },
             new Project
             {
-                Id = 3,
                 Name = "Legacy System Migration",
                 Abbreviation = "LSM",
                 Description = "Migration of legacy data systems to modern cloud-based infrastructure",
@@ -119,7 +112,6 @@ public static class SeedData
             // Customer Analytics Platform Classes
             new Class
             {
-                Id = 1,
                 Name = "Customer",
                 Description = "Customer entity with demographic and behavioral data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440101",
@@ -132,7 +124,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 2,
                 Name = "Purchase",
                 Description = "Customer purchase transactions and order history",
                 Uuid = "550e8400-e29b-41d4-a716-446655440102",
@@ -145,7 +136,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 3,
                 Name = "Segment",
                 Description = "Customer segmentation categories and rules",
                 Uuid = "550e8400-e29b-41d4-a716-446655440103",
@@ -158,7 +148,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 4,
                 Name = "Product",
                 Description = "Product catalog and inventory information",
                 Uuid = "550e8400-e29b-41d4-a716-446655440104",
@@ -173,7 +162,6 @@ public static class SeedData
             // Supply Chain Optimization Classes
             new Class
             {
-                Id = 5,
                 Name = "Supplier",
                 Description = "Supplier information and performance metrics",
                 Uuid = "550e8400-e29b-41d4-a716-446655440201",
@@ -186,7 +174,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 6,
                 Name = "Inventory",
                 Description = "Product inventory levels and warehouse data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440202",
@@ -199,7 +186,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 7,
                 Name = "Warehouse",
                 Description = "Warehouse facility information and capacity data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440203",
@@ -212,7 +198,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 8,
                 Name = "Shipment",
                 Description = "Shipping and logistics tracking information",
                 Uuid = "550e8400-e29b-41d4-a716-446655440204",
@@ -227,7 +212,6 @@ public static class SeedData
             // Legacy System Migration Classes (Archived)
             new Class
             {
-                Id = 9,
                 Name = "LegacyUser",
                 Description = "User accounts from legacy system requiring migration",
                 Uuid = "550e8400-e29b-41d4-a716-446655440301",
@@ -240,7 +224,6 @@ public static class SeedData
             },
             new Class
             {
-                Id = 10,
                 Name = "LegacyData",
                 Description = "Historical data records from legacy database",
                 Uuid = "550e8400-e29b-41d4-a716-446655440302",
@@ -265,7 +248,6 @@ public static class SeedData
             // Customer Analytics Platform Data Sources
             new DataSource
             {
-                Id = 1,
                 Name = "Customer CRM Database",
                 Description = "Primary customer relationship management database",
                 Abbreviation = "CRM_DB",
@@ -281,7 +263,6 @@ public static class SeedData
             },
             new DataSource
             {
-                Id = 2,
                 Name = "E-commerce Transaction API",
                 Description = "Real-time API for accessing e-commerce transaction data",
                 Abbreviation = "ECOM_API",
@@ -299,7 +280,6 @@ public static class SeedData
             // Supply Chain Optimization Data Sources
             new DataSource
             {
-                Id = 3,
                 Name = "Enterprise Resource Planning System",
                 Description = "Comprehensive ERP system with supplier and inventory data",
                 Abbreviation = "ERP_SYS",
@@ -315,7 +295,6 @@ public static class SeedData
             },
             new DataSource
             {
-                Id = 4,
                 Name = "IoT Warehouse Sensors",
                 Description = "Real-time sensor data from warehouse facilities",
                 Abbreviation = "IOT_SENSORS",
@@ -333,7 +312,6 @@ public static class SeedData
             // Legacy System Migration Data Sources (Archived)
             new DataSource
             {
-                Id = 5,
                 Name = "Legacy Mainframe Database",
                 Description = "Historical mainframe system with legacy data",
                 Abbreviation = "MAINFRAME_DB",
@@ -349,7 +327,6 @@ public static class SeedData
             },
             new DataSource
             {
-                Id = 6,
                 Name = "Legacy File System Archives",
                 Description = "Historical file-based data archives",
                 Abbreviation = "FILE_ARCHIVE",
@@ -408,7 +385,6 @@ public static class SeedData
             // Customer Analytics Platform Relationships
             new Relationship
             {
-                Id = 1,
                 Name = "Customer Makes Purchase",
                 Description = "Defines the relationship between customers and their purchase transactions",
                 Uuid = "550e8400-e29b-41d4-a716-446655440001",
@@ -423,7 +399,6 @@ public static class SeedData
             },
             new Relationship
             {
-                Id = 2,
                 Name = "Customer Belongs To Segment",
                 Description = "Associates customers with their market segmentation categories",
                 Uuid = "550e8400-e29b-41d4-a716-446655440002",
@@ -438,7 +413,6 @@ public static class SeedData
             },
             new Relationship
             {
-                Id = 3,
                 Name = "Purchase Contains Products",
                 Description = "Links purchase transactions to specific products",
                 Uuid = "550e8400-e29b-41d4-a716-446655440003",
@@ -455,7 +429,6 @@ public static class SeedData
             // Supply Chain Optimization Relationships
             new Relationship
             {
-                Id = 4,
                 Name = "Supplier Provides Inventory",
                 Description = "Establishes supply relationship between suppliers and inventory",
                 Uuid = "550e8400-e29b-41d4-a716-446655440004",
@@ -470,7 +443,6 @@ public static class SeedData
             },
             new Relationship
             {
-                Id = 5,
                 Name = "Inventory Stored In Warehouse",
                 Description = "Maps inventory items to warehouse storage locations",
                 Uuid = "550e8400-e29b-41d4-a716-446655440005",
@@ -485,7 +457,6 @@ public static class SeedData
             },
             new Relationship
             {
-                Id = 6,
                 Name = "Shipment Contains Inventory",
                 Description = "Defines inventory items included in shipments",
                 Uuid = "550e8400-e29b-41d4-a716-446655440006",
@@ -502,7 +473,6 @@ public static class SeedData
             // Legacy System Migration Relationships (Archived)
             new Relationship
             {
-                Id = 7,
                 Name = "Legacy User Owns Legacy Data",
                 Description = "Historical relationship mapping legacy users to data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440007",
@@ -529,7 +499,6 @@ public static class SeedData
             // Customer Analytics Platform Edge Mappings
             new EdgeMapping
             {
-                Id = 1,
                 OriginParams = @"{""class_name"":""Customer"",""primary_key"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name FROM customers WHERE status = 'active'"",""data_source_table"":""customers""}",
                 DestinationParams = @"{""class_name"":""Purchase"",""primary_key"":""purchase_id"",""foreign_key"":""customer_id"",""extraction_query"":""SELECT purchase_id, customer_id, purchase_date, total_amount FROM purchases"",""data_source_table"":""purchases""}",
                 RelationshipId = 1,
@@ -545,7 +514,6 @@ public static class SeedData
             },
             new EdgeMapping
             {
-                Id = 2,
                 OriginParams = @"{""class_name"":""Customer"",""primary_key"":""customer_id"",""segmentation_rules"":{""premium"":""total_lifetime_value > 5000"",""regular"":""total_lifetime_value BETWEEN 1000 AND 5000""}}",
                 DestinationParams = @"{""class_name"":""Segment"",""primary_key"":""segment_id"",""assignment_logic"":""rule_based"",""dynamic_assignment"":true}",
                 RelationshipId = 2,
@@ -563,7 +531,6 @@ public static class SeedData
             // Supply Chain Optimization Edge Mappings
             new EdgeMapping
             {
-                Id = 3,
                 OriginParams = @"{""class_name"":""Supplier"",""primary_key"":""supplier_id"",""performance_metrics"":[""on_time_delivery_rate"",""quality_score"",""cost_competitiveness""]}",
                 DestinationParams = @"{""class_name"":""Inventory"",""primary_key"":""inventory_id"",""foreign_key"":""supplier_id"",""supply_chain_tracking"":{""lead_time_calculation"":""DATEDIFF(day, order_date, delivery_date)""}}",
                 RelationshipId = 4,
@@ -581,7 +548,6 @@ public static class SeedData
             // Legacy System Migration Edge Mappings (Archived)
             new EdgeMapping
             {
-                Id = 4,
                 OriginParams = @"{""class_name"":""LegacyUser"",""primary_key"":""legacy_user_id"",""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""date_format_conversion"":""YYYYMMDD_to_ISO8601""}}",
                 DestinationParams = @"{""class_name"":""LegacyData"",""primary_key"":""legacy_data_id"",""foreign_key"":""owner_user_id"",""migration_priority"":{""critical_data_first"":true}}",
                 RelationshipId = 7,
@@ -609,7 +575,6 @@ public static class SeedData
             // Customer Analytics Platform Record Mappings
             new RecordMapping
             {
-                Id = 1,
                 RecordParams = @"{""record_extraction"":{""source_table"":""customers"",""primary_key_field"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name, status FROM customers WHERE status = 'active'""},""field_mappings"":{""customer_id"":""customer_id"",""email"":""email"",""first_name"":""first_name"",""last_name"":""last_name""}}",
                 ClassId = 1,
                 ProjectId = 1,
@@ -623,7 +588,6 @@ public static class SeedData
             },
             new RecordMapping
             {
-                Id = 2,
                 RecordParams = @"{""record_extraction"":{""source_table"":""purchases"",""primary_key_field"":""purchase_id"",""extraction_query"":""SELECT purchase_id, customer_id, order_number, purchase_date, total_amount FROM purchases""},""aggregation_rules"":{""customer_metrics"":{""total_purchases"":""COUNT(*) GROUP BY customer_id"",""avg_order_value"":""AVG(total_amount) GROUP BY customer_id""}}}",
                 ClassId = 2,
                 ProjectId = 1,
@@ -639,7 +603,6 @@ public static class SeedData
             // Supply Chain Optimization Record Mappings
             new RecordMapping
             {
-                Id = 3,
                 RecordParams = @"{""record_extraction"":{""source_table"":""suppliers"",""primary_key_field"":""supplier_id"",""extraction_query"":""SELECT supplier_id, company_name, performance_rating FROM suppliers WHERE status = 'active'""},""performance_calculations"":{""overall_score"":""(performance_rating + quality_score + on_time_delivery_rate * 5) / 3""}}",
                 ClassId = 5,
                 ProjectId = 2,
@@ -653,7 +616,6 @@ public static class SeedData
             },
             new RecordMapping
             {
-                Id = 4,
                 RecordParams = @"{""record_extraction"":{""source_table"":""inventory"",""primary_key_field"":""inventory_id"",""extraction_query"":""SELECT inventory_id, product_code, current_quantity, reorder_level FROM inventory""},""inventory_calculations"":{""stock_status"":""CASE WHEN current_quantity <= reorder_level THEN 'reorder_needed' ELSE 'normal' END""}}",
                 ClassId = 6,
                 ProjectId = 2,
@@ -669,7 +631,6 @@ public static class SeedData
             // Legacy System Migration Record Mappings (Archived)
             new RecordMapping
             {
-                Id = 5,
                 RecordParams = @"{""record_extraction"":{""source_table"":""LEGACY.USERS"",""primary_key_field"":""USR_ID"",""extraction_query"":""SELECT USR_ID, USR_NAME, USR_DEPT FROM LEGACY.USERS WHERE STATUS = 'A'""},""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""field_name_mapping"":{""USR_ID"":""legacy_user_id"",""USR_NAME"":""user_name""}}}",
                 ClassId = 9,
                 ProjectId = 3,
@@ -848,7 +809,6 @@ public static class SeedData
             // Customer Analytics Platform Edges
             new Edge
             {
-                Id = 1,
                 OriginId = 1, // Customer record
                 DestinationId = 2, // Purchase record
                 RelationshipId = 1,
@@ -862,7 +822,6 @@ public static class SeedData
             },
             new Edge
             {
-                Id = 2,
                 OriginId = 1, // Customer record
                 DestinationId = 3, // Segment record
                 RelationshipId = 2,
@@ -879,7 +838,6 @@ public static class SeedData
             // Supply Chain Optimization Edges
             new Edge
             {
-                Id = 3,
                 OriginId = 4, // Supplier record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 4,
@@ -893,7 +851,6 @@ public static class SeedData
             },
             new Edge
             {
-                Id = 4,
                 OriginId = 5, // Inventory record
                 DestinationId = 6, // Warehouse record
                 RelationshipId = 5,
@@ -907,7 +864,6 @@ public static class SeedData
             },
             new Edge
             {
-                Id = 5,
                 OriginId = 7, // Shipment record
                 DestinationId = 5, // Inventory record
                 RelationshipId = 6,
@@ -924,7 +880,6 @@ public static class SeedData
             // Legacy System Migration Edges (Archived)
             new Edge
             {
-                Id = 6,
                 OriginId = 8, // Legacy User record
                 DestinationId = 9, // Legacy Data record
                 RelationshipId = 7,
