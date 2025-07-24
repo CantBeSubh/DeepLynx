@@ -100,7 +100,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
         {
             List<EdgeRequestDto> edges = DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
-            List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId,  edges);
+            List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
             metadataResponseDto.Edges = edgeResponseDtos;
         }
 

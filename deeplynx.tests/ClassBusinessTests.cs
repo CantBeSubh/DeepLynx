@@ -58,7 +58,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClasses_Success_OnBulkCreate()
         {
-            var classDtos = new List<ClassRequestDto>();
+            var classRequestDtos = new List<ClassRequestDto>();
             
             var dto1 = new ClassRequestDto
             {
@@ -72,17 +72,13 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
             };
-            classDtos.Add(dto1);
-            classDtos.Add(dto2);
-            var bulkDto = new BulkClassRequestDto
-            {
-                BulkClassRequests = classDtos
-            };
+            classRequestDtos.Add(dto1);
+            classRequestDtos.Add(dto2);
 
-            var result = await _classBusiness.BulkCreateClass(pid, bulkDto);
-            result.Classes.Should().HaveCount(2);
-            result.Classes.First().Name.Should().Be("Test Class 1");
-            result.Classes.Last().Name.Should().Be("Test Class 2");
+            var result = await _classBusiness.BulkCreateClass(pid, classRequestDtos);
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Class 1");
+            result.Last().Name.Should().Be("Test Class 2");
         }
 
         [Fact]

@@ -292,31 +292,28 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = 100L;
         var dataSourceId = 100L;
-        var bulkDto = new BulkRecordRequestDto
+        List<RecordRequestDto> records = new List<RecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new RecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 1",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
-                },
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 2",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
-                }
+                Name = "Bulk Record 1",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
+            },
+            new RecordRequestDto
+            {
+                Name = "Bulk Record 2",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
             }
         };
 
         // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
+        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Records.Count());
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 1");
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 2");
+        Assert.Equal(2, records.Count());
+        Assert.Contains(records, r => r.Name == "Bulk Record 1");
+        Assert.Contains(records, r => r.Name == "Bulk Record 2");
 
         // Verify records were actually created in database
         var recordCount = await Context.Records.CountAsync(r => r.ProjectId == projectId);
@@ -329,17 +326,14 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = 100L;
         var dataSourceId = 100L;
-        var bulkDto = new BulkRecordRequestDto
-        {
-            Records = new List<RecordRequestDto>()
-        };
+        List<RecordRequestDto> records = new List<RecordRequestDto>();
 
         // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
+        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result.Records);
+        Assert.Empty(records);
     }
 
     [Fact]
@@ -348,21 +342,18 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var invalidProjectId = 999L;
         var dataSourceId = 1L;
-        var bulkDto = new BulkRecordRequestDto
+        List<RecordRequestDto> records = new List<RecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new RecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Test Record",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
-                }
+                Name = "Test Record",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
             }
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, bulkDto));
+            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, records));
     }
 
     #endregion
