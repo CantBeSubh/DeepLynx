@@ -78,7 +78,8 @@ public class MetadataBusiness : IMetadataBusiness
             // List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
             // metadataResponseDto.Classes = classResponseDtos;
             // TODO: if we expect to bulk insert 10k+ rows at a time, implement chunking/batching or a binary COPY
-            bool test = await _classBusiness.BulkCreateClass(projectId, classes);
+            // TODO: print total x created
+            int updated_classes = await _classBusiness.BulkCreateClass(projectId, classes);
         }
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())

@@ -167,7 +167,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<bool> BulkCreateClass(long projectId, List<ClassRequestDto> classRequestDtos)
+    public async Task<int> BulkCreateClass(long projectId, List<ClassRequestDto> classes)
     {
         DoesProjectExist(projectId);
         
@@ -189,7 +189,7 @@ public class ClassBusiness : IClassBusiness
         };
         
         // establish "dynamic" parameters (new for each dto in the list)
-        parameters.AddRange(classRequestDtos.SelectMany((dto, i) => new[]
+        parameters.AddRange(classes.SelectMany((dto, i) => new[]
         {
             new NpgsqlParameter($"@p{i}_name", dto.Name),
             new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
@@ -197,14 +197,14 @@ public class ClassBusiness : IClassBusiness
         }));
         
         // stringify the params and comma separate them
-        var valueTuples = string.Join(", ", classRequestDtos.Select((dto, i) =>
+        var valueTuples = string.Join(", ", classes.Select((dto, i) =>
             $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
-        var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters);
-
-        return true;
+        
+        // returns the number of affected rows
+        return await _context.Database.ExecuteSqlRawAsync(sql, parameters);
     }
 
     /// <summary>
