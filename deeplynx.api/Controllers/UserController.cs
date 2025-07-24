@@ -232,5 +232,26 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Get recent records
+        /// </summary>
+        /// <param name="projectId">Array of project ids</param>
+        /// <returns>List of record response DTOs sorted by most recent</returns>
+        [HttpPost("GetRecentlyAddedRecords")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromBody] long[] projectId)
+        {
+            try
+            {
+                var records = await _userBusiness.GetRecentlyAddedRecords(projectId);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing historical records: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }
