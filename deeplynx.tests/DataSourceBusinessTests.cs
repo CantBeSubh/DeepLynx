@@ -106,7 +106,6 @@ namespace deeplynx.tests
             // Arrange
             var dataSourceWithNullConfig = new DataSource
             {
-                Id = 100,
                 Name = "Null Config Test",
                 Description = "Primary customer relationship management database",
                 Abbreviation = "CRM_DB",
