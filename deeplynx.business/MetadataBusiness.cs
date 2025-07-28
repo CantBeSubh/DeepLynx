@@ -80,8 +80,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
         {
             List<RelationshipRequestDto> relationships = JsonSerialization.DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
-            List<RelationshipResponseDto> relationshipResponseDtos = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
-            metadataResponseDto.Relationships = relationshipResponseDtos;
+            metadataResponseDto.Relationships = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
         }
         
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
