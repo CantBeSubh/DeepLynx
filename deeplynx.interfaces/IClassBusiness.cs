@@ -7,7 +7,7 @@ public interface IClassBusiness
     Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived);
     Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived);
     Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto);
-    Task<int> BulkCreateClass(long projectId, List<ClassRequestDto> classRequestDtos);
+    Task<IEnumerable<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classRequestDtos);
     Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto);
     Task<ClassResponseDto> GetClassInfo(long projectId, string className);
     Task<bool> DeleteClass(long projectId, long classId);

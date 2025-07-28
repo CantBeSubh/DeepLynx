@@ -74,11 +74,7 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
             List<ClassRequestDto> classes = JsonSerialization.DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
-            // List<ClassResponseDto> classResponseDtos = await _classBusiness.BulkCreateClass(projectId, classes); 
-            // metadataResponseDto.Classes = classResponseDtos;
-            // TODO: if we expect to bulk insert 10k+ rows at a time, implement chunking/batching or a binary COPY
-            // TODO: print total x created
-            int updated_classes = await _classBusiness.BulkCreateClass(projectId, classes);
+            metadataResponseDto.Classes = await _classBusiness.BulkCreateClasses(projectId, classes);
         }
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())

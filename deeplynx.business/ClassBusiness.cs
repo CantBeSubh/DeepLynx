@@ -168,17 +168,48 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<int> BulkCreateClass(long projectId, List<ClassRequestDto> classes)
+    public async Task<IEnumerable<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
     {
         DoesProjectExist(projectId);
         
-        // TODO: replace with bulk insertOrUpdate
-        // var bulkConfig = new BulkConfig
-        // {
-        //
-        // }
+        // Bulk insert into classes; if there is a name collision, update the description and uuid if present
+        var sql = @"
+            INSERT INTO deeplynx.classes (project_id, name, description, uuid, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                description = COALESCE(EXCLUDED.description, classes.description),
+                uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
+                modified_at = @now
+            RETURNING *;
+        ";
 
-        return 0;
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
+        {
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(classes.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", classes.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+
+        // returns the resulting upserted classes
+        return await _context.Set<ClassResponseDto>()
+            .FromSqlRaw(sql, parameters.ToArray())
+            .AsNoTracking()
+            .ToListAsync();
     }
 
     /// <summary>

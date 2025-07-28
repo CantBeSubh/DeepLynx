@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using deeplynx.models;
 
 namespace deeplynx.datalayer.Models;
 
@@ -252,6 +253,9 @@ public partial class DeeplynxContext : DbContext
                     });
 
         });
+
+        // define DTOs which can be used for query returns but aren't tracked by the DB
+        modelBuilder.Entity<ClassResponseDto>().HasNoKey();
 
         OnModelCreatingPartial(modelBuilder);
     }
