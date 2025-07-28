@@ -206,9 +206,8 @@ public class ClassBusiness : IClassBusiness
         sql = string.Format(sql, valueTuples);
 
         // returns the resulting upserted classes
-        return await _context.Set<ClassResponseDto>()
-            .FromSqlRaw(sql, parameters.ToArray())
-            .AsNoTracking()
+        return await _context.Database
+            .SqlQueryRaw<ClassResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
     }
 
