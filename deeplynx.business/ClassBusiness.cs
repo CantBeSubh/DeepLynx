@@ -4,7 +4,6 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
-using EFCore.BulkExtensions;
 using Npgsql;
 
 namespace deeplynx.business;

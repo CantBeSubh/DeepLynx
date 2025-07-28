@@ -475,7 +475,7 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Private method used to calculate json depth of properties (should be <3)
+    /// Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>

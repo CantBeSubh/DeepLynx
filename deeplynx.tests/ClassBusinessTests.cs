@@ -245,7 +245,8 @@ namespace deeplynx.tests
             var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
             
-            updatedResult.ModifiedAt.Should().BeCloseTo(updatedResult.CreatedAt,TimeSpan.FromMilliseconds(10));
+            Assert.NotEqual(updatedResult.ModifiedAt, updatedResult.CreatedAt);
+            Assert.Equal("Updated Description", updatedResult.Description);
         }
 
         [Fact]
@@ -475,7 +476,7 @@ namespace deeplynx.tests
             // Create relationship where testClass is Origin and dest is null
             var relationship3 = new Relationship
             {
-                Name = "Test Relationship 1",
+                Name = "Test Relationship 3",
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
@@ -486,7 +487,7 @@ namespace deeplynx.tests
             // Create relationship where testClass is Destination and orig is null
             var relationship4 = new Relationship
             {
-                Name = "Test Relationship 2",
+                Name = "Test Relationship 4",
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
@@ -497,7 +498,7 @@ namespace deeplynx.tests
             // Create relationship where orig and dest are null
             var relationship5 = new Relationship
             {
-                Name = "Test Relationship 2",
+                Name = "Test Relationship 5",
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
