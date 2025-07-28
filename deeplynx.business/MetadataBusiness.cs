@@ -73,26 +73,26 @@ public class MetadataBusiness : IMetadataBusiness
 
         if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
-            List<ClassRequestDto> classes = JsonSerialization.DeserializeJsonArray<ClassRequestDto>(metadataRequestDto.Classes);
+            List<ClassRequestDto> classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
             metadataResponseDto.Classes = await _classBusiness.BulkCreateClasses(projectId, classes);
         }
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
         {
-            List<RelationshipRequestDto> relationships = JsonSerialization.DeserializeJsonArray<RelationshipRequestDto>(metadataRequestDto.Relationships);
+            List<RelationshipRequestDto> relationships = JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships);
             metadataResponseDto.Relationships = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
         }
         
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
-            List<RecordRequestDto> records = JsonSerialization.DeserializeJsonArray<RecordRequestDto>(metadataRequestDto.Records);
+            List<RecordRequestDto> records = JsonSerialization.Deserialize<RecordRequestDto>(metadataRequestDto.Records);
             List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
             metadataResponseDto.Records = recordResponseDtos;
         }
         
         if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
         {
-            List<EdgeRequestDto> edges = JsonSerialization.DeserializeJsonArray<EdgeRequestDto>(metadataRequestDto.Edges);
+            List<EdgeRequestDto> edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
             List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
             metadataResponseDto.Edges = edgeResponseDtos;
         }

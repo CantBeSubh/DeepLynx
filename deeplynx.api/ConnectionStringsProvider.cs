@@ -1,14 +1,14 @@
 using DotNetEnv;
 
 /// <summary>
-///  Provide a singular provider class to configure all external deeplynx connections
+///  Provide a singular provider class to configure external deeplynx connections
 /// </summary>
-public static class NexusConnectionsProvider
+public static class ConnectionStringsProvider
 {
     /// <summary>
-    /// Return a postgresql database connection string via .env file using DotNetEnv package.
+    /// Return a postgresql database connection string using the DotNetEnv package.
     /// </summary>
-    /// <param name="configuration">Get the default project configuration to use appsettings.json string as fallback string.</param>
+    /// <param name="configuration">Get the default project configuration to use appsettings string as fallback string.</param>
     /// <returns>A string holding the valid postgresql connection string.</returns>
     /// <exception cref="InvalidOperationException">Thrown when valid postgres connection string cannot be created.</exception>
     public static string GetPostgresConnectionString(IConfiguration configuration)
@@ -29,12 +29,12 @@ public static class NexusConnectionsProvider
             !string.IsNullOrEmpty(postgresServer) &&
             !string.IsNullOrEmpty(postgresPort))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info(".env data found, using .env postgres connection credentials.");
+            NLog.LogManager.GetCurrentClassLogger().Info("Using .env postgres connection credentials.");
             return $"User ID={postgresUser};Password={postgresPassword};Database={postgresDatabaseName};Server={postgresServer};Port={postgresPort};";
         }
         else if (!string.IsNullOrEmpty(defaultConnectionString))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info(".env postgres data not configured. Falling back to project default appsettings postgres connection credentials.");
+            NLog.LogManager.GetCurrentClassLogger().Info(".env postgres connection variables not configured. Falling back to default postgres connection credentials.");
             return defaultConnectionString;
         }
         else

@@ -5,18 +5,9 @@ namespace deeplynx.models;
 
 public class MetadataRequestDto
 {
-    public long? Id { get; set; }
     public JsonArray? Classes { get; set; }
     public JsonArray? Relationships { get; set; }
     public JsonArray? Tags { get; set; }
     public JsonArray? Records { get; set; }
     public JsonArray? Edges { get; set; }
-    public string? CreatedBy { get; set; }
-    [JsonIgnore]
-    public DateTime CreatedAt { get; set; }
-    public string? ModifiedBy { get; set; }
-    [JsonIgnore]
-    public DateTime? ModifiedAt { get; set; }
-    [JsonIgnore]
-    public DateTime? ArchivedAt { get; set; }
 }
