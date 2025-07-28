@@ -3,6 +3,12 @@ using System.Text.Json.Nodes;
 
 namespace deeplynx.helpers.json;
 
+/// <summary>
+/// Perform Json I/O operations to respective c# objects.
+/// You will need to make sure your deserialized object includes a map from the input json.
+/// This can be done using something like JsonPropertyName of System.Text.Json.Serialization;
+/// See request data transfer objects in our models as an example.
+/// </summary>
 public static class JsonSerialization
 {
     /// <summary>
