@@ -83,6 +83,12 @@ public class MetadataBusiness : IMetadataBusiness
             metadataResponseDto.Relationships = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
         }
         
+        if (metadataRequestDto.Tags != null && metadataRequestDto.Tags.Any())
+        {
+            List<TagRequestDto> tags = JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags);
+            metadataResponseDto.Tags = await _tagBusiness.BulkCreateTags(projectId, tags);
+        }
+        
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
             List<RecordRequestDto> records = JsonSerialization.Deserialize<RecordRequestDto>(metadataRequestDto.Records);

@@ -124,12 +124,6 @@ public class ClassBusiness : IClassBusiness
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
 
-        var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
-        if (existingClass != null)
-        {
-            throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
-        }
-
         var newClass = new Class
         {
             ProjectId = projectId,

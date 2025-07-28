@@ -85,7 +85,7 @@ namespace deeplynx.tests
         public async Task GetTag_ValidIds_ReturnsTag()
         {
             // Act
-            var result = await _tagBusiness.GetTagById(pid, tid, false);
+            var result = await _tagBusiness.GetTag(pid, tid, false);
 
             // Assert
             Assert.NotNull(result);
@@ -102,7 +102,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, 999, false));
+                () => _tagBusiness.GetTag(pid, 999, false));
             
             Assert.Contains("Tag with id 999 not found", exception.Message);
         }
@@ -112,7 +112,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, tid4, false)); // Tag 1 belongs to project 1, not 2
+                () => _tagBusiness.GetTag(pid, tid4, false)); // Tag 1 belongs to project 1, not 2
             
             Assert.Contains($"Tag with id {tid4} not found", exception.Message);
         }
@@ -122,7 +122,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _tagBusiness.GetTagById(pid, tid3, true)); // Tag 3 of project 1 is archived
+                () => _tagBusiness.GetTag(pid, tid3, true)); // Tag 3 of project 1 is archived
             
             Assert.Contains($"Tag with id {tid3} is archived", exception.Message);
         }
@@ -145,8 +145,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Tag One",
-                CreatedBy = "Test Suite"
+                Name = "Tag One"
             };
 
             // Act
@@ -156,7 +155,6 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.True(result.Id > 0);
             Assert.Equal("Tag One", result.Name);
-            Assert.Equal("Test Suite", result.CreatedBy);
             Assert.Equal(pid, result.ProjectId);
 
             // Verify it was actually saved to database
@@ -171,8 +169,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Tag Timestamp Test",
-                CreatedBy = "Test Suite"
+                Name = "Tag Timestamp Test"
             };
 
             var beforeCreate = DateTime.UtcNow;
@@ -183,60 +180,36 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result.CreatedAt >= beforeCreate);
             Assert.True(result.CreatedAt <= DateTime.UtcNow);
-            // CreatedBy can be null in current implementation (TODO: JWT implementation)
-            Assert.Equal(result.CreatedBy, dto.CreatedBy);
         }
 
         [Fact]
         public async Task CreateTag_Success_OnBulkCreate()
         {
-            var tagDtos = new List<TagRequestDto>();
-            
-            var dto1 = new TagRequestDto
+            var bulkDto = new List<TagRequestDto>
             {
-                Name = "Test Tag 1",
-                CreatedBy = "Test Suite"
-            };
-            var dto2 = new TagRequestDto
-            {
-                Name = "Test Tag 2",
-                CreatedBy = "Test Suite"
-            };
-            tagDtos.Add(dto1);
-            tagDtos.Add(dto2);
-
-            var bulkDto = new BulkTagRequestDto
-            {
-                Tags = tagDtos
+                new TagRequestDto
+                {
+                    Name = "Test Tag 1"
+                },
+                new TagRequestDto
+                {
+                    Name = "Test Tag 2"
+                }
             };
             
             var result = await _tagBusiness.BulkCreateTags(pid, bulkDto);
-            result.Tags.Should().HaveCount(2);
-            result.Tags.First().Name.Should().Be("Test Tag 1");
-            result.Tags.Last().Name.Should().Be("Test Tag 2");
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Tag 1");
+            result.Last().Name.Should().Be("Test Tag 2");
         }
                 
         [Fact]
         public async Task CreateTagRequest_Fails_IfNoName()
         { 
-            var missingNameDto = new TagRequestDto() { Name = null, CreatedBy = "Test Suite" };
-
-            var exception =
-                await Assert.ThrowsAsync<ValidationException>(() => _tagBusiness.CreateTag(pid, missingNameDto));
-            
-            Assert.Contains("Name is required and cannot be empty or whitespace", exception.Message);
+            var dto = new TagRequestDto() { Name = null };
+            var result = () => _tagBusiness.CreateTag(pid, dto);
+            await result.Should().ThrowAsync<ValidationException>();
         }
-        
-        /* TODO: revisit after JSON web token implementation
-        [Fact]
-        public async Task CreateTagRequest_Fails_IfNoCreatedBy()
-        {
-            var missingCreatedByDto = new TagRequestDto() { Name = "Tag One", CreatedBy = null };
-            var exception =
-                await Assert.ThrowsAsync<ValidationException>(() => _tagBusiness.CreateTag(1, missingCreatedByDto));
-            
-            Assert.Contains("CreatedBy is required and cannot be empty or whitespace", exception.Message);
-        }*/
 
         #endregion
         
@@ -248,8 +221,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Updated Test Tag",
-                CreatedBy = "Test Suite",
+                Name = "Updated Test Tag"
             };
 
             // Act
@@ -274,8 +246,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Update Test Tag",
-                CreatedBy = "Test Suite"
+                Name = "Update Test Tag"
             };
 
             // Act & Assert
@@ -291,8 +262,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Update Test",
-                CreatedBy = "Test Suite"
+                Name = "Update Test"
             };
 
             // Act & Assert
@@ -308,8 +278,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new TagRequestDto
             {
-                Name = "Update Test",
-                CreatedBy = "Test Suite"
+                Name = "Update Test"
             };
 
             // Act & Assert
@@ -438,14 +407,12 @@ namespace deeplynx.tests
              // Arrange
              var dto1 = new TagRequestDto
              {
-                 Name = "Concurrent Tag Update 1",
-                 CreatedBy = "Test Suite"
+                 Name = "Concurrent Tag Update 1"
              };
 
              var dto2 = new TagRequestDto
              {
-                 Name = "Concurrent Tag Update 2",
-                 CreatedBy = "Test Suite"
+                 Name = "Concurrent Tag Update 2"
              };
 
              // Act
@@ -466,8 +433,7 @@ namespace deeplynx.tests
              // Arrange
              var dto = new TagRequestDto
              {
-                 Name = "Test with émojis 🚀 and ñ special chars 中文",
-                 CreatedBy = "Name with quotes \"test\" and 'single quotes'",
+                 Name = "Test with émojis 🚀 and ñ special chars 中文"
              };
 
              // Act
@@ -475,7 +441,6 @@ namespace deeplynx.tests
 
              // Assert
              Assert.Equal("Test with émojis 🚀 and ñ special chars 中文", result.Name);
-             Assert.Contains("quotes \"test\"", result.CreatedBy);
          }
 
           [Fact]
@@ -484,13 +449,11 @@ namespace deeplynx.tests
               // Arrange & Act
               var dto = new TagRequestDto
               {
-                  Name = "Tag One",
-                  CreatedBy = "Test Suite",
+                  Name = "Tag One"
               };
 
               // Assert
               Assert.Equal("Tag One", dto.Name);
-              Assert.Equal("Test Suite", dto.CreatedBy);
           }
 
           [Fact]
