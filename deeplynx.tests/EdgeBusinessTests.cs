@@ -459,7 +459,7 @@ namespace deeplynx.tests
 public async Task BulkCreateEdges_Fails_IfNullDto()
 {
     var result = () => _edgeBusiness.BulkCreateEdges(pid, dsid, null);
-    await result.Should().ThrowAsync<NullReferenceException>();
+    await result.Should().ThrowAsync<ArgumentNullException>();
 }
 
 [Fact]

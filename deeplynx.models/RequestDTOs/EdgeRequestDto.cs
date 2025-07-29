@@ -13,8 +13,11 @@ public class EdgeRequestDto
     [JsonPropertyName("destination_id")]
     public long DestinationId { get; set; }
     
-    [JsonPropertyName("name")]
+    [JsonPropertyName("relationship_id")]
+    public long? RelationshipId { get; set; }
+    
+    [JsonPropertyName("relationship_name")]
     public string? RelationshipName { get; set; }
     
-    public long? RelationshipId { get; set; }
+    
 }

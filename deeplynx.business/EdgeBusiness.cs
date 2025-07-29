@@ -3,6 +3,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -155,55 +156,53 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-    /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
+    /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        List<EdgeRequestDto> bulkDto)
+        List<EdgeRequestDto> edges)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
         
-        var edgeEntities = new List<Edge>();
-        foreach (var edgeRequestDto in bulkDto)
+        // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
+        var sql = @"
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
+                relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
+                modified_at = @now
+            RETURNING *;
+        ";
+        
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            ValidationHelper.ValidateModel(edgeRequestDto);
-            
-            var edge = new Edge
-            {
-                OriginId = edgeRequestDto.OriginId,
-                DestinationId = edgeRequestDto.DestinationId,
-                ProjectId = projectId,
-                DataSourceId = dataSourceId,
-                RelationshipId = edgeRequestDto.RelationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null // TODO: Implement user ID here when JWT tokens are ready
-            };
-            edgeEntities.Add(edge);
-        }
-
-        await _context.Edges.AddRangeAsync(edgeEntities);
-        await _context.SaveChangesAsync();
-
-        var edgeResponseDtos = new List<EdgeResponseDto>();
-        foreach (var edge in edgeEntities)
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@dataSourceId", dataSourceId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+       
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(edges.SelectMany((dto, i) => new[]
         {
-            var edgeResponse = new EdgeResponseDto
-            {
-                Id = edge.Id,
-                OriginId = edge.OriginId,
-                DestinationId = edge.DestinationId,
-                RelationshipId = edge.RelationshipId,
-                DataSourceId = edge.DataSourceId,
-                ProjectId = edge.ProjectId,
-                CreatedAt = edge.CreatedAt,
-                CreatedBy = edge.CreatedBy
-            };
-            edgeResponseDtos.Add(edgeResponse);
-        }
+            new NpgsqlParameter($"@p{i}_orig", dto.OriginId),
+            new NpgsqlParameter($"@p{i}_dest", dto.DestinationId),
+            new NpgsqlParameter($"@p{i}_rel", (object?)dto.RelationshipId ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", edges.Select((dto, i) =>
+            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
 
-        return edgeResponseDtos;
+        // returns the resulting upserted classes
+        return await _context.Database
+            .SqlQueryRaw<EdgeResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
     }
 
     /// <summary>
