@@ -13,7 +13,7 @@ public interface IRecordBusiness
     Task<List<RecordResponseDto>> BulkCreateRecords(
         long projectId, long dataSourceId, List<RecordRequestDto> recordRequestDtos);
     Task<RecordResponseDto> UpdateRecord(
-        long projectId, long recordId, RecordRequestDto dto);
+        long projectId, long recordId, UpdateRecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId);
     Task<bool> ArchiveRecord(long projectId, long recordId);
     Task<bool> UnarchiveRecord(long projectId, long recordId);

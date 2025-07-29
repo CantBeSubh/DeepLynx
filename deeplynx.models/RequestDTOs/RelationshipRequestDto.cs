@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
@@ -8,9 +7,11 @@ public class RelationshipRequestDto
 {
     [Required]
     [JsonPropertyName("name")]
+    [JsonPropertyName("name")]
     public string Name { get; set; } = null!;
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+    
     
     public string? Uuid { get; set; }
     

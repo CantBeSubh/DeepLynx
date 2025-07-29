@@ -158,6 +158,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
+    public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
         List<EdgeRequestDto> edgesRequestDtos)

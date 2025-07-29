@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250729131213_RecordRequiredFields")]
+    partial class RecordRequiredFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,14 +141,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_classes_id");
 
-                    b.HasIndex(new[] { "Name" }, "idx_classes_name");
-
                     b.HasIndex(new[] { "ProjectId" }, "idx_classes_project_id");
 
                     b.HasIndex(new[] { "Uuid" }, "idx_classes_uuid");
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_class_name")
-                        .IsUnique();
 
                     b.ToTable("classes", "deeplynx");
                 });
@@ -879,16 +877,11 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_relationships_id");
 
-                    b.HasIndex(new[] { "Name" }, "idx_relationships_name");
-
                     b.HasIndex(new[] { "OriginId" }, "idx_relationships_origin_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_relationships_project_id");
 
                     b.HasIndex(new[] { "Uuid" }, "idx_relationships_uuid");
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_relationship_name")
-                        .IsUnique();
 
                     b.ToTable("relationships", "deeplynx");
                 });
@@ -938,12 +931,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_tags_id");
 
-                    b.HasIndex(new[] { "Name" }, "idx_tags_name");
-
                     b.HasIndex(new[] { "ProjectId" }, "idx_tags_project_id");
-
-                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_tag_name")
-                        .IsUnique();
 
                     b.ToTable("tags", "deeplynx");
                 });

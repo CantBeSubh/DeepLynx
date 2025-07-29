@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
@@ -129,10 +130,11 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
+       ValidationHelper.ValidateModel(dto);
         
         if(dto.Properties == null)
             throw new ArgumentNullException(nameof(dto.Properties), "Properties cannot be null");
@@ -255,7 +257,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dto">The data transfer object containing details on the record to be updated</param>
     /// <returns>The newly updated metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
-    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, RecordRequestDto dto)
+    public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, UpdateRecordRequestDto dto)
     {
         DoesProjectExist(projectId);
         var record= await _context.Records.FindAsync(recordId);
@@ -270,16 +272,14 @@ public class RecordBusiness : IRecordBusiness
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
         
-        record.Uri = dto.Uri;
-        record.Properties = dto.Properties.ToString()!;
-        record.OriginalId = dto.OriginalId;
-        record.Name = dto.Name;
-        record.Description = dto.Description;
-        record.ClassId = dto.ClassId;
+        record.Uri = dto.Uri ?? record.Uri;
+        record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
+        record.OriginalId = dto.OriginalId ?? record.OriginalId;
+        record.Name = dto.Name ?? record.Name;
+        record.Description = dto.Description ?? record.Description;
+        record.ClassId = dto.ClassId ?? record.ClassId;
         record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-        
-        // TODO: check property depth like we do on create
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
@@ -470,7 +470,7 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
         
         record.Tags.Remove(tag);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return true;
     }
 
