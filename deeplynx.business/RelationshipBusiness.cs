@@ -220,14 +220,14 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="bulkRelationshipRequestDto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<BulkRelationshipResponseDto> BulkCreateRelationships(long projectId, BulkRelationshipRequestDto bulkRelationshipRequestDto)
+    public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> dto)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkRelationshipRequestDto);
+        ValidationHelper.ValidateModel(dto);
         
         var relationships = new List<Relationship>();
         var relationshipResponses = new List<RelationshipResponseDto>();
-        foreach (var relationshipDto in bulkRelationshipRequestDto.Relationships)
+        foreach (var relationshipDto in dto)
         {
             ValidationHelper.ValidateModel(relationshipDto);
             
@@ -307,10 +307,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             relationshipResponses.Add(relationshipResponseDto);
         }
 
-        return new BulkRelationshipResponseDto
-        {
-            Relationships = relationshipResponses,
-        };
+        return relationshipResponses;
     }
 
     /// <summary>

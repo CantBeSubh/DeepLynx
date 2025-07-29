@@ -101,7 +101,9 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("BulkCreateRelationships", Name = "api_create_many_relationships")]
-        public async Task<ActionResult<BulkRelationshipResponseDto>> BulkCreateRelationships(long projectId, [FromBody] BulkRelationshipRequestDto dto)
+        public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
+            long projectId, 
+            [FromBody] List<RelationshipRequestDto> dto)
         {
             try
             {

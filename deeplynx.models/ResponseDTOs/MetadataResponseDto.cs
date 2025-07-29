@@ -5,19 +5,10 @@ namespace deeplynx.models;
 
 public class MetadataResponseDto
 {
-    public long? Id { get; set; }
-    public long ProjectId { get; set; }
-    public JsonArray? Classes { get; set; }
-    public JsonArray? Relationships { get; set; }
-    public JsonArray? Tags { get; set; }
-    public JsonArray? Records { get; set; }
-    public JsonArray? Edges { get; set; }
-    public string? CreatedBy { get; set; }
-    [JsonIgnore]
-    public DateTime CreatedAt { get; set; }
-    public string? ModifiedBy { get; set; }
-    [JsonIgnore]
-    public DateTime? ModifiedAt { get; set; }
-    [JsonIgnore]
-    public DateTime? ArchivedAt { get; set; }
+    
+    public List<ClassResponseDto>? Classes { get; set; }
+    public List<RelationshipResponseDto>? Relationships { get; set; }
+    public List<TagResponseDto>? Tags { get; set; }
+    public List<RecordResponseDto>? Records { get; set; }
+    public List<EdgeResponseDto>? Edges { get; set; }
 }

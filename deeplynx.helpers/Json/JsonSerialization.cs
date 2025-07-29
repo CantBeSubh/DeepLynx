@@ -17,7 +17,7 @@ public static class JsonSerialization
     /// <param name="jsonArray">The input json to be serialized to an object</param>
     /// <returns>List of serialized objects parsed from json</returns>
     /// <note>Due to possible null reference return, returns an empty list of generic type on failure.</note>
-    public static List<T> DeserializeJsonArrayToObjectList<T>(JsonArray jsonArray)
+    public static List<T> Deserialize<T>(JsonArray jsonArray)
     {
         string jsonString = jsonArray.ToString();
         var result = JsonSerializer.Deserialize<List<T>>(jsonString);
@@ -29,7 +29,7 @@ public static class JsonSerialization
     /// </summary>
     /// <param name="list">The input list of generic type to be serialized to json</param>
     /// <returns>A json array of the serialized objects parsed from the list</returns>
-    public static JsonArray SerializeToJsonArrayFromObjectList<T>(List<T> list)
+    public static JsonArray Serialize<T>(List<T> list)
     {
         string jsonString = JsonSerializer.Serialize(list);
         var jsonArray = JsonDocument.Parse(jsonString).RootElement.EnumerateArray();
