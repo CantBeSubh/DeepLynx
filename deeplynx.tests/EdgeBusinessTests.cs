@@ -144,6 +144,9 @@ namespace deeplynx.tests
                     ProjectId = pid,
                     DataSourceId = dsid,
                     Properties = "{\"test\": \"destination2_value\"}",
+                    Name = "Destination 2",
+                    Description = "Destination Description 2",
+                    OriginalId = "dest2",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord2);
@@ -338,7 +341,10 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = dsid,
                 Properties = "{\"test\": \"Updated destination_value\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
             };
             Context.Records.Add(newDestinationRecord);
             await Context.SaveChangesAsync();
@@ -602,21 +608,27 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             await Context.SaveChangesAsync();
 
             var originRecord = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    ClassId = testClass.Id,
-                    Properties = "{\"test\": \"origin_value\"}",
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                ClassId = testClass.Id,
+                Properties = "{\"test\": \"origin_value\"}",
+                Name = "Origin",
+                Description = "Origin Description",
+                OriginalId = "orig",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(originRecord);
 
             var destinationRecord = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    ClassId = testClass.Id,
-                    Properties = "{\"test\": \"destination_value\"}", 
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                ClassId = testClass.Id,
+                Properties = "{\"test\": \"destination_value\"}", 
+                Name = "Destination 1",
+                Description = "Destination Description 1",
+                OriginalId = "dest1",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);

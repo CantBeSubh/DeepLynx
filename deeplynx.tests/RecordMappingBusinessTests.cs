@@ -230,7 +230,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public async Task UpdateRecordMapping_Fails_IfNotFound()
     {
         var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
-        var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 99, dto);
+        var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 0, dto);
         updatedResult.Should().ThrowAsync<KeyNotFoundException>();
     }
     

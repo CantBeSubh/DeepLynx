@@ -543,6 +543,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
+                OriginalId = "og1",
+                Description = "Test Description 1",
                 Properties = "{\"test\": \"value1\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
@@ -554,6 +556,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
+                OriginalId = "og2",
+                Description = "Test Description 2",
                 Properties = "{\"test\": \"value2\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
