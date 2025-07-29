@@ -25,7 +25,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost("CreateTag")]
+    [HttpPost("CreateTag", Name = "api_create_a_tag")]
     public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
     {
         try
@@ -48,7 +48,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
-    [HttpPost("BulkCreateTag")]
+    [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
     public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(long projectId, [FromBody] BulkTagRequestDto tagRequestDto)
     {
         try
@@ -71,7 +71,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to update.</param>
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
-    [HttpPut("UpdateTag/{tagId}")]
+    [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
     public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto tagRequestDto)
     {
         try
@@ -93,7 +93,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    [HttpGet("GetAllTags")]
+    [HttpGet("GetAllTags", Name = "api_get_all_tags")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
         long projectId, 
         [FromQuery] bool hideArchived = true)
@@ -118,7 +118,7 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("GetTagById/{tagId}")]
+    [HttpGet("GetTagById/{tagId}", Name = "api_get_a_tag")]
     public async Task<ActionResult<TagResponseDto>> GetTagById(
         long projectId, 
         long tagId,
@@ -143,7 +143,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to delete.</param>
     /// <returns> A message stating the tag was successfully deleted.</returns>
-    [HttpDelete("DeleteTag/{tagId}")]
+    [HttpDelete("DeleteTag/{tagId}", Name = "api_delete_a_tag")]
     public async Task<IActionResult> DeleteTag(long projectId, long tagId)
     {
         try
@@ -165,7 +165,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to archive.</param>
     /// <returns> A message stating the tag was successfully archived.</returns>
-    [HttpDelete("ArchiveTag/{tagId}")]
+    [HttpDelete("ArchiveTag/{tagId}", Name = "api_archive_a_tag")]
     public async Task<IActionResult> ArchiveTag(long projectId, long tagId)
     {
         try
@@ -187,7 +187,7 @@ public class TagController : ControllerBase
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tagId">The ID of the tag to unarchive.</param>
     /// <returns> A message stating the tag was successfully unarchived.</returns>
-    [HttpPut("UnarchiveTag/{tagId}")]
+    [HttpPut("UnarchiveTag/{tagId}", Name = "api_unarchive_a_tag")]
     public async Task<IActionResult> UnarchiveTag(long projectId, long tagId)
     {
         try

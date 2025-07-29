@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
-        [HttpGet("GetAllDataSources")]
+        [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
         public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
             long projectId,
             [FromQuery] bool hideArchived = true)
@@ -51,7 +51,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>The data source associated with the given ID</returns>
-        [HttpGet("GetDataSource/{dataSourceId}")]
+        [HttpGet("GetDataSource/{dataSourceId}", Name = "api_get_a_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> GetDataSource(
             long projectId,
             long dataSourceId,
@@ -76,7 +76,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
-        [HttpPost("CreateDataSource")]
+        [HttpPost("CreateDataSource", Name = "api_create_a_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
         {
             try
@@ -99,7 +99,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing updated data source details</param>
         /// <returns>The newly updated data source</returns>
-        [HttpPut("UpdateDataSource/{dataSourceId}")]
+        [HttpPut("UpdateDataSource/{dataSourceId}", Name = "api_update_a_data_source")]
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
             long projectId,
             long dataSourceId,
@@ -124,7 +124,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">The ID of the data source to delete.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully deleted.</returns>
-        [HttpDelete("DeleteDataSource/{dataSourceId}")]
+        [HttpDelete("DeleteDataSource/{dataSourceId}", Name = "api_delete_a_data_source")]
         public async Task<IActionResult> DeleteDataSource(
             long dataSourceId,
             long projectId)
@@ -148,7 +148,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">The ID of the data source to archive.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully archived.</returns>
-        [HttpDelete("ArchiveDataSource/{dataSourceId}")]
+        [HttpDelete("ArchiveDataSource/{dataSourceId}", Name = "api_archive_a_data_source")]
         public async Task<IActionResult> ArchiveDataSource(
             long dataSourceId, 
             long projectId)
@@ -172,7 +172,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">The ID of the data source to unarchive.</param>
         /// <param name="projectId">The ID of the project to which the data source belongs.</param>
         /// <returns>A message stating the data source was successfully unarchived.</returns>
-        [HttpPut("UnarchiveDataSource/{dataSourceId}")]
+        [HttpPut("UnarchiveDataSource/{dataSourceId}", Name = "api_unarchive_a_data_source")]
         public async Task<IActionResult> UnarchiveDataSource(
             long dataSourceId, 
             long projectId)

@@ -24,7 +24,7 @@ public class MetadataController : ControllerBase
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
-    [HttpPost("CreateMetadata")]
+    [HttpPost("CreateMetadata", Name = "api_create_metadata")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(long projectId, [FromBody] MetadataRequestDto metadataRequestDto)
     {
         try
