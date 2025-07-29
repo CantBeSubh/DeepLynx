@@ -108,7 +108,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] List<CreateRecordRequestDto> records)
+            [FromBody] List<CreateRecordRequestDto> dto)
         {
             try
             {

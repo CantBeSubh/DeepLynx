@@ -193,14 +193,14 @@ public class RecordBusiness : IRecordBusiness
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
         long projectId, 
         long dataSourceId, 
-        List<CreateRecordRequestDto> recordRequestDtos)
+        List<CreateRecordRequestDto> bulkDto)
     {
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
         
        var records = new List<Record>();
        var recordResponses = new List<RecordResponseDto>();
-       foreach (var dto in bulkDto.Records)
+       foreach (var dto in bulkDto)
        {
            var maxDepth = CalculateJsonMaxDepth(dto.Properties);
            if (maxDepth > 3)
@@ -250,10 +250,7 @@ public class RecordBusiness : IRecordBusiness
             recordResponses.Add(recordResponse);
         }
 
-        return new BulkRecordResponseDto()
-        {
-            Records = recordResponses,
-        };
+        return recordResponses;
     }
 
     /// <summary>

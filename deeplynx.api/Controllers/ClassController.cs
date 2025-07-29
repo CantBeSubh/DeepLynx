@@ -109,7 +109,7 @@ namespace deeplynx.api.Controllers
         /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses")]
         public async Task<ActionResult<BulkClassResponseDto>> BulkCreateClass(long projectId,
-            [FromBody] BulkClassRequestDto dto)
+            [FromBody] List<ClassRequestDto> dto)
         {
             try
             {

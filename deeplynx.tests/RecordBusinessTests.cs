@@ -381,13 +381,13 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
+        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Records.Count());
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 1");
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 2");
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, r => r.Name == "Bulk Record 1");
+        Assert.Contains(result, r => r.Name == "Bulk Record 2");
 
         // Verify records were actually created in database
         var recordCount = await Context.Records.CountAsync(r => r.ProjectId == projectId);
@@ -403,11 +403,10 @@ public class RecordBusinessTests : IntegrationTestBase
         List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>();
         
         // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
+        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result.Records);
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -427,7 +426,7 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, bulkDto));
+            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, records));
     }
 
     #endregion

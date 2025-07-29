@@ -149,29 +149,26 @@ namespace deeplynx.tests
             Context.Records.Add(destinationRecord2);
             await Context.SaveChangesAsync();
 
-            var bulkDto = new BulkEdgeRequestDto
+            var edges = new List<EdgeRequestDto>
             {
-                Edges = new List<EdgeRequestDto>
+                new EdgeRequestDto
                 {
-                    new EdgeRequestDto
-                    {
-                        OriginId = (int)originRecordId,
-                        DestinationId = (int)destinationRecordId,
-                        RelationshipId = (int)relationshipId
-                    },
-                    new EdgeRequestDto
-                    {
-                        OriginId = (int)originRecordId,
-                        DestinationId = (int)destinationRecord2.Id,
-                        RelationshipId = (int)relationshipId
-                    }
+                    OriginId = (int)originRecordId,
+                    DestinationId = (int)destinationRecordId,
+                    RelationshipId = (int)relationshipId
+                },
+                new EdgeRequestDto
+                {
+                    OriginId = (int)originRecordId,
+                    DestinationId = (int)destinationRecord2.Id,
+                    RelationshipId = (int)relationshipId
                 }
             };
 
-            var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, bulkDto);
-            result.Edges.Should().HaveCount(2);
-            result.Edges.Should().OnlyContain(e => e.Id > 0);
-            result.Edges.Should().OnlyContain(e => e.CreatedAt >= now);
+            var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, edges);
+            result.Should().HaveCount(2);
+            result.Should().OnlyContain(e => e.Id > 0);
+            result.Should().OnlyContain(e => e.CreatedAt >= now);
         }
 
         [Fact]

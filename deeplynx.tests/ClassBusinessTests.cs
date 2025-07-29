@@ -58,31 +58,26 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClasses_Success_OnBulkCreate()
         {
-            var classDtos = new List<ClassRequestDto>();
-            
-            var dto1 = new ClassRequestDto
+            var classes = new List<ClassRequestDto>
             {
-                Name = $"Test Class 1",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-            };
-            var dto2 = new ClassRequestDto
-            {
-                Name = $"Test Class 2",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-            };
-            classDtos.Add(dto1);
-            classDtos.Add(dto2);
-            var bulkDto = new BulkClassRequestDto
-            {
-                BulkClassRequests = classDtos
+                new ClassRequestDto
+                {
+                    Name = $"Test Class 1",
+                    Description = "Test Description",
+                    Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                },
+                new ClassRequestDto
+                {
+                    Name = $"Test Class 2",
+                    Description = "Test Description",
+                    Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                }
             };
 
-            var result = await _classBusiness.BulkCreateClass(pid, bulkDto);
-            result.Classes.Should().HaveCount(2);
-            result.Classes.First().Name.Should().Be("Test Class 1");
-            result.Classes.Last().Name.Should().Be("Test Class 2");
+            var result = await _classBusiness.BulkCreateClass(pid, classes);
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Class 1");
+            result.Last().Name.Should().Be("Test Class 2");
         }
 
         [Fact]

@@ -49,11 +49,13 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("BulkCreateTag")]
-    public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(long projectId, [FromBody] BulkTagRequestDto tagRequestDto)
+    public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(
+        long projectId, 
+        [FromBody] List<TagRequestDto> dto)
     {
         try
         {
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tagRequestDto);
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, dto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)

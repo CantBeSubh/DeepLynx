@@ -49,32 +49,40 @@ public class MetadataBusiness : IMetadataBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, MetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(
+        long projectId,
+        long dataSourceId,
+        MetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
         
-        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
+        return await ParseMetadata(projectId, dataSourceId, metadataRequestDto);
     }
 
     /// <summary>
     /// Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
-    /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    private async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
+    private async Task<MetadataResponseDto> ParseMetadata(
+        long projectId,
+        long dataSourceId,
+        MetadataRequestDto metadataRequestDto
+        )
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
 
         if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
         {
             List<ClassRequestDto> classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
-            metadataResponseDto.Classes = await _classBusiness.BulkCreateClasses(projectId, classes);
+            metadataResponseDto.Classes = await _classBusiness.BulkCreateClass(projectId, classes);
         }
         
         if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
@@ -92,15 +100,13 @@ public class MetadataBusiness : IMetadataBusiness
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
             List<CreateRecordRequestDto> records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
-            List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
-            metadataResponseDto.Records = recordResponseDtos;
+            metadataResponseDto.Records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
         }
         
         if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
         {
             List<EdgeRequestDto> edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
-            List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
-            metadataResponseDto.Edges = edgeResponseDtos;
+            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
         }
 
         return metadataResponseDto;
