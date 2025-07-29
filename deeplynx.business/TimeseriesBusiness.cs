@@ -13,9 +13,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace deeplynx.business;
 
 public class TimeseriesBusiness(
-    DeeplynxContext context, 
-    IRecordBusiness recordBusiness, 
-    IClassBusiness classBusiness, 
+    DeeplynxContext context,
+    IRecordBusiness recordBusiness,
+    IClassBusiness classBusiness,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
@@ -23,6 +23,7 @@ public class TimeseriesBusiness(
     private readonly IClassBusiness _classBusiness = classBusiness;
     private IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
+    // todo: apparently these go to the api directory???
     private const string UploadFolderPath = "uploads";
     private const string QueryFolderPath = "reports";
 
@@ -76,6 +77,7 @@ public class TimeseriesBusiness(
                 ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             },
             Name = tableName,
+            Description = $"Timeseries data from {tableName} uploaded at {DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)}",
             OriginalId = uploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -183,6 +185,7 @@ public class TimeseriesBusiness(
                 ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             },
             Name = tableName,
+            Description = $"Timeseries data from {tableName} uploaded at {DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)}",
             OriginalId = request.UploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -230,6 +233,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries data from {fileName} uploaded at {DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -413,12 +417,12 @@ public class TimeseriesBusiness(
 
     private static DuckDBConnection GetDuckDbConnection()
     {
-        return new DuckDBConnection("Data Source=TimeSeries.db");
+        return new DuckDBConnection("Data Source=../deeplynx.timeseries/timeseries.db");
     }
 
     private static DuckDBConnection GetReadOnlyDuckDbConnection()
     {
-        return new DuckDBConnection("Data Source=TimeSeries.db;ACCESS_MODE=READ_ONLY");
+        return new DuckDBConnection("Data Source=../deeplynx.timeseries/timeseries.db;ACCESS_MODE=READ_ONLY");
     }
 
     /// <summary>
@@ -507,6 +511,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries data from {fileName} uploaded at {DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -568,6 +573,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries data from {fileName} uploaded at {DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -579,7 +585,7 @@ public class TimeseriesBusiness(
 
         return recordResponse;
     }
-    
+
     /// <summary>
     /// Determine if project exists
     /// </summary>
@@ -593,7 +599,7 @@ public class TimeseriesBusiness(
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
     }
-    
+
     /// <summary>
     /// Determine if datasource exists
     /// </summary>

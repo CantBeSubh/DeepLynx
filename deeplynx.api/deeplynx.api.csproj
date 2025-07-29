@@ -37,11 +37,7 @@
       <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
       <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
       <ProjectReference Include="..\deeplynx.graph\deeplynx.graph.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Folder Include="reports\" />
-        <Folder Include="uploads\" />
+      <ProjectReference Include="..\deeplynx.graph\deeplynx.timeseries.csproj" />
     </ItemGroup>
 
     <ItemGroup>
