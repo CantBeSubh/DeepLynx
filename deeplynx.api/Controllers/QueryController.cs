@@ -14,13 +14,13 @@ namespace deeplynx.api.Controllers
 
     [ApiController]
     [Route("api/records")]
-    public class FilterController : ControllerBase
+    public class QueryController : ControllerBase
     {
-        private readonly IFilterBusiness _filterBusiness;
+        private readonly IQueryBusiness _queryBusiness;
 
-        public FilterController(IFilterBusiness filterBusiness)
+        public QueryController(IQueryBusiness queryBusiness)
         {
-            _filterBusiness = filterBusiness;
+            _queryBusiness = queryBusiness;
         }
         /// <summary>
         /// Filter records 
@@ -33,7 +33,30 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var records = await _filterBusiness.FilterRecords(filterArray);
+                var records = await _queryBusiness.FilterRecords(filterArray);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while searching for records.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+
+        }
+        
+        /// <summary>
+        /// Query builder
+        /// </summary>
+        /// <param name="filterArray">Array of QueryComponent dtos</param>
+        /// <returns>List of historical record response DTOs</returns>
+        [HttpPost("QueryBuilder")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> AdvancedQuery(
+            [FromBody] AdvancedQueryRequestDto[] filterArray)
+        {
+            try
+            {
+                var records = _queryBusiness.BuildQuery(filterArray);
                 return Ok(records);
             }
             catch (Exception exc)
