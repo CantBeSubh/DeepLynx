@@ -49,7 +49,7 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("BulkCreateTag")]
-    public async Task<ActionResult<BulkTagResponseDto>> BulkCreateTag(
+    public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long projectId, 
         [FromBody] List<TagRequestDto> dto)
     {

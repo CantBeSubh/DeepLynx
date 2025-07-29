@@ -108,7 +108,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for classes</param>
         /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses")]
-        public async Task<ActionResult<BulkClassResponseDto>> BulkCreateClass(long projectId,
+        public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClass(long projectId,
             [FromBody] List<ClassRequestDto> dto)
         {
             try
