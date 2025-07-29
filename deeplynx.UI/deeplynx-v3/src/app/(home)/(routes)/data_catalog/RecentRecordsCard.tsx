@@ -1,5 +1,5 @@
-import React from "react";
-import SavedSearchesTabs from "../../components/SavedSearches";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services";
+import { useEffect, useState } from "react";
 
 export type RecentRecord = {
   id: number;
@@ -10,7 +10,28 @@ export type RecentRecord = {
   projectName: string;
 };
 
-const RecentRecordsCard = ({ records }: { records: RecentRecord[] }) => {
+const RecentRecordsCard = ({
+  selectedProjects,
+}: {
+  selectedProjects: string[];
+}) => {
+  const [records, setRecords] = useState<RecentRecord[]>([]);
+
+  useEffect(() => {
+    const fetchRecentRecords = async () => {
+      try {
+        const data = await getRecentlyAddedRecords(selectedProjects);
+        setRecords(data);
+      } catch (error) {
+        console.error("Failed to fetch recent records:", error);
+      }
+    };
+
+    if (selectedProjects && selectedProjects.length > 0) {
+      fetchRecentRecords();
+    }
+  }, [selectedProjects]);
+
   return (
     <div className="bg-base-100 rounded-xl p-4">
       <h2 className="text-lg font-semibold mb-4 border-b border-base-content">

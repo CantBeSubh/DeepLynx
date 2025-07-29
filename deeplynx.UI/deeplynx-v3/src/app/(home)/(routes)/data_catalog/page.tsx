@@ -13,7 +13,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
@@ -21,9 +21,12 @@ import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
 import SavedSearchesTabs from "../../components/SavedSearches";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services";
 
 const DataCatalog = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromProject = searchParams.get("fromProject");
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
   const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
   const [projectName, setProjectName] = useState<string>("");
@@ -36,7 +39,10 @@ const DataCatalog = () => {
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(false);
   const { project, hasLoaded } = useProjectSession();
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(
+    fromProject ? [fromProject] : []
+  );
 
   // Effect to set project name from localStorage and mark the component as mounted
   useEffect(() => {
@@ -51,8 +57,12 @@ const DataCatalog = () => {
 
       try {
         const data = await getAllProjects();
-        const projectString = data.map((d: { name: number }) => d.name);
-        setProjects(projectString);
+        setProjects(
+          data.map((d: { id: string; name: string }) => ({
+            id: d.id,
+            name: d.name,
+          }))
+        );
       } catch (error) {
         console.error("Failed to fetch records:", error);
       }
@@ -62,44 +72,23 @@ const DataCatalog = () => {
 
   useEffect(() => {
     const fetchRecords = async () => {
-      if (!hasLoaded || !project?.projectId) return;
+      if (!hasLoaded || selectedProjects.length === 0) return;
 
       try {
-        const data = await getAllRecords(project.projectId);
-        const transformedRecords = data.map((d: { tags: string }) => {
-          return {
-            ...d,
-            tags: JSON.parse(d.tags),
-          };
-        });
-        setTableData(transformedRecords);
+        if (selectedProjects.includes("All your Projects")) {
+          if (!project?.projectId) return;
+          const allRecords = await getAllRecords(project.projectId);
+          setTableData(allRecords);
+        } else {
+          const recentRecords = await getRecentlyAddedRecords(selectedProjects);
+          setTableData(recentRecords);
+        }
       } catch (error) {
         console.error("Failled to fetch records:", error);
       }
     };
     fetchRecords();
-  }, [hasLoaded, project?.projectId]);
-
-  // useEffect(() => {
-  //   if (activeFilters.length === 0) {
-  //     setTableData(fileTableData);
-  //   } else {
-  //     const filtered = fileTableData.filter((row) => {
-  //       return activeFilters.some((filter) => {
-  //         const query = filter.term.toLowerCase();
-  //         return (
-  //           row.fileName.toLowerCase().includes(query) ||
-  //           row.fileDescription.toLowerCase().includes(query) ||
-  //           row.fileType.toLowerCase().includes(query) ||
-  //           row.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-  //           (row.timeseries ? "yes" : "no").includes(query) ||
-  //           row.lastEdit.toLowerCase().includes(query)
-  //         );
-  //       });
-  //     });
-  //     setTableData(filtered);
-  //   }
-  // }, [activeFilters]);
+  }, [selectedProjects, hasLoaded, project?.projectId]);
 
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
@@ -172,13 +161,17 @@ const DataCatalog = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
-          <ProjectDropdown projects={projects} />
+          <ProjectDropdown
+            projects={projects}
+            onSelectionChange={(ids: string[]) => setSelectedProjects(ids)}
+            defaultSelected={fromProject ? [fromProject] : undefined}
+          />
         </div>
       </div>
       <div className="divider"></div>
       <div className="flex justify-between gap-4 mb-4">
         <LargeSearchBar
-          placeholder="Seach by name and description ... happy?"
+          placeholder="Seach by name and description ..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onEnter={handleSearch}
@@ -246,21 +239,23 @@ const DataCatalog = () => {
         <>
           {viewMode === "list" ? (
             <ListView
-              records={tableData}
+              data={tableData}
               activeSearchTerms={activeSearchTerms}
+              selectedProjects={selectedProjects}
             />
           ) : (
             <GridView
               columns={gridViewColumns}
               data={tableData}
               activeSearchTerms={activeSearchTerms}
+              selectedProjects={selectedProjects}
             />
           )}
         </>
       ) : (
         <div className="flex w-full gap-8">
           <div className="w-2/3">
-            <RecentRecordsCard records={recentRecordsData} />
+            <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>
           <div className="w-1/3">
             <SavedSearchesTabs className="" />

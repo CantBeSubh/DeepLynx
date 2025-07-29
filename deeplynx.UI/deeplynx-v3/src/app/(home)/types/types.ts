@@ -8,6 +8,11 @@ export type DataSourceTableRow = {
     select?: boolean;
   };
 
+export type Tag = {
+  id: number;
+  name: string
+}
+
 export type FileViewerTableRow = {
   id: number;
   uri?: string | null;
@@ -21,7 +26,7 @@ export type FileViewerTableRow = {
   dataSourceName?: string;
   projectId?: number;
   projectName?: string;
-  tags: string[];
+  tags: Tag[];
   createdBy?: string | null;
   createdAt?: string;
   modifiedBy?: string | null;
