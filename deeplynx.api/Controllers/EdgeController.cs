@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
-        [HttpGet("GetAllEdges")]
+        [HttpGet("GetAllEdges", Name = "api_get_all_edges")]
         public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(
             long projectId,
             [FromQuery] long? dataSourceId = null,
@@ -56,7 +56,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
-        [HttpGet("GetEdge")]
+        [HttpGet("GetEdge", Name = "api_get_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> GetEdge(
             long projectId, 
             [FromQuery] long? edgeId,
@@ -83,7 +83,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edge">The edge request data transfer object containing edge details</param>
-        [HttpPost("CreateEdge")]
+        [HttpPost("CreateEdge", Name = "api_create_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
         {
             try
@@ -105,8 +105,11 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edges">List of the edge request data transfer objects containing edge details</param>
-        [HttpPost("BulkCreateEdges")]
-        public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(long projectId, [Required] long dataSourceId, [FromBody] List<EdgeRequestDto> edges)
+        [HttpPost("BulkCreateEdges", Name = "api_create_many_edges")]
+        public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
+            long projectId,
+            [Required] long dataSourceId,
+            [FromBody] List<EdgeRequestDto> edges)
         {
             try
             {
@@ -130,7 +133,7 @@ namespace deeplynx.api.Controllers
         /// <param name="originId">The origin ID of the edge to update if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>The updated edge response DTO with its details</returns>
-        [HttpPut("UpdateEdge")]
+        [HttpPut("UpdateEdge", Name = "api_update_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
             long projectId,
             [FromBody] EdgeRequestDto dto,
@@ -159,7 +162,7 @@ namespace deeplynx.api.Controllers
         /// <param name="originId">The origin ID of the edge to delete if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully deleted.</returns>
-        [HttpDelete("DeleteEdge")]
+        [HttpDelete("DeleteEdge", Name = "api_delete_an_edge")]
         public async Task<IActionResult> DeleteEdge(
             long projectId,
             [FromQuery] long? edgeId,
@@ -188,7 +191,7 @@ namespace deeplynx.api.Controllers
         /// <param name="originId">The origin ID of the edge to archive if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge to archive if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully archived.</returns>
-        [HttpDelete("ArchiveEdge")]
+        [HttpDelete("ArchiveEdge", Name = "api_archive_an_edge")]
         public async Task<IActionResult> ArchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,
@@ -216,7 +219,7 @@ namespace deeplynx.api.Controllers
         /// <param name="originId">The origin ID of the edge to unarchive if edgeID is not present.</param>
         /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully unarchived.</returns>
-        [HttpPut("UnarchiveEdge")]
+        [HttpPut("UnarchiveEdge", Name = "api_unarchive_an_edge")]
         public async Task<IActionResult> UnarchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,
