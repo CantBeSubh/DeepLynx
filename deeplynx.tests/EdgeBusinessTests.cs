@@ -144,34 +144,34 @@ namespace deeplynx.tests
                     ProjectId = pid,
                     DataSourceId = dsid,
                     Properties = "{\"test\": \"destination2_value\"}",
+                    Name = "Destination 2",
+                    Description = "Destination Description 2",
+                    OriginalId = "dest2",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord2);
             await Context.SaveChangesAsync();
 
-            var bulkDto = new BulkEdgeRequestDto
+            var edges = new List<EdgeRequestDto>
             {
-                Edges = new List<EdgeRequestDto>
+                new EdgeRequestDto
                 {
-                    new EdgeRequestDto
-                    {
-                        OriginId = (int)originRecordId,
-                        DestinationId = (int)destinationRecordId,
-                        RelationshipId = (int)relationshipId
-                    },
-                    new EdgeRequestDto
-                    {
-                        OriginId = (int)originRecordId,
-                        DestinationId = (int)destinationRecord2.Id,
-                        RelationshipId = (int)relationshipId
-                    }
+                    OriginId = (int)originRecordId,
+                    DestinationId = (int)destinationRecordId,
+                    RelationshipId = (int)relationshipId
+                },
+                new EdgeRequestDto
+                {
+                    OriginId = (int)originRecordId,
+                    DestinationId = (int)destinationRecord2.Id,
+                    RelationshipId = (int)relationshipId
                 }
             };
 
-            var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, bulkDto);
-            result.Edges.Should().HaveCount(2);
-            result.Edges.Should().OnlyContain(e => e.Id > 0);
-            result.Edges.Should().OnlyContain(e => e.CreatedAt >= now);
+            var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, edges);
+            result.Should().HaveCount(2);
+            result.Should().OnlyContain(e => e.Id > 0);
+            result.Should().OnlyContain(e => e.CreatedAt >= now);
         }
 
         [Fact]
@@ -341,7 +341,10 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = dsid,
                 Properties = "{\"test\": \"Updated destination_value\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
             };
             Context.Records.Add(newDestinationRecord);
             await Context.SaveChangesAsync();
@@ -605,21 +608,27 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             await Context.SaveChangesAsync();
 
             var originRecord = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    ClassId = testClass.Id,
-                    Properties = "{\"test\": \"origin_value\"}",
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                ClassId = testClass.Id,
+                Properties = "{\"test\": \"origin_value\"}",
+                Name = "Origin",
+                Description = "Origin Description",
+                OriginalId = "orig",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(originRecord);
 
             var destinationRecord = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    ClassId = testClass.Id,
-                    Properties = "{\"test\": \"destination_value\"}", 
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                ClassId = testClass.Id,
+                Properties = "{\"test\": \"destination_value\"}", 
+                Name = "Destination 1",
+                Description = "Destination Description 1",
+                OriginalId = "dest1",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);

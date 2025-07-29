@@ -87,14 +87,14 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="bulkTagRequestDto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
+    public async Task<List<TagResponseDto>> BulkCreateTags(long projectId, List<TagRequestDto> dto)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkTagRequestDto);
+        ValidationHelper.ValidateModel(dto);
         
         var tags = new List<Tag>();
         var tagResponses = new List<TagResponseDto>();
-        foreach (var tagRequestDto in bulkTagRequestDto.Tags)
+        foreach (var tagRequestDto in dto)
         {
             ValidationHelper.ValidateModel(tagRequestDto);
             var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
@@ -128,10 +128,7 @@ public class TagBusiness : ITagBusiness
             tagResponses.Add(tagResponseDto);
         }
         
-        return new BulkTagResponseDto
-        {
-            Tags = tagResponses
-        };
+        return tagResponses;
     }
 
     /// <summary>
