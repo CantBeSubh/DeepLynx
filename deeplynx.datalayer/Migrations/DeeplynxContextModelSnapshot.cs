@@ -295,6 +295,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "RelationshipId" }, "idx_edges_relationship_id");
 
+                    b.HasIndex(new[] { "ProjectId", "OriginId", "DestinationId" }, "unique_edge_record_ids")
+                        .IsUnique();
+
                     b.ToTable("edges", "deeplynx");
                 });
 
@@ -742,6 +745,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Properties" }, "idx_records_properties");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Properties" }, "idx_records_properties"), "gin");
+
+                    b.HasIndex(new[] { "ProjectId", "DataSourceId", "OriginalId" }, "unique_record_original_id")
+                        .IsUnique();
 
                     b.ToTable("records", "deeplynx");
                 });

@@ -14,6 +14,7 @@ namespace deeplynx.datalayer.Models;
 [Index("OriginalId", Name = "idx_records_original_id")]
 [Index("ProjectId", Name = "idx_records_project_id")]
 [Index("MappingId", Name="idx_records_mapping_id")]
+[Index(nameof(ProjectId), nameof(DataSourceId), nameof(OriginalId), IsUnique = true, Name = "unique_record_original_id")]
 public partial class Record
 {
     [Key]
