@@ -28,7 +28,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
+    public async Task<List<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
@@ -66,7 +66,7 @@ public class RecordBusiness : IRecordBusiness
                     Id = t.Id,
                     Name = t.Name
                 }).ToList()
-            });
+            }).ToList();
     }
     
     /// <summary>
@@ -190,13 +190,16 @@ public class RecordBusiness : IRecordBusiness
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
-    public async Task<List<RecordResponseDto>> BulkCreateRecords(long projectId, long dataSourceId, List<RecordRequestDto> recordRequestDtos)
+    public async Task<List<RecordResponseDto>> BulkCreateRecords(
+        long projectId, 
+        long dataSourceId, 
+        List<CreateRecordRequestDto> dtos)
     {
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
         
        var recordsDatabaseEntities = new List<Record>();
-       foreach (var recordRequestDto in recordRequestDtos)
+       foreach (var recordRequestDto in dtos)
        {
            var maxDepth = CalculateJsonMaxDepth(recordRequestDto.Properties);
            if (maxDepth > 3)

@@ -92,7 +92,7 @@ public class MetadataBusiness : IMetadataBusiness
         
         if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
         {
-            List<RecordRequestDto> records = JsonSerialization.Deserialize<RecordRequestDto>(metadataRequestDto.Records);
+            List<CreateRecordRequestDto> records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
             List<RecordResponseDto> recordResponseDtos = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
             metadataResponseDto.Records = recordResponseDtos;
         }

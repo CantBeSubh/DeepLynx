@@ -45,7 +45,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
-    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
+    public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
         
@@ -70,7 +70,7 @@ public class ClassBusiness : IClassBusiness
                 ModifiedBy = c.ModifiedBy,
                 ModifiedAt = c.ModifiedAt,
                 ArchivedAt = c.ArchivedAt,
-            });
+            }).ToList();
     }
 
     /// <summary>
@@ -161,7 +161,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<IEnumerable<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
+    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
     {
         DoesProjectExist(projectId);
         

@@ -7,7 +7,6 @@ public class ClassRequestDto
 {
     [Required]
     [JsonPropertyName("name")]
-    [JsonPropertyName("name")]
     public string Name { get; set; }
     [JsonPropertyName("description")]
     public string? Description { get; set; }

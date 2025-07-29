@@ -33,7 +33,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result</param>
     /// <returns>A list of relationships</returns>
-    public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
+    public async Task<List<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
         var relationships = await _context.Relationships
@@ -77,7 +77,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
             ArchivedAt = r.ArchivedAt,
-        });
+        }).ToList();
     }
     /// <summary>
     /// Retrieves a specific relationship by ID
@@ -213,7 +213,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="relationships">A list of relationship data transfer objects with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<IEnumerable<RelationshipResponseDto>> BulkCreateRelationships(
+    public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
         long projectId, 
         List<RelationshipRequestDto> relationships)
     {

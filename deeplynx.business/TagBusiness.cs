@@ -31,7 +31,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
         var tagQuery = _context.Tags
@@ -154,7 +154,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<IEnumerable<TagResponseDto>> BulkCreateTags(
+    public async Task<List<TagResponseDto>> BulkCreateTags(
         long projectId, 
         List<TagRequestDto> tags)
     {

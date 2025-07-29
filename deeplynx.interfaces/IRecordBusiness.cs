@@ -4,14 +4,14 @@ namespace deeplynx.interfaces;
 
 public interface IRecordBusiness
 {
-    Task<IEnumerable<RecordResponseDto>> GetAllRecords(
+    Task<List<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived);
     Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived);
     Task<RecordResponseDto> CreateRecord(
-        long projectId, long dataSourceId, RecordRequestDto dto);
+        long projectId, long dataSourceId, CreateRecordRequestDto dto);
     Task<List<RecordResponseDto>> BulkCreateRecords(
-        long projectId, long dataSourceId, List<RecordRequestDto> recordRequestDtos);
+        long projectId, long dataSourceId, List<CreateRecordRequestDto> dtos);
     Task<RecordResponseDto> UpdateRecord(
         long projectId, long recordId, UpdateRecordRequestDto dto);
     Task<bool> DeleteRecord(long projectId, long recordId);

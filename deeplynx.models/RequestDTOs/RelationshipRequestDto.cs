@@ -7,7 +7,6 @@ public class RelationshipRequestDto
 {
     [Required]
     [JsonPropertyName("name")]
-    [JsonPropertyName("name")]
     public string Name { get; set; } = null!;
     [JsonPropertyName("description")]
     public string? Description { get; set; }

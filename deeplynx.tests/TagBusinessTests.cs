@@ -189,13 +189,11 @@ namespace deeplynx.tests
             {
                 new TagRequestDto
                 {
-                    Name = "Test Tag 1",
-                    CreatedBy = "Test Suite"
+                    Name = "Test Tag 1"
                 },
                 new TagRequestDto
                 {
-                    Name = "Test Tag 2",
-                    CreatedBy = "Test Suite"
+                    Name = "Test Tag 2"
                 }
             };
             

@@ -27,7 +27,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
-    public async Task<IEnumerable<EdgeResponseDto>> GetAllEdges(
+    public async Task<List<EdgeResponseDto>> GetAllEdges(
         long projectId, 
         long? dataSourceId,
         bool hideArchived)
@@ -57,7 +57,7 @@ public class EdgeBusiness : IEdgeBusiness
                 ModifiedAt = e.ModifiedAt,
                 ModifiedBy = e.ModifiedBy,
                 ArchivedAt = e.ArchivedAt,
-            });
+            }).ToList();
     }
 
     /// <summary>
@@ -158,16 +158,15 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
-    public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        List<EdgeRequestDto> edgesRequestDtos)
+        List<EdgeRequestDto> bulkDto)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
         
         var edgeEntities = new List<Edge>();
-        foreach (var edgeRequestDto in edgesRequestDtos)
+        foreach (var edgeRequestDto in bulkDto)
         {
             ValidationHelper.ValidateModel(edgeRequestDto);
             
