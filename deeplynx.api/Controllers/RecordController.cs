@@ -82,7 +82,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<RecordResponseDto>> CreateRecord(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] RecordRequestDto dto)
+            [FromBody] CreateRecordRequestDto dto)
         {
             try
             {
@@ -108,7 +108,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] BulkRecordRequestDto dto)
+            [FromBody] List<CreateRecordRequestDto> records)
         {
             try
             {
@@ -134,7 +134,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
             long projectId,
             long recordId,
-            [FromBody] RecordRequestDto dto)
+            [FromBody] UpdateRecordRequestDto dto)
         {
             try
             {

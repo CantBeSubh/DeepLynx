@@ -195,9 +195,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var dataSourceId = did;
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "New Test Record",
+            Description = "Test Record Description",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",
@@ -210,6 +211,7 @@ public class RecordBusinessTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal("New Test Record", result.Name);
+        Assert.Equal("Test Record Description", result.Description);
         Assert.Equal(projectId, result.ProjectId);
         Assert.Equal(dataSourceId, result.DataSourceId);
         Assert.Equal("test://uri", result.Uri);
@@ -228,9 +230,11 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var invalidProjectId = 999L;
         var dataSourceId = did;
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Test Record",
+            Description = "Test Record Description",
+            OriginalId = "original-123",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
         };
 
@@ -245,9 +249,11 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var invalidDataSourceId = 999L;
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Test Record",
+            Description = "Test Record Description",
+            OriginalId = "original-123",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
         };
 
@@ -279,9 +285,11 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
     
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Deep JSON Record",
+            Description = "Deep JSON Record Description",
+            OriginalId = "original-123",
             Properties = deepJson
         };
 
@@ -291,6 +299,63 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Contains("depth of the JSON structure exceeds", exception.Message);
     }
 
+    [Fact]
+    public async Task CreateRecord_NoName_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto()
+        {
+            Name = null,
+            Description = "No Name Description",
+            OriginalId = "NoName",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+
+    [Fact]
+    public async Task CreateRecord_NoDescription_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto()
+        {
+            Name = "No Description Record",
+            Description = null,
+            OriginalId = "NoDesc",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+
+    [Fact]
+    public async Task CreateRecord_NoOriginalId_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto()
+        {
+            Name = "No Original ID Record",
+            Description = "No Original ID Description",
+            OriginalId = null,
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+    
     #endregion
 
     #region BulkCreateRecords Tests
@@ -301,20 +366,17 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var dataSourceId = did;
-        var bulkDto = new BulkRecordRequestDto
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new CreateRecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 1",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
-                },
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 2",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
-                }
+                Name = "Bulk Record 1",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
+            },
+            new CreateRecordRequestDto
+            {
+                Name = "Bulk Record 2",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
             }
         };
 
@@ -338,11 +400,8 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var dataSourceId = did;
-        var bulkDto = new BulkRecordRequestDto
-        {
-            Records = new List<RecordRequestDto>()
-        };
-
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>();
+        
         // Act
         var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
 
@@ -357,15 +416,12 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var invalidProjectId = 999L;
         var dataSourceId = 1L;
-        var bulkDto = new BulkRecordRequestDto
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new CreateRecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Test Record",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
-                }
+                Name = "Test Record",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
             }
         };
 
@@ -384,7 +440,7 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var recordId = rid;
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Test Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
@@ -424,7 +480,7 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var invalidRecordId = 999L;
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
@@ -441,7 +497,7 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var wrongProjectId = 999L;
         var recordId = rid;
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
@@ -475,7 +531,7 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
         
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Deep JSON Record",
             Properties = deepJson
@@ -603,9 +659,11 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
         
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Valid Depth Record",
+            Description = "Valid Depth Description",
+            OriginalId = "VDR1",
             Properties = validDepthJson
         };
 
@@ -623,9 +681,11 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var projectId = pid;
         var dataSourceId = did;
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto()
         {
             Name = "No Properties Record",
+            Description = "No Properties Description",
+            OriginalId = "NoProps",
             Properties = null
         };
 
