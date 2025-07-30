@@ -4,6 +4,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -44,7 +45,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
-    public async Task<IEnumerable<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
+    public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
         
@@ -69,7 +70,7 @@ public class ClassBusiness : IClassBusiness
                 ModifiedBy = c.ModifiedBy,
                 ModifiedAt = c.ModifiedAt,
                 ArchivedAt = c.ArchivedAt,
-            });
+            }).ToList();
     }
 
     /// <summary>
@@ -123,12 +124,6 @@ public class ClassBusiness : IClassBusiness
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
 
-        var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
-        if (existingClass != null)
-        {
-            throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
-        }
-
         var newClass = new Class
         {
             ProjectId = projectId,
@@ -163,62 +158,50 @@ public class ClassBusiness : IClassBusiness
     /// Creates a new classes based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the class belongs</param>
-    /// <param name="bulkDto">A data transfer object with details on the new class to be created.</param>
+    /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<List<ClassResponseDto>> BulkCreateClass(long projectId, List<ClassRequestDto> bulkDto)
+    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkDto);
         
-        var newClasses = new List<Class>();
-        var classResponses = new List<ClassResponseDto>();
-        foreach (var dto in bulkDto)
+        // Bulk insert into classes; if there is a name collision, update the description and uuid if present
+        var sql = @"
+            INSERT INTO deeplynx.classes (project_id, name, description, uuid, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                description = COALESCE(EXCLUDED.description, classes.description),
+                uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
+                modified_at = @now
+            RETURNING *;
+        ";
+
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            ValidationHelper.ValidateModel(dto);
-            var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
-            if (existingClass != null)
-            {
-                throw new Exception($"Class for project {projectId} with name {dto.Name} already exists");
-            }
-
-            var newClass = new Class
-            {
-                ProjectId = projectId,
-                Name = dto.Name,
-                Description = dto.Description,
-                Uuid = dto.Uuid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
-                ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
-
-            };
-            newClasses.Add(newClass);
-        }
-
-        await _context.Classes.AddRangeAsync(newClasses);
-        await _context.SaveChangesAsync();
-
-        foreach (var newClass in newClasses)
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(classes.SelectMany((dto, i) => new[]
         {
-            var classResponse = new ClassResponseDto
-            {
-                Id = newClass.Id,
-                Name = newClass.Name,
-                Description = newClass.Description,
-                Uuid = newClass.Uuid,
-                ProjectId = newClass.ProjectId,
-                CreatedBy = newClass.CreatedBy,
-                CreatedAt = newClass.CreatedAt,
-                ModifiedBy = newClass.ModifiedBy,
-                ModifiedAt = newClass.ModifiedAt
-            };
-            
-            classResponses.Add(classResponse);
-        }
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", classes.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
 
-        return classResponses;
+        // returns the resulting upserted classes
+        return await _context.Database
+            .SqlQueryRaw<ClassResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
     }
 
     /// <summary>
@@ -244,8 +227,6 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Uuid = dto.Uuid;
         updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
-        updatedClass.CreatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
-        updatedClass.CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
@@ -257,8 +238,6 @@ public class ClassBusiness : IClassBusiness
             Description = updatedClass.Description,
             Uuid = updatedClass.Uuid,
             ProjectId = updatedClass.ProjectId,
-            CreatedBy = updatedClass.CreatedBy,
-            CreatedAt = updatedClass.CreatedAt,
             ModifiedBy = updatedClass.ModifiedBy,
             ModifiedAt = updatedClass.ModifiedAt,
         };

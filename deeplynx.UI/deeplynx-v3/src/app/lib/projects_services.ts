@@ -9,7 +9,7 @@ export const api = axios.create({
 
 export const getAllProjects = async () => {
     try {
-        const res = await api.get("/projects/GetAllProjects");
+        const res = await api.get("https://nexus.dev.inl.gov/api/projects/GetAllProjects");
         return res.data;
     } catch (error) {
         console.error("API call failed:", error);

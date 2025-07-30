@@ -105,15 +105,16 @@ namespace deeplynx.api.Controllers
         /// Create many classes
         /// </summary>
         /// <param name="projectId">The ID of the project to which the class belongs</param>
-        /// <param name="dto">The request DTO for classes</param>
+        /// <param name="classes">List of request DTOs for classes</param>
         /// <returns>Bulk class response DTOs</returns>
         [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
-        public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClass(long projectId,
-            [FromBody] List<ClassRequestDto> dto)
+        public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
+            long projectId,
+            [FromBody] List<ClassRequestDto> classes)
         {
             try
             {
-                var newClasses = await _classBusiness.BulkCreateClass(projectId, dto);
+                var newClasses = await _classBusiness.BulkCreateClasses(projectId, classes);
                 return Ok(newClasses);
             }
             catch (Exception exc)

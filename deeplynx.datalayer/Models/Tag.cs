@@ -8,7 +8,9 @@ namespace deeplynx.datalayer.Models;
 
 [Table("tags", Schema = "deeplynx")]
 [Index("Id", Name = "idx_tags_id")]
+[Index("Name", Name = "idx_tags_name")]
 [Index("ProjectId", Name = "idx_tags_project_id")]
+[Index(nameof(ProjectId), nameof(Name), IsUnique = true, Name = "unique_tag_name")]
 public partial class Tag
 {
     [Key]

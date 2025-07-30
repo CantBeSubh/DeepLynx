@@ -238,8 +238,8 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Array of project ids</param>
         /// <returns>List of record response DTOs sorted by most recent</returns>
-        [HttpPost("GetRecentlyAddedRecords", Name = "api_get_recent_records")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromBody] long[] projectId)
+        [HttpGet("GetRecentlyAddedRecords", Name = "api_get_recent_records")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromQuery] long[] projectId)
         {
             try
             {

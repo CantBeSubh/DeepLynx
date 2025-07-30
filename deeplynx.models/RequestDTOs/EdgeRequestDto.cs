@@ -5,16 +5,21 @@ namespace deeplynx.models;
 
 public class EdgeRequestDto
 {
-    [Required]
     [JsonPropertyName("origin_id")]
-    public long OriginId { get; set; } 
+    public long? OriginId { get; set; } 
     
-    [Required]
     [JsonPropertyName("destination_id")]
-    public long DestinationId { get; set; }
+    public long? DestinationId { get; set; }
     
-    [JsonPropertyName("name")]
+    [JsonPropertyName("relationship_id")]
+    public long? RelationshipId { get; set; }
+    
+    [JsonPropertyName("relationship_name")]
     public string? RelationshipName { get; set; }
     
-    public long? RelationshipId { get; set; }
+    [JsonPropertyName("origin_oid")]
+    public string? OriginOid { get; set; } 
+    
+    [JsonPropertyName("destination_oid")]
+    public string? DestinationOid { get; set; }
 }

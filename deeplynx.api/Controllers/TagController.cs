@@ -18,77 +18,7 @@ public class TagController : ControllerBase
     {
         _tagBusiness = tagBusiness;
     }
-
-    /// <summary>
-    /// Creates a tag
-    /// </summary>
-    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
-    /// <returns>The created tag with its details.</returns>
-    [HttpPost("CreateTag", Name = "api_create_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
-    {
-        try
-        {
-            var createdTag = await _tagBusiness.CreateTag(projectId, tagRequestDto);
-            return CreatedAtAction(nameof(GetTagById), new { projectId = projectId, tagId = createdTag.Id }, 
-                createdTag);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An error occurred while creating tag: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
     
-    /// <summary>
-    /// Creates many tags
-    /// </summary>
-    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
-    /// <returns>The created tag with its details.</returns>
-    [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
-    public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
-        long projectId, 
-        [FromBody] List<TagRequestDto> dto)
-    {
-        try
-        {
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, dto);
-            return Ok(bulkTagResponseDto);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An unexpected error occurred while creating these tags: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
-    /// <summary>
-    /// Update a tag
-    /// </summary>
-    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagId">The ID of the tag to update.</param>
-    /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
-    /// <returns>The updated tag with its details.</returns>
-    [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto tagRequestDto)
-    {
-        try
-        {
-            var updatedTag = await _tagBusiness.UpdateTag(projectId, tagId, tagRequestDto);
-            return Ok(updatedTag);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An error occurred while updating tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-
     /// <summary>
     /// Get all tags
     /// </summary>
@@ -120,20 +50,91 @@ public class TagController : ControllerBase
     /// <param name="tagId">The ID of the tag to retrieve.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>The tag with its details.</returns>
-    [HttpGet("GetTagById/{tagId}", Name = "api_get_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> GetTagById(
+    [HttpGet("GetTag/{tagId}", Name = "api_get_a_tag")]
+    public async Task<ActionResult<TagResponseDto>> GetTag(
         long projectId, 
         long tagId,
         [FromQuery] bool hideArchived = true)
     {
         try
         {
-            var tag = await _tagBusiness.GetTagById(projectId, tagId,  hideArchived);
+            var tag = await _tagBusiness.GetTag(projectId, tagId,  hideArchived);
             return Ok(tag);
         }
         catch (Exception exception)
         {
             var message = $"An error occurred while retrieving tag {tagId}: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+
+    /// <summary>
+    /// Creates a tag
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <returns>The created tag with its details.</returns>
+    [HttpPost("CreateTag", Name = "api_create_a_tag")]
+    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
+    {
+        try
+        {
+            var createdTag = await _tagBusiness.CreateTag(projectId, tagRequestDto);
+            return CreatedAtAction(nameof(GetTag), new { projectId = projectId, tagId = createdTag.Id }, 
+                createdTag);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while creating tag: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+    
+    /// <summary>
+    /// Creates many tags
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
+    /// <returns>The created tag with its details.</returns>
+    [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
+    public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
+        long projectId, 
+        [FromBody] List<TagRequestDto> tags)
+    {
+        try
+        {
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tags);
+            return Ok(bulkTagResponseDto);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An unexpected error occurred while creating these tags: {exception}";
+            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+
+    /// <summary>
+    /// Update a tag
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to update.</param>
+    /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
+    /// <returns>The updated tag with its details.</returns>
+    [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
+    public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto tagRequestDto)
+    {
+        try
+        {
+            var updatedTag = await _tagBusiness.UpdateTag(projectId, tagId, tagRequestDto);
+            return Ok(updatedTag);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while updating tag {tagId}: {exception}";
             NLog.LogManager.GetCurrentClassLogger().Error(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
