@@ -2619,5 +2619,40 @@ BEGIN
     VALUES ('20250723185918_SetGeneratedAlways', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET original_id = '' WHERE original_id IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET name = '' WHERE name IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN name SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN name SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET description = '' WHERE description IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN description SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN description SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250729131213_RecordRequiredFields', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

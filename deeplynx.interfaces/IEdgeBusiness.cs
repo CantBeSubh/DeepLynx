@@ -12,8 +12,8 @@ public interface IEdgeBusiness
         long projectId, long? edgeId, long? originId, long? destinationId, bool hideArchived);
     Task<EdgeResponseDto> CreateEdge(
         long projectId, long dataSourceId, EdgeRequestDto edge);
-    Task<BulkEdgeResponseDto> BulkCreateEdges(
-        long projectId, long dataSourceId, BulkEdgeRequestDto bulkDto);
+    Task<List<EdgeResponseDto>> BulkCreateEdges(
+        long projectId, long dataSourceId, List<EdgeRequestDto> bulkDto);
     Task<EdgeResponseDto> UpdateEdge(
         long projectId, EdgeRequestDto edge, long? edgeId, long? originId, long? destinationId);
     Task<long> DeleteEdge(

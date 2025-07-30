@@ -157,10 +157,10 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
     /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
-    public async Task<BulkEdgeResponseDto> BulkCreateEdges(
+    public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        BulkEdgeRequestDto bulkDto)
+        List<EdgeRequestDto> bulkDto)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
@@ -168,7 +168,7 @@ public class EdgeBusiness : IEdgeBusiness
         
         var edges = new List<Edge>();
         var edgeResponses = new List<EdgeResponseDto>();
-        foreach (var dto in bulkDto.Edges)
+        foreach (var dto in bulkDto)
         {
             ValidationHelper.ValidateModel(dto);
             
@@ -204,10 +204,7 @@ public class EdgeBusiness : IEdgeBusiness
             edgeResponses.Add(edgeResponse);
         }
 
-        return new BulkEdgeResponseDto
-        {
-            Edges = edgeResponses
-        };
+        return edgeResponses;
     }
 
     /// <summary>

@@ -190,30 +190,24 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateTag_Success_OnBulkCreate()
         {
-            var tagDtos = new List<TagRequestDto>();
-            
-            var dto1 = new TagRequestDto
+            var tags = new List<TagRequestDto>
             {
-                Name = "Test Tag 1",
-                CreatedBy = "Test Suite"
-            };
-            var dto2 = new TagRequestDto
-            {
-                Name = "Test Tag 2",
-                CreatedBy = "Test Suite"
-            };
-            tagDtos.Add(dto1);
-            tagDtos.Add(dto2);
-
-            var bulkDto = new BulkTagRequestDto
-            {
-                Tags = tagDtos
+                new TagRequestDto
+                {
+                    Name = "Test Tag 1",
+                    CreatedBy = "Test Suite"
+                },
+                new TagRequestDto
+                {
+                    Name = "Test Tag 2",
+                    CreatedBy = "Test Suite"
+                }
             };
             
-            var result = await _tagBusiness.BulkCreateTags(pid, bulkDto);
-            result.Tags.Should().HaveCount(2);
-            result.Tags.First().Name.Should().Be("Test Tag 1");
-            result.Tags.Last().Name.Should().Be("Test Tag 2");
+            var result = await _tagBusiness.BulkCreateTags(pid, tags);
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Tag 1");
+            result.Last().Name.Should().Be("Test Tag 2");
         }
                 
         [Fact]
