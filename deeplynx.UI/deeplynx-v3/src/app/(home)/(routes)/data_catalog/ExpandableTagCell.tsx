@@ -5,6 +5,7 @@ import { Tag } from "../../types/types";
 
 const ExpandableTagsCell = ({ tags }: { tags: Tag[] }) => {
   const [expanded, setExpanded] = useState(false);
+  if (!Array.isArray(tags)) return null;
   const tagsToShow = expanded ? tags : tags.slice(0, 3);
 
   return (

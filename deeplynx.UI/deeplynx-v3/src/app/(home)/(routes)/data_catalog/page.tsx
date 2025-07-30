@@ -1,11 +1,12 @@
 "use client";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { recentRecordsData } from "@/app/(home)/dummy_data/data";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getAllRecords } from "@/app/lib/record_services";
-import { getAllProjects } from "@/app/lib/projects_services";
+import {
+  getAllProjects,
+  getAllRecordsForMultipleProjects,
+} from "@/app/lib/projects_services";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -15,13 +16,12 @@ import {
 } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import SavedSearchesTabs from "../../components/SavedSearches";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
-import SavedSearchesTabs from "../../components/SavedSearches";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services";
 
 const DataCatalog = () => {
   const router = useRouter();
@@ -49,11 +49,17 @@ const DataCatalog = () => {
     setHasMounted(true);
     const storedName = localStorage.getItem("selectedProjectName");
     if (storedName) setProjectName(storedName);
-  }, []);
+
+    if (fromProject === "ALL") {
+      setSelectedProjects(projects.map((p) => p.id));
+    } else if (fromProject) {
+      setSelectedProjects([fromProject]);
+    }
+  }, [fromProject, projects]);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!hasLoaded || !project?.projectId) return;
+      if (!hasLoaded || !project?.projectId === undefined) return;
 
       try {
         const data = await getAllProjects();
@@ -71,24 +77,66 @@ const DataCatalog = () => {
   }, [project?.projectId, hasLoaded]);
 
   useEffect(() => {
+    if (!hasLoaded || projects.length === 0) return;
+
+    if (fromProject === "ALL") {
+      const allProjectIds = projects
+        .map((p) => p.id)
+        .filter((id) => id !== undefined);
+      setSelectedProjects(allProjectIds);
+    } else if (fromProject && !selectedProjects.length) {
+      setSelectedProjects([fromProject]);
+    }
+  }, [fromProject, projects, hasLoaded]);
+
+  useEffect(() => {
+    // Only run this if we haven't already selected projects
+    if (projects.length > 0 && selectedProjects.length === 0 && hasLoaded) {
+      const allProjectIds = projects
+        .map((p) => p.id)
+        .filter((id) => id !== undefined);
+      setSelectedProjects(allProjectIds);
+    }
+  }, [projects, selectedProjects, hasLoaded]);
+
+  useEffect(() => {
     const fetchRecords = async () => {
-      if (!hasLoaded || selectedProjects.length === 0) return;
+      if (
+        !hasLoaded ||
+        selectedProjects.length === 0 ||
+        projects.length === 0 ||
+        project?.projectId === undefined
+      ) {
+        console.log("Skipping fetch - condition not met:", {
+          hasLoaded,
+          selectedProjects,
+          projectsLoaded: projects.length,
+        });
+        return;
+      }
 
       try {
-        if (selectedProjects.includes("All your Projects")) {
-          if (!project?.projectId) return;
-          const allRecords = await getAllRecords(project.projectId);
-          setTableData(allRecords);
-        } else {
-          const recentRecords = await getRecentlyAddedRecords(selectedProjects);
-          setTableData(recentRecords);
-        }
+        const projectIdsToQuery = selectedProjects.map((id) => Number(id));
+        const records = await getAllRecordsForMultipleProjects(
+          projectIdsToQuery
+        );
+        console.log("Setting tableData:", records);
+        setTableData(records);
       } catch (error) {
-        console.error("Failled to fetch records:", error);
+        console.error("Failed to fetch records:", error);
       }
     };
+
     fetchRecords();
-  }, [selectedProjects, hasLoaded, project?.projectId]);
+  }, [
+    hasLoaded,
+    JSON.stringify(selectedProjects),
+    JSON.stringify(projects.map((p) => p.id)),
+  ]);
+
+  useEffect(() => {
+    console.log("Selected projects updated:", selectedProjects);
+  }, [selectedProjects]);
 
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
@@ -150,6 +198,10 @@ const DataCatalog = () => {
       data: "modifiedAt",
     },
   ];
+
+  const selectedProjectIds: number[] = selectedProjects.includes("ALL")
+    ? projects.map((p) => Number(p.id))
+    : selectedProjects.map((id) => Number(id));
 
   // If the component has not mounted yet, return null to avoid rendering
   if (!hasMounted) {
@@ -241,7 +293,7 @@ const DataCatalog = () => {
             <ListView
               data={tableData}
               activeSearchTerms={activeSearchTerms}
-              selectedProjects={selectedProjects}
+              selectedProjects={selectedProjectIds}
             />
           ) : (
             <GridView

@@ -44,8 +44,10 @@ const GridView = <T extends object>({
   const filteredRecords =
     selectedProjects?.includes("All your Projects") || !selectedProjects
       ? data
-      : data.filter((record) =>
-          selectedProjects.includes(record.projectName ?? "")
+      : data.filter(
+          (record) =>
+            record.projectId !== undefined &&
+            selectedProjects.includes(record.projectId?.toString())
         );
 
   return (

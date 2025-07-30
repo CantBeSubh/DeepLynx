@@ -4,7 +4,7 @@ import { FileViewerTableRow } from "../../types/types";
 interface ListViewProps {
   data: FileViewerTableRow[];
   activeSearchTerms?: string[];
-  selectedProjects?: string[];
+  selectedProjects?: number[];
 }
 
 const ListView: React.FC<ListViewProps> = ({
@@ -12,6 +12,7 @@ const ListView: React.FC<ListViewProps> = ({
   activeSearchTerms = [],
   selectedProjects,
 }) => {
+  console.log("ListView:", { data, activeSearchTerms, selectedProjects });
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
@@ -39,12 +40,13 @@ const ListView: React.FC<ListViewProps> = ({
     return { content, matched: true };
   };
 
-  const filteredRecords =
-    selectedProjects?.includes("All your Projects") || !selectedProjects
-      ? data
-      : data.filter((record) =>
-          selectedProjects.includes(record.projectName ?? "")
-        );
+  const filteredRecords = !selectedProjects?.length
+    ? data
+    : data.filter(
+        (record) =>
+          record.projectId !== undefined &&
+          selectedProjects.includes(record.projectId)
+      );
 
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
@@ -60,7 +62,7 @@ const ListView: React.FC<ListViewProps> = ({
 
           return (
             <li key={index} className="py-4 border-b border-base-content">
-              <div className={`font-bold text-base-content mb-1  `}>
+              <div className="font-bold text-base-content mb-1">
                 {name.content}
               </div>
               {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
@@ -85,11 +87,13 @@ const ListView: React.FC<ListViewProps> = ({
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
-                {record.tags.map((tag, index) => (
-                  <span key={index} className={`badge ml-2`}>
-                    {tag.name}
-                  </span>
-                ))}
+                {Array.isArray(record.tags)
+                  ? record.tags.map((tag, index) => (
+                      <span key={index} className="badge ml-2">
+                        {tag.name}
+                      </span>
+                    ))
+                  : null}
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>

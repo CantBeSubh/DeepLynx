@@ -17,6 +17,20 @@ export const getAllProjects = async () => {
     }
 }
 
+export const getAllRecordsForMultipleProjects = async (projectIds: number[], hideArchived = true) => {
+    try {
+        const query = projectIds    
+            .map(id => `projects=${encodeURIComponent(id)}`)
+            .join("&") + `&hideArchived=${hideArchived}`;
+        console.log("getAllRecordsForMultiProjects", query)
+        const res = await api.get(`/projects/MultiProjectRecords?${query}`);
+        return res.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw error;
+    }
+}
+
 export const getProject = async (projectId: string) => {
     try {
         const res = await api.get(`/projects/GetProject/${projectId}`);
