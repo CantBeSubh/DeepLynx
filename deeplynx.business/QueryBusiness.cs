@@ -119,6 +119,8 @@ public class QueryBusiness : IQueryBusiness
     {
         return operatorType switch
         {
+            //TODO: include LIKE operator, IN  for arrays
+            //TODO: Logic for operator and value type 
             "=" => Expression.Equal(property, value),
             ">" => Expression.GreaterThan(property, value),
             "<" => Expression.LessThan(property, value),
