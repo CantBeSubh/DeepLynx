@@ -481,6 +481,36 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
+    /// Bulk attach tags and records
+    /// </summary>
+    /// <param name="dtos">A list of record_id/tag_id pairs to be inserted</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="Exception">Thrown if tags unable to be attached</exception>
+    public async Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos)
+    {
+        // Bulk insert into record_tags
+        var sql = @"INSERT INTO deeplynx.record_tags (record_id, tag_id) VALUES {0} ON CONFLICT DO NOTHING;";
+        
+        // establish parameters
+        var parameters = new List<NpgsqlParameter>();
+        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@record{i}_id", dto.RecordId),
+            new NpgsqlParameter($"@tag{i}_id", dto.TagId)
+        }));
+        
+        // stringify params and comma separate them
+        var valueTuples = string.Join(", ", dtos.Select((dto, i) => $"(@record{i}_id, @tag{i}_id)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+        
+        await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
+        
+        return true;
+    }
+
+    /// <summary>
     /// Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
     /// <param name="node"></param>

@@ -19,4 +19,5 @@ public interface IRecordBusiness
     Task<bool> UnarchiveRecord(long projectId, long recordId);
     Task<bool> AttachTag(long projectId, long recordId, long tagId);
     Task<bool> UnattachTag(long projectId, long recordId, long tagId);
+    Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos);
 }

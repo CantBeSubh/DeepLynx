@@ -21,7 +21,7 @@ public class RecordResponseDto
     [Column("properties")]
     public string Properties { get; set; } = null!;
     [Column("original_id")]
-    public string? OriginalId { get; set; }
+    public string OriginalId { get; set; }
     [Column("class_id")]
     public long? ClassId { get; set; }
     [Column("data_source_id")]

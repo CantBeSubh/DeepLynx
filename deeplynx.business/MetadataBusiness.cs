@@ -71,38 +71,157 @@ public class MetadataBusiness : IMetadataBusiness
     private async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
+        
+        // deserialize metadata subdomains
+        List<ClassRequestDto> classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
+        List<RelationshipRequestDto> relationships = JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships);
+        List<TagRequestDto> tags = JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags);
+        List<CreateRecordRequestDto> records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
+        List<EdgeRequestDto> edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
+        List<RecordTagLinkDto> recordTags = new List<RecordTagLinkDto>();
 
-        if (metadataRequestDto.Classes != null && metadataRequestDto.Classes.Any())
+        // iterate through classes and records to ensure we are processing all requested classes
+        var classDict = classes.ToDictionary(c => c.Name);
+        foreach (var record in records)
         {
-            List<ClassRequestDto> classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
-            metadataResponseDto.Classes = await _classBusiness.BulkCreateClasses(projectId, classes);
+            if (record.ClassName != null)
+            {
+                classDict.TryAdd(record.ClassName, new ClassRequestDto{Name = record.ClassName});
+            }
         }
+        var classesToInsert = classDict.Values.ToList();
         
-        if (metadataRequestDto.Relationships != null && metadataRequestDto.Relationships.Any())
+        // iterate through relationships and edges to ensure we are processing all requested relationships
+        var relDict = relationships.ToDictionary(r => r.Name);
+        foreach (var edge in edges)
         {
-            List<RelationshipRequestDto> relationships = JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships);
-            metadataResponseDto.Relationships = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
+            if (edge.RelationshipName != null)
+            {
+                relDict.TryAdd(edge.RelationshipName, new RelationshipRequestDto{Name = edge.RelationshipName});
+            }
         }
+        var relationshipsToInsert = relDict.Values.ToList();
         
-        if (metadataRequestDto.Tags != null && metadataRequestDto.Tags.Any())
+        // iterate through tags and records to ensure we are processing all requested tags
+        var tagDict = tags.ToDictionary(t => t.Name);
+        foreach (var record in records)
         {
-            List<TagRequestDto> tags = JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags);
-            metadataResponseDto.Tags = await _tagBusiness.BulkCreateTags(projectId, tags);
-        }
-        
-        if (metadataRequestDto.Records != null && metadataRequestDto.Records.Any())
-        {
-            List<CreateRecordRequestDto> records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
-            metadataResponseDto.Records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
-        }
-        
-        if (metadataRequestDto.Edges != null && metadataRequestDto.Edges.Any())
-        {
-            List<EdgeRequestDto> edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
-            List<EdgeResponseDto> edgeResponseDtos = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
-            metadataResponseDto.Edges = edgeResponseDtos;
-        }
+            if (record.Tags == null || !record.Tags.Any())
+                continue;
 
+            foreach (var tag in record.Tags)
+            {
+                tagDict.TryAdd(tag, new TagRequestDto{Name = tag});
+            }
+        }
+        var tagsToInsert = tagDict.Values.ToList();
+        
+        // bulk insert classes
+        metadataResponseDto.Classes = await _classBusiness.BulkCreateClasses(projectId, classesToInsert);
+        // map ID to the natural key Name for use in record inserts
+        var classMap = metadataResponseDto.Classes
+            .ToDictionary(c => c.Name, c => c.Id);
+    
+        // bulk insert relationships
+        metadataResponseDto.Relationships = await _relationshipBusiness.BulkCreateRelationships(projectId, relationshipsToInsert);
+        // map ID to the natural key Name for use in edge inserts
+        var relMap = metadataResponseDto.Relationships
+            .ToDictionary(r => r.Name, r => r.Id);
+
+        // bulk insert tags
+        metadataResponseDto.Tags = await _tagBusiness.BulkCreateTags(projectId, tagsToInsert);
+        // map ID to the natural key Name for use in recordTags inserts
+        var tagMap = metadataResponseDto.Tags
+            .ToDictionary(t => t.Name, t => t);
+        
+        // update records before insert with the returned class ID that corresponds with class name
+        if (classMap.Count > 0)
+        {
+            foreach (var record in records)
+            {
+                if (record.ClassName != null && classMap.TryGetValue(record.ClassName, out long classId))
+                {
+                    record.ClassId = classId;
+                }
+            }
+        }
+        
+        // bulk insert records
+        metadataResponseDto.Records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
+        // map ID to the natural key original id for use in recordTags inserts
+        var recordMap = metadataResponseDto.Records
+            .ToDictionary(r => r.OriginalId, r => r.Id);
+        
+        // set recordTags before insert with IDs that correspond with tag name and record original id
+        foreach (var record in records)
+        {
+            if (record.Tags == null || !record.Tags.Any() || !recordMap.TryGetValue(record.OriginalId, out var recordId))
+                continue;
+
+            foreach (var tag in record.Tags)
+            {
+                if (tagMap.TryGetValue(tag, out var tagDto))
+                    recordTags.Add(new RecordTagLinkDto
+                    {
+                        RecordId = recordId,
+                        TagId = tagDto.Id
+                    });
+            }
+        }
+        
+        // bulk insert recordTags
+        await _recordBusiness.BulkAttachTags(recordTags);
+        var recordTagDict = recordTags
+            .GroupBy(t => t.RecordId)
+            .ToDictionary(
+                t => t.Key, 
+                t => t.Select(rt => rt.TagId).ToList());
+
+        var tagsById = metadataResponseDto.Tags
+            .ToDictionary(t => t.Id, t => t);
+
+        foreach (var record in metadataResponseDto.Records)
+        {
+            if (recordTagDict.TryGetValue(record.Id, out var recordTagIds))
+            {
+                record.Tags = new List<RecordTagDto>();
+                foreach (var tag in recordTagIds)
+                {
+                    if (tagsById.TryGetValue(tag, out var tagDto))
+                        record.Tags.Add(new RecordTagDto
+                        {
+                            Id = tagDto.Id,
+                            Name = tagDto.Name
+                        });
+                }
+            }
+        }
+        
+        // update edges before insert with the IDs that correspond with relationship name and record original IDs
+        if (relMap.Count > 0 || recordMap.Count > 0)
+        {
+            foreach (var edge in edges)
+            {
+                if (edge.RelationshipName != null && relMap.TryGetValue(edge.RelationshipName, out long relId))
+                {
+                    edge.RelationshipId = relId;
+                }
+                
+                if (edge.OriginOid != null && recordMap.TryGetValue(edge.OriginOid, out long originId))
+                {
+                    edge.OriginId = originId;
+                }
+                
+                if (edge.DestinationOid != null && recordMap.TryGetValue(edge.DestinationOid, out long destinationId))
+                {
+                    edge.DestinationId = destinationId;
+                }
+            }
+        }
+        
+        // bulk insert edges
+        metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
+        
         return metadataResponseDto;
     }
 

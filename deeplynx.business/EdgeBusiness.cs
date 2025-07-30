@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
@@ -123,11 +124,16 @@ public class EdgeBusiness : IEdgeBusiness
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
+
+        if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
+        {
+            throw new ValidationException("Origin and/or Destination IDs are missing or invalid.");
+        }
         
         var edge = new Edge
         {
-            OriginId = dto.OriginId,
-            DestinationId = dto.DestinationId,
+            OriginId = dto.OriginId.Value,
+            DestinationId = dto.DestinationId.Value,
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
@@ -230,9 +236,9 @@ public class EdgeBusiness : IEdgeBusiness
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
         
-        edge.OriginId = dto.OriginId;
-        edge.DestinationId = dto.DestinationId;
-        edge.RelationshipId = dto.RelationshipId;
+        edge.OriginId = dto.OriginId ?? edge.OriginId;
+        edge.DestinationId = dto.DestinationId ?? edge.DestinationId;
+        edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
         edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         

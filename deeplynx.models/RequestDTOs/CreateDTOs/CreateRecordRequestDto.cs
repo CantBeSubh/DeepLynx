@@ -30,4 +30,7 @@ public class CreateRecordRequestDto
     
     [JsonPropertyName("class_name")]
     public string? ClassName { get; set; }
+    
+    [JsonPropertyName("tags")]
+    public List<string>? Tags { get; set; }
 }
