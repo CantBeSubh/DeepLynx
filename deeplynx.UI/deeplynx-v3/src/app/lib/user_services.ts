@@ -21,14 +21,12 @@ export const getRecentlyAddedRecords = async (projectIds: string[]) => {
     console.log("Sending project IDs: ", projectIds)
     try {
         console.log("requestBody: ", projectIds)
-        const res = await api.post("/user/GetRecentlyAddedRecords", 
-            projectIds, 
-            {
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-        return res.data;
+        
+        const queryString = projectIds
+            .map(id => `projectId=${encodeURIComponent(id)}`)
+            .join("&");
+        const res = await api.get(`/user/GetRecentlyAddedRecords?${queryString}`);
+        return res.data
     } catch (error) {
         console.error("API call failed:", error);
         throw error;
