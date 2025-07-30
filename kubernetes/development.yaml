@@ -34,6 +34,8 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            - name: NEXT_PUBLIC_API_URL
+              value: ${NEXT_PUBLIC_API_URL}
           resources:
             limits:
               memory: "4Gi"
