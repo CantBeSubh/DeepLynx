@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250724142725_AddUniqueNameConstraints")]
+    partial class AddUniqueNameConstraints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -294,9 +297,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "idx_edges_project_id");
 
                     b.HasIndex(new[] { "RelationshipId" }, "idx_edges_relationship_id");
-
-                    b.HasIndex(new[] { "ProjectId", "OriginId", "DestinationId" }, "unique_edge_record_ids")
-                        .IsUnique();
 
                     b.ToTable("edges", "deeplynx");
                 });
@@ -686,7 +686,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("data_source_id");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
 
@@ -703,12 +702,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("modified_by");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
 
                     b.Property<string>("OriginalId")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("original_id");
 
@@ -745,9 +742,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Properties" }, "idx_records_properties");
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Properties" }, "idx_records_properties"), "gin");
-
-                    b.HasIndex(new[] { "ProjectId", "DataSourceId", "OriginalId" }, "unique_record_original_id")
-                        .IsUnique();
 
                     b.ToTable("records", "deeplynx");
                 });

@@ -3,8 +3,12 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
+using deeplynx.helpers.json;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace deeplynx.business;
 
@@ -28,7 +32,7 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetAllRecords(
+    public async Task<List<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
@@ -66,7 +70,7 @@ public class RecordBusiness : IRecordBusiness
                     Id = t.Id,
                     Name = t.Name
                 }).ToList()
-            });
+            }).ToList();
     }
     
     /// <summary>
@@ -186,71 +190,69 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project under which to create the record</param>
     /// <param name="dataSourceId">The ID of the data source under which to create the record</param>
-    /// <param name="bulkDto">The data transfer object containing details on the records to be created</param>
+    /// <param name="records">The data transfer object containing details on the records to be created</param>
     /// <returns>The newly created metadata record</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project or datasource are not found</exception>
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<List<RecordResponseDto>> BulkCreateRecords(
         long projectId, 
         long dataSourceId, 
-        List<CreateRecordRequestDto> bulkDto)
+        List<CreateRecordRequestDto> records)
     {
        DoesProjectExist(projectId);
        DoesDataSourceExist(dataSourceId);
-        
-       var records = new List<Record>();
-       var recordResponses = new List<RecordResponseDto>();
-       foreach (var dto in bulkDto)
+
+       if (records.Count == 0)
        {
-           var maxDepth = CalculateJsonMaxDepth(dto.Properties);
-           if (maxDepth > 3)
-           {
-               throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
-           }
-            
-           var record = new Record
-           {
-               ProjectId = projectId,
-               DataSourceId = dataSourceId,
-               Uri = dto.Uri,
-               Properties = dto.Properties.ToString()!,
-               OriginalId = dto.OriginalId,
-               Name = dto.Name,
-               Description = dto.Description,
-               ClassId = dto.ClassId,
-               CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-               CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
-           };
-           records.Add(record);
+           throw new Exception("Unable to bulk create records: no records selected for creation");
        }
+       
+       // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
+       var sql = @"
+            INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
+                                          original_id, properties, class_id, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
+                name = COALESCE(EXCLUDED.name, records.name),
+                description = COALESCE(EXCLUDED.description, records.description),
+                uri = COALESCE(EXCLUDED.uri, records.uri),
+                properties = COALESCE(EXCLUDED.properties, records.properties),
+                class_id = COALESCE(EXCLUDED.class_id, records.class_id),
+                modified_at = @now
+            RETURNING *;                                                          
+        ";
+       
+       // establish "constant" parameters
+       var parameters = new List<NpgsqlParameter>
+       {
+           new NpgsqlParameter("@projectId", projectId),
+           new NpgsqlParameter("@dataSourceId", dataSourceId),
+           new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+       };
+       
+       // establish "dynamic" parameters (new for each dto in the list)
+       parameters.AddRange(records.SelectMany((dto, i) => new[]
+       {
+           new NpgsqlParameter($"@p{i}_name", dto.Name),
+           new NpgsqlParameter($"@p{i}_desc", dto.Description),
+           new NpgsqlParameter($"@p{i}_uri", (object?)dto.Uri ?? DBNull.Value),
+           new NpgsqlParameter($"@p{i}_props", JsonSerializer.Serialize(dto.Properties)),
+           new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
+           new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
+       }));
 
-       await _context.Records.AddRangeAsync(records);
-       await _context.SaveChangesAsync();
+       // stringify the params and comma separate them
+       var valueTuples = string.Join(", ", records.Select((dto, i) =>
+           $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @now)"));
+        
+       // put everything together and execute the query
+       sql = string.Format(sql, valueTuples);
 
-        foreach (var record in records)
-        {
-            var recordResponse = new RecordResponseDto
-            {
-                Id = record.Id,
-                Description = record.Description,
-                Uri = record.Uri,
-                Properties = record.Properties,
-                OriginalId = record.OriginalId,
-                Name = record.Name,
-                ClassId = record.ClassId,
-                DataSourceId = record.DataSourceId,
-                ProjectId = record.ProjectId,
-                CreatedBy = record.CreatedBy,
-                CreatedAt = record.CreatedAt,
-                ModifiedBy = record.ModifiedBy,
-                ModifiedAt = record.ModifiedAt,
-                ArchivedAt = record.ArchivedAt,
-            };
-            
-            recordResponses.Add(recordResponse);
-        }
-
-        return recordResponses;
+       // returns the resulting upserted classes
+       return await _context.Database
+           .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
+           .ToListAsync();
     }
 
     /// <summary>
@@ -479,7 +481,37 @@ public class RecordBusiness : IRecordBusiness
     }
 
     /// <summary>
-    /// Private method used to calculate json depth of properties (should be <3)
+    /// Bulk attach tags and records
+    /// </summary>
+    /// <param name="dtos">A list of record_id/tag_id pairs to be inserted</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="Exception">Thrown if tags unable to be attached</exception>
+    public async Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos)
+    {
+        // Bulk insert into record_tags
+        var sql = @"INSERT INTO deeplynx.record_tags (record_id, tag_id) VALUES {0} ON CONFLICT DO NOTHING;";
+        
+        // establish parameters
+        var parameters = new List<NpgsqlParameter>();
+        parameters.AddRange(dtos.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@record{i}_id", dto.RecordId),
+            new NpgsqlParameter($"@tag{i}_id", dto.TagId)
+        }));
+        
+        // stringify params and comma separate them
+        var valueTuples = string.Join(", ", dtos.Select((dto, i) => $"(@record{i}_id, @tag{i}_id)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+        
+        await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
+        
+        return true;
+    }
+
+    /// <summary>
+    /// Private method used to calculate json depth of properties (should be less than three)
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>

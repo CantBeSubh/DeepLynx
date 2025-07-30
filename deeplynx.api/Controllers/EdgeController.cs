@@ -104,11 +104,11 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-        /// <param name="edge">The edge request data transfer object containing edge details</param>
+        /// <param name="edges">List of the edge request data transfer objects containing edge details</param>
         [HttpPost("BulkCreateEdges", Name = "api_create_many_edges")]
         public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
-            long projectId, 
-            [Required] long dataSourceId, 
+            long projectId,
+            [Required] long dataSourceId,
             [FromBody] List<EdgeRequestDto> edges)
         {
             try
