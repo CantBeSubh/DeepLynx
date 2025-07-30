@@ -12,7 +12,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness, [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
+public class TimeseriesBusiness(
+    DeeplynxContext context, 
+    IRecordBusiness recordBusiness, 
+    IClassBusiness classBusiness, 
+    [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
@@ -63,7 +67,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -170,7 +174,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
 
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -218,7 +222,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -495,7 +499,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -556,7 +560,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {

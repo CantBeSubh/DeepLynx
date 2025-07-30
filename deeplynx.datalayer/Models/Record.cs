@@ -27,13 +27,13 @@ public partial class Record
     public string Properties { get; set; } = null!;
 
     [Column("original_id")]
-    public string? OriginalId { get; set; }
+    public string OriginalId { get; set; } = null!;
 
     [Column("name")]
-    public string? Name { get; set; }
+    public string Name { get; set; } = null!;
     
     [Column("description")]
-    public string? Description { get; set; }
+    public string Description { get; set; } = null!;
     
     [Column("class_id")]
     public long? ClassId { get; set; }

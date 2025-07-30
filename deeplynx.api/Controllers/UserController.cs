@@ -23,7 +23,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">(Optional) ID of project that users are associated with</param>
         /// <returns>List of user response DTOs</returns>
-        [HttpGet("GetAllUsers")]
+        [HttpGet("GetAllUsers", Name = "api_get_all_users")]
         public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(long? projectId)
         {
             try
@@ -44,7 +44,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="userId">ID of user</param>
         /// <returns>User response DTO</returns>
-        [HttpGet("GetUser/{userId}")]
+        [HttpGet("GetUser/{userId}", Name = "api_get_a_user")]
         public async Task<ActionResult<UserResponseDto>> GetUser(long userId)
         {
             try
@@ -67,7 +67,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
-        [HttpPost("CreateUser")]
+        [HttpPost("CreateUser", Name = "api_create_a_user")]
         public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] UserRequestDto dto)
         {
             try
@@ -88,7 +88,7 @@ namespace deeplynx.api.Controllers
         /// /// <param name="userId">ID of user</param>
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
-        [HttpPut("UpdateUser/{userId}")]
+        [HttpPut("UpdateUser/{userId}", Name = "api_update_a_user")]
         public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UserRequestDto dto)
         {
             try
@@ -109,7 +109,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="userId">The ID of the user to delete.</param>
         /// <returns>A message stating the user was successfully deleted.</returns>
-        [HttpDelete("DeleteUser/{userId}")]
+        [HttpDelete("DeleteUser/{userId}", Name = "api_delete_a_user")]
         public async Task<IActionResult> DeleteUser(long userId)
         {
             try
@@ -130,7 +130,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="userId">The ID of the user to archive.</param>
         /// <returns>A message stating the user was successfully archived.</returns>
-        [HttpDelete("ArchiveUser/{userId}")]
+        [HttpDelete("ArchiveUser/{userId}", Name = "api_archive_a_user")]
         public async Task<IActionResult> ArchiveUser(long userId)
         {
             try
@@ -151,7 +151,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="userId">ID of user</param>
         /// <returns>Data overview DTO</returns>
-        [HttpGet("GetDataOverview/{userId}")]
+        [HttpGet("GetDataOverview/{userId}", Name = "api_get_a_user_overview")]
         public async Task<ActionResult<DataOverviewDto>> GetDataOverview(long userId)
         {
             try
@@ -174,7 +174,7 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">Id of user to be added</param>
         /// /// <param name="projectId">Id of project to add user to</param>
         /// <returns>Success message</returns>
-        [HttpPost("AddUserToProject")]
+        [HttpPost("AddUserToProject", Name = "api_add_user_to_project")]
         public async Task<IActionResult> AddUserToProject(long userId, long projectId)
         {
             try
@@ -196,7 +196,7 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">Id of user to be removed</param>
         /// /// <param name="projectId">Id of project to remove user from</param>
         /// <returns>Success message</returns>
-        [HttpPost("RemoveUserFromProject")]
+        [HttpPost("RemoveUserFromProject", Name = "api_remove_user_from_project")]
         public async Task<IActionResult> RemoveUserFromProject(long userId, long projectId)
         {
             try
@@ -217,7 +217,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="userId">The ID of the user to unarchive.</param>
         /// <returns>A message stating the user was successfully unarchived.</returns>
-        [HttpPut("UnarchiveUser/{userId}")]
+        [HttpPut("UnarchiveUser/{userId}", Name = "api_unarchive_a_user")]
         public async Task<IActionResult> UnarchiveUser(long userId)
         {
             try
@@ -238,8 +238,8 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Array of project ids</param>
         /// <returns>List of record response DTOs sorted by most recent</returns>
-        [HttpPost("GetRecentlyAddedRecords")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromBody] long[] projectId)
+        [HttpGet("GetRecentlyAddedRecords", Name = "api_get_recent_records")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetRecentlyAddedRecords([FromQuery] long[] projectId)
         {
             try
             {

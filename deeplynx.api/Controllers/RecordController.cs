@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
-        [HttpGet("GetAllRecords")]
+        [HttpGet("GetAllRecords", Name = "api_get_all_records")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
@@ -52,7 +52,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">Datasource ID which record is associated with</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>Record response DTO</returns>
-        [HttpGet("GetRecord/{recordId}")]
+        [HttpGet("GetRecord/{recordId}", Name = "api_get_a_record")]
         public async Task<ActionResult<RecordResponseDto>> GetRecord(
             long projectId, 
             long recordId, 
@@ -78,11 +78,11 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">Datasource ID which record is associated with</param>
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
-        [HttpPost("CreateRecord")]
+        [HttpPost("CreateRecord", Name = "api_create_a_record")]
         public async Task<ActionResult<RecordResponseDto>> CreateRecord(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] RecordRequestDto dto)
+            [FromBody] CreateRecordRequestDto dto)
         {
             try
             {
@@ -104,11 +104,11 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">Datasource ID which record is associated with</param>
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
-        [HttpPost("BulkCreateRecords")]
-        public async Task<ActionResult<BulkRecordResponseDto>> BulkCreateRecords(
+        [HttpPost("BulkCreateRecords", Name = "api_create_many_records")]
+        public async Task<ActionResult<List<RecordResponseDto>>> BulkCreateRecords(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] BulkRecordRequestDto dto)
+            [FromBody] List<CreateRecordRequestDto> dto)
         {
             try
             {
@@ -130,11 +130,11 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">ID of record to be upated</param>
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
-        [HttpPut("UpdateRecord/{recordId}")]
+        [HttpPut("UpdateRecord/{recordId}", Name = "api_update_a_record")]
         public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
             long projectId,
             long recordId,
-            [FromBody] RecordRequestDto dto)
+            [FromBody] UpdateRecordRequestDto dto)
         {
             try
             {
@@ -155,7 +155,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">The ID of the record to delete.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully deleted.</returns>
-        [HttpDelete("DeleteRecord/{recordId}")]
+        [HttpDelete("DeleteRecord/{recordId}", Name = "api_delete_a_record")]
         public async Task<IActionResult> DeleteRecord(long projectId, long recordId)
         {
             try
@@ -177,7 +177,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">The ID of the record to archive.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully archived.</returns>
-        [HttpDelete("ArchiveRecord/{recordId}")]
+        [HttpDelete("ArchiveRecord/{recordId}", Name = "api_archive_a_record")]
         public async Task<IActionResult> ArchiveRecord(long projectId, long recordId)
         {
             try
@@ -199,7 +199,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">The ID of the record to unarchive.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully unarchived.</returns>
-        [HttpPut("UnarchiveRecord/{recordId}")]
+        [HttpPut("UnarchiveRecord/{recordId}", Name = "api_unarchive_a_record")]
         public async Task<IActionResult> UnarchiveRecord(long projectId, long recordId)
         {
             try
@@ -222,7 +222,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">The ID of the record.</param>
         /// <param name="tagId">The ID of the tag.</param>
         /// <returns>A message stating the tag was successfully attached to the record.</returns>
-        [HttpPost("AttachTag/{recordId}")]
+        [HttpPost("AttachTag/{recordId}", Name = "api_attach_a_tag")]
         public async Task<IActionResult> AttachTag(long projectId, long recordId, [FromQuery] long tagId)
         {
             try
@@ -245,7 +245,7 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">The ID of the record.</param>
         /// <param name="tagId">The ID of the tag.</param>
         /// <returns>A message stating the tag was successfully unattached from the record.</returns>
-        [HttpPost("UnattachTag/{recordId}")]
+        [HttpPost("UnattachTag/{recordId}", Name = "api_unattach_a_tag")]
         public async Task<IActionResult> UnattachTag(long projectId, long recordId, [FromQuery] long tagId)
         {
             try

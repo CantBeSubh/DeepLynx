@@ -27,7 +27,7 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId">(Optional) The ID of the relationship by which to filter mappings</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>A list of edge mappings based on the applied filters.</returns>
-        [HttpGet("GetAllEdgeMappings")]
+        [HttpGet("GetAllEdgeMappings", Name = "api_get_all_edge_mappings")]
         public async Task<ActionResult<IEnumerable<EdgeMappingResponseDto>>> GetAllEdgeMappings(
             long projectId,
             [FromQuery] long? classId = null,
@@ -55,7 +55,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edge mappings from the result (Default true)</param>
         /// <returns>The edge mapping associated with the given ID</returns>
-        [HttpGet("GetEdgeMapping/{mappingId}")]
+        [HttpGet("GetEdgeMapping/{mappingId}", Name = "api_get_an_edge_mapping")]
         public async Task<ActionResult<EdgeMappingResponseDto>> GetEdgeMapping(
             long projectId, 
             long mappingId, 
@@ -80,7 +80,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the edge mapping belongs</param>
         /// <param name="dto">The edge mapping request data transfer object containing mapping details</param>
         /// <returns>The created edge mapping</returns>
-        [HttpPost("CreateEdgeMapping")]
+        [HttpPost("CreateEdgeMapping", Name = "api_create_an_edge_mapping")]
         public async Task<ActionResult<EdgeMappingResponseDto>> CreateEdgeMapping(
             long projectId,
             [FromBody] EdgeMappingRequestDto dto)
@@ -105,7 +105,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the edge mapping to update.</param>
         /// <param name="dto">The edge mapping request data transfer object containing updated details.</param>
         /// <returns>The updated mapping response DTO with its details.</returns>
-        [HttpPut("UpdateEdgeMapping/{mappingId}")]
+        [HttpPut("UpdateEdgeMapping/{mappingId}", Name = "api_update_an_edge_mapping")]
         public async Task<ActionResult<EdgeMappingResponseDto>> UpdateEdgeMapping(
             long projectId,
             long mappingId,
@@ -130,7 +130,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the edge mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the edge mapping was successfully deleted.</returns>
-        [HttpDelete("DeleteEdgeMapping/{mappingId}")]
+        [HttpDelete("DeleteEdgeMapping/{mappingId}", Name = "api_delete_an_edge_mapping")]
         public async Task<IActionResult> DeleteEdgeMapping(long projectId, long mappingId)
         {
             try
@@ -152,7 +152,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the edge mapping to archive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the edge mapping was successfully archived.</returns>
-        [HttpDelete("ArchiveEdgeMapping/{mappingId}")]
+        [HttpDelete("ArchiveEdgeMapping/{mappingId}", Name = "api_archive_an_edge_mapping")]
         public async Task<IActionResult> ArchiveEdgeMapping(long projectId, long mappingId)
         {
             try
@@ -174,7 +174,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the edge mapping to unarchive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the edge mapping was successfully unarchived.</returns>
-        [HttpPut("UnarchiveEdgeMapping/{mappingId}")]
+        [HttpPut("UnarchiveEdgeMapping/{mappingId}", Name = "api_unarchive_an_edge_mapping")]
         public async Task<IActionResult> UnarchiveEdgeMapping(long projectId, long mappingId)
         {
             try

@@ -5,6 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,6 +85,7 @@ builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusines
 builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
 
 var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
+
 builder.Services.AddOpenApi(options =>
 {
     options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
@@ -91,11 +93,28 @@ builder.Services.AddOpenApi(options =>
     {
         document.Info.Version = "v1";
         document.Info.Title = "DeepLynx Nexus";
-        document.Info.Description =
-            "DeepLynx Nexus Api Documentation";
+        document.Info.Description = "DeepLynx Nexus Api Documentation";
+
+        document.Tags = new HashSet<OpenApiTag>
+        {
+            new OpenApiTag { Name = "Class", Description = "Handles class management including creation, updates, retrieval, and deletion of class entities." },
+            new OpenApiTag { Name = "DataSource", Description = "Manages data sources, including their creation, retrieval, updating, and deletion." },
+            new OpenApiTag { Name = "Edge", Description = "Oversees relationships between entities, allowing for the creation, retrieval, updating, and deletion of edges." },
+            new OpenApiTag { Name = "EdgeMapping", Description = "Manages mappings of edges to entities, allowing for creation, updating, retrieval, and deletion." },
+            new OpenApiTag { Name = "Filter", Description = "Facilitates data filtering operations for efficient data retrieval and management." },
+            new OpenApiTag { Name = "HistoricalEdge", Description = "Handles operations related to historical edges, including retrieval and analysis of past relationships." },
+            new OpenApiTag { Name = "HistoricalRecord", Description = "Manages operations related to historical records, including retrieval and analysis of past records." },
+            new OpenApiTag { Name = "KuzuDatabaseManager", Description = "Oversees operations related to Kuzu database management, including data export and querying." },
+            new OpenApiTag { Name = "Metadata", Description = "Handles the management and processing of metadata associated with various entities." },
+            new OpenApiTag { Name = "Project", Description = "Facilitates project lifecycle management, including creating, updating, retrieving, and archiving projects." },
+            new OpenApiTag { Name = "Record", Description = "Manages all operations related to record creation, retrieval, updating, deletion, and tagging." },
+            new OpenApiTag { Name = "RecordMapping", Description = "Facilitates the mapping of records to other entities, including creation, updating, retrieval, and deletion." },
+            new OpenApiTag { Name = "Relationship", Description = "Handles complex relationships between various entities, allowing for creation, updates, retrieval, and deletion." },
+            new OpenApiTag { Name = "Tag", Description = "Manages tagging operations for entities, including creating, updating, retrieving, and deleting tags." },
+            new OpenApiTag { Name = "Timeseries", Description = "Handles operations related to time-series data, including querying and uploading time-series data." },
+            new OpenApiTag { Name = "User", Description = "Manages user-related operations, including user creation, updates, retrieval, and authentication processes." }
+        };
     });
-
-
 });
 
 var app = builder.Build();

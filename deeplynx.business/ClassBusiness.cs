@@ -166,14 +166,14 @@ public class ClassBusiness : IClassBusiness
     /// <param name="bulkDto">A data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<BulkClassResponseDto> BulkCreateClass(long projectId, BulkClassRequestDto bulkDto)
+    public async Task<List<ClassResponseDto>> BulkCreateClass(long projectId, List<ClassRequestDto> bulkDto)
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(bulkDto);
         
         var newClasses = new List<Class>();
         var classResponses = new List<ClassResponseDto>();
-        foreach (var dto in bulkDto.BulkClassRequests)
+        foreach (var dto in bulkDto)
         {
             ValidationHelper.ValidateModel(dto);
             var existingClass = await _context.Classes.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
@@ -218,10 +218,7 @@ public class ClassBusiness : IClassBusiness
             classResponses.Add(classResponse);
         }
 
-        return new BulkClassResponseDto
-        {
-           Classes = classResponses,
-        };
+        return classResponses;
     }
 
     /// <summary>
