@@ -64,7 +64,7 @@ COPY deeplynx.UI/deeplynx-v3/ ./
 
 # Install dependencies
 RUN rm -rf node_modules package-lock.json
-RUN yarn
+RUN npm install
 RUN npm run build
 
 # Set the command point to run the application
