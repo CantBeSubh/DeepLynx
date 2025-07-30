@@ -7,9 +7,9 @@ namespace deeplynx.interfaces;
 
 public interface IRelationshipBusiness
 {
-    Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived);
+    Task<List<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived);
     Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived);
-    Task<BulkRelationshipResponseDto> BulkCreateRelationships(long projectId, BulkRelationshipRequestDto bulkRelationshipRequestDto);
+    Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> relationshipRequestDtos);
     Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto);
     Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto);
     Task<bool> DeleteRelationship(long projectId, long relationshipId);

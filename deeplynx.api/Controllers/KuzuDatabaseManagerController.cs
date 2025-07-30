@@ -27,7 +27,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <returns>A status indicating the success or failure of the export operation.</returns>
-        [HttpPost("Export")]
+        [HttpPost("Export", Name = "api_export_kuzu")]
         public async Task<IActionResult> ExportData(int projectId)
         {
             if (!ModelState.IsValid)
@@ -64,7 +64,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <param name="request">The SQL query string to execute</param>
         /// <returns>A result set from the Kuzu database</returns>
-        [HttpPost("Query")]
+        [HttpPost("Query", Name = "api_query_kuzu")]
         public async Task<IActionResult> QueryKuzuDatabase(int projectId, [FromBody] KuzuDBMQueryRequestDto request)
         {
             if (!ModelState.IsValid)
@@ -96,7 +96,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to export from PostgreSQL into the KuzuDB</param>
         /// <param name="request">The request object containing the parameters for the query.</param>
         /// <returns>A result set containing the nodes and their relationships.</returns>
-        [HttpPost("Query-N-Layers")]
+        [HttpPost("Query-N-Layers", Name = "api_query_n_layers")]
         public async Task<IActionResult> GetNodesWithinDepth(int projectId, [FromBody] KuzuDBMNodesWithinDepthRequestDto request)
         {
             if (!ModelState.IsValid)

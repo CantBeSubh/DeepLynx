@@ -15,7 +15,7 @@ export const {
             authorization: {
                 params: {
                     scope: "openid profile",
-                    redirect_uri: "http://localhost:3000/"
+                    redirect_uri: process.env.REDIRECT_LINK,
                 },
             },
         })

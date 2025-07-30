@@ -4,13 +4,6 @@ namespace deeplynx.models;
 
 public class TagRequestDto
 {
-    public string Name { get; set; } = null!;
-    public string? CreatedBy { get; set; }
-    [JsonIgnore]
-    public DateTime CreatedAt { get; set; }
-    public string? ModifiedBy { get; set; }
-    [JsonIgnore]
-    public DateTime? ModifiedAt { get; set; }
-    [JsonIgnore]
-    public DateTime? ArchivedAt { get; set; }
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
 }

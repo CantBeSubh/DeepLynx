@@ -2409,5 +2409,250 @@ BEGIN
     VALUES ('20250722185325_FixHistEdgeLastUpdatedDate', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723134420_RecordTagTriggers') THEN
+
+                    CREATE OR REPLACE FUNCTION deeplynx.insert_recordtag_historical_record_trigger()
+    				    RETURNS trigger AS $$
+    				BEGIN	
+    					-- Update all other records with the same id to set current = false
+    					UPDATE deeplynx.historical_records
+    					SET current = FALSE
+    					WHERE record_id = NEW.record_id;
+
+    					-- Insert the new historical record
+    					INSERT INTO deeplynx.historical_records (
+    						record_id, uri, name, description, properties, original_id, 
+    						class_id, mapping_id, data_source_id, project_id, 
+    						created_by, created_at, modified_by, modified_at, 
+    						last_updated_at, tags, current,
+    						class_name, data_source_name, project_name)
+    					SELECT 
+    						NEW.record_id, r.uri, r.name, r.description, r.properties, r.original_id, 
+    						r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
+    						r.created_by, r.created_at, r.modified_by, LOCALTIMESTAMP, 
+    						LOCALTIMESTAMP AS last_updated_at, coalesce(json_agg(t.name), '[null]'::json), TRUE,
+    						c.name, d.name, p.name
+    					FROM deeplynx.records r
+    					LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+    					LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+    					LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+    					JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+    					JOIN deeplynx.projects p ON p.id = r.project_id
+    					WHERE r.id = NEW.record_id
+    					GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+    							r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
+    							r.created_by, r.created_at, r.modified_by, r.modified_at, 
+    							r.archived_at, c.name, d.name, p.name;
+    					RETURN NEW;
+    				END;
+    				$$ LANGUAGE plpgsql;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723134420_RecordTagTriggers') THEN
+
+    				CREATE OR REPLACE TRIGGER insert_historical_records
+    			    AFTER INSERT ON deeplynx.record_tags
+    			    FOR EACH ROW
+    			    EXECUTE FUNCTION deeplynx.insert_recordtag_historical_record_trigger();
+    			
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723134420_RecordTagTriggers') THEN
+
+                    CREATE OR REPLACE FUNCTION deeplynx.delete_recordtag_historical_record_trigger()
+    				    RETURNS trigger AS $$
+    				BEGIN	
+    					-- Update all other records with the same id to set current = false
+    					UPDATE deeplynx.historical_records
+    					SET current = FALSE
+    					WHERE record_id = OLD.record_id;
+
+    					-- Insert the new historical record
+    					INSERT INTO deeplynx.historical_records (
+    						record_id, uri, name, description, properties, original_id, 
+    						class_id, mapping_id, data_source_id, project_id, 
+    						created_by, created_at, modified_by, modified_at, 
+    						last_updated_at, tags, current,
+    						class_name, data_source_name, project_name)
+    					SELECT 
+    						OLD.record_id, r.uri, r.name, r.description, r.properties, r.original_id, 
+    						r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
+    						r.created_by, r.created_at, r.modified_by, LOCALTIMESTAMP, 
+    						LOCALTIMESTAMP AS last_updated_at, coalesce(json_agg(t.name), '[null]'::json), TRUE,
+    						c.name, d.name, p.name
+    					FROM deeplynx.records r
+    					LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+    					LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+    					LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+    					JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+    					JOIN deeplynx.projects p ON p.id = r.project_id
+    					WHERE r.id = OLD.record_id
+    					GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+    							r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
+    							r.created_by, r.created_at, r.modified_by, r.modified_at, 
+    							r.archived_at, c.name, d.name, p.name;
+    					RETURN OLD;
+    				END;
+    				$$ LANGUAGE plpgsql;
+                
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723134420_RecordTagTriggers') THEN
+
+    				CREATE OR REPLACE TRIGGER delete_historical_records
+    			    AFTER DELETE ON deeplynx.record_tags
+    			    FOR EACH ROW
+    			    EXECUTE FUNCTION deeplynx.delete_recordtag_historical_record_trigger();
+    			
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723134420_RecordTagTriggers') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250723134420_RecordTagTriggers', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.classes ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.data_sources ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.edge_mappings ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.edges ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.historical_edges ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.historical_records ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.projects ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.record_mappings ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.relationships ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.tags ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    ALTER TABLE deeplynx.users ALTER COLUMN id SET GENERATED ALWAYS;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250723185918_SetGeneratedAlways') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250723185918_SetGeneratedAlways', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET original_id = '' WHERE original_id IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET name = '' WHERE name IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN name SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN name SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    UPDATE deeplynx.records SET description = '' WHERE description IS NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN description SET NOT NULL;
+    ALTER TABLE deeplynx.records ALTER COLUMN description SET DEFAULT '';
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250729131213_RecordRequiredFields', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

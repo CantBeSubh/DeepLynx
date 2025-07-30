@@ -10,6 +10,8 @@ namespace deeplynx.datalayer.Models;
 [Index("Id", Name = "idx_classes_id")]
 [Index("ProjectId", Name = "idx_classes_project_id")]
 [Index("Uuid", Name = "idx_classes_uuid")]
+[Index("Name", Name = "idx_classes_name")]
+[Index(nameof(ProjectId), nameof(Name), IsUnique = true, Name = "unique_class_name")]
 public partial class Class
 {
     [Key]

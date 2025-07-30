@@ -12,6 +12,7 @@ namespace deeplynx.datalayer.Models;
 [Index("MappingId", Name = "idx_edges_mapping_id")]
 [Index("RelationshipId", Name = "idx_edges_relationship_id")]
 [Index("Id", Name = "idx_edges_id")]
+[Index(nameof(ProjectId), nameof(OriginId), nameof(DestinationId), IsUnique = true, Name = "unique_edge_record_ids")]
 public partial class Edge
 {
     [Key]

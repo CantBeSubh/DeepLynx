@@ -1,13 +1,11 @@
 using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
-using System.Text.Json.Nodes;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers;
-using deeplynx.helpers.exceptions;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
+using deeplynx.helpers;
+using deeplynx.helpers.exceptions;
 
 namespace deeplynx.business;
 
@@ -26,48 +24,117 @@ public class TagBusiness : ITagBusiness
         _context = context;
         _recordMappingBusiness = recordMappingBusiness;
     }
+    
+        /// <summary>
+    /// Retrieves all tags for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
+    /// <returns>A list of tags belonging to the project.</returns>
+    public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
+    {
+        DoesProjectExist(projectId, hideArchived);
+        var tagQuery = _context.Tags
+            .Where(t => t.ProjectId == projectId);
+            
+        if (hideArchived)
+        {
+            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+        }
+            
+        return await tagQuery.Select(t => new TagResponseDto()
+            {
+                Id = t.Id,
+                Name = t.Name,
+                ProjectId = t.ProjectId,
+                CreatedBy = t.CreatedBy,
+                CreatedAt = t.CreatedAt,
+                ModifiedBy = t.ModifiedBy,
+                ModifiedAt = t.ModifiedAt,
+                ArchivedAt = t.ArchivedAt,
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Retrieves a specific tag by its ID for a specified project.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
+    /// <param name="tagId">The ID of the tag to retrieve.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
+    /// <returns>The tag with its details.</returns>
+    /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
+    public async Task<TagResponseDto> GetTag(long projectId, long tagId, bool hideArchived)
+    {
+        DoesProjectExist(projectId, hideArchived);
+        var tag = await _context.Tags
+            .Where(t => t.ProjectId == projectId && t.Id == tagId)
+            .FirstOrDefaultAsync();
+
+        if (tag == null)
+        {
+            throw new KeyNotFoundException($"Tag with id {tagId} not found");
+        }
+        
+        if (hideArchived && tag.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
+        }
+
+        return new TagResponseDto
+        {
+            Id = tag.Id,
+            Name = tag.Name,
+            ProjectId = tag.ProjectId,
+            CreatedBy = tag.CreatedBy,
+            CreatedAt = tag.CreatedAt,
+            ModifiedBy = tag.ModifiedBy,
+            ModifiedAt = tag.ModifiedAt,
+            ArchivedAt = tag.ArchivedAt,
+        };
+    }
 
     /// <summary>
     /// Asynchronously creates a new tag for a specified project.
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <param name="dto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto dto)
     {
         DoesProjectExist(projectId);
-        if (tagRequestDto == null)
-            throw new ArgumentNullException(nameof(tagRequestDto));
+        if (dto == null)
+            throw new ArgumentNullException(nameof(dto));
         
         
-        var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
+        var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == dto.Name);
         if (existingTag != null)
         {
-            throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
+            throw new Exception($"Tag for project {projectId} with name {dto.Name} already exists");
         }
         
         // Validate 'Name' field
-        if (string.IsNullOrWhiteSpace(tagRequestDto.Name))
+        if (string.IsNullOrWhiteSpace(dto.Name))
         {
             throw new ValidationException("Name is required and cannot be empty or whitespace");
         }
         
         /*// Validate 'CreatedBy' field
-        if (string.IsNullOrWhiteSpace(tagRequestDto.CreatedBy))
+        if (string.IsNullOrWhiteSpace(dto.CreatedBy))
         {
             throw new ValidationException("CreatedBy is required and cannot be empty or whitespace");
         }*/
         
         var tag = new Tag
         {
-            Name = tagRequestDto.Name,
+            Name = dto.Name,
             ProjectId = projectId,
-            CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null, // TODO: handled in future by JWT.
+            CreatedBy = null, // TODO: handled in future by JWT.
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
-        await _context.Tags.AddAsync(tag);
+        _context.Tags.Add(tag);
         await _context.SaveChangesAsync();
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -85,53 +152,47 @@ public class TagBusiness : ITagBusiness
     /// Note: Will error out with foreign key constraint violation if project is not found.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="bulkTagRequestDto">The tag request data transfer object containing tag details.</param>
+    /// <param name="tags">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<BulkTagResponseDto> BulkCreateTags(long projectId, BulkTagRequestDto bulkTagRequestDto)
+    public async Task<List<TagResponseDto>> BulkCreateTags(
+        long projectId, 
+        List<TagRequestDto> tags)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(bulkTagRequestDto);
         
-        var tags = new List<Tag>();
-        var tagResponses = new List<TagResponseDto>();
-        foreach (var tagRequestDto in bulkTagRequestDto.Tags)
-        {
-            ValidationHelper.ValidateModel(tagRequestDto);
-            var existingTag = await _context.Tags.FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Name == tagRequestDto.Name);
-            if (existingTag != null)
-            {
-                throw new Exception($"Tag for project {projectId} with name {tagRequestDto.Name} already exists");
-            }
-            
-            var tag = new Tag
-            {
-                Name = tagRequestDto.Name,
-                ProjectId = projectId,
-                CreatedBy = !String.IsNullOrEmpty(tagRequestDto.CreatedBy) ? tagRequestDto.CreatedBy : null,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            tags.Add(tag);
-        }
-        await _context.Tags.AddRangeAsync(tags);
-        await _context.SaveChangesAsync();
+        // Bulk insert into classes; if there is a name collision, update the description and uuid if present
+        var sql = @"
+            INSERT INTO deeplynx.tags (project_id, name, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                modified_at = @now
+            RETURNING *;
+        ";
 
-        foreach (var tag in tags)
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            var tagResponseDto = new TagResponseDto
-            {
-                Id = tag.Id,
-                Name = tag.Name,
-                ProjectId = tag.ProjectId,
-                CreatedBy = tag.CreatedBy,
-                CreatedAt = tag.CreatedAt
-            };
-            tagResponses.Add(tagResponseDto);
-        }
-        
-        return new BulkTagResponseDto
-        {
-            Tags = tagResponses
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(tags.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_name", dto.Name)
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", tags.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+
+        // returns the resulting upserted classes
+        return await _context.Database
+            .SqlQueryRaw<TagResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
     }
 
     /// <summary>
@@ -174,76 +235,7 @@ public class TagBusiness : ITagBusiness
             ModifiedAt = tag.ModifiedAt
         };
     }
-
-    /// <summary>
-    /// Retrieves all tags for a specified project.
-    /// </summary>
-    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
-    /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<IEnumerable<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
-    {
-        DoesProjectExist(projectId, hideArchived);
-        var tagQuery = _context.Tags
-            .Where(t => t.ProjectId == projectId);
-            
-        if (hideArchived)
-        {
-            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
-        }
-            
-        return await tagQuery.Select(t => new TagResponseDto()
-            {
-                Id = t.Id,
-                Name = t.Name,
-                ProjectId = t.ProjectId,
-                CreatedBy = t.CreatedBy,
-                CreatedAt = t.CreatedAt,
-                ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt,
-                ArchivedAt = t.ArchivedAt,
-            })
-            .ToListAsync();
-    }
-
-    /// <summary>
-    /// Retrieves a specific tag by its ID for a specified project.
-    /// </summary>
-    /// <param name="projectId">The ID of the project to which the tag belongs.</param>
-    /// <param name="tagId">The ID of the tag to retrieve.</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
-    /// <returns>The tag with its details.</returns>
-    /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
-    public async Task<TagResponseDto> GetTagById(long projectId, long tagId, bool hideArchived)
-    {
-        DoesProjectExist(projectId, hideArchived);
-        var tag = await _context.Tags
-            .Where(t => t.ProjectId == projectId && t.Id == tagId)
-            .FirstOrDefaultAsync();
-
-        if (tag == null)
-        {
-            throw new KeyNotFoundException($"Tag with id {tagId} not found");
-        }
-        
-        if (hideArchived && tag.ArchivedAt != null)
-        {
-            throw new KeyNotFoundException($"Tag with id {tagId} is archived");
-        }
-
-        return new TagResponseDto
-        {
-            Id = tag.Id,
-            Name = tag.Name,
-            ProjectId = tag.ProjectId,
-            CreatedBy = tag.CreatedBy,
-            CreatedAt = tag.CreatedAt,
-            ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt,
-            ArchivedAt = tag.ArchivedAt,
-        };
-    }
-
+    
     /// <summary>
     /// Deletes a specific tag by its ID for a specified project.
     /// </summary>

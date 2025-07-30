@@ -12,6 +12,8 @@ namespace deeplynx.datalayer.Models;
 [Index("OriginId", Name = "idx_relationships_origin_id")]
 [Index("ProjectId", Name = "idx_relationships_project_id")]
 [Index("Uuid", Name = "idx_relationships_uuid")]
+[Index("Name", Name = "idx_relationships_name")]
+[Index(nameof(ProjectId), nameof(Name), IsUnique = true, Name = "unique_relationship_name")]
 public partial class Relationship
 {
     [Key]

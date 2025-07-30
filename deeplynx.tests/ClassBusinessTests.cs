@@ -58,31 +58,26 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClasses_Success_OnBulkCreate()
         {
-            var classDtos = new List<ClassRequestDto>();
-            
-            var dto1 = new ClassRequestDto
+            var bulkDto = new List<ClassRequestDto>
             {
-                Name = $"Test Class 1",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                new ClassRequestDto
+                {
+                    Name = $"Test Class 1",
+                    Description = "Test Description",
+                    Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                },
+                new ClassRequestDto
+                {
+                    Name = $"Test Class 2",
+                    Description = "Test Description",
+                    Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
+                }
             };
-            var dto2 = new ClassRequestDto
-            {
-                Name = $"Test Class 2",
-                Description = "Test Description",
-                Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
-            };
-            classDtos.Add(dto1);
-            classDtos.Add(dto2);
-            var bulkDto = new BulkClassRequestDto
-            {
-                BulkClassRequests = classDtos
-            };
-
-            var result = await _classBusiness.BulkCreateClass(pid, bulkDto);
-            result.Classes.Should().HaveCount(2);
-            result.Classes.First().Name.Should().Be("Test Class 1");
-            result.Classes.Last().Name.Should().Be("Test Class 2");
+        
+            var result = await _classBusiness.BulkCreateClasses(pid, bulkDto);
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Class 1");
+            result.Last().Name.Should().Be("Test Class 2");
         }
 
         [Fact]
@@ -249,7 +244,8 @@ namespace deeplynx.tests
             var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
             
-            updatedResult.ModifiedAt.Should().BeCloseTo(updatedResult.CreatedAt,TimeSpan.FromMilliseconds(10));
+            Assert.NotEqual(updatedResult.ModifiedAt, updatedResult.CreatedAt);
+            Assert.Equal("Updated Description", updatedResult.Description);
         }
 
         [Fact]
@@ -479,7 +475,7 @@ namespace deeplynx.tests
             // Create relationship where testClass is Origin and dest is null
             var relationship3 = new Relationship
             {
-                Name = "Test Relationship 1",
+                Name = "Test Relationship 3",
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
@@ -490,7 +486,7 @@ namespace deeplynx.tests
             // Create relationship where testClass is Destination and orig is null
             var relationship4 = new Relationship
             {
-                Name = "Test Relationship 2",
+                Name = "Test Relationship 4",
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
@@ -501,7 +497,7 @@ namespace deeplynx.tests
             // Create relationship where orig and dest are null
             var relationship5 = new Relationship
             {
-                Name = "Test Relationship 2",
+                Name = "Test Relationship 5",
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
@@ -548,6 +544,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
+                OriginalId = "og1",
+                Description = "Test Description 1",
                 Properties = "{\"test\": \"value1\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null
@@ -559,6 +557,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
+                OriginalId = "og2",
+                Description = "Test Description 2",
                 Properties = "{\"test\": \"value2\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 CreatedBy = null

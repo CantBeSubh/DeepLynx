@@ -27,7 +27,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tagId">(Optional) The ID of the tag by which to filter mappings</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>A list of record mappings based on the applied filters.</returns>
-        [HttpGet("GetAllRecordMappings")]
+        [HttpGet("GetAllRecordMappings", Name = "api_get_all_record_mappings")]
         public async Task<ActionResult<IEnumerable<RecordMappingResponseDto>>> GetAllRecordMappings(
             long projectId, 
             [FromQuery] long? classId = null,
@@ -55,7 +55,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID whereby to fetch the record mapping</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived mappings from the result (Default true)</param>
         /// <returns>The record mapping associated with the given ID</returns>
-        [HttpGet("GetRecordMapping/{mappingId}")]
+        [HttpGet("GetRecordMapping/{mappingId}", Name = "api_get_a_record_mapping")]
         public async Task<ActionResult<RecordMappingResponseDto>> GetRecordMapping(
             long projectId, 
             long mappingId,
@@ -80,7 +80,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the record mapping belongs</param>
         /// <param name="dto">The record mapping request data transfer object containing mapping details</param>
         /// <returns>The created record mapping</returns>
-        [HttpPost("CreateRecordMapping")]
+        [HttpPost("CreateRecordMapping", Name = "api_create_a_record_mapping")]
         public async Task<ActionResult<RecordMappingResponseDto>> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
         {
             try
@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the record mapping to update.</param>
         /// <param name="dto">The record mapping request data transfer object containing updated details.</param>
         /// <returns>The updated mapping response DTO with its details.</returns>
-        [HttpPut("UpdateRecordMapping/{mappingId}")]
+        [HttpPut("UpdateRecordMapping/{mappingId}", Name = "api_update_a_record_mapping")]
         public async Task<ActionResult<RecordMappingResponseDto>> UpdateRecordMapping(
             long projectId, 
             long mappingId, 
@@ -128,7 +128,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the record mapping to delete.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the record mapping was successfully deleted.</returns>
-        [HttpDelete("DeleteRecordMapping/{mappingId}")]
+        [HttpDelete("DeleteRecordMapping/{mappingId}", Name = "api_delete_a_record_mapping")]
         public async Task<IActionResult> DeleteRecordMapping(long projectId, long mappingId)
         {
             try
@@ -150,7 +150,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the record mapping to archive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the record mapping was successfully archived.</returns>
-        [HttpDelete("ArchiveRecordMapping/{mappingId}")]
+        [HttpDelete("ArchiveRecordMapping/{mappingId}", Name = "api_archive_a_record_mapping")]
         public async Task<IActionResult> ArchiveRecordMapping(long projectId, long mappingId)
         {
             try
@@ -172,7 +172,7 @@ namespace deeplynx.api.Controllers
         /// <param name="mappingId">The ID of the record mapping to unarchive.</param>
         /// <param name="projectId">The ID of the project to which the mapping belongs.</param>
         /// <returns>A message stating the record mapping was successfully unarchived.</returns>
-        [HttpPut("UnarchiveRecordMapping/{mappingId}")]
+        [HttpPut("UnarchiveRecordMapping/{mappingId}", Name = "api_unarchive_a_record_mapping")]
         public async Task<IActionResult> UnarchiveRecordMapping(long projectId, long mappingId)
         {
             try
