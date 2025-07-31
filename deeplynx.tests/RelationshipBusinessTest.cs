@@ -355,7 +355,7 @@ namespace deeplynx.tests
             // Add a small delay to ensure ModifiedAt is after CreatedAt
             await Task.Delay(50);
 
-            var dto = new RelationshipRequestDto
+            var dto = new UpdateRelationshipRequestDto
             {
                 Name = $"Updated Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Updated Description",
@@ -372,9 +372,50 @@ namespace deeplynx.tests
         }
 
         [Fact]
+        public async Task UpdateRelationship_PartialUpdate_UpdatesRelationship()
+        {
+            // Arrange
+            var originalRelationship = new Relationship
+            {
+                Name = "Original Relationship",
+                Description = "Original Description",
+                ProjectId = pid,
+                OriginId = originClassId,
+                DestinationId = destinationClassId,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.Relationships.Add(originalRelationship);
+            await Context.SaveChangesAsync();
+
+            var updateDto = new UpdateRelationshipRequestDto
+            {
+                Description = "Updated Description"
+            };
+
+            // Act
+            var result = await _relationshipBusiness.UpdateRelationship(pid, originalRelationship.Id, updateDto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(originalRelationship.Id, result.Id);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Equal(originalRelationship.Name, result.Name);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify it was actually updated in database
+            var updatedRelationship = await Context.Relationships.FindAsync(originalRelationship.Id);
+            Assert.NotNull(updatedRelationship);
+            Assert.Equal("Updated Description", updatedRelationship.Description);
+            Assert.Equal(originalRelationship.Name, updatedRelationship.Name);
+            Assert.NotNull(updatedRelationship.ModifiedAt);
+        }
+
+        [Fact]
         public async Task UpdateRelationship_Fails_IfNotFound()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new UpdateRelationshipRequestDto
             {
                 Name = "Updated Relationship",
                 Description = "Updated Description",
