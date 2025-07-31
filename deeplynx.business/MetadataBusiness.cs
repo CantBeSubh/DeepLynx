@@ -67,7 +67,6 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    
     private async Task<MetadataResponseDto> ParseMetadata(
         MetadataRequestDto metadataRequestDto,
         long dataSourceId,
@@ -380,6 +379,12 @@ public class MetadataBusiness : IMetadataBusiness
         }
     }
 
+    /// <summary>
+    /// Adjust the returned record objects to include tags
+    /// </summary>
+    /// <param name="metadataResponseDto"></param>
+    /// <param name="recordTags"></param>
+    /// <param name="tagMap"></param>
     private void AttachTagsToRecordDtos(
         MetadataResponseDto metadataResponseDto,
         List<RecordTagLinkDto> recordTags,
