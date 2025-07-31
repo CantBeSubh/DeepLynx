@@ -3,7 +3,7 @@ import axios from "axios";
 const API_BASE_URL = !process.env.NEXT_PUBLIC_API_URL ? '/api' : process.env.NEXT_PUBLIC_API_URL;
 
 export const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    baseURL: API_BASE_URL,
     withCredentials: true,
 })
 
@@ -18,10 +18,7 @@ export const getDataOverview = async (userId: string) => {
 }
 
 export const getRecentlyAddedRecords = async (projectIds: string[]) => {
-    console.log("Sending project IDs: ", projectIds)
     try {
-        console.log("requestBody: ", projectIds)
-
         const queryString = projectIds
             .map(id => `projectId=${encodeURIComponent(id)}`)
             .join("&");

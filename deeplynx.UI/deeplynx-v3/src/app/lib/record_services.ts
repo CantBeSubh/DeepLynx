@@ -7,7 +7,6 @@ export const api = axios.create({
     withCredentials: true
 })
 export const getAllRecords = async (projectId: string) => {
-    console.log("Project ID:", projectId)
     try {
         const res = await api.get(`/projects/${projectId}/records/GetAllRecords`);
         return res.data;

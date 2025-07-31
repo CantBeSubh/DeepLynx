@@ -12,7 +12,6 @@ const ListView: React.FC<ListViewProps> = ({
   activeSearchTerms = [],
   selectedProjects,
 }) => {
-  console.log("ListView:", { data, activeSearchTerms, selectedProjects });
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
