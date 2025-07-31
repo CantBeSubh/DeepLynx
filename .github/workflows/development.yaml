@@ -28,6 +28,7 @@ jobs:
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
