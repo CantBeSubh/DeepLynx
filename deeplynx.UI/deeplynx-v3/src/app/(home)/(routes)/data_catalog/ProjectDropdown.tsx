@@ -23,11 +23,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     if (!projects.length) return;
 
     if (defaultSelected?.length) {
-      setSelectedIds(defaultSelected);
+      setSelectedIds(defaultSelected.map(String));
     } else {
       setSelectedIds(["ALL"]);
     }
-  }, [projects.length, defaultSelected?.toString()]);
+  }, [projects, defaultSelected?.toString()]);
 
   // 🔄 Notify parent anytime selectedIds changes
   useEffect(() => {
@@ -50,6 +50,15 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    console.log("Default Selected:", defaultSelected);
+    console.log("Selecte Ids:", selectedIds);
+    console.log(
+      "Projects:",
+      projects.map((p) => p.id)
+    );
+  }, [defaultSelected, selectedIds, projects]);
 
   const toggleProject = (id: string) => {
     let newSelection: string[];
