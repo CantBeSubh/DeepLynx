@@ -9,6 +9,19 @@ jobs:
     # Checkout the repository
     runs-on: [self-hosted]
     environment: development
+    env:
+        ACR_SP_USER: ${{ secrets.CI_SP_USER }}
+        ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
+        ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
+        ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
+        ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
+        ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
+        GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
+        OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
+        OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
+        OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
+        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
