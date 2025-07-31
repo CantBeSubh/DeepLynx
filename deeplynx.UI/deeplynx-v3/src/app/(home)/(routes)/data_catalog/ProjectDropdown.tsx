@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 interface ProjectDropdownProps {
@@ -51,15 +51,6 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    console.log("Default Selected:", defaultSelected);
-    console.log("Selecte Ids:", selectedIds);
-    console.log(
-      "Projects:",
-      projects.map((p) => p.id)
-    );
-  }, [defaultSelected, selectedIds, projects]);
-
   const toggleProject = (id: string) => {
     let newSelection: string[];
 
@@ -82,14 +73,14 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedLabel = (() => {
+  const selectedLabel = useMemo(() => {
     if (selectedIds.includes("ALL")) return "All your Projects";
     if (selectedIds.length === 1) {
       const project = projects.find((p) => p.id === selectedIds[0]);
       return project?.name || "1 project selected";
     }
     return `${selectedIds.length} projects selected`;
-  })();
+  }, [selectedIds, projects]);
 
   return (
     <div className="relative inline-block text-left min-w-sm" ref={dropdownRef}>

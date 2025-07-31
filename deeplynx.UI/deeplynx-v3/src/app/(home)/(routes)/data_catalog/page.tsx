@@ -81,11 +81,6 @@ const DataCatalogContent = () => {
         selectedProjects.length === 0 ||
         projects.length === 0
       ) {
-        console.log("Skipping fetch - condition not met:", {
-          hasLoaded,
-          selectedProjects,
-          projectsLoaded: projects.length,
-        });
         return;
       }
 
@@ -94,7 +89,6 @@ const DataCatalogContent = () => {
         const records = await getAllRecordsForMultipleProjects(
           projectIdsToQuery
         );
-        console.log("Setting tableData:", records);
         setTableData(records);
       } catch (error) {
         console.error("Failed to fetch records:", error);
@@ -104,8 +98,8 @@ const DataCatalogContent = () => {
     fetchRecords();
   }, [
     hasLoaded,
-    JSON.stringify(selectedProjects),
-    JSON.stringify(projects.map((p) => p.id)),
+    selectedProjects.join(","),
+    projects.map((p) => p.id).join(","),
   ]);
 
   const handleSearch = (value: string) => {

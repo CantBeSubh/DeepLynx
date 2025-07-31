@@ -18,12 +18,10 @@ export const getDataOverview = async (userId: string) => {
 }
 
 export const getRecentlyAddedRecords = async (projectIds: string[]) => {
-    console.log("Sending project IDs: ", projectIds)
     try {
         const queryString = projectIds
             .map(id => `projectId=${encodeURIComponent(id)}`)
             .join("&");
-            console.log("Query String", queryString)
         const res = await api.get(`/user/GetRecentlyAddedRecords?${queryString}`);
         return res.data
     } catch (error) {

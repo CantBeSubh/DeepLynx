@@ -69,6 +69,7 @@ const ProjectDetailPage = () => {
                   </h1>
 
                   <button
+                    type="button"
                     className="btn btn-secondary"
                     onClick={() => {
                       const query = new URLSearchParams({
