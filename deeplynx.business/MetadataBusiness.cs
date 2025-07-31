@@ -97,9 +97,12 @@ public class MetadataBusiness : IMetadataBusiness
         {
             // check dependent objects for additional classes and then insert
             var classesToInsert = BuildClasses(classes, records);
-            classMap = await BulkUpsertClasses(projectId, classesToInsert, metadataResponseDto);
-            // load class IDs into records objects before insert
-            UpdateRecordsWithIds(records, classMap);
+            if (classesToInsert.Any())
+            {
+                classMap = await BulkUpsertClasses(projectId, classesToInsert, metadataResponseDto);
+                // load class IDs into records objects before insert
+                UpdateRecordsWithIds(records, classMap);
+            }
         }
         
         // Relationships
@@ -108,7 +111,8 @@ public class MetadataBusiness : IMetadataBusiness
         {
             // check dependent objects for additional relationships and then insert
             var relationshipsToInsert = BuildRelationships(relationships, edges);
-            relMap = await BulkUpsertRelationships(projectId, relationshipsToInsert, metadataResponseDto);
+            if (relationshipsToInsert.Any())
+                relMap = await BulkUpsertRelationships(projectId, relationshipsToInsert, metadataResponseDto);
         }
         
         // Tags
@@ -117,7 +121,8 @@ public class MetadataBusiness : IMetadataBusiness
         {
             // check dependent objects for additional tags and then insert
             var tagsToInsert = BuildTags(tags, records);
-            tagMap = await BulkUpsertTags(projectId, tagsToInsert, metadataResponseDto);
+            if (tagsToInsert.Any())
+                tagMap = await BulkUpsertTags(projectId, tagsToInsert, metadataResponseDto);
         }
         
         // Records
