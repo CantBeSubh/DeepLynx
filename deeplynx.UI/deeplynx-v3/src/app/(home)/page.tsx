@@ -16,6 +16,7 @@ const Projects = () => {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
+  const [canCustomize, setCanCustomize] = useState(false);
   const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
   const [projects, setProjects] = useState([]);
 
@@ -83,7 +84,9 @@ const Projects = () => {
 
         <div className="w-full md:w-1/2 px-4">
           <div className="flex justify-between items-center justify-end mb-4">
-            <button className="btn btn-outline btn-secondary flex items-center mr-2">
+            <button
+            onClick={() => setCanCustomize(!canCustomize)}
+            className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
               <Cog6ToothIcon className="size-6" />
               Customize
             </button>
@@ -95,7 +98,7 @@ const Projects = () => {
               Widget
             </button>
           </div>
-          <WidgetCard widgets={homeWidgets} />
+          <WidgetCard widgets={homeWidgets} canCustomize={canCustomize}/>
         </div>
       </div>
 

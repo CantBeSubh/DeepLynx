@@ -20,6 +20,7 @@ const ProjectDetailPage = () => {
   const [project, setProject] = useState<ProjectsList | null>(null);
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
   const [widgetModal, setWidgetModal] = useState(false);
+  const [canCustomize, setCanCustomize] = useState(false);
   const projectWidgets: WidgetType[] = [
     "RecentActivity",
     "ProjectOverview",
@@ -91,8 +92,10 @@ const ProjectDetailPage = () => {
 
           <div className="w-full md:w-2/5 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
-              <button className="btn btn-outline btn-secondary flex items-center mr-2">
-                <Cog6ToothIcon className="size-6" />
+              <button
+                onClick={() => setCanCustomize(!canCustomize)}
+                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
+                  <Cog6ToothIcon className="size-6" />
                 Customize
               </button>
               <button
@@ -103,7 +106,7 @@ const ProjectDetailPage = () => {
                 Widget
               </button>
             </div>
-            <WidgetCard widgets={projectWidgets} />
+            <WidgetCard widgets={projectWidgets} canCustomize={canCustomize}/>
           </div>
         </div>
 
