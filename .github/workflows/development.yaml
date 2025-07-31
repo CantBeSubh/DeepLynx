@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       # Builds the required image
       - shell: bash
@@ -36,6 +34,7 @@ jobs:
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
   kubernetes:
     needs: build
     runs-on: [self-hosted]
@@ -44,8 +43,6 @@ jobs:
       # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       #Download kubectl
       - uses: azure/setup-kubectl@v3
