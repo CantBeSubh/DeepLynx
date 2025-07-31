@@ -15,7 +15,7 @@ import {
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import SavedSearchesTabs from "../../components/SavedSearches";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
@@ -23,7 +23,7 @@ import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
 
-const DataCatalog = () => {
+const DataCatalogContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromProject = searchParams.get("fromProject");
@@ -268,17 +268,15 @@ const DataCatalog = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />
@@ -315,6 +313,14 @@ const DataCatalog = () => {
         </div>
       )}
     </div>
+  );
+};
+
+const DataCatalog = () => {
+  return (
+    <Suspense fallback={<div className="loading loading-spinner loading-lg"></div>}>
+      <DataCatalogContent />
+    </Suspense>
   );
 };
 
