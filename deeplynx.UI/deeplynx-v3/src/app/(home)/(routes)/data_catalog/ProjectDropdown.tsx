@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
 interface ProjectDropdownProps {
@@ -23,11 +23,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     if (!projects.length) return;
 
     if (defaultSelected?.length) {
-      setSelectedIds(defaultSelected);
+      setSelectedIds(defaultSelected.map(String));
     } else {
       setSelectedIds(["ALL"]);
     }
-  }, [projects.length, defaultSelected?.toString()]);
+  }, [projects, defaultSelected?.toString()]);
 
   // 🔄 Notify parent anytime selectedIds changes
   useEffect(() => {
@@ -73,14 +73,14 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const selectedLabel = (() => {
+  const selectedLabel = useMemo(() => {
     if (selectedIds.includes("ALL")) return "All your Projects";
     if (selectedIds.length === 1) {
       const project = projects.find((p) => p.id === selectedIds[0]);
       return project?.name || "1 project selected";
     }
     return `${selectedIds.length} projects selected`;
-  })();
+  }, [selectedIds, projects]);
 
   return (
     <div className="relative inline-block text-left min-w-sm" ref={dropdownRef}>

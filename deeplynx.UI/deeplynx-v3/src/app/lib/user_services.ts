@@ -18,10 +18,7 @@ export const getDataOverview = async (userId: string) => {
 }
 
 export const getRecentlyAddedRecords = async (projectIds: string[]) => {
-    console.log("Sending project IDs: ", projectIds)
     try {
-        console.log("requestBody: ", projectIds)
-
         const queryString = projectIds
             .map(id => `projectId=${encodeURIComponent(id)}`)
             .join("&");
