@@ -10,7 +10,7 @@ export const api = axios.create({
 export const getAllRecords = async (projectId: string) => {
     console.log("Project ID:", projectId)
     try {
-        const res = await api.get(`/projects/${projectId}/records/GetAllRecords`);
+        const res = await api.get(`api/projects/${projectId}/records/GetAllRecords`);
         return res.data;
     } catch (error) {
         console.error("API call failed:", error);

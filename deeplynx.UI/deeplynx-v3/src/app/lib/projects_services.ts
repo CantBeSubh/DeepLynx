@@ -9,7 +9,7 @@ export const api = axios.create({
 
 export const getAllProjects = async () => {
     try {
-        const res = await api.get("https://nexus.dev.inl.gov/api/projects/GetAllProjects");
+        const res = await api.get("/api/projects/GetAllProjects");
         return res.data;
     } catch (error) {
         console.error("API call failed:", error);
@@ -19,7 +19,7 @@ export const getAllProjects = async () => {
 
 export const getProject = async (projectId: string) => {
     try {
-        const res = await api.get(`/projects/GetProject/${projectId}`);
+        const res = await api.get(`/api/projects/GetProject/${projectId}`);
         return res.data;
     } catch (error) {
         console.error("API call failed:", error);
@@ -29,7 +29,7 @@ export const getProject = async (projectId: string) => {
 
 export const getProjectStats = async (projectId: string) => {
     try {
-        const res = await api.get(`/projects/ProjectStats/${projectId}`);
+        const res = await api.get(`/api/projects/ProjectStats/${projectId}`);
         return res.data;
     } catch (error) {
         console.error("API call failed:", error)
@@ -42,7 +42,7 @@ export const createProject = async (data: {
     abbreviation: string | null;
     description: string | null;
 }) => {
-    const res = await api.post("/projects/CreateProject", data, {
+    const res = await api.post("/api/projects/CreateProject", data, {
         headers: { "Content-Type": "application/json" },
     });
     return res.data;
