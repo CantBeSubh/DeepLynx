@@ -45,20 +45,6 @@ jobs:
       # Builds the required image
       - shell: bash
         name: Container Build
-        run: |
-          cd $GITHUB_WORKSPACE
-          az cloud set --name AzureUSGovernment
-          az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
-          az account set --subscription $ACR_SUBSCRIPTION
-          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
-          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
-          touch .env
-            echo OKTA_CLIENT_ID=$OKTA_CLIENT_ID >> .env
-            echo OKTA_CLIENT_SECRET=$OKTA_CLIENT_SECRET >> .env
-            echo OKTA_ISSUER=$OKTA_ISSUER >> .env
-            echo AUTH_SECRET=$AUTH_SECRET >> .env
-            echo NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL >> .env
-            echo REDIRECT_LINK=$REDIRECT_LINK >> .env
         env:
           ACR_SP_USER: ${{ secrets.CI_SP_USER }}
           ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
@@ -73,6 +59,27 @@ jobs:
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           REDIRECT_LINK=: ${{ vars.REDIRECT_LINK }}
+        run: |
+          cd $GITHUB_WORKSPACE
+          az cloud set --name AzureUSGovernment
+          az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
+          az account set --subscription $ACR_SUBSCRIPTION
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
+          touch .env
+            echo OKTA_CLIENT_ID=$OKTA_CLIENT_ID >> .env
+            echo OKTA_CLIENT_SECRET=$OKTA_CLIENT_SECRET >> .env
+            echo OKTA_ISSUER=$OKTA_ISSUER >> .env
+            echo AUTH_SECRET=$AUTH_SECRET >> .env
+            echo NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL >> .env
+            echo REDIRECT_LINK=$REDIRECT_LINK >> .env
+            NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}"
+            OKTA_CLIENT_ID= "${OKTA_CLIENT_ID}"
+            OKTA_CLIENT_SECRET= "${OKTA_CLIENT_SECRET}"
+            OKTA_ISSUER= "${OKTA_ISSUER}"
+            REDIRECT_LINK= "${REDIRECT_LINK}"
+            AUTH_SECRET= "${AUTH_SECRET}"
+
   kubernetes:
     needs: build
     runs-on: [self-hosted]
