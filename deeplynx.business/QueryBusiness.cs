@@ -81,8 +81,22 @@ public class QueryBusiness : IQueryBusiness
             // Converts the value from the DTO to the type of the property being filtered.
             var value = Expression.Constant(Convert.ChangeType(query.Value, property.Type));
             // Create the comparison operation (e.g., x.Name == "value")
-            Expression comparison = CreateComparisonExpression(property, value, query.Operator);
-
+            Expression comparison = null; 
+            if (query.Operator == "LIKE")
+            {
+                var method = query.Value.GetType().GetMethod("Contains");
+                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+            }
+            if (query.Operator == "IN") // might already be handled by LIKE 
+            {
+                var method = query.Value.GetType().GetMethod("Contains");
+                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+            }
+            else
+            {
+                comparison = CreateComparisonExpression(property, value, query.Operator);
+            }
+         
             // Combine the expressions using the connector (AND/OR)
             combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
         }
