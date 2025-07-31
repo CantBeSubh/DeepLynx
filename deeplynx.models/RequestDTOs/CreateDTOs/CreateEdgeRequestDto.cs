@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class EdgeRequestDto
+public class CreateEdgeRequestDto
 {
     [JsonPropertyName("origin_id")]
     public long? OriginId { get; set; } 

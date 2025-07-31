@@ -130,7 +130,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, CreateRelationshipRequestDto dto)
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
@@ -215,7 +215,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
         long projectId, 
-        List<RelationshipRequestDto> relationships)
+        List<CreateRelationshipRequestDto> relationships)
     {
         DoesProjectExist(projectId);
         

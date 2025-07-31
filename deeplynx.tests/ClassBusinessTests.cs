@@ -40,7 +40,7 @@ namespace deeplynx.tests
         public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
         {
             var now = DateTime.UtcNow;
-            var dto = new ClassRequestDto
+            var dto = new CreateClassRequestDto
             {
                 Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
@@ -58,15 +58,15 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClasses_Success_OnBulkCreate()
         {
-            var bulkDto = new List<ClassRequestDto>
+            var bulkDto = new List<CreateClassRequestDto>
             {
-                new ClassRequestDto
+                new CreateClassRequestDto
                 {
                     Name = $"Test Class 1",
                     Description = "Test Description",
                     Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 },
-                new ClassRequestDto
+                new CreateClassRequestDto
                 {
                     Name = $"Test Class 2",
                     Description = "Test Description",
@@ -83,7 +83,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfNoName()
         {
-            var dto = new ClassRequestDto { Name = null, Description = "Test Description" };
+            var dto = new CreateClassRequestDto { Name = null, Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -91,7 +91,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfEmptyName()
         {
-            var dto = new ClassRequestDto { Name = "", Description = "Test Description" };
+            var dto = new CreateClassRequestDto { Name = "", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -99,7 +99,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateClass_Fails_IfNoProjectId()
         {
-            var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
+            var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
         }
@@ -111,7 +111,7 @@ namespace deeplynx.tests
             project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
-            var dto = new ClassRequestDto { Name = "Test Class", Description = "Test Description" };
+            var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
         }
@@ -120,7 +120,7 @@ namespace deeplynx.tests
         public async Task CreateClass_Fails_IfDuplicateName()
         {
             var duplicateName = "Duplicate Class";
-            var dto = new ClassRequestDto { Name = duplicateName, Description = "Test Description" };
+            var dto = new CreateClassRequestDto { Name = duplicateName, Description = "Test Description" };
 
             // Create first class
             await _classBusiness.CreateClass(pid, dto);
@@ -137,8 +137,8 @@ namespace deeplynx.tests
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
-            await _classBusiness.CreateClass(pid, new ClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
-            await _classBusiness.CreateClass(p2.Id, new ClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
+            await _classBusiness.CreateClass(pid, new CreateClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
+            await _classBusiness.CreateClass(p2.Id, new CreateClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
 
             var list = await _classBusiness.GetAllClasses(pid,true);
             Assert.All(list, c => Assert.Equal(pid, c.ProjectId));

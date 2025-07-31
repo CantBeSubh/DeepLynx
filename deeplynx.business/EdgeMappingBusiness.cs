@@ -137,7 +137,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <returns>The created mapping response DTO with saved details</returns>
     public async Task<EdgeMappingResponseDto> CreateEdgeMapping(
         long projectId,
-        EdgeMappingRequestDto dto)
+        CreateEdgeMappingRequestDto dto)
     {
         DoesProjectExist(projectId);
         var mapping = new EdgeMapping

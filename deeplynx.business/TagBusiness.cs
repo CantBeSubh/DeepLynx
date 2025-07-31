@@ -101,7 +101,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project to which the tag belongs.</param>
     /// <param name="dto">The tag request data transfer object containing tag details.</param>
     /// <returns>The created tag response DTO with saved details.</returns>
-    public async Task<TagResponseDto> CreateTag(long projectId, TagRequestDto dto)
+    public async Task<TagResponseDto> CreateTag(long projectId, CreateTagRequestDto dto)
     {
         DoesProjectExist(projectId);
         if (dto == null)
@@ -156,7 +156,7 @@ public class TagBusiness : ITagBusiness
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<List<TagResponseDto>> BulkCreateTags(
         long projectId, 
-        List<TagRequestDto> tags)
+        List<CreateTagRequestDto> tags)
     {
         DoesProjectExist(projectId);
         

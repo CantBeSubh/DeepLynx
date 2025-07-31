@@ -6,8 +6,8 @@ public interface IClassBusiness
 {
     Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived);
     Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived);
-    Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto);
-    Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classRequestDtos);
+    Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto);
+    Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classRequestDtos);
     Task<ClassResponseDto> UpdateClass(long projectId, long classId, UpdateClassRequestDto dto);
     Task<ClassResponseDto> GetClassInfo(long projectId, string className);
     Task<bool> DeleteClass(long projectId, long classId);

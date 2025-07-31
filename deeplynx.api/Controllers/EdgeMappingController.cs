@@ -83,7 +83,7 @@ namespace deeplynx.api.Controllers
         [HttpPost("CreateEdgeMapping", Name = "api_create_an_edge_mapping")]
         public async Task<ActionResult<EdgeMappingResponseDto>> CreateEdgeMapping(
             long projectId,
-            [FromBody] EdgeMappingRequestDto dto)
+            [FromBody] CreateEdgeMappingRequestDto dto)
         {
             try
             {

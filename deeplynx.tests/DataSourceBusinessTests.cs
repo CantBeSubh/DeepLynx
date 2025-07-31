@@ -212,7 +212,7 @@ namespace deeplynx.tests
                 ["port"] = 5432
             };
 
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 Name = "New Test Data Source",
                 Description = "A newly created test data source",
@@ -255,7 +255,7 @@ namespace deeplynx.tests
         public async Task CreateDataSource_NullConfig_CreatesWithEmptyConfig()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 
                 Name = "No Config Data Source",
@@ -276,7 +276,7 @@ namespace deeplynx.tests
         public async Task CreateDataSource_SetsCreatedAtAndCreatedBy()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 Name = "Timestamp Test",
                 Type = "Test"
@@ -639,7 +639,7 @@ namespace deeplynx.tests
                 };
             }
 
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 Name = "Large Config Test",
                 Type = "Test",
@@ -659,7 +659,7 @@ namespace deeplynx.tests
         public async Task DataSourceOperations_SpecialCharactersInFields_HandlesCorrectly()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 Name = "Test with émojis 🚀 and ñ special chars",
                 Description = "Description with quotes \"test\" and 'single quotes'",
@@ -691,7 +691,7 @@ namespace deeplynx.tests
         {
             // Arrange & Act
             var config = new JsonObject { ["test"] = "value" };
-            var dto = new DataSourceRequestDto
+            var dto = new CreateDataSourceRequestDto
             {
                 Name = "Test Name",
                 Description = "Test Description",

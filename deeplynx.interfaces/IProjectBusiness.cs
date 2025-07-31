@@ -7,7 +7,7 @@ public interface IProjectBusiness
 {
     Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool hideArchived);
     Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived);
-    Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto);
+    Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto);
     Task<ProjectResponseDto> UpdateProject(long projectId, UpdateProjectRequestDto dto);
     Task<bool> DeleteProject(long projectId);
     Task<bool> ArchiveProject(long projectId);

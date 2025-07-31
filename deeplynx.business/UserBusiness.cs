@@ -83,7 +83,7 @@ public class UserBusiness : IUserBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new user to be created.</param>
     /// <returns>The new user which was just created.</returns>
-    public async Task<UserResponseDto> CreateUser(UserRequestDto dto)
+    public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
         var user = new User
         {

@@ -119,7 +119,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if class not found</exception>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
+    public async Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto)
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
@@ -161,7 +161,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
+    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classes)
     {
         DoesProjectExist(projectId);
         
@@ -375,7 +375,7 @@ public class ClassBusiness : IClassBusiness
             };
         }
 
-        var classDto = new ClassRequestDto()
+        var classDto = new CreateClassRequestDto()
         {
             Name = className
         };

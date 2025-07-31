@@ -50,7 +50,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
@@ -68,16 +68,16 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="dataSourceId">The ID of the project data source to which the metadata belongs.</param>
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
-    private async Task<MetadataResponseDto> ParseMetadata(MetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
+    private async Task<MetadataResponseDto> ParseMetadata(CreateMetadataRequestDto metadataRequestDto, long dataSourceId, long projectId)
     {
         MetadataResponseDto metadataResponseDto = new MetadataResponseDto();
         
         // deserialize metadata subdomains
-        List<ClassRequestDto> classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
-        List<RelationshipRequestDto> relationships = JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships);
-        List<TagRequestDto> tags = JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags);
+        List<CreateClassRequestDto> classes = JsonSerialization.Deserialize<CreateClassRequestDto>(metadataRequestDto.Classes);
+        List<CreateRelationshipRequestDto> relationships = JsonSerialization.Deserialize<CreateRelationshipRequestDto>(metadataRequestDto.Relationships);
+        List<CreateTagRequestDto> tags = JsonSerialization.Deserialize<CreateTagRequestDto>(metadataRequestDto.Tags);
         List<CreateRecordRequestDto> records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
-        List<EdgeRequestDto> edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
+        List<CreateEdgeRequestDto> edges = JsonSerialization.Deserialize<CreateEdgeRequestDto>(metadataRequestDto.Edges);
         List<RecordTagLinkDto> recordTags = new List<RecordTagLinkDto>();
 
         // iterate through classes and records to ensure we are processing all requested classes
@@ -86,7 +86,7 @@ public class MetadataBusiness : IMetadataBusiness
         {
             if (record.ClassName != null)
             {
-                classDict.TryAdd(record.ClassName, new ClassRequestDto{Name = record.ClassName});
+                classDict.TryAdd(record.ClassName, new CreateClassRequestDto{Name = record.ClassName});
             }
         }
         var classesToInsert = classDict.Values.ToList();
@@ -97,7 +97,7 @@ public class MetadataBusiness : IMetadataBusiness
         {
             if (edge.RelationshipName != null)
             {
-                relDict.TryAdd(edge.RelationshipName, new RelationshipRequestDto{Name = edge.RelationshipName});
+                relDict.TryAdd(edge.RelationshipName, new CreateRelationshipRequestDto{Name = edge.RelationshipName});
             }
         }
         var relationshipsToInsert = relDict.Values.ToList();
@@ -111,7 +111,7 @@ public class MetadataBusiness : IMetadataBusiness
 
             foreach (var tag in record.Tags)
             {
-                tagDict.TryAdd(tag, new TagRequestDto{Name = tag});
+                tagDict.TryAdd(tag, new CreateTagRequestDto{Name = tag});
             }
         }
         var tagsToInsert = tagDict.Values.ToList();

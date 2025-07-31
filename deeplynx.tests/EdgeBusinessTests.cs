@@ -48,7 +48,7 @@ namespace deeplynx.tests
         public async Task CreateEdge_Success_ReturnsIdAndCreatedAt()
         {
             var now = DateTime.UtcNow;
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -67,7 +67,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoOriginId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = 0, // Invalid origin
                 DestinationId = (int)destinationRecordId,
@@ -80,7 +80,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoDestinationId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = 0, // Invalid destination
@@ -93,7 +93,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoProjectId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -106,7 +106,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoDataSourceId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -124,7 +124,7 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -139,15 +139,15 @@ namespace deeplynx.tests
         {
             var now = DateTime.UtcNow;
 
-            var edges = new List<EdgeRequestDto>
+            var edges = new List<CreateEdgeRequestDto>
             {
-                new EdgeRequestDto
+                new CreateEdgeRequestDto
                 {
                     OriginId = (int)originRecordId,
                     DestinationId = (int)destinationRecordId,
                     RelationshipId = (int)relationshipId
                 },
-                new EdgeRequestDto
+                new CreateEdgeRequestDto
                 {
                     OriginId = (int)originRecordId,
                     DestinationId = (int)destinationRecordId2,
@@ -177,8 +177,8 @@ namespace deeplynx.tests
             Context.DataSources.Add(ds2);
             await Context.SaveChangesAsync();
 
-            await _edgeBusiness.CreateEdge(pid, dsid, new EdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
-            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new EdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(pid, dsid, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
 
             var list = await _edgeBusiness.GetAllEdges(pid, null, true);
             Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
@@ -583,7 +583,7 @@ public async Task UnarchiveEdge_Fails_IfNotArchived()
 [Fact]
 public void EdgeRequestDto_AllProperties_CanBeSetAndRetrieved()
 {
-    var dto = new EdgeRequestDto
+    var dto = new CreateEdgeRequestDto
     {
         OriginId = 1,
         DestinationId = 2,

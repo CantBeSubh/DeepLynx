@@ -77,7 +77,7 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("CreateTag", Name = "api_create_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
+    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] CreateTagRequestDto tagRequestDto)
     {
         try
         {
@@ -103,6 +103,7 @@ public class TagController : ControllerBase
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long projectId, 
         [FromBody] List<TagRequestDto> tagRequestDto)
+        [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
         {

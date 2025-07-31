@@ -142,7 +142,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     /// <returns>The created mapping response DTO with saved details</returns>
     public async Task<RecordMappingResponseDto> CreateRecordMapping(
         long projectId, 
-        RecordMappingRequestDto dto)
+        CreateRecordMappingRequestDto dto)
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);

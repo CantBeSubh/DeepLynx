@@ -95,7 +95,7 @@ public class ProjectBusiness : IProjectBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
     {
         var project = new Project
         {
@@ -109,12 +109,12 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        var timeseriesClassDto = new ClassRequestDto()
+        var timeseriesClassDto = new CreateClassRequestDto()
         {
             Name = "Timeseries"
         };
         
-        var reportClassDto = new ClassRequestDto()
+        var reportClassDto = new CreateClassRequestDto()
         {
             Name = "Report"
         };

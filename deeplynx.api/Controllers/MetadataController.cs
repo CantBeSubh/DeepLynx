@@ -29,7 +29,7 @@ public class MetadataController : ControllerBase
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
         long projectId, 
         long dataSourceId,
-        [FromBody] MetadataRequestDto metadataRequestDto)
+        [FromBody] CreateMetadataRequestDto metadataRequestDto)
     {
         try
         {

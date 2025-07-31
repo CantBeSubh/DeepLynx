@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 
 namespace deeplynx.models;
 
-public class DataSourceRequestDto
+public class CreateDataSourceRequestDto
 {
     public string Name { get; set; }
     public string? Description { get; set; }

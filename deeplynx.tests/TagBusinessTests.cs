@@ -143,7 +143,7 @@ namespace deeplynx.tests
         public async Task CreateTag_ValidDto_CreatesTag()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new CreateTagRequestDto
             {
                 Name = "Tag One"
             };
@@ -167,7 +167,7 @@ namespace deeplynx.tests
         public async Task CreateTag_SetsCreatedAtAndCreatedBy()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new CreateTagRequestDto
             {
                 Name = "Tag Timestamp Test"
             };
@@ -185,13 +185,13 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateTag_Success_OnBulkCreate()
         {
-            var tags = new List<TagRequestDto>
+            var tags = new List<CreateTagRequestDto>
             {
-                new TagRequestDto
+                new CreateTagRequestDto
                 {
                     Name = "Test Tag 1"
                 },
-                new TagRequestDto
+                new CreateTagRequestDto
                 {
                     Name = "Test Tag 2"
                 }
@@ -206,7 +206,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateTagRequest_Fails_IfNoName()
         { 
-            var dto = new TagRequestDto() { Name = null };
+            var dto = new CreateTagRequestDto() { Name = null };
             var result = () => _tagBusiness.CreateTag(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -467,7 +467,7 @@ namespace deeplynx.tests
          public async Task TagOperations_SpecialCharactersInFields_HandlesCorrectly()
          {
              // Arrange
-             var dto = new TagRequestDto
+             var dto = new CreateTagRequestDto
              {
                  Name = "Test with émojis 🚀 and ñ special chars 中文"
              };
@@ -483,7 +483,7 @@ namespace deeplynx.tests
           public void TagRequestDto_AllProperties_CanBeSetAndRetrieved()
           {
               // Arrange & Act
-              var dto = new TagRequestDto
+              var dto = new CreateTagRequestDto
               {
                   Name = "Tag One"
               };

@@ -120,7 +120,7 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<EdgeResponseDto> CreateEdge(
         long projectId, 
         long dataSourceId, 
-        EdgeRequestDto dto)
+        CreateEdgeRequestDto dto)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
@@ -167,7 +167,7 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        List<EdgeRequestDto> edges)
+        List<CreateEdgeRequestDto> edges)
     {
         DoesProjectExist(projectId);
         DoesDataSourceExist(dataSourceId);
