@@ -20,6 +20,7 @@ jobs:
         OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
         OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
         OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
+        REDIRECT_LINK=: ${{ vars.REDIRECT_LINK }}
         AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
     steps:
@@ -42,6 +43,7 @@ jobs:
           OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          REDIRECT_LINK=: ${{ vars.REDIRECT_LINK }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -74,6 +76,7 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          REDIRECT_LINK=: ${{ vars.REDIRECT_LINK }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
