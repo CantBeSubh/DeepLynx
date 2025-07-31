@@ -299,4 +299,50 @@ public class ProjectBusiness : IProjectBusiness
         return response;
     }
     
+    /// <summary>
+    /// Retrieves all records for multiple projects.
+    /// </summary>
+    /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns>A list of records based on the applied filters.</returns>
+    public async Task<IEnumerable<RecordResponseDto>> GetMultiProjectRecords(
+        long[] projects, bool hideArchived)
+    {
+        var recordQuery = _context.Records
+            .Where(r => projects.Contains(r.ProjectId));
+
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+        }
+        
+        var records = await recordQuery
+            .Include(r => r.Tags)
+            .ToListAsync();
+
+        return records
+            .Select(r => new RecordResponseDto()
+            {
+                Id = r.Id,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Tags = r.Tags.Select(t => new RecordTagDto()
+                {
+                    Id = t.Id,
+                    Name = t.Name
+                }).ToList()
+            });
+    }
+    
 }

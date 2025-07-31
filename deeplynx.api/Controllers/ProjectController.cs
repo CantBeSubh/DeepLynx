@@ -191,5 +191,29 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Retrieves all records for multiple projects.
+        /// </summary>
+        /// <param name="projects">Array of project ids whose records are to be retrieved</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+        /// <returns>List of record response DTOs</returns>
+        [HttpGet("MultiProjectRecords", Name = "api_multiproject_records")]
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
+            [FromQuery]long[] projects,
+            [FromQuery] bool hideArchived = true)
+        {
+            try
+            {
+                var records = await _projectBusiness.GetMultiProjectRecords(projects, hideArchived);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing records: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }

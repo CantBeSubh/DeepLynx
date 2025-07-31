@@ -102,17 +102,17 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
         /// <param name="dataSourceId">Datasource ID which record is associated with</param>
-        /// <param name="dto">Record request DTO</param>
+        /// <param name="records">List of record request DTOs</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("BulkCreateRecords", Name = "api_create_many_records")]
         public async Task<ActionResult<List<RecordResponseDto>>> BulkCreateRecords(
             long projectId, 
             [FromQuery] long dataSourceId,
-            [FromBody] List<CreateRecordRequestDto> dto)
+            [FromBody] List<CreateRecordRequestDto> records)
         {
             try
             {
-                var records = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, dto);
+                var newRecords = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
                 return Ok(records);
             }
             catch (Exception exc)

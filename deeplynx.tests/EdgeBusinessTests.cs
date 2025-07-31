@@ -25,6 +25,7 @@ namespace deeplynx.tests
         public long dsid;
         public long originRecordId;
         public long destinationRecordId;
+        public long destinationRecordId2;
         public long relationshipId;
 
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -138,20 +139,6 @@ namespace deeplynx.tests
         {
             var now = DateTime.UtcNow;
 
-            // Create additional records for second edge
-            var destinationRecord2 = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    Properties = "{\"test\": \"destination2_value\"}",
-                    Name = "Destination 2",
-                    Description = "Destination Description 2",
-                    OriginalId = "dest2",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Records.Add(destinationRecord2);
-            await Context.SaveChangesAsync();
-
             var edges = new List<EdgeRequestDto>
             {
                 new EdgeRequestDto
@@ -163,7 +150,7 @@ namespace deeplynx.tests
                 new EdgeRequestDto
                 {
                     OriginId = (int)originRecordId,
-                    DestinationId = (int)destinationRecord2.Id,
+                    DestinationId = (int)destinationRecordId2,
                     RelationshipId = (int)relationshipId
                 }
             };
@@ -213,7 +200,7 @@ namespace deeplynx.tests
             var archivedEdge = new Edge
             {
                 OriginId = originRecordId,
-                DestinationId = destinationRecordId,
+                DestinationId = destinationRecordId2,
                 DataSourceId = dsid,
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -335,30 +322,16 @@ namespace deeplynx.tests
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
 
-            // Create another destination record for update
-            var newDestinationRecord = new Record
-            {
-                ProjectId = pid,
-                DataSourceId = dsid,
-                Properties = "{\"test\": \"Updated destination_value\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                Name = "New Destination",
-                Description = "New Destination Description",
-                OriginalId = "new",
-            };
-            Context.Records.Add(newDestinationRecord);
-            await Context.SaveChangesAsync();
-
             var dto = new EdgeRequestDto
             {
                 OriginId = (int)originRecordId,
-                DestinationId = (int)newDestinationRecord.Id,
+                DestinationId = (int)destinationRecordId2,
                 RelationshipId = (int)relationshipId
             };
             var updatedResult = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
 
             updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
-            updatedResult.DestinationId.Should().Be(newDestinationRecord.Id);
+            updatedResult.DestinationId.Should().Be(destinationRecordId2);
         }
 
         [Fact]
@@ -632,6 +605,19 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);
+            
+            // Create additional records for second edge
+            var destinationRecord2 = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"destination2_value\"}",
+                Name = "Destination 2",
+                Description = "Destination Description 2",
+                OriginalId = "dest2",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Records.Add(destinationRecord2);
 
             var relationship = new Relationship
             {
@@ -647,6 +633,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
 
             originRecordId = originRecord.Id;
             destinationRecordId = destinationRecord.Id;
+            destinationRecordId2 = destinationRecord2.Id;
             relationshipId = relationship.Id;
         }
     }

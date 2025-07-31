@@ -1,11 +1,10 @@
-using System.Linq.Expressions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -34,7 +33,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="projectId">The ID of the project to which the relationship belongs.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result</param>
     /// <returns>A list of relationships</returns>
-    public async Task<IEnumerable<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
+    public async Task<List<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
         DoesProjectExist(projectId, hideArchived);
         var relationships = await _context.Relationships
@@ -54,9 +53,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.ModifiedAt,
                 r.ArchivedAt,
                 r.OriginId,
-                r.DestinationId,
-                Origin = r.Origin == null ? null : new ClassRelationshipResponseDto { Id = r.Origin.Id, Name = r.Origin.Name },
-                Destination = r.Destination == null ? null : new ClassRelationshipResponseDto { Id = r.Destination.Id, Name = r.Destination.Name }
+                r.DestinationId
             })
             .ToListAsync();
         
@@ -79,10 +76,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedAt = r.ModifiedAt,
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
-            Origin = r.Origin,
-            Destination = r.Destination,
             ArchivedAt = r.ArchivedAt,
-        });
+        }).ToList();
     }
     /// <summary>
     /// Retrieves a specific relationship by ID
@@ -124,8 +119,6 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedAt = relationship.ModifiedAt,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId,
-            Origin = relationship.Origin == null ? null : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null ? null : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name },
             ArchivedAt = relationship.ArchivedAt,
         };
     }
@@ -141,6 +134,12 @@ public class RelationshipBusiness: IRelationshipBusiness
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
+        
+        var existingRelationship = await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
+        if (existingRelationship != null)
+        {
+            throw new Exception($"Relationship for project {projectId} with name {dto.Name} already exists");
+        }
         
         if (dto.OriginId != null)
         { 
@@ -203,13 +202,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedBy = relationship.ModifiedBy,
             ModifiedAt = relationship.ModifiedAt,
             OriginId = relationship.OriginId,
-            DestinationId = relationship.DestinationId,
-            Origin = relationship.Origin == null
-                ? null
-                : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null
-                ? null
-                : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+            DestinationId = relationship.DestinationId
         };
     }
 
@@ -217,97 +210,52 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// Creates a new relationship based on the data transfer object supplied.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the relationship belongs</param>
-    /// <param name="bulkRelationshipRequestDto">A data transfer object with details on the new relationship to be created.</param>
+    /// <param name="relationships">A list of relationship data transfer objects with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> dto)
+    public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
+        long projectId, 
+        List<RelationshipRequestDto> relationships)
     {
         DoesProjectExist(projectId);
-        ValidationHelper.ValidateModel(dto);
         
-        var relationships = new List<Relationship>();
-        var relationshipResponses = new List<RelationshipResponseDto>();
-        foreach (var relationshipDto in dto)
+        // Bulk insert into relationships; if there is a name collision, update the description and uuid if present
+        var sql = @"
+            INSERT INTO deeplynx.relationships (project_id, name, description, uuid, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                description = COALESCE(EXCLUDED.description, relationships.description),
+                uuid = COALESCE(EXCLUDED.uuid, relationships.uuid),
+                modified_at = @now
+            RETURNING *;
+        ";
+        
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            ValidationHelper.ValidateModel(relationshipDto);
-            
-            if (relationshipDto.OriginId != null)
-            { 
-                var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.OriginId && c.ArchivedAt == null);
-                if (originClass == null)
-                {
-                    throw new KeyNotFoundException($"Origin class with ID {relationshipDto.OriginId} not found.");
-                }
-            }
-
-            if (relationshipDto.DestinationId != null)
-            {
-                var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == relationshipDto.DestinationId && c.ArchivedAt == null);
-                if (destinationClass == null)
-                {
-                    throw new KeyNotFoundException($"Destination class with ID {relationshipDto.DestinationId} not found.");
-                }
-            }
-            
-            var relationship = new Relationship
-            {
-                Name = relationshipDto.Name,
-                Description = relationshipDto.Description,
-                Uuid = relationshipDto.Uuid,
-                OriginId = relationshipDto.OriginId,
-                DestinationId = relationshipDto.DestinationId,
-                ProjectId = projectId,
-                CreatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
-                ModifiedBy =null  // TODO: Implement user ID here when JWT tokens are ready
-            };
-            relationships.Add(relationship);
-        }
-
-        await _context.Relationships.AddRangeAsync(relationships);
-        await _context.SaveChangesAsync();
-
-        foreach (var relationship in relationships)
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(relationships.SelectMany((dto, i) => new[]
         {
-            if (relationship.OriginId != null)
-            {
-                await _context.Entry(relationship)
-                    .Reference(r => r.Origin)
-                    .LoadAsync();
-            }
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+            new NpgsqlParameter($"@p{i}_uuid", (object?)dto.Uuid ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", relationships.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
 
-            if (relationship.DestinationId != null)
-            {
-                await _context.Entry(relationship)
-                    .Reference(r => r.Destination)
-                    .LoadAsync();
-            }
-            
-            var relationshipResponseDto = new RelationshipResponseDto
-            {
-                Id = relationship.Id,
-                Name = relationship.Name,
-                Description = relationship.Description,
-                Uuid = relationship.Uuid,
-                ProjectId = relationship.ProjectId,
-                CreatedBy = relationship.CreatedBy,
-                CreatedAt = relationship.CreatedAt,
-                ModifiedBy = relationship.ModifiedBy,
-                ModifiedAt = relationship.ModifiedAt,
-                OriginId = relationship.OriginId,
-                DestinationId = relationship.DestinationId,
-                Origin = relationship.Origin == null
-                    ? null
-                    : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-                Destination = relationship.Destination == null
-                    ? null
-                    : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
-            };
-            relationshipResponses.Add(relationshipResponseDto);
-        }
-
-        return relationshipResponses;
+        // returns the resulting upserted relationships
+        return await _context.Database
+            .SqlQueryRaw<RelationshipResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
     }
 
     /// <summary>
@@ -359,13 +307,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             ModifiedBy = relationship.ModifiedBy,
             ModifiedAt = relationship.ModifiedAt,
             OriginId = relationship.OriginId,
-            DestinationId = relationship.DestinationId,
-            Origin = relationship.Origin == null
-                ? null
-                : new ClassRelationshipResponseDto { Id = relationship.Origin.Id, Name = relationship.Origin.Name },
-            Destination = relationship.Destination == null
-                ? null
-                : new ClassRelationshipResponseDto { Id = relationship.Destination.Id, Name = relationship.Destination.Name }
+            DestinationId = relationship.DestinationId
         };
     }
 
