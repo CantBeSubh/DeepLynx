@@ -108,7 +108,7 @@ spec:
   ports:
     - name: http
       port: 80
-      targetPort: 3000
+      targetPort: 5000
   selector:
     app: deeplynxbackend
 
@@ -142,9 +142,10 @@ spec:
           - path: /api
             pathType: Prefix
             backend:
-              service: deeplynxv3-backend-service
-              port:
-                number: 80
+              service:
+                name: deeplynxv3-backend-service
+                port:
+                  number: 80
 ---
 # # Database if needed for deployment
 
