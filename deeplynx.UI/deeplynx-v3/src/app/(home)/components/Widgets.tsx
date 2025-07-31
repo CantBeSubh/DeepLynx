@@ -70,25 +70,4 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize }) => {
     );
   };
 
-//   return (
-//     <Reorder.Group
-//       axis="y"
-//       onReorder={setCurrentWidgets}
-//       values={currentWidgets}
-//       className="space-y-4"
-//       disabled={!canCustomize}
-//     >
-//       {currentWidgets.map((widget) => (
-//         <Reorder.Item
-//           key={widget}
-//           value={widget}
-//           className={`card card-border bg-base-100 w-auto ${canCustomize ? "cursor-grab" : "cursor-default"}`}
-//         >
-//           {renderWidgets(widget)}
-//         </Reorder.Item>
-//       ))}
-//     </Reorder.Group>
-//   );
-// };
-
 export default WidgetCard;
