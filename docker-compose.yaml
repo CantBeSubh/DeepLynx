@@ -9,12 +9,17 @@ services:
             - 3000:3000
         environment:
            NODE_ENV: production
-           DATABASE_CONNECTION_STRING: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-        volumes:
-            - ./database:/database
-        depends_on:
-            postgres:
-                condition: service_healthy
+        depends_on: ["postgres"]
+        #entrypoint: /usr/local/bin/entrypoint.sh
+    backend:
+        env_file:
+            - .env
+        build:
+            context: ./
+            dockerfile: Dockerfiles/Dockerfile.backend.local
+        ports:
+            - 5000:5000
+        depends_on: ["postgres"]
         entrypoint: /usr/local/bin/entrypoint.sh
     postgres:
         env_file:
@@ -23,10 +28,10 @@ services:
             context: ./database
             dockerfile: Dockerfiles/Dockerfile.db.local
         ports:
-            - "5432:5432"
-        healthcheck:    
-            test: |
-                while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
-                    echo "$(date) - waiting for database to start"
-                    sleep 5
-                done
+            - "5433:5432"
+        # healthcheck:    
+        #     test: |
+        #         while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
+        #             echo "$(date) - waiting for database to start"
+        #             sleep 5
+        #         done
