@@ -1,0 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
+
+namespace deeplynx.models;
+
+public class UpdateRecordMappingRequestDto
+{
+    public JsonObject? RecordParams { get; set; }
+    
+    public long? DataSourceId { get; set; }
+    
+    public long? ClassId { get; set; }
+    
+    public long? TagId { get; set; }
+}
