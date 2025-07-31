@@ -1,31 +1,18 @@
 import React from "react";
 import { FileViewerTableRow } from "../../types/types";
 
-export type RecordsListView = {
-  id: number;
-  uri: string;
-  properties: string;
-  originalId: string;
-  name: string;
-  classId: number;
-  dataSourceId: number;
-  projectId: number;
-  createdBy: string;
-  createdAt: string;
-  modifiedBy: string | null;
-  modifiedAt: string | null;
-  archivedAt: string | null;
-};
-
 interface ListViewProps {
-  records: FileViewerTableRow[];
+  data: FileViewerTableRow[];
   activeSearchTerms?: string[];
+  selectedProjects?: number[];
 }
 
 const ListView: React.FC<ListViewProps> = ({
-  records,
+  data,
   activeSearchTerms = [],
+  selectedProjects,
 }) => {
+  console.log("ListView:", { data, activeSearchTerms, selectedProjects });
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
@@ -53,12 +40,20 @@ const ListView: React.FC<ListViewProps> = ({
     return { content, matched: true };
   };
 
+  const filteredRecords = !selectedProjects?.length
+    ? data
+    : data.filter(
+        (record) =>
+          record.projectId !== undefined &&
+          selectedProjects.includes(record.projectId)
+      );
+
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
       <ul className="list">
-        {records.map((record, index) => {
+        {filteredRecords.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
-          // We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight serch term in description
+          // We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description
           // const desc = getHighlightedCell(
           //   record.fileDescription,
           //   activeSearchTerms
@@ -67,10 +62,10 @@ const ListView: React.FC<ListViewProps> = ({
 
           return (
             <li key={index} className="py-4 border-b border-base-content">
-              <div className={`font-bold text-base-content mb-1  `}>
+              <div className="font-bold text-base-content mb-1">
                 {name.content}
               </div>
-              {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight serch term in description */}
+              {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
               {/* <span className="text-sm">{desc.content}</span> */}
               <div className="flex pt-2">
                 {record.className && (
@@ -92,11 +87,13 @@ const ListView: React.FC<ListViewProps> = ({
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
-                {record.tags.map((tag, index) => (
-                  <span key={index} className={`badge ml-2`}>
-                    {tag}
-                  </span>
-                ))}
+                {Array.isArray(record.tags)
+                  ? record.tags.map((tag, index) => (
+                      <span key={index} className="badge ml-2">
+                        {tag.name}
+                      </span>
+                    ))
+                  : null}
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>

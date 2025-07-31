@@ -1,11 +1,12 @@
 "use client";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { recentRecordsData } from "@/app/(home)/dummy_data/data";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { getAllRecords } from "@/app/lib/record_services";
-import { getAllProjects } from "@/app/lib/projects_services";
+import {
+  getAllProjects,
+  getAllRecordsForMultipleProjects,
+} from "@/app/lib/projects_services";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -13,17 +14,19 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import SavedSearchesTabs from "../../components/SavedSearches";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
 import RecentRecordsCard from "./RecentRecordsCard";
-import SavedSearchesTabs from "../../components/SavedSearches";
 
 const DataCatalog = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromProject = searchParams.get("fromProject");
   // State to manage table data, project name, mount status, search term, active filters, and next filter ID
   const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
   const [projectName, setProjectName] = useState<string>("");
@@ -36,23 +39,36 @@ const DataCatalog = () => {
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(false);
   const { project, hasLoaded } = useProjectSession();
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(
+    fromProject ? [fromProject] : []
+  );
 
   // Effect to set project name from localStorage and mark the component as mounted
   useEffect(() => {
     setHasMounted(true);
     const storedName = localStorage.getItem("selectedProjectName");
     if (storedName) setProjectName(storedName);
-  }, []);
+
+    if (fromProject === "ALL") {
+      setSelectedProjects(projects.map((p) => p.id));
+    } else if (fromProject) {
+      setSelectedProjects([fromProject]);
+    }
+  }, [fromProject, projects]);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!hasLoaded || !project?.projectId) return;
+      if (!hasLoaded || !project?.projectId === undefined) return;
 
       try {
         const data = await getAllProjects();
-        const projectString = data.map((d: { name: number }) => d.name);
-        setProjects(projectString);
+        setProjects(
+          data.map((d: { id: string; name: string }) => ({
+            id: d.id,
+            name: d.name,
+          }))
+        );
       } catch (error) {
         console.error("Failed to fetch records:", error);
       }
@@ -61,45 +77,66 @@ const DataCatalog = () => {
   }, [project?.projectId, hasLoaded]);
 
   useEffect(() => {
+    if (!hasLoaded || projects.length === 0) return;
+
+    if (fromProject === "ALL") {
+      const allProjectIds = projects
+        .map((p) => p.id)
+        .filter((id) => id !== undefined);
+      setSelectedProjects(allProjectIds);
+    } else if (fromProject && !selectedProjects.length) {
+      setSelectedProjects([fromProject]);
+    }
+  }, [fromProject, projects, hasLoaded]);
+
+  useEffect(() => {
+    // Only run this if we haven't already selected projects
+    if (projects.length > 0 && selectedProjects.length === 0 && hasLoaded) {
+      const allProjectIds = projects
+        .map((p) => p.id)
+        .filter((id) => id !== undefined);
+      setSelectedProjects(allProjectIds);
+    }
+  }, [projects, selectedProjects, hasLoaded]);
+
+  useEffect(() => {
     const fetchRecords = async () => {
-      if (!hasLoaded || !project?.projectId) return;
+      if (
+        !hasLoaded ||
+        selectedProjects.length === 0 ||
+        projects.length === 0 ||
+        project?.projectId === undefined
+      ) {
+        console.log("Skipping fetch - condition not met:", {
+          hasLoaded,
+          selectedProjects,
+          projectsLoaded: projects.length,
+        });
+        return;
+      }
 
       try {
-        const data = await getAllRecords(project.projectId);
-        const transformedRecords = data.map((d: { tags: string }) => {
-          return {
-            ...d,
-            tags: JSON.parse(d.tags),
-          };
-        });
-        setTableData(transformedRecords);
+        const projectIdsToQuery = selectedProjects.map((id) => Number(id));
+        const records = await getAllRecordsForMultipleProjects(
+          projectIdsToQuery
+        );
+        console.log("Setting tableData:", records);
+        setTableData(records);
       } catch (error) {
-        console.error("Failled to fetch records:", error);
+        console.error("Failed to fetch records:", error);
       }
     };
-    fetchRecords();
-  }, [hasLoaded, project?.projectId]);
 
-  // useEffect(() => {
-  //   if (activeFilters.length === 0) {
-  //     setTableData(fileTableData);
-  //   } else {
-  //     const filtered = fileTableData.filter((row) => {
-  //       return activeFilters.some((filter) => {
-  //         const query = filter.term.toLowerCase();
-  //         return (
-  //           row.fileName.toLowerCase().includes(query) ||
-  //           row.fileDescription.toLowerCase().includes(query) ||
-  //           row.fileType.toLowerCase().includes(query) ||
-  //           row.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-  //           (row.timeseries ? "yes" : "no").includes(query) ||
-  //           row.lastEdit.toLowerCase().includes(query)
-  //         );
-  //       });
-  //     });
-  //     setTableData(filtered);
-  //   }
-  // }, [activeFilters]);
+    fetchRecords();
+  }, [
+    hasLoaded,
+    JSON.stringify(selectedProjects),
+    JSON.stringify(projects.map((p) => p.id)),
+  ]);
+
+  useEffect(() => {
+    console.log("Selected projects updated:", selectedProjects);
+  }, [selectedProjects]);
 
   // Function to handle search input and add it as an active filter
   const handleSearch = (value: string) => {
@@ -162,6 +199,10 @@ const DataCatalog = () => {
     },
   ];
 
+  const selectedProjectIds: number[] = selectedProjects.includes("ALL")
+    ? projects.map((p) => Number(p.id))
+    : selectedProjects.map((id) => Number(id));
+
   // If the component has not mounted yet, return null to avoid rendering
   if (!hasMounted) {
     return null;
@@ -172,13 +213,17 @@ const DataCatalog = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
-          <ProjectDropdown projects={projects} />
+          <ProjectDropdown
+            projects={projects}
+            onSelectionChange={(ids: string[]) => setSelectedProjects(ids)}
+            defaultSelected={fromProject ? [fromProject] : undefined}
+          />
         </div>
       </div>
       <div className="divider"></div>
       <div className="flex justify-between gap-4 mb-4">
         <LargeSearchBar
-          placeholder="Seach by name and description ... happy?"
+          placeholder="Seach by name and description ..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onEnter={handleSearch}
@@ -246,21 +291,23 @@ const DataCatalog = () => {
         <>
           {viewMode === "list" ? (
             <ListView
-              records={tableData}
+              data={tableData}
               activeSearchTerms={activeSearchTerms}
+              selectedProjects={selectedProjectIds}
             />
           ) : (
             <GridView
               columns={gridViewColumns}
               data={tableData}
               activeSearchTerms={activeSearchTerms}
+              selectedProjects={selectedProjects}
             />
           )}
         </>
       ) : (
         <div className="flex w-full gap-8">
           <div className="w-2/3">
-            <RecentRecordsCard records={recentRecordsData} />
+            <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>
           <div className="w-1/3">
             <SavedSearchesTabs className="" />

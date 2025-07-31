@@ -70,12 +70,19 @@ const ProjectDetailPage = () => {
 
                   <button
                     className="btn btn-secondary"
-                    onClick={() => router.push("/data_catalog")}
+                    onClick={() => {
+                      const query = new URLSearchParams({
+                        fromProject: projectId || "",
+                      }).toString();
+                      router.push(`/data_catalog?${query}`);
+                    }}
                   >
                     Visit
                   </button>
                 </div>
-                <RecentRecordsCard records={recentRecordsData} />
+                <RecentRecordsCard
+                  selectedProjects={projectId ? [projectId] : []}
+                />
               </div>
             </div>
 
