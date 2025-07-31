@@ -2,7 +2,7 @@ name: Build Development
 on:
   workflow_dispatch:
   push:
-    branches: ["develop", "tsage"]
+    branches: ["develop"]
 
 jobs:
   build:
