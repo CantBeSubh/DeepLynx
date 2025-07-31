@@ -62,8 +62,8 @@ namespace deeplynx.tests
             result.OriginId.Should().Be(originClassId);
             result.DestinationId.Should().Be(destinationClassId);
             result.ProjectId.Should().Be(pid);
-            result.Origin.Should().NotBeNull();
-            result.Destination.Should().NotBeNull();
+            result.OriginId.Should().NotBeNull();
+            result.DestinationId.Should().NotBeNull();
         }
 
         [Fact]
@@ -81,8 +81,7 @@ namespace deeplynx.tests
             result.Id.Should().BeGreaterThan(0);
             result.OriginId.Should().BeNull();
             result.DestinationId.Should().Be(destinationClassId);
-            result.Origin.Should().BeNull();
-            result.Destination.Should().NotBeNull();
+           
         }
 
         [Fact]
@@ -100,8 +99,6 @@ namespace deeplynx.tests
             result.Id.Should().BeGreaterThan(0);
             result.OriginId.Should().Be(originClassId);
             result.DestinationId.Should().BeNull();
-            result.Origin.Should().NotBeNull();
-            result.Destination.Should().BeNull();
         }
 
         [Fact]
@@ -592,8 +589,7 @@ namespace deeplynx.tests
                 ArchivedAt = null,
                 OriginId = 1,
                 DestinationId = 2,
-                Origin = origin,
-                Destination = destination
+              
             };
 
             Assert.Equal(1, dto.Id);
@@ -608,8 +604,6 @@ namespace deeplynx.tests
             Assert.Null(dto.ArchivedAt);
             Assert.Equal(1, dto.OriginId);
             Assert.Equal(2, dto.DestinationId);
-            Assert.Equal(origin, dto.Origin);
-            Assert.Equal(destination, dto.Destination);
         }
 
         protected override async Task SeedTestDataAsync()
