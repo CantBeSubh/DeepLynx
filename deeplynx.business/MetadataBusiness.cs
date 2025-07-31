@@ -228,8 +228,7 @@ public class MetadataBusiness : IMetadataBusiness
     //     
     //     return metadataResponseDto;
     // }
-
-
+    
     private async Task<MetadataResponseDto> ParseMetadata(
         MetadataRequestDto metadataRequestDto,
         long dataSourceId,
@@ -238,38 +237,76 @@ public class MetadataBusiness : IMetadataBusiness
         var metadataResponseDto = new MetadataResponseDto();
         
         // deserialize metadata subdomains
-        var classes = JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes);
-        var relationships = JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships);
-        var tags = JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags);
-        var records = JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records);
-        var edges = JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges);
+        var classes = metadataRequestDto.Classes != null
+            ? JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes)
+            : new List<ClassRequestDto>();
+        var relationships = metadataRequestDto.Relationships != null
+            ? JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships)
+            : new List<RelationshipRequestDto>();
+        var tags = metadataRequestDto.Tags != null
+            ? JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags)
+            : new List<TagRequestDto>();
+        var records = metadataRequestDto.Records != null
+            ? JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records)
+            : new List<CreateRecordRequestDto>();
+        var edges = metadataRequestDto.Edges != null
+            ? JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges)
+            : new List<EdgeRequestDto>();
         
-        // check dependent objects for additional classes, relationships and tags to add before insert
-        var classesToInsert = BuildClasses(classes, records);
-        var relationshipsToInsert = BuildRelationships(relationships, edges);
-        var tagsToInsert = BuildTags(tags, records);
+        // Classes
+        Dictionary<string, long> classMap = new();
+        if (classes.Any() || records.Any())
+        {
+            // check dependent objects for additional classes and then insert
+            var classesToInsert = BuildClasses(classes, records);
+            classMap = await BulkUpsertClasses(projectId, classesToInsert, metadataResponseDto);
+            // load class IDs into records objects before insert
+            UpdateRecordsWithIds(records, classMap);
+        }
         
-        // bulk insert classes, relationships and tags
-        var classMap = await BulkUpsertClasses(projectId, classesToInsert);
-        var relMap = await BulkUpsertRelationships(projectId, relationshipsToInsert);
-        var tagMap = await BulkUpsertTags(projectId, tagsToInsert);
+        // Relationships
+        Dictionary<string, long> relMap = new();
+        if (relationships.Any() || edges.Any())
+        {
+            // check dependent objects for additional relationships and then insert
+            var relationshipsToInsert = BuildRelationships(relationships, edges);
+            relMap = await BulkUpsertRelationships(projectId, relationshipsToInsert, metadataResponseDto);
+        }
         
-        // load class IDs into records objects before insert
-        UpdateRecordsWithIds(records, classMap);
+        // Tags
+        Dictionary<string, TagResponseDto> tagMap = new();
+        if (tags.Any() || records.Any())
+        {
+            // check dependent objects for additional tags and then insert
+            var tagsToInsert = BuildTags(tags, records);
+            tagMap = await BulkUpsertTags(projectId, tagsToInsert, metadataResponseDto);
+        }
         
-        // insert records
-        var recordMap = await BulkUpsertRecords(projectId, dataSourceId, records);
+        // Records
+        Dictionary<string, long> recordMap = new();
+        if (records.Any())
+        {
+            recordMap = await BulkUpsertRecords(projectId, dataSourceId, records, metadataResponseDto);
+            
+            // Record Tags
+            var recordTags = BuildRecordTags(records, tagMap, recordMap);
+            if (recordTags.Any())
+            {
+                await _recordBusiness.BulkAttachTags(recordTags);
+                AttachTagsToRecordDtos(metadataResponseDto, recordTags, tagMap);
+            }
+        }
+
+        // Edges
+        if (edges.Any())
+        {
+            // ensure all origin/destination records exist in the record map; if not, check DB
+            CheckRecordsByOriginalId(recordMap, edges);
+            // load relationship, origin and destination IDs into classes before insert
+            UpdateEdgesWithIds(edges, relMap, recordMap);
+            metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
+        }
         
-        // build and insert record tags
-        var recordTags = BuildRecordTags(records, tagMap, recordMap);
-        await _recordBusiness.BulkAttachTags(recordTags);
-        AttachTagsToRecordDtos(metadataResponseDto, recordTags, tagMap);
-        
-        // load relationship, origin and destination IDs into classes before insert
-        UpdateEdgesWithIds(edges, relMap, recordMap);
-        
-        // insert edges
-        metadataResponseDto.Edges = await _edgeBusiness.BulkCreateEdges(projectId, dataSourceId, edges);
         return metadataResponseDto;
     }
 
@@ -330,6 +367,32 @@ public class MetadataBusiness : IMetadataBusiness
         }
         return dict.Values.ToList();
     }
+    
+    /// <summary>
+    /// Throw error if records are specified by an edge but not specified by a record
+    /// TODO: eventually fetch records from DB by original ID (DL-533)
+    /// </summary>
+    /// <param name="recordMap"></param>
+    /// <param name="edges"></param>
+    /// <returns>A list of relationships to be inserted</returns>
+    private void CheckRecordsByOriginalId(
+        Dictionary<string, long> recordMap,
+        List<EdgeRequestDto> edges)
+    {
+        var missingOriginalIds = new HashSet<string>();
+        foreach (var edge in edges)
+        {
+            if (!recordMap.ContainsKey(edge.OriginOid))
+                missingOriginalIds.Add(edge.OriginOid);
+            if (!recordMap.ContainsKey(edge.DestinationOid))
+                missingOriginalIds.Add(edge.DestinationOid);
+        }
+
+        if (missingOriginalIds.Any())
+        {
+            throw new Exception($"Records not found matching Original IDs ({string.Join(", ", missingOriginalIds)})");
+        }
+    }
 
     /// <summary>
     /// Creates a list of record-tag pairs to be inserted into the linking table
@@ -360,12 +423,15 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="classes"></param>
+    /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
         long projectId,
-        List<ClassRequestDto> classes)
+        List<ClassRequestDto> classes,
+        MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _classBusiness.BulkCreateClasses(projectId, classes);
+        metadataResponseDto.Classes = inserted;
         return inserted.ToDictionary(c => c.Name, c => c.Id);
     }
     
@@ -374,12 +440,15 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="relationships"></param>
+    /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
         long projectId,
-        List<RelationshipRequestDto> relationships)
+        List<RelationshipRequestDto> relationships,
+        MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
+        metadataResponseDto.Relationships = inserted;
         return inserted.ToDictionary(r => r.Name, r => r.Id);
     }
     
@@ -388,12 +457,15 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="projectId"></param>
     /// <param name="tags"></param>
+    /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
         long projectId,
-        List<TagRequestDto> tags)
+        List<TagRequestDto> tags,
+        MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _tagBusiness.BulkCreateTags(projectId, tags);
+        metadataResponseDto.Tags = inserted;
         return inserted.ToDictionary(t => t.Name, t => t);
     }
     
@@ -403,14 +475,17 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <param name="records"></param>
+    /// <param name="metadataResponseDto"></param>
     /// <returns>A mapping of record name to record ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRecords(
         long projectId,
         long dataSourceId,
-        List<CreateRecordRequestDto> records)
+        List<CreateRecordRequestDto> records,
+        MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
-        return inserted.ToDictionary(r => r.Name, r => r.Id);
+        metadataResponseDto.Records = inserted;
+        return inserted.ToDictionary(r => r.OriginalId, r => r.Id);
     }
 
     /// <summary>
