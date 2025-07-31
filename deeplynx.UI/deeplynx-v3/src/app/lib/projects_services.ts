@@ -6,7 +6,6 @@ export const api = axios.create({ withCredentials: true })
 
 export const getAllProjects = async () => {
     try {
-        console.log(api)
         const res = await api.get(API_BASE_URL + "/projects/GetAllProjects");
         return res.data;
     } catch (error) {
