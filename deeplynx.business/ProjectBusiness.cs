@@ -140,16 +140,16 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
-    public async Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto)
+    public async Task<ProjectResponseDto> UpdateProject(long projectId, UpdateProjectRequestDto dto)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
-        project.Name = dto.Name;
-        project.Description = dto.Description;
-        project.Abbreviation = dto.Abbreviation;
+        project.Name = dto.Name ?? project.Name;
+        project.Description = dto.Description ?? project.Description;
+        project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
         project.ModifiedBy = null; // TODO: handled in future by JWT.
         project.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 

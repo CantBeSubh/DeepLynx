@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
             long projectId,
             long dataSourceId,
-            [FromBody] DataSourceRequestDto dto)
+            [FromBody] UpdateDataSourceRequestDto dto)
         {
             try
             {

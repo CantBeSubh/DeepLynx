@@ -322,7 +322,21 @@ namespace deeplynx.tests
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeRequestDto
+            // Create another destination record for update
+            var newDestinationRecord = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"Updated destination_value\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
+            };
+            Context.Records.Add(newDestinationRecord);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId2,
@@ -335,9 +349,73 @@ namespace deeplynx.tests
         }
 
         [Fact]
+        public async Task UpdateEdge_PartialUpdate_UpdatesEdge()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+            var oid = testEdge.OriginId;
+            var did = testEdge.DestinationId;
+
+            // Create another destination record for update
+            var newDestinationRecord = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"Updated destination_value\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
+            };
+            Context.Records.Add(newDestinationRecord);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateEdgeRequestDto
+            {
+                RelationshipId = (int)relationshipId
+            };
+
+            // Act
+            var result = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal((int)relationshipId, result.RelationshipId);
+            Assert.Equal(oid, result.OriginId);
+            Assert.Equal(did, result.DestinationId);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify edge was actually updated in database
+            var updatedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.NotNull(updatedEdge);
+            Assert.Equal((int)relationshipId, updatedEdge.RelationshipId);
+            Assert.Equal(oid, updatedEdge.OriginId);
+            Assert.Equal(did, updatedEdge.DestinationId);
+            Assert.NotNull(updatedEdge.ModifiedAt);
+
+            // Verify that get function gets updated version
+            var getResult = await _edgeBusiness.GetEdge(pid, testEdge.Id, oid, did, true);
+            Assert.NotNull(getResult);
+            Assert.Equal((int)relationshipId, getResult.RelationshipId);
+            Assert.Equal(oid, getResult.OriginId);
+            Assert.Equal(did, getResult.DestinationId);
+            Assert.NotNull(getResult.ModifiedAt);
+        }
+
+        [Fact]
         public async Task UpdateEdge_Fails_IfNotFound()
         {
-            var dto = new EdgeRequestDto
+            var dto = new UpdateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,

@@ -136,7 +136,7 @@ namespace deeplynx.api.Controllers
         [HttpPut("UpdateEdge", Name = "api_update_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
             long projectId,
-            [FromBody] EdgeRequestDto dto,
+            [FromBody] UpdateEdgeRequestDto dto,
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId)

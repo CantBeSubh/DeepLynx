@@ -190,7 +190,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
     public async Task<RecordMappingResponseDto> UpdateRecordMapping(
         long projectId,
         long mappingId,
-        RecordMappingRequestDto dto)
+        UpdateRecordMappingRequestDto dto)
     {
         DoesProjectExist(projectId);
         ValidationHelper.ValidateModel(dto);
@@ -202,11 +202,11 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
         
-        mapping.RecordParams = dto.RecordParams.ToString();
+        mapping.RecordParams = dto.RecordParams?.ToString() ?? mapping.RecordParams;
         mapping.ProjectId = projectId;
-        mapping.ClassId = dto.ClassId;
-        mapping.DataSourceId = dto.DataSourceId;
-        mapping.TagId = dto.TagId;
+        mapping.ClassId = dto.ClassId ?? mapping.ClassId;
+        mapping.DataSourceId = dto.DataSourceId ?? mapping.DataSourceId;
+        mapping.TagId = dto.TagId ?? mapping.TagId;
         mapping.ModifiedBy = null; // TODO: handled in future by JWT.
         mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         

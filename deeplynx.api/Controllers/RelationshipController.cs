@@ -127,7 +127,7 @@ namespace deeplynx.api.Controllers
         /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}", Name = "api_update_a_relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
-            [FromBody] RelationshipRequestDto dto)
+            [FromBody] UpdateRelationshipRequestDto dto)
         {
             try
             {

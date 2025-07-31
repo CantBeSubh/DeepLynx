@@ -107,7 +107,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<RecordMappingResponseDto>> UpdateRecordMapping(
             long projectId, 
             long mappingId, 
-            [FromBody] RecordMappingRequestDto dto)
+            [FromBody] UpdateRecordMappingRequestDto dto)
         {
             try
             {

@@ -133,7 +133,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for the class</param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
+        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] UpdateClassRequestDto dto)
         {
             try
             {

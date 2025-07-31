@@ -10,7 +10,7 @@ namespace deeplynx.interfaces
         Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived);
         Task<DataSourceResponseDto> GetDataSource(long projectId, long dataSourceId, bool hideArchived);
         Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto);
-        Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, DataSourceRequestDto dto);
+        Task<DataSourceResponseDto> UpdateDataSource(long projectId, long dataSourceId, UpdateDataSourceRequestDto dto);
         Task<bool> DeleteDataSource(long projectId, long dataSourceId);
         Task<bool> ArchiveDataSource(long projectId, long dataSourceId);
         Task<bool> UnarchiveDataSource(long projectId, long dataSourceId);

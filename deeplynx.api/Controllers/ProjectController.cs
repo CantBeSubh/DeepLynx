@@ -93,7 +93,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
         /// <returns>The project which was just updated.</returns>
         [HttpPut("UpdateProject/{projectId}", Name = "api_update_a_project")]
-        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] ProjectRequestDto dto)
+        public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] UpdateProjectRequestDto dto)
         {
             try
             {

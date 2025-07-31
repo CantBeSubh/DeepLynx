@@ -40,7 +40,7 @@ namespace deeplynx.api.Controllers
                 await _kuzuDatabaseManager.ConnectAsync();
 
                 bool exportSuccess = await _kuzuDatabaseManager.ExportDataAsync(projectId);
-                if (exportSuccess)
+                if (!exportSuccess)
                 {
                     return Ok("Data export completed successfully.");
                 }

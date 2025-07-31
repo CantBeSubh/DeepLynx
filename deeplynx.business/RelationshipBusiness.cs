@@ -266,7 +266,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
     /// <returns>The updated relationship response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
     {
         DoesProjectExist(projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -286,11 +286,11 @@ public class RelationshipBusiness: IRelationshipBusiness
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
         }
         
-        relationship.Name = dto.Name;
-        relationship.Description = dto.Description;
-        relationship.Uuid = dto.Uuid;
-        relationship.OriginId = dto.OriginId;
-        relationship.DestinationId = dto.DestinationId;
+        relationship.Name = dto.Name ?? relationship.Name;
+        relationship.Description = dto.Description ?? relationship.Description;
+        relationship.Uuid = dto.Uuid ?? relationship.Uuid;
+        relationship.OriginId = dto.OriginId ?? relationship.OriginId;
+        relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
         relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);

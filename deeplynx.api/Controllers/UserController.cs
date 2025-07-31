@@ -89,7 +89,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPut("UpdateUser/{userId}", Name = "api_update_a_user")]
-        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UserRequestDto dto)
+        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
         {
             try
             {

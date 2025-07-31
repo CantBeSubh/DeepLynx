@@ -182,7 +182,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     public async Task<EdgeMappingResponseDto> UpdateEdgeMapping(
         long projectId,
         long mappingId,
-        EdgeMappingRequestDto dto)
+        UpdateEdgeMappingRequestDto dto)
     {
         DoesProjectExist(projectId);
        
@@ -193,12 +193,12 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
         
-        mapping.OriginParams = dto.OriginParams.ToString();
-        mapping.DestinationParams = dto.DestinationParams.ToString();
-        mapping.RelationshipId = dto.RelationshipId;
-        mapping.OriginId = dto.OriginId;
-        mapping.DestinationId = dto.DestinationId;
-        mapping.DataSourceId = dto.DataSourceId;
+        mapping.OriginParams = dto.OriginParams?.ToString() ?? mapping.OriginParams.ToString();
+        mapping.DestinationParams = dto.DestinationParams?.ToString() ?? mapping.DestinationParams;
+        mapping.RelationshipId = dto.RelationshipId ?? mapping.RelationshipId;
+        mapping.OriginId = dto.OriginId ?? mapping.OriginId;
+        mapping.DestinationId = dto.DestinationId ?? mapping.DestinationId;
+        mapping.DataSourceId = dto.DataSourceId ?? mapping.DataSourceId;
         mapping.ProjectId = projectId;
         mapping.ModifiedBy = null; // TODO: handled in future by JWT.
         mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);

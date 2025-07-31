@@ -203,7 +203,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="tagRequestDto">The tag request data transfer object containing updated tag details.</param>
     /// <returns>The updated tag response DTO with its details.</returns>
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
-    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, TagRequestDto tagRequestDto)
+    public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, UpdateTagRequestDto tagRequestDto)
     {
         DoesProjectExist(projectId);
         var tag = await _context.Tags.FindAsync(tagId);
@@ -218,7 +218,7 @@ public class TagBusiness : ITagBusiness
             throw new ArgumentException("Name is required and cannot be empty.");
         }
 
-        tag.Name = tagRequestDto.Name;
+        tag.Name = tagRequestDto.Name ?? tag.Name;
         tag.ModifiedBy = null; // TODO: handled in future by JWT.
         tag.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 

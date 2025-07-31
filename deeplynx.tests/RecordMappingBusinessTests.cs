@@ -220,18 +220,57 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
         
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
+        var dto = new UpdateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = await _recordMappingBusiness.UpdateRecordMapping(pid, recordMapping1.Id, dto);
         
         updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+    }
+
+    [Fact]
+    public async Task UpdateRecordMapping_PartialUpdate_UpdatesRecordMapping()
+    {
+        // Arrange
+        var originalMapping = new RecordMapping
+        {
+            RecordParams = "{\"key\":\"update_value\"}",
+            ClassId = cid,
+            TagId = tid,
+            DataSourceId = did,
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            CreatedBy = null
+        };
+
+        Context.RecordMappings.Add(originalMapping);
+        await Context.SaveChangesAsync();
+
+        var updateDto = new UpdateRecordMappingRequestDto
+        {
+            RecordParams = new JsonObject { ["key"] = "updated_value" }
+        };
+
+        // Act
+        var result = await _recordMappingBusiness.UpdateRecordMapping(pid, originalMapping.Id, updateDto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(originalMapping.Id, result.Id);
+        Assert.Equal("updated_value", result?.RecordParams?["key"]?.ToString());
+        Assert.NotNull(result?.ModifiedAt);
+
+        // Verify it was actually updated in database
+        var updatedMapping = await Context.RecordMappings.FindAsync(originalMapping.Id);
+        Assert.NotNull(updatedMapping);
+        Assert.Contains("updated_value", updatedMapping.RecordParams);
+        Assert.NotNull(updatedMapping.ModifiedAt);
     }
     
     [Fact]
     public async Task UpdateRecordMapping_Fails_IfNotFound()
     {
-        var dto = new RecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
-        var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, -1, dto);
-        updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+        var dto = new UpdateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
+        var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 0, dto);
+        await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
     }
     
     [Fact]

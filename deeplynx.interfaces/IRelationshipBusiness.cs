@@ -11,7 +11,7 @@ public interface IRelationshipBusiness
     Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived);
     Task<List<RelationshipResponseDto>> BulkCreateRelationships(long projectId, List<RelationshipRequestDto> relationshipRequestDtos);
     Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto);
-    Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto);
+    Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto);
     Task<bool> DeleteRelationship(long projectId, long relationshipId);
     Task<bool> ArchiveRelationship(long projectId, long relationshipId);
     Task<bool> UnarchiveRelationship(long projectId, long relationshipId);

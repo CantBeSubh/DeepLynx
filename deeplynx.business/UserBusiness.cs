@@ -164,7 +164,7 @@ public class UserBusiness : IUserBusiness
     /// <exception cref="KeyNotFoundException">Returned if the user was not found.</exception>
     /// TODO: Decide if we want to update to null if null value is given in the DTO
     /// TODO: Decide if we want to allow add/remove to a project in this update method 
-    public async Task<UserResponseDto> UpdateUser(long userId, UserRequestDto dto)
+    public async Task<UserResponseDto> UpdateUser(long userId, UpdateUserRequestDto dto)
     {
         var user = await _context.Users
             .Where(p => p.Id == userId && p.ArchivedAt == null)
@@ -173,8 +173,8 @@ public class UserBusiness : IUserBusiness
         if (user == null)
             throw new KeyNotFoundException("User not found.");
         
-        user.Name = dto.Name;
-        user.Email = dto.Email;
+        user.Name = dto.Name ?? user.Name;
+        user.Email = dto.Email ?? user.Email;
     
         _context.Users.Update(user);
         await _context.SaveChangesAsync();

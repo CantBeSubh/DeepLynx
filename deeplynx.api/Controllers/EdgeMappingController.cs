@@ -109,7 +109,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<EdgeMappingResponseDto>> UpdateEdgeMapping(
             long projectId,
             long mappingId,
-            [FromBody] EdgeMappingRequestDto dto)
+            [FromBody] UpdateEdgeMappingRequestDto dto)
         {
             try
             {

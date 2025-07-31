@@ -380,7 +380,7 @@ namespace deeplynx.tests
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeMappingRequestDto
+            var dto = new UpdateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
@@ -399,7 +399,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateEdgeMapping_Fails_IfNotFound()
         {
-            var dto = new EdgeMappingRequestDto
+            var dto = new UpdateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),

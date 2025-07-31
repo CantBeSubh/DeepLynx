@@ -223,7 +223,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<EdgeResponseDto> UpdateEdge(
         long projectId,
-        EdgeRequestDto dto,
+        UpdateEdgeRequestDto dto,
         long? edgeId,
         long? originId, 
         long? destinationId)

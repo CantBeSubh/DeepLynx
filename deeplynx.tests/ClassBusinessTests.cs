@@ -241,7 +241,7 @@ namespace deeplynx.tests
             // Add a small delay to ensure ModifiedAt is after CreatedAt
             await Task.Delay(50);
 
-            var dto = new ClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
+            var dto = new UpdateClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
             
             Assert.NotEqual(updatedResult.ModifiedAt, updatedResult.CreatedAt);
@@ -249,9 +249,56 @@ namespace deeplynx.tests
         }
 
         [Fact]
+        public async Task UpdateClass_PartialUpdate_UpdatesClass()
+        {
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Add a small delay to ensure ModifiedAt can be tested
+            await Task.Delay(50);
+
+            var dto = new UpdateClassRequestDto
+            {
+                Description = "Updated Description"
+            };
+
+            // Act
+            var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
+
+            // Assert
+            Assert.NotNull(updatedResult);
+            Assert.Equal("Updated Description", updatedResult.Description);
+            Assert.Equal(testClass.Name, updatedResult.Name);
+            Assert.NotNull(updatedResult.ModifiedAt);
+
+            // Verify class was actually updated in database
+            var updatedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(updatedClass);
+            Assert.Equal("Updated Description", updatedClass.Description);
+            Assert.Equal(testClass.Name, updatedClass.Name);
+            Assert.NotNull(updatedClass.ModifiedAt);
+
+            // Verify that get function gets updated version
+            var getResult = await _classBusiness.GetClass(pid, testClass.Id, true);
+            Assert.NotNull(getResult);
+            Assert.Equal("Updated Description", getResult.Description);
+            Assert.Equal(testClass.Name, getResult.Name);
+            Assert.NotNull(getResult.ModifiedAt);
+        }
+
+        [Fact]
         public async Task UpdateClass_Fails_IfNotFound()
         {
-            var dto = new ClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
+            var dto = new UpdateClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
             var updatedResult = () => _classBusiness.UpdateClass(pid, 99, dto);
 
             await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
@@ -653,7 +700,7 @@ namespace deeplynx.tests
             Context.ChangeTracker.Clear();
             
             var updated = await Context.Classes.FindAsync(testClass.Id);
-            Assert.Null(updated.ArchivedAt);
+            Assert.Null(updated?.ArchivedAt);
         }
 
         [Fact]

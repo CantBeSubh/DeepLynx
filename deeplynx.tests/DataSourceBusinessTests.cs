@@ -309,7 +309,7 @@ namespace deeplynx.tests
                 ["port"] = 3306
             };
 
-            var dto = new DataSourceRequestDto
+            var dto = new UpdateDataSourceRequestDto
             {
                 Name = "Updated Test Data Source",
                 Description = "Updated description",
@@ -331,11 +331,52 @@ namespace deeplynx.tests
             Assert.Equal("MySQL", result.Type);
             Assert.Equal("Server=updated.com;Database=UpdatedDB;", result.BaseUri);
             Assert.NotNull(result.ModifiedAt);
-            Assert.Equal("mysql", result.Config["driver"]?.ToString());
+            Assert.Equal("mysql", result?.Config?["driver"]?.ToString());
 
             // Verify it was actually updated in database
             var updatedDataSource = await Context.DataSources.FindAsync((long)did);
-            Assert.Equal("Updated Test Data Source", updatedDataSource.Name);
+            Assert.Equal("Updated Test Data Source", updatedDataSource?.Name);
+            Assert.NotNull(updatedDataSource?.ModifiedAt);
+        }
+
+        [Fact]
+        public async Task UpdateDataSource_PartialUpdate_UpdatesDataSource()
+        {
+            // Arrange
+            var dataSource = new DataSource
+            {
+                Name = "Original Data Source",
+                Description = "Original Description",
+                Abbreviation = "ORIG",
+                Type = "SQL Server",
+                BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
+                ProjectId = pid,
+                CreatedBy = "john.smith@company.com"
+            };
+
+            Context.DataSources.Add(dataSource);
+            await Context.SaveChangesAsync();
+
+            var updateDto = new UpdateDataSourceRequestDto
+            {
+                Description = "Updated Description"
+            };
+
+            // Act
+            var result = await _dataSourceBusiness.UpdateDataSource(pid, dataSource.Id, updateDto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(dataSource.Id, result.Id);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Equal(dataSource.Name, result.Name);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify it was actually updated in database
+            var updatedDataSource = await Context.DataSources.FindAsync(dataSource.Id);
+            Assert.NotNull(updatedDataSource);
+            Assert.Equal("Updated Description", updatedDataSource.Description);
+            Assert.Equal(dataSource.Name, updatedDataSource.Name);
             Assert.NotNull(updatedDataSource.ModifiedAt);
         }
 
@@ -343,7 +384,7 @@ namespace deeplynx.tests
         public async Task UpdateDataSource_NonExistentDataSource_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new UpdateDataSourceRequestDto
             {
                 Name = "Update Test",
                 Type = "Test"
@@ -360,7 +401,7 @@ namespace deeplynx.tests
         public async Task UpdateDataSource_WrongProject_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new UpdateDataSourceRequestDto
             {
                 Name = "Update Test",
                 Type = "Test"
@@ -377,7 +418,7 @@ namespace deeplynx.tests
         public async Task UpdateDataSource_ArchivedDataSource_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new UpdateDataSourceRequestDto
             {
                 Name = "Update Test",
                 Type = "Test"
@@ -394,7 +435,7 @@ namespace deeplynx.tests
         public async Task UpdateDataSource_NullConfig_UpdatesWithEmptyConfig()
         {
             // Arrange
-            var dto = new DataSourceRequestDto
+            var dto = new UpdateDataSourceRequestDto
             {
                 Name = "No Config Update",
                 Type = "Test",
@@ -558,13 +599,13 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             var newDataSourceId = newDataSource.Id;
             
-            var dto1 = new DataSourceRequestDto
+            var dto1 = new UpdateDataSourceRequestDto
             {
                 Name = "Concurrent Update 1",
                 Type = "Test1"
             };
 
-            var dto2 = new DataSourceRequestDto
+            var dto2 = new UpdateDataSourceRequestDto
             {
                 Name = "Concurrent Update 2", 
                 Type = "Test2"
