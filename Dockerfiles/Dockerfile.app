@@ -1,6 +1,19 @@
 # Stage 1: Download dependencies
 FROM node:lts-alpine3.20 AS dependencies
 WORKDIR /app
+# Copy package.json and package-lock.json
+COPY deeplynx.UI/deeplynx-v3/package*.json ./
+RUN npm install
+
+# Stage 2: Build the frontend
+FROM node:lts-alpine3.20 AS frontend-build
+WORKDIR /app
+
+# Copy dependencies
+COPY --from=dependencies /app/node_modules ./node_modules
+
+# Copy the rest of the frontend source code
+COPY deeplynx.UI/deeplynx-v3/ ./
 
 # env variables for build
 ARG OKTA_CLIENT_ID
@@ -17,21 +30,6 @@ ENV OKTA_ISSUER=$OKTA_ISSUER
 ENV REDIRECT_LINK=$REDIRECT_LINK
 ENV AUTH_SECRET=$AUTH_SECRET
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-COPY . . 
-
-# Copy package.json and package-lock.json
-COPY deeplynx.UI/deeplynx-v3/package*.json ./
-RUN npm install
-
-# Stage 2: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
-WORKDIR /app
-
-# Copy dependencies
-COPY --from=dependencies /app/node_modules ./node_modules
-
-# Copy the rest of the frontend source code
-COPY deeplynx.UI/deeplynx-v3/ ./
 
 # Build the frontend
 RUN npm run build
