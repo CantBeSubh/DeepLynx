@@ -21,6 +21,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import { filterRecords } from "@/app/lib/filter_services";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -76,6 +77,11 @@ const DataCatalogContent = () => {
 
   useEffect(() => {
     const fetchRecords = async () => {
+      // Only fetch original data if there are no active filters
+      if (activeFilters.length > 0) {
+        return;
+      }
+
       if (
         !hasLoaded ||
         selectedProjects.length === 0 ||
@@ -100,17 +106,31 @@ const DataCatalogContent = () => {
     hasLoaded,
     selectedProjects.join(","),
     projects.map((p) => p.id).join(","),
+    activeFilters.length, // Add this dependency so it refetches when filters are cleared
   ]);
 
-  const handleSearch = (value: string) => {
-    if (!value.trim() || activeFilters.some((f) => f.term === value.trim()))
+  const handleSearch = async (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || activeFilters.some((f) => f.term === trimmed)) {
       return;
-    setActiveFilters([
-      ...activeFilters,
-      { id: nextFilterId, term: value.trim() },
-    ]);
-    setNextFilterId(nextFilterId + 1);
-    setSearchTerm("");
+    }
+
+    try {
+      const newFilters = [
+        ...activeFilters,
+        { id: nextFilterId, term: trimmed },
+      ];
+      const allSearchTerm = newFilters.map((f) => f.term);
+      const filteredData = await filterRecords(allSearchTerm);
+
+      setTableData(filteredData);
+      setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
+      setNextFilterId(nextFilterId + 1);
+      setSearchTerm("");
+      setShowAll(true);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
   const clearAllFilters = () => {
