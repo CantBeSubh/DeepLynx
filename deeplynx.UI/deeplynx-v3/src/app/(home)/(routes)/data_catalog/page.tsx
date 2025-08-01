@@ -21,6 +21,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import { filterRecords } from "@/app/lib/filter_services";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -76,19 +77,34 @@ const DataCatalogContent = () => {
 
   useEffect(() => {
     const fetchRecords = async () => {
+      console.log("useEffect triggered for fetching records");
+      console.log("hasLoaded:", hasLoaded);
+      console.log("selectedProjects:", selectedProjects);
+      console.log("projects.length:", projects.length);
+      console.log("activeFilters.length:", activeFilters.length);
+
+      // Only fetch original data if there are no active filters
+      if (activeFilters.length > 0) {
+        console.log("Skipping fetch - active filters present");
+        return;
+      }
+
       if (
         !hasLoaded ||
         selectedProjects.length === 0 ||
         projects.length === 0
       ) {
+        console.log("Skipping fetch - conditions not met");
         return;
       }
 
       try {
+        console.log("Fetching records for projects:", selectedProjects);
         const projectIdsToQuery = selectedProjects.map((id) => Number(id));
         const records = await getAllRecordsForMultipleProjects(
           projectIdsToQuery
         );
+        console.log("Fetched", records.length, "records");
         setTableData(records);
       } catch (error) {
         console.error("Failed to fetch records:", error);
@@ -100,22 +116,41 @@ const DataCatalogContent = () => {
     hasLoaded,
     selectedProjects.join(","),
     projects.map((p) => p.id).join(","),
+    activeFilters.length, // Add this dependency so it refetches when filters are cleared
   ]);
 
-  const handleSearch = (value: string) => {
-    if (!value.trim() || activeFilters.some((f) => f.term === value.trim()))
+  const handleSearch = async (value: string) => {
+    const trimmed = value.trim();
+    console.log("handleSearch called with:", trimmed);
+    if (!trimmed || activeFilters.some((f) => f.term === trimmed)) {
+      console.log("Skipping search = empty or duplicate term");
       return;
-    setActiveFilters([
-      ...activeFilters,
-      { id: nextFilterId, term: value.trim() },
-    ]);
-    setNextFilterId(nextFilterId + 1);
-    setSearchTerm("");
+    }
+
+    try {
+      const newFilters = [
+        ...activeFilters,
+        { id: nextFilterId, term: trimmed },
+      ];
+      const allSearchTerm = newFilters.map((f) => f.term);
+      const filteredData = await filterRecords(allSearchTerm);
+      console.log("Filter returned", filteredData.length, "records");
+
+      setTableData(filteredData);
+      setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
+      setNextFilterId(nextFilterId + 1);
+      setSearchTerm("");
+      setShowAll(true);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
   const clearAllFilters = () => {
+    console.log("clearAllFilters called - clearing state");
     setActiveFilters([]);
     setSearchTerm("");
+    console.log("State cleared, useEffect should trigger data refresh");
   };
 
   const selectedProjectIds: number[] = selectedProjects.map((id) => Number(id));
