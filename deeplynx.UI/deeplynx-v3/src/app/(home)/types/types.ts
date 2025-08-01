@@ -13,6 +13,7 @@ export type Tag = {
   name: string
 }
 
+// TODO: change Tag[] to string[] and figure out how to display
 export type FileViewerTableRow = {
   id: number;
   uri?: string | null;
@@ -32,7 +33,8 @@ export type FileViewerTableRow = {
   modifiedBy?: string | null;
   modifiedAt?: string | null;
   archivedAt?: string | null;
-  desc?: string;
+  lastUpdatedAt?: string;
+  description?: string;
   fileType: string;
   timeseries?: boolean;
   fileSize?: number;

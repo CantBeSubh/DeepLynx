@@ -228,6 +228,7 @@ const DataCatalogContent = () => {
 
       {activeFilters.length > 0 || showAll ? (
         viewMode === "list" ? (
+          // TODO: populate list view appropriately
           <ListView
             data={tableData}
             activeSearchTerms={activeSearchTerms}
@@ -238,6 +239,7 @@ const DataCatalogContent = () => {
             columns={[
               { header: "ID", data: "id" },
               { header: "Record Name", data: "name" },
+              { header: "Description", data: "description" },
               {
                 header: "Class",
                 cell: (row) =>
@@ -257,7 +259,10 @@ const DataCatalogContent = () => {
                   </div>
                 ),
               },
-              { header: "Last Edited", data: "modifiedAt" },
+              { 
+                header: "Last Edited", 
+                cell: (row) => row.modifiedAt ?? row.createdAt 
+              },
             ]}
             data={tableData}
             activeSearchTerms={activeSearchTerms}
