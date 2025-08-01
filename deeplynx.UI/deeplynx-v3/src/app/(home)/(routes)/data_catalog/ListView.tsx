@@ -41,10 +41,11 @@ const ListView: React.FC<ListViewProps> = ({
 
   const renderTags = (tags: string) => {
     try {
-      const parsedTags = JSON.parse(tags);
-      return parsedTags?.map((t) => (
-        <span key={t.name} className="badge mr-1">
-          {t.name}
+      console.log(tags)
+      const parsedTags: string[] = JSON.parse(tags);
+      return parsedTags?.map((t: string) => (
+        <span key={t} className="badge mr-1">
+          {t??"none"}
         </span>
       ));
     } catch {
@@ -99,8 +100,8 @@ const ListView: React.FC<ListViewProps> = ({
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
-                
                 {renderTags(record.tags)}
+               
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>
