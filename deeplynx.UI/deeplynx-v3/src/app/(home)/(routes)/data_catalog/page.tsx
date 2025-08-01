@@ -138,6 +138,19 @@ const DataCatalogContent = () => {
     setSearchTerm("");
   };
 
+  const renderTags = (tags: string) => {
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags?.map((t) => (
+        <span key={t.name} className="badge mr-1">
+          {t.name}
+        </span>
+      ));
+    } catch {
+      return null;
+    }
+  };
+
   const selectedProjectIds: number[] = selectedProjects.map((id) => Number(id));
 
   if (!hasMounted) return null;
@@ -251,17 +264,13 @@ const DataCatalogContent = () => {
                 header: "Tags",
                 cell: (row) => (
                   <div>
-                    {row.tags?.map((t) => (
-                      <span key={t.name} className="badge mr-1">
-                        {t.name}
-                      </span>
-                    ))}
+                    {renderTags(row.tags)}
                   </div>
                 ),
               },
               { 
                 header: "Last Edited", 
-                cell: (row) => row.modifiedAt ?? row.createdAt 
+                cell: (row) => row.modifiedAt ?? row.createdAt
               },
             ]}
             data={tableData}

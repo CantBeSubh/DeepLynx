@@ -39,6 +39,19 @@ const ListView: React.FC<ListViewProps> = ({
     return { content, matched: true };
   };
 
+  const renderTags = (tags: string) => {
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags?.map((t) => (
+        <span key={t.name} className="badge mr-1">
+          {t.name}
+        </span>
+      ));
+    } catch {
+      return null;
+    }
+  };
+
   const filteredRecords = !selectedProjects?.length
     ? data
     : data.filter(
@@ -57,8 +70,8 @@ const ListView: React.FC<ListViewProps> = ({
           //   record.fileDescription,
           //   activeSearchTerms
           // );
-          const date = getHighlightedCell(record.modifiedAt, activeSearchTerms);
-
+          const date = getHighlightedCell(record.modifiedAt??record.createdAt, activeSearchTerms);
+          console.log(record);
           return (
             <li key={index} className="py-4 border-b border-base-content">
               <div className="font-bold text-base-content mb-1">
@@ -86,13 +99,8 @@ const ListView: React.FC<ListViewProps> = ({
               </div>
               <div className="pt-2">
                 <span>Tags: </span>
-                {Array.isArray(record.tags)
-                  ? record.tags.map((tag, index) => (
-                      <span key={index} className="badge ml-2">
-                        {tag.name}
-                      </span>
-                    ))
-                  : null}
+                
+                {renderTags(record.tags)}
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>

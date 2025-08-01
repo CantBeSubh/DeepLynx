@@ -17,9 +17,9 @@ export type Tag = {
 export type FileViewerTableRow = {
   id: number;
   uri?: string | null;
+  name?: string;
   properties?: string;
   originalId?: string;
-  name?: string;
   classId?: number;
   className?: string;
   mappingId?: string | null;
@@ -27,7 +27,7 @@ export type FileViewerTableRow = {
   dataSourceName?: string;
   projectId?: number;
   projectName?: string;
-  tags: Tag[];
+  tags: string;
   createdBy?: string | null;
   createdAt?: string;
   modifiedBy?: string | null;
