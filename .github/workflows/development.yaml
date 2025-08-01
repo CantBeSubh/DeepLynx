@@ -31,6 +31,7 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
+          touch .env.production
           echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" >> .env.production
           echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" >> .env.production
           echo "NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" >> .env.production
