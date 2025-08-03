@@ -1,0 +1,125 @@
+"use client";
+
+import GenericTable from "@/app/(home)/components/GenericTable";
+import Tabs from "@/app/(home)/components/Tabs";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { getRecord } from "@/app/lib/record_services";
+import { useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import PropertyTable from "./PropertyTable";
+import ExpandableTagsCell from "../ExpandableTagCell";
+
+const RecordViewPage = () => {
+  const params = useSearchParams();
+  const recordId = params.get("recordId");
+  const projectId = params.get("projectId");
+
+  const [record, setRecord] = useState<FileViewerTableRow | null>(null);
+
+  useEffect(() => {
+    if (!recordId || !projectId) return;
+
+    console.log("RecordId after:", recordId);
+    console.log("ProjectId after:", projectId);
+    const fetchData = async () => {
+      try {
+        const data = await getRecord(Number(projectId), Number(recordId));
+        setRecord(data);
+      } catch (error) {
+        console.error("Error fetching record:", error);
+      }
+    };
+    fetchData();
+  }, [recordId, projectId]);
+
+  if (!record) {
+    return <div className="loading loading-spinner loading-xl" />;
+  }
+
+  const systemPropertiesRows = [
+    { label: "Project", value: record?.name, editable: true },
+    { label: "Data Source Name", value: record.dataSourceName },
+    { label: "Record Description", value: record.description, editable: true },
+    { label: "uri", value: record.uri },
+    { label: "ClassName", value: record.className, editable: true },
+    { label: "OriginalID", value: record.originalId },
+    { label: "Created By", value: record.createdBy },
+    { label: "Created At", value: formatDate(record.createdAt) },
+    { label: "Modified By", value: record.modifiedBy },
+    { label: "Modified By", value: formatDate(record.modifiedAt) },
+  ];
+
+  // const propertiesRows = [
+  //   {label: "height", value: record.}
+  // ];
+
+  const tabs = [
+    {
+      label: "Record Information",
+      content: (
+        <div className="flex gap-4">
+          <PropertyTable
+            className="w-full md:w-1/2 p-3"
+            title="System Porperties"
+            rows={systemPropertiesRows}
+          />
+          {/* <PropertyTable
+            className="p-3"
+            title="Properties"
+            rows={propertiesRows}
+          /> */}
+          <div className="flex-grow">
+            <div className="card bg-base-100 shadow-md p-2 ">
+              <div className="card-body">
+                <h2 className="card-title">
+                  Tags:{" "}
+                  {/* {record.tags.map((tag) => (
+                    <div className="card-actions">
+                      <div className="badge badge-outline badge-secondary">
+                        {tag.name}
+                      </div>
+                    </div>
+                  ))} */}
+                  <ExpandableTagsCell tags={record.tags} />
+                </h2>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    { label: "Timeseries Viewer", content: "" },
+    { label: "Graph Viewer", content: "" },
+    { label: "Record History", content: "" },
+  ];
+
+  if (!record)
+    return <div className="loading loading-spinner loading-xl"></div>;
+
+  return (
+    <div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-info-content">
+            {record?.name}
+          </h1>
+        </div>
+      </div>
+
+      <div className="divider"></div>
+
+      <Tabs tabs={tabs} className={""}></Tabs>
+    </div>
+  );
+};
+
+function formatDate(date: string | null | undefined): string {
+  if (!date) return "N/A";
+  return new Date(date).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+}
+
+export default RecordViewPage;

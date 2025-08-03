@@ -81,9 +81,7 @@ const SavedSearchesTabs = () => {
     },
   ];
 
-  return (
-     <Tabs tabs={tabData} className="tabs tabs-border" />
-  );
+  return <Tabs tabs={tabData} className="tabs tabs-border" />;
 };
 
 export default SavedSearchesTabs;

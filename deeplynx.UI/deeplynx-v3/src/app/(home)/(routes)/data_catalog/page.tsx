@@ -22,6 +22,7 @@ import {
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
 import { filterRecords } from "@/app/lib/filter_services";
+import ExpandableTagsCell from "./ExpandableTagCell";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -237,7 +238,17 @@ const DataCatalogContent = () => {
           <GridView
             columns={[
               { header: "ID", data: "id" },
-              { header: "Record Name", data: "name" },
+              {
+                header: "Record Name",
+                cell: (row) => (
+                  <a
+                    href={`/data_catalog/${row.id}`}
+                    className="text-base-content font-bold hover:underline"
+                  >
+                    {row.name}
+                  </a>
+                ),
+              },
               {
                 header: "Class",
                 cell: (row) =>
@@ -249,11 +260,7 @@ const DataCatalogContent = () => {
                 header: "Tags",
                 cell: (row) => (
                   <div>
-                    {row.tags?.map((t) => (
-                      <span key={t.name} className="badge mr-1">
-                        {t.name}
-                      </span>
-                    ))}
+                    <ExpandableTagsCell tags={row.tags} />
                   </div>
                 ),
               },

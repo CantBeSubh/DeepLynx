@@ -1,5 +1,6 @@
 import React from "react";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { useRouter } from "next/navigation";
 
 type GridViewProps = {
   columns: Column<FileViewerTableRow>[];
@@ -14,6 +15,7 @@ const GridView = <T extends object>({
   activeSearchTerms = [],
   selectedProjects,
 }: GridViewProps) => {
+  const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
@@ -67,7 +69,15 @@ const GridView = <T extends object>({
         </thead>
         <tbody>
           {filteredRecords.map((row, rowIndex) => (
-            <tr key={rowIndex}>
+            <tr
+              key={rowIndex}
+              className="cursor-pointer hover:bg-base-200/30"
+              onClick={() =>
+                router.push(
+                  `/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`
+                )
+              }
+            >
               {columns.map((column, colIndex) => {
                 const rawValue = column.data ? row[column.data] : "";
 

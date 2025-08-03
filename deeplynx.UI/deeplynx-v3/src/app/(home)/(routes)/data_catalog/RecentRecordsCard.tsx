@@ -1,5 +1,6 @@
 import { getRecentlyAddedRecords } from "@/app/lib/user_services";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export type RecentRecord = {
@@ -9,6 +10,7 @@ export type RecentRecord = {
   lastUpdatedAt: string;
   dataSourceName: string;
   projectName: string;
+  projectId: number;
 };
 
 const RECORDS_PER_PAGE = 5;
@@ -18,6 +20,7 @@ const RecentRecordsCard = ({
 }: {
   selectedProjects: string[];
 }) => {
+  const router = useRouter();
   const [records, setRecords] = useState<RecentRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -65,7 +68,15 @@ const RecentRecordsCard = ({
       </h2>
       <ul className="list px-4">
         {paginatedRecords.map((record, index) => (
-          <li key={index} className="py-4 border-b border-base-content">
+          <li
+            key={index}
+            className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 rounded-sm"
+            onClick={() =>
+              router.push(
+                `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
+              )
+            }
+          >
             <div className="font-bold text-base-content mb-1">
               {record.name}
             </div>

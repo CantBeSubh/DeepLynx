@@ -28,11 +28,11 @@ export type FileViewerTableRow = {
   projectName?: string;
   tags: Tag[];
   createdBy?: string | null;
-  createdAt?: string;
+  createdAt?: string | null;
   modifiedBy?: string | null;
   modifiedAt?: string | null;
   archivedAt?: string | null;
-  desc?: string;
+  description?: string;
   fileType: string;
   timeseries?: boolean;
   fileSize?: number;
