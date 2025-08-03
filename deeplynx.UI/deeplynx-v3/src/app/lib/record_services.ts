@@ -26,3 +26,29 @@ export const getRecord = async (projectId: number, recordId: number) => {
         throw error;
     }
 }
+
+export const updateRecord = async (
+    projectId: number, 
+    recordId: number, 
+    updateData: {
+        uri?: string | null; 
+        properties?: Record<string, any>;
+        original_id?: string | null;
+        name?: string | null;
+        class_id?: number | null;
+        class_name?: string | null;
+        description?: string| null;
+    }) => {
+        try {
+            const res = await api.put(
+                `/projects/${projectId}/records/UpdateRecord/${recordId}`, 
+                updateData, 
+                {headers: {
+                    "Content-Type": "application/json"
+                }})
+            return res.data;
+        } catch (error) {
+            console.error("Error updating record:", error);
+            throw error;
+        }
+    }

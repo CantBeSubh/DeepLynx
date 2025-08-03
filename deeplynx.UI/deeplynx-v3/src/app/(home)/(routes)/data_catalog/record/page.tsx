@@ -3,11 +3,12 @@
 import GenericTable from "@/app/(home)/components/GenericTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { getRecord } from "@/app/lib/record_services";
+import { getRecord, updateRecord } from "@/app/lib/record_services";
 import { useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import PropertyTable from "./PropertyTable";
 import ExpandableTagsCell from "../ExpandableTagCell";
+import toast from "react-hot-toast";
 
 const RecordViewPage = () => {
   const params = useSearchParams();
@@ -37,21 +38,77 @@ const RecordViewPage = () => {
   }
 
   const systemPropertiesRows = [
-    { label: "Project", value: record?.name, editable: true },
-    { label: "Data Source Name", value: record.dataSourceName },
-    { label: "Record Description", value: record.description, editable: true },
+    {
+      label: "Project",
+      value: record?.name,
+      editable: true,
+      onEdit: async (newValue: string) => {
+        try {
+          const update = await updateRecord(
+            Number(projectId),
+            Number(recordId),
+            {
+              name: newValue,
+            }
+          );
+          setRecord(update);
+          toast.success("Project name updated");
+        } catch (error) {
+          toast.error("Failed to update project name");
+        }
+      },
+    },
+    {
+      label: "Data Source Name",
+      value: record.dataSourceName,
+    },
+    {
+      label: "Record Description",
+      value: record.description,
+      editable: true,
+      onEdit: async (newValue: string) => {
+        try {
+          const update = await updateRecord(
+            Number(projectId),
+            Number(recordId),
+            {
+              description: newValue,
+            }
+          );
+          setRecord(update);
+          toast.success("Record description updated");
+        } catch (error) {
+          toast.error("Failed to update Record description");
+        }
+      },
+    },
     { label: "uri", value: record.uri },
-    { label: "ClassName", value: record.className, editable: true },
+    {
+      label: "ClassName",
+      value: record.className,
+      // editable: true, I dont see a className being returned form the BE
+      onEdit: async (newValue: string) => {
+        try {
+          const update = await updateRecord(
+            Number(projectId),
+            Number(recordId),
+            {
+              class_name: newValue,
+            }
+          );
+          setRecord(update);
+          toast.success("Class Name updated");
+        } catch (error) {
+          toast.error("Failed to update Class Name");
+        }
+      },
+    },
     { label: "OriginalID", value: record.originalId },
     { label: "Created By", value: record.createdBy },
     { label: "Created At", value: formatDate(record.createdAt) },
     { label: "Modified By", value: record.modifiedBy },
-    { label: "Modified By", value: formatDate(record.modifiedAt) },
+    { label: "Modified At", value: formatDate(record.modifiedAt) },
   ];
-
-  // const propertiesRows = [
-  //   {label: "height", value: record.}
-  // ];
 
   const tabs = [
     {
@@ -63,11 +120,6 @@ const RecordViewPage = () => {
             title="System Porperties"
             rows={systemPropertiesRows}
           />
-          {/* <PropertyTable
-            className="p-3"
-            title="Properties"
-            rows={propertiesRows}
-          /> */}
           <div className="flex-grow">
             <div className="card bg-base-100 shadow-md p-2 ">
               <div className="card-body">
