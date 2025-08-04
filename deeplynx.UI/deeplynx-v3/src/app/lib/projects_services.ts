@@ -22,7 +22,6 @@ export const getAllRecordsForMultipleProjects = async (projectIds: number[], hid
         const query = projectIds    
             .map(id => `projects=${encodeURIComponent(id)}`)
             .join("&") + `&hideArchived=${hideArchived}`;
-        console.log("getAllRecordsForMultiProjects", query)
         const res = await api.get(`/projects/MultiProjectRecords?${query}`);
         return res.data;
     } catch (error) {

@@ -8,6 +8,7 @@ export const api = axios.create({
 })
 
 export const getDataOverview = async (userId: string) => {
+    console.log(process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_OKTA_ISSUER)
     try {
         const res = await api.get(`/user/GetDataOverview/${userId}`);
         return res.data;
@@ -18,10 +19,7 @@ export const getDataOverview = async (userId: string) => {
 }
 
 export const getRecentlyAddedRecords = async (projectIds: string[]) => {
-    console.log("Sending project IDs: ", projectIds)
     try {
-        console.log("requestBody: ", projectIds)
-
         const queryString = projectIds
             .map(id => `projectId=${encodeURIComponent(id)}`)
             .join("&");

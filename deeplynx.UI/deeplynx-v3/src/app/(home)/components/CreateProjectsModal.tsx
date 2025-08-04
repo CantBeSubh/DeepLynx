@@ -4,10 +4,15 @@ import { useState } from "react";
 interface CreateProjectsModalProps {
   isOpen: boolean; // Indicates whether the modal is open
   onClose: () => void; // Function to call when closing the modal
+  onProjectCreated: () => void;
 }
 
 // Main CreateProject component
-const CreateProject = ({ isOpen, onClose }: CreateProjectsModalProps) => {
+const CreateProject = ({
+  isOpen,
+  onClose,
+  onProjectCreated,
+}: CreateProjectsModalProps) => {
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
@@ -32,10 +37,11 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsModalProps) => {
       setDescription("");
 
       setTimeout(() => {
+        onProjectCreated();
         setToastMessage("");
         setToastType(null);
         onClose();
-      }, 2000);
+      }, 1000);
     } catch (error) {
       console.error("Failed to create project", error);
       setToastType("error");
@@ -44,7 +50,7 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsModalProps) => {
       setTimeout(() => {
         setToastMessage("");
         setToastType(null);
-      }, 3000);
+      }, 2000);
     }
   };
 

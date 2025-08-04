@@ -19,6 +19,15 @@ const Projects = () => {
   const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
   const [projects, setProjects] = useState([]);
 
+  const refreshProjects = async () => {
+    try {
+      const data = await getAllProjects();
+      setProjects(data);
+    } catch (error) {
+      console.error("Failed to refresh projects:", error);
+    }
+  };
+
   const handleExplore = (project: ProjectsList) => {
     router.push(`/project/${project.id}`);
   };
@@ -103,6 +112,7 @@ const Projects = () => {
       <CreateProject
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onProjectCreated={refreshProjects}
       />
 
       {/* Create Widget Modal */}

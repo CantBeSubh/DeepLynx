@@ -1,12 +1,19 @@
 "use client";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getAllProjects,
   getAllRecordsForMultipleProjects,
 } from "@/app/lib/projects_services";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import ProjectDropdown from "./ProjectDropdown";
+import ListView from "./ListView";
+import GridView from "./GridView";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import RecentRecordsCard from "./RecentRecordsCard";
+import SavedSearchesTabs from "../../components/SavedSearches";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -14,104 +21,72 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
-import SavedSearchesTabs from "../../components/SavedSearches";
-import ExpandableTagsCell from "./ExpandableTagCell";
-import GridView from "./GridView";
-import ListView from "./ListView";
-import ProjectDropdown from "./ProjectDropdown";
-import RecentRecordsCard from "./RecentRecordsCard";
+import { filterRecords } from "@/app/lib/filter_services";
 
 const DataCatalogContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromProject = searchParams.get("fromProject");
-  // State to manage table data, project name, mount status, search term, active filters, and next filter ID
-  const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
-  const [projectName, setProjectName] = useState<string>("");
-  const [hasMounted, setHasMounted] = useState<boolean>(false);
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [activeFilters, setActiveFilters] = useState<
-    Array<{ id: number; term: string }>
-  >([]);
-  const [nextFilterId, setNextFilterId] = useState<number>(1);
-  const [viewMode, setViewMode] = useState<"list" | "table">("list");
-  const [showAll, setShowAll] = useState(false);
+
   const { project, hasLoaded } = useProjectSession();
+
+  const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     fromProject ? [fromProject] : []
   );
+  const [hasMounted, setHasMounted] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilters, setActiveFilters] = useState<
+    Array<{ id: number; term: string }>
+  >([]);
+  const [nextFilterId, setNextFilterId] = useState(1);
+  const [viewMode, setViewMode] = useState<"list" | "table">("list");
+  const [showAll, setShowAll] = useState(false);
 
-  // Effect to set project name from localStorage and mark the component as mounted
+  const activeSearchTerms = activeFilters.map((f) => f.term.toLowerCase());
+
   useEffect(() => {
     setHasMounted(true);
-    const storedName = localStorage.getItem("selectedProjectName");
-    if (storedName) setProjectName(storedName);
-
-    if (fromProject === "ALL") {
-      setSelectedProjects(projects.map((p) => p.id));
-    } else if (fromProject) {
-      setSelectedProjects([fromProject]);
-    }
-  }, [fromProject, projects]);
+  }, []);
 
   useEffect(() => {
     const fetchProjects = async () => {
-      if (!hasLoaded || !project?.projectId === undefined) return;
-
+      if (!hasLoaded || project?.projectId === undefined) return;
       try {
         const data = await getAllProjects();
-        setProjects(
-          data.map((d: { id: string; name: string }) => ({
-            id: d.id,
-            name: d.name,
-          }))
-        );
-      } catch (error) {
-        console.error("Failed to fetch records:", error);
+        const mapped = data.map((d: { id: string | number; name: string }) => ({
+          id: String(d.id),
+          name: d.name,
+        }));
+        setProjects(mapped);
+      } catch (err) {
+        console.error("Failed to fetch projects:", err);
       }
     };
     fetchProjects();
-  }, [project?.projectId, hasLoaded]);
+  }, [hasLoaded, project?.projectId]);
 
   useEffect(() => {
     if (!hasLoaded || projects.length === 0) return;
 
-    if (fromProject === "ALL") {
-      const allProjectIds = projects
-        .map((p) => p.id)
-        .filter((id) => id !== undefined);
-      setSelectedProjects(allProjectIds);
-    } else if (fromProject && !selectedProjects.length) {
+    if (fromProject && !selectedProjects.length) {
       setSelectedProjects([fromProject]);
     }
   }, [fromProject, projects, hasLoaded]);
 
   useEffect(() => {
-    // Only run this if we haven't already selected projects
-    if (projects.length > 0 && selectedProjects.length === 0 && hasLoaded) {
-      const allProjectIds = projects
-        .map((p) => p.id)
-        .filter((id) => id !== undefined);
-      setSelectedProjects(allProjectIds);
-    }
-  }, [projects, selectedProjects, hasLoaded]);
-
-  useEffect(() => {
     const fetchRecords = async () => {
+      // Only fetch original data if there are no active filters
+      if (activeFilters.length > 0) {
+        return;
+      }
+
       if (
         !hasLoaded ||
         selectedProjects.length === 0 ||
-        projects.length === 0 ||
-        project?.projectId === undefined
+        projects.length === 0
       ) {
-        console.log("Skipping fetch - condition not met:", {
-          hasLoaded,
-          selectedProjects,
-          projectsLoaded: projects.length,
-        });
         return;
       }
 
@@ -120,7 +95,6 @@ const DataCatalogContent = () => {
         const records = await getAllRecordsForMultipleProjects(
           projectIdsToQuery
         );
-        console.log("Setting tableData:", records);
         setTableData(records);
       } catch (error) {
         console.error("Failed to fetch records:", error);
@@ -130,83 +104,43 @@ const DataCatalogContent = () => {
     fetchRecords();
   }, [
     hasLoaded,
-    JSON.stringify(selectedProjects),
-    JSON.stringify(projects.map((p) => p.id)),
+    selectedProjects.join(","),
+    projects.map((p) => p.id).join(","),
+    activeFilters.length, // Add this dependency so it refetches when filters are cleared
   ]);
 
-  useEffect(() => {
-    console.log("Selected projects updated:", selectedProjects);
-  }, [selectedProjects]);
-
-  // Function to handle search input and add it as an active filter
-  const handleSearch = (value: string) => {
-    if (
-      !value.trim() || // Ignore empty searches
-      activeFilters.some((filter) => filter.term === value.trim()) // Ignore duplicates
-    ) {
+  const handleSearch = async (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || activeFilters.some((f) => f.term === trimmed)) {
       return;
     }
-    setActiveFilters([
-      ...activeFilters,
-      { id: nextFilterId, term: value.trim() }, // Add new filter
-    ]);
-    setNextFilterId(nextFilterId + 1); // Increment filter ID for next filter
-    setSearchTerm(""); // Clear search input
+
+    try {
+      const newFilters = [
+        ...activeFilters,
+        { id: nextFilterId, term: trimmed },
+      ];
+      const allSearchTerm = newFilters.map((f) => f.term);
+      const filteredData = await filterRecords(allSearchTerm);
+
+      setTableData(filteredData);
+      setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
+      setNextFilterId(nextFilterId + 1);
+      setSearchTerm("");
+      setShowAll(true);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
-  // Function to remove a specific filter by its ID
-  const removeFilter = (filterId: number) => {
-    setActiveFilters(activeFilters.filter((filter) => filter.id !== filterId));
-  };
-
-  // Function to clear all active filters
   const clearAllFilters = () => {
-    setActiveFilters([]); // Reset filters
-    setSearchTerm(""); // Clear search input
+    setActiveFilters([]);
+    setSearchTerm("");
   };
 
-  const activeSearchTerms = activeFilters.map((f) => f.term.toLowerCase());
+  const selectedProjectIds: number[] = selectedProjects.map((id) => Number(id));
 
-  const gridViewColumns: Column<FileViewerTableRow>[] = [
-    {
-      header: "ID",
-      data: "id",
-    },
-    {
-      header: "Record Name",
-      data: "name",
-    },
-    {
-      header: "Class",
-      cell: (row) =>
-        row.className ? (
-          <span className="badge text-sm">{row.className}</span>
-        ) : (
-          <span></span>
-        ),
-    },
-    {
-      header: "Tags",
-      cell: (row) => <ExpandableTagsCell tags={row.tags} />,
-    },
-    // {
-    //   header: "Associated Records",
-    //   cell: (row) => <AssociatedRecordsCell records={row.associatedRecords} />,
-    // },
-    {
-      header: "Last Edited",
-      data: "modifiedAt",
-    },
-  ];
-
-  const selectedProjectIds: number[] = selectedProjects.includes("ALL")
-    ? projects.map((p) => Number(p.id))
-    : selectedProjects.map((id) => Number(id));
-
-  // If the component has not mounted yet, return null to avoid rendering
-  if (!hasMounted) {
-    return null;
-  }
+  if (!hasMounted) return null;
 
   return (
     <div>
@@ -215,20 +149,24 @@ const DataCatalogContent = () => {
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown
             projects={projects}
-            onSelectionChange={(ids: string[]) => setSelectedProjects(ids)}
+            onSelectionChange={(ids) => setSelectedProjects(ids)}
             defaultSelected={fromProject ? [fromProject] : undefined}
           />
         </div>
       </div>
+
       <div className="divider"></div>
+
       <div className="flex justify-between gap-4 mb-4">
         <LargeSearchBar
-          placeholder="Seach by name and description ..."
+          placeholder="Search by name and description..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onEnter={handleSearch}
           activeFilters={activeFilters}
-          onRemoveFilter={removeFilter}
+          onRemoveFilter={(id) =>
+            setActiveFilters(activeFilters.filter((f) => f.id !== id))
+          }
           onClearAll={clearAllFilters}
           resultCount={tableData.length}
           showResultsMessage={activeFilters.length > 0}
@@ -252,9 +190,9 @@ const DataCatalogContent = () => {
             <button
               className="btn btn-outline btn-primary"
               onClick={() => {
-                clearAllFilters();
-                setViewMode("list");
                 setShowAll(true);
+                setViewMode("list");
+                clearAllFilters();
               }}
             >
               <EyeIcon className="size-6" />
@@ -268,15 +206,17 @@ const DataCatalogContent = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />
@@ -285,30 +225,52 @@ const DataCatalogContent = () => {
           )}
         </div>
       </div>
+
       {activeFilters.length > 0 || showAll ? (
-        <>
-          {viewMode === "list" ? (
-            <ListView
-              data={tableData}
-              activeSearchTerms={activeSearchTerms}
-              selectedProjects={selectedProjectIds}
-            />
-          ) : (
-            <GridView
-              columns={gridViewColumns}
-              data={tableData}
-              activeSearchTerms={activeSearchTerms}
-              selectedProjects={selectedProjects}
-            />
-          )}
-        </>
+        viewMode === "list" ? (
+          <ListView
+            data={tableData}
+            activeSearchTerms={activeSearchTerms}
+            selectedProjects={selectedProjectIds}
+          />
+        ) : (
+          <GridView
+            columns={[
+              { header: "ID", data: "id" },
+              { header: "Record Name", data: "name" },
+              {
+                header: "Class",
+                cell: (row) =>
+                  row.className ? (
+                    <span className="badge text-sm">{row.className}</span>
+                  ) : null,
+              },
+              {
+                header: "Tags",
+                cell: (row) => (
+                  <div>
+                    {row.tags?.map((t) => (
+                      <span key={t.name} className="badge mr-1">
+                        {t.name}
+                      </span>
+                    ))}
+                  </div>
+                ),
+              },
+              { header: "Last Edited", data: "modifiedAt" },
+            ]}
+            data={tableData}
+            activeSearchTerms={activeSearchTerms}
+            selectedProjects={selectedProjects}
+          />
+        )
       ) : (
         <div className="flex w-full gap-8">
           <div className="w-2/3">
             <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>
           <div className="w-1/3">
-            <SavedSearchesTabs className="" />
+            <SavedSearchesTabs />
           </div>
         </div>
       )}
@@ -318,7 +280,9 @@ const DataCatalogContent = () => {
 
 const DataCatalog = () => {
   return (
-    <Suspense fallback={<div className="loading loading-spinner loading-lg"></div>}>
+    <Suspense
+      fallback={<div className="loading loading-spinner loading-lg"></div>}
+    >
       <DataCatalogContent />
     </Suspense>
   );

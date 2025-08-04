@@ -23,14 +23,7 @@ export default function Login() {
       <main className="flex flex-col items-center w-full max-w-lg mt-0 mb-2">
         <div className="w-full p-2 bg-white border-2 border-solid rounded-3xl">
           <div className="fieldset m-5">
-            <div className="flex flex-col items-center">
-              <Image
-                src={"/assets/OneID.svg"}
-                alt={"OneID logo"}
-                width={250}
-                height={0}
-              />
-            </div>
+            <div className="flex flex-col items-center"></div>
 
             <div className="flex flex-col items-center mt-2">
               <h2 className="text-sm text-center text-slate-800">

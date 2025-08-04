@@ -9,13 +9,13 @@ export const {
 } = NextAuth({
     providers: [
         OktaProvider({
-            clientId: process.env.OKTA_CLIENT_ID!,
-            clientSecret: process.env.OKTA_CLIENT_SECRET!,
-            issuer: process.env.OKTA_ISSUER,
+            clientId: process.env.NEXT_PUBLIC_OKTA_CLIENT_ID!,
+            clientSecret: process.env.NEXT_PUBLIC_OKTA_CLIENT_SECRET!,
+            issuer: process.env.NEXT_PUBLIC_OKTA_ISSUER,
             authorization: {
                 params: {
                     scope: "openid profile",
-                    redirect_uri: process.env.REDIRECT_LINK,
+                    redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_LINK,
                 },
             },
         })

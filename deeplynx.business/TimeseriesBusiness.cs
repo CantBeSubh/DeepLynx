@@ -66,6 +66,7 @@ public class TimeseriesBusiness(
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
+        var fileName = file.FileName;
 
         var recordRequest = new CreateRecordRequestDto
         {
@@ -73,9 +74,10 @@ public class TimeseriesBusiness(
             {
                 ["columns"] = columns,
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
+                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower(),
             },
-            Name = tableName,
+            Name = fileName,
+            Description = $"Table name: {tableName}",
             OriginalId = uploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -173,6 +175,7 @@ public class TimeseriesBusiness(
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
+        var fileName = request.FileName;
 
         var recordRequest = new CreateRecordRequestDto
         {
@@ -182,7 +185,8 @@ public class TimeseriesBusiness(
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             },
-            Name = tableName,
+            Name = fileName,
+            Description = $"Table name: {tableName}",
             OriginalId = request.UploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -230,6 +234,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -507,6 +512,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -568,6 +574,7 @@ public class TimeseriesBusiness(
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
