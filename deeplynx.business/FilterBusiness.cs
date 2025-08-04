@@ -42,24 +42,28 @@ public class FilterBusiness : IFilterBusiness
         var records = await query.ToListAsync();
 
         return records
-            .Select(r=>new HistoricalRecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto()
             {
-                Id = r.Id,
+                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
                 Name = r.Name,
                 ClassId = r.ClassId,
+                ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
                 ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
                 CreatedBy = r.CreatedBy,
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
                 Description = r.Description, 
-                Tags = r.Tags,
-                
+                LastUpdatedAt = r.LastUpdatedAt
             });
     }
 }
