@@ -132,7 +132,7 @@ const RecordViewPageContent = () => {
         const value = parsedProperties[key as keyof object];
         return {
           label: key,
-          value: typeof value === 'object' ? JSON.stringify(value) : value,
+          value: typeof value === 'object' ? JSON.stringify(value) : String(value),
         };
       })
     : [];
@@ -148,6 +148,7 @@ const RecordViewPageContent = () => {
               rows={systemPropertiesRows}
             />
             <PropertyTable
+              className="mt-4"
               title="Additional Properties"
               rows={additionalPropertiesRows}
             />
