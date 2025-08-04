@@ -62,6 +62,7 @@ public class FilterBusiness : IFilterBusiness
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
+                Description = r.Description, 
                 LastUpdatedAt = r.LastUpdatedAt
             });
     }
