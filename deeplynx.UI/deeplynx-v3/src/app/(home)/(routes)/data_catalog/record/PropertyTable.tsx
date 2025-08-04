@@ -10,7 +10,6 @@ interface PropertyRow {
   value: React.ReactNode;
   editable?: boolean;
   onEdit?: (newValue: string) => void;
-  //   fieldKey?: string;
 }
 
 interface PropertyTableProps {
@@ -32,13 +31,12 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
     setEditValue(currentValue);
   };
 
-  const handleSave = (rows: PropertyRow) => {
-    rows.onEdit?.(editValue);
+  const handleSave = (row: PropertyRow) => {
+    row.onEdit?.(editValue);
     setEditingIndex(null);
   };
 
   const handleCancel = () => {
-    console.log("Cancel Edit");
     setEditingIndex(null);
     setEditValue("");
   };
@@ -59,7 +57,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                 <div className="col-span-4 p-3 font-medium text-info-content text-sm bg-base-50 border-r border-base-200">
                   {row.label}
                 </div>
-                <div className="col-span-7 p-3 text-sm">
+                <div className="col-span-7 p-3 text-sm break-words">
                   {editingIdex === index ? (
                     <input
                       type="text"
@@ -68,13 +66,13 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                       className="input input-sm input-bordered w-full"
                     ></input>
                   ) : (
-                    row.value
+                    <div className="break-words">{row.value}</div>
                   )}
                 </div>
                 <div className="col-span-1 p-3 flex justify-center items-center">
                   {row.editable && editingIdex !== index && (
                     <PencilIcon
-                      className="text-secondary size-6"
+                      className="text-secondary size-6 cursor-pointer"
                       onClick={() => handleEdit(index, String(row.value))}
                     />
                   )}
@@ -82,13 +80,13 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                     <>
                       <button className="">
                         <CheckCircleIcon
-                          className="text-sucess size-6"
+                          className="text-success size-6 cursor-pointer"
                           onClick={() => handleSave(row)}
                         />
                       </button>
                       <button>
                         <XCircleIcon
-                          className="text-error size-6"
+                          className="text-error size-6 cursor-pointer"
                           onClick={handleCancel}
                         />
                       </button>
