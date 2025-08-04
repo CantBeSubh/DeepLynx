@@ -125,16 +125,33 @@ const RecordViewPageContent = () => {
     { label: "Modified At", value: formatDate(record.modifiedAt) },
   ];
 
+  // TODO: make nested objects in table form too
+  const parsedProperties = JSON.parse(record.properties!);
+  const additionalPropertiesRows = parsedProperties
+    ? Object.keys(parsedProperties).map(key => {
+        const value = parsedProperties[key as keyof object];
+        return {
+          label: key,
+          value: typeof value === 'object' ? JSON.stringify(value) : value,
+        };
+      })
+    : [];
+
   const tabs = [
     {
       label: "Record Information",
       content: (
         <div className="flex gap-4">
-          <PropertyTable
-            className="w-full md:w-1/2 p-3"
-            title="System Porperties"
-            rows={systemPropertiesRows}
-          />
+          <div className="w-full md:w-1/2 p-3">
+            <PropertyTable
+              title="System Properties"
+              rows={systemPropertiesRows}
+            />
+            <PropertyTable
+              title="Additional Properties"
+              rows={additionalPropertiesRows}
+            />
+          </div>
           <div className="flex-grow">
             <div className="card bg-base-100 shadow-md p-2">
               <h2 className="card-title">Tags: {renderTags(record.tags)}</h2>
