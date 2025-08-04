@@ -43,13 +43,14 @@ const ListView: React.FC<ListViewProps> = ({
 
   const renderTags = (tags: string) => {
     try {
-      console.log(tags)
       const parsedTags: string[] = JSON.parse(tags);
-      return parsedTags?.map((t: string) => (
-        <span key={t} className="badge mr-1">
-          {t??"none"}
-        </span>
-      ));
+      return parsedTags
+        .filter((t: string) => t !== null && t !== undefined)
+        .map((t: string) => (
+          <span key={t} className="badge mr-1">
+            {t}
+          </span>
+        ));
     } catch {
       return null;
     }
@@ -73,8 +74,10 @@ const ListView: React.FC<ListViewProps> = ({
           //   record.fileDescription,
           //   activeSearchTerms
           // );
-          const date = getHighlightedCell(record.modifiedAt??record.createdAt, activeSearchTerms);
-          console.log(record);
+          const date = getHighlightedCell(
+            record.modifiedAt ?? record.createdAt,
+            activeSearchTerms
+          );
           return (
             <li
               key={index}
@@ -111,7 +114,6 @@ const ListView: React.FC<ListViewProps> = ({
               <div className="pt-2">
                 <span>Tags: </span>
                 {renderTags(record.tags)}
-               
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>

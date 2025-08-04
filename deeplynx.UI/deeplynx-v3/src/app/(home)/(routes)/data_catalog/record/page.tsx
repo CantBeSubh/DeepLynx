@@ -33,6 +33,21 @@ const RecordViewPageContent = () => {
     fetchData();
   }, [recordId, projectId]);
 
+  const renderTags = (tags: string) => {
+    try {
+      const parsedTags: string[] = JSON.parse(tags);
+      return parsedTags
+        .filter((t: string) => t !== null && t !== undefined)
+        .map((t: string) => (
+          <span key={t} className="badge mr-1">
+            {t}
+          </span>
+        ));
+    } catch {
+      return null;
+    }
+  };
+
   if (!record) {
     return <div className="loading loading-spinner loading-xl" />;
   }
@@ -121,21 +136,25 @@ const RecordViewPageContent = () => {
             rows={systemPropertiesRows}
           />
           <div className="flex-grow">
-            <div className="card bg-base-100 shadow-md p-2 ">
+            <div className="card bg-base-100 shadow-md p-2">
+              <h2 className="card-title">Tags: {renderTags(record.tags)}</h2>
+            </div>
+
+            {/* <div className="card bg-base-100 shadow-md p-2 ">
               <div className="card-body">
                 <h2 className="card-title">
                   Tags:{" "}
-                  {/* {record.tags.map((tag) => (
+                  {record.tags.map((tag) => (
                     <div className="card-actions">
                       <div className="badge badge-outline badge-secondary">
                         {tag.name}
                       </div>
                     </div>
-                  ))} */}
+                  ))}
                   <ExpandableTagsCell tags={record.tags} />
                 </h2>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       ),

@@ -9,7 +9,7 @@ export type DataSourceTableRow = {
   };
 
 export type Tag = {
-  id: number;
+  id?: number;
   name: string
 }
 
