@@ -54,7 +54,7 @@ const RecordViewPageContent = () => {
 
   const systemPropertiesRows = [
     {
-      label: "Project",
+      label: "Record Name",
       value: record?.name,
       editable: true,
       onEdit: async (newValue: string) => {
@@ -72,10 +72,6 @@ const RecordViewPageContent = () => {
           toast.error("Failed to update project name");
         }
       },
-    },
-    {
-      label: "Data Source Name",
-      value: record.dataSourceName,
     },
     {
       label: "Record Description",
@@ -96,6 +92,10 @@ const RecordViewPageContent = () => {
           toast.error("Failed to update Record description");
         }
       },
+    },
+    {
+      label: "Data Source Name",
+      value: record.dataSourceName,
     },
     { label: "uri", value: record.uri },
     {

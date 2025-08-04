@@ -19,7 +19,7 @@ export const getAllRecords = async (projectId: string) => {
 
 export const getRecord = async (projectId: number, recordId: number) => {
     try {
-        const res = await api.get(`/projects/${projectId}/records/GetRecord/${recordId}`);
+        const res = await api.get(`/projects/${projectId}/records/historical/GetHistoricalRecord/${recordId}`);
         return res.data;
     } catch (error) {
         console.error("Error fetching record:", error);
