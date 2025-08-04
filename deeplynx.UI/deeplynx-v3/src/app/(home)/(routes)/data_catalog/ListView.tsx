@@ -1,5 +1,6 @@
 import React from "react";
 import { FileViewerTableRow } from "../../types/types";
+import { useRouter } from "next/navigation";
 
 interface ListViewProps {
   data: FileViewerTableRow[];
@@ -12,6 +13,7 @@ const ListView: React.FC<ListViewProps> = ({
   activeSearchTerms = [],
   selectedProjects,
 }) => {
+  const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
@@ -41,13 +43,14 @@ const ListView: React.FC<ListViewProps> = ({
 
   const renderTags = (tags: string) => {
     try {
-      console.log(tags)
       const parsedTags: string[] = JSON.parse(tags);
-      return parsedTags?.map((t: string) => (
-        <span key={t} className="badge mr-1">
-          {t??"none"}
-        </span>
-      ));
+      return parsedTags
+        .filter((t: string) => t !== null && t !== undefined)
+        .map((t: string) => (
+          <span key={t} className="badge mr-1">
+            {t}
+          </span>
+        ));
     } catch {
       return null;
     }
@@ -71,10 +74,20 @@ const ListView: React.FC<ListViewProps> = ({
           //   record.fileDescription,
           //   activeSearchTerms
           // );
-          const date = getHighlightedCell(record.modifiedAt??record.createdAt, activeSearchTerms);
-          console.log(record);
+          const date = getHighlightedCell(
+            record.modifiedAt ?? record.createdAt,
+            activeSearchTerms
+          );
           return (
-            <li key={index} className="py-4 border-b border-base-content">
+            <li
+              key={index}
+              className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-3"
+              onClick={() =>
+                router.push(
+                  `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
+                )
+              }
+            >
               <div className="font-bold text-base-content mb-1">
                 {name.content}
               </div>
@@ -101,7 +114,6 @@ const ListView: React.FC<ListViewProps> = ({
               <div className="pt-2">
                 <span>Tags: </span>
                 {renderTags(record.tags)}
-               
               </div>
               {/* <div className="pt-2">
                 <span className="font-bold">Associated Records: </span>

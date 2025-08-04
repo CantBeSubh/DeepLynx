@@ -9,7 +9,7 @@ export type DataSourceTableRow = {
   };
 
 export type Tag = {
-  id: number;
+  id?: number;
   name: string
 }
 
@@ -29,7 +29,7 @@ export type FileViewerTableRow = {
   projectName?: string;
   tags: string;
   createdBy?: string | null;
-  createdAt?: string;
+  createdAt?: string | null;
   modifiedBy?: string | null;
   modifiedAt?: string | null;
   archivedAt?: string | null;
