@@ -23,6 +23,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { filterRecords } from "@/app/lib/filter_services";
 import ExpandableTagsCell from "./ExpandableTagCell";
+import Link from "next/link";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -241,12 +242,12 @@ const DataCatalogContent = () => {
               {
                 header: "Record Name",
                 cell: (row) => (
-                  <a
-                    href={`/data_catalog/${row.id}`}
+                  <Link
+                    href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
                     className="text-base-content font-bold hover:underline"
                   >
                     {row.name}
-                  </a>
+                  </Link>
                 ),
               },
               {

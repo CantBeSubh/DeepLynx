@@ -69,15 +69,7 @@ const GridView = <T extends object>({
         </thead>
         <tbody>
           {filteredRecords.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className="cursor-pointer hover:bg-base-200/30"
-              onClick={() =>
-                router.push(
-                  `/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`
-                )
-              }
-            >
+            <tr key={rowIndex} className="cursor-pointer hover:bg-base-200/30">
               {columns.map((column, colIndex) => {
                 const rawValue = column.data ? row[column.data] : "";
 

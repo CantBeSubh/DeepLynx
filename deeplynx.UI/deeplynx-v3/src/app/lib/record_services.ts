@@ -32,7 +32,7 @@ export const updateRecord = async (
     recordId: number, 
     updateData: {
         uri?: string | null; 
-        properties?: Record<string, any>;
+        properties?: Record<string, unknown>;
         original_id?: string | null;
         name?: string | null;
         class_id?: number | null;

@@ -5,12 +5,12 @@ import Tabs from "@/app/(home)/components/Tabs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { getRecord, updateRecord } from "@/app/lib/record_services";
 import { useSearchParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import PropertyTable from "./PropertyTable";
 import ExpandableTagsCell from "../ExpandableTagCell";
 import toast from "react-hot-toast";
 
-const RecordViewPage = () => {
+const RecordViewPageContent = () => {
   const params = useSearchParams();
   const recordId = params.get("recordId");
   const projectId = params.get("projectId");
@@ -173,5 +173,15 @@ function formatDate(date: string | null | undefined): string {
     day: "2-digit",
   });
 }
+
+const RecordViewPage = () => {
+  return (
+    <Suspense
+      fallback={<div className="loading loading-spinner loading-lg"></div>}
+    >
+      <RecordViewPageContent />
+    </Suspense>
+  );
+};
 
 export default RecordViewPage;
