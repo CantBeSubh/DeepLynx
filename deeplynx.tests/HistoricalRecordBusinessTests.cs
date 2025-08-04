@@ -151,7 +151,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public async Task GetHistoricalRecords_FiltersByTime()
     {
         await SeedTestDataAsync();
-        
+        await Context.SaveChangesAsync();
         firstPointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
         var testRecordLate = new Record
@@ -204,7 +204,140 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt == null);
         recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt != null);
     }
+
+    [Fact]
+    public async Task GetHistoryForRecord_ReturnsEmptyList_WhenRecordDoesNotExist()
+    {
+        await SeedTestDataAsync();
+        var historicalRecords = await _historicalRecordBusiness.GetHistoryForRecord(rid + 100000);
+        historicalRecords.Should().NotBeNull();
+        historicalRecords.Should().HaveCount(0);
+    }
+
+    [Fact]
+    public async Task GetHistoricalRecord_ReturnsMostCurrentRecord_WhenCurrentIsTrue()
+    {
+        await SeedTestDataAsync();
+        
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "Updated Test Record",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
+            Uri = "updated://uri",
+            OriginalId = "updated-123",
+            Description = "Updated Description",
+            ClassId = cid
+        };
+        
+        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, true, true);
+        historicalRecord.Should().NotBeNull();
+        historicalRecord.Name.Should().Be("Updated Test Record");
+    }
     
+    [Fact]
+    public async Task GetHistoricalRecord_ReturnsFirstRecordByDefault()
+    {
+        await SeedTestDataAsync();
+        
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "Updated Test Record",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
+            Uri = "updated://uri",
+            OriginalId = "updated-123",
+            Description = "Updated Description",
+            ClassId = cid
+        };
+        
+        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
+        historicalRecord.Should().NotBeNull();
+        historicalRecord.Name.Should().Be("Test Record");
+    }
+    
+    [Fact]
+    public async Task GetHistoricalRecord_CanIncludeArchived()
+    {
+        await SeedTestDataAsync();
+        
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "Updated Test Record",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
+            Uri = "updated://uri",
+            OriginalId = "updated-123",
+            Description = "Updated Description",
+            ClassId = cid
+        };
+        
+        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await _recordBusiness.ArchiveRecord(pid, rid);
+        
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false, true);
+        historicalRecord.Should().NotBeNull();
+        historicalRecord.Name.Should().Be("Updated Test Record");
+        historicalRecord.ArchivedAt.Should().NotBeNull();
+    }
+    
+    // Ask if this should be good behavior
+    [Fact]
+    public async Task GetHistoricalRecord_ThrowsError_WhenCurrentRecordIsArchived()
+    {
+        await SeedTestDataAsync();
+        
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "Updated Test Record",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
+            Uri = "updated://uri",
+            OriginalId = "updated-123",
+            Description = "Updated Description",
+            ClassId = cid
+        };
+        
+        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await _recordBusiness.ArchiveRecord(pid, rid);
+        
+        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid, null, true, true);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
+    
+    
+    [Fact]
+    public async Task GetHistoricalRecord_FiltersByTime()
+    {
+        await SeedTestDataAsync();
+        
+        firstPointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "Updated Test Record",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
+            Uri = "updated://uri",
+            OriginalId = "updated-123",
+            Description = "Updated Description",
+            ClassId = cid
+        };
+        
+        await _recordBusiness.UpdateRecord(pid, rid, dto);
+        await Context.SaveChangesAsync();
+        
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, firstPointInTime);
+        historicalRecord.Should().NotBeNull();
+        historicalRecord.Name.Should().Be("Test Record");
+    }
+    
+    [Fact]
+    public async Task GetHistoricalRecord_ThrowsError_WhenRecordDoesNotExist()
+    {
+        await SeedTestDataAsync();
+        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid+ 100000, null);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
     
     
     
@@ -320,7 +453,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddSeconds(1), DateTimeKind.Unspecified),
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Uri = "localhost:8090"
         };
         
