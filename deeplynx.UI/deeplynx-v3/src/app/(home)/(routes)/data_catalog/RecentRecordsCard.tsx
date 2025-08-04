@@ -7,6 +7,7 @@ export type RecentRecord = {
   id: number;
   name: string;
   className: string;
+  createdAt: string;
   lastUpdatedAt: string;
   dataSourceName: string;
   projectName: string;
@@ -28,6 +29,7 @@ const RecentRecordsCard = ({
     const fetchRecentRecords = async () => {
       try {
         const data = await getRecentlyAddedRecords(selectedProjects);
+        console.log(data);
         setRecords(data);
         setCurrentPage(1);
       } catch (error) {
@@ -87,7 +89,7 @@ const RecentRecordsCard = ({
                   {record.className}
                 </span>
               </span>
-              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt)}</span>
+              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt??record.createdAt)}</span>
               <span className="ml-4">Project: {record.projectName}</span>
               <span className="ml-4">Data Source: {record.dataSourceName}</span>
             </div>

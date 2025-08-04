@@ -140,6 +140,19 @@ const DataCatalogContent = () => {
     setSearchTerm("");
   };
 
+  const renderTags = (tags: string) => {
+    try {
+      const parsedTags = JSON.parse(tags);
+      return parsedTags?.map((t) => (
+        <span key={t.name} className="badge mr-1">
+          {t.name}
+        </span>
+      ));
+    } catch {
+      return null;
+    }
+  };
+
   const selectedProjectIds: number[] = selectedProjects.map((id) => Number(id));
 
   if (!hasMounted) return null;
@@ -230,6 +243,7 @@ const DataCatalogContent = () => {
 
       {activeFilters.length > 0 || showAll ? (
         viewMode === "list" ? (
+          // TODO: populate list view appropriately
           <ListView
             data={tableData}
             activeSearchTerms={activeSearchTerms}
@@ -250,6 +264,7 @@ const DataCatalogContent = () => {
                   </Link>
                 ),
               },
+              { header: "Description", data: "description" },
               {
                 header: "Class",
                 cell: (row) =>
@@ -259,13 +274,12 @@ const DataCatalogContent = () => {
               },
               {
                 header: "Tags",
-                cell: (row) => (
-                  <div>
-                    <ExpandableTagsCell tags={row.tags} />
-                  </div>
-                ),
+                cell: (row) => <div>{renderTags(row.tags)}</div>,
               },
-              { header: "Last Edited", data: "modifiedAt" },
+              {
+                header: "Last Edited",
+                cell: (row) => row.modifiedAt ?? row.createdAt,
+              },
             ]}
             data={tableData}
             activeSearchTerms={activeSearchTerms}
