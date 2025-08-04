@@ -324,7 +324,7 @@ public class ProjectBusiness : IProjectBusiness
         return records
             .Select(r => new HistoricalRecordResponseDto()
             {
-                Id = r.Id,
+                Id = r.RecordId,
                 Description = r.Description,
                 Uri = r.Uri,
                 Properties = r.Properties,
