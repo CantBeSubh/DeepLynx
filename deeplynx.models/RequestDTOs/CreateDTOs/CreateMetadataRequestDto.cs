@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 using System.Text.Json.Nodes;
-    
+
 namespace deeplynx.models;
 
-public class MetadataRequestDto
+public class CreateMetadataRequestDto
 {
     public JsonArray? Classes { get; set; }
     public JsonArray? Relationships { get; set; }

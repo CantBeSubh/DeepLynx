@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace deeplynx.models;
 
-public class ProjectRequestDto
+public class CreateProjectRequestDto
 {
     [Required]
     public string Name { get; set; }

@@ -119,7 +119,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if class not found</exception>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
+    public async Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
@@ -161,7 +161,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
+    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classes)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         
@@ -212,7 +212,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="dto">The class request data transfer object containing updated class details.</param>
     /// <returns>The updated class response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
-    public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
+    public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, UpdateClassRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var updatedClass = await _context.Classes.FindAsync(classId);
@@ -222,9 +222,9 @@ public class ClassBusiness : IClassBusiness
         }
 
         updatedClass.ProjectId = projectId;
-        updatedClass.Name = dto.Name;
-        updatedClass.Description = dto.Description;
-        updatedClass.Uuid = dto.Uuid;
+        updatedClass.Name = dto.Name ?? updatedClass.Name;
+        updatedClass.Description = dto.Description ?? updatedClass.Description;
+        updatedClass.Uuid = dto.Uuid ?? updatedClass.Uuid;
         updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
 
@@ -375,7 +375,7 @@ public class ClassBusiness : IClassBusiness
             };
         }
 
-        var classDto = new ClassRequestDto()
+        var classDto = new CreateClassRequestDto()
         {
             Name = className
         };

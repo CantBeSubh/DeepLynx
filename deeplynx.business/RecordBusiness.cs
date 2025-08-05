@@ -515,7 +515,7 @@ public class RecordBusiness : IRecordBusiness
     /// </summary>
     /// <param name="node"></param>
     /// <returns></returns>
-    private int CalculateJsonMaxDepth(JsonNode node)
+    private int CalculateJsonMaxDepth(JsonNode? node)
     {
         if (node is not JsonObject && node is not JsonArray)
             return 0;
@@ -532,7 +532,7 @@ public class RecordBusiness : IRecordBusiness
         }
         else if (node is JsonArray jsonArray)
         {
-            foreach (JsonNode item in jsonArray)
+            foreach (JsonNode? item in jsonArray)
             {
                 int depth = CalculateJsonMaxDepth(item);
                 if (depth > maxDepth)

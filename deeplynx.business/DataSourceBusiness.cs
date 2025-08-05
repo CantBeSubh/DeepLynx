@@ -120,7 +120,7 @@ namespace deeplynx.business
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source.</returns>
-        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, DataSourceRequestDto dto)
+        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
             if (dto == null)
@@ -169,7 +169,7 @@ namespace deeplynx.business
         public async Task<DataSourceResponseDto> UpdateDataSource(
             long projectId,
             long dataSourceId,
-            DataSourceRequestDto dto)
+            UpdateDataSourceRequestDto dto)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
@@ -179,12 +179,12 @@ namespace deeplynx.business
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
             }
 
-            dataSource.Name = dto.Name;
-            dataSource.Description = dto.Description;
-            dataSource.Abbreviation = dto.Abbreviation;
-            dataSource.BaseUri = dto.BaseUri;
-            dataSource.Config = dto.Config?.ToString();
-            dataSource.Type = dto.Type;
+            dataSource.Name = dto.Name ?? dataSource.Name;
+            dataSource.Description = dto.Description ?? dataSource.Description;
+            dataSource.Abbreviation = dto.Abbreviation ?? dataSource.Abbreviation;
+            dataSource.BaseUri = dto.BaseUri ?? dataSource.BaseUri;
+            dataSource.Config = dto.Config?.ToString() != null ? dto.Config.ToString() : new JsonObject().ToString();
+            dataSource.Type = dto.Type ?? dataSource.Type;
             dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
             dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 

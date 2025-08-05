@@ -120,7 +120,7 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<EdgeResponseDto> CreateEdge(
         long projectId, 
         long dataSourceId, 
-        EdgeRequestDto dto)
+        CreateEdgeRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context,dataSourceId);
@@ -167,7 +167,7 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        List<EdgeRequestDto> edges)
+        List<CreateEdgeRequestDto> edges)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
@@ -223,7 +223,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<EdgeResponseDto> UpdateEdge(
         long projectId,
-        EdgeRequestDto dto,
+        UpdateEdgeRequestDto dto,
         long? edgeId,
         long? originId, 
         long? destinationId)

@@ -86,7 +86,7 @@ namespace deeplynx.api.Controllers
         /// <returns>Class response DTOs</returns>
         [HttpPost("CreateClass", Name = "api_create_a_class")]
         public async Task<ActionResult<ClassResponseDto>> CreateClass(long projectId,
-            [FromBody] ClassRequestDto dto)
+            [FromBody] CreateClassRequestDto dto)
         {
             try
             {
@@ -110,7 +110,7 @@ namespace deeplynx.api.Controllers
         [HttpPost("BulkCreateClasses", Name = "api_create_many_classes")]
         public async Task<ActionResult<List<ClassResponseDto>>> BulkCreateClasses(
             long projectId,
-            [FromBody] List<ClassRequestDto> classes)
+            [FromBody] List<CreateClassRequestDto> classes)
         {
             try
             {
@@ -133,7 +133,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The request DTO for the class</param>
         /// <returns>Class response DTO</returns>
         [HttpPut("UpdateClass/{classId}", Name = "api_update_a_class")]
-        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] ClassRequestDto dto)
+        public async Task<ActionResult<ClassResponseDto>> UpdateClass(long projectId, long classId, [FromBody] UpdateClassRequestDto dto)
         {
             try
             {

@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace deeplynx.models;
 
-public class RecordMappingRequestDto
+public class CreateRecordMappingRequestDto
 {
     [Required]
     public JsonObject RecordParams { get; set; }

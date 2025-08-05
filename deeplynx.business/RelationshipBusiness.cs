@@ -130,7 +130,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, CreateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
@@ -215,7 +215,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
         long projectId, 
-        List<RelationshipRequestDto> relationships)
+        List<CreateRelationshipRequestDto> relationships)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         
@@ -266,7 +266,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
     /// <returns>The updated relationship response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
@@ -274,23 +274,24 @@ public class RelationshipBusiness: IRelationshipBusiness
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
+
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.OriginId ?? relationship.OriginId) && c.ArchivedAt == null);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
+
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.DestinationId ?? relationship.DestinationId) && c.ArchivedAt == null);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
         }
         
-        relationship.Name = dto.Name;
-        relationship.Description = dto.Description;
-        relationship.Uuid = dto.Uuid;
-        relationship.OriginId = dto.OriginId;
-        relationship.DestinationId = dto.DestinationId;
+        relationship.Name = dto.Name ?? relationship.Name;
+        relationship.Description = dto.Description ?? relationship.Description;
+        relationship.Uuid = dto.Uuid ?? relationship.Uuid;
+        relationship.OriginId = dto.OriginId ?? relationship.OriginId;
+        relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
         relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);

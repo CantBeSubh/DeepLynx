@@ -81,7 +81,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The record mapping request data transfer object containing mapping details</param>
         /// <returns>The created record mapping</returns>
         [HttpPost("CreateRecordMapping", Name = "api_create_a_record_mapping")]
-        public async Task<ActionResult<RecordMappingResponseDto>> CreateRecordMapping(long projectId, [FromBody] RecordMappingRequestDto dto)
+        public async Task<ActionResult<RecordMappingResponseDto>> CreateRecordMapping(long projectId, [FromBody] CreateRecordMappingRequestDto dto)
         {
             try
             {
@@ -107,7 +107,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<RecordMappingResponseDto>> UpdateRecordMapping(
             long projectId, 
             long mappingId, 
-            [FromBody] RecordMappingRequestDto dto)
+            [FromBody] UpdateRecordMappingRequestDto dto)
         {
             try
             {

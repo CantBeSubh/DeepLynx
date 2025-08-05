@@ -84,7 +84,7 @@ public class UserBusiness : IUserBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new user to be created.</param>
     /// <returns>The new user which was just created.</returns>
-    public async Task<UserResponseDto> CreateUser(UserRequestDto dto)
+    public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
         var user = new User
         {
@@ -165,7 +165,7 @@ public class UserBusiness : IUserBusiness
     /// <exception cref="KeyNotFoundException">Returned if the user was not found.</exception>
     /// TODO: Decide if we want to update to null if null value is given in the DTO
     /// TODO: Decide if we want to allow add/remove to a project in this update method 
-    public async Task<UserResponseDto> UpdateUser(long userId, UserRequestDto dto)
+    public async Task<UserResponseDto> UpdateUser(long userId, UpdateUserRequestDto dto)
     {
         var user = await _context.Users
             .Where(p => p.Id == userId && p.ArchivedAt == null)

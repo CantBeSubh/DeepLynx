@@ -68,7 +68,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPost("CreateUser", Name = "api_create_a_user")]
-        public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] UserRequestDto dto)
+        public async Task<ActionResult<UserResponseDto>> CreateUser([FromBody] CreateUserRequestDto dto)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">User request DTO</param>
         /// <returns>User response DTO</returns>
         [HttpPut("UpdateUser/{userId}", Name = "api_update_a_user")]
-        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UserRequestDto dto)
+        public async Task<ActionResult<UserResponseDto>> UpdateClass(long userId, [FromBody] UpdateUserRequestDto dto)
         {
             try
             {
