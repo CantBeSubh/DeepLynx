@@ -6,7 +6,7 @@ import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { getProject } from "@/app/lib/projects_services";
-import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { Cog6ToothIcon, PlusIcon, XMarkIcon, DocumentCheckIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -90,13 +90,25 @@ const ProjectDetailPage = () => {
             <SavedSearchesTabs />
           </div>
 
-          <div className="w-full md:w-2/5 px-4">
+          {/* <div className="w-full md:w-2/5 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
               <button
                 onClick={() => setCanCustomize(!canCustomize)}
                 className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
                   <Cog6ToothIcon className="size-6" />
                 Customize
+              </button>
+              <button
+                onClick={() => setCanCustomize(!canCustomize)}
+                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
+                  <XMarkIcon className="size-6" />
+                Customize
+              </button>
+              <button
+                onClick={() => setCanCustomize(!canCustomize)}
+                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
+                  <DocumentCheckIcon className="size-6" />
+                Save
               </button>
               <button
                 onClick={() => setWidgetModal(true)}
@@ -107,6 +119,36 @@ const ProjectDetailPage = () => {
               </button>
             </div>
             <WidgetCard widgets={projectWidgets} canCustomize={canCustomize}/>
+          </div>
+        </div> */}
+
+         <div className="w-full md:w-2/5 px-4">
+            <div className="flex justify-between items-center justify-end mb-4">
+              <button
+                onClick={() => setCanCustomize(!canCustomize)}
+                className="btn flex items-center mr-2 btn-outline btn-secondary"
+              >
+                {canCustomize ? <XMarkIcon className="size-6" /> : <Cog6ToothIcon className="size-6" />}
+                {canCustomize ? "Cancel" : "Customize"}
+              </button>
+              {canCustomize && (
+                <button
+                  onClick={() => {/* Add save here */}}
+                  className="btn flex items-center mr-2 btn-secondary"
+                >
+                  <DocumentCheckIcon className="size-6" />
+                  Save
+                </button>
+              )}
+              <button
+                onClick={() => setWidgetModal(true)}
+                className="btn btn-secondary text-primary-content flex items-center"
+              >
+                <PlusIcon className="size-6" />
+                Widget
+              </button>
+            </div>
+            <WidgetCard widgets={projectWidgets} canCustomize={canCustomize} />
           </div>
         </div>
 

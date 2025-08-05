@@ -10,7 +10,7 @@ import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, Cog6ToothIcon, DocumentCheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 const Projects = () => {
   const router = useRouter();
@@ -91,7 +91,7 @@ const Projects = () => {
           />
         </div>
 
-        <div className="w-full md:w-1/2 px-4">
+        {/* <div className="w-full md:w-1/2 px-4">
           <div className="flex justify-between items-center justify-end mb-4">
             <button
             onClick={() => setCanCustomize(!canCustomize)}
@@ -109,7 +109,37 @@ const Projects = () => {
           </div>
           <WidgetCard widgets={homeWidgets} canCustomize={canCustomize}/>
         </div>
-      </div>
+      </div> */}
+
+      <div className="w-full md:w-2/5 px-4">
+            <div className="flex justify-between items-center justify-end mb-4">
+              <button
+                onClick={() => setCanCustomize(!canCustomize)}
+                className="btn flex items-center mr-2 btn-outline btn-secondary"
+              >
+                {canCustomize ? <XMarkIcon className="size-6" /> : <Cog6ToothIcon className="size-6" />}
+                {canCustomize ? "Cancel" : "Customize"}
+              </button>
+              {canCustomize && (
+                <button
+                  onClick={() => {/* Add save here */}}
+                  className="btn flex items-center mr-2 btn-secondary"
+                >
+                  <DocumentCheckIcon className="size-6" />
+                  Save
+                </button>
+              )}
+              <button
+                onClick={() => setWidgetModal(true)}
+                className="btn btn-secondary text-primary-content flex items-center"
+              >
+                <PlusIcon className="size-6" />
+                Widget
+              </button>
+            </div>
+            <WidgetCard widgets={homeWidgets} canCustomize={canCustomize} />
+          </div>
+        </div>
 
       {/* Create Project Modal */}
       <CreateProject
