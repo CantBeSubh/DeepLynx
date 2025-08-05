@@ -45,7 +45,7 @@ namespace deeplynx.tests
         public async Task CreateRelationship_Success_ReturnsIdAndCreatedAt()
         {
             var now = DateTime.UtcNow;
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = $"Test Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
@@ -69,7 +69,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Success_WithNullOriginId()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = $"Test Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
@@ -87,7 +87,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Success_WithNullDestinationId()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = $"Test Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
@@ -106,16 +106,16 @@ namespace deeplynx.tests
         {
             var now = DateTime.UtcNow;
 
-            var relationshipDtos = new List<RelationshipRequestDto>
+            var relationshipDtos = new List<CreateRelationshipRequestDto>
             {
-                new RelationshipRequestDto
+                new CreateRelationshipRequestDto
                 {
                     Name = "Bulk Relationship 1",
                     Description = "First bulk relationship",
                     OriginId = originClassId,
                     DestinationId = destinationClassId
                 },
-                new RelationshipRequestDto
+                new CreateRelationshipRequestDto
                 {
                     Name = "Bulk Relationship 2",
                     Description = "Second bulk relationship",
@@ -135,7 +135,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfNoName()
         {
-            var dto = new RelationshipRequestDto { Name = null!, Description = "Test Description" };
+            var dto = new CreateRelationshipRequestDto { Name = null!, Description = "Test Description" };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -143,7 +143,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfEmptyName()
         {
-            var dto = new RelationshipRequestDto { Name = "", Description = "Test Description" };
+            var dto = new CreateRelationshipRequestDto { Name = "", Description = "Test Description" };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -151,7 +151,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfNoProjectId()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
                 Description = "Test Description",
@@ -170,7 +170,7 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
                 Description = "Test Description",
@@ -184,7 +184,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfInvalidOriginId()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
                 Description = "Test Description",
@@ -198,7 +198,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfInvalidDestinationId()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
                 Description = "Test Description",
@@ -216,7 +216,7 @@ namespace deeplynx.tests
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
-            await _relationshipBusiness.CreateRelationship(pid, new RelationshipRequestDto
+            await _relationshipBusiness.CreateRelationship(pid, new CreateRelationshipRequestDto
             {
                 Name = $"Relationship1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test",
@@ -355,7 +355,7 @@ namespace deeplynx.tests
             // Add a small delay to ensure ModifiedAt is after CreatedAt
             await Task.Delay(50);
 
-            var dto = new RelationshipRequestDto
+            var dto = new UpdateRelationshipRequestDto
             {
                 Name = $"Updated Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Updated Description",
@@ -372,9 +372,50 @@ namespace deeplynx.tests
         }
 
         [Fact]
+        public async Task UpdateRelationship_PartialUpdate_UpdatesRelationship()
+        {
+            // Arrange
+            var originalRelationship = new Relationship
+            {
+                Name = "Original Relationship",
+                Description = "Original Description",
+                ProjectId = pid,
+                OriginId = originClassId,
+                DestinationId = destinationClassId,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null
+            };
+
+            Context.Relationships.Add(originalRelationship);
+            await Context.SaveChangesAsync();
+
+            var updateDto = new UpdateRelationshipRequestDto
+            {
+                Description = "Updated Description"
+            };
+
+            // Act
+            var result = await _relationshipBusiness.UpdateRelationship(pid, originalRelationship.Id, updateDto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(originalRelationship.Id, result.Id);
+            Assert.Equal("Updated Description", result.Description);
+            Assert.Equal(originalRelationship.Name, result.Name);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify it was actually updated in database
+            var updatedRelationship = await Context.Relationships.FindAsync(originalRelationship.Id);
+            Assert.NotNull(updatedRelationship);
+            Assert.Equal("Updated Description", updatedRelationship.Description);
+            Assert.Equal(originalRelationship.Name, updatedRelationship.Name);
+            Assert.NotNull(updatedRelationship.ModifiedAt);
+        }
+
+        [Fact]
         public async Task UpdateRelationship_Fails_IfNotFound()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new UpdateRelationshipRequestDto
             {
                 Name = "Updated Relationship",
                 Description = "Updated Description",
@@ -552,7 +593,7 @@ namespace deeplynx.tests
         [Fact]
         public void RelationshipRequestDto_AllProperties_CanBeSetAndRetrieved()
         {
-            var dto = new RelationshipRequestDto
+            var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
                 Description = "Test Description",

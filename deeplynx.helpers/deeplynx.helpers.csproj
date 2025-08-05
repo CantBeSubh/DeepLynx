@@ -17,4 +17,10 @@
       <PackageReference Include="Okta.AspNetCore" Version="4.6.3" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\deeplynx.datalayer\deeplynx.datalayer.csproj" />
+      <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
+      <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
+    </ItemGroup>
+
 </Project>

@@ -18,7 +18,7 @@ public class TagController : ControllerBase
     {
         _tagBusiness = tagBusiness;
     }
-    
+
     /// <summary>
     /// Get all tags
     /// </summary>
@@ -77,7 +77,7 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing tag details.</param>
     /// <returns>The created tag with its details.</returns>
     [HttpPost("CreateTag", Name = "api_create_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] TagRequestDto tagRequestDto)
+    public async Task<ActionResult<TagResponseDto>> CreateTag(long projectId, [FromBody] CreateTagRequestDto tagRequestDto)
     {
         try
         {
@@ -102,11 +102,11 @@ public class TagController : ControllerBase
     [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long projectId, 
-        [FromBody] List<TagRequestDto> tags)
+        [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
         {
-            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tags);
+            var bulkTagResponseDto = await _tagBusiness.BulkCreateTags(projectId, tagRequestDto);
             return Ok(bulkTagResponseDto);
         }
         catch (Exception exception)
@@ -125,7 +125,7 @@ public class TagController : ControllerBase
     /// <param name="tagRequestDto">The tag data transfer object containing updated tag details.</param>
     /// <returns>The updated tag with its details.</returns>
     [HttpPut("UpdateTag/{tagId}", Name = "api_update_a_tag")]
-    public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] TagRequestDto tagRequestDto)
+    public async Task<ActionResult<TagResponseDto>> UpdateTag(long projectId, long tagId, [FromBody] UpdateTagRequestDto tagRequestDto)
     {
         try
         {

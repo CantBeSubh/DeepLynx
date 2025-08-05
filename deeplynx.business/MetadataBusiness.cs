@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using deeplynx.helpers.json;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 
@@ -49,10 +50,10 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
@@ -68,7 +69,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     private async Task<MetadataResponseDto> ParseMetadata(
-        MetadataRequestDto metadataRequestDto,
+        CreateMetadataRequestDto metadataRequestDto,
         long dataSourceId,
         long projectId)
     {
@@ -76,20 +77,20 @@ public class MetadataBusiness : IMetadataBusiness
         
         // deserialize metadata subdomains
         var classes = metadataRequestDto.Classes != null
-            ? JsonSerialization.Deserialize<ClassRequestDto>(metadataRequestDto.Classes)
-            : new List<ClassRequestDto>();
+            ? JsonSerialization.Deserialize<CreateClassRequestDto>(metadataRequestDto.Classes)
+            : new List<CreateClassRequestDto>();
         var relationships = metadataRequestDto.Relationships != null
-            ? JsonSerialization.Deserialize<RelationshipRequestDto>(metadataRequestDto.Relationships)
-            : new List<RelationshipRequestDto>();
+            ? JsonSerialization.Deserialize<CreateRelationshipRequestDto>(metadataRequestDto.Relationships)
+            : new List<CreateRelationshipRequestDto>();
         var tags = metadataRequestDto.Tags != null
-            ? JsonSerialization.Deserialize<TagRequestDto>(metadataRequestDto.Tags)
-            : new List<TagRequestDto>();
+            ? JsonSerialization.Deserialize<CreateTagRequestDto>(metadataRequestDto.Tags)
+            : new List<CreateTagRequestDto>();
         var records = metadataRequestDto.Records != null
             ? JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records)
             : new List<CreateRecordRequestDto>();
         var edges = metadataRequestDto.Edges != null
-            ? JsonSerialization.Deserialize<EdgeRequestDto>(metadataRequestDto.Edges)
-            : new List<EdgeRequestDto>();
+            ? JsonSerialization.Deserialize<CreateEdgeRequestDto>(metadataRequestDto.Edges)
+            : new List<CreateEdgeRequestDto>();
         
         // Classes
         Dictionary<string, long> classMap = new();
@@ -129,6 +130,7 @@ public class MetadataBusiness : IMetadataBusiness
         Dictionary<string, long> recordMap = new();
         if (records.Any())
         {
+            Console.WriteLine("creating record map");
             recordMap = await BulkUpsertRecords(projectId, dataSourceId, records, metadataResponseDto);
             
             // Record Tags
@@ -159,15 +161,15 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="classes"></param>
     /// <param name="records"></param>
     /// <returns>A list of classes to be inserted</returns>
-    private List<ClassRequestDto> BuildClasses(
-        List<ClassRequestDto> classes,
+    private List<CreateClassRequestDto> BuildClasses(
+        List<CreateClassRequestDto> classes,
         List<CreateRecordRequestDto> records)
     {
         var dict = classes.ToDictionary(c => c.Name);
         foreach (var record in records)
         {
             if (!string.IsNullOrEmpty(record.ClassName))
-                dict.TryAdd(record.ClassName, new ClassRequestDto{Name = record.ClassName});
+                dict.TryAdd(record.ClassName, new CreateClassRequestDto{Name = record.ClassName});
         }
         return dict.Values.ToList();
     }
@@ -178,15 +180,15 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="relationships"></param>
     /// <param name="edges"></param>
     /// <returns>A list of relationships to be inserted</returns>
-    private List<RelationshipRequestDto> BuildRelationships(
-        List<RelationshipRequestDto> relationships,
-        List<EdgeRequestDto> edges)
+    private List<CreateRelationshipRequestDto> BuildRelationships(
+        List<CreateRelationshipRequestDto> relationships,
+        List<CreateEdgeRequestDto> edges)
     {
         var dict = relationships.ToDictionary(r => r.Name);
         foreach (var edge in edges)
         {
             if (!string.IsNullOrEmpty(edge.RelationshipName))
-                dict.TryAdd(edge.RelationshipName, new RelationshipRequestDto{Name = edge.RelationshipName});
+                dict.TryAdd(edge.RelationshipName, new CreateRelationshipRequestDto{Name = edge.RelationshipName});
         }
         return dict.Values.ToList();
     }
@@ -197,8 +199,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="tags"></param>
     /// <param name="records"></param>
     /// <returns>A list of tags to be inserted</returns>
-    private List<TagRequestDto> BuildTags(
-        List<TagRequestDto> tags,
+    private List<CreateTagRequestDto> BuildTags(
+        List<CreateTagRequestDto> tags,
         List<CreateRecordRequestDto> records)
     {
         var dict = tags.ToDictionary(r => r.Name);
@@ -206,7 +208,7 @@ public class MetadataBusiness : IMetadataBusiness
         {
             if (record.Tags == null) continue;
             foreach (var tag in record.Tags)
-                dict.TryAdd(tag, new TagRequestDto{Name = tag});
+                dict.TryAdd(tag, new CreateTagRequestDto{Name = tag});
         }
         return dict.Values.ToList();
     }
@@ -220,15 +222,54 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A list of relationships to be inserted</returns>
     private void CheckRecordsByOriginalId(
         Dictionary<string, long> recordMap,
-        List<EdgeRequestDto> edges)
+        List<CreateEdgeRequestDto> edges)
     {
+        // Check if recordMap is null
+        if (recordMap == null)
+        {
+            throw new ArgumentNullException(nameof(recordMap), "Record map cannot be null");
+        }
+
+        // Print the contents of recordMap for debugging
+        Console.WriteLine("Contents of recordMap:");
+        foreach (var kvp in recordMap)
+        {
+            Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
+        }
+
         var missingOriginalIds = new HashSet<string>();
+
+        // Check if edges are null or empty
+        if (edges == null || !edges.Any())
+        {
+            throw new ArgumentException("Edges cannot be null or empty", nameof(edges));
+        }
+
         foreach (var edge in edges)
         {
+            // Check for null or empty values for OriginOid and DestinationOid
+            if (string.IsNullOrEmpty(edge.OriginOid))
+            {
+                throw new ArgumentNullException("Origin ID cannot be null or empty");
+            }
+
+            if (string.IsNullOrEmpty(edge.DestinationOid))
+            {
+                throw new ArgumentNullException("Destination ID cannot be null or empty");
+            }
+
+            // Print the keys being checked
+            Console.WriteLine($"Checking Origin ID: {edge.OriginOid}, Destination ID: {edge.DestinationOid}");
+
+            // Check existence in the recordMap
             if (!recordMap.ContainsKey(edge.OriginOid))
+            {
                 missingOriginalIds.Add(edge.OriginOid);
+            }
             if (!recordMap.ContainsKey(edge.DestinationOid))
+            {
                 missingOriginalIds.Add(edge.DestinationOid);
+            }
         }
 
         if (missingOriginalIds.Any())
@@ -270,7 +311,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of class name to class ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertClasses(
         long projectId,
-        List<ClassRequestDto> classes,
+        List<CreateClassRequestDto> classes,
         MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _classBusiness.BulkCreateClasses(projectId, classes);
@@ -287,7 +328,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of relationship name to relationship ID</returns>
     private async Task<Dictionary<string, long>> BulkUpsertRelationships(
         long projectId,
-        List<RelationshipRequestDto> relationships,
+        List<CreateRelationshipRequestDto> relationships,
         MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _relationshipBusiness.BulkCreateRelationships(projectId, relationships);
@@ -304,7 +345,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>A mapping of tag name to tag ID</returns>
     private async Task<Dictionary<string, TagResponseDto>> BulkUpsertTags(
         long projectId,
-        List<TagRequestDto> tags,
+        List<CreateTagRequestDto> tags,
         MetadataResponseDto metadataResponseDto)
     {
         var inserted = await _tagBusiness.BulkCreateTags(projectId, tags);
@@ -358,7 +399,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="relMap"></param>
     /// <param name="recordMap"></param>
     private void UpdateEdgesWithIds(
-        List<EdgeRequestDto> edges, 
+        List<CreateEdgeRequestDto> edges, 
         Dictionary<string, long> relMap,
         Dictionary<string, long> recordMap)
     {
@@ -410,22 +451,6 @@ public class MetadataBusiness : IMetadataBusiness
                 .ToList();
         }
     }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-    }   
     
     /// <summary>
     /// Determine if datasource exists

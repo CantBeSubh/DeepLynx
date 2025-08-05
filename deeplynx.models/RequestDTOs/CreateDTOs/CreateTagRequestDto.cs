@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
     
 namespace deeplynx.models;
 
-public class TagRequestDto
+public class CreateTagRequestDto
 {
     [JsonPropertyName("name")]
     public string Name { get; set; }

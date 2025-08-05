@@ -143,7 +143,7 @@ namespace deeplynx.tests
         public async Task CreateTag_ValidDto_CreatesTag()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new CreateTagRequestDto
             {
                 Name = "Tag One"
             };
@@ -167,7 +167,7 @@ namespace deeplynx.tests
         public async Task CreateTag_SetsCreatedAtAndCreatedBy()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new CreateTagRequestDto
             {
                 Name = "Tag Timestamp Test"
             };
@@ -185,13 +185,13 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateTag_Success_OnBulkCreate()
         {
-            var tags = new List<TagRequestDto>
+            var tags = new List<CreateTagRequestDto>
             {
-                new TagRequestDto
+                new CreateTagRequestDto
                 {
                     Name = "Test Tag 1"
                 },
-                new TagRequestDto
+                new CreateTagRequestDto
                 {
                     Name = "Test Tag 2"
                 }
@@ -206,7 +206,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateTagRequest_Fails_IfNoName()
         { 
-            var dto = new TagRequestDto() { Name = null };
+            var dto = new CreateTagRequestDto() { Name = null };
             var result = () => _tagBusiness.CreateTag(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
         }
@@ -219,7 +219,7 @@ namespace deeplynx.tests
         public async Task UpdateTag_ValidUpdate_UpdatesTag()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new UpdateTagRequestDto
             {
                 Name = "Updated Test Tag"
             };
@@ -236,7 +236,43 @@ namespace deeplynx.tests
 
             // Verify it was actually updated in database
             var updatedTag = await Context.Tags.FindAsync(tid);
-            Assert.Equal("Updated Test Tag", updatedTag.Name);
+            Assert.Equal("Updated Test Tag", updatedTag?.Name);
+            Assert.NotNull(updatedTag?.ModifiedAt);
+        }
+
+        [Fact]
+        public async Task UpdateTag_PartialUpdate_UpdatesTag()
+        {
+            // Arrange
+            var originalTag = new Tag
+            {
+                Name = "Original Tag",
+                ProjectId = pid,
+                CreatedBy = "john.smith@company.com",
+            };
+
+            Context.Tags.Add(originalTag);
+            await Context.SaveChangesAsync();
+
+            var updateDto = new UpdateTagRequestDto
+            {
+                Name = "Updated Tag"
+            };
+
+            // Act
+            var result = await _tagBusiness.UpdateTag(pid, originalTag.Id, updateDto);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(originalTag.Id, result.Id);
+            Assert.Equal("Updated Tag", result.Name);
+            Assert.Equal(originalTag.CreatedBy, result.CreatedBy);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify it was actually updated in database
+            var updatedTag = await Context.Tags.FindAsync(originalTag.Id);
+            Assert.NotNull(updatedTag);
+            Assert.Equal("Updated Tag", updatedTag.Name);
             Assert.NotNull(updatedTag.ModifiedAt);
         }
 
@@ -244,7 +280,7 @@ namespace deeplynx.tests
         public async Task UpdateTag_NonExistentTag_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new UpdateTagRequestDto
             {
                 Name = "Update Test Tag"
             };
@@ -260,7 +296,7 @@ namespace deeplynx.tests
         public async Task UpdateTag_WrongProject_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new UpdateTagRequestDto
             {
                 Name = "Update Test"
             };
@@ -276,7 +312,7 @@ namespace deeplynx.tests
         public async Task UpdateTag_ArchivedTag_ThrowsKeyNotFoundException()
         {
             // Arrange
-            var dto = new TagRequestDto
+            var dto = new UpdateTagRequestDto
             {
                 Name = "Update Test"
             };
@@ -405,12 +441,12 @@ namespace deeplynx.tests
              // In a real scenario, you might want to test with actual concurrent tasks
 
              // Arrange
-             var dto1 = new TagRequestDto
+             var dto1 = new UpdateTagRequestDto
              {
                  Name = "Concurrent Tag Update 1"
              };
 
-             var dto2 = new TagRequestDto
+             var dto2 = new UpdateTagRequestDto
              {
                  Name = "Concurrent Tag Update 2"
              };
@@ -431,7 +467,7 @@ namespace deeplynx.tests
          public async Task TagOperations_SpecialCharactersInFields_HandlesCorrectly()
          {
              // Arrange
-             var dto = new TagRequestDto
+             var dto = new CreateTagRequestDto
              {
                  Name = "Test with émojis 🚀 and ñ special chars 中文"
              };
@@ -447,7 +483,7 @@ namespace deeplynx.tests
           public void TagRequestDto_AllProperties_CanBeSetAndRetrieved()
           {
               // Arrange & Act
-              var dto = new TagRequestDto
+              var dto = new CreateTagRequestDto
               {
                   Name = "Tag One"
               };

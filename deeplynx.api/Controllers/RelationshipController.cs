@@ -79,7 +79,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship", Name = "api_create_a_relationship")]
-        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] RelationshipRequestDto dto)
+        public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] CreateRelationshipRequestDto dto)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         [HttpPost("BulkCreateRelationships", Name = "api_create_many_relationships")]
         public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
             long projectId, 
-            [FromBody] List<RelationshipRequestDto> relationships)
+            [FromBody] List<CreateRelationshipRequestDto> relationships)
         {
             try
             {
@@ -127,7 +127,7 @@ namespace deeplynx.api.Controllers
         /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}", Name = "api_update_a_relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
-            [FromBody] RelationshipRequestDto dto)
+            [FromBody] UpdateRelationshipRequestDto dto)
         {
             try
             {
