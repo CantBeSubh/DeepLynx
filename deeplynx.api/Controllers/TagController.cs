@@ -102,7 +102,6 @@ public class TagController : ControllerBase
     [HttpPost("BulkCreateTag", Name = "api_create_many_tags")]
     public async Task<ActionResult<List<TagResponseDto>>> BulkCreateTag(
         long projectId, 
-        [FromBody] List<TagRequestDto> tagRequestDto)
         [FromBody] List<CreateTagRequestDto> tagRequestDto)
     {
         try
