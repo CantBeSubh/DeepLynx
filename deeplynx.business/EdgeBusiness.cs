@@ -34,7 +34,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? dataSourceId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
 
@@ -80,7 +80,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? destinationId, 
         bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         
         var edge = await FindEdge(edgeId, originId, destinationId);
         
@@ -122,8 +122,8 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         CreateEdgeRequestDto dto)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context,dataSourceId);
 
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
         {
@@ -169,8 +169,8 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         List<CreateEdgeRequestDto> edges)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
@@ -228,7 +228,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
@@ -275,7 +275,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId) 
@@ -301,7 +301,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -329,7 +329,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is null) 
@@ -391,22 +391,6 @@ public class EdgeBusiness : IEdgeBusiness
         }
         
         return edge;  
-    }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
     }
     
     /// <summary>

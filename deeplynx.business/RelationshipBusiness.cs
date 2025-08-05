@@ -35,7 +35,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <returns>A list of relationships</returns>
     public async Task<List<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var relationships = await _context.Relationships
             .Where(r => r.ProjectId == projectId)
             .Include(r => r.Origin)
@@ -89,7 +89,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found or is archived</exception>
     public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var relationship = await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.Id == relationshipId)
             .Include(r => r.Origin)
@@ -132,7 +132,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> CreateRelationship(long projectId, CreateRelationshipRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
         
         var existingRelationship = await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
@@ -217,7 +217,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         long projectId, 
         List<CreateRelationshipRequestDto> relationships)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         
         // Bulk insert into relationships; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -268,7 +268,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
@@ -321,7 +321,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId)
@@ -342,7 +342,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -386,7 +386,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> UnarchiveRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is null)
@@ -417,22 +417,5 @@ public class RelationshipBusiness: IRelationshipBusiness
             }
         }
     }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-    }
-    
     
 }

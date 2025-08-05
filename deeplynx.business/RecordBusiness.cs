@@ -35,7 +35,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<List<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var recordQuery = _context.Records
             .Where(r => r.ProjectId == projectId);
 
@@ -84,7 +84,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         
         var record = await _context.Records
             .Where(r => r.ProjectId == projectId && r.Id == recordId)
@@ -136,8 +136,8 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
-       DoesProjectExist(projectId);
-       DoesDataSourceExist(dataSourceId);
+       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
        ValidationHelper.ValidateModel(dto);
         
         if(dto.Properties == null)
@@ -199,8 +199,8 @@ public class RecordBusiness : IRecordBusiness
         long dataSourceId, 
         List<CreateRecordRequestDto> records)
     {
-       DoesProjectExist(projectId);
-       DoesDataSourceExist(dataSourceId);
+       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
 
        if (records.Count == 0)
        {
@@ -265,7 +265,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, UpdateRecordRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
         {
@@ -320,7 +320,7 @@ public class RecordBusiness : IRecordBusiness
     /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId)
@@ -341,7 +341,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
@@ -385,7 +385,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
     public async Task<bool> UnarchiveRecord(long projectId, long recordId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.ArchivedAt is null)
@@ -429,7 +429,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
     public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
@@ -462,7 +462,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
     public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
@@ -541,22 +541,6 @@ public class RecordBusiness : IRecordBusiness
         }
 
         return maxDepth + 1;
-    }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
     }
     
     /// <summary>
