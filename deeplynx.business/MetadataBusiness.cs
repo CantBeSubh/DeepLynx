@@ -2,6 +2,7 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using deeplynx.helpers.json;
+using deeplynx.helpers;
 
 namespace deeplynx.business;
 
@@ -51,8 +52,8 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
@@ -129,6 +130,7 @@ public class MetadataBusiness : IMetadataBusiness
         Dictionary<string, long> recordMap = new();
         if (records.Any())
         {
+            Console.WriteLine("creating record map");
             recordMap = await BulkUpsertRecords(projectId, dataSourceId, records, metadataResponseDto);
             
             // Record Tags
@@ -222,13 +224,52 @@ public class MetadataBusiness : IMetadataBusiness
         Dictionary<string, long> recordMap,
         List<EdgeRequestDto> edges)
     {
+        // Check if recordMap is null
+        if (recordMap == null)
+        {
+            throw new ArgumentNullException(nameof(recordMap), "Record map cannot be null");
+        }
+
+        // Print the contents of recordMap for debugging
+        Console.WriteLine("Contents of recordMap:");
+        foreach (var kvp in recordMap)
+        {
+            Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
+        }
+
         var missingOriginalIds = new HashSet<string>();
+
+        // Check if edges are null or empty
+        if (edges == null || !edges.Any())
+        {
+            throw new ArgumentException("Edges cannot be null or empty", nameof(edges));
+        }
+
         foreach (var edge in edges)
         {
+            // Check for null or empty values for OriginOid and DestinationOid
+            if (string.IsNullOrEmpty(edge.OriginOid))
+            {
+                throw new ArgumentNullException("Origin ID cannot be null or empty");
+            }
+
+            if (string.IsNullOrEmpty(edge.DestinationOid))
+            {
+                throw new ArgumentNullException("Destination ID cannot be null or empty");
+            }
+
+            // Print the keys being checked
+            Console.WriteLine($"Checking Origin ID: {edge.OriginOid}, Destination ID: {edge.DestinationOid}");
+
+            // Check existence in the recordMap
             if (!recordMap.ContainsKey(edge.OriginOid))
+            {
                 missingOriginalIds.Add(edge.OriginOid);
+            }
             if (!recordMap.ContainsKey(edge.DestinationOid))
+            {
                 missingOriginalIds.Add(edge.DestinationOid);
+            }
         }
 
         if (missingOriginalIds.Any())
@@ -410,22 +451,6 @@ public class MetadataBusiness : IMetadataBusiness
                 .ToList();
         }
     }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-    }   
     
     /// <summary>
     /// Determine if datasource exists
