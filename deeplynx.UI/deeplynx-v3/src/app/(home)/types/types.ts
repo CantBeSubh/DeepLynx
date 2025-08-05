@@ -8,12 +8,18 @@ export type DataSourceTableRow = {
     select?: boolean;
   };
 
+export type Tag = {
+  id?: number;
+  name: string
+}
+
+// TODO: change Tag[] to string[] and figure out how to display
 export type FileViewerTableRow = {
   id: number;
   uri?: string | null;
+  name?: string;
   properties?: string;
   originalId?: string;
-  name?: string;
   classId?: number;
   className?: string;
   mappingId?: string | null;
@@ -21,13 +27,14 @@ export type FileViewerTableRow = {
   dataSourceName?: string;
   projectId?: number;
   projectName?: string;
-  tags: string[];
+  tags: string;
   createdBy?: string | null;
-  createdAt?: string;
+  createdAt?: string | null;
   modifiedBy?: string | null;
   modifiedAt?: string | null;
   archivedAt?: string | null;
-  desc?: string;
+  lastUpdatedAt?: string;
+  description?: string;
   fileType: string;
   timeseries?: boolean;
   fileSize?: number;

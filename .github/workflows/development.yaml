@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       # Builds the required image
       - shell: bash
@@ -26,16 +24,28 @@ jobs:
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}
+          NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}
+          NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}
+          NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
+          touch .env.production
+          echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" >> .env.production
+          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" >> .env.production
+          echo "NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" >> .env.production
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
+         
+
   kubernetes:
     needs: build
     runs-on: [self-hosted]
@@ -44,8 +54,6 @@ jobs:
       # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       #Download kubectl
       - uses: azure/setup-kubectl@v3
@@ -62,7 +70,6 @@ jobs:
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml

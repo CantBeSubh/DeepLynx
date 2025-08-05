@@ -305,10 +305,10 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="projects">Array of project ids whose records are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetMultiProjectRecords(
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
         long[] projects, bool hideArchived)
     {
-        var recordQuery = _context.Records
+        var recordQuery = _context.HistoricalRecords
             .Where(r => projects.Contains(r.ProjectId));
 
         if (hideArchived)
@@ -317,13 +317,14 @@ public class ProjectBusiness : IProjectBusiness
         }
         
         var records = await recordQuery
-            .Include(r => r.Tags)
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
 
         return records
-            .Select(r => new RecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto()
             {
-                Id = r.Id,
+                Id = r.RecordId,
                 Description = r.Description,
                 Uri = r.Uri,
                 Properties = r.Properties,
@@ -337,11 +338,7 @@ public class ProjectBusiness : IProjectBusiness
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
-                Tags = r.Tags.Select(t => new RecordTagDto()
-                {
-                    Id = t.Id,
-                    Name = t.Name
-                }).ToList()
+                Tags = r.Tags
             });
     }
     

@@ -2622,36 +2622,94 @@ END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
-    UPDATE deeplynx.records SET original_id = '' WHERE original_id IS NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET NOT NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET DEFAULT '';
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE INDEX idx_tags_name ON deeplynx.tags (name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
-    UPDATE deeplynx.records SET name = '' WHERE name IS NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN name SET NOT NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN name SET DEFAULT '';
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE UNIQUE INDEX unique_tag_name ON deeplynx.tags (project_id, name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
-    UPDATE deeplynx.records SET description = '' WHERE description IS NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN description SET NOT NULL;
-    ALTER TABLE deeplynx.records ALTER COLUMN description SET DEFAULT '';
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE INDEX idx_relationships_name ON deeplynx.relationships (name);
     END IF;
 END $EF$;
 
 DO $EF$
 BEGIN
-    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729131213_RecordRequiredFields') THEN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE UNIQUE INDEX unique_relationship_name ON deeplynx.relationships (project_id, name);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE INDEX idx_classes_name ON deeplynx.classes (name);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
+    CREATE UNIQUE INDEX unique_class_name ON deeplynx.classes (project_id, name);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250724142725_AddUniqueNameConstraints') THEN
     INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-    VALUES ('20250729131213_RecordRequiredFields', '10.0.0-preview.5.25277.114');
+    VALUES ('20250724142725_AddUniqueNameConstraints', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN original_id SET NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN name SET NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    ALTER TABLE deeplynx.records ALTER COLUMN description SET NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    CREATE UNIQUE INDEX unique_record_original_id ON deeplynx.records (project_id, data_source_id, original_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    CREATE UNIQUE INDEX unique_edge_record_ids ON deeplynx.edges (project_id, origin_id, destination_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250729211405_RecordAndEdgeConstraints') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250729211405_RecordAndEdgeConstraints', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
 COMMIT;

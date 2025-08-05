@@ -1,17 +1,21 @@
 import React from "react";
-import { Column } from "@/app/(home)/types/types";
+import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { useRouter } from "next/navigation";
 
-type GridViewProps<T extends object> = {
-  columns: Column<T>[];
-  data: T[];
+type GridViewProps = {
+  columns: Column<FileViewerTableRow>[];
+  data: FileViewerTableRow[];
   activeSearchTerms?: string[];
+  selectedProjects?: string[];
 };
 
 const GridView = <T extends object>({
   columns,
   data,
   activeSearchTerms = [],
-}: GridViewProps<T>) => {
+  selectedProjects,
+}: GridViewProps) => {
+  const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
     if (!queries.length) return { content: safeText, matched: false };
@@ -39,6 +43,17 @@ const GridView = <T extends object>({
     return { content, matched: true };
   };
 
+  console.log("Returned Data", data);
+
+  const filteredRecords =
+    selectedProjects?.includes("All your Projects") || !selectedProjects
+      ? data
+      : data.filter(
+          (record) =>
+            record.projectId !== undefined &&
+            selectedProjects.includes(record.projectId?.toString())
+        );
+
   return (
     <div className="h-150 overflow-x-auto">
       <table className="table table-pin-rows table-pin-cols">
@@ -55,12 +70,10 @@ const GridView = <T extends object>({
           </tr>
         </thead>
         <tbody>
-          {data.map((row, rowIndex) => (
-            <tr key={rowIndex}>
+          {filteredRecords.map((row, rowIndex) => (
+            <tr key={rowIndex} className="cursor-pointer hover:bg-base-200/30">
               {columns.map((column, colIndex) => {
-                const rawValue = column.data
-                  ? (row[column.data as keyof T] as unknown)
-                  : "";
+                const rawValue = column.data ? row[column.data] : "";
 
                 return (
                   <td

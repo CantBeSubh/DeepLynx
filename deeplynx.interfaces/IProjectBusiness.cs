@@ -13,5 +13,5 @@ public interface IProjectBusiness
     Task<bool> ArchiveProject(long projectId);
     Task<bool> UnarchiveProject(long projectId);
     Task<ProjectStatResponseDto> GetProjectStats(long projectId);
-    Task<IEnumerable<RecordResponseDto>> GetMultiProjectRecords(long[] projects, bool hideArchived); 
+    Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(long[] projects, bool hideArchived); 
 }

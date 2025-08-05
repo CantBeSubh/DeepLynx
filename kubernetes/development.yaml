@@ -1,6 +1,6 @@
-apiVersion: v1  
-kind: Namespace  
-metadata:  
+apiVersion: v1
+kind: Namespace
+metadata:
   name: deeplynxv3-dev
   labels:
     name: deeplynxv3-dev
@@ -25,7 +25,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: ConnectionStrings__DefaultConnection
-              value: ${DATABASE_CONNECTION_STRING}
+              value: "${DATABASE_CONNECTION_STRING}"
             - name: POSTGRES_DBHOST
               value: ${POSTGRES_DBHOST}
             - name: POSTGRES_DB
@@ -42,6 +42,47 @@ spec:
               cpu: "1500m"
           ports:
             - containerPort: 3000
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deeplynxbackend
+  namespace: deeplynxv3-dev
+spec:
+  selector:
+    matchLabels:
+      app: deeplynxbackend
+  template:
+    metadata:
+      labels:
+        app: deeplynxbackend
+    spec:
+      containers:
+        - name: deeplynxv3
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-backend-${GITHUB_RUN_NUMBER}
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/entrypoint.sh"]
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              value: ${DATABASE_CONNECTION_STRING}
+            - name: POSTGRES_DBHOST
+              value: ${POSTGRES_DBHOST}
+            - name: POSTGRES_DB
+              value: ${POSTGRES_DB}
+            - name: POSTGRES_USER
+              value: ${POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              value: ${POSTGRES_PASSWORD}
+            - name: NEXT_PUBLIC_API_URL
+              value: ${NEXT_PUBLIC_API_URL}
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: "1500m"
+          ports:
+            - containerPort: 5000
+
 ---
 apiVersion: v1
 kind: Service
@@ -56,6 +97,22 @@ spec:
       targetPort: 3000
   selector:
     app: deeplynxv3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deeplynxv3-backend-service
+  namespace: deeplynxv3-dev
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+  selector:
+    app: deeplynxbackend
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -83,9 +140,16 @@ spec:
                 name: deeplynxv3-service
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-backend-service
+                port:
+                  number: 80
 ---
 # # Database if needed for deployment
-
+# Dummy change to force build.
 # apiVersion: apps/v1
 # kind: Deployment
 # metadata:
