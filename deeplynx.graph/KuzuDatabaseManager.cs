@@ -12,7 +12,7 @@ namespace deeplynx.graph
 {
     public class KuzuDatabaseManager : IKuzuDatabaseManager
     {
-        private readonly string _kuzuDbPath = "../deeplynx.graph/kuzu_db";
+        private readonly string _kuzuDbPath = Path.GetFullPath("../deeplynx.graph/kuzu_db");
         private kuzu_database? _db;
         private kuzu_connection? _conn;
         private bool _isDatabaseInitialized = false;
@@ -73,12 +73,6 @@ namespace deeplynx.graph
         /// <returns>A task representing the asynchronous connection operation.</returns>
         public async Task<bool> ConnectAsync()
         {
-            if (_conn != null)
-            {
-                Console.WriteLine("Already connected to Kuzu database.");
-                return true;
-            }
-            
             Console.WriteLine("Getting connect lock");
             await _connectionLock.WaitAsync();
             Console.WriteLine("Connect lock acquired");
@@ -188,7 +182,7 @@ namespace deeplynx.graph
                 if (projectIdExists)
                 {
                     Console.WriteLine($"Project ID {project_id} has already been processed. Skipping data load.");
-                    return true;
+                    return false;
                 }
 
                 await SetupKuzuTablesAsync();
@@ -204,7 +198,7 @@ namespace deeplynx.graph
                 if (!hasError)
                 {
                     Console.WriteLine("Data export completed.");
-                    return true;
+                    return false;
                 }
 
                 return hasError;
@@ -296,15 +290,15 @@ namespace deeplynx.graph
                             mapping_id INT64,
                             class_name STRING,
                             project_id INT64,
-                            project_name INT64,
-                            data_source_name INT64,
+                            project_name STRING,
+                            data_source_name STRING,
                             tags STRING,
                             created_by STRING,
                             created_at TIMESTAMP,
                             modified_by STRING,
                             modified_at TIMESTAMP,
                             archived_at TIMESTAMP,
-                            PRIMARY KEY (id)
+                            PRIMARY KEY (record_id)
                         );";
 
                     await PerformNonQueryAsync(createNodeTableQuery);
@@ -312,6 +306,11 @@ namespace deeplynx.graph
 
                 var relationships = await GetUniqueRelationshipNamesAsync();
                 var relationshipGroups = relationships.GroupBy(r => r.RelationshipName).ToList();
+
+                if (!relationshipGroups.Any())
+                {
+                    throw new InvalidOperationException("The edges_c view is empty.");
+                }
 
                 foreach (var group in relationshipGroups)
                 {
@@ -341,15 +340,15 @@ namespace deeplynx.graph
                         mapping_id INT64,
                         class_name STRING,
                         project_id INT64,
-                        project_name INT64,
-                        data_source_name INT64,
+                        project_name STRING,
+                        data_source_name STRING,
                         tags STRING,
                         created_by STRING,
                         created_at TIMESTAMP,
                         modified_by STRING,
                         modified_at TIMESTAMP,
                         archived_at TIMESTAMP,
-                        PRIMARY KEY (id)
+                        PRIMARY KEY (record_id)
                     );"
                 );
                 await CreateRelatesToTableAsync();
@@ -510,7 +509,7 @@ namespace deeplynx.graph
             try
             {
                 string query = $@"
-                MATCH (a:{request.TableName}) WHERE a.id = {request.Id}
+                MATCH (a:{request.TableName}) WHERE a.record_id = {request.Id}
                 MATCH (a)-[r*1..{request.Depth}]-(b)
                 RETURN
                     a AS Original_Node,
@@ -526,7 +525,7 @@ namespace deeplynx.graph
                 }
                 else
                 {
-                    return $"There are no relationships for the {request.TableName} with id {request.Id} that are in project your project.";
+                    return $"There are no relationships for the {request.TableName} with id {request.Id} that are in your project.";
                 }
 
             }
@@ -576,7 +575,7 @@ namespace deeplynx.graph
             {
                 await PerformNonQueryAsync($@"
                     COPY Entity FROM (LOAD FROM historical_records
-                        WHERE class_name IS NULL AND project_id = {project_id}
+                        WHERE class_name IS NULL AND project_id = {project_id} AND current = TRUE
                         RETURN
                             id,
                             uri,
@@ -607,7 +606,7 @@ namespace deeplynx.graph
                     string copyCommand = $@"
                         COPY {CapitalizeFirstLetter(className)} FROM (
                             LOAD FROM historical_records
-                            WHERE class_name = '{className}' AND project_id = {project_id}
+                            WHERE class_name = '{className}' AND project_id = {project_id} AND current = TRUE
                             RETURN
                                 id,
                                 uri,
