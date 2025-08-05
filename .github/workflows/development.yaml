@@ -4,40 +4,11 @@ on:
   push:
     branches: ["develop"]
 
-env:
-  ACR_SP_USER: ${{ secrets.CI_SP_USER }}
-  ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
-  ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
-  ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
-  ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
-  ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
-  GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-  OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-  OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-  OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
-  REDIRECT_LINK=: ${{ vars.REDIRECT_LINK }}
-  AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-  NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-
 jobs:
   build:
     # Checkout the repository
     runs-on: [self-hosted]
     environment: development
-    env:
-        ACR_SP_USER: ${{ secrets.CI_SP_USER }}
-        ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
-        ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
-        ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
-        ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
-        ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
-        GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-        OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-        OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-        OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
-        REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
-        AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-        NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -53,25 +24,27 @@ jobs:
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}
+          NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}
+          NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}
+          NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-          REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
+          NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
+          touch .env.production
+          echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" >> .env.production
+          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" >> .env.production
+          echo "NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" >> .env.production
+          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" >> .env.production
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
-          NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL}"
-          OKTA_CLIENT_ID="${OKTA_CLIENT_ID}"
-          OKTA_CLIENT_SECRET="${OKTA_CLIENT_SECRET}"
-          OKTA_ISSUER="${OKTA_ISSUER}"
-          REDIRECT_LINK="${REDIRECT_LINK}"
-          AUTH_SECRET="${AUTH_SECRET}"
+         
 
   kubernetes:
     needs: build
@@ -97,8 +70,6 @@ jobs:
           POSTGRES_DB: ${{ vars.POSTGRES_DB }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
-          REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml

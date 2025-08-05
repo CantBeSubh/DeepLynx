@@ -47,7 +47,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>A list of classes</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         
         var classes = await _context.Classes
             .Where(c => c.ProjectId == projectId).ToListAsync();
@@ -83,7 +83,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
     public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var newClass = await _context.Classes
             .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
@@ -119,9 +119,9 @@ public class ClassBusiness : IClassBusiness
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if class not found</exception>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<ClassResponseDto> CreateClass(long projectId, ClassRequestDto dto)
+    public async Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
 
         var newClass = new Class
@@ -161,9 +161,9 @@ public class ClassBusiness : IClassBusiness
     /// <param name="classes">A list of class data transfer object with details on the new class to be created.</param>
     /// <returns>The new class which was just created.</returns>
     /// <exception cref="Exception">Returned if class already exists</exception>
-    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<ClassRequestDto> classes)
+    public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classes)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -212,9 +212,9 @@ public class ClassBusiness : IClassBusiness
     /// <param name="dto">The class request data transfer object containing updated class details.</param>
     /// <returns>The updated class response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
-    public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, ClassRequestDto dto)
+    public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, UpdateClassRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var updatedClass = await _context.Classes.FindAsync(classId);
         if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.ArchivedAt is not null)
         {
@@ -222,9 +222,9 @@ public class ClassBusiness : IClassBusiness
         }
 
         updatedClass.ProjectId = projectId;
-        updatedClass.Name = dto.Name;
-        updatedClass.Description = dto.Description;
-        updatedClass.Uuid = dto.Uuid;
+        updatedClass.Name = dto.Name ?? updatedClass.Name;
+        updatedClass.Description = dto.Description ?? updatedClass.Description;
+        updatedClass.Uuid = dto.Uuid ?? updatedClass.Uuid;
         updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
 
@@ -275,7 +275,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
@@ -321,7 +321,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
     public async Task<bool> UnarchiveClass(long projectId, long classId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
@@ -363,7 +363,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>Class DTO of the found or created class</returns>
     public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
@@ -375,7 +375,7 @@ public class ClassBusiness : IClassBusiness
             };
         }
 
-        var classDto = new ClassRequestDto()
+        var classDto = new CreateClassRequestDto()
         {
             Name = className
         };
@@ -383,19 +383,4 @@ public class ClassBusiness : IClassBusiness
         return await CreateClass(projectId, classDto);
     }
     
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-    }
 }

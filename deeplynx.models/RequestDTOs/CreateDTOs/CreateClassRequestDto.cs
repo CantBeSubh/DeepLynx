@@ -3,19 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class RelationshipRequestDto
+public class CreateClassRequestDto
 {
     [Required]
     [JsonPropertyName("name")]
-    public string Name { get; set; } = null!;
+    public string Name { get; set; }
     [JsonPropertyName("description")]
     public string? Description { get; set; }
-    
-    
+    [JsonPropertyName("uuid")]
     public string? Uuid { get; set; }
-    
-    [JsonPropertyName("origin_id")]
-    public long? OriginId { get; set; }
-    [JsonPropertyName("destination_id")] 
-    public long? DestinationId { get; set; }
 }

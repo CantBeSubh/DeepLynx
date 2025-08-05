@@ -21,6 +21,9 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import { filterRecords } from "@/app/lib/filter_services";
+import ExpandableTagsCell from "./ExpandableTagCell";
+import Link from "next/link";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -76,6 +79,11 @@ const DataCatalogContent = () => {
 
   useEffect(() => {
     const fetchRecords = async () => {
+      // Only fetch original data if there are no active filters
+      if (activeFilters.length > 0) {
+        return;
+      }
+
       if (
         !hasLoaded ||
         selectedProjects.length === 0 ||
@@ -100,22 +108,51 @@ const DataCatalogContent = () => {
     hasLoaded,
     selectedProjects.join(","),
     projects.map((p) => p.id).join(","),
+    activeFilters.length, // Add this dependency so it refetches when filters are cleared
   ]);
 
-  const handleSearch = (value: string) => {
-    if (!value.trim() || activeFilters.some((f) => f.term === value.trim()))
+  const handleSearch = async (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed || activeFilters.some((f) => f.term === trimmed)) {
       return;
-    setActiveFilters([
-      ...activeFilters,
-      { id: nextFilterId, term: value.trim() },
-    ]);
-    setNextFilterId(nextFilterId + 1);
-    setSearchTerm("");
+    }
+
+    try {
+      const newFilters = [
+        ...activeFilters,
+        { id: nextFilterId, term: trimmed },
+      ];
+      const allSearchTerm = newFilters.map((f) => f.term);
+      const filteredData = await filterRecords(allSearchTerm);
+
+      setTableData(filteredData);
+      setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
+      setNextFilterId(nextFilterId + 1);
+      setSearchTerm("");
+      setShowAll(true);
+    } catch (error) {
+      console.error("Search error:", error);
+    }
   };
 
   const clearAllFilters = () => {
     setActiveFilters([]);
     setSearchTerm("");
+  };
+
+  const renderTags = (tags: string) => {
+    try {
+      const parsedTags: string[] = JSON.parse(tags);
+      return parsedTags
+        .filter((t: string) => t !== null && t !== undefined)
+        .map((t: string) => (
+          <span key={t} className="badge mr-1">
+            {t}
+          </span>
+        ));
+    } catch {
+      return null;
+    }
   };
 
   const selectedProjectIds: number[] = selectedProjects.map((id) => Number(id));
@@ -208,6 +245,7 @@ const DataCatalogContent = () => {
 
       {activeFilters.length > 0 || showAll ? (
         viewMode === "list" ? (
+          // TODO: populate list view appropriately
           <ListView
             data={tableData}
             activeSearchTerms={activeSearchTerms}
@@ -217,7 +255,21 @@ const DataCatalogContent = () => {
           <GridView
             columns={[
               { header: "ID", data: "id" },
-              { header: "Record Name", data: "name" },
+              {
+                header: "Record Name",
+                cell: (row) => (
+                  <>
+                    {/* {console.log("row for project id", row)} */}
+                    <Link
+                      href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
+                      className="text-base-content font-bold hover:underline"
+                    >
+                      {row.name}
+                    </Link>
+                  </>
+                ),
+              },
+              { header: "Description", data: "description" },
               {
                 header: "Class",
                 cell: (row) =>
@@ -227,17 +279,19 @@ const DataCatalogContent = () => {
               },
               {
                 header: "Tags",
-                cell: (row) => (
-                  <div>
-                    {row.tags?.map((t) => (
-                      <span key={t.name} className="badge mr-1">
-                        {t.name}
-                      </span>
-                    ))}
-                  </div>
-                ),
+                cell: (row) => {
+                  return renderTags(row.tags);
+                  // return activeFilters ? (
+                  //   <div>{renderTags(row.tags)}</div>
+                  // ) : (
+                  //   <ExpandableTagsCell tags={row.tags} />
+                  // );
+                },
               },
-              { header: "Last Edited", data: "modifiedAt" },
+              {
+                header: "Last Edited",
+                cell: (row) => row.modifiedAt ?? row.createdAt,
+              },
             ]}
             data={tableData}
             activeSearchTerms={activeSearchTerms}
