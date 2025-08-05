@@ -11,7 +11,6 @@ namespace deeplynx.datalayer.Models;
 [Index("Id", Name = "idx_historical_records_id")]
 [Index("RecordId", Name = "idx_historical_records_record_id")]
 [Index("ClassName", Name = "idx_historical_records_class_name")]
-[Index("Current", Name = "idx_historical_records_current")]
 [Index("LastUpdatedAt", Name = "idx_historical_records_last_updated_at")]
 public partial class HistoricalRecord
 {
@@ -60,9 +59,6 @@ public partial class HistoricalRecord
     
     [Column("tags", TypeName = "jsonb")]
     public string Tags { get; set; } = null!;
-    
-    [Column("current")]
-    public bool Current { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }

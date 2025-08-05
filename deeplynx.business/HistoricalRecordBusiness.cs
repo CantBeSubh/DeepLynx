@@ -31,8 +31,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         long projectId,
         long? dataSourceId = null,
         DateTime? pointInTime = null,
-        bool hideArchived = true,
-        bool current = true)
+        bool hideArchived = true)
     {
         var recordQuery = _context.HistoricalRecords
             .Where(r => r.ProjectId == projectId);
@@ -42,18 +41,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
         }
 
-        if (current)
-        {
-            recordQuery = recordQuery.Where(r => r.Current);
-        }
-
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
-        }
-
         // specification for "current" should override any supplied pointInTime
-        if (pointInTime.HasValue && !current)
+        if (pointInTime.HasValue)
         {
             // convert the point in time to timestamp without timezone
             var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
@@ -68,6 +57,11 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             .GroupBy(e => e.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
+
+        if (hideArchived && records.Count > 0)
+        {
+            records = records.Where(r => r.ArchivedAt == null).ToList();
+        }
 
         return records
             .Select(r => new HistoricalRecordResponseDto()
@@ -101,7 +95,13 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <returns>An array of record instances for the given record</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetHistoryForRecord(long recordId)
     {
-        return await _context.HistoricalRecords
+        var record = await _context.Records.FirstOrDefaultAsync(r => r.Id == recordId);
+        if (record == null)
+        { 
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+        
+        var historicalRecord = await _context.HistoricalRecords
             .Where(r => r.RecordId == recordId)
             .OrderByDescending(r => r.LastUpdatedAt)
             .Select(r => new HistoricalRecordResponseDto()
@@ -127,6 +127,11 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 LastUpdatedAt = r.LastUpdatedAt
             })
             .ToListAsync();
+        if (historicalRecord.Count == 0)
+        {
+            throw new Exception($"Record with id {recordId} exists but history was not found");
+        }
+        return historicalRecord;
     }
 
     /// <summary>
@@ -141,18 +146,13 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(
         long recordId,
         DateTime? pointInTime,
-        bool hideArchived = true,
-        bool current = false)
+        bool hideArchived = true)
     {
         var recordQuery = _context.HistoricalRecords
-            .Where(r => r.RecordId == recordId);
+            .Where(r => r.RecordId == recordId)
+            .OrderByDescending(r => r.LastUpdatedAt);
 
-        if (current)
-        {
-            recordQuery = recordQuery.Where(r => r.Current);
-        }
-
-        if (pointInTime.HasValue && !current)
+        if (pointInTime.HasValue)
         {
             // convert the point in time to timestamp without timezone
             var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
@@ -163,16 +163,16 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
 
-        if (hideArchived)
-        {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
-        }
-
         var record = await recordQuery.FirstOrDefaultAsync();
 
         if (record == null)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found at point in time {pointInTime}.");
+        }
+        
+        if (hideArchived && record.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
         }
 
         return new HistoricalRecordResponseDto()

@@ -170,7 +170,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         Context.Records.Add(testRecordLate);
         await Context.SaveChangesAsync();
         
-        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, firstPointInTime, false, false);
+        var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, firstPointInTime, false);
         historicalRecords.Should().NotBeNull();
         historicalRecords.Should().HaveCount(2);
         historicalRecords.Should().Contain(x => x.Name == "Test Record");
@@ -206,12 +206,11 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetHistoryForRecord_ReturnsEmptyList_WhenRecordDoesNotExist()
+    public async Task GetHistoryForRecord_ThrowsError_WhenRecordDoesNotExist()
     {
         await SeedTestDataAsync();
-        var historicalRecords = await _historicalRecordBusiness.GetHistoryForRecord(rid + 100000);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(0);
+        var historicalRecords = () => _historicalRecordBusiness.GetHistoryForRecord(rid + 100000);
+        await historicalRecords.Should().ThrowAsync<KeyNotFoundException>();
     }
 
     [Fact]
@@ -231,7 +230,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, true, true);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         historicalRecord.Should().NotBeNull();
         historicalRecord.Name.Should().Be("Updated Test Record");
     }
@@ -276,7 +275,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         await _recordBusiness.ArchiveRecord(pid, rid);
         
-        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false, true);
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
         historicalRecord.Should().NotBeNull();
         historicalRecord.Name.Should().Be("Updated Test Record");
         historicalRecord.ArchivedAt.Should().NotBeNull();
@@ -301,7 +300,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         await _recordBusiness.ArchiveRecord(pid, rid);
         
-        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid, null, true, true);
+        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     
