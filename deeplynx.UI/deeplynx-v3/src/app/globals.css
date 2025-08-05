@@ -138,3 +138,8 @@ body {
   background: #39526C;
   background: linear-gradient(180deg, rgba(57, 82, 108, 1) 0%, rgba(21, 34, 48, 1) 100%);
 }
+
+.grayed-out {
+  opacity: 0.5;
+  pointer-events: none;
+}

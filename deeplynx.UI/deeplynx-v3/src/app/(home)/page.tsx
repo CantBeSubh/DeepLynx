@@ -60,7 +60,7 @@ const Projects = () => {
 
       {/* Main Content */}
       <div className="flex w-full">
-        <div className="w-full md:w-1/2 px-4">
+        <div className={`w-full md:w-1/2 px-4 ${canCustomize ? "grayed-out" : ""}`}>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-info-content text-lg font-semibold">
               Your Projects

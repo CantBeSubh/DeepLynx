@@ -60,7 +60,7 @@ const ProjectDetailPage = () => {
         <div className="divider"></div>
 
         <div className="flex w-full">
-          <div className="w-full md:w-3/5 pr-4">
+          <div className={`w-full md:w-3/5 pr-4 ${canCustomize ? "grayed-out" : ""}`}>
             <div className="card shadow-md">
               <div className="card-body">
                 <div className="flex justify-between px-4">
