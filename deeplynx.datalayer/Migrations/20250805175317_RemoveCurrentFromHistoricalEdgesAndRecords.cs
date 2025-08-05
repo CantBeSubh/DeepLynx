@@ -104,11 +104,6 @@ namespace deeplynx.datalayer.Migrations
                 CREATE OR REPLACE FUNCTION deeplynx.update_historical_records_trigger()
                 RETURNS TRIGGER AS $$
                 BEGIN
-                    -- Update all other records with the same id to set current = false
-                    UPDATE deeplynx.historical_records
-                    SET current = FALSE
-                    WHERE record_id = NEW.id;
-
                     -- Insert the new historical record
                     INSERT INTO deeplynx.historical_records (
                         record_id, uri, name, description, properties, original_id, 
