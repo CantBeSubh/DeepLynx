@@ -79,11 +79,11 @@ namespace deeplynx.api.Controllers
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{UploadId}</returns>
         [HttpPost("start-upload", Name = "api_start_timeseries_upload")]
-        public IActionResult StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
+        public async Task<IActionResult> StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
             try
             {
-                var uploadId = _timeseriesBusiness.StartUpload(projectId, dataSourceId);
+                var uploadId = await _timeseriesBusiness.StartUpload(projectId, dataSourceId);
                 return Ok(new { UploadId = uploadId });
             }
             catch (Exception e)
