@@ -16,6 +16,7 @@ const CreateProject = ({
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
+  // TODO: Use the react hot toast ... it uses a lot less code
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     "success" | "error" | "info" | null

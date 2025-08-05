@@ -22,6 +22,8 @@ import {
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
 import { filterRecords } from "@/app/lib/filter_services";
+import ExpandableTagsCell from "./ExpandableTagCell";
+import Link from "next/link";
 
 const DataCatalogContent = () => {
   const router = useRouter();
@@ -140,12 +142,14 @@ const DataCatalogContent = () => {
 
   const renderTags = (tags: string) => {
     try {
-      const parsedTags = JSON.parse(tags);
-      return parsedTags?.map((t) => (
-        <span key={t.name} className="badge mr-1">
-          {t.name}
-        </span>
-      ));
+      const parsedTags: string[] = JSON.parse(tags);
+      return parsedTags
+        .filter((t: string) => t !== null && t !== undefined)
+        .map((t: string) => (
+          <span key={t} className="badge mr-1">
+            {t}
+          </span>
+        ));
     } catch {
       return null;
     }
@@ -251,7 +255,20 @@ const DataCatalogContent = () => {
           <GridView
             columns={[
               { header: "ID", data: "id" },
-              { header: "Record Name", data: "name" },
+              {
+                header: "Record Name",
+                cell: (row) => (
+                  <>
+                    {/* {console.log("row for project id", row)} */}
+                    <Link
+                      href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
+                      className="text-base-content font-bold hover:underline"
+                    >
+                      {row.name}
+                    </Link>
+                  </>
+                ),
+              },
               { header: "Description", data: "description" },
               {
                 header: "Class",
@@ -262,15 +279,18 @@ const DataCatalogContent = () => {
               },
               {
                 header: "Tags",
-                cell: (row) => (
-                  <div>
-                    {renderTags(row.tags)}
-                  </div>
-                ),
+                cell: (row) => {
+                  return renderTags(row.tags);
+                  // return activeFilters ? (
+                  //   <div>{renderTags(row.tags)}</div>
+                  // ) : (
+                  //   <ExpandableTagsCell tags={row.tags} />
+                  // );
+                },
               },
-              { 
-                header: "Last Edited", 
-                cell: (row) => row.modifiedAt ?? row.createdAt
+              {
+                header: "Last Edited",
+                cell: (row) => row.modifiedAt ?? row.createdAt,
               },
             ]}
             data={tableData}
