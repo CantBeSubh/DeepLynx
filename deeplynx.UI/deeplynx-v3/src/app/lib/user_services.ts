@@ -1,7 +1,11 @@
 import axios from "axios";
 import getConfig from 'next/config';
-const { publicRuntimeConfig } = getConfig();
-const issuer = publicRuntimeConfig.NEXT_PUBLIC_OKTA_ISSUER;
+
+const config = getConfig();
+console.log('Full config:', config);
+console.log('Public runtime config:', config?.publicRuntimeConfig);
+
+const issuer = process.env.NEXT_PUBLIC_OKTA_ISSUER;
 
 const API_BASE_URL = !process.env.NEXT_PUBLIC_API_URL ? '/api' : process.env.NEXT_PUBLIC_API_URL;
 
