@@ -53,7 +53,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, MetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
