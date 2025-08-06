@@ -236,7 +236,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     }
     
     [Fact]
-    public async Task GetHistoricalRecord_ReturnsFirstRecordByDefault()
+    public async Task GetHistoricalRecord_ReturnsMostRecentRecordByDefault()
     {
         await SeedTestDataAsync();
         
@@ -254,7 +254,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Test Record");
+        historicalRecord.Name.Should().Be("Updated Test Record");
     }
     
     [Fact]

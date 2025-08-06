@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250805175317_RemoveCurrentFromHistoricalEdgesAndRecords")]
-    partial class RemoveCurrentFromHistoricalEdgesAndRecords
+    [Migration("20250806142833_UpdateCurrentAndTagsForHistoricalEntities")]
+    partial class UpdateCurrentAndTagsForHistoricalEntities
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
