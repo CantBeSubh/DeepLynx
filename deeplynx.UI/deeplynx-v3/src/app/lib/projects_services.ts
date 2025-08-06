@@ -1,9 +1,7 @@
 import axios from "axios";
 
-const API_BASE_URL = !process.env.NEXT_PUBLIC_API_URL ? '/api' : process.env.NEXT_PUBLIC_API_URL;
-
 export const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
     withCredentials: true
 })
 
@@ -19,7 +17,7 @@ export const getAllProjects = async () => {
 
 export const getAllRecordsForMultipleProjects = async (projectIds: number[], hideArchived = true) => {
     try {
-        const query = projectIds    
+        const query = projectIds
             .map(id => `projects=${encodeURIComponent(id)}`)
             .join("&") + `&hideArchived=${hideArchived}`;
         const res = await api.get(`/projects/MultiProjectRecords?${query}`);
