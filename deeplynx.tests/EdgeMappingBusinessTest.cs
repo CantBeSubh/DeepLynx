@@ -47,7 +47,7 @@ namespace deeplynx.tests
         public async Task CreateEdgeMapping_Success_ReturnsIdAndCreatedAt()
         {
             var now = DateTime.UtcNow;
-            var dto = new EdgeMappingRequestDto
+            var dto = new CreateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"origin_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"destination_value\"}")!.AsObject(),
@@ -72,7 +72,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdgeMapping_Fails_IfNoProjectId()
         {
-            var dto = new EdgeMappingRequestDto
+            var dto = new CreateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"origin_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"destination_value\"}")!.AsObject(),
@@ -93,7 +93,7 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeMappingRequestDto
+            var dto = new CreateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"origin_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"destination_value\"}")!.AsObject(),
@@ -114,7 +114,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Create EdgeMapping for project 1
-            await _edgeMappingBusiness.CreateEdgeMapping(pid, new EdgeMappingRequestDto
+            await _edgeMappingBusiness.CreateEdgeMapping(pid, new CreateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"value1\"}")!.AsObject(),
             DestinationParams = JsonNode.Parse("{\"param1\": \"value1\"}")!.AsObject(),
@@ -380,7 +380,7 @@ namespace deeplynx.tests
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeMappingRequestDto
+            var dto = new UpdateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
@@ -399,7 +399,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateEdgeMapping_Fails_IfNotFound()
         {
-            var dto = new EdgeMappingRequestDto
+            var dto = new UpdateEdgeMappingRequestDto
             {
                 OriginParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
                 DestinationParams = JsonNode.Parse("{\"param1\": \"updated_value\"}")!.AsObject(),
@@ -581,7 +581,7 @@ namespace deeplynx.tests
             var originParams = JsonNode.Parse("{\"param1\": \"origin_value\"}")!.AsObject();
             var destinationParams = JsonNode.Parse("{\"param1\": \"destination_value\"}")!.AsObject();
 
-            var dto = new EdgeMappingRequestDto
+            var dto = new CreateEdgeMappingRequestDto
             {
                 OriginParams = originParams,
                 DestinationParams = destinationParams,

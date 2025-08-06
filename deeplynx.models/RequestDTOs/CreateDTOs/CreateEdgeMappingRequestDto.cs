@@ -3,7 +3,7 @@ using System.Text.Json.Nodes;
 
 namespace deeplynx.models;
 
-public class EdgeMappingRequestDto
+public class CreateEdgeMappingRequestDto
 {
     [Required]
     public JsonObject OriginParams { get; set; }

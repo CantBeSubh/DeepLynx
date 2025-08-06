@@ -6,7 +6,7 @@ namespace deeplynx.interfaces
     public interface ITimeseriesBusiness
     {
         Task<RecordResponseDto> UploadFile(long projectId, long datasourceId, IFormFile file);
-        string StartUpload(long projectId, long datasourceId);
+        Task<string> StartUpload(long projectId, long datasourceId);
 
         Task<string> UploadChunk(long projectId, long datasourceId, IFormFile chunk,
             string uploadId, int chunkNumber);

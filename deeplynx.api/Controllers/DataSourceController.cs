@@ -77,7 +77,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source</returns>
         [HttpPost("CreateDataSource", Name = "api_create_a_data_source")]
-        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] DataSourceRequestDto dto)
+        public async Task<ActionResult<DataSourceResponseDto>> CreateDataSource(long projectId, [FromBody] CreateDataSourceRequestDto dto)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<DataSourceResponseDto>> UpdateDataSource(
             long projectId,
             long dataSourceId,
-            [FromBody] DataSourceRequestDto dto)
+            [FromBody] UpdateDataSourceRequestDto dto)
         {
             try
             {

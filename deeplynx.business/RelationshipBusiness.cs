@@ -35,7 +35,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <returns>A list of relationships</returns>
     public async Task<List<RelationshipResponseDto>> GetAllRelationships(long projectId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var relationships = await _context.Relationships
             .Where(r => r.ProjectId == projectId)
             .Include(r => r.Origin)
@@ -89,7 +89,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found or is archived</exception>
     public async Task<RelationshipResponseDto> GetRelationship(long projectId, long relationshipId, bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var relationship = await _context.Relationships
             .Where(r => r.ProjectId == projectId && r.Id == relationshipId)
             .Include(r => r.Origin)
@@ -130,9 +130,9 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">A data transfer object with details on the new relationship to be created.</param>
     /// <returns>The new relationship which was just created.</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> CreateRelationship(long projectId, CreateRelationshipRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
         
         var existingRelationship = await _context.Relationships.FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Name == dto.Name);
@@ -215,9 +215,9 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
     public async Task<List<RelationshipResponseDto>> BulkCreateRelationships(
         long projectId, 
-        List<RelationshipRequestDto> relationships)
+        List<CreateRelationshipRequestDto> relationships)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         
         // Bulk insert into relationships; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -266,31 +266,32 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="dto">The relationship request data transfer object containing updated relationship details.</param>
     /// <returns>The updated relationship response DTO with its details</returns>
     /// <exception cref="KeyNotFoundException">Returned if relationship or origin/destination classes not found</exception>
-    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, RelationshipRequestDto dto)
+    public async Task<RelationshipResponseDto> UpdateRelationship(long projectId, long relationshipId, UpdateRelationshipRequestDto dto)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
-        
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
+
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.OriginId ?? relationship.OriginId) && c.ArchivedAt == null);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
+
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.DestinationId ?? relationship.DestinationId) && c.ArchivedAt == null);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
         }
         
-        relationship.Name = dto.Name;
-        relationship.Description = dto.Description;
-        relationship.Uuid = dto.Uuid;
-        relationship.OriginId = dto.OriginId;
-        relationship.DestinationId = dto.DestinationId;
+        relationship.Name = dto.Name ?? relationship.Name;
+        relationship.Description = dto.Description ?? relationship.Description;
+        relationship.Uuid = dto.Uuid ?? relationship.Uuid;
+        relationship.OriginId = dto.OriginId ?? relationship.OriginId;
+        relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
         relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);
@@ -320,7 +321,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> DeleteRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId)
@@ -341,7 +342,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> ArchiveRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
@@ -385,7 +386,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <exception cref="KeyNotFoundException">Returned if relationship not found</exception>
     public async Task<bool> UnarchiveRelationship(long projectId, long relationshipId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
         if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is null)
@@ -416,22 +417,5 @@ public class RelationshipBusiness: IRelationshipBusiness
             }
         }
     }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
-    }
-    
     
 }
