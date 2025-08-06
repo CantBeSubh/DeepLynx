@@ -10,7 +10,6 @@ public class MetadataBusiness : IMetadataBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IClassBusiness _classBusiness;
-    private readonly IServiceProvider _provider;
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly ITagBusiness _tagBusiness;
     private readonly IRecordBusiness _recordBusiness;
@@ -27,7 +26,6 @@ public class MetadataBusiness : IMetadataBusiness
     /// <param name="edgeBusiness">The edge context to be used during metadata parsing.</param>
     public MetadataBusiness(
         DeeplynxContext context, 
-        IServiceProvider provider,
         IClassBusiness classBusiness,
         IRelationshipBusiness relationshipBusiness,
         ITagBusiness tagBusiness,
@@ -36,7 +34,6 @@ public class MetadataBusiness : IMetadataBusiness
         )
     {
         _context = context;
-        _provider = provider;
         _classBusiness = classBusiness;
         _relationshipBusiness = relationshipBusiness;
         _tagBusiness = tagBusiness;
