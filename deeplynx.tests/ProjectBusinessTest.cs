@@ -34,7 +34,7 @@ namespace deeplynx.tests
         {
             
             var now = DateTime.UtcNow;
-            var dto = new ProjectRequestDto
+            var dto = new CreateProjectRequestDto
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
@@ -42,7 +42,7 @@ namespace deeplynx.tests
             };
 
         
-            _classBusiness.Setup(x => x.CreateClass(It.IsAny<long>(), It.IsAny<ClassRequestDto>()))
+            _classBusiness.Setup(x => x.CreateClass(It.IsAny<long>(), It.IsAny<CreateClassRequestDto>()))
                 .ReturnsAsync(new ClassResponseDto { Id = 1, Name = "MockClass" });
 
            
@@ -55,16 +55,16 @@ namespace deeplynx.tests
             result.Abbreviation.Should().Be(dto.Abbreviation);
 
             _classBusiness.Verify(x => x.CreateClass(It.IsAny<long>(),
-                It.Is<ClassRequestDto>(c => c.Name == "Timeseries")), Times.Once);
+                It.Is<CreateClassRequestDto>(c => c.Name == "Timeseries")), Times.Once);
             _classBusiness.Verify(x => x.CreateClass(It.IsAny<long>(),
-                It.Is<ClassRequestDto>(c => c.Name == "Report")), Times.Once);
+                It.Is<CreateClassRequestDto>(c => c.Name == "Report")), Times.Once);
         }
 
         [Fact]
         public async Task CreateProject_Fails_IfNoName()
         {
            
-            var dto = new ProjectRequestDto { Name = null!, Description = "Test Description" };
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
 
            
             var result = () => _projectBusiness.CreateProject(dto);
@@ -75,7 +75,7 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfEmptyName()
         {
             
-            var dto = new ProjectRequestDto { Name = "", Description = "Test Description" };
+            var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description" };
 
            
             var result = () => _projectBusiness.CreateProject(dto);
@@ -175,7 +175,7 @@ namespace deeplynx.tests
             // Add delay to ensure ModifiedAt is after CreatedAt
             await Task.Delay(100);
 
-            var dto = new ProjectRequestDto
+            var dto = new UpdateProjectRequestDto
             {
                 Name = $"Updated Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Updated Description",
@@ -196,7 +196,7 @@ namespace deeplynx.tests
         public async Task UpdateProject_Fails_IfNotFound()
         {
             
-            var dto = new ProjectRequestDto
+            var dto = new UpdateProjectRequestDto
             {
                 Name = "Updated Project",
                 Description = "Updated Description",
@@ -458,7 +458,7 @@ namespace deeplynx.tests
         public void ProjectRequestDto_AllProperties_CanBeSetAndRetrieved()
         {
           
-            var dto = new ProjectRequestDto
+            var dto = new CreateProjectRequestDto
             {
                 Name = "Test Project",
                 Description = "Test Description",
@@ -517,7 +517,6 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestProjectId = testProject.Id;
 
-            // Create test class
             var testClass = new Class
             {
                 Name = "Test Class",
@@ -527,8 +526,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
             TestClassId = testClass.Id;
-
-            // Create test data source
+            
             var testDataSource = new DataSource
             {
                 Name = "Test DataSource",
@@ -538,8 +536,7 @@ namespace deeplynx.tests
             Context.DataSources.Add(testDataSource);
             await Context.SaveChangesAsync();
             TestDataSourceId = testDataSource.Id;
-
-            // Create test records
+            
             var testRecord = new Record
             {
                 Name = "Test Record",
