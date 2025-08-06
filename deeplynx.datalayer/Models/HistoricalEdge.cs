@@ -13,7 +13,6 @@ namespace deeplynx.datalayer.Models;
 [Index("EdgeId", Name = "idx_historical_edges_edge_id")]
 [Index("RelationshipName", Name = "idx_historical_edges_relationship_name")]
 [Index("Id", Name = "idx_historical_edges_id")]
-[Index("Current", Name = "idx_historical_edges_current")]
 [Index("LastUpdatedAt", Name = "idx_historical_edges_last_updated_at")]
 public partial class HistoricalEdge
 {
@@ -51,9 +50,6 @@ public partial class HistoricalEdge
 
     [Column("project_name")]
     public string ProjectName { get; set; }
-    
-    [Column("current")]
-    public bool Current { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }
