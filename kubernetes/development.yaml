@@ -34,8 +34,38 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            # Runtime environment variables from secrets (sensitive)
+            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: okta-client-secret
+            - name: NEXT_PUBLIC_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: auth-secret
+            # Runtime environment variables from configmap (non-sensitive)
+            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-client-id
+            - name: NEXT_PUBLIC_OKTA_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-issuer
             - name: NEXT_PUBLIC_API_URL
-              value: ${NEXT_PUBLIC_API_URL}
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: api-url
+            - name: NEXT_PUBLIC_REDIRECT_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: redirect-link
           resources:
             limits:
               memory: "4Gi"
@@ -74,8 +104,37 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            # Backend may also need these environment variables
+            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: okta-client-secret
+            - name: NEXT_PUBLIC_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: auth-secret
+            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-client-id
+            - name: NEXT_PUBLIC_OKTA_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-issuer
             - name: NEXT_PUBLIC_API_URL
-              value: ${NEXT_PUBLIC_API_URL}
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: api-url
+            - name: NEXT_PUBLIC_REDIRECT_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: redirect-link
           resources:
             limits:
               memory: "4Gi"

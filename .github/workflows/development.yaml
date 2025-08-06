@@ -59,6 +59,36 @@ jobs:
       #Download kubectl
       - uses: azure/setup-kubectl@v3
 
+      # Initializes the kube context, introducing kubectl to the cluster
+      - uses: azure/k8s-set-context@v3
+        name: Configure K8s
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
+          context: deploy-service-account
+
+      # Create Kubernetes Secrets for sensitive environment variables
+      - shell: bash
+        name: Create Kubernetes Secrets
+        run: |
+          kubectl create secret generic app-secrets \
+            --from-literal=okta-client-secret="${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" \
+            --from-literal=auth-secret="${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" \
+            --namespace=deeplynxv3-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # Create Kubernetes ConfigMap for non-sensitive environment variables
+      - shell: bash
+        name: Create Kubernetes ConfigMap
+        run: |
+          kubectl create configmap app-config \
+            --from-literal=okta-client-id="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
+            --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
+            --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --namespace=deeplynxv3-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       # Overwrites ${VARIABLES} in the kube manifest with secrets
       - shell: bash
         name: Manifest env substitute
@@ -74,13 +104,6 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
-      # Initializes the kube context, introducing kubectl to the cluster
-      - uses: azure/k8s-set-context@v3
-        name: Configure K8s
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
-          context: deploy-service-account
 
       # Deploys the kube manifest
       - uses: Azure/k8s-deploy@v4
