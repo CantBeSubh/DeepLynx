@@ -116,16 +116,6 @@ namespace deeplynx.datalayer.Migrations
               EXECUTE FUNCTION deeplynx.delete_recordtag_historical_record_trigger();
           ");
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
             // method to automatically set modified_at when we make updates to rows
             migrationBuilder.Sql(@"
                 CREATE OR REPLACE FUNCTION deeplynx.update_modified_at()

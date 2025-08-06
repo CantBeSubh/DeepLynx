@@ -25,7 +25,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="pointInTime">(Optional) Find the most current records that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
-    /// <param name="current">(Optional) Find only the most current records. Overrides point in time.</param>
     /// <returns>An array of records</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetAllHistoricalRecords(
         long projectId,
@@ -57,7 +56,9 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             .GroupBy(e => e.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
-
+        
+        // need to check for archived at after DB retrieval since filtering archived results before querying could
+        // result in inaccurate "most recent" results if a record has been archived
         if (hideArchived && records.Count > 0)
         {
             records = records.Where(r => r.ArchivedAt == null).ToList();
@@ -142,7 +143,6 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
     /// <param name="recordId">The ID of the record to retrieve</param>
     /// <param name="pointInTime">(Optional) Find the most current record that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result.</param>
-    /// <param name="current">(Optional) Find only the most current record. Overrides point in time.</param>
     /// <returns>A record that matches the applied filters.</returns>
     /// <exception cref="KeyNotFoundException">Returned if record not found</exception>
     public async Task<HistoricalRecordResponseDto> GetHistoricalRecord(

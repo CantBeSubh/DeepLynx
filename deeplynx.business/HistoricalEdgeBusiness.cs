@@ -25,7 +25,6 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <param name="pointInTime">(Optional) Find the most current edges that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
-    /// <param name="current">(Optional) Find only the most current edges. Overrides point in time.</param>
     /// <returns>An array of edges</returns>
     /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetAllHistoricalEdges(
@@ -58,7 +57,9 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             .GroupBy(e => e.EdgeId)
             .Select(g => g.OrderByDescending(e => e.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
-
+        
+        // Need to check for ArchivedAt after DB retrieval since filtering archived results before querying could
+        // result in inaccurate "most recent" results if an edge has been archived
         if (hideArchived && edges.Count > 0)
         {
             edges = edges.Where(e => e.ArchivedAt == null).ToList();
@@ -131,7 +132,6 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <param name="pointInTime">(Optional) Find the most current edge that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
-    /// <param name="current">(Optional) Find only the most current edge. Overrides point in time.</param>
     /// <returns>An edge that matches the applied filters.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found</exception>
     /// /// TODO: create an endpoint for this
