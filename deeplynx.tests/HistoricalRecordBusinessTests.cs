@@ -21,17 +21,9 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public long pid2;
     public long did;
     public long did2;
-    public long did3;
     public long cid;
-    public long cid2;
     public long rid;
     public long rid2;
-    public long tid;
-    public long hr;
-    public long hr2;
-    public long hr3;
-    public long hr4;
-    public long hr5;
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     
@@ -393,7 +385,6 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await Context.SaveChangesAsync();
         did = dataSource.Id;
         did2 = dataSource2.Id;
-        did3 = dataSource3.Id;
         
         var testClass = new Class
         {
@@ -414,7 +405,6 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         Context.Classes.Add(testClass2);
         await Context.SaveChangesAsync();
         cid = testClass.Id;
-        cid2 = testClass2.Id;
 
         var testTag = new Tag
         {
@@ -493,105 +483,5 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         rid =  testRecord.Id;
         rid2 = testRecord2.Id;
-        tid = testTag.Id;
-
-        // var historicalRecord = new HistoricalRecord
-        // {
-        //     RecordId = rid,
-        //     Name = "Test Historical Record",
-        //     Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
-        //     ProjectId = project.Id,
-        //     ProjectName = project.Name,
-        //     DataSourceId = dataSource.Id,
-        //     DataSourceName = dataSource.Name,
-        //     ClassId = testClass.Id,
-        //     ClassName = testClass.Name,
-        //     CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     Tags =  JsonSerializer.Serialize(testTag.Name),
-        //     Current = true,
-        //     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        // };
-        //
-        // var historicalRecord2 = new HistoricalRecord
-        // {
-        //     RecordId = rid,
-        //     Name = "Test Historical Record 2",
-        //     Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue 2" }),
-        //     ProjectId = project.Id,
-        //     ProjectName = project.Name,
-        //     DataSourceId = dataSource.Id,
-        //     DataSourceName = dataSource.Name,
-        //     ClassId = testClass.Id,
-        //     ClassName = testClass.Name,
-        //     CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     Tags =  JsonSerializer.Serialize(testTag.Name),
-        //     Current = false,
-        //     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        // };
-        //
-        // var historicalRecord3 = new HistoricalRecord
-        // {
-        //     RecordId = rid2,
-        //     Name = "Test Historical Record 3",
-        //     Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue 3" }),
-        //     ProjectId = project.Id,
-        //     ProjectName = project.Name,
-        //     DataSourceId = dataSource.Id,
-        //     DataSourceName = dataSource.Name,
-        //     ClassId = testClass.Id,
-        //     ClassName = testClass.Name,
-        //     CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     Tags =  JsonSerializer.Serialize(testTag.Name),
-        //     Current = true,
-        //     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        // };
-        //
-        // var historicalRecord4 = new HistoricalRecord
-        // {
-        //     RecordId = rid2,
-        //     Name = "Test Historical Record 4",
-        //     Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue 4" }),
-        //     ProjectId = project.Id,
-        //     ProjectName = project.Name,
-        //     DataSourceId = dataSource.Id,
-        //     DataSourceName = dataSource.Name,
-        //     ClassId = testClass.Id,
-        //     ClassName = testClass.Name,
-        //     CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     Tags =  JsonSerializer.Serialize(testTag.Name),
-        //     Current = false,
-        //     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        // };
-        //
-        // var historicalRecord5 = new HistoricalRecord
-        // {
-        //     RecordId = rid2,
-        //     Name = "Test Historical Record 5",
-        //     Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue 5" }),
-        //     ProjectId = project.Id,
-        //     ProjectName = project.Name,
-        //     DataSourceId = dataSource.Id,
-        //     DataSourceName = dataSource.Name,
-        //     ClassId = testClass.Id,
-        //     ClassName = testClass.Name,
-        //     CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     Tags =  JsonSerializer.Serialize(testTag.Name),
-        //     Current = false,
-        //     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        //     ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        // };
-        //
-        // Context.HistoricalRecords.Add(historicalRecord);
-        // Context.HistoricalRecords.Add(historicalRecord2);
-        // Context.HistoricalRecords.Add(historicalRecord3);
-        // Context.HistoricalRecords.Add(historicalRecord4);
-        // Context.HistoricalRecords.Add(historicalRecord5);
-        // await Context.SaveChangesAsync();
-        // hr = historicalRecord.Id;
-        // hr2 = historicalRecord2.Id;
-        // hr3 = historicalRecord3.Id;
-        // hr4 = historicalRecord4.Id;
-        // hr5 = historicalRecord5.Id;
-        
     }
 }

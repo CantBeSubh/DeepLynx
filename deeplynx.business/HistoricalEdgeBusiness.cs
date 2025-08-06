@@ -41,11 +41,6 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         {
             edgeQuery = edgeQuery.Where(e => e.DataSourceId == dataSourceId);
         }
-
-        if (hideArchived)
-        {
-            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
-        }
         
         // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue)
@@ -151,7 +146,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         var foundEdgeId = foundEdge.EdgeId;
         
         var edgeQuery = _context.HistoricalEdges
-            .Where(e => e.EdgeId == foundEdgeId);
+            .Where(e => e.EdgeId == foundEdgeId)
+            .OrderByDescending(e => e.LastUpdatedAt);
 
         // specification for "current" should override any supplied pointInTime
         if (pointInTime.HasValue)
