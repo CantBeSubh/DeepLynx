@@ -31,6 +31,21 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
+          # Print all environment variables
+          echo "ACR_SP_USER=$ACR_SP_USER"
+          echo "ACR_SP_PASSWORD=$ACR_SP_PASSWORD"
+          echo "ACR_REGISTRY=$ACR_REGISTRY"
+          echo "ACR_PATH=$ACR_PATH"
+          echo "ACR_SP_TENANT=$ACR_SP_TENANT"
+          echo "ACR_SUBSCRIPTION=$ACR_SUBSCRIPTION"
+          echo "GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER"
+          echo "NEXT_PUBLIC_OKTA_CLIENT_ID=$NEXT_PUBLIC_OKTA_CLIENT_ID"
+          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=$NEXT_PUBLIC_OKTA_CLIENT_SECRET"
+          echo "NEXT_PUBLIC_OKTA_ISSUER=$NEXT_PUBLIC_OKTA_ISSUER"
+          echo "NEXT_PUBLIC_AUTH_SECRET=$NEXT_PUBLIC_AUTH_SECRET"
+          echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL"
+          echo "NEXT_PUBLIC_REDIRECT_LINK=$NEXT_PUBLIC_REDIRECT_LINK"
+          
           touch .env.production
           echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" >> .env.production
           echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" >> .env.production
@@ -44,7 +59,6 @@ jobs:
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
-         
 
   kubernetes:
     needs: build
@@ -71,8 +85,19 @@ jobs:
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
+          # Print all environment variables
+          echo "CI_REGISTRY=$CI_REGISTRY"
+          echo "CI_REGISTRY_PATH=$CI_REGISTRY_PATH"
+          echo "GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER"
+          echo "DATABASE_CONNECTION_STRING=$DATABASE_CONNECTION_STRING"
+          echo "POSTGRES_DBHOST=$POSTGRES_DBHOST"
+          echo "POSTGRES_DB=$POSTGRES_DB"
+          echo "POSTGRES_USER=$POSTGRES_USER"
+          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
+          
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
+
       # Initializes the kube context, introducing kubectl to the cluster
       - uses: azure/k8s-set-context@v3
         name: Configure K8s
