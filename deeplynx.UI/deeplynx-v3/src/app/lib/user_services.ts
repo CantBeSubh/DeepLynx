@@ -8,7 +8,7 @@ export const api = axios.create({
 })
 
 export const getDataOverview = async (userId: string) => {
-    console.log(process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_OKTA_ISSUER)
+    console.log("api_url", process.env.NEXT_PUBLIC_API_URL, "okta issuer", process.env.NEXT_PUBLIC_OKTA_ISSUER)
     try {
         const res = await api.get(`/user/GetDataOverview/${userId}`);
         return res.data;
