@@ -202,3 +202,16 @@ This can be done after you've made your migration to verify that the changes are
 ```
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
+
+### Removing a migration
+
+If you have already applied the migration, you need to run an update pointing to the migration before the one you want to remove:
+```
+dotnet ef database update <MigrationToRollBackTo> -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
+```
+
+Next, you need to run the remove command. This will remove the most recent migration, so the number of remove commands
+should be equal to the number of migrations you want to remove
+```
+dotnet ef migrations remove -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
+```
