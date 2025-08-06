@@ -67,6 +67,13 @@ RUN rm -rf node_modules package-lock.json
 RUN npm install
 RUN npm run build
 
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
+ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NODE_ENV=${NODE_ENV}
+
+
 # Set the command point to run the application
 # Currently overriden by entrypoint.sh
 CMD ["npm", "start"]

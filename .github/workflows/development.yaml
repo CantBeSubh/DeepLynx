@@ -31,6 +31,13 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
+          # Print out the environment variables to ensure they are set correctly
+          echo "ACR_SP_USER: $ACR_SP_USER"
+          echo "ACR_REGISTRY: $ACR_REGISTRY"
+          echo "NEXT_PUBLIC_OKTA_CLIENT_ID: $NEXT_PUBLIC_OKTA_CLIENT_ID"
+          echo "NEXT_PUBLIC_OKTA_ISSUER: $NEXT_PUBLIC_OKTA_ISSUER"
+          echo "NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
+
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
@@ -50,7 +57,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      #Download kubectl
+      # Download kubectl
       - uses: azure/setup-kubectl@v3
 
       # Initializes the kube context, introducing kubectl to the cluster
@@ -60,6 +67,16 @@ jobs:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
           context: deploy-service-account
+
+      # Print out the environment variables for Kubernetes secrets
+      - name: Print Kubernetes Secrets Environment Variables
+        run: |
+          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}"
+          echo "NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}"
+          echo "NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}"
+          echo "NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}"
+          echo "NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}"
+          echo "NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}"
 
       # Create Kubernetes Secrets for sensitive environment variables
       - shell: bash

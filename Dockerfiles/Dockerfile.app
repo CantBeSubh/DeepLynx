@@ -59,6 +59,11 @@ COPY --from=frontend-build /app/package.json ./package.json
 
 RUN npm install --production
 
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=$NEXT_PUBLIC_OKTA_CLIENT_ID
+ENV NEXT_PUBLIC_OKTA_ISSUER=$NEXT_PUBLIC_OKTA_ISSUER
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Set the command point to run the application
 # Currently overriden by entrypoint.sh
 CMD [ "npm", "start" ]

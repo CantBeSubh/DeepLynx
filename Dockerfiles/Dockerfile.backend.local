@@ -69,4 +69,9 @@ COPY --from=publish /app/publish .
 COPY database /database
 COPY deeplynx.api/moon.css /app/backend/moon.css
 
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=$NEXT_PUBLIC_OKTA_CLIENT_ID
+ENV NEXT_PUBLIC_OKTA_ISSUER=$NEXT_PUBLIC_OKTA_ISSUER
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 CMD [ "dotnet", "run" ]
