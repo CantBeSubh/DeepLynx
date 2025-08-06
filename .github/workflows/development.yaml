@@ -6,7 +6,6 @@ on:
 
 jobs:
   build:
-    # Checkout the repository
     runs-on: [self-hosted]
     environment: development
     steps:
@@ -37,23 +36,35 @@ jobs:
           echo "NEXT_PUBLIC_OKTA_CLIENT_ID: $NEXT_PUBLIC_OKTA_CLIENT_ID"
           echo "NEXT_PUBLIC_OKTA_ISSUER: $NEXT_PUBLIC_OKTA_ISSUER"
           echo "NEXT_PUBLIC_API_URL: $NEXT_PUBLIC_API_URL"
+          echo "NEXT_PUBLIC_REDIRECT_LINK: $NEXT_PUBLIC_REDIRECT_LINK"
 
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
+          
+          # Build the Docker images and pass the environment variables as build arguments
           az acr build --registry $ACR_REGISTRY \
             --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
             --file Dockerfiles/Dockerfile.app \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
             .
-          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
+          
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
+            .
 
   kubernetes:
     needs: build
     runs-on: [self-hosted]
     environment: development
     steps:
-      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
 

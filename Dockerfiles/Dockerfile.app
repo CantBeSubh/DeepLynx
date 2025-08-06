@@ -1,5 +1,18 @@
 # Stage 1: Download dependencies
 FROM node:lts-alpine3.20 AS dependencies
+
+# Define build arguments
+ARG NEXT_PUBLIC_OKTA_CLIENT_ID
+ARG NEXT_PUBLIC_OKTA_ISSUER
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_REDIRECT_LINK
+
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
+ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
+
 WORKDIR /app
 
 # Copy package.json and package-lock.json
@@ -58,11 +71,6 @@ COPY --from=frontend-build /app/.next ./.next
 COPY --from=frontend-build /app/package.json ./package.json
 
 RUN npm install --production
-
-# Set environment variables
-ENV NEXT_PUBLIC_OKTA_CLIENT_ID=$NEXT_PUBLIC_OKTA_CLIENT_ID
-ENV NEXT_PUBLIC_OKTA_ISSUER=$NEXT_PUBLIC_OKTA_ISSUER
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Set the command point to run the application
 # Currently overriden by entrypoint.sh
