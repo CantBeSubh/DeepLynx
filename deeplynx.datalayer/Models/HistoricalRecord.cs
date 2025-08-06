@@ -58,7 +58,7 @@ public partial class HistoricalRecord
     public string ProjectName { get; set; }
     
     [Column("tags", TypeName = "jsonb")]
-    public string Tags { get; set; } = null!;
+    public string? Tags { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }

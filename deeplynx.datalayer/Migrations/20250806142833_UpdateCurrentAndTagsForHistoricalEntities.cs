@@ -47,7 +47,7 @@ namespace deeplynx.datalayer.Migrations
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at, r.modified_by, LOCALTIMESTAMP, 
                    LOCALTIMESTAMP AS last_updated_at, 
-                   coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                   json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                    c.name, d.name, p.name
                 FROM deeplynx.records r
                 LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
@@ -90,7 +90,7 @@ namespace deeplynx.datalayer.Migrations
                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, 
                    r.created_by, r.created_at, r.modified_by, LOCALTIMESTAMP, 
                    LOCALTIMESTAMP AS last_updated_at, 
-                   coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                   json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                    c.name, d.name, p.name
                 FROM deeplynx.records r
                 LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
@@ -159,7 +159,7 @@ namespace deeplynx.datalayer.Migrations
                         NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, 
                         NEW.created_by, NEW.created_at,
                         NEW.created_at AS last_updated_at, 
-                        coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                        json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                         c.name, d.name, p.name
                     FROM deeplynx.records r
                     LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
@@ -202,7 +202,7 @@ namespace deeplynx.datalayer.Migrations
                         NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, 
                         NEW.created_by, NEW.created_at, NEW.modified_by, NEW.modified_at, 
                         NEW.modified_at AS last_updated_at, 
-                        coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                        json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                         c.name, d.name, p.name
                     FROM deeplynx.records r
                     LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
@@ -247,7 +247,7 @@ namespace deeplynx.datalayer.Migrations
                         NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, 
                         NEW.created_by, NEW.created_at, NEW.modified_by, NEW.modified_at, 
                         NEW.archived_at, NEW.archived_at AS last_updated_at, 
-                        coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                        json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                         c.name, d.name, p.name
                     FROM deeplynx.records r
                     LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
@@ -291,7 +291,7 @@ namespace deeplynx.datalayer.Migrations
                         NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, 
                         NEW.created_by, NEW.created_at, NEW.modified_by, NEW.modified_at, 
                         NEW.archived_at, NEW.modified_at AS last_updated_at, 
-                        coalesce(json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL), '[null]'::json),
+                        json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
                         c.name, d.name, p.name
                     FROM deeplynx.records r
                     LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id

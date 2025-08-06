@@ -191,8 +191,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         recordHistory.Should().NotBeNull();
         recordHistory.Should().HaveCount(4);
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == "[null]");
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != "[null]");
+        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == null);
+        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != null);
         recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt == null);
         recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt != null);
     }

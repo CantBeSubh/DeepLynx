@@ -564,7 +564,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("record_id");
 
                     b.Property<string>("Tags")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("tags");
 
