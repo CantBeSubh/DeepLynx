@@ -58,6 +58,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 # Stage 3: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
 
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
+
 WORKDIR /app/backend
 
 # Copy the published backend code
