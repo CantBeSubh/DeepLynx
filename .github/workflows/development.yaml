@@ -38,12 +38,6 @@ jobs:
           az acr build --registry $ACR_REGISTRY \
             --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
             --file Dockerfiles/Dockerfile.app \
-            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
-            --build-arg NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }} \
-            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
-            --build-arg NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }} \
-            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
-            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
             .
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app .
 

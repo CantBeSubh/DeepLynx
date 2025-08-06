@@ -1,11 +1,11 @@
 import axios from "axios";
-import getConfig from 'next/config';
 
-const config = getConfig();
-console.log('Full config:', config);
-console.log('Public runtime config:', config?.publicRuntimeConfig);
-
-const issuer = process.env.NEXT_PUBLIC_OKTA_ISSUER;
+console.log('All environment variables:', {
+    OKTA_ISSUER: process.env.NEXT_PUBLIC_OKTA_ISSUER,
+    OKTA_CLIENT_ID: process.env.NEXT_PUBLIC_OKTA_CLIENT_ID,
+    API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NODE_ENV: process.env.NODE_ENV,
+});
 
 const API_BASE_URL = !process.env.NEXT_PUBLIC_API_URL ? '/api' : process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,7 +15,6 @@ export const api = axios.create({
 })
 
 export const getDataOverview = async (userId: string) => {
-    console.log("runtime", issuer)
     try {
         const res = await api.get(`/user/GetDataOverview/${userId}`);
         return res.data;
