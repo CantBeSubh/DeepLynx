@@ -23,17 +23,17 @@ namespace deeplynx.api.Controllers
             _queryBusiness = queryBusiness;
         }
         /// <summary>
-        /// Filter records 
+        /// Quick search records 
         /// </summary>
         /// <param name="filterArray">Array of strings</param>
         /// <returns>List of class response DTOs</returns>
-        [HttpPost("Filter", Name = "api_filter_records")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> FilterRecords(
-            [FromBody] string[] filterArray)
+        [HttpGet("Filter", Name = "api_filter_records")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
+            [FromQuery] string userQuery)
         {
             try
             {
-                var records = await _queryBusiness.FilterRecords(filterArray);
+                var records = await _queryBusiness.Search(userQuery);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -42,7 +42,7 @@ namespace deeplynx.api.Controllers
                 NLog.LogManager.GetCurrentClassLogger().Error(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
+        
         }
         
         /// <summary>
@@ -67,29 +67,6 @@ namespace deeplynx.api.Controllers
             }
 
         }
-        /// <summary>
-        /// Search records 
-        /// </summary>
-        /// <param name="search">String query</param>
-        /// <returns>List of class response DTOs</returns>
-        [HttpPost("googlesearch", Name = "api_search_records")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
-            [FromQuery] string search)
-        {
-            try
-            {
-                var records = await _queryBusiness.Search(search);
-                return Ok(records);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while searching for records.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-
-        }
-        
         
     }
 }

@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
@@ -176,28 +177,29 @@ public class QueryBusiness : IQueryBusiness
         
         // full text search query for all text properties of historical records table 
         var sql = @"
-            SELECT *
-            FROM deeplynx.historical_records
-            WHERE to_tsvector('english',
-                coalesce(name, '') || ' ' ||
-                coalesce(description, '') || ' ' ||
-                coalesce(class_name, '') || ' ' ||
-                coalesce(uri, '') || ' ' ||
-                coalesce(original_id, '') || ' ' ||
-                coalesce(data_source_name, '') || ' ' ||
-                coalesce(project_name, '') || ' ' ||
-                coalesce(created_by, '') || ' ' ||
-                coalesce(modified_by, '') || ' ' ||
-                coalesce(properties::text, '') || ' ' ||
-                coalesce(tags::text, '')
-            ) @@ to_tsquery(@query);
-        ";
-        
+        SELECT *
+        FROM deeplynx.historical_records
+        WHERE to_tsvector('english',
+            coalesce(name, '') || ' ' ||
+            coalesce(description, '') || ' ' ||
+            coalesce(class_name, '') || ' ' ||
+            coalesce(uri, '') || ' ' ||
+            coalesce(original_id, '') || ' ' ||
+            coalesce(data_source_name, '') || ' ' ||
+            coalesce(project_name, '') || ' ' ||
+            coalesce(created_by, '') || ' ' ||
+            coalesce(modified_by, '') || ' ' ||
+            coalesce(properties::text, '') || ' ' ||
+            coalesce(tags::text, '')
+        ) @@ to_tsquery('english', @query);
+    ";
+
         var param = new NpgsqlParameter("query", query);
 
         var results = await _context.HistoricalRecords
             .FromSqlRaw(sql, param)
             .ToListAsync();
+
 
         return results
             .Select(r => new HistoricalRecordResponseDto()
@@ -225,35 +227,41 @@ public class QueryBusiness : IQueryBusiness
             });
     }
     
-    private string ParseToQuery(string userInput)
+    private string ParseToQuery(string input)
     {
-        var tokens = userInput
-            .ToLower()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
 
-        var output = new List<string>();
+        // Operators to translate
+        var operators = new HashSet<string> { "AND", "OR", "NOT" };
+
+        // Tokenize input by whitespace
+        var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>();
 
         foreach (var token in tokens)
         {
-            switch (token)
+            string upper = token.ToUpperInvariant();
+
+            if (operators.Contains(upper))
             {
-                case "and":
-                    output.Add("&");
-                    break;
-                case "or":
-                    output.Add("|");
-                    break;
-                case "not":
-                    output.Add("!");
-                    break;
-                default:
-                    // Escape special chars like ':', '&', etc. (optional)
-                    output.Add(token);
-                    break;
+                switch (upper)
+                {
+                    case "AND": result.Add("&"); break;
+                    case "OR": result.Add("|"); break;
+                    case "NOT": result.Add("!"); break;
+                }
+            }
+            else
+            {
+                // Add :* for partial matching
+                var cleaned = Regex.Replace(token, @"[^\w]", ""); // Remove punctuation/special chars
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                    result.Add($"{cleaned}:*");
             }
         }
 
-        return string.Join(" ", output);
+        return string.Join(" ", result);
     }
 
 }
