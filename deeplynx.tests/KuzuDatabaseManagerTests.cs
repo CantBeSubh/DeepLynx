@@ -57,8 +57,12 @@ namespace deeplynx.tests
 
         public override async Task InitializeAsync()
         {
-            if (System.IO.Directory.Exists("/Users/embaan/Library/CloudStorage/OneDrive-IdahoNationalLaboratory/Documents/Digital-Engineering/Nexus/deeplynx.tests/bin/Debug/deeplynx.graph"))
-                System.IO.Directory.Delete("/Users/embaan/Library/CloudStorage/OneDrive-IdahoNationalLaboratory/Documents/Digital-Engineering/Nexus/deeplynx.tests/bin/Debug/deeplynx.graph", true);
+            var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
+
+            var kuzuDbFilePath = Path.Combine(projectRoot, "deeplynx.tests/bin/Debug/deeplynx.graph");
+
+            if (System.IO.Directory.Exists(kuzuDbFilePath))
+                System.IO.Directory.Delete(kuzuDbFilePath, true);
 
             bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
 
@@ -126,6 +130,12 @@ namespace deeplynx.tests
         [SkippableFact]
         public async Task InitalSeedDatabaseAsync()
         {
+            var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
+
+            var kuzuDbFilePath = Path.Combine(projectRoot, "deeplynx.tests/bin/Debug/deeplynx.graph");
+
+            Console.WriteLine("KuzuDB Path: " + kuzuDbFilePath);
+
             try
             {
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
