@@ -33,13 +33,12 @@ namespace deeplynx.api.Controllers
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] DateTime? pointInTime,
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var edges = await _historicalEdgeBusiness
-                    .GetAllHistoricalEdges(projectId, dataSourceId, pointInTime, hideArchived, current);
+                    .GetAllHistoricalEdges(projectId, dataSourceId, pointInTime, hideArchived);
                 return Ok(edges);
             }
             catch (Exception exc)
@@ -66,13 +65,12 @@ namespace deeplynx.api.Controllers
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId,
             [FromQuery] DateTime? pointInTime, 
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var edge = await _historicalEdgeBusiness
-                    .GetHistoricalEdge(edgeId, originId, destinationId, pointInTime, hideArchived, current);
+                    .GetHistoricalEdge(edgeId, originId, destinationId, pointInTime, hideArchived);
                 return Ok(edge);
             }
             catch (Exception exc)

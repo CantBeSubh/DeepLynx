@@ -3,7 +3,7 @@ using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
-
+using deeplynx.helpers;
 namespace deeplynx.business;
 
 public class ProjectBusiness : IProjectBusiness
@@ -97,6 +97,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>The new project which was just created.</returns>
     public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
         var project = new Project
         {
             Name = dto.Name,

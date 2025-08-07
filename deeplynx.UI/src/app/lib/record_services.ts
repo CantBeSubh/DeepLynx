@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = !process.env.NEXT_PUBLIC_API_URL ? '/api' : process.env.NEXT_PUBLIC_API_URL;
-
 export const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
     withCredentials: true
 })
 
@@ -28,27 +26,29 @@ export const getRecord = async (projectId: number, recordId: number) => {
 }
 
 export const updateRecord = async (
-    projectId: number, 
-    recordId: number, 
+    projectId: number,
+    recordId: number,
     updateData: {
-        uri?: string | null; 
+        uri?: string | null;
         properties?: Record<string, unknown>;
         original_id?: string | null;
         name?: string | null;
         class_id?: number | null;
         class_name?: string | null;
-        description?: string| null;
+        description?: string | null;
     }) => {
-        try {
-            const res = await api.put(
-                `/projects/${projectId}/records/UpdateRecord/${recordId}`, 
-                updateData, 
-                {headers: {
+    try {
+        const res = await api.put(
+            `/projects/${projectId}/records/UpdateRecord/${recordId}`,
+            updateData,
+            {
+                headers: {
                     "Content-Type": "application/json"
-                }})
-            return res.data;
-        } catch (error) {
-            console.error("Error updating record:", error);
-            throw error;
-        }
+                }
+            })
+        return res.data;
+    } catch (error) {
+        console.error("Error updating record:", error);
+        throw error;
     }
+}

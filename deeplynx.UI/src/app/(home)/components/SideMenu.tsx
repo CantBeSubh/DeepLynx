@@ -1,0 +1,251 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+
+// Importing Hero-UI icons
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import {
+  AdjustmentsHorizontalIcon,
+  ArrowUpTrayIcon,
+  BookmarkSquareIcon,
+  BugAntIcon,
+  ChatBubbleLeftRightIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  Cog6ToothIcon,
+  FolderIcon,
+  HomeIcon,
+  PresentationChartLineIcon,
+  QuestionMarkCircleIcon,
+  RectangleGroupIcon,
+} from "@heroicons/react/24/outline";
+
+// Define the props for the SideMenu component
+interface SideMenuProps {
+  onToggle: (isCollapsed: boolean) => void;
+}
+
+// Main SideMenu component
+const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
+  const router = useRouter(); // Router hook for navigation
+  const pathname = usePathname(); // Hook to get the current pathname
+  const { project } = useProjectSession();
+
+  // State variables for selected item and menu collapse state
+  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+
+  // Effect to set the selected item based on the current pathname
+  useEffect(() => {
+    setSelectedItem(pathname);
+  }, [pathname]);
+
+  // Effect to get the selected item from localStorage on initial render
+  useEffect(() => {
+    const savedItem = localStorage.getItem("selectedItem");
+    if (savedItem) setSelectedItem(savedItem);
+  }, []);
+
+  // Effect to save the selected item to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem("selectedItem", selectedItem);
+  }, [selectedItem]);
+
+  useEffect(() => {
+    onToggle(isCollapsed);
+  }, [isCollapsed, onToggle]);
+
+  // Function to toggle the collapse state of the menu
+  const toggleMenu = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    onToggle(newState);
+  };
+
+  // Function to handle item click events
+  const handleItemClick = (
+    item: string,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    event.preventDefault();
+    setSelectedItem(item); // Set the clicked item as selected
+    router.push(item); // Navigate to the clicked item's path
+  };
+
+  // Function to check if an item is disabled
+  const isDisabled = (targetPath: string) =>
+    pathname === "/" && targetPath !== "/";
+
+  // Function to get the CSS class for an item based on its state
+  const getItemClass = (targetPath: string) => {
+    const alwaysActivePaths = [
+      "/settings",
+      "/help",
+      "/contact",
+      "/fileBug",
+      "/upload_center",
+      "/project_settings",
+    ];
+    const isExactMatch = selectedItem === targetPath;
+    const isDynamicProject =
+      targetPath === "/project/[id]" && /^\/project\/[^/]+$/.test(pathname);
+    const isSelected = isExactMatch || isDynamicProject;
+    const isAlwaysActive = alwaysActivePaths.includes(targetPath);
+
+    return [
+      "flex items-center block py-2 px-4 rounded transition",
+      isSelected ? "bg-info/30" : "hover:bg-info/30",
+      isDisabled(targetPath) && !isAlwaysActive
+        ? "pointer-events-none opacity-50 cursor-not-allowed"
+        : "",
+    ].join(" ");
+  };
+
+  return (
+    <div className="fixed top-18 bottom-0 flex z-50">
+      <aside
+        className={`h-full shadow-2xl ${
+          isCollapsed ? "w-22" : "w-64"
+        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+      >
+        {/* Home */}
+        <ul className="">
+          {/* <li>
+            <Link
+              href="/"
+              onClick={(e) => handleItemClick("/", e)}
+              className={getItemClass("/")}
+            >
+              <HomeIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Home Dashboard</p>}
+            </Link>
+          </li> */}
+          <li className="mt-2">
+            <Link href={""} className={getItemClass("/upload_center")}>
+              <ArrowUpTrayIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Upload Center</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link href={""} className={getItemClass("/project_settings")}>
+              <AdjustmentsHorizontalIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Project Settings</p>}
+            </Link>
+          </li>
+        </ul>
+
+        <div className="divider" />
+
+        {/* Your Data section */}
+        {/* {!isCollapsed && <p className="text-sm mt-4">Your Data</p>} */}
+        <ul className="flex-grow">
+          <li>
+            <Link
+              href="/project/#"
+              onClick={(e) =>
+                handleItemClick(`/project/${project?.projectId}`, e)
+              }
+              className={getItemClass(`/project/${project?.projectId}`)}
+            >
+              <RectangleGroupIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Project Management</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="/data_catalog"
+              onClick={(e) => handleItemClick("/data_catalog", e)}
+              className={getItemClass("/data_catalog")}
+            >
+              <FolderIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Data Catalog</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="#saved-searches"
+              onClick={(e) => handleItemClick("#saved-searches", e)}
+              className={getItemClass("#saved-searches")}
+            >
+              <BookmarkSquareIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Saved Searches</p>}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="#timeseries-viewer"
+              onClick={(e) => handleItemClick("#timeseries-viewer", e)}
+              className={getItemClass("#timeseries-viewer")}
+            >
+              <PresentationChartLineIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Timeseries Viewer</p>}
+            </Link>
+          </li>
+        </ul>
+
+        <div className="divider" />
+        {/* Last 4 Menu Items */}
+        {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
+        <div className="mt-auto">
+          <ul>
+            <li className="mt-2">
+              <Link
+                href="/settings"
+                onClick={(e) => handleItemClick("/settings", e)}
+                className={getItemClass("/settings")}
+              >
+                <Cog6ToothIcon className="size-6" />
+                {!isCollapsed && <p className="ml-2">Settings</p>}
+              </Link>
+            </li>
+            <li className="mt-2">
+              <Link
+                href="#"
+                onClick={(e) => handleItemClick("/help", e)}
+                className={getItemClass("/help")}
+              >
+                <QuestionMarkCircleIcon className="size-6" />
+                {!isCollapsed && <p className="ml-2">Help</p>}
+              </Link>
+            </li>
+            <li className="mt-2">
+              <Link
+                href="/contact"
+                onClick={(e) => handleItemClick("/contact", e)}
+                className={getItemClass("/contact")}
+              >
+                <ChatBubbleLeftRightIcon className="size-6" />
+                {!isCollapsed && <p className="ml-2">Contact</p>}
+              </Link>
+            </li>
+            <li className="mt-2">
+              <Link
+                href="/fileBug"
+                onClick={(e) => handleItemClick("/fileBug", e)}
+                className={getItemClass("/fileBug")}
+              >
+                <BugAntIcon className="size-6" />
+                {!isCollapsed && <p className="ml-2">File A Bug</p>}
+              </Link>
+            </li>
+          </ul>
+        </div>
+      </aside>
+      {/* Toggle tab (sticking out to the right) */}
+      <div
+        className="h-12 w-5 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-4"
+        onClick={toggleMenu}
+      >
+        {isCollapsed ? (
+          <ChevronRightIcon className="size-6" />
+        ) : (
+          <ChevronLeftIcon className="size-6" />
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SideMenu;
