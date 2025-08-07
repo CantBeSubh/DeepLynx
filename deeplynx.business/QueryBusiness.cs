@@ -5,6 +5,8 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -31,7 +33,7 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="filterRequest">Filter Request DTO</param>
     /// <returns>A list of record response dtos that match provided filters</returns>
-    public async Task<IEnumerable<RecordResponseDto>> FilterRecords(string[] filterRequest)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> FilterRecords(string[] filterRequest)
     {
         var query = _context.HistoricalRecords.AsQueryable();
 
@@ -43,7 +45,7 @@ public class QueryBusiness : IQueryBusiness
         var records = await query.ToListAsync();
 
         return records
-            .Select(r => new RecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto()
             {
                 Id = r.Id,
                 Uri = r.Uri,
@@ -158,6 +160,143 @@ public class QueryBusiness : IQueryBusiness
             "OR" => Expression.OrElse(existing, newExpression),
             _ => throw new NotSupportedException($"Connector {connector} is not supported")
         };
+    }
+    
+    /// <summary>
+    /// Filters record request
+    /// </summary>
+    /// <param name="filterRequest">Filter Request DTO</param>
+    /// <returns>A list of record response dtos that match provided filters</returns>
+    /// TODO: Partial match with combined strings Example: "Reactor Care" should return entries with "Reactor Core" as the name or description
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> FilteredRecords(string[] filterRequest)
+    {
+        var query = _context.HistoricalRecords.AsQueryable();
+    
+        // Check database for partial match, ignore case
+        query = query.Where(c => filterRequest.Any(filter =>
+            c.Name.ToLower().Contains(filter.ToLower()) ||
+            c.Description.ToLower().Contains(filter.ToLower())));
+        
+        var records = await query.ToListAsync();
+
+        return records
+            .Select(r => new HistoricalRecordResponseDto()
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Description = r.Description, 
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+    
+    
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            throw new Exception("Search query is required.");
+
+        var terms = query
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+            .Select(term => term.Trim())
+            .ToArray();
+        
+        var tsQuery = ParseToTsQuery(query); // "data & digital"
+
+        var sql = @"
+            SELECT *
+            FROM deeplynx.historical_records
+            WHERE to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(created_by, '') || ' ' ||
+                coalesce(modified_by, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            ) @@ to_tsquery(@query);
+        ";
+
+        var param = new NpgsqlParameter("query", tsQuery);
+
+        var results = await _context.HistoricalRecords
+            .FromSqlRaw(sql, param)
+            .ToListAsync();
+
+        return results
+            .Select(r => new HistoricalRecordResponseDto()
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Description = r.Description, 
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+    
+    private string ParseToTsQuery(string userInput)
+    {
+        var tokens = userInput
+            .ToLower()
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+        var output = new List<string>();
+
+        foreach (var token in tokens)
+        {
+            switch (token)
+            {
+                case "and":
+                    output.Add("&");
+                    break;
+                case "or":
+                    output.Add("|");
+                    break;
+                case "not":
+                    output.Add("!");
+                    break;
+                default:
+                    // Escape special chars like ':', '&', etc. (optional)
+                    output.Add(token);
+                    break;
+            }
+        }
+
+        return string.Join(" ", output);
     }
 
 }

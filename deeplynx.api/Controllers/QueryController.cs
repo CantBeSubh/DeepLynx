@@ -67,6 +67,29 @@ namespace deeplynx.api.Controllers
             }
 
         }
+        /// <summary>
+        /// Search records 
+        /// </summary>
+        /// <param name="search">String query</param>
+        /// <returns>List of class response DTOs</returns>
+        [HttpPost("googlesearch", Name = "api_search_records")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
+            [FromQuery] string search)
+        {
+            try
+            {
+                var records = await _queryBusiness.Search(search);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while searching for records.: {exc}";
+                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+
+        }
+        
         
     }
 }
