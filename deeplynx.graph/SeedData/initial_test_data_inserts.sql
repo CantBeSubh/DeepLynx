@@ -64,3 +64,19 @@ INSERT INTO users (name, email, password) VALUES
 -- -- insert into user_projects
 -- INSERT INTO user_project (user_id, project_id) VALUES
 -- ((SELECT id FROM users WHERE name = 'test' LIMIT 1), (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
+
+SET search_path TO deeplynx;
+CREATE OR REPLACE VIEW edges_c AS
+SELECT c_o.name AS orig_class,
+    e.origin_id,
+    c_d.name AS dest_class,
+    e.destination_id,
+    e.relationship_name,
+    o.project_id,
+    e.id
+   FROM deeplynx.historical_edges e
+     JOIN deeplynx.historical_records o ON o.record_id = e.origin_id
+     JOIN deeplynx.historical_records d ON d.record_id = e.destination_id
+     JOIN deeplynx.classes c_o ON c_o.id = o.class_id
+     JOIN deeplynx.classes c_d ON c_d.id = d.class_id
+  WHERE o.project_id = d.project_id AND c_o.name <> 'test'::text AND c_d.name <> 'test'::text AND e.relationship_name <> 'test'::text;
