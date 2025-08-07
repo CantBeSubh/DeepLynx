@@ -162,7 +162,7 @@ const DataCatalogContent = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/50 pl-10 pt-2 pb-2">
+      <div className="flex justify-between items-center bg-base-200/50 pl-12 pt-2 pb-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown
@@ -173,24 +173,33 @@ const DataCatalogContent = () => {
         </div>
       </div>
 
-      <div className="divider"></div>
-
-      <div className="flex justify-between gap-4 mb-4">
-        <LargeSearchBar
-          placeholder="Search for records"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onEnter={handleSearch}
-          activeFilters={activeFilters}
-          onRemoveFilter={(id) =>
-            setActiveFilters(activeFilters.filter((f) => f.id !== id))
-          }
-          onClearAll={clearAllFilters}
-          resultCount={tableData.length}
-          showResultsMessage={activeFilters.length > 0}
-          className="md:w-1/4"
-        />
-
+      <div className="flex justify-between gap-4 mb-4 pt-20 pl-8">
+        <div className="w-full flex flex-col gap-1 items-start">
+          <div className="w-full md:w-1/2">
+            <LargeSearchBar
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onEnter={handleSearch}
+              activeFilters={activeFilters}
+              onRemoveFilter={(id) =>
+                setActiveFilters(activeFilters.filter((f) => f.id !== id))
+              }
+              onClearAll={clearAllFilters}
+              resultCount={tableData.length}
+              showResultsMessage={activeFilters.length > 0}
+            />
+            {/* Link below search bar */}
+            <div className=" text-right mt-1">
+              <a
+                href="/placeholder for advanced"
+                className="text-sm underline text-secondary hover:underline"
+              >
+                Additional Filters
+              </a>
+            </div>
+          </div>
+        </div>
         <div className="flex gap-4">
           {showAll ? (
             <button
