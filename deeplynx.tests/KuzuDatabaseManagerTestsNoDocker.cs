@@ -15,8 +15,7 @@ using Renci.SshNet;
 
 namespace deeplynx.tests
 {
-    [Collection("Test Suite Collection")]
-    public class KuzuDatabaseManagerTests : IntegrationTestBase
+    public class KuzuDatabaseManagerTestsNoDocker
     {
         private KuzuDatabaseManager? _kuzuDatabaseManager;
         private readonly IConfiguration _configuration;
@@ -24,7 +23,7 @@ namespace deeplynx.tests
         private bool _isConnected = false;
         private static readonly SemaphoreSlim _connectionSemaphore = new SemaphoreSlim(1, 1);
 
-        public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
+        public KuzuDatabaseManagerTestsNoDocker()
         {
             var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
@@ -55,13 +54,13 @@ namespace deeplynx.tests
             }
         }
 
-        public override async Task InitializeAsync()
+        private async Task InitializeAsync()
         {
             if (System.IO.Directory.Exists("/Users/embaan/Library/CloudStorage/OneDrive-IdahoNationalLaboratory/Documents/Digital-Engineering/Nexus/deeplynx.tests/bin/Debug/deeplynx.graph"))
                 System.IO.Directory.Delete("/Users/embaan/Library/CloudStorage/OneDrive-IdahoNationalLaboratory/Documents/Digital-Engineering/Nexus/deeplynx.tests/bin/Debug/deeplynx.graph", true);
 
             bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
-
+            
             if (enableKuzu && _kuzuDatabaseManager != null)
             {
                 Log.Information("Attempting to acquire initialize semaphore lock");
@@ -131,7 +130,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
 
                 Log.Information("Starting InitalSeedDatabaseAsync test...");
-
+                await InitializeAsync();
                 // Arrange
                 await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
                 bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
@@ -146,14 +145,14 @@ namespace deeplynx.tests
                 Log.Error($"Test InitalSeedDatabaseAsync failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         [SkippableFact]
@@ -164,6 +163,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
                 
                 Log.Information("Starting SeedDatabaseAsync test...");
+                await InitializeAsync();
 
                 // Arrange
                 await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
@@ -179,14 +179,14 @@ namespace deeplynx.tests
                 Log.Error($"Test SeedDatabaseAsync failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #region ConnectAsync Tests
@@ -199,6 +199,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
 
                 Log.Information("Starting ConnectAsync test...");
+                await InitializeAsync();
 
                 if (_kuzuDatabaseManager != null)
                 {
@@ -215,14 +216,14 @@ namespace deeplynx.tests
                 Log.Error($"Test ConnectAsync_ShouldInitializeDatabase failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #endregion
@@ -237,6 +238,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
 
                 Log.Information("Starting ExportDataAsync test...");
+                await InitializeAsync();
 
                 if (_kuzuDatabaseManager != null)
                 {
@@ -257,14 +259,14 @@ namespace deeplynx.tests
                 Log.Error($"Test ExportDataAsync_ShouldReturnFalse failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #endregion
@@ -280,6 +282,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
 
                 Log.Information("Starting GetNodesWithin test...");
+                await InitializeAsync();
 
                 // Arrange
                 var requestDto = new KuzuDBMNodesWithinDepthRequestDto
@@ -311,14 +314,14 @@ namespace deeplynx.tests
                 Log.Error($"Test GetNodesWithinDepthByIdAsync failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #endregion
@@ -334,6 +337,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
 
                 Log.Information("Starting ExecuteQuery test...");
+                await InitializeAsync();
 
                 // Arrange
                 var requestDto = new KuzuDBMQueryRequestDto
@@ -363,14 +367,14 @@ namespace deeplynx.tests
                 Log.Error($"Test ExecuteQuery_ValidQuery failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #endregion
@@ -386,6 +390,7 @@ namespace deeplynx.tests
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
 
                 Log.Information("Starting CloseAsync test...");
+                await InitializeAsync();
 
                 if (_kuzuDatabaseManager != null)
                 {
@@ -406,14 +411,14 @@ namespace deeplynx.tests
                 Log.Error($"Test CloseAsync_ShouldCloseConnection failed: {ex.Message}");
                 throw;
             }
-            // finally
-            // {
-            //     if (_kuzuDatabaseManager != null && _isConnected)
-            //     {
-            //         await _kuzuDatabaseManager.CloseAsync();
-            //         _isConnected = false;
-            //     }
-            // }
+            finally
+            {
+                if (_kuzuDatabaseManager != null && _isConnected)
+                {
+                    await _kuzuDatabaseManager.CloseAsync();
+                    _isConnected = false;
+                }
+            }
         }
 
         #endregion

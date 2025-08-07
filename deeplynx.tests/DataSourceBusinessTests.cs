@@ -10,7 +10,6 @@ namespace deeplynx.tests
 {
     public class DataSourceBusinessTests : IntegrationTestBase
     {
-        private DeeplynxContext _context;
         private DataSourceBusiness _dataSourceBusiness;
         private Mock<IEdgeBusiness> _mockEdgeBusiness;
         private Mock<IRecordBusiness> _mockRecordBusiness;
