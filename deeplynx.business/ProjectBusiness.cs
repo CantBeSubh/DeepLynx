@@ -3,7 +3,7 @@ using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
-
+using deeplynx.helpers;
 namespace deeplynx.business;
 
 public class ProjectBusiness : IProjectBusiness
@@ -95,8 +95,9 @@ public class ProjectBusiness : IProjectBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(ProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
     {
+        ValidationHelper.ValidateModel(dto);
         var project = new Project
         {
             Name = dto.Name,
@@ -109,12 +110,12 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        var timeseriesClassDto = new ClassRequestDto()
+        var timeseriesClassDto = new CreateClassRequestDto()
         {
             Name = "Timeseries"
         };
         
-        var reportClassDto = new ClassRequestDto()
+        var reportClassDto = new CreateClassRequestDto()
         {
             Name = "Report"
         };
@@ -140,16 +141,16 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="dto">A data transfer object with details on the project to be updated.</param>
     /// <returns>The project which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the project was not found.</exception>
-    public async Task<ProjectResponseDto> UpdateProject(long projectId, ProjectRequestDto dto)
+    public async Task<ProjectResponseDto> UpdateProject(long projectId, UpdateProjectRequestDto dto)
     {
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.ArchivedAt is not null)
             throw new KeyNotFoundException("Project not found.");
 
-        project.Name = dto.Name;
-        project.Description = dto.Description;
-        project.Abbreviation = dto.Abbreviation;
+        project.Name = dto.Name ?? project.Name;
+        project.Description = dto.Description ?? project.Description;
+        project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
         project.ModifiedBy = null; // TODO: handled in future by JWT.
         project.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
@@ -305,10 +306,10 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="projects">Array of project ids whose records are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns>A list of records based on the applied filters.</returns>
-    public async Task<IEnumerable<RecordResponseDto>> GetMultiProjectRecords(
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(
         long[] projects, bool hideArchived)
     {
-        var recordQuery = _context.Records
+        var recordQuery = _context.HistoricalRecords
             .Where(r => projects.Contains(r.ProjectId));
 
         if (hideArchived)
@@ -317,13 +318,14 @@ public class ProjectBusiness : IProjectBusiness
         }
         
         var records = await recordQuery
-            .Include(r => r.Tags)
+            .GroupBy(e => e.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
 
         return records
-            .Select(r => new RecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto()
             {
-                Id = r.Id,
+                Id = r.RecordId,
                 Description = r.Description,
                 Uri = r.Uri,
                 Properties = r.Properties,
@@ -337,11 +339,7 @@ public class ProjectBusiness : IProjectBusiness
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
-                Tags = r.Tags.Select(t => new RecordTagDto()
-                {
-                    Id = t.Id,
-                    Name = t.Name
-                }).ToList()
+                Tags = r.Tags
             });
     }
     

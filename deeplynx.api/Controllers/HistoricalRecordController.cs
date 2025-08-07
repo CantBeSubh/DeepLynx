@@ -33,13 +33,12 @@ namespace deeplynx.api.Controllers
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] DateTime? pointInTime,
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var records = await _historicalRecordBusiness
-                    .GetAllHistoricalRecords(projectId, dataSourceId, pointInTime, hideArchived, current);
+                    .GetAllHistoricalRecords(projectId, dataSourceId, pointInTime, hideArchived);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -62,13 +61,12 @@ namespace deeplynx.api.Controllers
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetHistoricalRecord(
             long recordId,
             [FromQuery] DateTime? pointInTime, 
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var record = await _historicalRecordBusiness
-                    .GetHistoricalRecord(recordId, pointInTime, hideArchived, current);
+                    .GetHistoricalRecord(recordId, pointInTime, hideArchived);
                 return Ok(record);
             }
             catch (Exception exc)

@@ -3,11 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class RelationshipRequestDto
+public class UpdateRelationshipRequestDto
 {
-    [Required]
     [JsonPropertyName("name")]
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; } = null!;
     
     [JsonPropertyName("description")]
     public string? Description { get; set; }

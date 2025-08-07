@@ -354,18 +354,16 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task BulkCreateRecords_EmptyList_ReturnsEmptyResult()
+    public async Task BulkCreateRecords_EmptyList_ThrowsException()
     {
         // Arrange
         var projectId = pid;
         var dataSourceId = did;
         List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>();
         
-        // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
-
-        // Assert
-        Assert.Empty(result);
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(() =>
+            _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records));
     }
 
     [Fact]

@@ -138,9 +138,14 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_classes_id");
 
+                    b.HasIndex(new[] { "Name" }, "idx_classes_name");
+
                     b.HasIndex(new[] { "ProjectId" }, "idx_classes_project_id");
 
                     b.HasIndex(new[] { "Uuid" }, "idx_classes_uuid");
+
+                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_class_name")
+                        .IsUnique();
 
                     b.ToTable("classes", "deeplynx");
                 });
@@ -290,6 +295,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "RelationshipId" }, "idx_edges_relationship_id");
 
+                    b.HasIndex(new[] { "ProjectId", "OriginId", "DestinationId" }, "unique_edge_record_ids")
+                        .IsUnique();
+
                     b.ToTable("edges", "deeplynx");
                 });
 
@@ -395,10 +403,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("created_by");
 
-                    b.Property<bool>("Current")
-                        .HasColumnType("boolean")
-                        .HasColumnName("current");
-
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
@@ -458,8 +462,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("historical_edges_pkey");
 
-                    b.HasIndex(new[] { "Current" }, "idx_historical_edges_current");
-
                     b.HasIndex(new[] { "DestinationId" }, "idx_historical_edges_destination_id");
 
                     b.HasIndex(new[] { "EdgeId" }, "idx_historical_edges_edge_id");
@@ -505,10 +507,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text")
                         .HasColumnName("created_by");
-
-                    b.Property<bool>("Current")
-                        .HasColumnType("boolean")
-                        .HasColumnName("current");
 
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
@@ -566,7 +564,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("record_id");
 
                     b.Property<string>("Tags")
-                        .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("tags");
 
@@ -578,8 +575,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasName("historical_records_pkey");
 
                     b.HasIndex(new[] { "ClassName" }, "idx_historical_records_class_name");
-
-                    b.HasIndex(new[] { "Current" }, "idx_historical_records_current");
 
                     b.HasIndex(new[] { "Id" }, "idx_historical_records_id");
 
@@ -738,6 +733,9 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlIndexBuilderExtensions.HasMethod(b.HasIndex(new[] { "Properties" }, "idx_records_properties"), "gin");
 
+                    b.HasIndex(new[] { "ProjectId", "DataSourceId", "OriginalId" }, "unique_record_original_id")
+                        .IsUnique();
+
                     b.ToTable("records", "deeplynx");
                 });
 
@@ -874,11 +872,16 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_relationships_id");
 
+                    b.HasIndex(new[] { "Name" }, "idx_relationships_name");
+
                     b.HasIndex(new[] { "OriginId" }, "idx_relationships_origin_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_relationships_project_id");
 
                     b.HasIndex(new[] { "Uuid" }, "idx_relationships_uuid");
+
+                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_relationship_name")
+                        .IsUnique();
 
                     b.ToTable("relationships", "deeplynx");
                 });
@@ -928,7 +931,12 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_tags_id");
 
+                    b.HasIndex(new[] { "Name" }, "idx_tags_name");
+
                     b.HasIndex(new[] { "ProjectId" }, "idx_tags_project_id");
+
+                    b.HasIndex(new[] { "ProjectId", "Name" }, "unique_tag_name")
+                        .IsUnique();
 
                     b.ToTable("tags", "deeplynx");
                 });

@@ -1,15 +1,26 @@
 import axios from "axios";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-
 export const api = axios.create({
-    baseURL: API_BASE_URL,
-    withCredentials: true,
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    withCredentials: true
 })
 
 export const getAllProjects = async () => {
     try {
         const res = await api.get("/projects/GetAllProjects");
+        return res.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw error;
+    }
+}
+
+export const getAllRecordsForMultipleProjects = async (projectIds: number[], hideArchived = true) => {
+    try {
+        const query = projectIds
+            .map(id => `projects=${encodeURIComponent(id)}`)
+            .join("&") + `&hideArchived=${hideArchived}`;
+        const res = await api.get(`/projects/MultiProjectRecords?${query}`);
         return res.data;
     } catch (error) {
         console.error("API call failed:", error);

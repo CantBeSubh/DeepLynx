@@ -25,15 +25,13 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <param name="pointInTime">(Optional) Find the most current edges that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
-    /// <param name="current">(Optional) Find only the most current edges. Overrides point in time.</param>
     /// <returns>An array of edges</returns>
     /// TODO: create an endpoint for this
     public async Task<IEnumerable<HistoricalEdgeResponseDto>> GetAllHistoricalEdges(
         long projectId,
         long? dataSourceId = null,
         DateTime? pointInTime = null,
-        bool hideArchived = true,
-        bool current = true)
+        bool hideArchived = true)
     {
         var edgeQuery = _context.HistoricalEdges
             .Where(e => e.ProjectId == projectId);
@@ -42,19 +40,9 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         {
             edgeQuery = edgeQuery.Where(e => e.DataSourceId == dataSourceId);
         }
-
-        if (current)
-        {
-            edgeQuery = edgeQuery.Where(e => e.Current);
-        }
-
-        if (hideArchived)
-        {
-            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
-        }
         
         // specification for "current" should override any supplied pointInTime
-        if (pointInTime.HasValue && !current)
+        if (pointInTime.HasValue)
         {
             // convert the point in time to timestamp without timezone
             var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
@@ -69,6 +57,13 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             .GroupBy(e => e.EdgeId)
             .Select(g => g.OrderByDescending(e => e.LastUpdatedAt).FirstOrDefault())
             .ToListAsync();
+        
+        // Need to check for ArchivedAt after DB retrieval since filtering archived results before querying could
+        // result in inaccurate "most recent" results if an edge has been archived
+        if (hideArchived && edges.Count > 0)
+        {
+            edges = edges.Where(e => e.ArchivedAt == null).ToList();
+        }
 
         return edges
             .Select(e => new HistoricalEdgeResponseDto
@@ -137,7 +132,6 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
     /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
     /// <param name="pointInTime">(Optional) Find the most current edge that existed before this point in time</param>
     /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result.</param>
-    /// <param name="current">(Optional) Find only the most current edge. Overrides point in time.</param>
     /// <returns>An edge that matches the applied filters.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found</exception>
     /// /// TODO: create an endpoint for this
@@ -146,22 +140,17 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         long? originId, 
         long? destinationId,
         DateTime? pointInTime,
-        bool hideArchived = true,
-        bool current = true)
+        bool hideArchived = true)
     {
         var foundEdge = await FindEdge(edgeId, originId, destinationId);
         var foundEdgeId = foundEdge.EdgeId;
         
         var edgeQuery = _context.HistoricalEdges
-            .Where(e => e.EdgeId == foundEdgeId);
-
-        if (current)
-        {
-            edgeQuery = edgeQuery.Where(e => e.Current);
-        }
+            .Where(e => e.EdgeId == foundEdgeId)
+            .OrderByDescending(e => e.LastUpdatedAt);
 
         // specification for "current" should override any supplied pointInTime
-        if (pointInTime.HasValue && !current)
+        if (pointInTime.HasValue)
         {
             // convert the point in time to timestamp without timezone
             var unspecifiedPointInTime = DateTime.SpecifyKind(pointInTime.Value, DateTimeKind.Unspecified);
@@ -171,17 +160,17 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
                 .Where(r => r.LastUpdatedAt <= unspecifiedPointInTime)
                 .OrderByDescending(r => r.LastUpdatedAt);
         }
-
-        if (hideArchived)
-        {
-            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
-        }
         
         var edge = await edgeQuery.FirstOrDefaultAsync();
 
         if (edge == null)
         {
             throw new KeyNotFoundException($"Edge with id {foundEdgeId} not found at point in time {pointInTime}.");
+        }
+        
+        if (hideArchived && edge.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Edge with id {foundEdgeId} not found or archived.");
         }
 
         return new HistoricalEdgeResponseDto()
@@ -230,14 +219,14 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         {
             edge = await _context.HistoricalEdges
                 .Where(e => e.EdgeId == edgeId)
-                .Where(e => e.Current)
+                .OrderByDescending(e => e.LastUpdatedAt)
                 .FirstOrDefaultAsync();
         }
         else
         {
             edge = await _context.HistoricalEdges
                 .Where(e => e.OriginId == originId && e.DestinationId == destinationId)
-                .Where(e => e.Current)
+                .OrderByDescending(e => e.LastUpdatedAt)
                 .FirstOrDefaultAsync();
         }
 

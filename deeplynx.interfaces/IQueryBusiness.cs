@@ -4,6 +4,6 @@ namespace deeplynx.interfaces;
 
 public interface IQueryBusiness
 {
-    Task<IEnumerable<RecordResponseDto>> FilterRecords(string[] filterRequest);
+    Task<IEnumerable<HistoricalRecordResponseDto>> FilterRecords(string[] filterRequest);
     IEnumerable<HistoricalRecordResponseDto> BuildQuery(AdvancedQueryRequestDto[] components);
 }

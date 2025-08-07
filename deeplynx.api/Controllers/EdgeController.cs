@@ -84,7 +84,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edge">The edge request data transfer object containing edge details</param>
         [HttpPost("CreateEdge", Name = "api_create_an_edge")]
-        public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] EdgeRequestDto edge)
+        public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] CreateEdgeRequestDto edge)
         {
             try
             {
@@ -104,12 +104,12 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-        /// <param name="edge">The edge request data transfer object containing edge details</param>
+        /// <param name="edges">List of the edge request data transfer objects containing edge details</param>
         [HttpPost("BulkCreateEdges", Name = "api_create_many_edges")]
         public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
-            long projectId, 
-            [Required] long dataSourceId, 
-            [FromBody] List<EdgeRequestDto> edges)
+            long projectId,
+            [Required] long dataSourceId,
+            [FromBody] List<CreateEdgeRequestDto> edges)
         {
             try
             {
@@ -136,7 +136,7 @@ namespace deeplynx.api.Controllers
         [HttpPut("UpdateEdge", Name = "api_update_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
             long projectId,
-            [FromBody] EdgeRequestDto dto,
+            [FromBody] UpdateEdgeRequestDto dto,
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId)

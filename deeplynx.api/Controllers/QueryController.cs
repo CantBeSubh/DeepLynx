@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="filterArray">Array of strings</param>
         /// <returns>List of class response DTOs</returns>
         [HttpPost("Filter", Name = "api_filter_records")]
-        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> FilterRecords(
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> FilterRecords(
             [FromBody] string[] filterArray)
         {
             try

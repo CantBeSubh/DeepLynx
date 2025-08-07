@@ -25,6 +25,7 @@ namespace deeplynx.tests
         public long dsid;
         public long originRecordId;
         public long destinationRecordId;
+        public long destinationRecordId2;
         public long relationshipId;
 
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -47,7 +48,7 @@ namespace deeplynx.tests
         public async Task CreateEdge_Success_ReturnsIdAndCreatedAt()
         {
             var now = DateTime.UtcNow;
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -66,7 +67,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoOriginId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = 0, // Invalid origin
                 DestinationId = (int)destinationRecordId,
@@ -79,7 +80,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoDestinationId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = 0, // Invalid destination
@@ -92,7 +93,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoProjectId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -105,7 +106,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEdge_Fails_IfNoDataSourceId()
         {
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -123,7 +124,7 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeRequestDto
+            var dto = new CreateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -138,32 +139,18 @@ namespace deeplynx.tests
         {
             var now = DateTime.UtcNow;
 
-            // Create additional records for second edge
-            var destinationRecord2 = new Record
-                {
-                    ProjectId = pid,
-                    DataSourceId = dsid,
-                    Properties = "{\"test\": \"destination2_value\"}",
-                    Name = "Destination 2",
-                    Description = "Destination Description 2",
-                    OriginalId = "dest2",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Records.Add(destinationRecord2);
-            await Context.SaveChangesAsync();
-
-            var edges = new List<EdgeRequestDto>
+            var edges = new List<CreateEdgeRequestDto>
             {
-                new EdgeRequestDto
+                new CreateEdgeRequestDto
                 {
                     OriginId = (int)originRecordId,
                     DestinationId = (int)destinationRecordId,
                     RelationshipId = (int)relationshipId
                 },
-                new EdgeRequestDto
+                new CreateEdgeRequestDto
                 {
                     OriginId = (int)originRecordId,
-                    DestinationId = (int)destinationRecord2.Id,
+                    DestinationId = (int)destinationRecordId2,
                     RelationshipId = (int)relationshipId
                 }
             };
@@ -190,8 +177,8 @@ namespace deeplynx.tests
             Context.DataSources.Add(ds2);
             await Context.SaveChangesAsync();
 
-            await _edgeBusiness.CreateEdge(pid, dsid, new EdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
-            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new EdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(pid, dsid, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
 
             var list = await _edgeBusiness.GetAllEdges(pid, null, true);
             Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
@@ -213,7 +200,7 @@ namespace deeplynx.tests
             var archivedEdge = new Edge
             {
                 OriginId = originRecordId,
-                DestinationId = destinationRecordId,
+                DestinationId = destinationRecordId2,
                 DataSourceId = dsid,
                 ProjectId = pid,
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -349,22 +336,86 @@ namespace deeplynx.tests
             Context.Records.Add(newDestinationRecord);
             await Context.SaveChangesAsync();
 
-            var dto = new EdgeRequestDto
+            var dto = new UpdateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
-                DestinationId = (int)newDestinationRecord.Id,
+                DestinationId = (int)destinationRecordId2,
                 RelationshipId = (int)relationshipId
             };
             var updatedResult = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
 
             updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
-            updatedResult.DestinationId.Should().Be(newDestinationRecord.Id);
+            updatedResult.DestinationId.Should().Be(destinationRecordId2);
+        }
+
+        [Fact]
+        public async Task UpdateEdge_PartialUpdate_UpdatesEdge()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                CreatedBy = null,
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+            var oid = testEdge.OriginId;
+            var did = testEdge.DestinationId;
+
+            // Create another destination record for update
+            var newDestinationRecord = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"Updated destination_value\"}",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
+            };
+            Context.Records.Add(newDestinationRecord);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateEdgeRequestDto
+            {
+                RelationshipId = (int)relationshipId
+            };
+
+            // Act
+            var result = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal((int)relationshipId, result.RelationshipId);
+            Assert.Equal(oid, result.OriginId);
+            Assert.Equal(did, result.DestinationId);
+            Assert.NotNull(result.ModifiedAt);
+
+            // Verify edge was actually updated in database
+            var updatedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.NotNull(updatedEdge);
+            Assert.Equal((int)relationshipId, updatedEdge.RelationshipId);
+            Assert.Equal(oid, updatedEdge.OriginId);
+            Assert.Equal(did, updatedEdge.DestinationId);
+            Assert.NotNull(updatedEdge.ModifiedAt);
+
+            // Verify that get function gets updated version
+            var getResult = await _edgeBusiness.GetEdge(pid, testEdge.Id, oid, did, true);
+            Assert.NotNull(getResult);
+            Assert.Equal((int)relationshipId, getResult.RelationshipId);
+            Assert.Equal(oid, getResult.OriginId);
+            Assert.Equal(did, getResult.DestinationId);
+            Assert.NotNull(getResult.ModifiedAt);
         }
 
         [Fact]
         public async Task UpdateEdge_Fails_IfNotFound()
         {
-            var dto = new EdgeRequestDto
+            var dto = new UpdateEdgeRequestDto
             {
                 OriginId = (int)originRecordId,
                 DestinationId = (int)destinationRecordId,
@@ -532,7 +583,7 @@ public async Task UnarchiveEdge_Fails_IfNotArchived()
 [Fact]
 public void EdgeRequestDto_AllProperties_CanBeSetAndRetrieved()
 {
-    var dto = new EdgeRequestDto
+    var dto = new CreateEdgeRequestDto
     {
         OriginId = 1,
         DestinationId = 2,
@@ -632,6 +683,19 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);
+            
+            // Create additional records for second edge
+            var destinationRecord2 = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"destination2_value\"}",
+                Name = "Destination 2",
+                Description = "Destination Description 2",
+                OriginalId = "dest2",
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Records.Add(destinationRecord2);
 
             var relationship = new Relationship
             {
@@ -647,6 +711,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
 
             originRecordId = originRecord.Id;
             destinationRecordId = destinationRecord.Id;
+            destinationRecordId2 = destinationRecord2.Id;
             relationshipId = relationship.Id;
         }
     }

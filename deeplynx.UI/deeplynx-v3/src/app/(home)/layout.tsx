@@ -4,6 +4,7 @@ import "@/app/globals.css";
 import LayoutShell from "../(home)/components/LayoutShell";
 import { UserSessionProvider } from "../contexts/UserSessionProvider";
 import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "DeepLynx",
@@ -20,7 +21,10 @@ export default function RootLayout({
       <body>
         <UserSessionProvider>
           <ProjectSessionProvider>
-            <LayoutShell>{children}</LayoutShell>
+            <LayoutShell>
+              {children}
+              <Toaster position="top-right" />
+            </LayoutShell>
           </ProjectSessionProvider>
         </UserSessionProvider>
       </body>

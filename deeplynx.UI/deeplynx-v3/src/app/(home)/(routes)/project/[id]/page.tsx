@@ -3,7 +3,6 @@
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import SavedSearchesTabs from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import { recentRecordsData } from "@/app/(home)/dummy_data/data";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { getProject } from "@/app/lib/projects_services";
@@ -69,13 +68,21 @@ const ProjectDetailPage = () => {
                   </h1>
 
                   <button
+                    type="button"
                     className="btn btn-secondary"
-                    onClick={() => router.push("/data_catalog")}
+                    onClick={() => {
+                      const query = new URLSearchParams({
+                        fromProject: projectId || "",
+                      }).toString();
+                      router.push(`/data_catalog?${query}`);
+                    }}
                   >
                     Visit
                   </button>
                 </div>
-                <RecentRecordsCard records={recentRecordsData} />
+                <RecentRecordsCard
+                  selectedProjects={projectId ? [projectId] : []}
+                />
               </div>
             </div>
 

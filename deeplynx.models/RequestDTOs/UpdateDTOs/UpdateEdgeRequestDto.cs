@@ -3,15 +3,13 @@ using System.Text.Json.Serialization;
 
 namespace deeplynx.models;
 
-public class EdgeRequestDto
+public class UpdateEdgeRequestDto
 {
-    [Required]
     [JsonPropertyName("origin_id")]
-    public long OriginId { get; set; } 
+    public long? OriginId { get; set; }
     
-    [Required]
     [JsonPropertyName("destination_id")]
-    public long DestinationId { get; set; }
+    public long? DestinationId { get; set; }
     
     [JsonPropertyName("name")]
     public string? RelationshipName { get; set; }
