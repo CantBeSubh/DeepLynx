@@ -1,37 +1,36 @@
 services:
-    app:
-        env_file:
-            - .env
-        build:
-            context: ./
-            dockerfile: Dockerfiles/Dockerfile.app.local
-        ports:
-            - 3000:3000
-        environment:
-           NODE_ENV: production
-        depends_on: ["postgres"]
-        #entrypoint: /usr/local/bin/entrypoint.sh
-    backend:
-        env_file:
-            - .env
-        build:
-            context: ./
-            dockerfile: Dockerfiles/Dockerfile.backend.local
-        ports:
-            - 5000:5000
-        depends_on: ["postgres"]
-        entrypoint: /usr/local/bin/entrypoint.sh
-    postgres:
-        env_file:
-            - .env
-        build:
-            context: ./database
-            dockerfile: Dockerfiles/Dockerfile.db.local
-        ports:
-            - "5433:5432"
-        # healthcheck:    
-        #     test: |
-        #         while ! pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}; do
-        #             echo "$(date) - waiting for database to start"
-        #             sleep 5
-        #         done
+  app:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/Dockerfile.app.local
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
+      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    depends_on:
+      - postgres
+
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/Dockerfile.backend.local
+    ports:
+      - "5000:5000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
+      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    depends_on:
+      - postgres
+    entrypoint: /usr/local/bin/entrypoint.sh
+
+  postgres:
+    build:
+      context: ./database
+      dockerfile: Dockerfiles/Dockerfile.db.local
+    ports:
+      - "5433:5432"
