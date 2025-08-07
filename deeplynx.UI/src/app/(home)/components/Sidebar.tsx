@@ -21,9 +21,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     <div className="relative">
       <div
         ref={sidebarRef}
-        className={`fixed top-16 left-0 h-[calc(100%-64px)] bg-base-200 shadow-lg transform ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        } transition-transform duration-300 ease-in-out z-40`}
+        className={`fixed top-16 left-0 h-[calc(100%-64px)] bg-base-200 shadow-lg transform ${isOpen ? "translate-x-0" : "-translate-x-full"
+          } transition-transform duration-300 ease-in-out z-40`}
         style={{ width: isOpen ? "30%" : "0" }}
       >
         {isOpen && (
@@ -41,9 +40,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
             </div>
             <h2 className="card-title pb-4 text-base-content">FAQ's</h2>
             <div
-              className={`collapse collapse-plus border border-neutral ${
-                selectedFAQ === 0 ? "bg-base-200" : "bg-primary"
-              }`}
+              className={`collapse collapse-plus border border-neutral ${selectedFAQ === 0 ? "bg-base-200" : "bg-primary"
+                }`}
             >
               <input
                 type="radio"
@@ -60,9 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               </div>
             </div>
             <div
-              className={`collapse collapse-plus border border-neutral ${
-                selectedFAQ === 1 ? "bg-base-200" : "bg-primary"
-              }`}
+              className={`collapse collapse-plus border border-neutral ${selectedFAQ === 1 ? "bg-base-200" : "bg-primary"
+                }`}
             >
               <input
                 type="radio"
@@ -79,9 +76,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               </div>
             </div>
             <div
-              className={`collapse collapse-plus border border-neutral ${
-                selectedFAQ === 2 ? "bg-base-200" : "bg-primary"
-              }`}
+              className={`collapse collapse-plus border border-neutral ${selectedFAQ === 2 ? "bg-base-200" : "bg-primary"
+                }`}
             >
               <input
                 type="radio"
