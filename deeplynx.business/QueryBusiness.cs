@@ -163,61 +163,18 @@ public class QueryBusiness : IQueryBusiness
     }
     
     /// <summary>
-    /// Filters record request
+    /// Google search bar 
     /// </summary>
-    /// <param name="filterRequest">Filter Request DTO</param>
-    /// <returns>A list of record response dtos that match provided filters</returns>
-    /// TODO: Partial match with combined strings Example: "Reactor Care" should return entries with "Reactor Core" as the name or description
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> FilteredRecords(string[] filterRequest)
+    /// <param name="query">String query</param>
+    /// <returns>A list of historical record response dtos that match provided query parameters</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string userQuery)
     {
-        var query = _context.HistoricalRecords.AsQueryable();
-    
-        // Check database for partial match, ignore case
-        query = query.Where(c => filterRequest.Any(filter =>
-            c.Name.ToLower().Contains(filter.ToLower()) ||
-            c.Description.ToLower().Contains(filter.ToLower())));
-        
-        var records = await query.ToListAsync();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto()
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                Description = r.Description, 
-                LastUpdatedAt = r.LastUpdatedAt
-            });
-    }
-    
-    
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string query)
-    {
-        if (string.IsNullOrWhiteSpace(query))
+        if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
-
-        var terms = query
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-            .Select(term => term.Trim())
-            .ToArray();
         
-        var tsQuery = ParseToTsQuery(query); // "data & digital"
-
+        var query = ParseToQuery(userQuery);
+        
+        // full text search query for all text properties of historical records table 
         var sql = @"
             SELECT *
             FROM deeplynx.historical_records
@@ -235,8 +192,8 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(tags::text, '')
             ) @@ to_tsquery(@query);
         ";
-
-        var param = new NpgsqlParameter("query", tsQuery);
+        
+        var param = new NpgsqlParameter("query", query);
 
         var results = await _context.HistoricalRecords
             .FromSqlRaw(sql, param)
@@ -268,7 +225,7 @@ public class QueryBusiness : IQueryBusiness
             });
     }
     
-    private string ParseToTsQuery(string userInput)
+    private string ParseToQuery(string userInput)
     {
         var tokens = userInput
             .ToLower()
