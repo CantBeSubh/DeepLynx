@@ -4,8 +4,10 @@ import { UserCircleIcon } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import React from "react";
 import SideMenu from "./SideMenu";
+import { useRouter } from "next/navigation";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
@@ -22,7 +24,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           alt="Logo"
           height={20}
           width={150}
-          className="rounded"
+          className="rounded cursor-pointer"
           style={{
             WebkitMaskImage:
               "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
@@ -31,6 +33,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             WebkitMaskRepeat: "no-repeat",
             maskRepeat: "no-repeat",
           }}
+          onClick={() => router.push("/")}
         />
         {/* <label className="toggle text-neutral">
           <input type="checkbox" value="dark" className="theme-controller" />
