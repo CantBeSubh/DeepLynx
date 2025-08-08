@@ -285,13 +285,13 @@ public class UserBusiness : IUserBusiness
     /// </summary>
     /// <param name="projectId">An array of project ids</param>
     /// <returns>An array of records</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectId)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
     {
         var records = _context.HistoricalRecords
-            .Where(r => projectId.Contains(r.ProjectId))
-            .GroupBy(r => r.RecordId)
-            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
-            .Where(r => r.ArchivedAt == null);
+                .Where(p => projectIds.Contains(p.ProjectId))
+                .OrderByDescending(p => p.LastUpdatedAt)
+                .Where(r => r.ArchivedAt == null)
+                .ToList();
         
         return records
             .Select(r => new HistoricalRecordResponseDto()
