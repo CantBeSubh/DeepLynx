@@ -63,13 +63,11 @@ const ListView: React.FC<ListViewProps> = ({
         record.projectId !== undefined &&
         selectedProjects.includes(record.projectId)
     );
-
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
       <ul className="list">
         {filteredRecords.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
-          // We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description
           const desc = getHighlightedCell(
             record.description,
             activeSearchTerms
@@ -88,7 +86,7 @@ const ListView: React.FC<ListViewProps> = ({
                 )
               }
             >
-              <div className="font-bold text-base-content mb-1">
+              <div className="font-bold mb-1">
                 {name.content}
               </div>
               {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}

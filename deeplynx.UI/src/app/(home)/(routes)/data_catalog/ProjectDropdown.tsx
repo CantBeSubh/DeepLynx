@@ -85,7 +85,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
   return (
     <div className="relative inline-block text-left min-w-sm text-black" ref={dropdownRef}>
       <button
-        className="flex items-center gap-1 text-lg"
+        className="flex items-center gap-1 text-md"
         onClick={() => setIsOpen(!isOpen)}
       >
         {selectedLabel}{" "}

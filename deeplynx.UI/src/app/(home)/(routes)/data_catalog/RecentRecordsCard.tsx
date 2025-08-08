@@ -68,19 +68,19 @@ const RecentRecordsCard = ({
       <h2 className="text-lg text-black mb-4t">
         Recently Added Records
       </h2>
-      <div className="divider"></div>
-      <ul className="list px-4">
+      <div className="divider m-0 mt-2"></div>
+      <ul className="list mt-0">
         {paginatedRecords.map((record, index) => (
           <li
             key={index}
-            className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 rounded-sm"
+            className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 pl-0 rounded-sm"
             onClick={() =>
               router.push(
                 `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
               )
             }
           >
-            <div className="font-bold text-base-content mb-1">
+            <div className="text-accent-content mb-1">
               {record.name}
             </div>
             <div className="text-sm text-base-300 space-x-2 flex flex-wrap">

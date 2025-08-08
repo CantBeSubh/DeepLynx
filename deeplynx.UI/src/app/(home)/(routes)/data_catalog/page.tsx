@@ -173,7 +173,7 @@ const DataCatalogContent = () => {
         </div>
       </div>
 
-      <div className="flex justify-between gap-4 mb-4 pt-20 pl-8">
+      <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
         <div className="w-full flex flex-col gap-1 items-start">
           <div className="w-full md:w-1/2">
             <LargeSearchBar
@@ -200,7 +200,7 @@ const DataCatalogContent = () => {
             </div>
           </div>
         </div>
-        <div className="flex gap-4">
+        <div className="flex gap-1">
           {showAll ? (
             <button
               className="btn btn-outline btn-primary"
