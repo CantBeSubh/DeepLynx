@@ -309,6 +309,7 @@ public class UserBusiness : IUserBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
+                Description = r.Description,
                 CreatedBy = r.CreatedBy,
                 CreatedAt = r.CreatedAt,
                 ModifiedBy = r.ModifiedBy,
