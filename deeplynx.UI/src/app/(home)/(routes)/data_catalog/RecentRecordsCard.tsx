@@ -52,22 +52,23 @@ const RecentRecordsCard = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric', 
-      hour: 'numeric', 
-      minute: 'numeric', 
-      hour12: true, 
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
       timeZoneName: 'short'
     };
     return date.toLocaleString('en-US', options);
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4">
-      <h2 className="text-lg font-semibold mb-4 border-b border-base-content">
+    <div className="bg-base-100 rounded-xl p-4 shadow-md">
+      <h2 className="text-lg text-black mb-4t">
         Recently Added Records
       </h2>
+      <div className="divider"></div>
       <ul className="list px-4">
         {paginatedRecords.map((record, index) => (
           <li
@@ -89,7 +90,7 @@ const RecentRecordsCard = ({
                   {record.className}
                 </span>
               </span>
-              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt??record.createdAt)}</span>
+              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt ?? record.createdAt)}</span>
               <span className="ml-4">Project: {record.projectName}</span>
               <span className="ml-4">Data Source: {record.dataSourceName}</span>
             </div>

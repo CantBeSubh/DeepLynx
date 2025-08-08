@@ -162,9 +162,9 @@ const DataCatalogContent = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/50 pl-12 pt-2 pb-2">
+      <div className="flex justify-between items-center bg-base-200/50 pl-12 pt-3 pb-2">
         <div>
-          <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
+          <h1 className="text-2xl text-info-content">Data Catalog</h1>
           <ProjectDropdown
             projects={projects}
             onSelectionChange={(ids) => setSelectedProjects(ids)}
@@ -307,7 +307,7 @@ const DataCatalogContent = () => {
           />
         )
       ) : (
-        <div className="flex w-full gap-8">
+        <div className="flex w-full gap-8 pl-8">
           <div className="w-2/3">
             <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>

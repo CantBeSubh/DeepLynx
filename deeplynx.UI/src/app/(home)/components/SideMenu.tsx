@@ -106,9 +106,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 flex z-50">
       <aside
-        className={`h-full shadow-2xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
