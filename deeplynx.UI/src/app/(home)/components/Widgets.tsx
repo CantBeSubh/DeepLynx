@@ -9,7 +9,13 @@ import RecentActivityWidget from "./WidgetCards/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
 import TeamMembersWidget from "./WidgetCards/TeamMembers";
 
-export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
+export type WidgetType =
+  | "DataOverview"
+  | "Links"
+  | "Graph"
+  | "RecentActivity"
+  | "ProjectOverview"
+  | "TeamMembers";
 interface WidgetCardProps {
   widgets: WidgetType[];
 }
@@ -28,8 +34,8 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ widgets }) => {
       case "Graph":
         return <GraphWidget />;
 
-      case "RecentActivity":
-        return <RecentActivityWidget />;
+      // case "RecentActivity":
+      //   return <RecentActivityWidget />;
 
       case "ProjectOverview":
         return <ProjectOverviewWidget />;

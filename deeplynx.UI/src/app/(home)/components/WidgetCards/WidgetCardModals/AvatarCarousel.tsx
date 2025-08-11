@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from "react";
-import Image from "next/image";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCell from "../../Avatar";
 
 interface Person {
-  id: number;
   name: string;
-  image: string;
-  nickname: string;
-  visibility: string;
-  role: string;
+  email: string;
+  image?: string;
 }
+
 interface AvatarCarouselProps {
   people: Person[];
 }
@@ -67,7 +64,6 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ people }) => {
 
           {/* Avatar Icons */}
           <div className="flex items-center justify-center space-x-3">
-            <p className="text-base-300 mb-2"></p>
             {currentAvatars.map((person, index) => (
               <div key={index} className="avatar inline-block">
                 <div>
@@ -93,7 +89,7 @@ const AvatarCarousel: React.FC<AvatarCarouselProps> = ({ people }) => {
         </div>
       </div>
 
-      {/* Create Link Modal */}
+      {/* Add Member Modal */}
       <AddMember
         isOpen={addMemberModal}
         onClose={() => setAddMemberModal(false)}

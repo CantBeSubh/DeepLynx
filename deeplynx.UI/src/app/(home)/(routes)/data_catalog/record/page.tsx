@@ -128,11 +128,12 @@ const RecordViewPageContent = () => {
   // TODO: make nested objects in table form too
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
-    ? Object.keys(parsedProperties).map(key => {
+    ? Object.keys(parsedProperties).map((key) => {
         const value = parsedProperties[key as keyof object];
         return {
           label: key,
-          value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+          value:
+            typeof value === "object" ? JSON.stringify(value) : String(value),
         };
       })
     : [];
@@ -157,22 +158,6 @@ const RecordViewPageContent = () => {
             <div className="card bg-base-100 shadow-md p-2">
               <h2 className="card-title">Tags: {renderTags(record.tags)}</h2>
             </div>
-
-            {/* <div className="card bg-base-100 shadow-md p-2 ">
-              <div className="card-body">
-                <h2 className="card-title">
-                  Tags:{" "}
-                  {record.tags.map((tag) => (
-                    <div className="card-actions">
-                      <div className="badge badge-outline badge-secondary">
-                        {tag.name}
-                      </div>
-                    </div>
-                  ))}
-                  <ExpandableTagsCell tags={record.tags} />
-                </h2>
-              </div>
-            </div> */}
           </div>
         </div>
       ),

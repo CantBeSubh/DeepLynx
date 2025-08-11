@@ -65,8 +65,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18  ${isMenuCollapsed ? "ml-20" : "ml-64"
-            }`}
+          className={`transition-all duration-300 w-full mt-18  ${
+            isMenuCollapsed ? "ml-20" : "ml-64"
+          }`}
         >
           {children}
         </main>

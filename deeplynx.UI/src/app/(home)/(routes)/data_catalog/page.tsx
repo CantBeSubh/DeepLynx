@@ -161,7 +161,7 @@ const DataCatalogContent = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown
@@ -230,15 +230,17 @@ const DataCatalogContent = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />

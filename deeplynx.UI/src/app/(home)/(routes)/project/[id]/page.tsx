@@ -11,6 +11,7 @@ import { format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RecentRecordsCard from "../../data_catalog/RecentRecordsCard";
+import SearchInput from "@/app/(home)/components/SearchInput";
 
 const ProjectDetailPage = () => {
   const router = useRouter();
@@ -46,7 +47,7 @@ const ProjectDetailPage = () => {
   return (
     <div>
       <main>
-        <div className="text-info-content">
+        <div className="text-info-content bg-base-200/40 pl-12 py-2">
           <h1 className="text-2xl">Project Name: {project.name}</h1>
           <p className="mt-2 text-base-content">{project.description}</p>
           <p>
@@ -56,11 +57,13 @@ const ProjectDetailPage = () => {
           </p>
         </div>
 
-        <div className="divider"></div>
-
-        <div className="flex w-full">
-          <div className="w-full md:w-3/5 pr-4">
-            <div className="card shadow-md">
+        <div className="flex w-full mt-6">
+          <div className="w-full md:w-3/5 px-4">
+            <SearchInput
+              className="md:w-1/2 mb-4 rounded-2xl"
+              placeholder="Search Recently Added Records"
+            />
+            <div className="card card-border">
               <div className="card-body">
                 <div className="flex justify-between px-4">
                   <h1 className="text-xl font-semibold">

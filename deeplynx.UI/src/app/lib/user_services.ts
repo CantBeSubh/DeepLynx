@@ -5,8 +5,17 @@ export const api = axios.create({
     withCredentials: true,
 })
 
+export const getAllUsers = async (projectId: number) => {
+    try {
+        const res = await api.get(`/user/GetAllUsers?${projectId}`);
+        return res.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw error;
+    }
+}
+
 export const getDataOverview = async (userId: string) => {
-    console.log("userId",userId)
     try {
         const res = await api.get(`/user/GetDataOverview/${userId}`);
         return res.data;
