@@ -28,42 +28,6 @@ public class QueryBusiness : IQueryBusiness
     {
         _context = context;
     }
-
-    /// <summary>
-    /// Filters record request
-    /// </summary>
-    /// <param name="filterRequest">Filter Request DTO</param>
-    /// <returns>A list of record response dtos that match provided filters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> FilterRecords(string[] filterRequest)
-    {
-        var query = _context.HistoricalRecords.AsQueryable();
-
-        // Check database for partial match, ignore case
-        query = query.Where(c => filterRequest.Any(filter =>
-            c.Name.ToLower().Contains(filter.ToLower()) ||
-            c.Description.ToLower().Contains(filter.ToLower())));
-
-        var records = await query.ToListAsync();
-
-        return records
-            .Select(r => new HistoricalRecordResponseDto()
-            {
-                Id = r.Id,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                DataSourceId = r.DataSourceId,
-                ProjectId = r.ProjectId,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                Description = r.Description
-            });
-    }
     
     /// <summary>
     /// Advanced query builder
@@ -164,9 +128,9 @@ public class QueryBusiness : IQueryBusiness
     }
     
     /// <summary>
-    /// Google search bar 
+    /// Google-type search
     /// </summary>
-    /// <param name="query">String query</param>
+    /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string userQuery)
     {
@@ -177,30 +141,29 @@ public class QueryBusiness : IQueryBusiness
         
         // full text search query for all text properties of historical records table 
         var sql = @"
-        SELECT *
-        FROM deeplynx.historical_records
-        WHERE to_tsvector('english',
-            coalesce(name, '') || ' ' ||
-            coalesce(description, '') || ' ' ||
-            coalesce(class_name, '') || ' ' ||
-            coalesce(uri, '') || ' ' ||
-            coalesce(original_id, '') || ' ' ||
-            coalesce(data_source_name, '') || ' ' ||
-            coalesce(project_name, '') || ' ' ||
-            coalesce(created_by, '') || ' ' ||
-            coalesce(modified_by, '') || ' ' ||
-            coalesce(properties::text, '') || ' ' ||
-            coalesce(tags::text, '')
-        ) @@ to_tsquery('english', @query);
-    ";
+            SELECT *
+            FROM deeplynx.historical_records
+            WHERE to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(created_by, '') || ' ' ||
+                coalesce(modified_by, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            ) @@ to_tsquery('english', @query);
+        ";
 
         var param = new NpgsqlParameter("query", query);
 
         var results = await _context.HistoricalRecords
             .FromSqlRaw(sql, param)
             .ToListAsync();
-
-
+        
         return results
             .Select(r => new HistoricalRecordResponseDto()
             {
@@ -233,7 +196,7 @@ public class QueryBusiness : IQueryBusiness
             return string.Empty;
 
         // Operators to translate
-        var operators = new HashSet<string> { "AND", "OR", "NOT" };
+        var operators = new HashSet<string> { "AND", "OR" };
 
         // Tokenize input by whitespace
         var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
@@ -249,13 +212,12 @@ public class QueryBusiness : IQueryBusiness
                 {
                     case "AND": result.Add("&"); break;
                     case "OR": result.Add("|"); break;
-                    case "NOT": result.Add("!"); break;
                 }
             }
             else
             {
                 // Add :* for partial matching
-                var cleaned = Regex.Replace(token, @"[^\w]", ""); // Remove punctuation/special chars
+                var cleaned = Regex.Replace(token, @"[^\w]", "");
                 if (!string.IsNullOrWhiteSpace(cleaned))
                     result.Add($"{cleaned}:*");
             }

@@ -23,10 +23,10 @@ namespace deeplynx.api.Controllers
             _queryBusiness = queryBusiness;
         }
         /// <summary>
-        /// Quick search records 
+        /// Google-type search records 
         /// </summary>
-        /// <param name="filterArray">Array of strings</param>
-        /// <returns>List of class response DTOs</returns>
+        /// <param name="userQuery">String phrase entered by user</param>
+        /// <returns>List of historical record response DTOs</returns>
         [HttpGet("Filter", Name = "api_filter_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
             [FromQuery] string userQuery)
