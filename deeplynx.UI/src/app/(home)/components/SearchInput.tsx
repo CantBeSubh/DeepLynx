@@ -14,14 +14,12 @@ const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
 }: SearchInputProps) => {
   return (
-    <label
-      className={`input flex items-center relative ml-2 bg-base-200 ${className}`}
-    >
+    <label className={`input flex items-center relative ml-2 ${className}`}>
       {/* Input field */}
       <input
         type="text"
         placeholder={placeholder}
-        className="input pl-10 focus:outline-none text-secondary-content"
+        className="input pl-10 focus:outline-none text-info-content"
         onChange={onChange}
       />
       {/* Search icon */}

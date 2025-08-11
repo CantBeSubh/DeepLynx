@@ -11,6 +11,7 @@ import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import SearchInput from "./components/SearchInput";
 
 const Projects = () => {
   const router = useRouter();
@@ -18,6 +19,15 @@ const Projects = () => {
   const [widgetModal, setWidgetModal] = useState(false);
   const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
   const [projects, setProjects] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProjects = projects.filter((project: ProjectsList) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      project.name.toLowerCase().includes(term) ||
+      project.description?.toLowerCase().includes(term)
+    );
+  });
 
   const refreshProjects = async () => {
     try {
@@ -54,57 +64,63 @@ const Projects = () => {
         <h1 className="text-2xl font-bold text-info-content">
           Welcome Back Kevin
         </h1>
+        <SearchInput
+          placeholder="Search Projects"
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
       <div className="divider" />
 
       {/* Main Content */}
-      <div className="flex w-full">
-        <div className="w-full md:w-1/2 px-4">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-info-content text-lg font-semibold">
-              Your Projects
-            </h3>
+      <div className="w-full">
+        <div className="flex justify-between items-center justify-end mb-4">
+          <button className="btn btn-outline btn-secondary flex items-center mr-2">
+            <Cog6ToothIcon className="size-6" />
+            Customize
+          </button>
+          <button
+            onClick={() => setWidgetModal(true)}
+            className="btn btn-secondary text-primary-content flex items-center"
+          >
+            <PlusIcon className="size-6" />
+            Widget
+          </button>
+        </div>
+        <div className="flex">
+          <div className="w-full md:w-1/2 px-4">
+            <div className="card card-border p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-info-content text-lg font-semibold">
+                  Your Projects
+                </h3>
 
-            <div className="flex gap-2">
-              <button className="btn btn-outline btn-secondary flex items-center gap-1">
-                <PlusIcon className="size-6" />
-                <span>Record</span>
-              </button>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="btn btn-secondary text-primary-content flex items-center gap-1"
-              >
-                <PlusIcon className="size-6" />
-                <span>Project</span>
-              </button>
+                <div className="flex gap-2">
+                  <button className="btn btn-outline btn-secondary flex items-center gap-1">
+                    <PlusIcon className="size-6" />
+                    <span>Record</span>
+                  </button>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="btn btn-secondary text-primary-content flex items-center gap-1"
+                  >
+                    <PlusIcon className="size-6" />
+                    <span>Project</span>
+                  </button>
+                </div>
+              </div>
+              <ExpandableTable
+                data={filteredProjects}
+                columns={columns}
+                onExplore={handleExplore}
+                renderExpandedContent={(project, onClose) => (
+                  <ExpandedProjectCard project={project} onClose={onClose} />
+                )}
+              />
             </div>
           </div>
-
-          <ExpandableTable
-            data={projects}
-            columns={columns}
-            onExplore={handleExplore}
-            renderExpandedContent={(project, onClose) => (
-              <ExpandedProjectCard project={project} onClose={onClose} />
-            )}
-          />
-        </div>
-
-        <div className="w-full md:w-1/2 px-4">
-          <div className="flex justify-between items-center justify-end mb-4">
-            <button className="btn btn-outline btn-secondary flex items-center mr-2">
-              <Cog6ToothIcon className="size-6" />
-              Customize
-            </button>
-            <button
-              onClick={() => setWidgetModal(true)}
-              className="btn btn-secondary text-primary-content flex items-center"
-            >
-              <PlusIcon className="size-6" />
-              Widget
-            </button>
+          <div className="w-full md:w-1/2 px-4">
+            <WidgetCard widgets={homeWidgets} />
           </div>
-          <WidgetCard widgets={homeWidgets} />
         </div>
       </div>
 

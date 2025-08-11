@@ -72,7 +72,7 @@ ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
 # Copy the frontend code
-COPY deeplynx.UI/deeplynx-v3/ ./
+COPY deeplynx.UI/ ./
 
 # Install dependencies
 RUN rm -rf node_modules package-lock.json
