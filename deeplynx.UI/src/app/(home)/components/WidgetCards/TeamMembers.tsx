@@ -7,6 +7,7 @@ import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddM
 import { Column, TeamMember } from "@/app/(home)/types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
+import { translations } from "@/app/lib/translations";
 import { getAllUsers } from "@/app/lib/user_services";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
@@ -15,6 +16,8 @@ const TeamMembersWidget: React.FC = () => {
   const [addMemberModal, setAddMemberModal] = useState(false);
   const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
   const { project } = useProjectSession();
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
 
   const handleToggle = () => {
     setShowTable((prev) => !prev);
@@ -65,7 +68,7 @@ const TeamMembersWidget: React.FC = () => {
     <div className="card-body">
       <div className="flex justify-between">
         <h2 className="card-title flex items-center">
-          Team Members
+          {t.WidgetCards.TEAM_MEMBERS}
           {showTable && (
             <button onClick={() => setAddMemberModal(true)} className="ml-1">
               <PlusCircleIcon className="w-7 h-7 text-secondary" />

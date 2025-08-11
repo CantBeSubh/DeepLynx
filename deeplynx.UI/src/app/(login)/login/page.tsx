@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import ArrowButton from "@/app/(home)/components/ArrowButton";
 import { links, LinkT } from "@/app/(home)/(routes)/links";
+import { translations } from "@/app/lib/translations";
 import "@/app/globals.css";
 
 export default function Login() {
   const [isChecked, setChecked] = useState(true);
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
 
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
@@ -27,26 +30,19 @@ export default function Login() {
 
             <div className="flex flex-col items-center mt-2">
               <h2 className="text-sm text-center text-slate-800">
-                All data contained within DOE computer systems is owned by DOE
-                and may be audited, intercepted, recorded, read, copied, or
-                captured in any manner and disclosed in any manner by authorized
-                personnel. THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. System
-                personnel may disclose any potential evidence of crime found on
-                DOE computer systems to appropriate authorities. USE OF THIS
-                SYSTEM BY ANY USER, AUTHORIZED OR UNAUTHORIZED, CONSTITUTES
-                CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING,
-                COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY.
-                **WARNING**WARNING**WARNING**WARNING**WARNING**
+                {t.loginPage.WARNING}
               </h2>
               <h2 className="text-sm text-center text-slate-800">
-                Click here for the Vulnerability Disclosure
+                {t.loginPage.VULNERABILITY_DISCLOSURE}
               </h2>
             </div>
           </div>
         </div>
       </main>
       <Link className="text-white w-full max-w-lg px-40" href="/login/signin">
-        <button className="btn btn-outline w-full">Sign In</button>
+        <button className="btn btn-outline w-full">
+          {t.loginPage.SIGN_IN}
+        </button>
       </Link>
       <footer className="flex flex-wrap items-center justify-center gap-8 mt-16 mb-8">
         {links

@@ -12,9 +12,12 @@ import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import SearchInput from "./components/SearchInput";
+import { translations } from "../lib/translations";
 
 const Projects = () => {
   const router = useRouter();
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
@@ -62,7 +65,7 @@ const Projects = () => {
       {/* Header */}
       <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2 h-20">
         <h1 className="text-2xl font-bold text-info-content">
-          Welcome Back Kevin
+          {t.HomeDashboard.WELECOME}
         </h1>
         <SearchInput
           placeholder="Search Projects"
@@ -76,14 +79,14 @@ const Projects = () => {
         <div className="flex justify-between items-center justify-end mb-4">
           <button className="btn btn-outline btn-secondary flex items-center mr-2">
             <Cog6ToothIcon className="size-6" />
-            Customize
+            {t.HomeDashboard.CUSTOMIZE}
           </button>
           <button
             onClick={() => setWidgetModal(true)}
             className="btn btn-secondary text-primary-content flex items-center"
           >
             <PlusIcon className="size-6" />
-            Widget
+            {t.HomeDashboard.WIDGET}
           </button>
         </div>
         <div className="flex">
@@ -91,20 +94,20 @@ const Projects = () => {
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">
-                  Your Projects
+                  {t.HomeDashboard.YOUR_PROJECTS}
                 </h3>
 
                 <div className="flex gap-2">
                   <button className="btn btn-outline btn-secondary flex items-center gap-1">
                     <PlusIcon className="size-6" />
-                    <span>Record</span>
+                    <span>{t.HomeDashboard.RECORD}</span>
                   </button>
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="btn btn-secondary text-primary-content flex items-center gap-1"
                   >
                     <PlusIcon className="size-6" />
-                    <span>Project</span>
+                    <span>{t.HomeDashboard.PROJECT}</span>
                   </button>
                 </div>
               </div>
