@@ -106,9 +106,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 flex z-50">
       <aside
-        className={`h-full shadow-2xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
@@ -235,7 +234,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       </aside>
       {/* Toggle tab (sticking out to the right) */}
       <div
-        className="h-12 w-5 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-4"
+        className="h-8 w-4 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-20"
         onClick={toggleMenu}
       >
         {isCollapsed ? (

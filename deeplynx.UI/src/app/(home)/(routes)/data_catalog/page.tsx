@@ -21,7 +21,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { filterRecords } from "@/app/lib/filter_services";
+import { queryRecords } from "@/app/lib/filter_services";
 import ExpandableTagsCell from "./ExpandableTagCell";
 import Link from "next/link";
 
@@ -123,7 +123,7 @@ const DataCatalogContent = () => {
         { id: nextFilterId, term: trimmed },
       ];
       const allSearchTerm = newFilters.map((f) => f.term);
-      const filteredData = await filterRecords(allSearchTerm);
+      const filteredData = await queryRecords(value);
 
       setTableData(filteredData);
       setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
@@ -161,7 +161,7 @@ const DataCatalogContent = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown
@@ -171,26 +171,33 @@ const DataCatalogContent = () => {
           />
         </div>
       </div>
-
-      <div className="divider"></div>
-
-      <div className="flex justify-between gap-4 mb-4">
-        <LargeSearchBar
-          placeholder="Search by name and description..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onEnter={handleSearch}
-          activeFilters={activeFilters}
-          onRemoveFilter={(id) =>
-            setActiveFilters(activeFilters.filter((f) => f.id !== id))
-          }
-          onClearAll={clearAllFilters}
-          resultCount={tableData.length}
-          showResultsMessage={activeFilters.length > 0}
-          className="md:w-1/4"
-        />
-
-        <div className="flex gap-4">
+      <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
+        {/* Left side: Search bar + "Additional Filters" link */}
+        <div className="flex flex-col md:w-1/2">
+          <LargeSearchBar
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onEnter={handleSearch}
+            activeFilters={activeFilters}
+            onRemoveFilter={(id) =>
+              setActiveFilters(activeFilters.filter((f) => f.id !== id))
+            }
+            onClearAll={clearAllFilters}
+            resultCount={tableData.length}
+            showResultsMessage={activeFilters.length > 0}
+            className="w-full"
+          />
+          <div className="text-right mt-1">
+            <a
+              href="/placeholder for advanced"
+              className="text-sm underline text-secondary hover:underline"
+            >
+              Additional Filters
+            </a>
+          </div>
+        </div>
+        <div className="flex gap-4 pr-4">
           {showAll ? (
             <button
               className="btn btn-outline btn-primary"
@@ -223,17 +230,15 @@ const DataCatalogContent = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />
@@ -299,7 +304,7 @@ const DataCatalogContent = () => {
           />
         )
       ) : (
-        <div className="flex w-full gap-8">
+        <div className="flex w-full gap-8 pl-8">
           <div className="w-2/3">
             <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>

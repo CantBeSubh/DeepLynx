@@ -1,0 +1,229 @@
+using System.Linq.Expressions;
+using System.Text.RegularExpressions;
+using deeplynx.datalayer.Models;
+using deeplynx.helpers.exceptions;
+using deeplynx.interfaces;
+using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
+using deeplynx.helpers;
+using Microsoft.AspNetCore.Mvc;
+using Npgsql;
+
+namespace deeplynx.business;
+
+/// <summary>
+/// Filter record request
+/// </summary>
+public class QueryBusiness : IQueryBusiness
+{
+    private readonly DeeplynxContext _context;
+
+    /// <summary>
+    /// Filter record request
+    /// </summary>
+    /// <param name="context">The database context to be used for filter operations.</param>
+    public QueryBusiness(
+        DeeplynxContext context
+    )
+    {
+        _context = context;
+    }
+    
+    /// <summary>
+    /// Advanced query builder
+    /// </summary>
+    /// <param name="queryRequests">Array of query component dtos</param>
+    /// <returns>A list of historical record response dtos that match provided filters</returns>
+    public IEnumerable<HistoricalRecordResponseDto> BuildQuery(AdvancedQueryRequestDto[] queryRequests)
+    {
+        var histRec = _context.HistoricalRecords.AsQueryable();
+        // Creates a parameter expression that represents a single instance of the HistoricalRecord class
+        var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
+        Expression combinedExpression = null;
+
+        foreach (var query in queryRequests)
+        {
+            // Creates an expression that represents accessing a property of the HistoricalRecord class
+            var property = Expression.Property(parameter, query.Filter);
+            // Converts the value from the DTO to the type of the property being filtered.
+            var value = Expression.Constant(Convert.ChangeType(query.Value, property.Type));
+            // Create the comparison operation (e.g., x.Name == "value")
+            Expression comparison = null; 
+            if (query.Operator == "LIKE")
+            {
+                var method = query.Value.GetType().GetMethod("Contains");
+                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+            }
+            if (query.Operator == "IN") // might already be handled by LIKE 
+            {
+                var method = query.Value.GetType().GetMethod("Contains");
+                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+            }
+            else
+            {
+                comparison = CreateComparisonExpression(property, value, query.Operator);
+            }
+         
+            // Combine the expressions using the connector (AND/OR)
+            combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
+        }
+
+        // Create the final lambda expression
+        var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
+        var records = histRec.Where(lambda).ToList();
+        return records
+            .Select(r => new HistoricalRecordResponseDto()
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+
+    private Expression CreateComparisonExpression(MemberExpression property, ConstantExpression value, string operatorType)
+    {
+        return operatorType switch
+        {
+            //TODO: include LIKE operator, IN  for arrays
+            //TODO: Logic for operator and value type 
+            "=" => Expression.Equal(property, value),
+            ">" => Expression.GreaterThan(property, value),
+            "<" => Expression.LessThan(property, value),
+            ">=" => Expression.GreaterThanOrEqual(property, value),
+            "<=" => Expression.LessThanOrEqual(property, value),
+            "!=" => Expression.NotEqual(property, value),
+            _ => throw new NotSupportedException($"Operator {operatorType} is not supported")
+        };
+    }
+
+    private Expression CombineExpressions(Expression existing, Expression newExpression, string connector)
+    {
+        if (existing == null)
+        {
+            return newExpression;
+        }
+
+        return connector switch
+        {
+            "AND" => Expression.AndAlso(existing, newExpression),
+            "OR" => Expression.OrElse(existing, newExpression),
+            _ => throw new NotSupportedException($"Connector {connector} is not supported")
+        };
+    }
+    
+    /// <summary>
+    /// Google-type search
+    /// </summary>
+    /// <param name="userQuery">String query</param>
+    /// <returns>A list of historical record response dtos that match provided query parameters</returns>
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string userQuery)
+    {
+        if (string.IsNullOrWhiteSpace(userQuery))
+            throw new Exception("Search query is required.");
+        
+        var query = ParseToQuery(userQuery);
+        
+        // full text search query for all text properties of historical records table 
+        var sql = @"
+            SELECT *
+            FROM deeplynx.historical_records
+            WHERE to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(created_by, '') || ' ' ||
+                coalesce(modified_by, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            ) @@ to_tsquery('english', @query);
+        ";
+
+        var param = new NpgsqlParameter("query", query);
+
+        var results = await _context.HistoricalRecords
+            .FromSqlRaw(sql, param)
+            .ToListAsync();
+        
+        return results
+            .Select(r => new HistoricalRecordResponseDto()
+            {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                MappingId = r.MappingId,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                CreatedBy = r.CreatedBy,
+                CreatedAt = r.CreatedAt,
+                ModifiedBy = r.ModifiedBy,
+                ModifiedAt = r.ModifiedAt,
+                ArchivedAt = r.ArchivedAt,
+                Description = r.Description, 
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+    
+    private string ParseToQuery(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        // Operators to translate
+        var operators = new HashSet<string> { "AND", "OR" };
+
+        // Tokenize input by whitespace
+        var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>();
+
+        foreach (var token in tokens)
+        {
+            string upper = token.ToUpperInvariant();
+
+            if (operators.Contains(upper))
+            {
+                switch (upper)
+                {
+                    case "AND": result.Add("&"); break;
+                    case "OR": result.Add("|"); break;
+                }
+            }
+            else
+            {
+                // Add :* for partial matching
+                var cleaned = Regex.Replace(token, @"[^\w]", "");
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                    result.Add($"{cleaned}:*");
+            }
+        }
+
+        return string.Join(" ", result);
+    }
+
+}

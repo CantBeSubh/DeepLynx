@@ -5,7 +5,7 @@ export const api = axios.create({
     withCredentials: true
 })
 
-export const filterRecords = async (filter: string[]) => {
+export const filterRecords = async (filter: string) => {
     try {
         const res = await api.post("/records/Filter", filter, {
             headers: { "Content-Type": "application/json" },
@@ -13,6 +13,19 @@ export const filterRecords = async (filter: string[]) => {
         return res.data;
     } catch (error) {
         console.error("Error filtering records:", error);
+        throw error;
+    }
+}
+
+export const queryRecords = async (query: string) => {
+    const queryParams = {
+        userQuery: query
+    };
+    try {
+        const res = await api.get("/records/Filter/", { params: queryParams });
+        return res.data;
+    } catch (error) {
+        console.error("Query records failed:", error);
         throw error;
     }
 }

@@ -52,34 +52,35 @@ const RecentRecordsCard = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
-      month: 'long', 
-      day: 'numeric', 
-      year: 'numeric', 
-      hour: 'numeric', 
-      minute: 'numeric', 
-      hour12: true, 
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
       timeZoneName: 'short'
     };
     return date.toLocaleString('en-US', options);
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4">
-      <h2 className="text-lg font-semibold mb-4 border-b border-base-content">
+    <div className="bg-base-100 rounded-xl p-4 shadow-md">
+      <h2 className="text-lg text-black mb-4t">
         Recently Added Records
       </h2>
-      <ul className="list px-4">
+      <div className="divider m-0 mt-2"></div>
+      <ul className="list mt-0">
         {paginatedRecords.map((record, index) => (
           <li
             key={index}
-            className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 rounded-sm"
+            className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 pl-0 rounded-sm"
             onClick={() =>
               router.push(
                 `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
               )
             }
           >
-            <div className="font-bold text-base-content mb-1">
+            <div className="text-accent-content mb-1">
               {record.name}
             </div>
             <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
@@ -89,7 +90,7 @@ const RecentRecordsCard = ({
                   {record.className}
                 </span>
               </span>
-              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt??record.createdAt)}</span>
+              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt ?? record.createdAt)}</span>
               <span className="ml-4">Project: {record.projectName}</span>
               <span className="ml-4">Data Source: {record.dataSourceName}</span>
             </div>

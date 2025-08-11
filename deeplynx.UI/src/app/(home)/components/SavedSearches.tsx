@@ -89,7 +89,7 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
   ];
 
   return (
-    <div className="card shadow-lg mt-3">
+    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md">
       <div className="card-body">
         <h2 className="card-title">Saved Searches</h2>
         <Tabs tabs={tabData} className="tabs tabs-border" />
