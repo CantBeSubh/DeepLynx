@@ -14,6 +14,7 @@ import RecentRecordsCard from "../../data_catalog/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 import React from "react";
 import SearchInput from "@/app/(home)/components/SearchInput";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 
 const ProjectDetailPage = () => {
   const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
@@ -45,17 +46,18 @@ const ProjectDetailPage = () => {
     fetchProject();
   }, [hasLoaded, projectId, setProjectSession]);
 
-  if (!hasLoaded) return <p className="p-4">Loading session...</p>;
-  if (!project) return <p className="p-4">No project found.</p>;
+  if (!hasLoaded) return <p className="p-4">{t.ProjectDashboard.LOADING}</p>;
+  if (!project)
+    return <p className="p-4">{t.ProjectDashboard.NO_PROJECT_FOUND}</p>;
 
   return (
     <div>
       <main>
-        <div className="text-info-content">
+        <div className="text-info-content bg-base-200/40 py-3 p-12">
           <h1 className="text-2xl">{project.name}</h1>
           <p className="mt-2 text-base-content">{project.description}</p>
           <p>
-            <strong>Created: </strong>
+            <strong>{t.ProjectDashboard.CREATED} </strong>
             {project?.createdAt &&
               format(new Date(project.createdAt), "MM/dd/yyyy")}
           </p>
@@ -63,9 +65,14 @@ const ProjectDetailPage = () => {
 
         <div className="flex w-full mt-6">
           <div className="w-full md:w-3/5 px-4">
-            <SearchInput
-              className="md:w-1/2 mb-4 rounded-2xl"
-              placeholder="Search Recently Added Records"
+            <LargeSearchBar
+              onEnter={(searchTerm) => {
+                const query = new URLSearchParams({
+                  fromProject: projectId || "",
+                  search: searchTerm,
+                }).toString();
+                router.push(`/data_catalog?${query}`);
+              }}
             />
             <div className="card card-border">
               <div className="card-body">
@@ -100,14 +107,14 @@ const ProjectDetailPage = () => {
             <div className="flex justify-between items-center justify-end mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="size-6" />
-                Customize
+                {t.ProjectDashboard.CUSTOMIZE}
               </button>
               <button
                 onClick={() => setWidgetModal(true)}
                 className="btn btn-secondary text-primary-content flex items-center"
               >
                 <PlusIcon className="size-6" />
-                Widget
+                {t.ProjectDashboard.WIDGET}
               </button>
             </div>
             <WidgetCard widgets={projectWidgets} />

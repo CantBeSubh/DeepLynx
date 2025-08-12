@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { queryRecords } from "@/app/lib/filter_services";
 import {
   getAllProjects,
   getAllRecordsForMultipleProjects,
 } from "@/app/lib/projects_services";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
-import ProjectDropdown from "./ProjectDropdown";
-import ListView from "./ListView";
-import GridView from "./GridView";
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import RecentRecordsCard from "./RecentRecordsCard";
-import SavedSearchesTabs from "../../components/SavedSearches";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -21,14 +15,24 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { queryRecords } from "@/app/lib/filter_services";
-import ExpandableTagsCell from "./ExpandableTagCell";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import SavedSearchesTabs from "../../components/SavedSearches";
+import GridView from "./GridView";
+import ListView from "./ListView";
+import ProjectDropdown from "./ProjectDropdown";
+import RecentRecordsCard from "./RecentRecordsCard";
+import { translations } from "@/app/lib/translations";
+import React from "react";
 
 const DataCatalogContent = () => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromProject = searchParams.get("fromProject");
+  const initialSearch = searchParams.get("search");
 
   const { project, hasLoaded } = useProjectSession();
 
@@ -50,7 +54,15 @@ const DataCatalogContent = () => {
 
   useEffect(() => {
     setHasMounted(true);
-  }, []);
+
+    if (initialSearch && !hasMounted && hasLoaded) {
+      handleSearch(initialSearch);
+    }
+
+    if (initialSearch) {
+      setSearchTerm(initialSearch);
+    }
+  }, [initialSearch, hasMounted, hasLoaded]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -129,6 +141,7 @@ const DataCatalogContent = () => {
       setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
       setNextFilterId(nextFilterId + 1);
       setSearchTerm("");
+      setViewMode("list");
       setShowAll(true);
     } catch (error) {
       console.error("Search error:", error);
@@ -266,7 +279,6 @@ const DataCatalogContent = () => {
                 header: "Record Name",
                 cell: (row) => (
                   <>
-                    {/* {console.log("row for project id", row)} */}
                     <Link
                       href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
                       className="text-base-content font-bold hover:underline"

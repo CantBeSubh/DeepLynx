@@ -63,7 +63,7 @@ const Projects = () => {
   return (
     <div className="bg-base-100">
       {/* Header */}
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2 h-20">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
         <h1 className="text-2xl font-bold text-info-content">
           {t.HomeDashboard.WELECOME}
         </h1>
