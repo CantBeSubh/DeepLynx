@@ -20,11 +20,11 @@ const ProjectDetailPage = () => {
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
   const [widgetModal, setWidgetModal] = useState(false);
   const [canCustomize, setCanCustomize] = useState(false);
-  const projectWidgets: WidgetType[] = [
+  const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
     "RecentActivity",
     "ProjectOverview",
     "TeamMembers",
-  ];
+  ]);
 
   useEffect(() => {
     if (!hasLoaded || !projectId) return;
@@ -40,6 +40,15 @@ const ProjectDetailPage = () => {
     };
     fetchProject();
   }, [hasLoaded, projectId, setProjectSession]);
+
+  const handleSave = (newWidgets: WidgetType[]) => {
+    setProjectWidgets(newWidgets);
+    setCanCustomize(false);
+  };
+
+  const handleCancel = () => {
+    setCanCustomize(false);
+  };
 
   if (!hasLoaded) return <p className="p-4">Loading session...</p>;
   if (!project) return <p className="p-4">No project found.</p>;
@@ -90,39 +99,7 @@ const ProjectDetailPage = () => {
             <SavedSearchesTabs />
           </div>
 
-          {/* <div className="w-full md:w-2/5 px-4">
-            <div className="flex justify-between items-center justify-end mb-4">
-              <button
-                onClick={() => setCanCustomize(!canCustomize)}
-                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
-                  <Cog6ToothIcon className="size-6" />
-                Customize
-              </button>
-              <button
-                onClick={() => setCanCustomize(!canCustomize)}
-                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
-                  <XMarkIcon className="size-6" />
-                Customize
-              </button>
-              <button
-                onClick={() => setCanCustomize(!canCustomize)}
-                className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
-                  <DocumentCheckIcon className="size-6" />
-                Save
-              </button>
-              <button
-                onClick={() => setWidgetModal(true)}
-                className="btn btn-secondary text-primary-content flex items-center"
-              >
-                <PlusIcon className="size-6" />
-                Widget
-              </button>
-            </div>
-            <WidgetCard widgets={projectWidgets} canCustomize={canCustomize}/>
-          </div>
-        </div> */}
-
-         <div className="w-full md:w-2/5 px-4">
+        <div className="w-full md:w-1/2 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
               <button
                 onClick={() => setCanCustomize(!canCustomize)}
@@ -133,7 +110,7 @@ const ProjectDetailPage = () => {
               </button>
               {canCustomize && (
                 <button
-                  onClick={() => {/* Add save here */}}
+                  onClick={() => handleSave(projectWidgets)}
                   className="btn flex items-center mr-2 btn-secondary"
                 >
                   <DocumentCheckIcon className="size-6" />
@@ -148,7 +125,12 @@ const ProjectDetailPage = () => {
                 Widget
               </button>
             </div>
-            <WidgetCard widgets={projectWidgets} canCustomize={canCustomize} />
+            <WidgetCard
+              widgets={projectWidgets}
+              canCustomize={canCustomize}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
           </div>
         </div>
 

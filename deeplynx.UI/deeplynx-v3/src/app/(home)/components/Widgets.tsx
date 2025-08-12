@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ReactNode } from "react";
+import React, { useState, ReactNode, useEffect } from "react";
 import { Reorder } from "framer-motion";
 import DataOverviewWidget from "./WidgetCards/DataOverviewWidget";
 import LinksWidget from "./WidgetCards/LinksWidget";
@@ -13,9 +13,11 @@ export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" |
 interface WidgetCardProps {
   widgets: WidgetType[];
   canCustomize: boolean;
+  onSave: (widgets: WidgetType[]) => void;
+  onCancel: () => void;
 }
 
-const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize }) => {
+const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize, onSave, onCancel }) => {
   const [currentWidgets, setCurrentWidgets] = useState<WidgetType[]>(widgets);
 
   const renderWidgets = (widget: WidgetType) => {

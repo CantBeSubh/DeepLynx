@@ -1,6 +1,6 @@
 interface AddMemberModalProps {
-  isOpen: boolean; // Indicates whether the modal is open
-  onClose: () => void; // Function to call when closing the modal
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 // Main CreateWidget component
@@ -34,7 +34,7 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
                 {/* Container for file upload */}
                 <label className="form-control">
                   <span className="label-text text-neutral">
-                    Upload .png file (optional) {/* Label for file upload */}
+                    Upload .png file (optional)
                   </span>
                   <input
                     type="file" // File input for uploading .owl files

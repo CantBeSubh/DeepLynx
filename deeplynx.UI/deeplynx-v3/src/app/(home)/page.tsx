@@ -17,8 +17,12 @@ const Projects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [canCustomize, setCanCustomize] = useState(false);
-  const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
   const [projects, setProjects] = useState([]);
+  const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
+    "Links",
+    "DataOverview",
+    "Graph",
+  ]);
 
   const refreshProjects = async () => {
     try {
@@ -47,6 +51,15 @@ const Projects = () => {
     { header: "Description", data: (row: ProjectsList) => row.description },
     { header: "Last Viewed", data: (row: ProjectsList) => row.lastViewed },
   ];
+
+  const handleSave = (newWidgets: WidgetType[]) => {
+    setHomeWidgets(newWidgets);
+    setCanCustomize(false);
+  };
+
+  const handleCancel = () => {
+    setCanCustomize(false);
+  };
 
   return (
     <div className="bg-base-100">
@@ -111,7 +124,7 @@ const Projects = () => {
         </div>
       </div> */}
 
-      <div className="w-full md:w-2/5 px-4">
+      <div className="w-full md:w-1/2 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
               <button
                 onClick={() => setCanCustomize(!canCustomize)}
@@ -122,7 +135,7 @@ const Projects = () => {
               </button>
               {canCustomize && (
                 <button
-                  onClick={() => {/* Add save here */}}
+                  onClick={() => handleSave(homeWidgets)}
                   className="btn flex items-center mr-2 btn-secondary"
                 >
                   <DocumentCheckIcon className="size-6" />
@@ -137,7 +150,12 @@ const Projects = () => {
                 Widget
               </button>
             </div>
-            <WidgetCard widgets={homeWidgets} canCustomize={canCustomize} />
+            <WidgetCard
+              widgets={homeWidgets}
+              canCustomize={canCustomize}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
           </div>
         </div>
 
