@@ -65,15 +65,18 @@ const ProjectDetailPage = () => {
 
         <div className="flex w-full mt-6">
           <div className="w-full md:w-3/5 px-4">
-            <LargeSearchBar
-              onEnter={(searchTerm) => {
-                const query = new URLSearchParams({
-                  fromProject: projectId || "",
-                  search: searchTerm,
-                }).toString();
-                router.push(`/data_catalog?${query}`);
-              }}
-            />
+            <div className="flex flex-col">
+              <LargeSearchBar
+                className="mb-4 px-4"
+                onEnter={(searchTerm) => {
+                  const query = new URLSearchParams({
+                    fromProject: projectId || "",
+                    search: searchTerm,
+                  }).toString();
+                  router.push(`/data_catalog?${query}`);
+                }}
+              />
+            </div>
             <div className="card card-border">
               <div className="card-body">
                 <div className="flex justify-between px-4">

@@ -83,7 +83,8 @@ export const translations = {
             CLEAR_ALL: "Clear All",
             NO_RESULTS_FOUND: "No results found.",
             FOUND: "Found",
-            MATCHES: "matches"
+            MATCHES: "matches",
+            ADITIONAL_FILTERS: "Additional Filters"
         }
     },
     es: {

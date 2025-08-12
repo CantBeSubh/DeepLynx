@@ -60,7 +60,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   return (
     <div className={`${className}`}>
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-neutral size-6" />
+        <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-neutral size-6" />
         <input
           type="text"
           placeholder={placeholder}
@@ -81,12 +81,20 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
           <button
             type="button"
             onClick={handleClear}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
+            className="absolute right-4 top-5 transform -translate-y-1/2 text-base-content opacity-70 hover:opacity-100"
             aria-label="Clear search"
           >
             <XMarkIcon className="size-6" />
           </button>
         )}
+        <div className="text-right mt-1">
+          <a
+            href="/placeholder for advanced"
+            className="text-sm underline text-secondary hover:underline"
+          >
+            {t.LargeSearchBar.ADITIONAL_FILTERS}
+          </a>
+        </div>
       </div>
 
       {/* Filter Chips */}
@@ -103,7 +111,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
                   className="hover:text-error"
                   onClick={() => onRemoveFilter(filter.id)}
                 >
-                  X
+                  <XMarkIcon className="size-4" />
                 </button>
               )}
             </div>
@@ -113,7 +121,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
               className="text-sm hover:underline ml-2"
               onClick={onClearAll}
             >
-              Clear All
+              {t.LargeSearchBar.CLEAR_ALL}
             </button>
           )}
         </div>
@@ -122,10 +130,13 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
       {showResultsMessage && (
         <div className="mt-4 ml-1">
           {activeFilters.length > 0 && resultCount === 0 ? (
-            <p>No results found.</p>
+            <p>{t.LargeSearchBar.NO_RESULTS_FOUND}</p>
           ) : (
             <div className="border-b border-base-200">
-              <h2>Found {resultCount} matches</h2>
+              <h2>
+                {t.LargeSearchBar.FOUND} {resultCount}{" "}
+                {t.LargeSearchBar.MATCHES}
+              </h2>
             </div>
           )}
         </div>
