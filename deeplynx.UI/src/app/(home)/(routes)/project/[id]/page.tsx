@@ -11,9 +11,13 @@ import { format } from "date-fns";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import RecentRecordsCard from "../../data_catalog/RecentRecordsCard";
+import { translations } from "@/app/lib/translations";
+import React from "react";
 import SearchInput from "@/app/(home)/components/SearchInput";
 
 const ProjectDetailPage = () => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const router = useRouter();
   const { id } = useParams();
   const projectId = id?.toString();
@@ -47,8 +51,8 @@ const ProjectDetailPage = () => {
   return (
     <div>
       <main>
-        <div className="text-info-content bg-base-200/40 pl-12 py-2">
-          <h1 className="text-2xl">Project Name: {project.name}</h1>
+        <div className="text-info-content">
+          <h1 className="text-2xl">{project.name}</h1>
           <p className="mt-2 text-base-content">{project.description}</p>
           <p>
             <strong>Created: </strong>
@@ -67,7 +71,7 @@ const ProjectDetailPage = () => {
               <div className="card-body">
                 <div className="flex justify-between px-4">
                   <h1 className="text-xl font-semibold">
-                    Data Catalog Overview
+                    {t.ProjectDashboard.DATA_CATALOG_OVERVIEW}
                   </h1>
 
                   <button

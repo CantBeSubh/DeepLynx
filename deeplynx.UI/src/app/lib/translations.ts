@@ -21,6 +21,10 @@ export const translations = {
             RECORD: "Record", 
             PROJECT: "Project", 
         },
+        ProjectDashboard: {
+            PROJECT_NAME: "Project Name: ",
+            DATA_CATALOG_OVERVIEW: "Data Catalog Overview"
+        },
         ExpandableTable: {
             EXPLORE: "Explore",
             PAGE: "Page",
