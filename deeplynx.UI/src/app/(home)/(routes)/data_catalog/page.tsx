@@ -37,6 +37,7 @@ const DataCatalogContent = () => {
   const { project, hasLoaded } = useProjectSession();
 
   const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     fromProject ? [fromProject] : []
@@ -136,8 +137,16 @@ const DataCatalogContent = () => {
       ];
       const allSearchTerm = newFilters.map((f) => f.term);
       const filteredData = await queryRecords(value);
+      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
 
-      setTableData(filteredData);
+      // ✅ Scope search results to selected projects
+      const scopedResults = filteredData.filter((r: FileViewerTableRow) =>
+        selectedProjectIdsNum.includes(Number(r.projectId))
+      );
+
+      setTableData(scopedResults);
+      setTotalRecords(scopedResults.length); // ✅ same data, same count
+
       setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
       setNextFilterId(nextFilterId + 1);
       setSearchTerm("");
@@ -201,14 +210,6 @@ const DataCatalogContent = () => {
             showResultsMessage={activeFilters.length > 0}
             className="w-full"
           />
-          <div className="text-right mt-1">
-            <a
-              href="/placeholder for advanced"
-              className="text-sm underline text-secondary hover:underline"
-            >
-              Additional Filters
-            </a>
-          </div>
         </div>
         <div className="flex gap-4 pr-4">
           {showAll ? (
