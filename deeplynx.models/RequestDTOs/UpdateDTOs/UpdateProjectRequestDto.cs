@@ -1,0 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace deeplynx.models;
+
+public class UpdateProjectRequestDto
+{
+    public string? Name { get; set; }
+    
+    public string? Description { get; set; }
+   
+    public string? Abbreviation { get; set; }
+}

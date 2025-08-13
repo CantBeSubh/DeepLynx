@@ -7,6 +7,7 @@ public class HistoricalRecordResponseDto
     public string Properties { get; set; } = null!;
     public string? OriginalId { get; set; }
     public string? Name { get; set; }
+    public string? Description { get; set; }
     public long? ClassId { get; set; }
     public string? ClassName { get; set; }
     public long? MappingId { get; set; }

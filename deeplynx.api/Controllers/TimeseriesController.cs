@@ -28,7 +28,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
-        [HttpPost("Query")]
+        [HttpPost("Query", Name = "api_query_timeseries")]
         public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
@@ -55,7 +55,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="file">Timeseries file</param>
         /// <returns>Record response DTO</returns>
-        [HttpPost("upload")]
+        [HttpPost("upload", Name = "api_upload_timeseries_file")]
         public async Task<ActionResult<RecordResponseDto>> UploadFile(long projectId, long dataSourceId, IFormFile file)
         {
             try
@@ -78,12 +78,12 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{UploadId}</returns>
-        [HttpPost("start-upload")]
-        public IActionResult StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
+        [HttpPost("start-upload", Name = "api_start_timeseries_upload")]
+        public async Task<IActionResult> StartUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadInitRequestDto request)
         {
             try
             {
-                var uploadId = _timeseriesBusiness.StartUpload(projectId, dataSourceId);
+                var uploadId = await _timeseriesBusiness.StartUpload(projectId, dataSourceId);
                 return Ok(new { UploadId = uploadId });
             }
             catch (Exception e)
@@ -103,7 +103,7 @@ namespace deeplynx.api.Controllers
         /// <param name="uploadId">ID of upload</param>
         /// <param name="chunkNumber">Chunk number from form</param>
         /// <returns>{ChunkUploadStatus}</returns>
-        [HttpPost("upload-chunk")]
+        [HttpPost("upload-chunk", Name = "api_upload_timeseries_chunk")]
         public async Task<IActionResult> UploadChunk(long projectId, long dataSourceId, IFormFile chunk, [FromForm] string uploadId, [FromForm] int chunkNumber)
         {
             try
@@ -127,7 +127,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <param name="request">Timeseries request DTO</param>
         /// <returns>{TimeseriesUploadRecord}</returns>
-        [HttpPost("complete-upload")]
+        [HttpPost("complete-upload", Name = "api_complete_timeseries_upload")]
         public async Task<ActionResult<RecordResponseDto>> CompleteUpload(long projectId, long dataSourceId, [FromBody] TimeseriesUploadCompleteRequestDto request)
         {
             try
@@ -151,7 +151,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tableName"></param>
         /// <param name="rowNumber"></param>
         /// <returns></returns>
-        [HttpGet("InterpolateRows")]
+        [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
         public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
         {
             try
@@ -174,7 +174,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
-        [HttpGet("GetAll")]
+        [HttpGet("GetAll", Name = "api_get_all_timeseries_records")]
         public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, long projectId, long dataSourceId)
         {
             try

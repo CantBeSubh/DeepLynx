@@ -16,4 +16,4 @@ done
 
 echo "Migrations complete."
 
-npm start
+dotnet deeplynx.api.dll --urls http://*:5000

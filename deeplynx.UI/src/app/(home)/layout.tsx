@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "@/app/globals.css";
+import LayoutShell from "../(home)/components/LayoutShell";
+import { UserSessionProvider } from "../contexts/UserSessionProvider";
+import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
+import { Toaster } from "react-hot-toast";
+
+export const metadata: Metadata = {
+  title: "DeepLynx",
+  description: "Container for DeepLynx app",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body>
+        <UserSessionProvider>
+          <ProjectSessionProvider>
+            <LayoutShell>
+              {children}
+              <Toaster position="top-right" />
+            </LayoutShell>
+          </ProjectSessionProvider>
+        </UserSessionProvider>
+      </body>
+    </html>
+  );
+}

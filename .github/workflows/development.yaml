@@ -6,14 +6,11 @@ on:
 
 jobs:
   build:
-    # Checkout the repository
     runs-on: [self-hosted]
     environment: development
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       # Builds the required image
       - shell: bash
@@ -26,29 +23,79 @@ jobs:
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}
+          NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}
+          NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}
+          NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
-          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.app .
+          
+          # Build the Docker images and pass the environment variables as build arguments
+          az acr build --registry $ACR_REGISTRY \
+            --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
+            --file Dockerfiles/Dockerfile.app \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }} \
+            --build-arg NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }} \
+            .
+          
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }} \
+            --build-arg NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }} \
+            .
+
   kubernetes:
     needs: build
     runs-on: [self-hosted]
     environment: development
     steps:
-      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
-      #Download kubectl
+      # Download kubectl
       - uses: azure/setup-kubectl@v3
+
+      # Initializes the kube context, introducing kubectl to the cluster
+      - uses: azure/k8s-set-context@v3
+        name: Configure K8s
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
+          context: deploy-service-account
+
+      # Create Kubernetes Secrets for sensitive environment variables
+      - shell: bash
+        name: Create Kubernetes Secrets
+        run: |
+          kubectl create secret generic app-secrets \
+            --from-literal=okta-client-secret="${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" \
+            --from-literal=auth-secret="${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" \
+            --namespace=deeplynxv3-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      # Create Kubernetes ConfigMap for non-sensitive environment variables
+      - shell: bash
+        name: Create Kubernetes ConfigMap
+        run: |
+          kubectl create configmap app-config \
+            --from-literal=okta-client-id="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
+            --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
+            --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --namespace=deeplynxv3-dev \
+            --dry-run=client -o yaml | kubectl apply -f -
 
       # Overwrites ${VARIABLES} in the kube manifest with secrets
       - shell: bash
@@ -58,20 +105,14 @@ jobs:
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
-          POSTGRES_DBHOST: ${{ secrets.POSTGRES_DBHOST }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_DBHOST: ${{ vars.POSTGRES_DBHOST }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
-      # Initializes the kube context, introducing kubectl to the cluster
-      - uses: azure/k8s-set-context@v3
-        name: Configure K8s
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
-          context: deploy-service-account
 
       # Deploys the kube manifest
       - uses: Azure/k8s-deploy@v4

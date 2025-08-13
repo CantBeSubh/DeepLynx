@@ -3,16 +3,22 @@ using System.Text;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace deeplynx.business;
 
-public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordBusiness, IClassBusiness classBusiness, [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
+public class TimeseriesBusiness(
+    DeeplynxContext context, 
+    IRecordBusiness recordBusiness, 
+    IClassBusiness classBusiness, 
+    [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
@@ -40,8 +46,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
     public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         if (file == null || file.Length == 0)
         {
             throw new ArgumentException("File is required and cannot be empty or whitespace.");
@@ -62,16 +68,18 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
+        var fileName = file.FileName;
 
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
                 ["columns"] = columns,
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
+                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower(),
             },
-            Name = tableName,
+            Name = fileName,
+            Description = $"Table name: {tableName}",
             OriginalId = uploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -87,10 +95,11 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <returns>The upload ID (guid format) for file chunks to go to the right directory</returns>
-    public string StartUpload(long projectId, long dataSourceId)
+    public async Task<string> StartUpload(long projectId, long dataSourceId)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var uploadId = Guid.NewGuid().ToString();
         var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId);
         Directory.CreateDirectory(folderPath);
@@ -111,8 +120,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     public async Task<string> UploadChunk(long projectId, long dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         if (chunk == null || chunk.Length == 0)
         {
             throw new ArgumentException("No chunk uploaded.");
@@ -135,8 +144,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     public async Task<RecordResponseDto> CompleteUpload(long projectId, long dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
         var finalFilePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(),
@@ -169,8 +178,9 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(tableName);
+        var fileName = request.FileName;
 
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -178,7 +188,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             },
-            Name = tableName,
+            Name = fileName,
+            Description = $"Table name: {tableName}",
             OriginalId = request.UploadId,
             Uri = uri,
             ClassId = recordClass.Id,
@@ -198,8 +209,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns></returns>
     public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         await using var duckDbConnection = GetReadOnlyDuckDbConnection();
         await duckDbConnection.OpenAsync();
@@ -218,7 +229,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -226,6 +237,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -249,10 +261,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="fileName">The name of the file to be written</param>
     /// <exception cref="KeyNotFoundException">Thrown when the record cannot be found</exception>
     /// <exception cref="Exception">Thrown if the report cannot be written</exception>
-    private void RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
+    private async Task RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
@@ -362,10 +374,10 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <param name="dataSourceId">The data source ID</param>
     /// <param name="fileName">The name of the file</param>
     /// <exception cref="InvalidOperationException"></exception>
-    private void DataTableToCsv(DataTable dataTable, long projectId, long dataSourceId, string fileName)
+    private async Task DataTableToCsv(DataTable dataTable, long projectId, long dataSourceId, string fileName)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         StringBuilder sbData = new();
 
         foreach (var col in dataTable.Columns)
@@ -473,8 +485,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>All data for given table</returns>
     public async Task<RecordResponseDto> GetAllTableRecords(string tableName, long projectId, long dataSourceId)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
@@ -495,7 +507,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -503,6 +515,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -525,8 +538,8 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
     /// <returns>Data</returns>
     public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = GetReadOnlyDuckDbConnection();
         await duckDBConnection.OpenAsync();
@@ -556,7 +569,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new RecordRequestDto
+        var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
@@ -564,6 +577,7 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
                 ["query"] = request.Query
             },
             Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
             ClassName = reportClass.Name
@@ -574,20 +588,6 @@ public class TimeseriesBusiness(DeeplynxContext context, IRecordBusiness recordB
         RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
-    }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId)
-    {
-        var project = _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
     }
     
     /// <summary>

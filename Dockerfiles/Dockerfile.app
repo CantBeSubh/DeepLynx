@@ -1,24 +1,36 @@
-# Stage 1: Download dependencies
-FROM node:lts-alpine3.20 AS dependencies
+# Stage 1: Build the frontend
+FROM node:lts-alpine3.20 AS frontend-build
+
+# Set working directory
 WORKDIR /app
+
+# Define build arguments
+ARG NEXT_PUBLIC_OKTA_CLIENT_ID
+ARG NEXT_PUBLIC_OKTA_ISSUER
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_REDIRECT_LINK
+ARG NEXT_PUBLIC_OKTA_CLIENT_SECRET
+ARG NEXT_PUBLIC_AUTH_SECRET
+
+# Set environment variables
+ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
+ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
+ENV NEXT_PUBLIC_OKTA_CLIENT_SECRET=${NEXT_PUBLIC_OKTA_CLIENT_SECRET}
+ENV NEXT_PUBLIC_AUTH_SECRET=${NEXT_PUBLIC_AUTH_SECRET}
+
 # Copy package.json and package-lock.json
-COPY deeplynx.UI/deeplynx-v3/package*.json ./
+COPY deeplynx.UI/package*.json ./
 RUN npm install
 
-# Stage 2: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
-WORKDIR /app
-
-# Copy dependencies
-COPY --from=dependencies /app/node_modules ./node_modules
-
 # Copy the rest of the frontend source code
-COPY deeplynx.UI/deeplynx-v3/ ./
+COPY deeplynx.UI/ ./
 
 # Build the frontend
 RUN npm run build
 
-# Stage 3: Build the C# backend
+# Stage 2: Build the C# backend
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 WORKDIR /source
 
@@ -41,8 +53,11 @@ RUN apk --no-check-certificate add postgresql-client
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-# Stage 4: Create the final image
-FROM node:lts-alpine3.20 AS final
+# Stage 3: Create the final image
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
 WORKDIR /app/backend
 
@@ -51,14 +66,14 @@ COPY --from=publish /app/publish .
 
 WORKDIR /app/frontend
 
-ENV NODE_ENV=production
+# Copy the built frontend code
 COPY --from=frontend-build /app/next.config.ts ./
 COPY --from=frontend-build /app/public ./public
 COPY --from=frontend-build /app/.next ./.next
 COPY --from=frontend-build /app/package.json ./package.json
 
+# Install production dependencies
 RUN npm install --production
 
 # Set the command point to run the application
-# Currently overriden by entrypoint.sh
 CMD [ "npm", "start" ]

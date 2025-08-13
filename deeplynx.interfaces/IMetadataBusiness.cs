@@ -4,5 +4,5 @@ namespace deeplynx.interfaces;
 
 public interface IMetadataBusiness
 {
-    Task<MetadataResponseDto> CreateMetadata(long projectId, MetadataRequestDto metadataRequestDto);
+    Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto);
 }

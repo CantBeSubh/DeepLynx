@@ -1,9 +1,47 @@
-apiVersion: v1  
-kind: Namespace  
-metadata:  
+apiVersion: v1
+kind: Namespace
+metadata:
   name: deeplynxv3-dev
   labels:
     name: deeplynxv3-dev
+---
+# Storage Class for DuckDB Azure Files
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefile-duckdb
+  namespace: deeplynxv3-dev
+provisioner: file.csi.azure.com
+parameters:
+  skuName: Premium_LRS
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=0
+  - gid=0
+  - mfsymlinks
+  - cache=strict
+  - actimeo=30
+  - nobrl # disable sending byte range lock requests to the server and for applications which have challenges with posix locks
+volumeBindingMode: Immediate
+
+---
+# Persistent Volume Claim for DuckDB storage
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: deeplynx-duckdb-pvc
+  namespace: deeplynxv3-dev
+spec:
+  accessModes:
+    - ReadWriteMany  # Allows multiple pods to access the same volume
+  resources:
+    requests:
+      storage: 20Gi  # Adjust size based on your timeseries data needs
+  storageClassName: azurefile-duckdb
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -24,7 +62,89 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: DATABASE_CONNECTION_STRING
+            - name: ConnectionStrings__DefaultConnection
+              value: "${DATABASE_CONNECTION_STRING}"
+            - name: POSTGRES_DBHOST
+              value: ${POSTGRES_DBHOST}
+            - name: POSTGRES_DB
+              value: ${POSTGRES_DB}
+            - name: POSTGRES_USER
+              value: ${POSTGRES_USER}
+            - name: POSTGRES_PASSWORD
+              value: ${POSTGRES_PASSWORD}
+            # DuckDB Configuration
+            - name: DUCKDB_BASE_PATH
+              value: ${DUCKDB_BASE_PATH}
+            # - name: TENANT_MODE
+            #   value: ${TENANT_MODE}
+            # Runtime environment variables from secrets (sensitive)
+            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: okta-client-secret
+            - name: NEXT_PUBLIC_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: auth-secret
+            # Runtime environment variables from configmap (non-sensitive)
+            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-client-id
+            - name: NEXT_PUBLIC_OKTA_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-issuer
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: api-url
+            - name: NEXT_PUBLIC_REDIRECT_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: redirect-link
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: "1500m"
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: duckdb-storage
+              mountPath: /data/duckdb
+      volumes:
+        - name: duckdb-storage
+          persistentVolumeClaim:
+            claimName: deeplynx-duckdb-pvc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deeplynxbackend
+  namespace: deeplynxv3-dev
+spec:
+  selector:
+    matchLabels:
+      app: deeplynxbackend
+  template:
+    metadata:
+      labels:
+        app: deeplynxbackend
+    spec:
+      containers:
+        - name: deeplynxv3
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-backend-${GITHUB_RUN_NUMBER}
+          imagePullPolicy: Always
+          command: ["/usr/local/bin/entrypoint.sh"]
+          env:
+            - name: ConnectionStrings__DefaultConnection
               value: ${DATABASE_CONNECTION_STRING}
             - name: POSTGRES_DBHOST
               value: ${POSTGRES_DBHOST}
@@ -34,12 +154,56 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            # DuckDB Configuration (same as frontend)
+            - name: DUCKDB_BASE_PATH
+              value: ${DUCKDB_BASE_PATH}
+            # - name: TENANT_MODE
+            #   value: ${TENANT_MODE}
+            # Backend may also need these environment variables
+            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: okta-client-secret
+            - name: NEXT_PUBLIC_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: auth-secret
+            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-client-id
+            - name: NEXT_PUBLIC_OKTA_ISSUER
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: okta-issuer
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: api-url
+            - name: NEXT_PUBLIC_REDIRECT_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: redirect-link
           resources:
             limits:
               memory: "4Gi"
               cpu: "1500m"
           ports:
-            - containerPort: 3000
+            - containerPort: 5000
+          volumeMounts:
+            - name: duckdb-storage
+              mountPath: /data/duckdb
+      volumes:
+        - name: duckdb-storage
+          persistentVolumeClaim:
+            claimName: deeplynx-duckdb-pvc
+
 ---
 apiVersion: v1
 kind: Service
@@ -54,6 +218,22 @@ spec:
       targetPort: 3000
   selector:
     app: deeplynxv3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deeplynxv3-backend-service
+  namespace: deeplynxv3-dev
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+  selector:
+    app: deeplynxbackend
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -81,9 +261,16 @@ spec:
                 name: deeplynxv3-service
                 port:
                   number: 80
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-backend-service
+                port:
+                  number: 80
 ---
 # # Database if needed for deployment
-
+# Dummy change to force build.
 # apiVersion: apps/v1
 # kind: Deployment
 # metadata:

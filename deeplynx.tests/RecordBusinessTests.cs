@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.business;
@@ -15,6 +16,15 @@ namespace deeplynx.tests;
 public class RecordBusinessTests : IntegrationTestBase
 {
     private RecordBusiness _recordBusiness;
+    public long pid;
+    public long did;
+    public long cid;
+    public long rid;
+    public long tid;
+    public string rprop;
+    public string rogid;
+    public string rdesc;
+    public string ruri;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -31,56 +41,67 @@ public class RecordBusinessTests : IntegrationTestBase
         // Seed test data
         var project = new Project
         {
-            Id = 100,
             Name = "Test Project",
             Description = "Test project for unit tests",
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+        Context.Projects.Add(project);
+        await Context.SaveChangesAsync();
+        pid = project.Id;
         
         var dataSource = new DataSource
         {
-            Id = 100,
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
-            ProjectId = 100,
+            ProjectId = project.Id,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+        Context.DataSources.Add(dataSource);
+        await Context.SaveChangesAsync();
+        did = dataSource.Id;
         
         var testClass = new Class
         {
-            Id = 100,
             Name = "Test Class",
             Description = "Test class for unit tests",
-            ProjectId = 100,
+            ProjectId = project.Id,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+        Context.Classes.Add(testClass);
+        await Context.SaveChangesAsync();
+        cid = testClass.Id;
 
         var testTag = new Tag
         {
-            Id = 100,
             Name = "Test Tag",
-            ProjectId = 100,
+            ProjectId = project.Id,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var testRecord = new Record
         {
-            Id = 100,
             Name = "Test Record",
+            Description = "Test record for unit tests",
+            OriginalId = "og_id",
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
-            ProjectId = 100,
-            DataSourceId = 100,
-            ClassId = 100,
+            ProjectId = project.Id,
+            DataSourceId = dataSource.Id,
+            ClassId = testClass.Id,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Tags =  new List<Tag> { testTag }
+            Tags =  new List<Tag> { testTag },
+            Uri = "localhost:8090"
         };
-
-        Context.Projects.Add(project);
-        Context.DataSources.Add(dataSource);
-        Context.Classes.Add(testClass);
+        
         Context.Records.Add(testRecord);
         Context.Tags.Add(testTag);
         await Context.SaveChangesAsync();
+        
+        rid =  testRecord.Id;
+        tid = testTag.Id;
+        rprop = testRecord.Properties;
+        rogid = testRecord.OriginalId;
+        rdesc = testRecord.Description;
+        ruri = testRecord.Uri;
     }
 
     #region GetAllRecords Tests
@@ -89,7 +110,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task GetAllRecords_ValidProjectId_ReturnsRecords()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = pid;
 
         // Act
         var result = await _recordBusiness.GetAllRecords(projectId, null, true);
@@ -104,7 +125,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task GetAllRecords_ReturnsTags()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = pid;
 
         // Act
         var result = await _recordBusiness.GetAllRecords(projectId, null, true);
@@ -121,8 +142,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task GetAllRecords_WithDataSourceId_ReturnsFilteredRecords()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
+        var projectId = pid;
+        var dataSourceId = did;
 
         // Act
         var result = await _recordBusiness.GetAllRecords(projectId, dataSourceId, true);
@@ -152,8 +173,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task GetRecord_ValidIds_ReturnsRecord()
     {
         // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
 
         // Act
         var result = await _recordBusiness.GetRecord(projectId, recordId, true);
@@ -169,7 +190,7 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var invalidProjectId = 999L;
-        var recordId = 100L;
+        var recordId = rid;
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
@@ -184,15 +205,16 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_ValidData_CreatesRecord()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
-        var dto = new RecordRequestDto
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
         {
             Name = "New Test Record",
+            Description = "Test Record Description",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",
-            ClassId = 100
+            ClassId = cid
         };
 
         // Act
@@ -201,11 +223,12 @@ public class RecordBusinessTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         Assert.Equal("New Test Record", result.Name);
+        Assert.Equal("Test Record Description", result.Description);
         Assert.Equal(projectId, result.ProjectId);
         Assert.Equal(dataSourceId, result.DataSourceId);
         Assert.Equal("test://uri", result.Uri);
         Assert.Equal("original-123", result.OriginalId);
-        Assert.Equal(100, result.ClassId);
+        Assert.Equal(cid, result.ClassId);
 
         // Verify record was actually created in database
         var createdRecord = await Context.Records.FindAsync(result.Id);
@@ -218,10 +241,12 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var invalidProjectId = 999L;
-        var dataSourceId = 100L;
-        var dto = new RecordRequestDto
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
         {
             Name = "Test Record",
+            Description = "Test Record Description",
+            OriginalId = "original-123",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
         };
 
@@ -234,11 +259,13 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_InvalidDataSourceId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = pid;
         var invalidDataSourceId = 999L;
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Test Record",
+            Description = "Test Record Description",
+            OriginalId = "original-123",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
         };
 
@@ -251,8 +278,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_TooDeepJson_ThrowsException()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
+        var projectId = pid;
+        var dataSourceId = did;
         var deepJson = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new 
         { 
             Level1 = new 
@@ -270,9 +297,11 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
     
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Deep JSON Record",
+            Description = "Deep JSON Record Description",
+            OriginalId = "original-123",
             Properties = deepJson
         };
 
@@ -281,7 +310,7 @@ public class RecordBusinessTests : IntegrationTestBase
             _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
         Assert.Contains("depth of the JSON structure exceeds", exception.Message);
     }
-
+    
     #endregion
 
     #region BulkCreateRecords Tests
@@ -290,33 +319,34 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task BulkCreateRecords_ValidData_CreatesMultipleRecords()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
-        var bulkDto = new BulkRecordRequestDto
+        var projectId = pid;
+        var dataSourceId = did;
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new CreateRecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 1",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
-                },
-                new RecordRequestDto
-                {
-                    Name = "Bulk Record 2",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
-                }
+                Name = "Bulk Record 1",
+                Description = "Bulk Record 1 Description",
+                OriginalId = "br1",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
+            },
+            new CreateRecordRequestDto
+            {
+                Name = "Bulk Record 2",
+                Description = "Bulk Record 2 Description",
+                OriginalId = "br2",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
             }
         };
 
         // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
+        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(2, result.Records.Count());
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 1");
-        Assert.Contains(result.Records, r => r.Name == "Bulk Record 2");
+        Assert.Equal(2, result.Count());
+        Assert.Contains(result, r => r.Name == "Bulk Record 1");
+        Assert.Contains(result, r => r.Name == "Bulk Record 2");
 
         // Verify records were actually created in database
         var recordCount = await Context.Records.CountAsync(r => r.ProjectId == projectId);
@@ -324,22 +354,16 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task BulkCreateRecords_EmptyList_ReturnsEmptyResult()
+    public async Task BulkCreateRecords_EmptyList_ThrowsException()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
-        var bulkDto = new BulkRecordRequestDto
-        {
-            Records = new List<RecordRequestDto>()
-        };
-
-        // Act
-        var result = await _recordBusiness.BulkCreateRecords(projectId, dataSourceId, bulkDto);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Empty(result.Records);
+        var projectId = pid;
+        var dataSourceId = did;
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>();
+        
+        // Act & Assert
+        await Assert.ThrowsAsync<Exception>(() =>
+            _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records));
     }
 
     [Fact]
@@ -348,21 +372,20 @@ public class RecordBusinessTests : IntegrationTestBase
         // Arrange
         var invalidProjectId = 999L;
         var dataSourceId = 1L;
-        var bulkDto = new BulkRecordRequestDto
+        List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>
         {
-            Records = new List<RecordRequestDto>
+            new CreateRecordRequestDto
             {
-                new RecordRequestDto
-                {
-                    Name = "Test Record",
-                    Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
-                }
+                Name = "Test Record",
+                Description = "Test Record Description",
+                OriginalId = "test",
+                Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
             }
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, bulkDto));
+            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, records));
     }
 
     #endregion
@@ -373,16 +396,16 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task UpdateRecord_ValidData_UpdatesRecord()
     {
         // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
-        var dto = new RecordRequestDto
+        var projectId = pid;
+        var recordId = rid;
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Test Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { UpdatedProp = "UpdatedValue" }))!,
             Uri = "updated://uri",
             OriginalId = "updated-123",
             Description = "Updated Description",
-            ClassId = 100
+            ClassId = cid
         };
 
         // Act
@@ -410,12 +433,50 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task UpdateRecord_PartialUpdate_UpdatesRecord()
+    {
+        // Arrange
+        var projectId = pid;
+        var recordId = rid;
+        var dto = new UpdateRecordRequestDto
+        {
+            Name = "New-ish Test Record"
+        };
+
+        // Act
+        var result = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("New-ish Test Record", result.Name);
+        Assert.Equal(ruri, result.Uri);
+        Assert.Equal(rogid, result.OriginalId);
+        Assert.Equal(rdesc, result.Description);
+        Assert.Equal(rprop, result.Properties);
+        Assert.NotNull(result.ModifiedAt);
+
+        // Verify record was actually updated in database
+        var updatedRecord = await Context.Records.FindAsync(recordId);
+        Assert.NotNull(updatedRecord);
+        Assert.Equal("New-ish Test Record", updatedRecord.Name);
+        Assert.Equal(rdesc, updatedRecord.Description);
+        Assert.NotNull(updatedRecord.ModifiedAt);
+        
+        // Verify that get function gets updated version
+        var getResult = await _recordBusiness.GetRecord(projectId, recordId, true);
+        Assert.NotNull(getResult);
+        Assert.Equal("New-ish Test Record", getResult.Name);
+        Assert.Equal(rdesc, getResult.Description);
+        Assert.NotNull(getResult.ModifiedAt);
+    }
+    
+    [Fact]
     public async Task UpdateRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = pid;
         var invalidRecordId = 999L;
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
@@ -431,8 +492,8 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var wrongProjectId = 999L;
-        var recordId = 100L;
-        var dto = new RecordRequestDto
+        var recordId = rid;
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
@@ -447,8 +508,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task UpdateRecord_TooDeepJson_ThrowsException()
     {
         // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
         var deepJson = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new 
         { 
             Level1 = new 
@@ -466,7 +527,7 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
         
-        var dto = new RecordRequestDto
+        var dto = new UpdateRecordRequestDto
         {
             Name = "Deep JSON Record",
             Properties = deepJson
@@ -486,8 +547,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task DeleteRecord_ValidData_DeletesRecord()
     {
         // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
 
         // Verify record exists before deletion
         var recordExists = await Context.Records.AnyAsync(r => r.Id == recordId);
@@ -508,7 +569,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task DeleteRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = pid;
         var invalidRecordId = 999L;
 
         // Act & Assert
@@ -521,7 +582,7 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var wrongProjectId = 999L;
-        var recordId = 100L;
+        var recordId = rid;
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
@@ -536,7 +597,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task ArchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = 100L;
+        var projectId = 1L;
         var invalidRecordId = 999L;
 
         // Act & Assert
@@ -549,7 +610,7 @@ public class RecordBusinessTests : IntegrationTestBase
     {
         // Arrange
         var wrongProjectId = 999L;
-        var recordId = 100L;
+        var recordId = rid;
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
@@ -560,8 +621,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task ArchiveRecord_AlreadyArchivedRecord_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
 
         // First archive the record
         var record = await Context.Records.FindAsync(recordId);
@@ -581,8 +642,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_ValidJsonDepthThree_Success()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
+        var projectId = pid;
+        var dataSourceId = did;
         var validDepthJson = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new 
         { 
             Level1 = new 
@@ -594,9 +655,11 @@ public class RecordBusinessTests : IntegrationTestBase
             } 
         }))!;
         
-        var dto = new RecordRequestDto
+        var dto = new CreateRecordRequestDto
         {
             Name = "Valid Depth Record",
+            Description = "Valid Depth Description",
+            OriginalId = "VDR1",
             Properties = validDepthJson
         };
 
@@ -612,16 +675,75 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_NullProperties_ThrowsException()
     {
         // Arrange
-        var projectId = 100L;
-        var dataSourceId = 100L;
-        var dto = new RecordRequestDto
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
         {
             Name = "No Properties Record",
+            Description = "No Properties Description",
+            OriginalId = "NoProps",
             Properties = null
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+    
+    [Fact]
+    public async Task CreateRecord_NoName_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
+        {
+            Name = null,
+            Description = "No Name Description",
+            OriginalId = "NoName",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+
+    [Fact]
+    public async Task CreateRecord_NoDescription_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
+        {
+            Name = "No Description Record",
+            Description = null,
+            OriginalId = "NoDesc",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
+            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+    }
+
+    [Fact]
+    public async Task CreateRecord_NoOriginalId_ThrowsException()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+        var dto = new CreateRecordRequestDto
+        {
+            Name = "No Original ID Record",
+            Description = "No Original ID Description",
+            OriginalId = null,
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<ValidationException>(() => 
             _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
     }
 
@@ -632,14 +754,16 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnarchiveRecord_ValidArchivedRecord_UnarchivesSuccessfully()
     {
-        var projectId = 100L;
+        var projectId = pid;
         var archivedRecord = new Record
         {
             Name = "Archived Record",
+            Description = "Archived Record Description",
+            OriginalId = "Archived Record OriginalId",
             Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
             ProjectId = projectId,
-            DataSourceId = 100,
-            ClassId = 100,
+            DataSourceId = did,
+            ClassId = cid,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-2), DateTimeKind.Unspecified)
         };
@@ -660,7 +784,7 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnarchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
-        var projectId = 100L;
+        var projectId = pid;
         var invalidRecordId = 999L;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -671,7 +795,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task UnarchiveRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
     {
         var differentProjectId = 999L;
-        var recordId = 100L;
+        var recordId = rid;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _recordBusiness.UnarchiveRecord(differentProjectId, recordId));
@@ -680,8 +804,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnarchiveRecord_AlreadyUnarchived_ThrowsKeyNotFoundException()
     {
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
 
         // Confirm record is not archived
         var existing = await Context.Records.FindAsync(recordId);
@@ -699,18 +823,17 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_SuccessfullyAttachesTagToRecord()
     {
-        var projectId = 100L;
+        var projectId = pid;
 
         var newTag = new Tag
         {
-            Id = 101,
             Name = "Tag to Attach",
             ProjectId = projectId,
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Tags.Add(newTag);
 
-        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == 100);
+        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == rid);
         record.Tags.Clear(); // ensure tag not already attached
         await Context.SaveChangesAsync();
 
@@ -724,8 +847,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_RecordNotFound_ThrowsKeyNotFound()
     {
-        var projectId = 100L;
-        var validTagId = 100L;
+        var projectId = pid;
+        var validTagId = tid;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _recordBusiness.AttachTag(projectId, 9999L, validTagId));
@@ -734,8 +857,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_TagNotFound_ThrowsKeyNotFound()
     {
-        var projectId = 100L;
-        var validRecordId = 100L;
+        var projectId = pid;
+        var validRecordId = rid;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _recordBusiness.AttachTag(projectId, validRecordId, 9999L));
@@ -744,9 +867,9 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_AlreadyAttached_ThrowsException()
     {
-        var projectId = 100L;
-        var recordId = 100L;
-        var tagId = 100L;
+        var projectId = pid;
+        var recordId = rid;
+        var tagId = tid;
 
         await Assert.ThrowsAsync<Exception>(() =>
             _recordBusiness.AttachTag(projectId, recordId, tagId));
@@ -755,9 +878,9 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnattachTag_SuccessfullyDetachesTagFromRecord()
     {
-        var projectId = 100L;
-        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == 100L);
-        var tagId = 100L;
+        var projectId = pid;
+        var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == rid);
+        var tagId = tid;
         Assert.Contains(record.Tags, t => t.Id == tagId);
 
         var result = await _recordBusiness.UnattachTag(projectId, record.Id, tagId);
@@ -770,8 +893,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnattachTag_RecordNotFound_ThrowsKeyNotFound()
     {
-        var projectId = 100L;
-        var tagId = 100L;
+        var projectId = pid;
+        var tagId = tid;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _recordBusiness.UnattachTag(projectId, 9999L, tagId));
@@ -780,8 +903,8 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnattachTag_TagNotFound_ThrowsKeyNotFound()
     {
-        var projectId = 100L;
-        var recordId = 100L;
+        var projectId = pid;
+        var recordId = rid;
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
             _recordBusiness.UnattachTag(projectId, recordId, 9999L));

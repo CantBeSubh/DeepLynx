@@ -28,18 +28,17 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <param name="current">(Optional) Find only the most current edges. Overrides point in time (Default true)</param>
         /// <returns>List of edge response DTOs</returns>
-        [HttpGet("GetAllHistoricalEdges")]
+        [HttpGet("GetAllHistoricalEdges", Name = "api_get_all_historical_edges")]
         public async Task<ActionResult<IEnumerable<HistoricalEdgeResponseDto>>> GetAllHistoricalEdges(
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] DateTime? pointInTime,
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var edges = await _historicalEdgeBusiness
-                    .GetAllHistoricalEdges(projectId, dataSourceId, pointInTime, hideArchived, current);
+                    .GetAllHistoricalEdges(projectId, dataSourceId, pointInTime, hideArchived);
                 return Ok(edges);
             }
             catch (Exception exc)
@@ -60,19 +59,18 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <param name="current">(Optional) Find only the most current edges. Overrides point in time (Default true)</param>
         /// <returns>Edge response DTO</returns>
-        [HttpGet("GetHistoricalEdge")]
+        [HttpGet("GetHistoricalEdge", Name = "api_get_a_historical_edge")]
         public async Task<ActionResult<HistoricalEdgeResponseDto>> GetHistoricalEdge(
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 
             [FromQuery] long? destinationId,
             [FromQuery] DateTime? pointInTime, 
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var edge = await _historicalEdgeBusiness
-                    .GetHistoricalEdge(edgeId, originId, destinationId, pointInTime, hideArchived, current);
+                    .GetHistoricalEdge(edgeId, originId, destinationId, pointInTime, hideArchived);
                 return Ok(edge);
             }
             catch (Exception exc)
@@ -90,7 +88,7 @@ namespace deeplynx.api.Controllers
         /// <param name="originId">the origin ID by which to fetch the edge if no ID</param>
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
         /// <returns>A list of previous edge versions</returns>
-        [HttpGet("GetEdgeHistory")]
+        [HttpGet("GetEdgeHistory", Name = "api_get_an_edge_history")]
         public async Task<ActionResult<HistoricalEdgeResponseDto>> GetEdgeHistory(
             [FromQuery] long? edgeId,
             [FromQuery] long? originId, 

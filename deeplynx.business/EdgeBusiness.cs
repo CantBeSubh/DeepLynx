@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -27,12 +29,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter edges</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
-    public async Task<IEnumerable<EdgeResponseDto>> GetAllEdges(
+    public async Task<List<EdgeResponseDto>> GetAllEdges(
         long projectId, 
         long? dataSourceId,
         bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
 
@@ -57,7 +59,7 @@ public class EdgeBusiness : IEdgeBusiness
                 ModifiedAt = e.ModifiedAt,
                 ModifiedBy = e.ModifiedBy,
                 ArchivedAt = e.ArchivedAt,
-            });
+            }).ToList();
     }
 
     /// <summary>
@@ -78,7 +80,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? destinationId, 
         bool hideArchived)
     {
-        DoesProjectExist(projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
         
         var edge = await FindEdge(edgeId, originId, destinationId);
         
@@ -118,15 +120,20 @@ public class EdgeBusiness : IEdgeBusiness
     public async Task<EdgeResponseDto> CreateEdge(
         long projectId, 
         long dataSourceId, 
-        EdgeRequestDto dto)
+        CreateEdgeRequestDto dto)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context,dataSourceId);
+
+        if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
+        {
+            throw new ValidationException("Origin and/or Destination IDs are missing or invalid.");
+        }
         
         var edge = new Edge
         {
-            OriginId = dto.OriginId,
-            DestinationId = dto.DestinationId,
+            OriginId = dto.OriginId.Value,
+            DestinationId = dto.DestinationId.Value,
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
@@ -155,59 +162,53 @@ public class EdgeBusiness : IEdgeBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the edge belongs</param>
     /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
-    /// <param name="bulkDto">The edge request data transfer object containing edge details</param>
+    /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
-    public async Task<BulkEdgeResponseDto> BulkCreateEdges(
+    public async Task<List<EdgeResponseDto>> BulkCreateEdges(
         long projectId, 
         long dataSourceId, 
-        BulkEdgeRequestDto bulkDto)
+        List<CreateEdgeRequestDto> edges)
     {
-        DoesProjectExist(projectId);
-        DoesDataSourceExist(dataSourceId);
-        ValidationHelper.ValidateModel(bulkDto);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
-        var edges = new List<Edge>();
-        var edgeResponses = new List<EdgeResponseDto>();
-        foreach (var dto in bulkDto.Edges)
+        // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
+        var sql = @"
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, created_at)
+            VALUES {0}
+            ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
+                relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
+                modified_at = @now
+            RETURNING *;
+        ";
+        
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
         {
-            ValidationHelper.ValidateModel(dto);
-            
-            var edge = new Edge
-            {
-                OriginId = dto.OriginId,
-                DestinationId = dto.DestinationId,
-                ProjectId = projectId,
-                DataSourceId = dataSourceId,
-                RelationshipId = dto.RelationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null // TODO: Implement user ID here when JWT tokens are ready
-            };
-            edges.Add(edge);
-        }
-
-        await _context.Edges.AddRangeAsync(edges);
-        await _context.SaveChangesAsync();
-
-        foreach (var edge in edges)
-        {
-            var edgeResponse = new EdgeResponseDto
-            {
-                Id = edge.Id,
-                OriginId = edge.OriginId,
-                DestinationId = edge.DestinationId,
-                RelationshipId = edge.RelationshipId,
-                DataSourceId = edge.DataSourceId,
-                ProjectId = edge.ProjectId,
-                CreatedAt = edge.CreatedAt,
-                CreatedBy = edge.CreatedBy
-            };
-            edgeResponses.Add(edgeResponse);
-        }
-
-        return new BulkEdgeResponseDto
-        {
-            Edges = edgeResponses
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@dataSourceId", dataSourceId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
+       
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(edges.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_orig", dto.OriginId),
+            new NpgsqlParameter($"@p{i}_dest", dto.DestinationId),
+            new NpgsqlParameter($"@p{i}_rel", (object?)dto.RelationshipId ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", edges.Select((dto, i) =>
+            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+
+        // returns the resulting upserted classes
+        return await _context.Database
+            .SqlQueryRaw<EdgeResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
     }
 
     /// <summary>
@@ -222,12 +223,12 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<EdgeResponseDto> UpdateEdge(
         long projectId,
-        EdgeRequestDto dto,
+        UpdateEdgeRequestDto dto,
         long? edgeId,
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
@@ -235,9 +236,9 @@ public class EdgeBusiness : IEdgeBusiness
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
         
-        edge.OriginId = dto.OriginId;
-        edge.DestinationId = dto.DestinationId;
-        edge.RelationshipId = dto.RelationshipId;
+        edge.OriginId = dto.OriginId ?? edge.OriginId;
+        edge.DestinationId = dto.DestinationId ?? edge.DestinationId;
+        edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
         edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         
@@ -274,7 +275,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId) 
@@ -300,7 +301,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
@@ -328,7 +329,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        DoesProjectExist(projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is null) 
@@ -390,22 +391,6 @@ public class EdgeBusiness : IEdgeBusiness
         }
         
         return edge;  
-    }
-    
-    /// <summary>
-    /// Determine if project exists
-    /// </summary>
-    /// <param name="projectId">The ID of the project we are searching for</param>
-    /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
-    /// <returns>Throws error if project does not exist</returns>
-    private void DoesProjectExist(long projectId, bool hideArchived = true)
-    {
-        var project = hideArchived ? _context.Projects.Any(p => p.Id == projectId && p.ArchivedAt == null) 
-            : _context.Projects.Any(p => p.Id == projectId);
-        if (!project)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} not found");
-        }
     }
     
     /// <summary>

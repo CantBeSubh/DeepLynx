@@ -28,18 +28,17 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <param name="current">(Optional) Find only the most current records. Overrides point in time (Default true)</param>
         /// <returns>List of record response DTOs</returns>
-        [HttpGet("GetAllHistoricalRecords")]
+        [HttpGet("GetAllHistoricalRecords", Name = "api_get_all_historical_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> GetAllHistoricalRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] DateTime? pointInTime,
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var records = await _historicalRecordBusiness
-                    .GetAllHistoricalRecords(projectId, dataSourceId, pointInTime, hideArchived, current);
+                    .GetAllHistoricalRecords(projectId, dataSourceId, pointInTime, hideArchived);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -58,17 +57,16 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">(Optional) Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <param name="current">(Optional) Find only the most current records. Overrides point in time (Default true)</param>
         /// <returns>Record response DTO</returns>
-        [HttpGet("GetHistoricalRecord/{recordId}")]
+        [HttpGet("GetHistoricalRecord/{recordId}", Name = "api_get_a_historical_record")]
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetHistoricalRecord(
             long recordId,
             [FromQuery] DateTime? pointInTime, 
-            [FromQuery] bool hideArchived = true,
-            [FromQuery] bool current = true)
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
                 var record = await _historicalRecordBusiness
-                    .GetHistoricalRecord(recordId, pointInTime, hideArchived, current);
+                    .GetHistoricalRecord(recordId, pointInTime, hideArchived);
                 return Ok(record);
             }
             catch (Exception exc)
@@ -84,7 +82,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="recordId">ID of record to search on </param>
         /// <returns>A list of previous record versions</returns>
-        [HttpGet("GetRecordHistory/{recordId}")]
+        [HttpGet("GetRecordHistory/{recordId}", Name = "api_get_a_historical_record_history")]
         public async Task<ActionResult<HistoricalRecordResponseDto>> GetRecordHistory(long recordId)
         {
             try
