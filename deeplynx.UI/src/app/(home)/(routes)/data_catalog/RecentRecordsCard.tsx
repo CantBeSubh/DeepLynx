@@ -28,6 +28,7 @@ const RecentRecordsCard = ({
   useEffect(() => {
     const fetchRecentRecords = async () => {
       try {
+        console.log("selected Project", selectedProjects);
         const data = await getRecentlyAddedRecords(selectedProjects);
         console.log(data);
         setRecords(data);
@@ -52,22 +53,20 @@ const RecentRecordsCard = ({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
       hour12: true,
-      timeZoneName: 'short'
+      timeZoneName: "short",
     };
-    return date.toLocaleString('en-US', options);
+    return date.toLocaleString("en-US", options);
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4 shadow-md">
-      <h2 className="text-lg text-black mb-4t">
-        Recently Added Records
-      </h2>
+    <div className="bg-base-100 rounded-xl p-4">
+      <h2 className="text-lg text-black mb-4t">Recently Added Records</h2>
       <div className="divider m-0 mt-2"></div>
       <ul className="list mt-0">
         {paginatedRecords.map((record, index) => (
@@ -80,9 +79,7 @@ const RecentRecordsCard = ({
               )
             }
           >
-            <div className="text-accent-content mb-1">
-              {record.name}
-            </div>
+            <div className="text-accent-content mb-1">{record.name}</div>
             <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
               <span>
                 Class:{" "}
@@ -90,7 +87,10 @@ const RecentRecordsCard = ({
                   {record.className}
                 </span>
               </span>
-              <span className="ml-4">Last Edited: {formatDate(record.lastUpdatedAt ?? record.createdAt)}</span>
+              <span className="ml-4">
+                Last Edited:{" "}
+                {formatDate(record.lastUpdatedAt ?? record.createdAt)}
+              </span>
               <span className="ml-4">Project: {record.projectName}</span>
               <span className="ml-4">Data Source: {record.dataSourceName}</span>
             </div>

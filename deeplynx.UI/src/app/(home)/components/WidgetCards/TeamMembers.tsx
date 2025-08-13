@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
@@ -8,17 +8,34 @@ import { Column, TeamMember } from "@/app/(home)/types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 import { translations } from "@/app/lib/translations";
+import { getAllUsers } from "@/app/lib/user_services";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 const TeamMembersWidget: React.FC = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
   const [showTable, setShowTable] = useState(false);
   const [addMemberModal, setAddMemberModal] = useState(false);
+  const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
+  const { project } = useProjectSession();
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
 
   const handleToggle = () => {
     setShowTable((prev) => !prev);
   };
 
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const data = await getAllUsers(Number(project?.projectId));
+        setUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
+    };
+
+    fetchAllUsers();
+  }, [project]);
+  console.log(users);
   const teamMemberColumns: Column<TeamMember>[] = [
     {
       header: "Name",
@@ -68,7 +85,7 @@ const TeamMembersWidget: React.FC = () => {
       </div>
 
       {!showTable ? (
-        <AvatarCarousel people={peopleData} />
+        <AvatarCarousel people={users} />
       ) : (
         <GenericTable
           columns={teamMemberColumns}

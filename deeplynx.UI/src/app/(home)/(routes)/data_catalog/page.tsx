@@ -1,19 +1,13 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { queryRecords } from "@/app/lib/filter_services";
 import {
   getAllProjects,
   getAllRecordsForMultipleProjects,
 } from "@/app/lib/projects_services";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
-import ProjectDropdown from "./ProjectDropdown";
-import ListView from "./ListView";
-import GridView from "./GridView";
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import RecentRecordsCard from "./RecentRecordsCard";
-import SavedSearchesTabs from "../../components/SavedSearches";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -21,18 +15,29 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
-import { queryRecords } from "@/app/lib/filter_services";
-import ExpandableTagsCell from "./ExpandableTagCell";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import SavedSearchesTabs from "../../components/SavedSearches";
+import GridView from "./GridView";
+import ListView from "./ListView";
+import ProjectDropdown from "./ProjectDropdown";
+import RecentRecordsCard from "./RecentRecordsCard";
+import { translations } from "@/app/lib/translations";
+import React from "react";
 
 const DataCatalogContent = () => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromProject = searchParams.get("fromProject");
+  const initialSearch = searchParams.get("search");
 
   const { project, hasLoaded } = useProjectSession();
 
   const [tableData, setTableData] = useState<FileViewerTableRow[]>([]);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     fromProject ? [fromProject] : []
@@ -50,7 +55,15 @@ const DataCatalogContent = () => {
 
   useEffect(() => {
     setHasMounted(true);
-  }, []);
+
+    if (initialSearch && !hasMounted && hasLoaded) {
+      handleSearch(initialSearch);
+    }
+
+    if (initialSearch) {
+      setSearchTerm(initialSearch);
+    }
+  }, [initialSearch, hasMounted, hasLoaded]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -124,11 +137,19 @@ const DataCatalogContent = () => {
       ];
       const allSearchTerm = newFilters.map((f) => f.term);
       const filteredData = await queryRecords(value);
+      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
 
-      setTableData(filteredData);
+      const scopedResults = filteredData.filter((r: FileViewerTableRow) =>
+        selectedProjectIdsNum.includes(Number(r.projectId))
+      );
+
+      setTableData(scopedResults);
+      setTotalRecords(scopedResults.length);
+
       setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
       setNextFilterId(nextFilterId + 1);
       setSearchTerm("");
+      setViewMode("list");
       setShowAll(true);
     } catch (error) {
       console.error("Search error:", error);
@@ -161,7 +182,7 @@ const DataCatalogContent = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
           <ProjectDropdown
@@ -188,14 +209,6 @@ const DataCatalogContent = () => {
             showResultsMessage={activeFilters.length > 0}
             className="w-full"
           />
-          <div className="text-right mt-1">
-            <a
-              href="/placeholder for advanced"
-              className="text-sm underline text-secondary hover:underline"
-            >
-              Additional Filters
-            </a>
-          </div>
         </div>
         <div className="flex gap-4 pr-4">
           {showAll ? (
@@ -230,15 +243,17 @@ const DataCatalogContent = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />
@@ -264,7 +279,6 @@ const DataCatalogContent = () => {
                 header: "Record Name",
                 cell: (row) => (
                   <>
-                    {/* {console.log("row for project id", row)} */}
                     <Link
                       href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
                       className="text-base-content font-bold hover:underline"
