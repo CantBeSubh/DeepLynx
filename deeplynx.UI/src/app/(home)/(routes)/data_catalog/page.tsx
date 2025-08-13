@@ -139,13 +139,12 @@ const DataCatalogContent = () => {
       const filteredData = await queryRecords(value);
       const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
 
-      // ✅ Scope search results to selected projects
       const scopedResults = filteredData.filter((r: FileViewerTableRow) =>
         selectedProjectIdsNum.includes(Number(r.projectId))
       );
 
       setTableData(scopedResults);
-      setTotalRecords(scopedResults.length); // ✅ same data, same count
+      setTotalRecords(scopedResults.length);
 
       setActiveFilters([...activeFilters, { id: nextFilterId, term: trimmed }]);
       setNextFilterId(nextFilterId + 1);
