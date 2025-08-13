@@ -20,8 +20,6 @@ const RecordViewPageContent = () => {
   useEffect(() => {
     if (!recordId || !projectId) return;
 
-    console.log("RecordId after:", recordId);
-    console.log("ProjectId after:", projectId);
     const fetchData = async () => {
       try {
         const data = await getRecord(Number(projectId), Number(recordId));
@@ -128,11 +126,12 @@ const RecordViewPageContent = () => {
   // TODO: make nested objects in table form too
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
-    ? Object.keys(parsedProperties).map(key => {
+    ? Object.keys(parsedProperties).map((key) => {
         const value = parsedProperties[key as keyof object];
         return {
           label: key,
-          value: typeof value === 'object' ? JSON.stringify(value) : String(value),
+          value:
+            typeof value === "object" ? JSON.stringify(value) : String(value),
         };
       })
     : [];

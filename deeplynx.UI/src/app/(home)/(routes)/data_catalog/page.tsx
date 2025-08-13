@@ -230,15 +230,17 @@ const DataCatalogContent = () => {
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="size-7" />
               </button>
               <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
+                className={`btn btn-sm ${
+                  viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="size-7" />
@@ -264,7 +266,6 @@ const DataCatalogContent = () => {
                 header: "Record Name",
                 cell: (row) => (
                   <>
-                    {/* {console.log("row for project id", row)} */}
                     <Link
                       href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
                       className="text-base-content font-bold hover:underline"

@@ -6,7 +6,6 @@ export const api = axios.create({
 })
 
 export const getDataOverview = async (userId: string) => {
-    console.log("userId",userId)
     try {
         const res = await api.get(`/user/GetDataOverview/${userId}`);
         return res.data;
