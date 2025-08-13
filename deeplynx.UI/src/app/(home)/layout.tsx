@@ -1,33 +1,22 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "@/app/globals.css";
+// app/(home)/layout.tsx
+import React, { Suspense } from "react";
 import LayoutShell from "../(home)/components/LayoutShell";
+import PageAreaSkeleton from "./PageAreaSkeleton";
+
+// If you have client providers, wrap them here (but they must not suspend)
 import { UserSessionProvider } from "../contexts/UserSessionProvider";
 import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
-import { Toaster } from "react-hot-toast";
 
-export const metadata: Metadata = {
-  title: "DeepLynx",
-  description: "Container for DeepLynx app",
-};
-
-export default function RootLayout({
+export default function HomeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <UserSessionProvider>
-          <ProjectSessionProvider>
-            <LayoutShell>
-              {children}
-              <Toaster position="top-right" />
-            </LayoutShell>
-          </ProjectSessionProvider>
-        </UserSessionProvider>
-      </body>
-    </html>
+    <UserSessionProvider>
+      <ProjectSessionProvider>
+        <LayoutShell>{children}</LayoutShell>
+      </ProjectSessionProvider>
+    </UserSessionProvider>
   );
 }

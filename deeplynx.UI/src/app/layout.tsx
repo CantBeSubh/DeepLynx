@@ -1,3 +1,7 @@
+// app/layout.tsx
+import "./globals.css"; // <— Tailwind/DaisyUI
+import "react-loading-skeleton/dist/skeleton.css";
+
 export default function RootLayout({
   children,
 }: {
@@ -5,7 +9,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      {/* Apply your theme if you use daisyUI */}
+      <body data-theme="light">{children}</body>
     </html>
   );
 }

@@ -56,7 +56,8 @@ export const translations = {
             NEW_CONNECTION: "created a new connection between ",
             AND: "and",
             LINKED_SOURCES: "Linked Sources",
-            TEAM_MEMBERS: "Team Members"
+            TEAM_MEMBERS: "Team Members",
+            CUSTOMIZE: "Customize"
         },
         CreateProjectModal: {
             CREATE_PROJECT: "Create New Project",
