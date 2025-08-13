@@ -59,6 +59,8 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
         <GenericTable
           columns={my_search_table_columns}
           data={myRecentSearches}
+          enablePagination
+          rowsPerPage={5}
         />
       ),
     },
@@ -68,6 +70,8 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
         <GenericTable
           columns={my_search_table_columns}
           data={mySavedSearches}
+          enablePagination
+          rowsPerPage={5}
         />
       ),
     },
