@@ -64,5 +64,13 @@ public partial class Project
     
     [InverseProperty("Projects")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
-
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Action> Actions { get; set; } = new List<Action>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 }
