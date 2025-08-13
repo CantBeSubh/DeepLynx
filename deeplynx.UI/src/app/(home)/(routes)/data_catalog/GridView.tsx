@@ -43,8 +43,6 @@ const GridView = <T extends object>({
     return { content, matched: true };
   };
 
-  console.log("Returned Data", data);
-
   const filteredRecords =
     selectedProjects?.includes("All your Projects") || !selectedProjects
       ? data

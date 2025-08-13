@@ -30,7 +30,6 @@ const RecentRecordsCard = ({
       try {
         console.log("selected Project", selectedProjects);
         const data = await getRecentlyAddedRecords(selectedProjects);
-        console.log(data);
         setRecords(data);
         setCurrentPage(1);
       } catch (error) {

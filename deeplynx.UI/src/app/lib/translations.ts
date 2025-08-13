@@ -1,4 +1,4 @@
-import LargeSearchBar from "../(home)/components/LargeSearchBar";
+import SideMenu from "../(home)/components/SideMenu";
 
 export const translations = {
     en: {
@@ -85,6 +85,18 @@ export const translations = {
             FOUND: "Found",
             MATCHES: "matches",
             ADITIONAL_FILTERS: "Additional Filters"
+        },
+        SideMenu: {
+            UPLOAD_CENTER: "Upload Center",
+            PROJECT_MANAGEMENT: "Project Management",
+            PROJECT_SETINGS: "Project Settings",
+            DATA_CATALOG: "Data Catalog",
+            SAVED_SEARCHES: "Saved Searches",
+            TIMESERIES_VIEWER: "Timeseries Viewer",
+            SETTINGS: "Settings",
+            HELP: "Help", 
+            CONTACT: "Contact", 
+            FILE_A_BUG: "File A Bug"
         }
     },
     es: {
