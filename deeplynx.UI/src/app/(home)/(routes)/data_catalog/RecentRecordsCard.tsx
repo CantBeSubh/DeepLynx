@@ -28,6 +28,7 @@ const RecentRecordsCard = ({
   useEffect(() => {
     const fetchRecentRecords = async () => {
       try {
+        console.log("selected Project", selectedProjects);
         const data = await getRecentlyAddedRecords(selectedProjects);
         setRecords(data);
         setCurrentPage(1);
@@ -56,6 +57,11 @@ const RecentRecordsCard = ({
       year: "numeric",
       hour: "numeric",
       minute: "numeric",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
       hour12: true,
       timeZoneName: "short",
     };
@@ -63,7 +69,7 @@ const RecentRecordsCard = ({
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4 shadow-md">
+    <div className="bg-base-100 rounded-xl p-4">
       <h2 className="text-lg text-black mb-4t">Recently Added Records</h2>
       <div className="divider m-0 mt-2"></div>
       <ul className="list mt-0">

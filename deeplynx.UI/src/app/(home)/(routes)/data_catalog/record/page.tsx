@@ -156,22 +156,6 @@ const RecordViewPageContent = () => {
             <div className="card bg-base-100 shadow-md p-2">
               <h2 className="card-title">Tags: {renderTags(record.tags)}</h2>
             </div>
-
-            {/* <div className="card bg-base-100 shadow-md p-2 ">
-              <div className="card-body">
-                <h2 className="card-title">
-                  Tags:{" "}
-                  {record.tags.map((tag) => (
-                    <div className="card-actions">
-                      <div className="badge badge-outline badge-secondary">
-                        {tag.name}
-                      </div>
-                    </div>
-                  ))}
-                  <ExpandableTagsCell tags={record.tags} />
-                </h2>
-              </div>
-            </div> */}
           </div>
         </div>
       ),

@@ -63,19 +63,19 @@ const Projects = () => {
   return (
     <div className="bg-base-100">
       {/* Header */}
-      <div className="flex justify-between items-center px-4 py-4">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
         <h1 className="text-2xl font-bold text-info-content">
           {t.HomeDashboard.WELECOME}
         </h1>
         <SearchInput
           placeholder="Search Projects"
           onChange={(e) => setSearchTerm(e.target.value)}
+          className="mr-6"
         />
       </div>
-      <div className="divider" />
 
       {/* Main Content */}
-      <div className="w-full">
+      <div className="mr-6 py-6">
         <div className="flex justify-between items-center justify-end mb-4">
           <button className="btn btn-outline btn-secondary flex items-center mr-2">
             <Cog6ToothIcon className="size-6" />
@@ -121,7 +121,7 @@ const Projects = () => {
               />
             </div>
           </div>
-          <div className="w-full md:w-1/2 px-4">
+          <div className="w-full md:w-1/2">
             <WidgetCard widgets={homeWidgets} />
           </div>
         </div>

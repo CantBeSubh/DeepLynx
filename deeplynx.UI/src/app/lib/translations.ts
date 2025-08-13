@@ -68,6 +68,24 @@ export const translations = {
             ABBREVIATION: "Abbreviation (optional)",
             DESCRIPTION: "Description (optional)"
         },
+        ProjectDashboard: {
+            PROJECT_NAME: "Project Name: ",
+            DATA_CATALOG_OVERVIEW: "Data Catalog Overview",
+            CREATED: "Created",
+            LOADING: "Loading ...",
+            NO_PROJECT_FOUND: "No Project Found ...",
+            VISIT: "Visit",
+            CUSTOMIZE: "Customize",
+            WIDGET: "Widget"
+        },
+        LargeSearchBar: {
+            FILTERED_BY: "Filtered by: ",
+            CLEAR_ALL: "Clear All",
+            NO_RESULTS_FOUND: "No results found.",
+            FOUND: "Found",
+            MATCHES: "matches",
+            ADITIONAL_FILTERS: "Additional Filters"
+        },
         SideMenu: {
             UPLOAD_CENTER: "Upload Center",
             PROJECT_MANAGEMENT: "Project Management",
