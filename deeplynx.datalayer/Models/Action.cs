@@ -8,6 +8,7 @@ namespace deeplynx.datalayer.Models
 {
     [Table("actions", Schema = "deeplynx")]
     [Index("Id", Name = "idx_actions_id")]
+    [Index("ProjectId", Name = "idx_project_id")]
     public partial class Action
     {
         [Key]

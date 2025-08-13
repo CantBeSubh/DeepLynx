@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace deeplynx.datalayer.Migrations
 {
     /// <inheritdoc />
-    public partial class EventSystemTables : Migration
+    public partial class AddEventSystemTables : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -146,7 +146,7 @@ namespace deeplynx.datalayer.Migrations
                 column: "id");
 
             migrationBuilder.CreateIndex(
-                name: "IX_actions_project_id",
+                name: "idx_project_id",
                 schema: "deeplynx",
                 table: "actions",
                 column: "project_id");

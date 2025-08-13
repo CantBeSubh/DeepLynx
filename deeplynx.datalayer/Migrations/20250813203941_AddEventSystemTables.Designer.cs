@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250813191118_EventSystemTables")]
-    partial class EventSystemTables
+    [Migration("20250813203941_AddEventSystemTables")]
+    partial class AddEventSystemTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -133,9 +133,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("actions_pkey");
 
-                    b.HasIndex("ProjectId");
-
                     b.HasIndex(new[] { "Id" }, "idx_actions_id");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_project_id");
 
                     b.ToTable("actions", "deeplynx");
                 });
