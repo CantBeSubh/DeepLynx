@@ -57,11 +57,6 @@ const RecentRecordsCard = ({
       year: "numeric",
       hour: "numeric",
       minute: "numeric",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "numeric",
       hour12: true,
       timeZoneName: "short",
     };
