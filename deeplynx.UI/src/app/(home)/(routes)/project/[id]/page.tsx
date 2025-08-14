@@ -1,14 +1,21 @@
-// app/(home)/project/[id]/page.tsx
+// app/(home)/(routes)/project/[id]/page.tsx
+import { notFound } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
-import { getProject } from "@/app/lib/projects_services"; // server-only
+import { getProject } from "@/app/lib/projects_services";
 
 type Props = {
-  params: { id: string };
+  // In async pages, Next may pass a Promise for params
+  params: Promise<{ id?: string }>;
 };
 
 export default async function ProjectPage({ params }: Props) {
+  const p = await params; // ✅ await first
+  const id = p.id;
+  if (!id) return notFound();
+
+  // server fetch (no axios to /api)
+  const project = await getProject(id);
+  if (!project) return notFound();
   await new Promise((r) => setTimeout(r, 1200));
-  const project = await getProject(params.id); // server fetch (no axios to /api)
-  // If you prefer, handle null here and render a simple not-found UI.
-  return <ProjectDetailClient initialProject={project} projectId={params.id} />;
+  return <ProjectDetailClient initialProject={project} projectId={id} />;
 }
