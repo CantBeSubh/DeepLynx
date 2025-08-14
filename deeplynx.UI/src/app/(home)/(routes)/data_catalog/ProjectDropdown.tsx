@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 
@@ -83,7 +85,10 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
   }, [selectedIds, projects]);
 
   return (
-    <div className="relative inline-block text-left min-w-sm text-accent-content" ref={dropdownRef}>
+    <div
+      className="relative inline-block text-left min-w-sm text-accent-content"
+      ref={dropdownRef}
+    >
       <button
         className="flex items-center gap-1 text-md"
         onClick={() => setIsOpen(!isOpen)}

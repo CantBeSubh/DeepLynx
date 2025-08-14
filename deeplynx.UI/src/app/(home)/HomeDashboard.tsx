@@ -12,7 +12,7 @@ import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import SearchInput from "./components/SearchInput";
 import { translations } from "../lib/translations";
-import { getAllProjectsServer } from "../lib/projects_services"; // optional (for refresh)
+import { getAllProjects } from "../lib/projects_services"; // optional (for refresh)
 import { useRouter } from "next/navigation";
 
 type Props = { initialProjects: ProjectsList[] };
@@ -38,7 +38,7 @@ export default function HomeDashboard({ initialProjects }: Props) {
 
   const refreshProjects = async () => {
     try {
-      const data = await getAllProjectsServer();
+      const data = await getAllProjects();
       setProjects(data);
     } catch (err) {
       console.error("Failed to refresh projects:", err);

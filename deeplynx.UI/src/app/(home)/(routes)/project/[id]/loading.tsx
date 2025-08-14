@@ -56,7 +56,7 @@ const LoadingProjectDetail = () => {
                     Visit
                   </Link>
                 </div>
-
+                {/* Recently Added Records Card */}
                 <div className="bg-base-100 rounded-xl p-4">
                   <h2 className="text-lg text-black mb-4t">
                     Recently Added Records
