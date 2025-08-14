@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
@@ -5,22 +6,27 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
 namespace deeplynx.business;
+using DotNetEnv;
 
 public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
 
     private readonly IClassBusiness _classBusiness;
+    
+    private readonly IObjectStorageBusiness _objectStorageBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record mapping operations.</param>
     /// <param name="classBusiness">Used to create a Timeseries class automatically on project creation.</param>
-    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness)
+    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness, IObjectStorageBusiness objectStorageBusiness)
     {
         _context = context;
         _classBusiness = classBusiness;
+        _objectStorageBusiness = objectStorageBusiness;
+        
     }
 
     /// <summary>
@@ -122,6 +128,18 @@ public class ProjectBusiness : IProjectBusiness
 
         await _classBusiness.CreateClass(project.Id, timeseriesClassDto);
         await _classBusiness.CreateClass(project.Id, reportClassDto);
+        
+        Env.Load("../.env");
+        var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
+        if (defaultObjectStorageMethod != null)
+        {
+            var objectStorageRequestDto = new CreateObjectStorageRequestDto
+            {
+                Name = "Instance Default",
+                Type =  defaultObjectStorageMethod,
+            };
+            await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+        }
 
         return new ProjectResponseDto
         {
