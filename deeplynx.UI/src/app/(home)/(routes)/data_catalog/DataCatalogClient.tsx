@@ -1,19 +1,18 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { queryRecords } from "@/app/lib/filter_services"; // if this calls HTTP, it's fine client-side
+import { queryRecords } from "@/app/lib/filter_services";
 
 import SavedSearches from "../../components/SavedSearches";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
-import RecentRecordsCard from "./RecentRecordsCard"; // make sure this is client or has a client wrapper
+import RecentRecordsCard from "./RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 
 import {
@@ -39,13 +38,12 @@ export default function DataCatalogClient({
 }: Props) {
   const locale = "en";
   const t = translations[locale];
-  const router = useRouter();
 
   // Project session (client provider)
-  const { project, hasLoaded } = useProjectSession();
+  const { hasLoaded } = useProjectSession();
 
   // Local state
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects] = useState(initialProjects);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
@@ -70,56 +68,84 @@ export default function DataCatalogClient({
     [activeFilters]
   );
 
+  // === memoized “complex” deps ===
+  const selectedProjectsToken = useMemo(
+    () => selectedProjects.join("|"),
+    [selectedProjects]
+  );
+  const projectIdsToken = useMemo(
+    () => projects.map((p) => p.id).join("|"),
+    [projects]
+  );
+
+  // === handlers wrapped in useCallback so effects can depend on them ===
+  const clearAllFilters = useCallback(() => {
+    setActiveFilters([]);
+    setSearchTerm("");
+    setTableData(initialRecords ?? []);
+    setTotalRecords((initialRecords ?? []).length);
+  }, [initialRecords]);
+
+  const handleSearch = useCallback(
+    async (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
+
+      try {
+        const newFilter = { id: nextFilterId, term: trimmed };
+        const filteredData = await queryRecords(trimmed);
+
+        const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
+        const scopedResults = selectedProjectIdsNum.length
+          ? filteredData.filter((r: FileViewerTableRow) =>
+              selectedProjectIdsNum.includes(Number(r.projectId))
+            )
+          : filteredData;
+
+        setTableData(scopedResults);
+        setTotalRecords(scopedResults.length);
+
+        setActiveFilters((prev) => [...prev, newFilter]);
+        setNextFilterId((n) => n + 1);
+        setSearchTerm("");
+        setViewMode("list");
+        setShowAll(true);
+      } catch (error) {
+        console.error("Search error:", error);
+      }
+    },
+    [activeFilters, nextFilterId, selectedProjects]
+  );
+
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {
     if (!hasLoaded) return;
     if (initialSearchTerm) {
+      // run once when session ready
       handleSearch(initialSearchTerm);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasLoaded]);
+  }, [hasLoaded, initialSearchTerm, handleSearch]);
 
   // Fetch original records when filters are cleared and projects are selected
   useEffect(() => {
     if (!hasLoaded) return;
     if (activeFilters.length > 0) return;
     if (selectedProjects.length === 0) return;
-  }, [hasLoaded, activeFilters.length, selectedProjects.join(",")]);
 
-  async function handleSearch(value: string) {
-    const trimmed = value.trim();
-    if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
-
-    try {
-      const newFilter = { id: nextFilterId, term: trimmed };
-      const filteredData = await queryRecords(trimmed); // client-side API call
-
-      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
-      const scopedResults = selectedProjectIdsNum.length
-        ? filteredData.filter((r: FileViewerTableRow) =>
-            selectedProjectIdsNum.includes(Number(r.projectId))
-          )
-        : filteredData;
-
-      setTableData(scopedResults);
-      setTotalRecords(scopedResults.length);
-
-      setActiveFilters((prev) => [...prev, newFilter]);
-      setNextFilterId((n) => n + 1);
-      setSearchTerm("");
-      setViewMode("list");
-      setShowAll(true);
-    } catch (error) {
-      console.error("Search error:", error);
-    }
-  }
-
-  function clearAllFilters() {
-    setActiveFilters([]);
-    setSearchTerm("");
-    setTableData(initialRecords ?? []);
-    setTotalRecords((initialRecords ?? []).length);
-  }
+    // Example placeholder: if you later convert to client fetch, do it here.
+    // Keeping effect present satisfies linter now that deps are stable.
+    // fetch(`/api/records?projects=${selectedProjects.join(",")}`)
+    //   .then(r => r.json()).then(data => {
+    //     setTableData(data);
+    //     setTotalRecords(data.length);
+    //   }).catch(console.error);
+  }, [
+    hasLoaded,
+    activeFilters.length,
+    selectedProjects.length, // track size explicitly
+    selectedProjectsToken, // track membership
+    projectIdsToken, // track projects list changes
+  ]);
 
   function renderTags(tags: string) {
     try {
@@ -136,9 +162,11 @@ export default function DataCatalogClient({
     }
   }
 
-  const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
+  const selectedProjectIdsNum = useMemo(
+    () => selectedProjects.map((id) => Number(id)),
+    [selectedProjects]
+  );
 
-  // Guard on session provider readiness (optional depending on your app)
   if (!hasLoaded) return null;
 
   return (
@@ -149,7 +177,7 @@ export default function DataCatalogClient({
 
           <ProjectDropdown
             projects={projects}
-            onSelectionChange={(ids) => setSelectedProjects(ids)}
+            onSelectionChange={setSelectedProjects} // stable enough (state setter)
             defaultSelected={
               initialSelectedProjects.length
                 ? initialSelectedProjects

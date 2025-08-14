@@ -104,7 +104,7 @@ export default function ProjectDetailClient({
 
           {/* right column */}
           <div className="w-full md:w-2/5 px-4">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex justify-end items-center mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="h-6 w-6" />
                 {t.ProjectDashboard.CUSTOMIZE}

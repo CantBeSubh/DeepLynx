@@ -3,35 +3,41 @@ import DataCatalogClient from "./DataCatalogClient";
 import {
   getAllProjects,
   getAllRecordsForMultipleProjects,
-} from "@/app/lib/projects_services"; // server-only versions (no axios to /api)
+} from "@/app/lib/projects_services";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 
-type PageProps = {
-  searchParams: {
-    fromProject?: string;
-    search?: string;
-  };
-};
+type ProjectDTO = { id: number | string; name: string };
 
-export default async function Page({ searchParams }: PageProps) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const params = await searchParams;
-  const fromProject = params.fromProject ?? "";
-  const initialSearch = params.search ?? "";
+  const fromProject =
+    typeof params.fromProject === "string" ? params.fromProject : "";
+  const initialSearch = typeof params.search === "string" ? params.search : "";
 
-  // 1) Load projects on the server
-  const projects = await getAllProjects(); // returns [{id, name, ...}]
-  const initialProjects = projects.map((p: any) => ({
+  // Type the service results (or change the service signatures to return typed data)
+  const projects = (await getAllProjects()) as ProjectDTO[];
+  const initialProjects: { id: string; name: string }[] = projects.map((p) => ({
     id: String(p.id),
-    name: p.name as string,
+    name: p.name,
   }));
 
-  // 2) If a project is preselected, preload its records (optional)
   const initialSelectedProjects = fromProject ? [fromProject] : [];
-  let initialRecords: any[] = [];
-  if (initialSelectedProjects.length > 0) {
+
+  let initialRecords: FileViewerTableRow[] = [];
+  if (initialSelectedProjects.length) {
     const idsNum = initialSelectedProjects.map((id) => Number(id));
-    initialRecords = await getAllRecordsForMultipleProjects(idsNum);
+    initialRecords = (await getAllRecordsForMultipleProjects(
+      idsNum
+    )) as FileViewerTableRow[];
   }
+
+  // demo delay
   await new Promise((r) => setTimeout(r, 1200));
+
   return (
     <DataCatalogClient
       initialProjects={initialProjects}

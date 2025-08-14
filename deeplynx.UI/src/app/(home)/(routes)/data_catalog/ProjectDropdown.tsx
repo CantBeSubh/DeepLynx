@@ -18,26 +18,30 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const allIds = projects.map((p) => p.id);
 
-  // ⏳ Apply defaultSelected when loaded
+  // ✅ stable, memoized derived values
+  const allIds = useMemo(() => projects.map((p) => p.id), [projects]);
+  const defaultToken = useMemo(
+    () => (defaultSelected ?? []).map(String).join("|"),
+    [defaultSelected]
+  );
+
+  // ⏳ Apply defaultSelected when loaded / when it changes
   useEffect(() => {
     if (!projects.length) return;
-
-    if (defaultSelected?.length) {
-      setSelectedIds(defaultSelected.map(String));
+    if (defaultToken.length) {
+      setSelectedIds((defaultSelected ?? []).map(String));
     } else {
       setSelectedIds(["ALL"]);
     }
-  }, [projects, defaultSelected?.toString()]);
+  }, [projects.length, defaultToken, defaultSelected]);
 
-  // 🔄 Notify parent anytime selectedIds changes
+  // 🔄 Notify parent anytime selectedIds changes (and projects exists)
   useEffect(() => {
     if (!projects.length) return;
-
     const isAll = selectedIds.includes("ALL");
     onSelectionChange?.(isAll ? allIds : selectedIds);
-  }, [selectedIds, projects.length]);
+  }, [selectedIds, projects.length, allIds, onSelectionChange]);
 
   // 🧹 Close dropdown on outside click
   useEffect(() => {
@@ -55,7 +59,6 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
 
   const toggleProject = (id: string) => {
     let newSelection: string[];
-
     if (id === "ALL") {
       newSelection = ["ALL"];
     } else {
@@ -63,16 +66,17 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
         ? selectedIds.filter((sid) => sid !== id)
         : [...selectedIds.filter((sid) => sid !== "ALL"), id];
 
-      if (newSelection.length === 0) {
-        newSelection = ["ALL"];
-      }
+      if (newSelection.length === 0) newSelection = ["ALL"];
     }
-
     setSelectedIds(newSelection);
   };
 
-  const filteredProjects = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProjects = useMemo(
+    () =>
+      projects.filter((p) =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [projects, searchTerm]
   );
 
   const selectedLabel = useMemo(() => {
@@ -91,7 +95,8 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     >
       <button
         className="flex items-center gap-1 text-md"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((o) => !o)}
+        type="button"
       >
         {selectedLabel}{" "}
         {selectedLabel === "All your Projects" && `(${projects.length})`}
