@@ -23,6 +23,9 @@ public partial class ObjectStorage
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("default")]
+    public bool Default { get; set; }
 
     [Column("created_by")]
     public string? CreatedBy { get; set; }

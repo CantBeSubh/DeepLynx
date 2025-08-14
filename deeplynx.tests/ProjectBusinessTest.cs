@@ -15,6 +15,7 @@ namespace deeplynx.tests
     {
         private ProjectBusiness _projectBusiness = null!;
         private Mock<IClassBusiness> _classBusiness = null!;
+        private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
 
         public long TestProjectId;
         public long TestClassId;
@@ -26,7 +27,8 @@ namespace deeplynx.tests
         {
             await base.InitializeAsync();
             _classBusiness = new Mock<IClassBusiness>();
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness.Object);
+            _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
+            _projectBusiness = new ProjectBusiness(Context, _classBusiness.Object, _objectStorageBusiness.Object);
         }
 
         [Fact]
