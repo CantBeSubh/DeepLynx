@@ -36,9 +36,14 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<RecordMapping> RecordMappings { get; set; }
 
     public virtual DbSet<Relationship> Relationships { get; set; }
-
     public virtual DbSet<Tag> Tags { get; set; }
     public virtual DbSet<User> Users { get; set; }
+    
+    public virtual DbSet<Event> Events { get; set; }
+    
+    public virtual DbSet<Action> Actions { get; set; }
+    
+    public virtual DbSet<Subscription> Subscriptions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -264,6 +269,69 @@ public partial class DeeplynxContext : DbContext
                         j.IndexerProperty<long>("ProjectId").HasColumnName("project_id");
                     });
 
+        });
+
+        modelBuilder.Entity<Event>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("events_pkey");
+        
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("events_user_id_fkey");
+            
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_project_id_fkey");
+            
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_dataSource_id_fkey");
+        });
+
+        modelBuilder.Entity<Action>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("actions_pkey");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Actions)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("actions_project_id_fkey");
+        });
+
+        modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_user_id_fkey");
+            
+            entity.HasOne(d => d.Action)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.ActionId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_action_id_fkey");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_project_id_fkey");
+
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_dataSource_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);

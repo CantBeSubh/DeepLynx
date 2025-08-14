@@ -31,7 +31,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
       </div>
 
       {/* Tab content */}
-      <div className="mt-4">{tabs[activeIndex].content}</div>
+      <div className="flex justify-center items-start w-full">
+        <div className="w-full max-w-4xl">{tabs[activeIndex].content}</div>
+      </div>
     </div>
   );
 };

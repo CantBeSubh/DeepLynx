@@ -20,8 +20,6 @@ const RecordViewPageContent = () => {
   useEffect(() => {
     if (!recordId || !projectId) return;
 
-    console.log("RecordId after:", recordId);
-    console.log("ProjectId after:", projectId);
     const fetchData = async () => {
       try {
         const data = await getRecord(Number(projectId), Number(recordId));
