@@ -175,11 +175,11 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAll", Name = "api_get_all_timeseries_records")]
-        public async Task<IActionResult> GetAllTableRecords([FromQuery] string tableName, long projectId, long dataSourceId)
+        public async Task<IActionResult> GetAllTableRecords(long projectId, long dataSourceId, [FromQuery] string tableName)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(tableName, projectId, dataSourceId);
+                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(projectId, dataSourceId, tableName);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
