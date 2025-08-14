@@ -104,26 +104,6 @@ const Projects = () => {
           />
         </div>
 
-        {/* <div className="w-full md:w-1/2 px-4">
-          <div className="flex justify-between items-center justify-end mb-4">
-            <button
-            onClick={() => setCanCustomize(!canCustomize)}
-            className={`btn flex items-center mr-2 ${canCustomize ? "btn-primary" : "btn-outline btn-secondary"}`}>
-              <Cog6ToothIcon className="size-6" />
-              Customize
-            </button>
-            <button
-              onClick={() => setWidgetModal(true)}
-              className="btn btn-secondary text-primary-content flex items-center"
-            >
-              <PlusIcon className="size-6" />
-              Widget
-            </button>
-          </div>
-          <WidgetCard widgets={homeWidgets} canCustomize={canCustomize}/>
-        </div>
-      </div> */}
-
       <div className="w-full md:w-1/2 px-4">
             <div className="flex justify-between items-center justify-end mb-4">
               <button

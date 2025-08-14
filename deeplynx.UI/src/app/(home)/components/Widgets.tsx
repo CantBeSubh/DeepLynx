@@ -51,25 +51,25 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize, onSave, 
       }
     };
 
-    return (
-      <Reorder.Group
-        axis="y"
-        onReorder={handleReorder}
-        values={currentWidgets}
-        className="space-y-4"
-      >
-        {currentWidgets.map((widget) => (
-          <Reorder.Item
-            key={widget}
-            value={widget}
-            className={`card card-border bg-base-100 w-auto ${canCustomize ? "cursor-grab" : "cursor-default"}`}
-            style={{ pointerEvents: canCustomize ? 'auto' : 'none' }}
-          >
-            {renderWidgets(widget)}
-          </Reorder.Item>
-        ))}
-      </Reorder.Group>
-    );
-  };
+  return (
+    <Reorder.Group
+      axis="y"
+      onReorder={handleReorder}
+      values={currentWidgets}
+      className="space-y-4"
+    >
+      {currentWidgets.map((widget) => (
+        <Reorder.Item
+          key={widget}
+          value={widget}
+          className={`card card-border bg-base-100 w-auto ${canCustomize ? "cursor-grab" : "cursor-default"}`}
+          style={{ pointerEvents: canCustomize ? 'auto' : 'none' }}
+        >
+          {renderWidgets(widget)}
+        </Reorder.Item>
+      ))}
+    </Reorder.Group>
+  );
+};
 
 export default WidgetCard;

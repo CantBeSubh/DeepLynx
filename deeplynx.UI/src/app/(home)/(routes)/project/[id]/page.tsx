@@ -43,6 +43,7 @@ const ProjectDetailPage = () => {
 
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
+    localStorage.setItem(`projectWidgets-${projectId}`, JSON.stringify(newWidgets));
     setCanCustomize(false);
   };
 
@@ -134,7 +135,6 @@ const ProjectDetailPage = () => {
           </div>
         </div>
 
-        {/* Create Widget Modal */}
         <CreateWidget
           isOpen={widgetModal}
           onClose={() => setWidgetModal(false)}
