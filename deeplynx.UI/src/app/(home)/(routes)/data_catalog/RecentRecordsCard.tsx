@@ -1,3 +1,5 @@
+"use client";
+
 import { getRecentlyAddedRecords } from "@/app/lib/user_services";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";

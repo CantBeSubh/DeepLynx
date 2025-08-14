@@ -3,7 +3,6 @@ import {
   AdjustmentsHorizontalIcon,
   ArrowsRightLeftIcon,
   ArrowTrendingUpIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CircleStackIcon,
@@ -26,7 +25,7 @@ export default function LoadingHomeDashboard() {
   const t = translations[locale];
   const totalPages = 2;
   const expandedIndex = 1;
-  const columns = [1, 2];
+  const columns = [1];
   const paginatedRecords = [1, 2, 3, 4, 5];
   return (
     <div className="bg-base-100">
@@ -35,7 +34,7 @@ export default function LoadingHomeDashboard() {
         <h1 className="text-2xl font-bold text-info-content">
           <Skeleton />
         </h1>
-        <label className={`input flex items-center relative ml-2`}>
+        <label className={`input flex items-center relative mr-4`}>
           {/* Input field */}
           <input type="text" />
           {/* Search icon */}
@@ -60,7 +59,7 @@ export default function LoadingHomeDashboard() {
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">
-                  <Skeleton />
+                  {t.HomeDashboard.YOUR_PROJECTS}
                 </h3>
 
                 <div className="flex gap-2">
@@ -95,25 +94,15 @@ export default function LoadingHomeDashboard() {
                       const globalIndex = index; // because paginatedRecords index is local
                       return (
                         <React.Fragment key={globalIndex}>
-                          {expandedIndex === globalIndex ? (
-                            <tr>
-                              <td colSpan={columns.length + 2} className="p-0">
-                                <div className="overflow-hidden transition-all duration-500 ease-in-out max-h-[1000px] opacity-100">
-                                  <div className="card bg-base-200/40 p-6 rounded-box shadow">
-                                    <Skeleton />
-                                  </div>
-                                </div>
+                          <tr className="bg-base-200/20 hover:bg-base-200/40 rounded-lg overflow-hidden">
+                            {columns.map((col, i) => (
+                              <td key={i}>
+                                <Skeleton width={200} />
+                                <Skeleton />
+                                <Skeleton width={500} />
                               </td>
-                            </tr>
-                          ) : (
-                            <tr className="bg-base-200/20 hover:bg-base-200/40 rounded-lg overflow-hidden">
-                              {columns.map((col, i) => (
-                                <td key={i}>
-                                  <Skeleton />
-                                </td>
-                              ))}
-                            </tr>
-                          )}
+                            ))}
+                          </tr>
                         </React.Fragment>
                       );
                     })}
@@ -138,82 +127,82 @@ export default function LoadingHomeDashboard() {
             </div>
           </div>
           <div className="w-full md:w-1/2">
-            <div className="card-body">
-              <div className="flex justify-between items-center">
-                <h2 className="card-title">{t.WidgetCards.LINKS}</h2>
-                <button>
-                  <PlusCircleIcon className="w-10 h-10 text-secondary" />
-                </button>
-              </div>
-              <div className="flex justify-between p-4">
-                <div className="flex flex-col items-center">
-                  <AdjustmentsHorizontalIcon className="size-8 text-secondary" />
-                  <button className="btn btn-link text-secondary">
-                    {t.WidgetCards.ROLES}
+            <div className="card card-border">
+              <div className="card-body">
+                <div className="flex justify-between items-center">
+                  <h2 className="card-title">{t.WidgetCards.LINKS}</h2>
+                  <button>
+                    <PlusCircleIcon className="w-10 h-10 text-secondary" />
                   </button>
                 </div>
-                <div className="flex flex-col items-center">
-                  <FolderIcon className="size-8 text-secondary" />
-                  <button className="btn btn-link text-secondary flex flex-col items-center">
-                    {t.WidgetCards.FILE_EXPLORER}
-                  </button>
-                </div>
-                <div className="flex flex-col items-center">
-                  <DocumentDuplicateIcon className="size-8 text-secondary" />
-                  <button className="btn btn-link text-secondary flex flex-col items-center">
-                    {t.WidgetCards.REPORTS}
-                  </button>
-                </div>
-                <div className="flex flex-col items-center">
-                  <ArrowTrendingUpIcon className="size-8 text-secondary" />
-                  <button className="btn btn-link text-secondary ">
-                    {t.WidgetCards.TRENDS}
-                  </button>
+                <div className="flex justify-between p-4">
+                  <div className="flex flex-col items-center">
+                    <AdjustmentsHorizontalIcon className="size-8 text-secondary" />
+                    <button className="btn btn-link text-secondary">
+                      {t.WidgetCards.ROLES}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <FolderIcon className="size-8 text-secondary" />
+                    <button className="btn btn-link text-secondary flex flex-col items-center">
+                      {t.WidgetCards.FILE_EXPLORER}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <DocumentDuplicateIcon className="size-8 text-secondary" />
+                    <button className="btn btn-link text-secondary flex flex-col items-center">
+                      {t.WidgetCards.REPORTS}
+                    </button>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <ArrowTrendingUpIcon className="size-8 text-secondary" />
+                    <button className="btn btn-link text-secondary ">
+                      {t.WidgetCards.TRENDS}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-            <div className="">
+            <div className="card card-border mt-4">
               <div className="card-body">
-                <h2 className="card-title">
-                  <Skeleton />
-                </h2>
+                <h2 className="card-title">{t.WidgetCards.DATA_OVERVIEW}</h2>
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      <Skeleton />
+                      {t.WidgetCards.PROJECTS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <Squares2X2Icon className="size-8 mr-2" />
-                      <Skeleton />
+                      <Skeleton width={40} />
                     </div>
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      <Skeleton />
+                      {t.WidgetCards.DATA_RECORD}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <CircleStackIcon className="size-8 mr-2" />
-                      <Skeleton />
+                      <Skeleton width={40} />
                     </div>
                   </div>
                 </div>
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      <Skeleton />
+                      {t.WidgetCards.CLASSES}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <RectangleGroupIcon className="size-8 mr-2" />
-                      <Skeleton />
+                      <Skeleton width={40} />
                     </div>
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      <Skeleton />
+                      {t.WidgetCards.CONNECTIONS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <ArrowsRightLeftIcon className="size-8 mr-2" />
-                      <Skeleton />
+                      <Skeleton width={40} />
                     </div>
                   </div>
                 </div>

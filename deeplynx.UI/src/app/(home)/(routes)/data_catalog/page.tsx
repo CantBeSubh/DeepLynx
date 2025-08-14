@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import SavedSearchesTabs from "../../components/SavedSearches";
+import SavedSearches from "../../components/SavedSearches";
 import GridView from "./GridView";
 import ListView from "./ListView";
 import ProjectDropdown from "./ProjectDropdown";
@@ -323,7 +323,7 @@ const DataCatalogContent = () => {
             <RecentRecordsCard selectedProjects={selectedProjects} />
           </div>
           <div className="w-1/3">
-            <SavedSearchesTabs />
+            <SavedSearches />
           </div>
         </div>
       )}

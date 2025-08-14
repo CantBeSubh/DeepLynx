@@ -1,3 +1,5 @@
+"use client";
+
 import { Column } from "@/app/(home)/types/types";
 import {
   ChevronDownIcon,

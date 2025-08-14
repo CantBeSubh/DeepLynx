@@ -1,3 +1,5 @@
+"use client";
+
 import { translations } from "@/app/lib/translations";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { useRef, useState } from "react";

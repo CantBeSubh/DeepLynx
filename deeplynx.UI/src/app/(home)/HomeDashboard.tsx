@@ -13,12 +13,14 @@ import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
 import SearchInput from "./components/SearchInput";
 import { translations } from "../lib/translations";
 import { getAllProjectsServer } from "../lib/projects_services"; // optional (for refresh)
+import { useRouter } from "next/navigation";
 
 type Props = { initialProjects: ProjectsList[] };
 
 export default function HomeDashboard({ initialProjects }: Props) {
   const locale = "en";
   const t = translations[locale];
+  const router = useRouter();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
@@ -41,6 +43,10 @@ export default function HomeDashboard({ initialProjects }: Props) {
     } catch (err) {
       console.error("Failed to refresh projects:", err);
     }
+  };
+
+  const onExplore = (row: ProjectsList) => {
+    router.push(`/project/${row.id}`);
   };
 
   const columns = [
@@ -115,9 +121,7 @@ export default function HomeDashboard({ initialProjects }: Props) {
                 renderExpandedContent={(project, onClose) => (
                   <ExpandedProjectCard project={project} onClose={onClose} />
                 )}
-                onExplore={function (row: ProjectsList): void {
-                  throw new Error("Function not implemented.");
-                }}
+                onExplore={onExplore}
               />
             </div>
           </div>
