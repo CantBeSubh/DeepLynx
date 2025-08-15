@@ -33,168 +33,32 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="queryRequests">Array of query component dtos</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-   public IEnumerable<HistoricalRecordResponseDto> BuildQuery(string initialQuery, CustomQueryRequestDto[] queryRequests)
+  public IEnumerable<HistoricalRecordResponseDto> BuildQuery(string initialQuery, CustomQueryRequestDto[] queryRequests)
 {
-    var histRec = _context.HistoricalRecords.AsQueryable();
-    // Creates a parameter expression that represents a single instance of the HistoricalRecord class
-    var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
-    Expression combinedExpression = null;
-
-    foreach (var query in queryRequests)
-    {
-        // Creates an expression that represents accessing a property of the HistoricalRecord class
-        var property = Expression.Property(parameter, query.Filter);
-        
-        // Get the target type (unwrap nullable if needed)
-        var targetType = Nullable.GetUnderlyingType(property.Type) ?? property.Type;
-
-        // Convert value to appropriate type
-        object? convertedValue = null;
-        if (!string.IsNullOrWhiteSpace(query.Value))
-        {
-            try
-            {
-                convertedValue = Convert.ChangeType(query.Value, targetType);
-            }
-            catch (Exception)
-            {
-                // If conversion fails, treat as string for LIKE operations
-                convertedValue = query.Value;
-            }
-        }
-
-        // Create the constant expression with the correct type
-        Expression value;
-        if (convertedValue == null)
-        {
-            // For null values, create a constant of the property's actual type
-            value = Expression.Constant(null, property.Type);
-        }
-        else
-        {
-            // For non-null values, ensure the constant matches the property type
-            if (property.Type != targetType && Nullable.GetUnderlyingType(property.Type) != null)
-            {
-                // This is a nullable type, so create the nullable value
-                value = Expression.Constant(convertedValue, property.Type);
-            }
-            else
-            {
-                value = Expression.Constant(convertedValue, property.Type);
-            }
-        }
-        
-        // Create the comparison operation
-        Expression comparison = null; 
-        if (query.Operator == "LIKE")
-        {
-            // For LIKE operations, work with string representation
-            Expression stringProperty;
-            
-            if (property.Type == typeof(string))
-            {
-                stringProperty = property;
-            }
-            else
-            {
-                // Convert non-string properties to string for LIKE operations
-                // Handle nullable types by using null coalescing
-                if (Nullable.GetUnderlyingType(property.Type) != null)
-                {
-                    // For nullable types, convert to string with null handling
-                    var toStringMethod = typeof(object).GetMethod("ToString");
-                    var convertToString = Expression.Call(
-                        Expression.Convert(property, typeof(object)), 
-                        toStringMethod
-                    );
-                    stringProperty = Expression.Coalesce(
-                        Expression.Condition(
-                            Expression.Equal(property, Expression.Constant(null, property.Type)),
-                            Expression.Constant(""),
-                            convertToString
-                        ),
-                        Expression.Constant("")
-                    );
-                }
-                else
-                {
-                    // For non-nullable types
-                    var toStringMethod = property.Type.GetMethod("ToString", Type.EmptyTypes);
-                    stringProperty = Expression.Call(property, toStringMethod);
-                }
-            }
-
-            // EF.Functions setup (your existing code works well)
-            var efFunctionsProp = typeof(EF).GetProperty(nameof(EF.Functions))!;
-            var efFunctionsExpr = Expression.Property(null, efFunctionsProp);
-
-            // Wrap value in % for wildcard search
-            var patternExpr = Expression.Constant($"%{query.Value}%");
-
-            // Call EF.Functions.ILike for case-insensitive search
-            var mi = typeof(NpgsqlDbFunctionsExtensions).GetMethod(
-                nameof(NpgsqlDbFunctionsExtensions.ILike),
-                new[] { typeof(DbFunctions), typeof(string), typeof(string) }
-            )!;
-
-            comparison = Expression.Call(mi, efFunctionsExpr, stringProperty, patternExpr);
-        }
-        else
-        {
-            // For other operators, handle nullable comparisons properly
-            if (convertedValue == null)
-            {
-                // For null comparisons, use IS NULL or IS NOT NULL
-                if (query.Operator == "=" || query.Operator == "==")
-                {
-                    comparison = Expression.Equal(property, value);
-                }
-                else if (query.Operator == "!=" || query.Operator == "<>")
-                {
-                    comparison = Expression.NotEqual(property, value);
-                }
-                else
-                {
-                    // For other operators with null, this will typically be false
-                    comparison = Expression.Constant(false);
-                }
-            }
-            else
-            {
-                comparison = CreateComparisonExpression(property, value, query.Operator);
-            }
-        }
-     
-        // Combine the expressions using the connector (AND/OR)
-        combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
-    }
-
-    // Create the final lambda expression
-    var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
-    histRec = histRec.Where(lambda);
+    IQueryable<HistoricalRecord> histRec;
     
-    // 2) Full-text search AFTER filters to reduce amount of records queried with vector 
-    if (!string.IsNullOrWhiteSpace(initialQuery))
+    // If we have both filters and full-text search, combine them in a single SQL query
+    if (queryRequests.Any() && !string.IsNullOrWhiteSpace(initialQuery))
     {
-        // Build tsquery string once
-        var tsQueryText = ParseToQuery(initialQuery);
-
-        histRec = histRec.Where(r =>
-            EF.Functions.ToTsVector("english",
-                    (r.Name ?? "") + " " +
-                    (r.Description ?? "") + " " +
-                    (r.ClassName ?? "") + " " +
-                    (r.Uri ?? "") + " " +
-                    (r.OriginalId ?? "") + " " +
-                    (r.DataSourceName ?? "") + " " +
-                    (r.ProjectName ?? "") + " " +
-                    (r.CreatedBy ?? "") + " " +
-                    (r.ModifiedBy ?? "") + " "
-                )
-                .Matches(EF.Functions.WebSearchToTsQuery("english", tsQueryText)));
+        histRec = BuildCombinedQuery(initialQuery, queryRequests);
+    }
+    // If only filters, use Expression trees
+    else if (queryRequests.Any())
+    {
+        histRec = BuildFilterQuery(queryRequests);
+    }
+    // If only full-text search, use raw SQL
+    else if (!string.IsNullOrWhiteSpace(initialQuery))
+    {
+        histRec = BuildFullTextQuery(initialQuery);
+    }
+    // No filters
+    else
+    {
+        histRec = _context.HistoricalRecords.AsQueryable();
     }
 
-    // 3) Execute & shape
+    // Execute & shape
     return histRec
         .Select(r => new HistoricalRecordResponseDto
         {
@@ -222,6 +86,175 @@ public class QueryBusiness : IQueryBusiness
         .ToList();
 }
 
+private IQueryable<HistoricalRecord> BuildCombinedQuery(string initialQuery, CustomQueryRequestDto[] queryRequests)
+{
+    var tsQueryText = ParseToQuery(initialQuery);
+    var whereConditions = new List<string>();
+    var parameters = new List<NpgsqlParameter>();
+    
+    // Add parameter for full-text search
+    parameters.Add(new NpgsqlParameter("query", tsQueryText));
+    
+    // Build WHERE conditions from queryRequests
+    for (int i = 0; i < queryRequests.Length; i++)
+    {
+        var query = queryRequests[i];
+        var paramName = $"param{i}";
+        
+        string condition;
+        if (query.Operator.ToUpper() == "LIKE")
+        {
+            condition = $"{ConvertPropertyToColumnName(query.Filter)} ILIKE @{paramName}";
+            parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
+        }
+        else if (query.Operator == "=")
+        {
+            condition = $"{ConvertPropertyToColumnName(query.Filter)} = @{paramName}";
+            parameters.Add(new NpgsqlParameter(paramName, ConvertValueForSql(query.Value, query.Filter)));
+        }
+        // Add more operators as needed
+        else
+        {
+            condition = $"{ConvertPropertyToColumnName(query.Filter)} {query.Operator} @{paramName}";
+            parameters.Add(new NpgsqlParameter(paramName, ConvertValueForSql(query.Value, query.Filter)));
+        }
+        
+        whereConditions.Add(condition);
+    }
+    
+    var whereClause = string.Join(" AND ", whereConditions);
+    
+    var sql = $@"
+        SELECT *
+        FROM deeplynx.historical_records
+        WHERE ({whereClause})
+        AND to_tsvector('english',
+            coalesce(name, '') || ' ' ||
+            coalesce(description, '') || ' ' ||
+            coalesce(class_name, '') || ' ' ||
+            coalesce(uri, '') || ' ' ||
+            coalesce(original_id, '') || ' ' ||
+            coalesce(data_source_name, '') || ' ' ||
+            coalesce(project_name, '') || ' ' ||
+            coalesce(created_by, '') || ' ' ||
+            coalesce(modified_by, '') || ' ' ||
+            coalesce(properties::text, '') || ' ' ||
+            coalesce(tags::text, '')
+        ) @@ to_tsquery('english', @query)";
+
+    return _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
+}
+
+private IQueryable<HistoricalRecord> BuildFilterQuery(CustomQueryRequestDto[] queryRequests)
+{
+    var histRec = _context.HistoricalRecords.AsQueryable();
+    var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
+    Expression combinedExpression = null;
+
+    foreach (var query in queryRequests)
+    {
+        var property = Expression.Property(parameter, query.Filter);
+        var targetType = Nullable.GetUnderlyingType(property.Type) ?? property.Type;
+
+        object? convertedValue = null;
+        if (!string.IsNullOrWhiteSpace(query.Value))
+        {
+            try
+            {
+                convertedValue = Convert.ChangeType(query.Value, targetType);
+            }
+            catch (Exception)
+            {
+                convertedValue = query.Value;
+            }
+        }
+
+        Expression value;
+        if (convertedValue == null)
+        {
+            value = Expression.Constant(null, property.Type);
+        }
+        else
+        {
+            if (property.Type != targetType && Nullable.GetUnderlyingType(property.Type) != null)
+            {
+                value = Expression.Constant(convertedValue, property.Type);
+            }
+            else
+            {
+                value = Expression.Constant(convertedValue, property.Type);
+            }
+        }
+        
+        Expression comparison = null;
+        if (query.Operator == "LIKE")
+        {
+            // Your existing LIKE logic here
+            var efFunctionsProp = typeof(EF).GetProperty(nameof(EF.Functions))!;
+            var efFunctionsExpr = Expression.Property(null, efFunctionsProp);
+            var patternExpr = Expression.Constant($"%{query.Value}%");
+            var mi = typeof(NpgsqlDbFunctionsExtensions).GetMethod(
+                nameof(NpgsqlDbFunctionsExtensions.ILike),
+                new[] { typeof(DbFunctions), typeof(string), typeof(string) }
+            )!;
+            comparison = Expression.Call(mi, efFunctionsExpr, property, patternExpr);
+        }
+        else
+        {
+            comparison = CreateComparisonExpression(property, value, query.Operator);
+        }
+     
+        combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
+    }
+
+    if (combinedExpression != null)
+    {
+        var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
+        histRec = histRec.Where(lambda);
+    }
+    
+    return histRec;
+}
+
+private IQueryable<HistoricalRecord> BuildFullTextQuery(string initialQuery)
+{
+    var tsQueryText = ParseToQuery(initialQuery);
+    
+    var sql = @"
+        SELECT *
+        FROM deeplynx.historical_records
+        WHERE to_tsvector('english',
+            coalesce(name, '') || ' ' ||
+            coalesce(description, '') || ' ' ||
+            coalesce(class_name, '') || ' ' ||
+            coalesce(uri, '') || ' ' ||
+            coalesce(original_id, '') || ' ' ||
+            coalesce(data_source_name, '') || ' ' ||
+            coalesce(project_name, '') || ' ' ||
+            coalesce(created_by, '') || ' ' ||
+            coalesce(modified_by, '') || ' ' ||
+            coalesce(properties::text, '') || ' ' ||
+            coalesce(tags::text, '')
+        ) @@ to_tsquery('english', @query)";
+
+    var param = new NpgsqlParameter("query", tsQueryText);
+    return _context.HistoricalRecords.FromSqlRaw(sql, param);
+}
+
+// Helper method to convert C# property names to database column names
+private string ConvertPropertyToColumnName(string propertyName)
+{
+    // Convert PascalCase to snake_case for PostgreSQL
+    return string.Concat(propertyName.Select((x, i) => i > 0 && char.IsUpper(x) ? "_" + x : x.ToString())).ToLower();
+}
+
+// Helper method to convert values for SQL parameters
+private object ConvertValueForSql(string value, string propertyName)
+{
+    // Add logic here to convert based on the property type
+    // For now, just return the string value
+    return value;
+}
     private Expression CreateComparisonExpression(MemberExpression property, Expression value, string operatorType)
     {
         return operatorType switch
