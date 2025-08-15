@@ -8,6 +8,7 @@ import GraphWidget from "./WidgetCards/GraphWidget";
 import RecentActivityWidget from "./WidgetCards/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
 import TeamMembersWidget from "./WidgetCards/TeamMembers";
+import { Cog6ToothIcon, PlusIcon, XMarkIcon, DocumentCheckIcon } from "@heroicons/react/24/outline";
 
 export type WidgetType = "DataOverview" | "Links" | "Graph" | "RecentActivity" | "ProjectOverview" | "TeamMembers";
 interface WidgetCardProps {
@@ -19,6 +20,13 @@ interface WidgetCardProps {
 
 const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize, onSave, onCancel }) => {
   const [currentWidgets, setCurrentWidgets] = useState<WidgetType[]>(widgets);
+  const [initialWidgets, setInitialWidgets] = useState<WidgetType[]>(widgets);
+
+  useEffect(() => {
+      if (canCustomize) {
+        setInitialWidgets(currentWidgets);
+      }
+    }, [canCustomize]);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
@@ -51,24 +59,49 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, canCustomize, onSave, 
       }
     };
 
-  return (
-    <Reorder.Group
-      axis="y"
-      onReorder={handleReorder}
-      values={currentWidgets}
-      className="space-y-4"
-    >
-      {currentWidgets.map((widget) => (
-        <Reorder.Item
-          key={widget}
-          value={widget}
-          className={`card card-border bg-base-100 w-auto ${canCustomize ? "cursor-grab" : "cursor-default"}`}
-          style={{ pointerEvents: canCustomize ? 'auto' : 'none' }}
-        >
-          {renderWidgets(widget)}
-        </Reorder.Item>
-      ))}
-    </Reorder.Group>
+  const handleCancel = () => {
+    setCurrentWidgets(initialWidgets);
+    onCancel();
+  };
+
+return (
+    <div>
+      {canCustomize && (
+        <div className="flex justify-between items-center justify-end mb-4">
+          <button
+            onClick={handleCancel}
+            className="btn flex items-center mr-2 btn-outline btn-secondary"
+          >
+            <XMarkIcon className="size-6" />
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(currentWidgets)}
+            className="btn flex items-center mr-2 btn-secondary"
+          >
+            <DocumentCheckIcon className="size-6" />
+            Save
+          </button>
+        </div>
+      )}
+      <Reorder.Group
+        axis="y"
+        onReorder={handleReorder}
+        values={currentWidgets}
+        className="space-y-4"
+      >
+        {currentWidgets.map((widget) => (
+          <Reorder.Item
+            key={widget}
+            value={widget}
+            className={`card card-border bg-base-100 w-auto ${canCustomize ? "cursor-grab" : "cursor-default"}`}
+            style={{ pointerEvents: canCustomize ? 'auto' : 'none' }}
+          >
+            {renderWidgets(widget)}
+          </Reorder.Item>
+        ))}
+      </Reorder.Group>
+    </div>
   );
 };
 
