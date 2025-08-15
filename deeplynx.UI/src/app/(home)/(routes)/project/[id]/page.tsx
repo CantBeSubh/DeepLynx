@@ -125,11 +125,6 @@ const ProjectDetailPage = () => {
             />
           </div>
         </div>
-
-        <CreateWidget
-          isOpen={widgetModal}
-          onClose={() => setWidgetModal(false)}
-        />
       </main>
     </div>
   );

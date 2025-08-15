@@ -55,6 +55,8 @@ const Projects = () => {
   const handleSave = (newWidgets: WidgetType[]) => {
     setHomeWidgets(newWidgets);
     setCanCustomize(false);
+    console.log(homeWidgets, "THESE ARE MY NEW WIDGET ORDERS");
+    console.log(newWidgets, "THESE ARE MY updated ORDERS");
   };
 
   const handleCancel = () => {
