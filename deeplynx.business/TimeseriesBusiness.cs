@@ -102,7 +102,7 @@ public class TimeseriesBusiness(
 
         var uploadId = Guid.NewGuid().ToString();
         string tableName = uploadId + "_" + file.FileName;
-        var filePath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "uploads", uploadId + "_" + file.FileName);
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId + "_" + file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
         var uri = "duckdb://" + tableName;
 
@@ -148,7 +148,7 @@ public class TimeseriesBusiness(
 
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var uploadId = Guid.NewGuid().ToString();
-        var folderPath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "uploads", uploadId);
+        var folderPath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId);
         Directory.CreateDirectory(folderPath);
 
         return uploadId;
@@ -174,7 +174,7 @@ public class TimeseriesBusiness(
             throw new ArgumentException("No chunk uploaded.");
         }
 
-        var tempFilePath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "uploads", uploadId, $"{chunkNumber}.part");
+        var tempFilePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId, $"{chunkNumber}.part");
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
 
@@ -193,9 +193,9 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var folderPath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "uploads", request.UploadId);
+        var folderPath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
-        var finalFilePath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "uploads",
+        var finalFilePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads",
             request.UploadId + "_" + request.FileName);
         var uri = "duckdb://" + tableName;
 
@@ -402,7 +402,7 @@ public class TimeseriesBusiness(
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
 
-        var filePath = Path.Combine(_duckDbBasePath, projectId.ToString(), dataSourceId.ToString(), "reports", fileName);
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
         File.WriteAllText(filePath, sbData.ToString());
