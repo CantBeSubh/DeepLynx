@@ -1,7 +1,7 @@
 "use client";
 
 import { translations } from "@/app/lib/translations";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import React from "react";

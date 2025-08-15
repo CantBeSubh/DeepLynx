@@ -1,32 +1,36 @@
 // app/(home)/(routes)/data_catalog/record/page.tsx
-import { notFound } from "next/navigation";
 import RecordViewClient from "./RecordViewClient";
-import { getRecord } from "@/app/lib/record_services"; // server-only
+import { getRecordServer } from "@/app/lib/record_services.server";
+
+export const dynamic = "force-dynamic"; // optional if behind auth
 
 type PageProps = {
-  searchParams: Promise<{ recordId?: string; projectId?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
-  const recordId = params.recordId ? Number(params.recordId) : NaN;
-  const projectId = params.projectId ? Number(params.projectId) : NaN;
+  const recordId = typeof params.recordId === "string" ? params.recordId : "";
+  const projectId =
+    typeof params.projectId === "string" ? params.projectId : "";
 
-  if (!Number.isFinite(recordId) || !Number.isFinite(projectId)) {
-    return notFound();
+  if (!recordId || !projectId) {
+    // you can render a simple error / notFound()
+    return <div className="p-4">Missing recordId or projectId</div>;
   }
 
-  const record = await getRecord(projectId, recordId);
-  if (!record) {
-    return notFound();
+  let initialRecord = null;
+  try {
+    initialRecord = await getRecordServer(projectId, recordId);
+  } catch (e) {
+    console.error("getRecordServer failed:", e);
   }
 
-  await new Promise((r) => setTimeout(r, 1200));
   return (
     <RecordViewClient
-      initialRecord={record}
-      projectId={projectId}
-      recordId={recordId}
+      initialRecord={initialRecord}
+      projectId={Number(projectId)}
+      recordId={Number(recordId)}
     />
   );
 }

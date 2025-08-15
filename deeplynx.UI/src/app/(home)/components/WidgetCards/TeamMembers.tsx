@@ -8,7 +8,7 @@ import { Column, TeamMember } from "@/app/(home)/types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 import { translations } from "@/app/lib/translations";
-import { getAllUsers } from "@/app/lib/user_services";
+import { getAllUsers } from "@/app/lib/user_services.client";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 const TeamMembersWidget: React.FC = () => {

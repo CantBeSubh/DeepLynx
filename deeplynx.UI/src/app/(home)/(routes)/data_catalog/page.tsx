@@ -1,9 +1,9 @@
 // app/(home)/(routes)/data_catalog/page.tsx
 import DataCatalogClient from "./DataCatalogClient";
 import {
-  getAllProjects,
-  getAllRecordsForMultipleProjects,
-} from "@/app/lib/projects_services";
+  getAllProjectsServer,
+  getAllRecordsForMultipleProjectsServer,
+} from "@/app/lib/projects_services.server";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 
 type ProjectDTO = { id: number | string; name: string };
@@ -19,7 +19,7 @@ export default async function Page({
   const initialSearch = typeof params.search === "string" ? params.search : "";
 
   // Type the service results (or change the service signatures to return typed data)
-  const projects = (await getAllProjects()) as ProjectDTO[];
+  const projects = (await getAllProjectsServer()) as ProjectDTO[];
   const initialProjects: { id: string; name: string }[] = projects.map((p) => ({
     id: String(p.id),
     name: p.name,
@@ -30,7 +30,7 @@ export default async function Page({
   let initialRecords: FileViewerTableRow[] = [];
   if (initialSelectedProjects.length) {
     const idsNum = initialSelectedProjects.map((id) => Number(id));
-    initialRecords = (await getAllRecordsForMultipleProjects(
+    initialRecords = (await getAllRecordsForMultipleProjectsServer(
       idsNum
     )) as FileViewerTableRow[];
   }
