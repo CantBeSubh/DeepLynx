@@ -110,18 +110,9 @@ const Projects = () => {
                 onClick={() => setCanCustomize(!canCustomize)}
                 className="btn flex items-center mr-2 btn-outline btn-secondary"
               >
-                {canCustomize ? <XMarkIcon className="size-6" /> : <Cog6ToothIcon className="size-6" />}
-                {canCustomize ? "Cancel" : "Customize"}
+                <Cog6ToothIcon className="size-6" />
+                Customize
               </button>
-              {canCustomize && (
-                <button
-                  onClick={() => handleSave(homeWidgets)}
-                  className="btn flex items-center mr-2 btn-secondary"
-                >
-                  <DocumentCheckIcon className="size-6" />
-                  Save
-                </button>
-              )}
               <button
                 onClick={() => setWidgetModal(true)}
                 className="btn btn-secondary text-primary-content flex items-center"
