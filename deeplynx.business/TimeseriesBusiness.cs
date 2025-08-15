@@ -34,8 +34,8 @@ public class TimeseriesBusiness(
 
     private static async Task<DuckDBConnection> GetDuckDbConnection(long projectId, long dataSourceId)
     {
-        var projectDir = Path.Combine(_duckDbBasePath, projectId.ToString());
-        var dataSourceDir = Path.Combine(projectDir, dataSourceId.ToString());
+        var projectDir = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString());
+        var dataSourceDir = Path.Combine(projectDir, "datasource-" + dataSourceId.ToString());
         Directory.CreateDirectory(dataSourceDir);
 
         var dbPath = Path.Combine(dataSourceDir, "timeseries.duckdb");
@@ -49,8 +49,8 @@ public class TimeseriesBusiness(
 
     private static async Task<DuckDBConnection> GetReadOnlyDuckDbConnection(long projectId, long dataSourceId)
     {
-        var projectDir = Path.Combine(_duckDbBasePath, projectId.ToString());
-        var dataSourceDir = Path.Combine(projectDir, dataSourceId.ToString());
+        var projectDir = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString());
+        var dataSourceDir = Path.Combine(projectDir, "datasource-" + dataSourceId.ToString());
         var dbPath = Path.Combine(dataSourceDir, "timeseries.duckdb");
 
         if (!File.Exists(dbPath))
