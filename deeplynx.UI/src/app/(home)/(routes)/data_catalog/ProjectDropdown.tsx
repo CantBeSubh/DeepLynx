@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
+import { translations } from "@/app/lib/translations";
 
 interface ProjectDropdownProps {
   projects: { id: string; name: string }[];
@@ -14,19 +15,20 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
   onSelectionChange,
   defaultSelected,
 }) => {
+  const locale = "en";
+  const t = translations[locale];
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ✅ stable, memoized derived values
   const allIds = useMemo(() => projects.map((p) => p.id), [projects]);
   const defaultToken = useMemo(
     () => (defaultSelected ?? []).map(String).join("|"),
     [defaultSelected]
   );
 
-  // ⏳ Apply defaultSelected when loaded / when it changes
+  // Apply defaultSelected when loaded / when it changes
   useEffect(() => {
     if (!projects.length) return;
     if (defaultToken.length) {
@@ -36,7 +38,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     }
   }, [projects.length, defaultToken, defaultSelected]);
 
-  // 🔄 Notify parent anytime selectedIds changes (and projects exists)
+  //  Notify parent anytime selectedIds changes (and projects exists)
   useEffect(() => {
     if (!projects.length) return;
     const isAll = selectedIds.includes("ALL");
@@ -125,7 +127,9 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
                 checked={selectedIds.includes("ALL")}
                 onChange={() => toggleProject("ALL")}
               />
-              <span className="label-text">All your Projects</span>
+              <span className="label-text">
+                {t.translations.ALL_YOUR_PROJECTS}
+              </span>
             </label>
           </div>
 

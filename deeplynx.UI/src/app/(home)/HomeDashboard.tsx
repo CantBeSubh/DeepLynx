@@ -67,7 +67,7 @@ export default function HomeDashboard({ initialProjects }: Props) {
       {/* Header */}
       <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
         <h1 className="text-2xl font-bold text-info-content">
-          {t.HomeDashboard.WELECOME}
+          {t.translations.WELECOME}
         </h1>
         <SearchInput
           placeholder="Search Projects"
@@ -81,14 +81,14 @@ export default function HomeDashboard({ initialProjects }: Props) {
         <div className="flex justify-between items-center justify-end mb-4">
           <button className="btn btn-outline btn-secondary flex items-center mr-2">
             <Cog6ToothIcon className="size-6" />
-            {t.HomeDashboard.CUSTOMIZE}
+            {t.translations.CUSTOMIZE}
           </button>
           <button
             onClick={() => setWidgetModal(true)}
             className="btn btn-secondary text-primary-content flex items-center"
           >
             <PlusIcon className="size-6" />
-            {t.HomeDashboard.WIDGET}
+            {t.translations.WIDGET}
           </button>
         </div>
         <div className="flex">
@@ -96,20 +96,20 @@ export default function HomeDashboard({ initialProjects }: Props) {
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">
-                  {t.HomeDashboard.YOUR_PROJECTS}
+                  {t.translations.YOUR_PROJECTS}
                 </h3>
 
                 <div className="flex gap-2">
                   <button className="btn btn-outline btn-secondary flex items-center gap-1">
                     <PlusIcon className="size-6" />
-                    <span>{t.HomeDashboard.RECORD}</span>
+                    <span>{t.translations.RECORD}</span>
                   </button>
                   <button
                     onClick={() => setIsModalOpen(true)}
                     className="btn btn-secondary text-primary-content flex items-center gap-1"
                   >
                     <PlusIcon className="size-6" />
-                    <span>{t.HomeDashboard.PROJECT}</span>
+                    <span>{t.translations.PROJECT}</span>
                   </button>
                 </div>
               </div>

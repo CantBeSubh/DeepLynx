@@ -18,8 +18,6 @@ import Skeleton from "react-loading-skeleton";
 const times = (n: number) => Array.from({ length: n }, (_, i) => i);
 
 export default function DataCatalogLoading() {
-  const locale = "en";
-  const t = translations[locale];
   const params = useSearchParams();
 
   // If coming from Projects "Visit" button, you already push ?fromProject=...
@@ -96,6 +94,8 @@ function ToolbarSkeleton({ showListButtons }: { showListButtons: boolean }) {
 }
 
 function ListViewSkeleton() {
+  const locale = "en";
+  const t = translations[locale];
   const tagsCount = 3;
   const rows = 5;
 
@@ -119,13 +119,15 @@ function ListViewSkeleton() {
                 <Skeleton width={120} />
               </span>
               <div>
-                <span className="font-bold mr-2">Last Edited:</span>
+                <span className="font-bold mr-2">
+                  {t.translations.LAST_EDIT}
+                </span>
                 <Skeleton width={100} />
               </div>
             </div>
 
             <div className="pt-2 flex items-center gap-2">
-              <span>Tags:</span>
+              <span>{t.translations.TAGS}</span>
               {times(tagsCount).map((t) => (
                 <Skeleton key={t} width={40} height={20} />
               ))}
@@ -138,6 +140,8 @@ function ListViewSkeleton() {
 }
 
 function CatalogViewSkeleton() {
+  const locale = "en";
+  const t = translations[locale];
   const rows = 6;
   const totalPages = 2;
 
@@ -161,19 +165,19 @@ function CatalogViewSkeleton() {
                 </div>
                 <div className="text-sm text-base-300 space-x-2 flex flex-wrap items-center">
                   <span>
-                    Class:{" "}
+                    {t.translations.CLASS}{" "}
                     <span className="badge badge-info badge-sm text-xs">
                       <Skeleton width={60} />
                     </span>
                   </span>
                   <span className="ml-4">
-                    Last Edited: <Skeleton width={80} />
+                    {t.translations.LAST_EDIT} <Skeleton width={80} />
                   </span>
                   <span className="ml-4">
-                    Project: <Skeleton width={120} />
+                    {t.translations.PROJECT} <Skeleton width={120} />
                   </span>
                   <span className="ml-4">
-                    Data Source: <Skeleton width={100} />
+                    {t.translations.DATA_SOURCE} <Skeleton width={100} />
                   </span>
                 </div>
               </li>

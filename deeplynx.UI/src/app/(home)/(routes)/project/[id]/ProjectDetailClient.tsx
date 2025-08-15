@@ -45,9 +45,8 @@ export default function ProjectDetailClient({
     setProjectSession({ projectId: project.id!, projectName: project.name });
   }, [hasLoaded, project, setProjectSession]);
 
-  if (!hasLoaded) return <p className="p-4">{t.ProjectDashboard.LOADING}</p>;
-  if (!project)
-    return <p className="p-4">{t.ProjectDashboard.NO_PROJECT_FOUND}</p>;
+  if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
+  if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
 
   return (
     <div>
@@ -56,7 +55,7 @@ export default function ProjectDetailClient({
           <h1 className="text-2xl">{project.name}</h1>
           <p className="mt-2 text-base-content">{project.description}</p>
           <p>
-            <strong>{t.ProjectDashboard.CREATED} </strong>
+            <strong>{t.translations.CREATED} </strong>
             {project.createdAt &&
               format(new Date(project.createdAt), "MM/dd/yyyy")}
           </p>
@@ -82,7 +81,7 @@ export default function ProjectDetailClient({
               <div className="card-body">
                 <div className="flex justify-between px-4">
                   <h1 className="text-xl font-semibold">
-                    {t.ProjectDashboard.DATA_CATALOG_OVERVIEW}
+                    {t.translations.DATA_CATALOG_OVERVIEW}
                   </h1>
                   <Link
                     className="btn btn-secondary"
@@ -107,14 +106,14 @@ export default function ProjectDetailClient({
             <div className="flex justify-end items-center mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="h-6 w-6" />
-                {t.ProjectDashboard.CUSTOMIZE}
+                {t.translations.CUSTOMIZE}
               </button>
               <button
                 onClick={() => setWidgetModal(true)}
                 className="btn btn-secondary text-primary-content flex items-center"
               >
                 <PlusIcon className="h-6 w-6" />
-                {t.ProjectDashboard.WIDGET}
+                {t.translations.WIDGET}
               </button>
             </div>
 

@@ -2,7 +2,7 @@ import SideMenu from "../(home)/components/SideMenu";
 
 export const translations = {
     en: {
-        loginPage: {
+        translations: {
             WARNING: "All data contained within DOE computer systems is owned by DOE and may be audited, intercepted, recorded, read, copied, or captured in any manner and disclosed in any manner by authorized personnel. " +
             "THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. System personnel may disclose any potential evidence of crime found on DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR " + 
             "UNAUTHORIZED, CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. **WARNING**WARNING**WARNING**WARNING**WARNING**",
@@ -13,30 +13,22 @@ export const translations = {
             NEXT: "Next",
             OR: "OR",
             PIV_CAC_CARD_SIGN_IN: "Sign in with PIV/CAC Card",
-            TROUBLE_LOGGING_IN: "Trouble Logging in?"
-        },
-        HomeDashboard: {
+            TROUBLE_LOGGING_IN: "Trouble Logging in?",
             WELECOME: "Welcome Back ",
             CUSTOMIZE: "Customize",
             WIDGET: "Widget",
             YOUR_PROJECTS: "Your Projects", 
             RECORD: "Record", 
             PROJECT: "Project", 
-        },
-        ExpandableTable: {
             EXPLORE: "Explore",
             PAGE: "Page",
             OF: "of",
             TEAM_MEMBERS: "Team Members",
             LAST_EDIT: "Last Edited: ",
-            NO_STATS: "No Stats Found ... "
-        },
-        CreateWidgetModal: {
+            NO_STATS: "No Stats Found ... ",
             CREATE_NEW_WIDGET: "Create New Widget",
             CANCEL: "Cancel", 
             SAVE: "Save", 
-        },
-        WidgetCards: {
             DATA_OVERVIEW: "Data Overview", 
             PROJECT_OVERVIEW: "Project Overview",
             PROJECTS: "Projects", 
@@ -56,38 +48,25 @@ export const translations = {
             NEW_CONNECTION: "created a new connection between ",
             AND: "and",
             LINKED_SOURCES: "Linked Sources",
-            TEAM_MEMBERS: "Team Members",
-            CUSTOMIZE: "Customize"
-        },
-        CreateProjectModal: {
             CREATE_PROJECT: "Create New Project",
             NEED_HELP: "Need Help? Details can be creating or updating a project via an ontology file can be found on our ",
             WIKI: "Wiki",
-            CANCEL: "Cancel",
             CREATE: "Create",
             NAME: "Name",
             ABBREVIATION: "Abbreviation (optional)",
-            DESCRIPTION: "Description (optional)"
-        },
-        ProjectDashboard: {
+            DESCRIPTION: "Description (optional)",
             PROJECT_NAME: "Project Name: ",
             DATA_CATALOG_OVERVIEW: "Data Catalog Overview",
             CREATED: "Created",
             LOADING: "Loading ...",
             NO_PROJECT_FOUND: "No Project Found ...",
             VISIT: "Visit",
-            CUSTOMIZE: "Customize",
-            WIDGET: "Widget"
-        },
-        LargeSearchBar: {
             FILTERED_BY: "Filtered by: ",
             CLEAR_ALL: "Clear All",
             NO_RESULTS_FOUND: "No results found.",
             FOUND: "Found",
             MATCHES: "matches",
-            ADITIONAL_FILTERS: "Additional Filters"
-        },
-        SideMenu: {
+            ADITIONAL_FILTERS: "Additional Filters",
             UPLOAD_CENTER: "Upload Center",
             PROJECT_MANAGEMENT: "Project Management",
             PROJECT_SETINGS: "Project Settings",
@@ -97,45 +76,51 @@ export const translations = {
             SETTINGS: "Settings",
             HELP: "Help", 
             CONTACT: "Contact", 
-            FILE_A_BUG: "File A Bug"
+            FILE_A_BUG: "File A Bug",
+            EXPLORE_ALL_RECORDS: "Explore all records",
+            SEE_MORE: "See more",
+            TAGS: "Tags:",
+            CLASS: "Class: ",
+            DATA_SOURCE: "Data source: ",
+            ALL_YOUR_PROJECTS: "All your Projects",
+            RECENTLY_ADDED_RECORDS: "Recently Added Records",
+            TIMESERIES: "Timeseries",
+            ADD_NEW_MEMBER: "Add New Member",
+            UPLOAD_PNG_FILE: "Upload .png file (optional)",
+            CREATE_NEW_LINK: "Create New Link",
+            NEED_HELP_UPLOADING: "Need Help? Details can be creating or updating a project via an ontology file can be found on our",
+            PREV: "Prev",
+            LOGOUT: "Logout",
+            
         }
     },
     es: {
-        loginPage: {
-            WARNING: "Todos los datos contenidos en los sistemas informáticos del DOE son propiedad del DOE y pueden ser auditados, interceptados, registrados, leídos, copiados o capturados de cualquier manera y divulgados de cualquier forma por personal autorizado. " +
-            "NO EXISTE DERECHO A LA PRIVACIDAD EN ESTE SISTEMA. El personal del sistema puede divulgar cualquier posible evidencia de delito encontrada en los sistemas informáticos del DOE a las autoridades correspondientes. EL USO DE ESTE SISTEMA POR CUALQUIER USUARIO, AUTORIZADO O " +
-            "NO AUTORIZADO, CONSTITUYE CONSENTIMIENTO PARA ESTA AUDITORÍA, INTERCEPCIÓN, GRABACIÓN, LECTURA, COPIA, CAPTURA Y DIVULGACIÓN DE LA ACTIVIDAD INFORMÁTICA. **ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**",
-            VULNERABILITY_DISCLOSURE: "Haz clic aquí para la Divulgación de Vulnerabilidades",
+        translations: {
+             WARNING: "Todos los datos contenidos en los sistemas informáticos del DOE son propiedad del DOE y pueden ser auditados, interceptados, grabados, leídos, copiados o capturados de cualquier manera y divulgados de cualquier manera por personal autorizado. " +
+                 "NO EXISTE DERECHO A LA PRIVACIDAD EN ESTE SISTEMA. El personal del sistema puede divulgar cualquier posible evidencia de un delito encontrado en los sistemas informáticos del DOE a las autoridades correspondientes. EL USO DE ESTE SISTEMA POR CUALQUIER USUARIO, AUTORIZADO O NO AUTORIZADO, CONSTITUYE CONSENTIMIENTO PARA ESTA AUDITORÍA, INTERCEPCIÓN, GRABACIÓN, LECTURA, COPIA, CAPTURA Y DIVULGACIÓN DE LA ACTIVIDAD INFORMÁTICA. **ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**",
+            VULNERABILITY_DISCLOSURE: "Haga clic aquí para la Divulgación de Vulnerabilidades",
             SIGN_IN: "Iniciar sesión",
             USERNAME: "Nombre de usuario",
             KEEP_SIGNED_IN: "Mantenerme conectado",
             NEXT: "Siguiente",
             OR: "O",
             PIV_CAC_CARD_SIGN_IN: "Iniciar sesión con tarjeta PIV/CAC",
-            TROUBLE_LOGGING_IN: "¿Problemas para iniciar sesión?"
-        },
-        HomeDashboard: {
+            TROUBLE_LOGGING_IN: "¿Problemas para iniciar sesión?",
             WELECOME: "Bienvenido de nuevo ",
             CUSTOMIZE: "Personalizar",
             WIDGET: "Widget",
             YOUR_PROJECTS: "Tus proyectos", 
             RECORD: "Registro", 
             PROJECT: "Proyecto", 
-        },
-        ExpandableTable: {
             EXPLORE: "Explorar",
             PAGE: "Página",
             OF: "de",
             TEAM_MEMBERS: "Miembros del equipo",
             LAST_EDIT: "Última edición: ",
-            NO_STATS: "No se encontraron estadísticas ... "
-        },
-        CreateWidgetModal: {
+            NO_STATS: "No se encontraron estadísticas ... ",
             CREATE_NEW_WIDGET: "Crear nuevo widget",
             CANCEL: "Cancelar", 
             SAVE: "Guardar", 
-        },
-        WidgetCards: {
             DATA_OVERVIEW: "Resumen de datos", 
             PROJECT_OVERVIEW: "Resumen del proyecto",
             PROJECTS: "Proyectos", 
@@ -155,17 +140,36 @@ export const translations = {
             NEW_CONNECTION: "creó una nueva conexión entre ",
             AND: "y",
             LINKED_SOURCES: "Fuentes vinculadas",
-            TEAM_MEMBERS: "Miembros del equipo"
-        },
-        CreateProjectModal: {
             CREATE_PROJECT: "Crear nuevo proyecto",
-            NEED_HELP: "¿Necesitas ayuda? Los detalles sobre cómo crear o actualizar un proyecto mediante un archivo de ontología se pueden encontrar en nuestro ",
+            NEED_HELP: "¿Necesitas ayuda? Los detalles para crear o actualizar un proyecto mediante un archivo de ontología se pueden encontrar en nuestro ",
             WIKI: "Wiki",
-            CANCEL: "Cancelar",
             CREATE: "Crear",
             NAME: "Nombre",
-            ABBREVIATION: "Abreviación (opcional)",
-            DESCRIPTION: "Descripción (opcional)"
+            ABBREVIATION: "Abreviatura (opcional)",
+            DESCRIPTION: "Descripción (opcional)",
+            PROJECT_NAME: "Nombre del proyecto: ",
+            DATA_CATALOG_OVERVIEW: "Resumen del catálogo de datos",
+            CREATED: "Creado",
+            LOADING: "Cargando ...",
+            NO_PROJECT_FOUND: "No se encontró ningún proyecto ...",
+            VISIT: "Visitar",
+            FILTERED_BY: "Filtrado por: ",
+            CLEAR_ALL: "Borrar todo",
+            NO_RESULTS_FOUND: "No se encontraron resultados.",
+            FOUND: "Encontrado",
+            MATCHES: "coincidencias",
+            ADITIONAL_FILTERS: "Filtros adicionales",
+            UPLOAD_CENTER: "Centro de carga",
+            PROJECT_MANAGEMENT: "Gestión de proyectos",
+            PROJECT_SETINGS: "Configuración del proyecto",
+            DATA_CATALOG: "Catálogo de datos",
+            SAVED_SEARCHES: "Búsquedas guardadas",
+            TIMESERIES_VIEWER: "Visor de series temporales",
+            SETTINGS: "Configuración",
+            HELP: "Ayuda", 
+            CONTACT: "Contacto", 
+            FILE_A_BUG: "Reportar un error"
+
         }
     }
 }

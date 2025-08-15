@@ -131,20 +131,12 @@ export default function DataCatalogClient({
     if (!hasLoaded) return;
     if (activeFilters.length > 0) return;
     if (selectedProjects.length === 0) return;
-
-    // Example placeholder: if you later convert to client fetch, do it here.
-    // Keeping effect present satisfies linter now that deps are stable.
-    // fetch(`/api/records?projects=${selectedProjects.join(",")}`)
-    //   .then(r => r.json()).then(data => {
-    //     setTableData(data);
-    //     setTotalRecords(data.length);
-    //   }).catch(console.error);
   }, [
     hasLoaded,
     activeFilters.length,
-    selectedProjects.length, // track size explicitly
-    selectedProjectsToken, // track membership
-    projectIdsToken, // track projects list changes
+    selectedProjects.length,
+    selectedProjectsToken,
+    projectIdsToken,
   ]);
 
   function renderTags(tags: string) {
@@ -173,11 +165,13 @@ export default function DataCatalogClient({
     <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
-          <h1 className="text-2xl font-bold text-info-content">Data Catalog</h1>
+          <h1 className="text-2xl font-bold text-info-content">
+            {t.translations.DATA_CATALOG}
+          </h1>
 
           <ProjectDropdown
             projects={projects}
-            onSelectionChange={setSelectedProjects} // stable enough (state setter)
+            onSelectionChange={setSelectedProjects}
             defaultSelected={
               initialSelectedProjects.length
                 ? initialSelectedProjects
@@ -218,7 +212,7 @@ export default function DataCatalogClient({
               }}
             >
               <ArrowUturnLeftIcon className="h-6 w-6" />
-              Show Recent Records
+              {t.translations.RECENT_ACTIVITY}
             </button>
           ) : (
             <button
@@ -230,13 +224,13 @@ export default function DataCatalogClient({
               }}
             >
               <EyeIcon className="h-6 w-6" />
-              Explore All Records
+              {t.translations.EXPLORE_ALL_RECORDS}
             </button>
           )}
 
           <button className="btn btn-primary text-white">
             <PlusIcon className="h-6 w-6" />
-            Record
+            {t.translations.RECORD}
           </button>
 
           {(activeFilters.length > 0 || showAll) && (

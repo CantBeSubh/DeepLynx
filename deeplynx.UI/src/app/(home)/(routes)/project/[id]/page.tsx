@@ -9,7 +9,7 @@ type Props = {
 };
 
 export default async function ProjectPage({ params }: Props) {
-  const p = await params; // ✅ await first
+  const p = await params;
   const id = p.id;
   if (!id) return notFound();
 

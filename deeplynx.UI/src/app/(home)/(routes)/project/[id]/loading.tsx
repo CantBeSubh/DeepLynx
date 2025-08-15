@@ -50,16 +50,16 @@ const LoadingProjectDetail = () => {
               <div className="card-body">
                 <div className="flex justify-between px-4">
                   <h1 className="text-xl font-semibold">
-                    {t.ProjectDashboard.DATA_CATALOG_OVERVIEW}
+                    {t.translations.DATA_CATALOG_OVERVIEW}
                   </h1>
                   <Link className="btn btn-secondary" href={""}>
-                    Visit
+                    {t.translations.VISIT}
                   </Link>
                 </div>
                 {/* Recently Added Records Card */}
                 <div className="bg-base-100 rounded-xl p-4">
                   <h2 className="text-lg text-black mb-4t">
-                    Recently Added Records
+                    {t.translations.RECENTLY_ADDED_RECORDS}
                   </h2>
                   <div className="divider m-0 mt-2"></div>
                   <ul className="list mt-0">
@@ -73,19 +73,19 @@ const LoadingProjectDetail = () => {
                         </div>
                         <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
                           <span>
-                            Class:{" "}
+                            {t.translations.CLASS}
                             <span className="badge badge-info badge-sm text-xs">
                               <Skeleton />
                             </span>
                           </span>
                           <span className="ml-4">
-                            Last Edited: <Skeleton />
+                            {t.translations.LAST_EDIT} <Skeleton />
                           </span>
                           <span className="ml-4">
-                            Project: <Skeleton />
+                            {t.translations.PROJECT} <Skeleton />
                           </span>
                           <span className="ml-4">
-                            Data Source: <Skeleton />
+                            {t.translations.DATA_SOURCE} <Skeleton />
                           </span>
                         </div>
                       </li>
@@ -116,21 +116,21 @@ const LoadingProjectDetail = () => {
             <div className="flex justify-between items-center mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="h-6 w-6" />
-                {t.ProjectDashboard.CUSTOMIZE}
+                {t.translations.CUSTOMIZE}
               </button>
               <button className="btn btn-secondary text-primary-content flex items-center">
                 <PlusIcon className="h-6 w-6" />
-                {t.ProjectDashboard.WIDGET}
+                {t.translations.WIDGET}
               </button>
             </div>
             {/* Widget card */}
             <div className="card card-border mt-4">
               <div className="card-body">
-                <h2 className="card-title">{t.WidgetCards.DATA_OVERVIEW}</h2>
+                <h2 className="card-title">{t.translations.DATA_OVERVIEW}</h2>
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.PROJECTS}
+                      {t.translations.PROJECTS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <Squares2X2Icon className="size-8 mr-2" />
@@ -139,7 +139,7 @@ const LoadingProjectDetail = () => {
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.DATA_RECORD}
+                      {t.translations.DATA_RECORD}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <CircleStackIcon className="size-8 mr-2" />
@@ -150,7 +150,7 @@ const LoadingProjectDetail = () => {
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.CLASSES}
+                      {t.translations.CLASSES}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <RectangleGroupIcon className="size-8 mr-2" />
@@ -159,7 +159,7 @@ const LoadingProjectDetail = () => {
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.CONNECTIONS}
+                      {t.translations.CONNECTIONS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <ArrowsRightLeftIcon className="size-8 mr-2" />
@@ -174,7 +174,7 @@ const LoadingProjectDetail = () => {
               <div className="card-body">
                 <div className="">
                   <h2 className="card-title flex items-center">
-                    {t.WidgetCards.TEAM_MEMBERS}
+                    {t.translations.TEAM_MEMBERS}
                   </h2>
                   <Skeleton width={700} height={50} />
                 </div>

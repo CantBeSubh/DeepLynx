@@ -54,7 +54,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           <h2 className="text-2xl font-bold">{project.name}</h2>
           <p className="text-sm text-base-content">{project.description}</p>
           <p className="text-sm text-base-300 mt-1 mb-2">
-            {t.ExpandableTable.LAST_EDIT} {project.lastViewed}
+            {t.translations.LAST_EDIT} {project.lastViewed}
           </p>
         </div>
         <button onClick={onClose} aria-label="Close details">
@@ -63,7 +63,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
       </div>
 
       <div className="space-x-2">
-        <p className="text-base-300 mb-2">{t.ExpandableTable.TEAM_MEMBERS}</p>
+        <p className="text-base-300 mb-2">{t.translations.TEAM_MEMBERS}</p>
         {peopleData
           .slice(0, Math.floor(Math.random() * 6) + 2)
           .map((person) => (
@@ -83,7 +83,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
       {/* Stats */}
       {!stats ? (
         <div className="text-center text-base-content">
-          {t.ExpandableTable.NO_STATS}
+          {t.translations.NO_STATS}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-4 mt-4">
@@ -124,7 +124,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           className="btn btn-secondary text-primary-content mt-4"
           onClick={() => router.push(`/project/${project.id}`)}
         >
-          {t.ExpandableTable.EXPLORE}
+          {t.translations.EXPLORE}
         </button>
       </div>
     </div>

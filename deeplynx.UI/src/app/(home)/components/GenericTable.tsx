@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import React, { useState } from "react";
 import SearchInput from "./SearchInput";
+import { translations } from "@/app/lib/translations";
 
 // Define the props for the GenericTable component
 type GenericTableProps<T extends object> = {
@@ -44,6 +45,8 @@ const GenericTable = <T extends object>({
   tableClassName,
   gridView = false,
 }: GenericTableProps<T>) => {
+  const locale = "en";
+  const t = translations[locale];
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -134,7 +137,7 @@ const GenericTable = <T extends object>({
             className="join-item btn"
             onClick={() => handlePageClick(currentPage - 1)}
           >
-            Prev
+            {t.translations.PREV}
           </button>
         );
       }
@@ -202,7 +205,7 @@ const GenericTable = <T extends object>({
             className="join-item btn"
             onClick={() => handlePageClick(currentPage + 1)}
           >
-            Next
+            {t.translations.NEXT}
           </button>
         );
       }

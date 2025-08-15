@@ -20,7 +20,7 @@ import Skeleton from "react-loading-skeleton";
 import { translations } from "../lib/translations";
 // NOTE: CSS import moved to layout or globals
 
-export default function LoadingHomeDashboard() {
+export default function Loadingtranslations() {
   const locale = "en";
   const t = translations[locale];
   const totalPages = 2;
@@ -47,11 +47,11 @@ export default function LoadingHomeDashboard() {
         <div className="flex justify-between items-center justify-end mb-4">
           <button className="btn btn-outline btn-secondary flex items-center mr-2">
             <Cog6ToothIcon className="size-6" />
-            {t.WidgetCards.CUSTOMIZE}
+            {t.translations.CUSTOMIZE}
           </button>
           <button className="btn btn-secondary text-primary-content flex items-center">
             <PlusIcon className="size-6" />
-            {t.ProjectDashboard.WIDGET}
+            {t.translations.WIDGET}
           </button>
         </div>
         <div className="flex">
@@ -59,17 +59,17 @@ export default function LoadingHomeDashboard() {
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">
-                  {t.HomeDashboard.YOUR_PROJECTS}
+                  {t.translations.YOUR_PROJECTS}
                 </h3>
 
                 <div className="flex gap-2">
                   <button className="btn btn-outline btn-secondary flex items-center gap-1">
                     <PlusIcon className="size-6" />
-                    <span>{t.HomeDashboard.RECORD}</span>
+                    <span>{t.translations.RECORD}</span>
                   </button>
                   <button className="btn btn-secondary text-primary-content flex items-center gap-1">
                     <PlusIcon className="size-6" />
-                    <span>{t.HomeDashboard.PROJECT}</span>
+                    <span>{t.translations.PROJECT}</span>
                   </button>
                 </div>
               </div>
@@ -130,7 +130,7 @@ export default function LoadingHomeDashboard() {
             <div className="card card-border">
               <div className="card-body">
                 <div className="flex justify-between items-center">
-                  <h2 className="card-title">{t.WidgetCards.LINKS}</h2>
+                  <h2 className="card-title">{t.translations.LINKS}</h2>
                   <button>
                     <PlusCircleIcon className="w-10 h-10 text-secondary" />
                   </button>
@@ -139,25 +139,25 @@ export default function LoadingHomeDashboard() {
                   <div className="flex flex-col items-center">
                     <AdjustmentsHorizontalIcon className="size-8 text-secondary" />
                     <button className="btn btn-link text-secondary">
-                      {t.WidgetCards.ROLES}
+                      {t.translations.ROLES}
                     </button>
                   </div>
                   <div className="flex flex-col items-center">
                     <FolderIcon className="size-8 text-secondary" />
                     <button className="btn btn-link text-secondary flex flex-col items-center">
-                      {t.WidgetCards.FILE_EXPLORER}
+                      {t.translations.FILE_EXPLORER}
                     </button>
                   </div>
                   <div className="flex flex-col items-center">
                     <DocumentDuplicateIcon className="size-8 text-secondary" />
                     <button className="btn btn-link text-secondary flex flex-col items-center">
-                      {t.WidgetCards.REPORTS}
+                      {t.translations.REPORTS}
                     </button>
                   </div>
                   <div className="flex flex-col items-center">
                     <ArrowTrendingUpIcon className="size-8 text-secondary" />
                     <button className="btn btn-link text-secondary ">
-                      {t.WidgetCards.TRENDS}
+                      {t.translations.TRENDS}
                     </button>
                   </div>
                 </div>
@@ -165,11 +165,11 @@ export default function LoadingHomeDashboard() {
             </div>
             <div className="card card-border mt-4">
               <div className="card-body">
-                <h2 className="card-title">{t.WidgetCards.DATA_OVERVIEW}</h2>
+                <h2 className="card-title">{t.translations.DATA_OVERVIEW}</h2>
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.PROJECTS}
+                      {t.translations.PROJECTS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <Squares2X2Icon className="size-8 mr-2" />
@@ -178,7 +178,7 @@ export default function LoadingHomeDashboard() {
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.DATA_RECORD}
+                      {t.translations.DATA_RECORD}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <CircleStackIcon className="size-8 mr-2" />
@@ -189,7 +189,7 @@ export default function LoadingHomeDashboard() {
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.CLASSES}
+                      {t.translations.CLASSES}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <RectangleGroupIcon className="size-8 mr-2" />
@@ -198,7 +198,7 @@ export default function LoadingHomeDashboard() {
                   </div>
                   <div className="stat">
                     <div className="stat-title text-secondary">
-                      {t.WidgetCards.CONNECTIONS}
+                      {t.translations.CONNECTIONS}
                     </div>
                     <div className="stat-value text-secondary flex items-center">
                       <ArrowsRightLeftIcon className="size-8 mr-2" />

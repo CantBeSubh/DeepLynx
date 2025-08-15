@@ -4,7 +4,7 @@ import { translations } from "@/app/lib/translations";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { useRef, useState } from "react";
 
-// Define the props for the LargeSearchBar component
+// Define the props for the translations component
 interface Filter {
   id: number;
   term: string;
@@ -94,7 +94,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
             href="/placeholder for advanced"
             className="text-sm underline text-secondary hover:underline"
           >
-            {t.LargeSearchBar.ADITIONAL_FILTERS}
+            {t.translations.ADITIONAL_FILTERS}
           </a>
         </div>
       </div>
@@ -123,7 +123,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
               className="text-sm hover:underline ml-2"
               onClick={onClearAll}
             >
-              {t.LargeSearchBar.CLEAR_ALL}
+              {t.translations.CLEAR_ALL}
             </button>
           )}
         </div>
@@ -132,12 +132,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
       {showResultsMessage && (
         <div className="mt-4 ml-1">
           {activeFilters.length > 0 && resultCount === 0 ? (
-            <p>{t.LargeSearchBar.NO_RESULTS_FOUND}</p>
+            <p>{t.translations.NO_RESULTS_FOUND}</p>
           ) : (
             <div className="border-b border-base-200">
               <h2>
-                {t.LargeSearchBar.FOUND} {resultCount}{" "}
-                {t.LargeSearchBar.MATCHES}
+                {t.translations.FOUND} {resultCount} {t.translations.MATCHES}
               </h2>
             </div>
           )}
