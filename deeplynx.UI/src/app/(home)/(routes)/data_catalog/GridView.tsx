@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
