@@ -15,6 +15,7 @@ namespace deeplynx.tests
     {
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
+        private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
         private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
@@ -31,9 +32,12 @@ namespace deeplynx.tests
             _recordBusiness = new Mock<IRecordBusiness>();
             _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
+            _dataSourceBusiness = new Mock<IDataSourceBusiness>();
 
-            _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness.Object, _relationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness);
+            _classBusiness = new ClassBusiness(
+                Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
+                _recordMappingBusiness.Object, _relationshipBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness.Object);
         }
 
         [Fact]

@@ -11,16 +11,19 @@ public class ProjectBusiness : IProjectBusiness
     private readonly DeeplynxContext _context;
 
     private readonly IClassBusiness _classBusiness;
+    private readonly IDataSourceBusiness _dataSourceBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record mapping operations.</param>
-    /// <param name="classBusiness">Used to create a Timeseries class automatically on project creation.</param>
-    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness)
+    /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
+    /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
+    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness)
     {
         _context = context;
         _classBusiness = classBusiness;
+        _dataSourceBusiness = dataSourceBusiness;
     }
 
     /// <summary>
@@ -110,18 +113,23 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        var timeseriesClassDto = new CreateClassRequestDto()
+        // TODO: project config should determine whether to do this (true by default)
+        // create built-in classes for Timeseries and Report
+        var defaultClasses = new List<CreateClassRequestDto>
         {
-            Name = "Timeseries"
+            new CreateClassRequestDto {Name = "Timeseries"},
+            new CreateClassRequestDto {Name = "Report"},
         };
+        await _classBusiness.BulkCreateClasses(project.Id, defaultClasses);
         
-        var reportClassDto = new CreateClassRequestDto()
+        // TODO: project config should determine whether to do this (true by default)
+        // create default data source upon project creation
+        var defaultDataSource = new CreateDataSourceRequestDto()
         {
-            Name = "Report"
+            Name = "Default Data Source",
+            Description = "This data source was created alongside the project for ease of use."
         };
-
-        await _classBusiness.CreateClass(project.Id, timeseriesClassDto);
-        await _classBusiness.CreateClass(project.Id, reportClassDto);
+        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
 
         return new ProjectResponseDto
         {

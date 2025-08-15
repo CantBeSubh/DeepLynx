@@ -37,8 +37,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _recordBusiness = new Mock<IRecordBusiness>();
         _relationshipBusiness = new Mock<IRelationshipBusiness>();
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness, _relationshipBusiness.Object);
-        _projectBusiness = new ProjectBusiness(Context, _classBusiness);
         _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness.Object, _recordBusiness.Object);
+        _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness);
     }
 
     [Fact]
