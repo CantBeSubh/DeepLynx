@@ -1,13 +1,12 @@
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace deeplynx.business;
 
@@ -34,69 +33,196 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="queryRequests">Array of query component dtos</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> BuildQuery(AdvancedQueryRequestDto[] queryRequests)
-    {
-        var histRec = _context.HistoricalRecords.AsQueryable();
-        // Creates a parameter expression that represents a single instance of the HistoricalRecord class
-        var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
-        Expression combinedExpression = null;
+   public IEnumerable<HistoricalRecordResponseDto> BuildQuery(string initialQuery, CustomQueryRequestDto[] queryRequests)
+{
+    var histRec = _context.HistoricalRecords.AsQueryable();
+    // Creates a parameter expression that represents a single instance of the HistoricalRecord class
+    var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
+    Expression combinedExpression = null;
 
-        foreach (var query in queryRequests)
+    foreach (var query in queryRequests)
+    {
+        // Creates an expression that represents accessing a property of the HistoricalRecord class
+        var property = Expression.Property(parameter, query.Filter);
+        
+        // Get the target type (unwrap nullable if needed)
+        var targetType = Nullable.GetUnderlyingType(property.Type) ?? property.Type;
+
+        // Convert value to appropriate type
+        object? convertedValue = null;
+        if (!string.IsNullOrWhiteSpace(query.Value))
         {
-            // Creates an expression that represents accessing a property of the HistoricalRecord class
-            var property = Expression.Property(parameter, query.Filter);
-            // Converts the value from the DTO to the type of the property being filtered.
-            var value = Expression.Constant(Convert.ChangeType(query.Value, property.Type));
-            // Create the comparison operation (e.g., x.Name == "value")
-            Expression comparison = null; 
-            if (query.Operator == "LIKE")
+            try
             {
-                var method = query.Value.GetType().GetMethod("Contains");
-                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+                convertedValue = Convert.ChangeType(query.Value, targetType);
             }
-            if (query.Operator == "IN") // might already be handled by LIKE 
+            catch (Exception)
             {
-                var method = query.Value.GetType().GetMethod("Contains");
-                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+                // If conversion fails, treat as string for LIKE operations
+                convertedValue = query.Value;
+            }
+        }
+
+        // Create the constant expression with the correct type
+        Expression value;
+        if (convertedValue == null)
+        {
+            // For null values, create a constant of the property's actual type
+            value = Expression.Constant(null, property.Type);
+        }
+        else
+        {
+            // For non-null values, ensure the constant matches the property type
+            if (property.Type != targetType && Nullable.GetUnderlyingType(property.Type) != null)
+            {
+                // This is a nullable type, so create the nullable value
+                value = Expression.Constant(convertedValue, property.Type);
+            }
+            else
+            {
+                value = Expression.Constant(convertedValue, property.Type);
+            }
+        }
+        
+        // Create the comparison operation
+        Expression comparison = null; 
+        if (query.Operator == "LIKE")
+        {
+            // For LIKE operations, work with string representation
+            Expression stringProperty;
+            
+            if (property.Type == typeof(string))
+            {
+                stringProperty = property;
+            }
+            else
+            {
+                // Convert non-string properties to string for LIKE operations
+                // Handle nullable types by using null coalescing
+                if (Nullable.GetUnderlyingType(property.Type) != null)
+                {
+                    // For nullable types, convert to string with null handling
+                    var toStringMethod = typeof(object).GetMethod("ToString");
+                    var convertToString = Expression.Call(
+                        Expression.Convert(property, typeof(object)), 
+                        toStringMethod
+                    );
+                    stringProperty = Expression.Coalesce(
+                        Expression.Condition(
+                            Expression.Equal(property, Expression.Constant(null, property.Type)),
+                            Expression.Constant(""),
+                            convertToString
+                        ),
+                        Expression.Constant("")
+                    );
+                }
+                else
+                {
+                    // For non-nullable types
+                    var toStringMethod = property.Type.GetMethod("ToString", Type.EmptyTypes);
+                    stringProperty = Expression.Call(property, toStringMethod);
+                }
+            }
+
+            // EF.Functions setup (your existing code works well)
+            var efFunctionsProp = typeof(EF).GetProperty(nameof(EF.Functions))!;
+            var efFunctionsExpr = Expression.Property(null, efFunctionsProp);
+
+            // Wrap value in % for wildcard search
+            var patternExpr = Expression.Constant($"%{query.Value}%");
+
+            // Call EF.Functions.ILike for case-insensitive search
+            var mi = typeof(NpgsqlDbFunctionsExtensions).GetMethod(
+                nameof(NpgsqlDbFunctionsExtensions.ILike),
+                new[] { typeof(DbFunctions), typeof(string), typeof(string) }
+            )!;
+
+            comparison = Expression.Call(mi, efFunctionsExpr, stringProperty, patternExpr);
+        }
+        else
+        {
+            // For other operators, handle nullable comparisons properly
+            if (convertedValue == null)
+            {
+                // For null comparisons, use IS NULL or IS NOT NULL
+                if (query.Operator == "=" || query.Operator == "==")
+                {
+                    comparison = Expression.Equal(property, value);
+                }
+                else if (query.Operator == "!=" || query.Operator == "<>")
+                {
+                    comparison = Expression.NotEqual(property, value);
+                }
+                else
+                {
+                    // For other operators with null, this will typically be false
+                    comparison = Expression.Constant(false);
+                }
             }
             else
             {
                 comparison = CreateComparisonExpression(property, value, query.Operator);
             }
-         
-            // Combine the expressions using the connector (AND/OR)
-            combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
         }
-
-        // Create the final lambda expression
-        var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
-        var records = histRec.Where(lambda).ToList();
-        return records
-            .Select(r => new HistoricalRecordResponseDto()
-            {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                LastUpdatedAt = r.LastUpdatedAt
-            });
+     
+        // Combine the expressions using the connector (AND/OR)
+        combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
     }
 
-    private Expression CreateComparisonExpression(MemberExpression property, ConstantExpression value, string operatorType)
+    // Create the final lambda expression
+    var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
+    histRec = histRec.Where(lambda);
+    
+    // 2) Full-text search AFTER filters to reduce amount of records queried with vector 
+    if (!string.IsNullOrWhiteSpace(initialQuery))
+    {
+        // Build tsquery string once
+        var tsQueryText = ParseToQuery(initialQuery);
+
+        histRec = histRec.Where(r =>
+            EF.Functions.ToTsVector("english",
+                    (r.Name ?? "") + " " +
+                    (r.Description ?? "") + " " +
+                    (r.ClassName ?? "") + " " +
+                    (r.Uri ?? "") + " " +
+                    (r.OriginalId ?? "") + " " +
+                    (r.DataSourceName ?? "") + " " +
+                    (r.ProjectName ?? "") + " " +
+                    (r.CreatedBy ?? "") + " " +
+                    (r.ModifiedBy ?? "") + " "
+                )
+                .Matches(EF.Functions.WebSearchToTsQuery("english", tsQueryText)));
+    }
+
+    // 3) Execute & shape
+    return histRec
+        .Select(r => new HistoricalRecordResponseDto
+        {
+            Id = r.RecordId,
+            Uri = r.Uri,
+            Properties = r.Properties,
+            OriginalId = r.OriginalId,
+            Name = r.Name,
+            ClassId = r.ClassId,
+            ClassName = r.ClassName,
+            DataSourceId = r.DataSourceId,
+            DataSourceName = r.DataSourceName,
+            MappingId = r.MappingId,
+            ProjectId = r.ProjectId,
+            ProjectName = r.ProjectName,
+            Tags = r.Tags,
+            CreatedBy = r.CreatedBy,
+            CreatedAt = r.CreatedAt,
+            ModifiedBy = r.ModifiedBy,
+            ModifiedAt = r.ModifiedAt,
+            ArchivedAt = r.ArchivedAt,
+            LastUpdatedAt = r.LastUpdatedAt,
+            Description = r.Description
+        })
+        .ToList();
+}
+
+    private Expression CreateComparisonExpression(MemberExpression property, Expression value, string operatorType)
     {
         return operatorType switch
         {
@@ -114,6 +240,7 @@ public class QueryBusiness : IQueryBusiness
 
     private Expression CombineExpressions(Expression existing, Expression newExpression, string connector)
     {
+        //TODO: Fix initial connector being OR
         if (existing == null)
         {
             return newExpression;
@@ -127,12 +254,14 @@ public class QueryBusiness : IQueryBusiness
         };
     }
     
+    
+    
     /// <summary>
     /// Google-type search
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string userQuery)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");

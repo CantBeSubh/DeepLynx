@@ -52,11 +52,11 @@ namespace deeplynx.api.Controllers
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("QueryBuilder")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> AdvancedQuery(
-            [FromBody] AdvancedQueryRequestDto[] filterArray)
+            [FromBody] CustomQueryRequestDto[] filterArray, string initialQuery)
         {
             try
             {
-                var records = _queryBusiness.BuildQuery(filterArray);
+                var records = _queryBusiness.BuildQuery(initialQuery, filterArray);
                 return Ok(records);
             }
             catch (Exception exc)
