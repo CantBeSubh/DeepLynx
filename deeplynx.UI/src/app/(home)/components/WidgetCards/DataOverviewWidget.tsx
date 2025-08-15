@@ -42,11 +42,11 @@ const DataOverviewWidget = () => {
 
   return (
     <div className="card-body">
-      <h2 className="card-title">{t.WidgetCards.DATA_OVERVIEW}</h2>
+      <h2 className="card-title">{t.translations.DATA_OVERVIEW}</h2>
       <div className="stats shadow">
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.PROJECTS}
+            {t.translations.PROJECTS}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <Squares2X2Icon className="size-8 mr-2" />
@@ -55,7 +55,7 @@ const DataOverviewWidget = () => {
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.DATA_RECORD}
+            {t.translations.DATA_RECORD}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <CircleStackIcon className="size-8 mr-2" />
@@ -66,7 +66,7 @@ const DataOverviewWidget = () => {
       <div className="stats shadow">
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.CLASSES}
+            {t.translations.CLASSES}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <RectangleGroupIcon className="size-8 mr-2" />
@@ -75,7 +75,7 @@ const DataOverviewWidget = () => {
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.CONNECTIONS}
+            {t.translations.CONNECTIONS}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <ArrowsRightLeftIcon className="size-8 mr-2" />

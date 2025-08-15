@@ -1,5 +1,7 @@
 "use client";
 
+import { translations } from "@/app/lib/translations";
+import React from "react";
 import { useState } from "react";
 
 const AssociatedRecordsCell = ({
@@ -7,6 +9,8 @@ const AssociatedRecordsCell = ({
 }: {
   records: string[] | undefined;
 }) => {
+  const locale = "en";
+  const t = translations[locale];
   const [expanded, setExpanded] = useState(false);
   const recordsToShow = expanded ? records : records?.slice(0, 3) || [];
 
@@ -22,7 +26,7 @@ const AssociatedRecordsCell = ({
           className="text-sm flex badge text-blue-600 ml-2"
           onClick={() => setExpanded(true)}
         >
-          See more
+          {t.translations.SEE_MORE}
         </button>
       )}
     </div>

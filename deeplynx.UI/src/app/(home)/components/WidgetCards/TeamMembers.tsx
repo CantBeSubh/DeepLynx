@@ -68,7 +68,7 @@ const TeamMembersWidget: React.FC = () => {
     <div className="card-body">
       <div className="flex justify-between">
         <h2 className="card-title flex items-center">
-          {t.WidgetCards.TEAM_MEMBERS}
+          {t.translations.TEAM_MEMBERS}
           {showTable && (
             <button onClick={() => setAddMemberModal(true)} className="ml-1">
               <PlusCircleIcon className="w-7 h-7 text-secondary" />

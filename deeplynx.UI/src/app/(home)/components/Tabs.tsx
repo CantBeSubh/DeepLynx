@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 
 interface Tab {
@@ -32,7 +34,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
 
       {/* Tab content */}
       <div className="flex justify-center items-start w-full">
-        <div className="w-full max-w-4xl">{tabs[activeIndex].content}</div>
+        <div className="w-full">{tabs[activeIndex].content}</div>
       </div>
     </div>
   );

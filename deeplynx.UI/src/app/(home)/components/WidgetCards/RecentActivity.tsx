@@ -13,7 +13,7 @@ const RecentActivityWidget = () => {
   const t = translations[locale];
   return (
     <div className="card-body">
-      <h2 className="card-title">{t.WidgetCards.RECENT_ACTIVITY}</h2>
+      <h2 className="card-title">{t.translations.RECENT_ACTIVITY}</h2>
       <ul className="list bg-base-100">
         <li className="list-row">
           <div className="avatar indicator relative inline-block">
@@ -33,7 +33,7 @@ const RecentActivityWidget = () => {
           </div>
           <div>
             <div className="pt-2">
-              <b>Jaren Brownlee</b> {t.WidgetCards.UPLOADED_NEW_SOURCE}{" "}
+              <b>Jaren Brownlee</b> {t.translations.UPLOADED_NEW_SOURCE}{" "}
               weather_data.csv
             </div>
           </div>
@@ -56,7 +56,7 @@ const RecentActivityWidget = () => {
             </div>
           </div>
           <div className="pt-2">
-            <b>Natalie Hergesheimer</b> {t.WidgetCards.GENERATED_NEW_REPORT}
+            <b>Natalie Hergesheimer</b> {t.translations.GENERATED_NEW_REPORT}
           </div>
         </li>
 
@@ -78,7 +78,7 @@ const RecentActivityWidget = () => {
           </div>
           <div>
             <div className="pt-2">
-              <b>Jason Kuipers</b> {t.WidgetCards.LINKED_NEW_SOURCE}{" "}
+              <b>Jason Kuipers</b> {t.translations.LINKED_NEW_SOURCE}{" "}
               employee_records.xlsx
             </div>
           </div>
@@ -102,8 +102,8 @@ const RecentActivityWidget = () => {
           </div>
           <div>
             <div className="pt-2">
-              <b>Victor Walker</b> {t.WidgetCards.NEW_CONNECTION}
-              weather_data.csv {t.WidgetCards.AND} project_timeline.docx
+              <b>Victor Walker</b> {t.translations.NEW_CONNECTION}
+              weather_data.csv {t.translations.AND} project_timeline.docx
             </div>
           </div>
         </li>
