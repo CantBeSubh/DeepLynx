@@ -112,7 +112,8 @@ try
     builder.Services.AddTransient<IMetadataBusiness, MetadataBusiness>();
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
-
+    builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
     builder.Services.AddOpenApi(options =>
@@ -218,6 +219,11 @@ try
                     Name = "User",
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
+                },
+                new OpenApiTag 
+                { 
+                    Name = "Event", 
+                    Description = "Handles Event fetching by project and user subscriptions." 
                 }
             };
         });
