@@ -21,6 +21,15 @@ ENV OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
 ENV AUTH_SECRET=${AUTH_SECRET}
 ENV BACKEND_BASE_URL=${NEXT_PUBLIC_API_URL}
 
+# Print out the value of the environment variables
+RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
+    && echo "NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}" \
+    && echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" \
+    && echo "NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}" \
+    && echo "OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}" \
+    && echo "AUTH_SECRET=${AUTH_SECRET}" \
+    && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}"
+
 # Copy package.json and package-lock.json
 COPY deeplynx.UI/package*.json ./
 RUN npm install

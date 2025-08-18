@@ -31,6 +31,7 @@ async function asJson<T>(res: Response): Promise<T> {
 /** ===== Server-safe calls (no cookies; safe for prerender/SSR) ===== */
 
 export async function getAllProjectsServer(): Promise<ProjectDTO[]> {
+  console.log(process.env.BACKEND_BASE_URL)
   const res = await fetch(`${BASE}/projects/GetAllProjects`, {
     headers: authHeaders(),
     cache: "no-store", // or: next: { revalidate: 300 } for ISR
