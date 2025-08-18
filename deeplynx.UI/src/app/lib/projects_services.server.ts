@@ -5,6 +5,9 @@ import type { FileViewerTableRow } from "@/app/(home)/types/types";
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
 
+console.log("BACKEND BASE URL:",process.env.BACKEND_BASE_URL)
+console.log("SERVICE TOKEN:",process.env.SERVICE_TOKEN)
+
 /** ----- Types ----- */
 export type ProjectDTO = {
   id: number | string;
@@ -31,7 +34,7 @@ async function asJson<T>(res: Response): Promise<T> {
 /** ===== Server-safe calls (no cookies; safe for prerender/SSR) ===== */
 
 export async function getAllProjectsServer(): Promise<ProjectDTO[]> {
-  console.log("BACKEND BASE URL:",process.env.BACKEND_BASE_URL)
+  
   const res = await fetch(`${BASE}/projects/GetAllProjects`, {
     headers: authHeaders(),
     cache: "no-store", // or: next: { revalidate: 300 } for ISR
