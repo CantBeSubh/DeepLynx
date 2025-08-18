@@ -2,8 +2,8 @@
 import "server-only";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 
-const BASE = process.env.BACKEND_BASE_URL || "BASE URL IS NOT DEFINED";
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "SERVICE TOKEN IS NOT DEFINED";
+const BASE = process.env.BACKEND_BASE_URL || "https://nexus.dev.inl.gov/api";
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "xxx";
 
 console.log("BACKEND BASE URL:",BASE)
 console.log("SERVICE TOKEN:",SERVICE_TOKEN)
