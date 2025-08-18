@@ -1,4 +1,6 @@
 import { createProject } from "@/app/lib/projects_services";
+import { translations } from "@/app/lib/translations";
+import React from "react";
 import { useState } from "react";
 
 interface CreateProjectsModalProps {
@@ -13,6 +15,8 @@ const CreateProject = ({
   onClose,
   onProjectCreated,
 }: CreateProjectsModalProps) => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
@@ -74,7 +78,7 @@ const CreateProject = ({
             {" "}
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              Create New Project {/* Header for the modal */}
+              {t.translations.CREATE_PROJECT}
             </h3>
             {/* Form for creating a new project */}
             <form
@@ -87,53 +91,53 @@ const CreateProject = ({
             >
               <input
                 type="text"
-                placeholder="Name" // Placeholder for project name input
-                className="input input-primary w-full" // Input styling
+                placeholder={t.translations.NAME}
+                className="input input-primary w-full"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
               <input
                 type="text"
-                placeholder="Abbreviation (optional)"
+                placeholder={t.translations.ABBREVIATION}
                 className="input input-primary w-full"
                 value={abbreviation}
                 onChange={(e) => setAbbreviation(e.target.value)}
               />
               <textarea
-                placeholder="Description (optional)" // Placeholder for project description
+                placeholder={t.translations.DESCRIPTION} // Placeholder for project description
                 className="textarea textarea-primary w-full" // Textarea styling
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              <div className="bg-base-200 p-4 rounded-xl">
+              {/* <div className="bg-base-200 p-4 rounded-xl">
                 {" "}
-                {/* Container for file upload */}
+               
                 <label className="form-control">
                   <span className="label-text text-neutral">
-                    Upload .owl file (optional) {/* Label for file upload */}
+                    Upload .owl file (optional) 
                   </span>
                   <input
                     type="file" // File input for uploading .owl files
                     className="file-input file-input-primary text-neutral w-full" // File input styling
                   />
                 </label>
-              </div>
+              </div> */}
 
               {/* Help text with a link to the Wiki */}
               <p className="cursor-pointer text-xs text-neutral">
-                Need Help? Details can be creating or updating a project via an
-                ontology file can be found on our <a className="link">Wiki.</a>
+                {t.translations.NEED_HELP}{" "}
+                <a className="link">{t.translations.WIKI}</a>
               </p>
               {/* Modal Action Buttons */}
               <div className="modal-action">
                 <button className="btn" onClick={onClose}>
                   {" "}
                   {/* Cancel button calls onClose */}
-                  Cancel
+                  {t.translations.CANCEL}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  Create
+                  {t.translations.CREATE}
                 </button>{" "}
                 {/* Save button for saving the project */}
               </div>

@@ -21,11 +21,11 @@ ENV NEXT_PUBLIC_OKTA_CLIENT_SECRET=${NEXT_PUBLIC_OKTA_CLIENT_SECRET}
 ENV NEXT_PUBLIC_AUTH_SECRET=${NEXT_PUBLIC_AUTH_SECRET}
 
 # Copy package.json and package-lock.json
-COPY deeplynx.UI/deeplynx-v3/package*.json ./
+COPY deeplynx.UI/package*.json ./
 RUN npm install
 
 # Copy the rest of the frontend source code
-COPY deeplynx.UI/deeplynx-v3/ ./
+COPY deeplynx.UI/ ./
 
 # Build the frontend
 RUN npm run build

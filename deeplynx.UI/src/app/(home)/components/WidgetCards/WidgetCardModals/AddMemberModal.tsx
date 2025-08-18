@@ -1,3 +1,6 @@
+import { translations } from "@/app/lib/translations";
+import React from "react";
+
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -5,6 +8,8 @@ interface AddMemberModalProps {
 
 // Main CreateWidget component
 const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
+  const locale = "en";
+  const t = translations[locale];
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}
@@ -16,7 +21,7 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
             {" "}
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              Add New Member {/* Header for the modal */}
+              {t.translations.ADD_NEW_MEMBER} {/* Header for the modal */}
             </h3>
             {/* Form for creating a new widget */}
             <form method="dialog" className="flex flex-col gap-4">
@@ -34,7 +39,8 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
                 {/* Container for file upload */}
                 <label className="form-control">
                   <span className="label-text text-neutral">
-                    Upload .png file (optional)
+                    {t.translations.UPLOAD_PNG_FILE}{" "}
+                    {/* Label for file upload */}
                   </span>
                   <input
                     type="file" // File input for uploading .owl files
@@ -48,7 +54,7 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
               <button className="btn" onClick={onClose}>
                 {" "}
                 {/* Cancel button calls onClose */}
-                Cancel
+                {t.translations.CANCEL}
               </button>
               <button className="btn btn-primary">Save</button>{" "}
               {/* Save button for saving the project */}

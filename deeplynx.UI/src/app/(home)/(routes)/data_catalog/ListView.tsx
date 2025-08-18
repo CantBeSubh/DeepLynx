@@ -1,6 +1,9 @@
+"use client";
+
 import React from "react";
 import { FileViewerTableRow } from "../../types/types";
 import { useRouter } from "next/navigation";
+import { translations } from "@/app/lib/translations";
 
 interface ListViewProps {
   data: FileViewerTableRow[];
@@ -13,6 +16,8 @@ const ListView: React.FC<ListViewProps> = ({
   activeSearchTerms = [],
   selectedProjects,
 }) => {
+  const locale = "en";
+  const t = translations[locale];
   const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
@@ -63,17 +68,15 @@ const ListView: React.FC<ListViewProps> = ({
           record.projectId !== undefined &&
           selectedProjects.includes(record.projectId)
       );
-
   return (
     <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
       <ul className="list">
         {filteredRecords.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
-          // We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description
-          // const desc = getHighlightedCell(
-          //   record.fileDescription,
-          //   activeSearchTerms
-          // );
+          const desc = getHighlightedCell(
+            record.description,
+            activeSearchTerms
+          );
           const date = getHighlightedCell(
             record.modifiedAt ?? record.createdAt,
             activeSearchTerms
@@ -88,45 +91,27 @@ const ListView: React.FC<ListViewProps> = ({
                 )
               }
             >
-              <div className="font-bold text-base-content mb-1">
-                {name.content}
-              </div>
+              <div className="font-bold mb-1">{name.content}</div>
               {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
-              {/* <span className="text-sm">{desc.content}</span> */}
+              <span className="text-sm">{desc.content}</span>
               <div className="flex pt-2">
                 {record.className && (
                   <span className="font-bold">
-                    Class:
+                    {t.translations.CLASS}
                     <span className="badge badge-sm text-xs ml-2">
-                      Timeseries
+                      {t.translations.TIMESERIES}
                     </span>
                   </span>
                 )}
                 <div className="ml-4">
-                  <span className="font-bold">Last Edited: </span>{" "}
+                  <span className="font-bold">{t.translations.LAST_EDIT} </span>{" "}
                   {date.content}
                 </div>
-                {/* <div className="ml-4">
-                  <span className="font-bold">File Type: </span>{" "}
-                  {record.fileType}
-                </div> */}
               </div>
               <div className="pt-2">
-                <span>Tags: </span>
+                <span>{t.translations.TAGS} </span>
                 {renderTags(record.tags)}
               </div>
-              {/* <div className="pt-2">
-                <span className="font-bold">Associated Records: </span>
-                {record.associatedRecords?.map((record, index) => (
-                  <Link
-                    key={index}
-                    href={"#"}
-                    className="border-b text-blue-600 mr-3"
-                  >
-                    {record}
-                  </Link>
-                ))}
-              </div> */}
             </li>
           );
         })}

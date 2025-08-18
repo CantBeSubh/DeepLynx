@@ -1,13 +1,20 @@
 import React, { useState } from "react";
-import Image from 'next/image';
-import {CircleStackIcon, DocumentChartBarIcon, LinkIcon, ArrowsRightLeftIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
+import {
+  CircleStackIcon,
+  DocumentChartBarIcon,
+  LinkIcon,
+  ArrowsRightLeftIcon,
+} from "@heroicons/react/24/outline";
+import { translations } from "@/app/lib/translations";
 
 const RecentActivityWidget = () => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   return (
     <div className="card-body">
-      <h2 className="card-title">Recent Activity</h2>
-        <ul className="list bg-base-100">
-
+      <h2 className="card-title">{t.translations.RECENT_ACTIVITY}</h2>
+      <ul className="list bg-base-100">
         <li className="list-row">
           <div className="avatar indicator relative inline-block">
             <span className="indicator-item indicator-bottom">
@@ -20,12 +27,14 @@ const RecentActivityWidget = () => {
                 src="/images/j2.png"
                 alt="avatar"
                 width="300"
-                height="300"/>
+                height="300"
+              />
             </div>
           </div>
           <div>
             <div className="pt-2">
-              <b>Jaren Brownlee</b> uploaded a new source weather_data.csv
+              <b>Jaren Brownlee</b> {t.translations.UPLOADED_NEW_SOURCE}{" "}
+              weather_data.csv
             </div>
           </div>
         </li>
@@ -42,11 +51,12 @@ const RecentActivityWidget = () => {
                 src="/images/natalie.png"
                 alt="avatar"
                 width="300"
-                height="300"/>
+                height="300"
+              />
             </div>
           </div>
           <div className="pt-2">
-              <b>Natalie Hergesheimer</b> generated a new report
+            <b>Natalie Hergesheimer</b> {t.translations.GENERATED_NEW_REPORT}
           </div>
         </li>
 
@@ -62,12 +72,14 @@ const RecentActivityWidget = () => {
                 src="/images/jason.png"
                 alt="avatar"
                 width="300"
-                height="300"/>
+                height="300"
+              />
             </div>
           </div>
           <div>
             <div className="pt-2">
-              <b>Jason Kuipers</b> linked a new source employee_records.xlsx
+              <b>Jason Kuipers</b> {t.translations.LINKED_NEW_SOURCE}{" "}
+              employee_records.xlsx
             </div>
           </div>
         </li>
@@ -84,16 +96,17 @@ const RecentActivityWidget = () => {
                 src="/images/victor.png"
                 alt="avatar"
                 width="300"
-                height="300"/>
+                height="300"
+              />
             </div>
           </div>
           <div>
             <div className="pt-2">
-              <b>Victor Walker</b> created a new connection between weather_data.csv and project_timeline.docx
+              <b>Victor Walker</b> {t.translations.NEW_CONNECTION}
+              weather_data.csv {t.translations.AND} project_timeline.docx
             </div>
           </div>
         </li>
-
       </ul>
     </div>
   );

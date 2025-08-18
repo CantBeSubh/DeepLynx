@@ -5,8 +5,11 @@ import Image from "next/image";
 import React from "react";
 import SideMenu from "./SideMenu";
 import { useRouter } from "next/navigation";
+import { translations } from "@/app/lib/translations";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const locale = "en";
+  const t = translations[locale];
   const router = useRouter();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
@@ -18,7 +21,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-primary text-white flex justify-between items-center px-6 py-1 shadow-md z-50 fixed w-full">
+      <header className="bg-primary text-white flex justify-between items-center px-6 py-1 z-50 fixed w-full shadow-xl">
         <Image
           src="/images/lynx-white.png"
           alt="Logo"
@@ -54,18 +57,20 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a className="text-secondary-content">Item 1</a>
             </li>
             <li>
-              <button className="text-secondary-content">Logout</button>
+              <button className="text-secondary-content">
+                {t.translations.LOGOUT}
+              </button>
             </li>
           </ul>
         </div>
       </header>
 
       {/* Page Content */}
-      <div className="flex h-full">
+      <div className="flex h-full z-0">
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full p-6 mt-20  ${
+          className={`transition-all duration-300 w-full mt-18  ${
             isMenuCollapsed ? "ml-20" : "ml-64"
           }`}
         >

@@ -10,8 +10,11 @@ import {
   CircleStackIcon,
 } from "@heroicons/react/24/outline";
 import { getDataOverview } from "@/app/lib/user_services";
+import { translations } from "@/app/lib/translations";
 
 const DataOverviewWidget = () => {
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
   const { user } = useUserSession();
   const [stats, setStats] = useState<{
     projects: number;
@@ -39,17 +42,21 @@ const DataOverviewWidget = () => {
 
   return (
     <div className="card-body">
-      <h2 className="card-title">Data Overview</h2>
+      <h2 className="card-title">{t.translations.DATA_OVERVIEW}</h2>
       <div className="stats shadow">
         <div className="stat">
-          <div className="stat-title text-secondary">Projects</div>
+          <div className="stat-title text-secondary">
+            {t.translations.PROJECTS}
+          </div>
           <div className="stat-value text-secondary flex items-center">
             <Squares2X2Icon className="size-8 mr-2" />
             {stats?.projects}
           </div>
         </div>
         <div className="stat">
-          <div className="stat-title text-secondary">Data Records</div>
+          <div className="stat-title text-secondary">
+            {t.translations.DATA_RECORD}
+          </div>
           <div className="stat-value text-secondary flex items-center">
             <CircleStackIcon className="size-8 mr-2" />
             {stats?.records}
@@ -58,14 +65,18 @@ const DataOverviewWidget = () => {
       </div>
       <div className="stats shadow">
         <div className="stat">
-          <div className="stat-title text-secondary">Classes</div>
+          <div className="stat-title text-secondary">
+            {t.translations.CLASSES}
+          </div>
           <div className="stat-value text-secondary flex items-center">
             <RectangleGroupIcon className="size-8 mr-2" />
             {stats?.tags}
           </div>
         </div>
         <div className="stat">
-          <div className="stat-title text-secondary">Connections</div>
+          <div className="stat-title text-secondary">
+            {t.translations.CONNECTIONS}
+          </div>
           <div className="stat-value text-secondary flex items-center">
             <ArrowsRightLeftIcon className="size-8 mr-2" />
             {stats?.connections}

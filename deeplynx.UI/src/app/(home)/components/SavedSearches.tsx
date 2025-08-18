@@ -1,9 +1,7 @@
+"use client";
+
 import React from "react";
-import {
-  myRecentSearches,
-  peopleData,
-  mySavedSearches,
-} from "../dummy_data/data";
+import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
 import GenericTable from "./GenericTable";
 import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
@@ -13,7 +11,7 @@ interface SavedSearchProps {
   className?: string;
 }
 
-const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
+const SavedSearches = ({ className }: SavedSearchProps) => {
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -63,33 +61,26 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
         <GenericTable
           columns={my_search_table_columns}
           data={myRecentSearches}
-        />
-      ),
-    },
-    {
-      label: "Popular",
-      content: (
-        <GenericTable
-          columns={popular_table_columns}
-          data={peopleData}
           enablePagination
           rowsPerPage={5}
         />
       ),
     },
     {
-      label: "My Searches",
+      label: "Favorites",
       content: (
         <GenericTable
           columns={my_search_table_columns}
           data={mySavedSearches}
+          enablePagination
+          rowsPerPage={5}
         />
       ),
     },
   ];
 
   return (
-    <div className="card shadow-lg mt-3">
+    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card card-border mt-6">
       <div className="card-body">
         <h2 className="card-title">Saved Searches</h2>
         <Tabs tabs={tabData} className="tabs tabs-border" />
@@ -98,4 +89,4 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
   );
 };
 
-export default SavedSearchesTabs;
+export default SavedSearches;

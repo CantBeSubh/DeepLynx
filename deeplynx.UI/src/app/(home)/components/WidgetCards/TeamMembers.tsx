@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
 import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
@@ -7,80 +7,100 @@ import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddM
 import { Column, TeamMember } from "@/app/(home)/types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
+import { translations } from "@/app/lib/translations";
+import { getAllUsers } from "@/app/lib/user_services";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 const TeamMembersWidget: React.FC = () => {
-    const [showTable, setShowTable] = useState(false);
-    const [addMemberModal, setAddMemberModal] = useState(false);
+  const [showTable, setShowTable] = useState(false);
+  const [addMemberModal, setAddMemberModal] = useState(false);
+  const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
+  const { project } = useProjectSession();
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
 
-    const handleToggle = () => {
-        setShowTable((prev) => !prev);
+  const handleToggle = () => {
+    setShowTable((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const data = await getAllUsers(Number(project?.projectId));
+        setUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
     };
 
-    const teamMemberColumns: Column<TeamMember>[] = [
-        {
-            header: "Name",
-            data: "name",
-            cell: (row) => (
-                <div className="flex items-center gap-3">
-                    <div className="avatar">
-                        <div className="mask mask-circle h-10 w-10">
-                            <AvatarCell name= {row.name} image= {row.image} />
-                        </div>
-                    </div>
-                    <div>{row.name}</div>
-                </div>
-            ),
-            sortable: true,
-        },
-        {
-            header: "Role",
-            data: "role",
-            sortable: true,
-        },
-        {
-            header: "Last Login",
-            data: "lastLogin",
-            sortable: true,
-        },
-    ];
-
-    return (
-        <div className="card-body">
-            <div className="flex justify-between">
-                <h2 className="card-title flex items-center">
-                    Team Members
-                    {showTable && (
-                        <button onClick={() => setAddMemberModal(true)} className="ml-1">
-                            <PlusCircleIcon className="w-7 h-7 text-secondary" />
-                        </button>
-                    )}
-                </h2>
-                <button onClick={handleToggle} className="btn btn-sm btn-ghost">
-                    {showTable ? (
-                        <ChevronDownIcon className="size-6 rotate-180" />
-                    ) : (
-                        <ChevronDownIcon className="size-6" />
-                    )}
-                </button>
+    fetchAllUsers();
+  }, [project]);
+  console.log(users);
+  const teamMemberColumns: Column<TeamMember>[] = [
+    {
+      header: "Name",
+      data: "name",
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <div className="avatar">
+            <div className="mask mask-circle h-10 w-10">
+              <AvatarCell name={row.name} image={row.image} />
             </div>
-
-            {!showTable ? (
-                <AvatarCarousel people={peopleData} />
-            ) : (
-                <GenericTable
-                    columns={teamMemberColumns}
-                    data={peopleData}
-                    enablePagination
-                    rowsPerPage={4}
-                />
-            )}
-
-            <AddMember
-                isOpen={addMemberModal}
-                onClose={() => setAddMemberModal(false)}
-            />
+          </div>
+          <div>{row.name}</div>
         </div>
-    );
+      ),
+      sortable: true,
+    },
+    {
+      header: "Role",
+      data: "role",
+      sortable: true,
+    },
+    {
+      header: "Last Login",
+      data: "lastLogin",
+      sortable: true,
+    },
+  ];
+
+  return (
+    <div className="card-body">
+      <div className="flex justify-between">
+        <h2 className="card-title flex items-center">
+          {t.translations.TEAM_MEMBERS}
+          {showTable && (
+            <button onClick={() => setAddMemberModal(true)} className="ml-1">
+              <PlusCircleIcon className="w-7 h-7 text-secondary" />
+            </button>
+          )}
+        </h2>
+        <button onClick={handleToggle} className="btn btn-sm btn-ghost">
+          {showTable ? (
+            <ChevronDownIcon className="size-6 rotate-180" />
+          ) : (
+            <ChevronDownIcon className="size-6" />
+          )}
+        </button>
+      </div>
+
+      {!showTable ? (
+        <AvatarCarousel people={users} />
+      ) : (
+        <GenericTable
+          columns={teamMemberColumns}
+          data={peopleData}
+          enablePagination
+          rowsPerPage={4}
+        />
+      )}
+
+      <AddMember
+        isOpen={addMemberModal}
+        onClose={() => setAddMemberModal(false)}
+      />
+    </div>
+  );
 };
 
 export default TeamMembersWidget;
