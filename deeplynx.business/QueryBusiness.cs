@@ -78,7 +78,7 @@ public class QueryBusiness : IQueryBusiness
                         : And(predicate, next);
                 }
             }
-            
+            //TODO: Determine if less than, greater than should only be available to the DateTime columns 
             if (query.Operator == ">")
             {
                 DateTime.TryParse(query.Value, out var dateVal);
