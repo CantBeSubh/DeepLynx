@@ -53,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("BuildAQuery")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> BuildAQuery(
-            [FromBody] CustomQueryRequestDto[] filterArray, string initialQuery)
+            [FromBody] CustomQueryRequestDto[] filterArray)
         {
             try
             {
