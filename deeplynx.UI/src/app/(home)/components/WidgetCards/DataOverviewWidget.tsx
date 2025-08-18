@@ -9,7 +9,7 @@ import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
 } from "@heroicons/react/24/outline";
-import { getDataOverview } from "@/app/lib/user_services";
+import { getDataOverview } from "@/app/lib/user_services.client";
 import { translations } from "@/app/lib/translations";
 
 const DataOverviewWidget = () => {

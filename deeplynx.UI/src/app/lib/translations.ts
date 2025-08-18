@@ -1,5 +1,3 @@
-import SideMenu from "../(home)/components/SideMenu";
-
 export const translations = {
     en: {
         translations: {

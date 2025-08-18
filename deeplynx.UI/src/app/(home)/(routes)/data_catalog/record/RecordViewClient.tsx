@@ -5,10 +5,10 @@ import toast from "react-hot-toast";
 import Tabs from "@/app/(home)/components/Tabs";
 import PropertyTable from "./PropertyTable";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { updateRecord } from "@/app/lib/record_services"; // client-safe API call
+import { updateRecord } from "@/app/lib/record_services.client"; // client-safe API call
 
 type Props = {
-  initialRecord: FileViewerTableRow;
+  initialRecord: FileViewerTableRow | null;
   projectId: number;
   recordId: number;
 };
@@ -18,7 +18,9 @@ export default function RecordViewClient({
   projectId,
   recordId,
 }: Props) {
-  const [record, setRecord] = useState<FileViewerTableRow>(initialRecord);
+  const [record, setRecord] = useState<FileViewerTableRow | null>(
+    initialRecord
+  );
 
   function formatDate(date?: string | null) {
     if (!date) return "N/A";

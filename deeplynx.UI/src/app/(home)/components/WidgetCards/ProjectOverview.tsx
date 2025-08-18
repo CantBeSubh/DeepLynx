@@ -5,7 +5,7 @@ import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
 } from "@heroicons/react/24/outline";
-import { getProjectStats } from "@/app/lib/projects_services";
+import { getProjectStats } from "@/app/lib/projects_services.client";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { translations } from "@/app/lib/translations";
 

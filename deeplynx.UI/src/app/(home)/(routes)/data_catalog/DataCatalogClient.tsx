@@ -6,7 +6,7 @@ import Link from "next/link";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { queryRecords } from "@/app/lib/filter_services";
+import { queryRecords } from "@/app/lib/filter_services.client";
 
 import SavedSearches from "../../components/SavedSearches";
 import GridView from "./GridView";
