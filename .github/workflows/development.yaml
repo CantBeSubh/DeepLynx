@@ -47,6 +47,15 @@ jobs:
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             .
 
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
+            --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
+            --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
+            --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
+            --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
+            .
+
   kubernetes:
     needs: build
     runs-on: [self-hosted]
