@@ -36,10 +36,10 @@ metadata:
   namespace: deeplynxv3-dev
 spec:
   accessModes:
-    - ReadWriteMany  # Allows multiple pods to access the same volume
+    - ReadWriteMany # Allows multiple pods to access the same volume
   resources:
     requests:
-      storage: 20Gi  # Adjust size based on your timeseries data needs
+      storage: 20Gi # Adjust size based on your timeseries data needs
   storageClassName: azurefile-duckdb
 
 ---
@@ -78,12 +78,12 @@ spec:
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
-            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+            - name: OKTA_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
-            - name: NEXT_PUBLIC_AUTH_SECRET
+            - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
@@ -160,12 +160,12 @@ spec:
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             # Backend may also need these environment variables
-            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+            - name: OKTA_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
-            - name: NEXT_PUBLIC_AUTH_SECRET
+            - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
