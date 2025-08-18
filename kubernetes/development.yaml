@@ -88,11 +88,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: auth-secret
-            - name: SERVER_TOKEN
+            - name: SERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
-                  key: server-token
+                  key: service-token
             # Runtime environment variables from configmap (non-sensitive)
             - name: NEXT_PUBLIC_OKTA_CLIENT_ID
               valueFrom:

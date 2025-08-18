@@ -2,8 +2,8 @@
 import "server-only";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 
-const BASE = process.env.BACKEND_BASE_URL!;
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
+const BASE = process.env.BACKEND_BASE_URL || "BASE URL IS NOT DEFINED";
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "xxx";
 
 console.log("BACKEND BASE URL:",process.env.BACKEND_BASE_URL)
 console.log("SERVICE TOKEN:",process.env.SERVICE_TOKEN)
