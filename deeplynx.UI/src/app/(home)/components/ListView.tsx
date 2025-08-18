@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FileViewerTableRow } from "../../types/types";
+import { FileViewerTableRow } from "../types/types";
 import { useRouter } from "next/navigation";
 import { translations } from "@/app/lib/translations";
 

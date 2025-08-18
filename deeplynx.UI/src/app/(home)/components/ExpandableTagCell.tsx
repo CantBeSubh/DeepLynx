@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Tag } from "../../types/types";
+import { Tag } from "../types/types";
 import { translations } from "@/app/lib/translations";
 import React from "react";
 

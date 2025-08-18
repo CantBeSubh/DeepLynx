@@ -10,7 +10,7 @@ import SavedSearches from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import RecentRecordsCard from "../../data_catalog/RecentRecordsCard";
+import RecentRecordsCard from "../../components/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";

@@ -8,11 +8,11 @@ import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
 
-import SavedSearches from "../../components/SavedSearches";
-import GridView from "./GridView";
-import ListView from "./ListView";
-import ProjectDropdown from "./ProjectDropdown";
-import RecentRecordsCard from "./RecentRecordsCard";
+import SavedSearches from "../components/SavedSearches";
+import GridView from "../components/GridView";
+import ListView from "../components/ListView";
+import ProjectDropdown from "../components/ProjectDropdown";
+import RecentRecordsCard from "../components/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 
 import {
@@ -78,13 +78,24 @@ export default function DataCatalogClient({
     [projects]
   );
 
-  // === handlers wrapped in useCallback so effects can depend on them ===
+  // Update clearAllFilters to respect project selection:
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
-    setTableData(initialRecords ?? []);
-    setTotalRecords((initialRecords ?? []).length);
-  }, [initialRecords]);
+
+    // Apply project filter even when clearing search filters
+    if (selectedProjects.length === 0 || selectedProjects.includes("ALL")) {
+      setTableData(initialRecords ?? []);
+      setTotalRecords((initialRecords ?? []).length);
+    } else {
+      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
+      const filteredData = (initialRecords ?? []).filter((record) =>
+        selectedProjectIdsNum.includes(Number(record.projectId))
+      );
+      setTableData(filteredData);
+      setTotalRecords(filteredData.length);
+    }
+  }, [initialRecords, selectedProjects]);
 
   const handleSearch = useCallback(
     async (value: string) => {
@@ -95,12 +106,20 @@ export default function DataCatalogClient({
         const newFilter = { id: nextFilterId, term: trimmed };
         const filteredData = await queryRecords(trimmed);
 
-        const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
-        const scopedResults = selectedProjectIdsNum.length
-          ? filteredData.filter((r: FileViewerTableRow) =>
-              selectedProjectIdsNum.includes(Number(r.projectId))
-            )
-          : filteredData;
+        // Check if "ALL" is selected or no projects selected
+        const isAllSelected =
+          selectedProjects.length === 0 ||
+          selectedProjects.includes("ALL") ||
+          selectedProjects.length === projects.length;
+
+        const scopedResults = isAllSelected
+          ? filteredData
+          : filteredData.filter((r: FileViewerTableRow) => {
+              const selectedProjectIdsNum = selectedProjects.map((id) =>
+                Number(id)
+              );
+              return selectedProjectIdsNum.includes(Number(r.projectId));
+            });
 
         setTableData(scopedResults);
         setTotalRecords(scopedResults.length);
@@ -125,6 +144,29 @@ export default function DataCatalogClient({
       handleSearch(initialSearchTerm);
     }
   }, [hasLoaded, initialSearchTerm, handleSearch]);
+
+  // Add this useEffect to filter data when selected projects change
+  useEffect(() => {
+    if (!hasLoaded) return;
+
+    // If there are active filters, let the search handle the filtering
+    if (activeFilters.length > 0) return;
+
+    // Filter the initial records based on selected projects
+    if (selectedProjects.length === 0 || selectedProjects.includes("ALL")) {
+      // Show all records if no specific projects selected
+      setTableData(initialRecords ?? []);
+      setTotalRecords((initialRecords ?? []).length);
+    } else {
+      // Filter records by selected project IDs
+      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
+      const filteredData = (initialRecords ?? []).filter((record) =>
+        selectedProjectIdsNum.includes(Number(record.projectId))
+      );
+      setTableData(filteredData);
+      setTotalRecords(filteredData.length);
+    }
+  }, [hasLoaded, selectedProjects, initialRecords, activeFilters.length]);
 
   // Fetch original records when filters are cleared and projects are selected
   useEffect(() => {
