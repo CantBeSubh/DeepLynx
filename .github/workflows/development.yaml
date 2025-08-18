@@ -80,8 +80,8 @@ jobs:
         name: Create Kubernetes Secrets
         run: |
           kubectl create secret generic app-secrets \
-            --from-literal=OKTA_CLIENT_SECRET="${{ secrets.OKTA_CLIENT_SECRET }}" \
-            --from-literal=AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
+            --from-literal=okta-client-secret="${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" \
+            --from-literal=auth-secret="${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -90,10 +90,10 @@ jobs:
         name: Create Kubernetes ConfigMap
         run: |
           kubectl create configmap app-config \
-            --from-literal=NEXT_PUBLIC_OKTA_CLIENT_ID="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
-            --from-literal=NEXT_PUBLIC_OKTA_ISSUER="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
-            --from-literal=NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
-            --from-literal=NEXT_PUBLIC_REDIRECT_LINK="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --from-literal=okta-client-id="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
+            --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
+            --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
