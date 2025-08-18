@@ -10,7 +10,6 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: azurefile-duckdb
-  namespace: deeplynxv3-dev
 provisioner: file.csi.azure.com
 parameters:
   skuName: Premium_LRS
@@ -61,63 +60,36 @@ spec:
         - name: deeplynxv3
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
-          env:
-            - name: ConnectionStrings__DefaultConnection
-              value: "${DATABASE_CONNECTION_STRING}"
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
-            - name: POSTGRES_DB
-              value: ${POSTGRES_DB}
-            - name: POSTGRES_USER
-              value: ${POSTGRES_USER}
-            - name: POSTGRES_PASSWORD
-              value: ${POSTGRES_PASSWORD}
-            # DuckDB Configuration
-            - name: DUCKDB_BASE_PATH
-              value: ${DUCKDB_BASE_PATH}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
-            # Runtime environment variables from secrets (sensitive)
-            - name: OKTA_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: okta-client-secret
-            - name: AUTH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: auth-secret
-            # Runtime environment variables from configmap (non-sensitive)
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: redirect-link
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+              name: app-config
+            - secretRef:
+              name: app-secrets
+          volumeMounts:
+            - name: duckdb-storage
+              mountPath: /data/duckdb
           resources:
             limits:
               memory: "4Gi"
               cpu: "1500m"
-          ports:
-            - containerPort: 3000
-          volumeMounts:
-            - name: duckdb-storage
-              mountPath: /data/duckdb
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
       volumes:
         - name: duckdb-storage
           persistentVolumeClaim:
@@ -143,53 +115,11 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-backend-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           command: ["/usr/local/bin/entrypoint.sh"]
-          env:
-            - name: ConnectionStrings__DefaultConnection
-              value: ${DATABASE_CONNECTION_STRING}
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
-            - name: POSTGRES_DB
-              value: ${POSTGRES_DB}
-            - name: POSTGRES_USER
-              value: ${POSTGRES_USER}
-            - name: POSTGRES_PASSWORD
-              value: ${POSTGRES_PASSWORD}
-            # DuckDB Configuration (same as frontend)
-            - name: DUCKDB_BASE_PATH
-              value: ${DUCKDB_BASE_PATH}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
-            # Backend may also need these environment variables
-            - name: OKTA_CLIENT_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: okta-client-secret
-            - name: AUTH_SECRET
-              valueFrom:
-                secretKeyRef:
-                  name: app-secrets
-                  key: auth-secret
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: redirect-link
+          envFrom:
+            - configMapRef:
+              name: app-config
+            - secretRef:
+              name: app-secrets
           resources:
             limits:
               memory: "4Gi"
@@ -199,6 +129,22 @@ spec:
           volumeMounts:
             - name: duckdb-storage
               mountPath: /data/duckdb
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 6
       volumes:
         - name: duckdb-storage
           persistentVolumeClaim:

@@ -43,8 +43,6 @@ jobs:
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
-            --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
-            --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             .
 
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
@@ -52,8 +50,6 @@ jobs:
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
-            --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
-            --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             .
 
   kubernetes:
@@ -80,8 +76,8 @@ jobs:
         name: Create Kubernetes Secrets
         run: |
           kubectl create secret generic app-secrets \
-            --from-literal=okta-client-secret="${{ secrets.OKTA_CLIENT_SECRET }}" \
-            --from-literal=auth-secret="${{ secrets.AUTH_SECRET }}" \
+            --from-literal=OKTA_CLIENT_SECRET="${{ secrets.OKTA_CLIENT_SECRET }}" \
+            --from-literal=AUTH_SECRET="${{ secrets.AUTH_SECRET }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -90,10 +86,10 @@ jobs:
         name: Create Kubernetes ConfigMap
         run: |
           kubectl create configmap app-config \
-            --from-literal=okta-client-id="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
-            --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
-            --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
-            --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --from-literal=NEXT_PUBLIC_OKTA_CLIENT_ID="${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" \
+            --from-literal=NEXT_PUBLIC_OKTA_ISSUER="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
+            --from-literal=NEXT_PUBLIC_API_URL="${{ vars.NEXT_PUBLIC_API_URL }}" \
+            --from-literal=NEXT_PUBLIC_REDIRECT_LINK="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
