@@ -38,7 +38,7 @@ namespace deeplynx.tests
             _relationshipBusiness = new RelationshipBusiness(Context, _mockEdgeMappingBusiness.Object, _mockEdgeBusiness.Object);
             _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
             _classBusiness = new ClassBusiness(Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, _mockRecordMappingBusiness.Object, _relationshipBusiness);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness);
         }
 
         [Fact]

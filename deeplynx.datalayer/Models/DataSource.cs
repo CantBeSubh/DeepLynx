@@ -68,4 +68,9 @@ public partial class DataSource
     [InverseProperty("DataSource")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
 
+    [InverseProperty("DataSource")]
+    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
+    
+    [InverseProperty("DataSource")]
+    public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 }

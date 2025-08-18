@@ -1,224 +1,36 @@
-"use client";
+// app/(home)/(routes)/data_catalog/record/page.tsx
+import RecordViewClient from "./RecordViewClient";
+import { getRecordServer } from "@/app/lib/record_services.server";
 
-import GenericTable from "@/app/(home)/components/GenericTable";
-import Tabs from "@/app/(home)/components/Tabs";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
-import { getRecord, updateRecord } from "@/app/lib/record_services";
-import { useSearchParams } from "next/navigation";
-import React, { Suspense, useEffect, useState } from "react";
-import PropertyTable from "./PropertyTable";
-import ExpandableTagsCell from "../ExpandableTagCell";
-import toast from "react-hot-toast";
+export const dynamic = "force-dynamic"; // optional if behind auth
 
-const RecordViewPageContent = () => {
-  const params = useSearchParams();
-  const recordId = params.get("recordId");
-  const projectId = params.get("projectId");
+type PageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-  const [record, setRecord] = useState<FileViewerTableRow | null>(null);
+export default async function Page({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const recordId = typeof params.recordId === "string" ? params.recordId : "";
+  const projectId =
+    typeof params.projectId === "string" ? params.projectId : "";
 
-  useEffect(() => {
-    if (!recordId || !projectId) return;
-
-    console.log("RecordId after:", recordId);
-    console.log("ProjectId after:", projectId);
-    const fetchData = async () => {
-      try {
-        const data = await getRecord(Number(projectId), Number(recordId));
-        setRecord(data);
-      } catch (error) {
-        console.error("Error fetching record:", error);
-      }
-    };
-    fetchData();
-  }, [recordId, projectId]);
-
-  const renderTags = (tags: string) => {
-    try {
-      const parsedTags: string[] = JSON.parse(tags);
-      return parsedTags
-        .filter((t: string) => t !== null && t !== undefined)
-        .map((t: string) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
-    } catch {
-      return null;
-    }
-  };
-
-  if (!record) {
-    return <div className="loading loading-spinner loading-xl" />;
+  if (!recordId || !projectId) {
+    // you can render a simple error / notFound()
+    return <div className="p-4">Missing recordId or projectId</div>;
   }
 
-  const systemPropertiesRows = [
-    {
-      label: "Record Name",
-      value: record?.name,
-      editable: true,
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              name: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Project name updated");
-        } catch (error) {
-          toast.error("Failed to update project name");
-        }
-      },
-    },
-    {
-      label: "Record Description",
-      value: record.description,
-      editable: true,
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              description: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Record description updated");
-        } catch (error) {
-          toast.error("Failed to update Record description");
-        }
-      },
-    },
-    {
-      label: "Data Source Name",
-      value: record.dataSourceName,
-    },
-    { label: "uri", value: record.uri },
-    {
-      label: "ClassName",
-      value: record.className,
-      // editable: true, I dont see a className being returned form the BE
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              class_name: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Class Name updated");
-        } catch (error) {
-          toast.error("Failed to update Class Name");
-        }
-      },
-    },
-    { label: "OriginalID", value: record.originalId },
-    { label: "Created By", value: record.createdBy },
-    { label: "Created At", value: formatDate(record.createdAt) },
-    { label: "Modified By", value: record.modifiedBy },
-    { label: "Modified At", value: formatDate(record.modifiedAt) },
-  ];
-
-  // TODO: make nested objects in table form too
-  const parsedProperties = JSON.parse(record.properties!);
-  const additionalPropertiesRows = parsedProperties
-    ? Object.keys(parsedProperties).map(key => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value: typeof value === 'object' ? JSON.stringify(value) : String(value),
-        };
-      })
-    : [];
-
-  const tabs = [
-    {
-      label: "Record Information",
-      content: (
-        <div className="flex gap-4">
-          <div className="w-full md:w-1/2 p-3">
-            <PropertyTable
-              title="System Properties"
-              rows={systemPropertiesRows}
-            />
-            <PropertyTable
-              className="mt-4"
-              title="Additional Properties"
-              rows={additionalPropertiesRows}
-            />
-          </div>
-          <div className="flex-grow">
-            <div className="card bg-base-100 shadow-md p-2">
-              <h2 className="card-title">Tags: {renderTags(record.tags)}</h2>
-            </div>
-
-            {/* <div className="card bg-base-100 shadow-md p-2 ">
-              <div className="card-body">
-                <h2 className="card-title">
-                  Tags:{" "}
-                  {record.tags.map((tag) => (
-                    <div className="card-actions">
-                      <div className="badge badge-outline badge-secondary">
-                        {tag.name}
-                      </div>
-                    </div>
-                  ))}
-                  <ExpandableTagsCell tags={record.tags} />
-                </h2>
-              </div>
-            </div> */}
-          </div>
-        </div>
-      ),
-    },
-    { label: "Timeseries Viewer", content: "" },
-    { label: "Graph Viewer", content: "" },
-    { label: "Record History", content: "" },
-  ];
-
-  if (!record)
-    return <div className="loading loading-spinner loading-xl"></div>;
+  let initialRecord = null;
+  try {
+    initialRecord = await getRecordServer(projectId, recordId);
+  } catch (e) {
+    console.error("getRecordServer failed:", e);
+  }
 
   return (
-    <div>
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-info-content">
-            {record?.name}
-          </h1>
-        </div>
-      </div>
-
-      <div className="divider"></div>
-
-      <Tabs tabs={tabs} className={""}></Tabs>
-    </div>
+    <RecordViewClient
+      initialRecord={initialRecord}
+      projectId={Number(projectId)}
+      recordId={Number(recordId)}
+    />
   );
-};
-
-function formatDate(date: string | null | undefined): string {
-  if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 }
-
-const RecordViewPage = () => {
-  return (
-    <Suspense
-      fallback={<div className="loading loading-spinner loading-lg"></div>}
-    >
-      <RecordViewPageContent />
-    </Suspense>
-  );
-};
-
-export default RecordViewPage;

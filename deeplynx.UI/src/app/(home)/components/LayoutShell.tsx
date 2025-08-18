@@ -5,8 +5,11 @@ import Image from "next/image";
 import React from "react";
 import SideMenu from "./SideMenu";
 import { useRouter } from "next/navigation";
+import { translations } from "@/app/lib/translations";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const locale = "en";
+  const t = translations[locale];
   const router = useRouter();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
@@ -54,7 +57,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <a className="text-secondary-content">Item 1</a>
             </li>
             <li>
-              <button className="text-secondary-content">Logout</button>
+              <button className="text-secondary-content">
+                {t.translations.LOGOUT}
+              </button>
             </li>
           </ul>
         </div>
@@ -65,8 +70,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18  ${isMenuCollapsed ? "ml-20" : "ml-64"
-            }`}
+          className={`transition-all duration-300 w-full mt-18  ${
+            isMenuCollapsed ? "ml-20" : "ml-64"
+          }`}
         >
           {children}
         </main>

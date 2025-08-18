@@ -10,29 +10,76 @@ using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using System.Threading.Tasks;
 
 namespace deeplynx.business;
 
 public class TimeseriesBusiness(
-    DeeplynxContext context, 
-    IRecordBusiness recordBusiness, 
-    IClassBusiness classBusiness, 
+    DeeplynxContext context,
+    IRecordBusiness recordBusiness,
+    IClassBusiness classBusiness,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
-    private IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
-
-    private const string UploadFolderPath = "uploads";
-    private const string QueryFolderPath = "reports";
+    private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+    private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
 
     private static class Status
     {
         public static string Failed { get; } = "failed";
         public static string Completed { get; } = "completed";
         public static string InProgress { get; } = "in progress";
+    }
+
+    private static async Task<DuckDBConnection> GetDuckDbConnection(long projectId, long dataSourceId)
+    {
+        var projectDir = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString());
+        var dataSourceDir = Path.Combine(projectDir, "datasource-" + dataSourceId.ToString());
+        Directory.CreateDirectory(dataSourceDir);
+
+        var dbPath = Path.Combine(dataSourceDir, "timeseries.duckdb");
+        var connectionString = $"Data Source={dbPath}";
+
+        var connection = new DuckDBConnection(connectionString);
+        await connection.OpenAsync();
+
+        return connection;
+    }
+
+    private static async Task<DuckDBConnection> GetReadOnlyDuckDbConnection(long projectId, long dataSourceId)
+    {
+        var projectDir = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString());
+        var dataSourceDir = Path.Combine(projectDir, "datasource-" + dataSourceId.ToString());
+        var dbPath = Path.Combine(dataSourceDir, "timeseries.duckdb");
+
+        if (!File.Exists(dbPath))
+        {
+            throw new FileNotFoundException($"DuckDB file not found for project {projectId}, datasource {dataSourceId}: {dbPath}");
+        }
+
+        var connectionString = $"Data Source={dbPath};ACCESS_MODE=READ_ONLY";
+        var connection = new DuckDBConnection(connectionString);
+        await connection.OpenAsync();
+
+        return connection;
+    }
+
+    /// <summary>
+    /// Creates DuckDB table based on the table name and the file path
+    /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The Data Source ID</param>
+    /// <param name="tableName">Timeseries table name</param>
+    /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
+    public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath)
+    {
+        using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
+
+        await using var command = duckDbConnection.CreateCommand();
+
+        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
+        var executeNonQuery = await command.ExecuteNonQueryAsync();
     }
 
     /// <summary>
@@ -55,7 +102,7 @@ public class TimeseriesBusiness(
 
         var uploadId = Guid.NewGuid().ToString();
         string tableName = uploadId + "_" + file.FileName;
-        var filePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId + "_" + file.FileName);
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId + "_" + file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
         var uri = "duckdb://" + tableName;
 
@@ -64,10 +111,10 @@ public class TimeseriesBusiness(
             await file.CopyToAsync(stream);
         }
 
-        await CreateTimeseriesTable(tableName, filePath);
+        await CreateTimeseriesTable(projectId, dataSourceId, tableName, filePath);
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
-        var columns = await GetColumnsFromDb(tableName);
+        var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
         var fileName = file.FileName;
 
         var recordRequest = new CreateRecordRequestDto
@@ -101,7 +148,7 @@ public class TimeseriesBusiness(
 
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var uploadId = Guid.NewGuid().ToString();
-        var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId);
+        var folderPath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId);
         Directory.CreateDirectory(folderPath);
 
         return uploadId;
@@ -127,7 +174,7 @@ public class TimeseriesBusiness(
             throw new ArgumentException("No chunk uploaded.");
         }
 
-        var tempFilePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), uploadId, $"{chunkNumber}.part");
+        var tempFilePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", uploadId, $"{chunkNumber}.part");
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await chunk.CopyToAsync(stream);
 
@@ -146,9 +193,9 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var folderPath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(), request.UploadId);
+        var folderPath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
-        var finalFilePath = Path.Combine(UploadFolderPath, projectId.ToString(), dataSourceId.ToString(),
+        var finalFilePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads",
             request.UploadId + "_" + request.FileName);
         var uri = "duckdb://" + tableName;
 
@@ -167,17 +214,10 @@ public class TimeseriesBusiness(
 
         Directory.Delete(folderPath); // Clean up the upload folder
 
-        // todo: kick off file processing here (See DL-97 Sub-Tasks)
-        // start saving metadata to db
-        // import into duckdb
-        // describe table for metadata record properties
-        // after processing, new filepath should be something like
-        // "duckdb://path/to/uuid_filename"
-
-        await CreateTimeseriesTable(tableName, finalFilePath);
+        await CreateTimeseriesTable(projectId, dataSourceId, tableName, finalFilePath);
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
-        var columns = await GetColumnsFromDb(tableName);
+        var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
         var fileName = request.FileName;
 
         var recordRequest = new CreateRecordRequestDto
@@ -200,57 +240,6 @@ public class TimeseriesBusiness(
     }
 
     /// <summary>
-    /// This allows the user to query timeseries data in duckDb. Creates the command using an sql string
-    /// The connection is read only so any write operations will be blocked.
-    /// </summary>
-    /// <param name="request"> The request which includes the query string</param>
-    /// <param name="projectId">The project ID</param>
-    /// <param name="dataSourceId">The data source ID</param>
-    /// <returns></returns>
-    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var resultTable = new DataTable();
-        await using var duckDbConnection = GetReadOnlyDuckDbConnection();
-        await duckDbConnection.OpenAsync();
-
-        await using var command = duckDbConnection.CreateCommand();
-        command.CommandText = request.Query;
-        await using var reader = command.ExecuteReader();
-
-        if (!reader.HasRows)
-        {
-            throw new NoResultsException("Empty query results, no report needed");
-        }
-
-        resultTable.Load(reader);
-        var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
-
-        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
-        var recordRequest = new CreateRecordRequestDto
-        {
-            Properties = new JsonObject
-            {
-                ["status"] = Status.InProgress,
-                ["query"] = request.Query
-            },
-            Name = fileName,
-            Description = $"Timeseries result report for {fileName}",
-            OriginalId = queryId,
-            ClassId = reportClass.Id,
-            ClassName = reportClass.Name
-        };
-
-        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
-
-        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
-
-        return recordResponse;
-    }
-
-    /// <summary>
     /// Runs a timeseries query to generate a csv from a DataTable
     /// </summary>
     /// <param name="recordResponse">The record response DTO</param>
@@ -268,16 +257,16 @@ public class TimeseriesBusiness(
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
-        Task.Run(async () =>
+        await Task.Run(async () =>
         {
             // creates a background scope to create its own context so that the background task doesn't
-            // have to rely on other contexts that may be destroyed or closed. 
+            // have to rely on other contexts that may be destroyed or closed.
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
             try
             {
-                DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
+                await DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Completed,
@@ -328,7 +317,7 @@ public class TimeseriesBusiness(
     /// <param name="dt"> data table with response data</param>
     /// <returns></returns>
     // private List<Dictionary<string, object?>> DataTableToDictionary(DataTable dt)
-    // { 
+    // {
     //     var preview = new List<Dictionary<string, object?>>();
     //     foreach (DataRow row in dt.Rows)
     //     {
@@ -385,7 +374,7 @@ public class TimeseriesBusiness(
             if (col == null)
                 sbData.Append(',');
             else
-                sbData.Append("\"" + col.ToString().Replace("\"", "\"\"") + "\",");
+                sbData.Append("\"" + col.ToString()?.Replace("\"", "\"\"") + "\",");
         }
 
         sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
@@ -413,53 +402,28 @@ public class TimeseriesBusiness(
             sbData.Replace(",", Environment.NewLine, sbData.Length - 1, 1);
         }
 
-        var filePath = Path.Combine(QueryFolderPath, projectId.ToString(), dataSourceId.ToString(), fileName);
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
 
         File.WriteAllText(filePath, sbData.ToString());
     }
 
-    private static DuckDBConnection GetDuckDbConnection()
-    {
-        return new DuckDBConnection("Data Source=TimeSeries.db");
-    }
-
-    private static DuckDBConnection GetReadOnlyDuckDbConnection()
-    {
-        return new DuckDBConnection("Data Source=TimeSeries.db;ACCESS_MODE=READ_ONLY");
-    }
-
-    /// <summary>
-    /// Creates DuckDB table based on the table name and the file path
-    /// </summary>
-    /// <param name="tableName">Timeseries table name</param>
-    /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
-    public async Task CreateTimeseriesTable(string tableName, string filePath)
-    {
-        await using var duckDbConnection = GetDuckDbConnection();
-        await duckDbConnection.OpenAsync();
-
-        await using var command = duckDbConnection.CreateCommand();
-
-        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
-        var executeNonQuery = command.ExecuteNonQuery();
-    }
-
     /// <summary>
     /// Gets all the column names and types from the table
     /// </summary>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The data source ID</param>
     /// <param name="tableName">Timeseries table name</param>
     /// <returns>JSON array of columns</returns>
-    private async Task<JsonArray> GetColumnsFromDb(string tableName)
+    private static async Task<JsonArray> GetColumnsFromDb(long projectId, long dataSourceId, string tableName)
     {
         var columns = new JsonArray();
-        await using var duckDbConnection = GetDuckDbConnection();
-        await duckDbConnection.OpenAsync();
+        using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
         command.CommandText = $"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tableName}';";
 
-        await using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync();
 
         while (reader.Read())
         {
@@ -479,17 +443,16 @@ public class TimeseriesBusiness(
     /// <summary>
     /// Generic select all for given table
     /// </summary>
-    /// <param name="tableName"></param>
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
+    /// <param name="tableName"></param>
     /// <returns>All data for given table</returns>
-    public async Task<RecordResponseDto> GetAllTableRecords(string tableName, long projectId, long dataSourceId)
+    public async Task<RecordResponseDto> GetAllTableRecords(long projectId, long dataSourceId, string tableName)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
-        using var duckDBConnection = GetReadOnlyDuckDbConnection();
-        await duckDBConnection.OpenAsync();
+        using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
 
         using var command = duckDBConnection.CreateCommand();
 
@@ -499,7 +462,7 @@ public class TimeseriesBusiness(
         };
 
         command.CommandText = request.Query;
-        using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync();
 
         resultTable.Load(reader);
 
@@ -523,7 +486,7 @@ public class TimeseriesBusiness(
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
     }
@@ -541,28 +504,27 @@ public class TimeseriesBusiness(
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
-        using var duckDBConnection = GetReadOnlyDuckDbConnection();
-        await duckDBConnection.OpenAsync();
+        using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
         using var command = duckDBConnection.CreateCommand();
 
         var request = new TimeseriesQueryRequestDto
         {
             Query = $"""
-            
+
             SELECT * FROM
             (
-                SELECT *, ROW_NUMBER() OVER() AS row_num 
+                SELECT *, ROW_NUMBER() OVER() AS row_num
                 FROM '{tableName}'
             ) AS numbered_table
             WHERE row_num % $rowNum = 0;
-            
+
             """
         };
 
         command.CommandText = request.Query;
         command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
 
-        using var reader = command.ExecuteReader();
+        using var reader = await command.ExecuteReaderAsync();
         resultTable.Load(reader);
 
         var queryId = Guid.NewGuid().ToString();
@@ -585,22 +547,59 @@ public class TimeseriesBusiness(
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
     }
-    
+
     /// <summary>
-    /// Determine if datasource exists
+    /// This allows the user to query timeseries data in duckDb. Creates the command using an sql string
+    /// The connection is read only so any write operations will be blocked.
     /// </summary>
-    /// <param name="datasourceId">The ID of the datasource we are searching for</param>
-    /// <returns>Throws error if datasource does not exist</returns>
-    private void DoesDataSourceExist(long datasourceId)
+    /// <param name="request"> The request which includes the query string</param>
+    /// <param name="projectId">The project ID</param>
+    /// <param name="dataSourceId">The data source ID</param>
+    /// <returns></returns>
+    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
     {
-        var datasource = _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null);
-        if (!datasource)
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        var resultTable = new DataTable();
+        using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
+
+        await using var command = duckDbConnection.CreateCommand();
+        command.CommandText = request.Query;
+
+        using var reader = await command.ExecuteReaderAsync();
+
+        if (!reader.HasRows)
         {
-            throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
+            throw new NoResultsException("Empty query results, no report needed");
         }
+
+        resultTable.Load(reader);
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+
+        var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
+        var recordRequest = new CreateRecordRequestDto
+        {
+            Properties = new JsonObject
+            {
+                ["status"] = Status.InProgress,
+                ["query"] = request.Query
+            },
+            Name = fileName,
+            Description = $"Timeseries result report for {fileName}",
+            OriginalId = queryId,
+            ClassId = reportClass.Id,
+            ClassName = reportClass.Name
+        };
+
+        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+
+        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+
+        return recordResponse;
     }
 }

@@ -1,3 +1,4 @@
+import { translations } from "@/app/lib/translations";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -5,7 +6,7 @@ import {
 } from "@heroicons/react/24/outline";
 import React, { useState, ReactNode, useEffect } from "react";
 
-interface ExpandableTableProps<T> {
+interface translationsProps<T> {
   data: T[];
   columns: {
     header: string;
@@ -22,9 +23,11 @@ export function ExpandableTable<T>({
   columns,
   renderExpandedContent,
   onExplore,
-}: ExpandableTableProps<T>) {
+}: translationsProps<T>) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
 
   const toggleRow = (index: number) => {
     setExpandedIndex(expandedIndex === index ? null : index);
@@ -82,7 +85,7 @@ export function ExpandableTable<T>({
                         className="btn btn-sm btn-outline btn-secondary hover:text-primary-content mr-3"
                         onClick={() => onExplore(row)}
                       >
-                        Explore
+                        {t.translations.EXPLORE}
                       </button>
                     </td>
                     <td>
@@ -112,7 +115,7 @@ export function ExpandableTable<T>({
             <ChevronLeftIcon className="size-6" />
           </button>
           <span className="px-2 text-sm">
-            Page {currentPage} of {totalPages}
+            {t.translations.PAGE} {currentPage} {t.translations.OF} {totalPages}
           </span>
           <button
             className="btn btn-sm btn-ghost"

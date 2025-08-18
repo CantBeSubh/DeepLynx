@@ -39,7 +39,7 @@ namespace deeplynx.business
         /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<IEnumerable<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
+        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
             var dataSources = await _context.DataSources
@@ -67,7 +67,7 @@ namespace deeplynx.business
                     ModifiedBy = d.ModifiedBy,
                     ModifiedAt = d.ModifiedAt,
                     ArchivedAt = d.ArchivedAt,
-                });
+                }).ToList();
         }
 
         /// <summary>

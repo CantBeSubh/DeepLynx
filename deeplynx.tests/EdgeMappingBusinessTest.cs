@@ -39,8 +39,10 @@ namespace deeplynx.tests
 
             _edgeMappingBusiness = new EdgeMappingBusiness(Context);
             _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
-            _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness, _mockRecordBusiness.Object, _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness);
+            _classBusiness = new ClassBusiness(
+                Context, _edgeMappingBusiness, _mockRecordBusiness.Object, 
+                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness);
         }
 
         [Fact]
