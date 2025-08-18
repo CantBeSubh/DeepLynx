@@ -30,6 +30,7 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -47,6 +48,7 @@ jobs:
             --build-arg OKTA_CLIENT_SECRET=${{ secrets._OKTA_CLIENT_SECRET }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
+            --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             .
           
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
@@ -56,6 +58,7 @@ jobs:
             --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
+            --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             .
 
@@ -98,6 +101,7 @@ jobs:
             --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
             --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
