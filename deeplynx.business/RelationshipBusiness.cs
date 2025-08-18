@@ -10,9 +10,9 @@ namespace deeplynx.business;
 
 public class RelationshipBusiness: IRelationshipBusiness
 {
-      private readonly DeeplynxContext _context;
-      private readonly IEdgeMappingBusiness _edgeMappingBusiness;
-      private readonly IEdgeBusiness _edgeBusiness;
+    private readonly DeeplynxContext _context;
+    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
+    private readonly IEdgeBusiness _edgeBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RelationshipBusiness"/> class.
@@ -417,5 +417,78 @@ public class RelationshipBusiness: IRelationshipBusiness
             }
         }
     }
+    /// <summary>
+    /// Validates that all provided relationship names exist in the database for the specified project.
+    /// Used by MetadataBusiness to enforce ontologyMutable settings.
+    /// </summary>
+    /// <param name="projectId">The project ID to search within</param>
+    /// <param name="relationshipNames">List of relationship names to validate</param>
+    /// <returns>List of relationships that were found</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if one or more relationship names not found</exception>
+    /// <exception cref="ArgumentException">Thrown if relationshipNames list is null or empty</exception>
+    public async Task<List<RelationshipResponseDto>> GetRelationshipsByName(long projectId, List<string> relationshipNames)
+    {
+        if (relationshipNames == null || !relationshipNames.Any())
+            throw new ArgumentException("Relationship names list cannot be null or empty", nameof(relationshipNames));
+
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+
+        var cleanRelationshipNames = relationshipNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .ToList();
+
+        if (!cleanRelationshipNames.Any())
+            throw new ArgumentException("No valid relationship names provided", nameof(relationshipNames));
     
+        var existingRelationships = await _context.Relationships
+            .Where(r => r.ProjectId == projectId 
+                        && r.ArchivedAt == null 
+                        && cleanRelationshipNames.Contains(r.Name))
+            .Include(r => r.Origin)
+            .Include(r => r.Destination)
+            .Select(r => new
+            {
+                r.Id,
+                r.Name,
+                r.Description,
+                r.Uuid,
+                r.ProjectId,
+                r.CreatedBy,
+                r.CreatedAt,
+                r.ModifiedBy,
+                r.ModifiedAt,
+                r.ArchivedAt,
+                r.OriginId,
+                r.DestinationId
+            })
+            .ToListAsync();
+
+        // Check for missing relationships
+        var foundRelationshipNames = existingRelationships.Select(r => r.Name).ToHashSet();
+        var missingRelationshipNames = cleanRelationshipNames.Where(name => !foundRelationshipNames.Contains(name)).ToList();
+
+        if (missingRelationshipNames.Any())
+        {
+            throw new KeyNotFoundException(
+                $"Relationships not found with names: {string.Join(", ", missingRelationshipNames)}");
+        }
+
+        // Convert to DTOs (manual mapping to avoid infinite loop with Origin/Destination)
+        return existingRelationships.Select(r => new RelationshipResponseDto
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Description = r.Description,
+            Uuid = r.Uuid,
+            ProjectId = r.ProjectId,
+            CreatedBy = r.CreatedBy,
+            CreatedAt = r.CreatedAt,
+            ModifiedBy = r.ModifiedBy,
+            ModifiedAt = r.ModifiedAt,
+            OriginId = r.OriginId,
+            DestinationId = r.DestinationId,
+            ArchivedAt = r.ArchivedAt
+        }).ToList();
+    }
 }

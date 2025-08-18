@@ -13,4 +13,5 @@ public interface IClassBusiness
     Task<bool> DeleteClass(long projectId, long classId);
     Task<bool> ArchiveClass(long projectId, long classId);
     Task<bool> UnarchiveClass(long projectId, long classId);
+    Task<List<ClassResponseDto>> GetClassesByName(long projectId, List<string> classNames);
 }

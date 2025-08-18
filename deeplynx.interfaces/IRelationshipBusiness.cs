@@ -15,4 +15,6 @@ public interface IRelationshipBusiness
     Task<bool> DeleteRelationship(long projectId, long relationshipId);
     Task<bool> ArchiveRelationship(long projectId, long relationshipId);
     Task<bool> UnarchiveRelationship(long projectId, long relationshipId);
+    Task<List<RelationshipResponseDto>> GetRelationshipsByName(long projectId, List<string> relationshipNames);
+
 }

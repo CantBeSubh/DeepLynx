@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace deeplynx.datalayer.Models;
 
@@ -37,6 +38,36 @@ public partial class Project
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
+    [Column("config", TypeName = "jsonb")]
+    public string ConfigJson { get; set; } = null!;
+
+    /// <summary>
+    /// Strongly-typed access to project configuration.
+    /// Automatically serializes/deserializes from the ConfigJson column.
+    /// </summary>
+    [NotMapped]
+    public ProjectConfig Config
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(ConfigJson))
+                return ProjectConfig.Default;
+
+            try
+            {
+                return JsonSerializer.Deserialize<ProjectConfig>(ConfigJson) ?? ProjectConfig.Default;
+            }
+            catch (JsonException)
+            {
+                // If JSON is invalid, return default config
+                return ProjectConfig.Default;
+            }
+        }
+        set
+        {
+            ConfigJson = JsonSerializer.Serialize(value);
+        }
+    }
 
     [InverseProperty("Project")]
     public virtual ICollection<Class> Classes { get; set; } = new List<Class>();

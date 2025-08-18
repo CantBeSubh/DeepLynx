@@ -25,7 +25,7 @@ public class TagBusiness : ITagBusiness
         _recordMappingBusiness = recordMappingBusiness;
     }
     
-        /// <summary>
+    /// <summary>
     /// Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
@@ -296,4 +296,57 @@ public class TagBusiness : ITagBusiness
         return true;
     }
     
+    /// <summary>
+    /// Validates that all provided tag names exist in the database for the specified project.
+    /// Used by MetadataBusiness to enforce tagsMutable settings.
+    /// </summary>
+    /// <param name="projectId">The project ID to search within</param>
+    /// <param name="tagNames">List of tag names to validate</param>
+    /// <returns>List of tags that were found</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if one or more tag names not found</exception>
+    /// <exception cref="ArgumentException">Thrown if tagNames list is null or empty</exception>
+    public async Task<List<TagResponseDto>> GetTagsByName(long projectId, List<string> tagNames)
+    {
+        if (tagNames == null || !tagNames.Any())
+            throw new ArgumentException("Tag names list cannot be null or empty", nameof(tagNames));
+
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+
+        // Remove duplicates and filter out null/empty values
+        var cleanTagNames = tagNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .ToList();
+
+        if (!cleanTagNames.Any())
+            throw new ArgumentException("No valid tag names provided", nameof(tagNames));
+
+        // Query for existing tags (excluding archived)
+        var existingTags = await _context.Tags
+            .Where(t => t.ProjectId == projectId 
+                        && t.ArchivedAt == null 
+                        && cleanTagNames.Contains(t.Name))
+            .ToListAsync();
+    
+        var foundTagNames = existingTags.Select(t => t.Name).ToHashSet();
+        var missingTagNames = cleanTagNames.Where(name => !foundTagNames.Contains(name)).ToList();
+
+        if (missingTagNames.Any())
+        {
+            throw new KeyNotFoundException(
+                $"Tags not found with names: {string.Join(", ", missingTagNames)}");
+        }
+    
+        return existingTags.Select(t => new TagResponseDto
+        {
+            Id = t.Id,
+            Name = t.Name,
+            ProjectId = t.ProjectId,
+            CreatedBy = t.CreatedBy,
+            CreatedAt = t.CreatedAt,
+            ModifiedBy = t.ModifiedBy,
+            ModifiedAt = t.ModifiedAt,
+            ArchivedAt = t.ArchivedAt
+        }).ToList();
+    }
 }
