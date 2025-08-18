@@ -133,27 +133,45 @@ public class QueryBusiness : IQueryBusiness
             .ToList();
     }
     
+     // Combines two lambda expressions (x => condition1, x => condition2)
+    // into a single lambda (x => condition1 AND condition2).
     private static Expression<Func<T, bool>> And<T>(
-        Expression<Func<T, bool>> left, Expression<Func<T, bool>> right)
+        Expression<Func<T, bool>> left,
+        Expression<Func<T, bool>> right)
     {
         var param = left.Parameters[0];
-        var body = Expression.AndAlso(left.Body, new Replace(right.Parameters[0], param).Visit(right.Body)!);
+        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
+        var body = Expression.AndAlso(left.Body, rightBodyWithLeftParam);
         return Expression.Lambda<Func<T, bool>>(body, param);
     }
 
+    // Same as And<T>, but combines with OR instead of AND.
     private static Expression<Func<T, bool>> Or<T>(
-        Expression<Func<T, bool>> left, Expression<Func<T, bool>> right)
+        Expression<Func<T, bool>> left,
+        Expression<Func<T, bool>> right)
     {
         var param = left.Parameters[0];
-        var body = Expression.OrElse(left.Body, new Replace(right.Parameters[0], param).Visit(right.Body)!);
+        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
+        var body = Expression.OrElse(left.Body, rightBodyWithLeftParam);
         return Expression.Lambda<Func<T, bool>>(body, param);
     }
 
+    // Walks the expression tree and swaps one ParameterExpression for another.
     class Replace : ExpressionVisitor
     {
-        private readonly ParameterExpression from, to;
-        public Replace(ParameterExpression from, ParameterExpression to) { this.from = from; this.to = to; }
-        protected override Expression VisitParameter(ParameterExpression node) => node == from ? to : node;
+        private readonly ParameterExpression from; // the old parameter we want to replace
+        private readonly ParameterExpression to;   // the new parameter we want to use
+
+        public Replace(ParameterExpression from, ParameterExpression to)
+        {
+            this.from = from;
+            this.to = to;
+        }
+
+        // Whenever the visitor encounters a parameter node,
+        // if it's the old one ("from"), replace it with "to".
+        protected override Expression VisitParameter(ParameterExpression node)
+            => node == from ? to : node;
     }
     
     
