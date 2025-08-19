@@ -9,6 +9,7 @@ namespace deeplynx.api.Controllers
     public class ObjectStorageController : ControllerBase
     {
         private readonly IObjectStorageBusiness _objectStorageBusiness;
+        private readonly ILogger<ObjectStorageController> _logger;
 
         public ObjectStorageController(IObjectStorageBusiness objectStorageBusiness)
         {
@@ -34,7 +35,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while fetching all classes.: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -61,7 +62,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while fetching object storage with id {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -88,7 +89,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while creating this object storage: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -114,7 +115,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while updating this object storage {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -138,7 +139,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while deleting this object storage {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -162,7 +163,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while archiving this object storage {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -187,7 +188,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while unarchiving this object storage {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -211,7 +212,7 @@ namespace deeplynx.api.Controllers
             catch (Exception ex)
             {
                 var message = $"An unexpected error occurred while unarchiving this object storage {objectStorageId}: {ex}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
