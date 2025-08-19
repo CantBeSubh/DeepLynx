@@ -5,14 +5,12 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import SavedSearches from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
-import { Cog6ToothIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { format } from "date-fns";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 
@@ -30,13 +28,13 @@ export default function ProjectDetailClient({
   const router = useRouter();
 
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
-  const [widgetModal, setWidgetModal] = useState(false);
+  const [canCustomize, setCanCustomize] = useState(false);
 
-  const projectWidgets: WidgetType[] = [
+  const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
     "RecentActivity",
     "ProjectOverview",
     "TeamMembers",
-  ];
+  ]);
 
   // Sync project session from initial server data
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
@@ -44,6 +42,11 @@ export default function ProjectDetailClient({
     if (!hasLoaded || !project) return;
     setProjectSession({ projectId: project.id!, projectName: project.name });
   }, [hasLoaded, project, setProjectSession]);
+
+  const handleSave = (newWidgets: WidgetType[]) => {
+    setProjectWidgets(newWidgets);
+    localStorage.setItem(`projectWidgets-${projectId}`, JSON.stringify(newWidgets));
+  };
 
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
   if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
@@ -63,7 +66,7 @@ export default function ProjectDetailClient({
 
         <div className="flex w-full mt-6">
           {/* left column */}
-          <div className="w-full md:w-3/5 px-4">
+          <div className={`w-full md:w-3/5 pr-4 ${canCustomize ? "grayed-out" : ""}`}>
             <div className="flex flex-col">
               <LargeSearchBar
                 className="mb-4 px-4"
@@ -103,29 +106,13 @@ export default function ProjectDetailClient({
 
           {/* right column */}
           <div className="w-full md:w-2/5 px-4">
-            <div className="flex justify-end items-center mb-4">
-              <button className="btn btn-outline btn-secondary flex items-center mr-2">
-                <Cog6ToothIcon className="h-6 w-6" />
-                {t.translations.CUSTOMIZE}
-              </button>
-              <button
-                onClick={() => setWidgetModal(true)}
-                className="btn btn-secondary text-primary-content flex items-center"
-              >
-                <PlusIcon className="h-6 w-6" />
-                {t.translations.WIDGET}
-              </button>
-            </div>
-
-            <WidgetCard widgets={projectWidgets} />
+            <WidgetCard
+              widgets={projectWidgets}
+              onSave={handleSave}
+              onCustomizeChange={setCanCustomize}
+            />
           </div>
         </div>
-
-        {/* Create Widget Modal */}
-        <CreateWidget
-          isOpen={widgetModal}
-          onClose={() => setWidgetModal(false)}
-        />
       </main>
     </div>
   );

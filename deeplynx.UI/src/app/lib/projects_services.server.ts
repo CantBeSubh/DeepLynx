@@ -2,8 +2,11 @@
 import "server-only";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 
-const BASE = process.env.BACKEND_BASE_URL!;
-const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
+const BASE = process.env.BACKEND_BASE_URL || "BASE URL IS NOT DEFINED";
+const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "SERVICE TOKEN IS NOT DEFINED";
+
+console.log("BACKEND BASE URL:",BASE)
+console.log("SERVICE TOKEN:",SERVICE_TOKEN)
 
 /** ----- Types ----- */
 export type ProjectDTO = {
@@ -31,6 +34,7 @@ async function asJson<T>(res: Response): Promise<T> {
 /** ===== Server-safe calls (no cookies; safe for prerender/SSR) ===== */
 
 export async function getAllProjectsServer(): Promise<ProjectDTO[]> {
+  
   const res = await fetch(`${BASE}/projects/GetAllProjects`, {
     headers: authHeaders(),
     cache: "no-store", // or: next: { revalidate: 300 } for ISR
