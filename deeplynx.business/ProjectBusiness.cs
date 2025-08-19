@@ -4,11 +4,15 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
+using Serilog;
+using Microsoft.Extensions.Logging;
+
 namespace deeplynx.business;
 
 public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly ILogger<ProjectBusiness> _logger;
 
     private readonly IClassBusiness _classBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
@@ -19,11 +23,14 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="context">The database context used for the record mapping operations.</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
-    public ProjectBusiness(DeeplynxContext context,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness)
+    public ProjectBusiness(DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness)
     {
         _context = context;
+        _logger = logger;
         _classBusiness = classBusiness;
         _dataSourceBusiness = dataSourceBusiness;
+        
+        _logger.LogInformation("Project business initialized");
     }
 
     /// <summary>

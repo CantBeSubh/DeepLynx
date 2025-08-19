@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class HistoricalEdgeController : ControllerBase
     {
         private readonly IHistoricalEdgeBusiness _historicalEdgeBusiness;
+        private readonly ILogger<HistoricalEdgeController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HistoricalEdgeController"/> class
         /// </summary>
         /// <param name="historicalEdgeBusiness">The business logic interface for handling record operations.</param>
-        public HistoricalEdgeController(IHistoricalEdgeBusiness historicalEdgeBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public HistoricalEdgeController(IHistoricalEdgeBusiness historicalEdgeBusiness, ILogger<HistoricalEdgeController> logger)
         {
             _historicalEdgeBusiness = historicalEdgeBusiness;
+            _logger = logger;
         }
         
         /// <summary>
@@ -44,7 +47,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing historical edges: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -76,7 +79,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving historical edge: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -103,7 +106,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving history for edge: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

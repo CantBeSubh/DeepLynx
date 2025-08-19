@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class EdgeMappingController : ControllerBase
     {
         private readonly IEdgeMappingBusiness _eMappingBusiness;
+        private readonly ILogger<EdgeMappingController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="EdgeMappingController"/> class
         /// </summary>
         /// <param name="eMappingBusiness">The business logic interface for handling edge mapping operations.</param>
-        public EdgeMappingController(IEdgeMappingBusiness eMappingBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public EdgeMappingController(IEdgeMappingBusiness eMappingBusiness, ILogger<EdgeMappingController> logger)
         {
             _eMappingBusiness = eMappingBusiness;
+            _logger = logger;
         }
 
         /// <summary>
@@ -43,7 +46,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing all edge mappings: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -69,7 +72,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving edge mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -93,7 +96,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while creating edge mapping: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -119,7 +122,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while updating record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -141,7 +144,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting edge mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -163,7 +166,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving edge mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -185,7 +188,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving edge mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

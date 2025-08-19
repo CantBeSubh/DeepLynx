@@ -16,7 +16,6 @@
       </PackageReference>
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0-preview.5.25277.114" />
       <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0-preview.5.25277.114" />
-      <PackageReference Include="NLog" Version="5.4.0" />
       <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0-preview.5" />
       <PackageReference Include="Okta.AspNetCore" Version="4.6.3" />
     </ItemGroup>

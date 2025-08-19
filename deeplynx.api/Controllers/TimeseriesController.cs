@@ -2,7 +2,6 @@ using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
-using NLog;
 
 namespace deeplynx.api.Controllers
 {
@@ -11,14 +10,17 @@ namespace deeplynx.api.Controllers
     public class TimeseriesController : ControllerBase
     {
         private readonly ITimeseriesBusiness _timeseriesBusiness;
+        private readonly ILogger<TimeseriesController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TimeseriesController"/> class
         /// </summary>
         /// <param name="timeseriesBusiness">The business logic interface for handling time series operations.</param>
-        public TimeseriesController(ITimeseriesBusiness timeseriesBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public TimeseriesController(ITimeseriesBusiness timeseriesBusiness, ILogger<TimeseriesController> logger)
         {
             _timeseriesBusiness = timeseriesBusiness;
+            _logger = logger;
         }
 
         /// <summary>
@@ -43,7 +45,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while querying timeseries table {e}";
-                LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -66,7 +68,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while uploading timeseries file {file.FileName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -89,7 +91,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while starting an upload for timeseries file {request.FileName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -115,7 +117,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while uploading a chunk for timeseries file {uploadId}: {e}";
-                LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -138,7 +140,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while completing a timeseries file upload for {request.FileName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -162,7 +164,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, e);
             }
         }
@@ -185,7 +187,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, e);
             }
         }

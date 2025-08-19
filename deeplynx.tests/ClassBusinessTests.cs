@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Moq;
+using Microsoft.Extensions.Logging;
 using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests
@@ -20,6 +20,7 @@ namespace deeplynx.tests
         private Mock<IRecordBusiness> _recordBusiness = null!;
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
+        private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         public long pid;
         public long did;
 
@@ -33,11 +34,12 @@ namespace deeplynx.tests
             _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
+            _mockLogger = new Mock<ILogger<ProjectBusiness>>();
 
             _classBusiness = new ClassBusiness(
                 Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
                 _recordMappingBusiness.Object, _relationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness.Object);
         }
 
         [Fact]
