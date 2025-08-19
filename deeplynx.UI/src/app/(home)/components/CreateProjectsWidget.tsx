@@ -1,3 +1,6 @@
+import { translations } from "@/app/lib/translations";
+import React from "react";
+
 interface CreateProjectsWidgetProps {
   isOpen: boolean; // Indicates whether the modal is open
   onClose: () => void; // Function to call when closing the modal
@@ -5,6 +8,8 @@ interface CreateProjectsWidgetProps {
 
 // Main CreateProject component
 const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
+  const locale = "en";
+  const t = translations[locale];
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}
@@ -16,7 +21,7 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
             {" "}
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              Create New Project {/* Header for the modal */}
+              {t.translations.CREATE_PROJECT} {/* Header for the modal */}
             </h3>
             {/* Form for creating a new project */}
             <form method="dialog" className="flex flex-col gap-4">
@@ -34,7 +39,8 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
                 {/* Container for file upload */}
                 <label className="form-control">
                   <span className="label-text text-neutral">
-                    Upload .owl file (optional) {/* Label for file upload */}
+                    {t.translations.UPLOAD_PNG_FILE}{" "}
+                    {/* Label for file upload */}
                   </span>
                   <input
                     type="file" // File input for uploading .owl files
@@ -45,8 +51,8 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
 
               {/* Help text with a link to the Wiki */}
               <p className="cursor-pointer text-xs text-neutral">
-                Need Help? Details can be creating or updating a project via an
-                ontology file can be found on our <a className="link">Wiki.</a>
+                {t.translations.NEED_HELP_UPLOADING}{" "}
+                <a className="link">{t.translations.WIKI}</a>
               </p>
             </form>
             {/* Modal Action Buttons */}
@@ -54,7 +60,7 @@ const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
               <button className="btn" onClick={onClose}>
                 {" "}
                 {/* Cancel button calls onClose */}
-                Cancel
+                {t.translations.CANCEL}
               </button>
               <button className="btn btn-primary">Save</button>{" "}
               {/* Save button for saving the project */}

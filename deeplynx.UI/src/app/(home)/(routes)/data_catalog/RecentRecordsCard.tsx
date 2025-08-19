@@ -1,6 +1,10 @@
-import { getRecentlyAddedRecords } from "@/app/lib/user_services";
+"use client";
+
+import { translations } from "@/app/lib/translations";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
+import React from "react";
 import { useEffect, useState } from "react";
 
 export type RecentRecord = {
@@ -21,6 +25,8 @@ const RecentRecordsCard = ({
 }: {
   selectedProjects: string[];
 }) => {
+  const locale = "en";
+  const t = translations[locale];
   const router = useRouter();
   const [records, setRecords] = useState<RecentRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -65,7 +71,9 @@ const RecentRecordsCard = ({
 
   return (
     <div className="bg-base-100 rounded-xl p-4">
-      <h2 className="text-lg text-black mb-4t">Recently Added Records</h2>
+      <h2 className="text-lg text-black mb-4t">
+        {t.translations.RECENTLY_ADDED_RECORDS}
+      </h2>
       <div className="divider m-0 mt-2"></div>
       <ul className="list mt-0">
         {paginatedRecords.map((record, index) => (
@@ -81,7 +89,7 @@ const RecentRecordsCard = ({
             <div className="text-accent-content mb-1">{record.name}</div>
             <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
               <span>
-                Class:{" "}
+                {t.translations.CLASS}
                 <span className="badge badge-info badge-sm text-xs">
                   {record.className}
                 </span>
@@ -90,8 +98,12 @@ const RecentRecordsCard = ({
                 Last Edited:{" "}
                 {formatDate(record.lastUpdatedAt ?? record.createdAt)}
               </span>
-              <span className="ml-4">Project: {record.projectName}</span>
-              <span className="ml-4">Data Source: {record.dataSourceName}</span>
+              <span className="ml-4">
+                {t.translations.PROJECT} {record.projectName}
+              </span>
+              <span className="ml-4">
+                {t.translations.DATA_SOURCE} {record.dataSourceName}
+              </span>
             </div>
           </li>
         ))}
@@ -108,7 +120,7 @@ const RecentRecordsCard = ({
             <ChevronLeftIcon className="size-6" />
           </button>
           <span className="px-2 text-sm">
-            Page {currentPage} of {totalPages}
+            {t.translations.PAGE} {currentPage} {t.translations.OF} {totalPages}
           </span>
           <button
             className="btn btn-sm btn-ghost"

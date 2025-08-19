@@ -28,7 +28,7 @@ interface SideMenuProps {
   onToggle: (isCollapsed: boolean) => void;
 }
 
-// Main SideMenu component
+// Main translations component
 const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
   const t = translations[locale];
@@ -123,7 +123,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             >
               <FolderIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.DATA_CATALOG}</p>
+                <p className="ml-2">{t.translations.DATA_CATALOG}</p>
               )}
             </Link>
           </li>
@@ -131,7 +131,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <Link href={""} className={getItemClass("/upload_center")}>
               <ArrowUpTrayIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.UPLOAD_CENTER}</p>
+                <p className="ml-2">{t.translations.UPLOAD_CENTER}</p>
               )}
             </Link>
           </li>
@@ -150,7 +150,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             >
               <RectangleGroupIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.PROJECT_MANAGEMENT}</p>
+                <p className="ml-2">{t.translations.PROJECT_MANAGEMENT}</p>
               )}
             </Link>
           </li>
@@ -163,7 +163,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             >
               <BookmarkSquareIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.SAVED_SEARCHES}</p>
+                <p className="ml-2">{t.translations.SAVED_SEARCHES}</p>
               )}
             </Link>
           </li>
@@ -175,7 +175,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             >
               <PresentationChartLineIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.TIMESERIES_VIEWER}</p>
+                <p className="ml-2">{t.translations.TIMESERIES_VIEWER}</p>
               )}
             </Link>
           </li>
@@ -183,7 +183,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <Link href={""} className={getItemClass("/project_settings")}>
               <AdjustmentsHorizontalIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.SideMenu.PROJECT_SETINGS}</p>
+                <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
               )}
             </Link>
           </li>
@@ -201,7 +201,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 className={getItemClass("/settings")}
               >
                 <Cog6ToothIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.SideMenu.SETTINGS}</p>}
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.SETTINGS}</p>
+                )}
               </Link>
             </li>
             <li className="mt-2">
@@ -211,7 +213,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 className={getItemClass("/help")}
               >
                 <QuestionMarkCircleIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.SideMenu.HELP}</p>}
+                {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}
               </Link>
             </li>
             <li className="mt-2">
@@ -221,7 +223,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 className={getItemClass("/contact")}
               >
                 <ChatBubbleLeftRightIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.SideMenu.CONTACT}</p>}
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.CONTACT}</p>
+                )}
               </Link>
             </li>
             <li className="mt-2">
@@ -232,7 +236,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               >
                 <BugAntIcon className="size-6" />
                 {!isCollapsed && (
-                  <p className="ml-2">{t.SideMenu.FILE_A_BUG}</p>
+                  <p className="ml-2">{t.translations.FILE_A_BUG}</p>
                 )}
               </Link>
             </li>

@@ -6,7 +6,7 @@ const GraphWidget = () => {
   const t = translations[locale];
   return (
     <div className="card-body">
-      <h2 className="card-title">{t.WidgetCards.GRAPH}</h2>
+      <h2 className="card-title">{t.translations.GRAPH}</h2>
     </div>
   );
 };

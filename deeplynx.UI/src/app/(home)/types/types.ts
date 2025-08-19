@@ -40,18 +40,6 @@ export type FileViewerTableRow = {
   fileSize?: number;
   select?: boolean;
   associatedRecords?: string[];
-
-    // id: number;
-    // fileName: string;
-    // fileDescription: string;
-    // fileType: string;
-    // timeseries: boolean;
-    // fileSize: number;
-    // dateModified: string;
-    // select?: boolean;
-    // tags: string[];
-    // lastEdit: string;
-    // associatedRecords?: string[];
   };
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;

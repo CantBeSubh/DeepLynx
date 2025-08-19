@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class RecordController : ControllerBase
     {
         private readonly IRecordBusiness _recordBusiness;
+        private readonly ILogger<RecordController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RecordController"/> class
         /// </summary>
         /// <param name="recordBusiness">The business logic interface for handling record operations.</param>
-        public RecordController(IRecordBusiness recordBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public RecordController(IRecordBusiness recordBusiness, ILogger<RecordController> logger)
         {
             _recordBusiness = recordBusiness;
+            _logger = logger;
         }
         
         /// <summary>
@@ -40,7 +43,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing records: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -66,7 +69,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -92,7 +95,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while creating record: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -118,7 +121,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while creating records: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -144,7 +147,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while updating record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -166,7 +169,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -188,7 +191,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -210,7 +213,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -233,7 +236,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while attaching tag {tagId} to record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -256,7 +259,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unattaching tag {tagId} from record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

@@ -1,8 +1,6 @@
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
-using NLog;
-using System.Threading.Tasks;
 
 namespace deeplynx.api.Controllers
 {
@@ -11,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class KuzuDatabaseManagerController : ControllerBase
     {
         private readonly IKuzuDatabaseManager _kuzuDatabaseManager;
+        private readonly ILogger<KuzuDatabaseManagerController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="KuzuDatabaseManagerController"/> class
         /// </summary>
         /// <param name="kuzuDatabaseManager">The business logic interface for handling kuzu database operations.</param>
-        public KuzuDatabaseManagerController(IKuzuDatabaseManager kuzuDatabaseManager)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public KuzuDatabaseManagerController(IKuzuDatabaseManager kuzuDatabaseManager, ILogger<KuzuDatabaseManagerController> logger)
         {
             _kuzuDatabaseManager = kuzuDatabaseManager;
+            _logger = logger;
         }
 
 
@@ -52,7 +53,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while exporting data to the Kuzu database: {e.Message}";
-                LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -84,7 +85,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while querying the Kuzu database: {e.Message}";
-                LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -116,7 +117,7 @@ namespace deeplynx.api.Controllers
             catch (Exception e)
             {
                 var message = $"An error occurred while retrieving nodes within depth: {e.Message}";
-                LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

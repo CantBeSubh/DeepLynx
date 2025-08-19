@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class RecordMappingController : ControllerBase
     {
         private readonly IRecordMappingBusiness _rMappingBusiness;
+        private readonly ILogger<RecordMappingController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RecordMappingController"/> class
         /// </summary>
         /// <param name="rMappingBusiness">The business logic interface for handling record mapping operations.</param>
-        public RecordMappingController(IRecordMappingBusiness rMappingBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public RecordMappingController(IRecordMappingBusiness rMappingBusiness, ILogger<RecordMappingController> logger)
         {
             _rMappingBusiness = rMappingBusiness;
+            _logger = logger;
         }
 
         /// <summary>
@@ -43,7 +46,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing all record mappings: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -69,7 +72,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -91,7 +94,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while creating record mapping: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -117,7 +120,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while updating record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -139,7 +142,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -161,7 +164,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -183,7 +186,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving record mapping {mappingId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

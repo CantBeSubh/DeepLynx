@@ -17,13 +17,20 @@ namespace deeplynx.api.Controllers
     public class QueryController : ControllerBase
     {
         private readonly IQueryBusiness _queryBusiness;
+        private readonly ILogger<QueryController> _logger;
 
-        public QueryController(IQueryBusiness queryBusiness)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="queryBusiness">The business logic interface for handling querying operations.</param>
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public QueryController(IQueryBusiness queryBusiness, ILogger<QueryController> logger)
         {
             _queryBusiness = queryBusiness;
+            _logger = logger;
         }
         /// <summary>
-        /// Google-type search records 
+        /// Full text search for records
         /// </summary>
         /// <param name="userQuery">String phrase entered by user</param>
         /// <returns>List of historical record response DTOs</returns>
@@ -39,30 +46,31 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while searching for records.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         
         }
         
+        
         /// <summary>
-        /// Query builder
+        /// Build a query for records
         /// </summary>
         /// <param name="filterArray">Array of QueryComponent dtos</param>
         /// <returns>List of historical record response DTOs</returns>
-        [HttpPost("QueryBuilder")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> AdvancedQuery(
-            [FromBody] AdvancedQueryRequestDto[] filterArray)
+        [HttpPost("BuildAQuery")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> BuildAQuery(
+            [FromBody] CustomQueryRequestDto[] filterArray)
         {
             try
             {
-                var records = _queryBusiness.BuildQuery(filterArray);
+                var records = _queryBusiness.BuildAQuery(filterArray);
                 return Ok(records);
             }
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while searching for records.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
 

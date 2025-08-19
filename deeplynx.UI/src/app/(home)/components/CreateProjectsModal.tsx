@@ -1,4 +1,4 @@
-import { createProject } from "@/app/lib/projects_services";
+import { createProject } from "@/app/lib/projects_services.client";
 import { translations } from "@/app/lib/translations";
 import React from "react";
 import { useState } from "react";
@@ -78,7 +78,7 @@ const CreateProject = ({
             {" "}
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-neutral">
-              {t.CreateProjectModal.CREATE_PROJECT}
+              {t.translations.CREATE_PROJECT}
             </h3>
             {/* Form for creating a new project */}
             <form
@@ -91,7 +91,7 @@ const CreateProject = ({
             >
               <input
                 type="text"
-                placeholder={t.CreateProjectModal.NAME}
+                placeholder={t.translations.NAME}
                 className="input input-primary w-full"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -99,13 +99,13 @@ const CreateProject = ({
               />
               <input
                 type="text"
-                placeholder={t.CreateProjectModal.ABBREVIATION}
+                placeholder={t.translations.ABBREVIATION}
                 className="input input-primary w-full"
                 value={abbreviation}
                 onChange={(e) => setAbbreviation(e.target.value)}
               />
               <textarea
-                placeholder={t.CreateProjectModal.DESCRIPTION} // Placeholder for project description
+                placeholder={t.translations.DESCRIPTION} // Placeholder for project description
                 className="textarea textarea-primary w-full" // Textarea styling
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -126,18 +126,18 @@ const CreateProject = ({
 
               {/* Help text with a link to the Wiki */}
               <p className="cursor-pointer text-xs text-neutral">
-                {t.CreateProjectModal.NEED_HELP}{" "}
-                <a className="link">{t.CreateProjectModal.WIKI}</a>
+                {t.translations.NEED_HELP}{" "}
+                <a className="link">{t.translations.WIKI}</a>
               </p>
               {/* Modal Action Buttons */}
               <div className="modal-action">
                 <button className="btn" onClick={onClose}>
                   {" "}
                   {/* Cancel button calls onClose */}
-                  {t.CreateProjectModal.CANCEL}
+                  {t.translations.CANCEL}
                 </button>
                 <button type="submit" className="btn btn-primary">
-                  {t.CreateProjectModal.CREATE}
+                  {t.translations.CREATE}
                 </button>{" "}
                 {/* Save button for saving the project */}
               </div>
