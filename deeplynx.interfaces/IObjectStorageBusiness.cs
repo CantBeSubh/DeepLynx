@@ -18,5 +18,6 @@ public interface IObjectStorageBusiness
     Task<bool>  DeleteObjectStorage(long projectId, long objectStorageId);
     Task<bool> ArchiveObjectStorage(long projectId, long objectStorageId);
     Task<bool> UnarchiveObjectStorage(long projectId, long objectStorageId);
+    Task<ObjectStorageResponseDto> ChangeDefaultObjectStorage(long projectId, long objectStorageId);
 
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -28,6 +29,7 @@ namespace deeplynx.tests
         public long destinationRecordId;
         public long destinationRecordId2;
         public long relationshipId;
+        public long os1;
 
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -329,6 +331,7 @@ namespace deeplynx.tests
             {
                 ProjectId = pid,
                 DataSourceId = dsid,
+                ObjectStorageId = os1,
                 Properties = "{\"test\": \"Updated destination_value\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 Name = "New Destination",
@@ -373,6 +376,7 @@ namespace deeplynx.tests
             {
                 ProjectId = pid,
                 DataSourceId = dsid,
+                ObjectStorageId = os1,
                 Properties = "{\"test\": \"Updated destination_value\"}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 Name = "New Destination",
@@ -659,11 +663,25 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
+            
+            var config = new JsonObject();
+            var objectStorage = new ObjectStorage
+            {
+                Name = "Object Storage 1",
+                Type = "filesystem",
+                Config = config.ToString(),
+                ProjectId = pid,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.ObjectStorages.Add(objectStorage);
+            await Context.SaveChangesAsync();
+            os1 = objectStorage.Id;
 
             var originRecord = new Record
             {
                 ProjectId = pid,
                 DataSourceId = dsid,
+                ObjectStorageId = os1,
                 ClassId = testClass.Id,
                 Properties = "{\"test\": \"origin_value\"}",
                 Name = "Origin",
@@ -677,6 +695,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             {
                 ProjectId = pid,
                 DataSourceId = dsid,
+                ObjectStorageId = os1,
                 ClassId = testClass.Id,
                 Properties = "{\"test\": \"destination_value\"}", 
                 Name = "Destination 1",
@@ -691,6 +710,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             {
                 ProjectId = pid,
                 DataSourceId = dsid,
+                ObjectStorageId = os1,
                 Properties = "{\"test\": \"destination2_value\"}",
                 Name = "Destination 2",
                 Description = "Destination Description 2",

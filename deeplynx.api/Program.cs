@@ -68,6 +68,7 @@ builder.Services.AddDbContext<DeeplynxContext>(
 );
 
 builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
+builder.Services.AddTransient<IObjectStorageBusiness, ObjectStorageBusiness>();
 builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
 builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
 builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();

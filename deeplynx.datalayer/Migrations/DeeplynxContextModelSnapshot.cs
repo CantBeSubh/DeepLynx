@@ -752,6 +752,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("created_by");
 
+                    b.Property<bool>("Default")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default");
+
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("modified_at");
@@ -781,7 +785,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
 
-                    b.ToTable("object_storage", "deeplynx");
+                    b.ToTable("object_storages", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
@@ -1716,9 +1720,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Edges");
 
-                    b.Navigation("ObjectStorages");
-
                     b.Navigation("Events");
+
+                    b.Navigation("ObjectStorages");
 
                     b.Navigation("RecordMappings");
 

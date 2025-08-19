@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -20,6 +21,7 @@ namespace deeplynx.tests
         public long TestProjectId;
         public long TestClassId;
         public long TestDataSourceId;
+        public long os1;
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -365,6 +367,18 @@ namespace deeplynx.tests
             };
             Context.Projects.Add(secondProject);
             await Context.SaveChangesAsync();
+            
+            var config = new JsonObject();
+            var secondObjectStorage = new ObjectStorage
+            {
+                Name = "Object Storage 1",
+                Type = "filesystem",
+                Config = config.ToString(),
+                ProjectId = secondProject.Id,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.ObjectStorages.Add(secondObjectStorage);
+            await Context.SaveChangesAsync();
 
             // Create additional class and datasource for second project
             var secondClass = new Class
@@ -390,6 +404,7 @@ namespace deeplynx.tests
                 Name = "Multi Project Record 1",
                 ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
+                ObjectStorageId = os1,
                 ClassId = TestClassId,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -402,6 +417,7 @@ namespace deeplynx.tests
                 Name = "Multi Project Record 2",
                 ProjectId = secondProject.Id,
                 DataSourceId = secondDataSource.Id,
+                ObjectStorageId = os1,
                 ClassId = secondClass.Id,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -418,6 +434,8 @@ namespace deeplynx.tests
                 RecordId = record1.Id,
                 Name = record1.Name,
                 ProjectId = TestProjectId,
+                ObjectStorageId = os1,
+                ObjectStorageName = secondProject.Name,
                 ProjectName = "Test Project",
                 Properties = record1.Properties,
                 ClassName = "Test Class",
@@ -434,6 +452,8 @@ namespace deeplynx.tests
                 RecordId = record2.Id,
                 Name = record2.Name,
                 ProjectId = secondProject.Id,
+                ObjectStorageId = secondObjectStorage.Id,
+                ObjectStorageName = secondObjectStorage.Name,
                 ProjectName = secondProject.Name,
                 Properties = record2.Properties,
                 DataSourceName = secondDataSource.Name,
@@ -539,11 +559,26 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestDataSourceId = testDataSource.Id;
             
+            var config = new JsonObject();
+            var objectStorage = new ObjectStorage
+            {
+                Name = "Object Storage 1",
+                Type = "filesystem",
+                Config = config.ToString(),
+                ProjectId = TestProjectId,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.ObjectStorages.Add(objectStorage);
+            await Context.SaveChangesAsync();
+            os1 = objectStorage.Id;
+            
+            
             var testRecord = new Record
             {
                 Name = "Test Record",
                 ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
+                ObjectStorageId = os1,
                 ClassId = TestClassId,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),

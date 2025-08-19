@@ -1,5 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -7,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace deeplynx.datalayer.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateObjectStorageTable : Migration
+    public partial class UpdateObjectStorages : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -92,6 +91,20 @@ namespace deeplynx.datalayer.Migrations
                 principalTable: "object_storage",
                 principalColumn: "id",
                 onDelete: ReferentialAction.Cascade);
+            
+            migrationBuilder.RenameTable(
+                name: "object_storage",
+                schema: "deeplynx",
+                newName: "object_storages",
+                newSchema: "deeplynx");
+
+            migrationBuilder.AddColumn<bool>(
+                name: "default",
+                schema: "deeplynx",
+                table: "object_storages",
+                type: "boolean",
+                nullable: false,
+                defaultValue: false);
         }
 
         /// <inheritdoc />
@@ -125,6 +138,17 @@ namespace deeplynx.datalayer.Migrations
                 name: "object_storage_name",
                 schema: "deeplynx",
                 table: "historical_records");
+            
+            migrationBuilder.DropColumn(
+                name: "default",
+                schema: "deeplynx",
+                table: "object_storages");
+
+            migrationBuilder.RenameTable(
+                name: "object_storages",
+                schema: "deeplynx",
+                newName: "object_storage",
+                newSchema: "deeplynx");
         }
     }
 }

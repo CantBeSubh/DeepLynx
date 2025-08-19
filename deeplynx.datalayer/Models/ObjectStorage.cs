@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("object_storage", Schema = "deeplynx")]
+[Table("object_storages", Schema = "deeplynx")]
 [Index("Id", Name = "idx_object_storage_id")]
 public partial class ObjectStorage
 {

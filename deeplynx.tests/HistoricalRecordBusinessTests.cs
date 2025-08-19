@@ -24,6 +24,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public long cid;
     public long rid;
     public long rid2;
+    public long os1;
+    public long os2;
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     
@@ -151,6 +153,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Record Late",
             Description = "Test record late for unit tests",
             OriginalId = "og_idlate",
+            ObjectStorageId = os1,
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue late" }),
             ProjectId = pid,
             DataSourceId = did,
@@ -419,10 +422,35 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
+        var config = new JsonObject();
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Object Storage 1",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage);
+        
+        var objectStorage2 = new ObjectStorage
+        {
+            Name = "Object Storage 2",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid2,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage2);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
+        os2 = objectStorage2.Id;
+        
         var testRecord = new Record
         {
             Name = "Test Record",
             Description = "Test record for unit tests",
+            ObjectStorageId = os1,
             OriginalId = "og_id",
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
             ProjectId = project.Id,
@@ -438,6 +466,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Record 2",
             Description = "Test record 2 for unit tests",
             OriginalId = "og_id2",
+            ObjectStorageId = os1,
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
@@ -451,6 +480,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Record 3",
             Description = "Test record 3 for unit tests",
             OriginalId = "og_id3",
+            ObjectStorageId = os2,
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
             ProjectId = project2.Id,
             DataSourceId = dataSource2.Id,
@@ -465,6 +495,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Record 4",
             Description = "Test record 4 for unit tests",
             OriginalId = "og_id4",
+            ObjectStorageId = os2,
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
             ProjectId = project2.Id,
             DataSourceId = dataSource3.Id,

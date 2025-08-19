@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -23,6 +24,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public long eid4;
     public long dsid;
     public long dsid2;
+    public long os1;
+    public long os2;
     public long originRecordId;
     public long originRecordId2;
     public long destinationRecordId;
@@ -309,11 +312,36 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         Context.Classes.Add(testClass);
         Context.Classes.Add(testClass2);
         await Context.SaveChangesAsync();
+        
+        var config = new JsonObject();
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Object Storage 1",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage);
+        
+        var objectStorage2 = new ObjectStorage
+        {
+            Name = "Object Storage 2",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid2,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage2);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
+        os2 = objectStorage2.Id;
 
         var originRecord = new Record
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            ObjectStorageId = os1,
             ClassId = testClass.Id,
             Properties = "{\"test\": \"origin_value\"}",
             Name = "Origin",
@@ -326,6 +354,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             ProjectId = pid2,
             DataSourceId = dsid2,
+            ObjectStorageId = os2,
             ClassId = testClass2.Id,
             Properties = "{\"test\": \"origin_value 2\"}",
             Name = "Origin 2",
@@ -340,6 +369,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            ObjectStorageId = os1,
             ClassId = testClass.Id,
             Properties = "{\"test\": \"destination_value\"}", 
             Name = "Destination 1",
@@ -351,6 +381,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             ProjectId = pid2,
             DataSourceId = dsid2,
+            ObjectStorageId = os2,
             ClassId = testClass2.Id,
             Properties = "{\"test\": \"destination_value 3\"}", 
             Name = "Destination 3",
@@ -366,6 +397,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             ProjectId = pid,
             DataSourceId = dsid,
+            ObjectStorageId = os1,
             Properties = "{\"test\": \"destination2_value\"}",
             Name = "Destination 2",
             Description = "Destination Description 2",

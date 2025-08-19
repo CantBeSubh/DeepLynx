@@ -131,12 +131,27 @@ public class ProjectBusiness : IProjectBusiness
         
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
+        
+        var config = new JsonObject();
+        if (defaultObjectStorageMethod == "azure_object")
+        {
+            config["mountPath"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_MOUNT_PATH");
+        }
+        else if (defaultObjectStorageMethod == "filesystem")
+        {
+            config["mountPath"] =  Environment.GetEnvironmentVariable("FILESYSTEM_STORAGE_DIRECTORY");
+        }
+        else if (defaultObjectStorageMethod == "aws_s3")
+        {
+            config["mountPath"] = Environment.GetEnvironmentVariable("AWS_S3_MOUNT_PATH");
+        }
+        
         if (defaultObjectStorageMethod != null)
         {
             var objectStorageRequestDto = new CreateObjectStorageRequestDto
             {
                 Name = "Instance Default",
-                Type =  defaultObjectStorageMethod,
+                Config = config
             };
             await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
         }

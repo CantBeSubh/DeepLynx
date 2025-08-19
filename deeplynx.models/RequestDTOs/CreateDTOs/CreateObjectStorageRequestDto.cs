@@ -11,6 +11,5 @@ public class CreateObjectStorageRequestDto
     public string Name { get; set; }
     
     [Required]
-    [JsonPropertyName("type")]
-    public string Type { get; set; }
+    public JsonObject Config { get; set; }
 }

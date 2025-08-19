@@ -148,12 +148,29 @@ public class RecordBusiness : IRecordBusiness
         {
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
+
+        if (dto.ObjectStorageId == null)
+        {
+            var defaultObjectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Default == true);
+            if (defaultObjectStorage == null)
+            {
+                throw new KeyNotFoundException($"Object storage ID required. Object Storage ID not provided and no default object storage found in project {projectId}");
+            }
+            dto.ObjectStorageId = defaultObjectStorage.Id;
+        }
+        
+        var referencedObjectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == dto.ObjectStorageId);
+        if (referencedObjectStorage == null)
+        {
+            throw new KeyNotFoundException($"Object storage with ID {dto.ObjectStorageId} does not exist");
+        }
         
         var record = new Record
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             Uri = dto.Uri,
+            ObjectStorageId = dto.ObjectStorageId.Value,
             Properties = dto.Properties.ToString()!,
             OriginalId = dto.OriginalId,
             Name = dto.Name,
@@ -172,6 +189,7 @@ public class RecordBusiness : IRecordBusiness
             Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
+            ObjectStorageId = record.ObjectStorageId,
             OriginalId = record.OriginalId,
             Name = record.Name,
             ClassId = record.ClassId,
@@ -207,10 +225,29 @@ public class RecordBusiness : IRecordBusiness
            throw new Exception("Unable to bulk create records: no records selected for creation");
        }
        
+       // sets the ObjectStorageId to default if one is not provided
+       foreach (var dto in records)
+       {
+           if (dto.ObjectStorageId == null)
+           {
+               var defaultStorageId = await _context.ObjectStorages
+                   .Where(os => os.ProjectId == projectId && os.Default)
+                   .Select(os => (long?)os.Id)
+                   .FirstOrDefaultAsync();
+
+               if (defaultStorageId == null)
+               {
+                   throw new Exception("No object storage ID provided and no default found for this project.");
+               }
+
+               dto.ObjectStorageId = defaultStorageId;
+           }
+       }
+       
        // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
        var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
-                                          original_id, properties, class_id, created_at)
+                                          original_id, properties, class_id, object_storage_id, created_at)
             VALUES {0}
             ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
                 name = COALESCE(EXCLUDED.name, records.name),
@@ -218,6 +255,7 @@ public class RecordBusiness : IRecordBusiness
                 uri = COALESCE(EXCLUDED.uri, records.uri),
                 properties = COALESCE(EXCLUDED.properties, records.properties),
                 class_id = COALESCE(EXCLUDED.class_id, records.class_id),
+                object_storage_id = COALESCE(EXCLUDED.object_storage_id,  records.object_storage_id),
                 modified_at = @now
             RETURNING *;                                                          
         ";
@@ -239,12 +277,13 @@ public class RecordBusiness : IRecordBusiness
            new NpgsqlParameter($"@p{i}_props", JsonSerializer.Serialize(dto.Properties)),
            new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
            new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
+           new NpgsqlParameter($"@p{i}_object_storage", dto.ObjectStorageId),
        }));
 
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @now)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -281,6 +320,7 @@ public class RecordBusiness : IRecordBusiness
         record.Uri = dto.Uri ?? record.Uri;
         record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
         record.OriginalId = dto.OriginalId ?? record.OriginalId;
+        record.ObjectStorageId = dto.ObjectStorageId ?? record.ObjectStorageId;
         record.Name = dto.Name ?? record.Name;
         record.Description = dto.Description ?? record.Description;
         record.ClassId = dto.ClassId ?? record.ClassId;
@@ -296,6 +336,7 @@ public class RecordBusiness : IRecordBusiness
             Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
+            ObjectStorageId = record.ObjectStorageId,
             OriginalId = record.OriginalId,
             Name = record.Name,
             ClassId = record.ClassId,
