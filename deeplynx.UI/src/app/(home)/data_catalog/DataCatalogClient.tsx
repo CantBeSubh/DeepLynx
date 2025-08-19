@@ -110,7 +110,7 @@ export default function DataCatalogClient({
     setSearchTerm("");
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: any) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Clear all fetch failed:", e);
       }
@@ -158,7 +158,7 @@ export default function DataCatalogClient({
     if (activeFilters.length > 0) return; // search takes precedence
 
     const ctrl = new AbortController();
-    fetchRecordsForSelection(ctrl.signal).catch((e: any) => {
+    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
       if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
         console.error("Fetch on selection change failed:", e);
       }

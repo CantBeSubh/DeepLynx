@@ -1,4 +1,5 @@
 // app/(home)/(routes)/data_catalog/page.tsx
+import { FileViewerTableRow } from "../types/types";
 import DataCatalogClient from "./DataCatalogClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 
@@ -7,7 +8,7 @@ type ProjectDTO = { id: number | string; name: string };
 export default async function Page({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
   const fromProject =
@@ -23,7 +24,7 @@ export default async function Page({
 
   // Let the client fetch records after mount based on the dropdown selection
   const initialSelectedProjects = fromProject ? [fromProject] : [];
-  const initialRecords = [] as any[];
+  const initialRecords = [] as FileViewerTableRow[];
 
   return (
     <DataCatalogClient

@@ -10,7 +10,12 @@ import RecentActivityWidget from "./WidgetCards/RecentActivity";
 import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
 import TeamMembersWidget from "./WidgetCards/TeamMembers";
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
-import { Cog6ToothIcon, PlusIcon, XMarkIcon, DocumentCheckIcon } from "@heroicons/react/24/outline";
+import {
+  Cog6ToothIcon,
+  PlusIcon,
+  XMarkIcon,
+  DocumentCheckIcon,
+} from "@heroicons/react/24/outline";
 
 export type WidgetType =
   | "DataOverview"
@@ -26,7 +31,11 @@ interface WidgetCardProps {
   onCustomizeChange: (canCustomize: boolean) => void;
 }
 
-const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, onSave, onCustomizeChange }) => {
+const WidgetCard: React.FC<WidgetCardProps> = ({
+  widgets,
+  onSave,
+  onCustomizeChange,
+}) => {
   const [currentWidgets, setCurrentWidgets] = useState<WidgetType[]>(widgets);
   const [initialWidgets, setInitialWidgets] = useState<WidgetType[]>(widgets);
   const [canCustomize, setCanCustomize] = useState<boolean>(false);
@@ -39,7 +48,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({ widgets, onSave, onCustomizeCha
       setInitialWidgets(currentWidgets);
     }
     onCustomizeChange(canCustomize);
-  }, [canCustomize]);
+  }, [canCustomize, currentWidgets, onCustomizeChange]);
 
   const renderWidgets = (widget: WidgetType) => {
     switch (widget) {
