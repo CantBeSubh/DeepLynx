@@ -17,6 +17,7 @@ import { translations } from "@/app/lib/translations";
 type GenericTableProps<T extends object> = {
   columns: Column<T>[];
   data: T[];
+  title?: string;
   filterPlaceholder?: string;
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
@@ -33,6 +34,7 @@ type GenericTableProps<T extends object> = {
 const GenericTable = <T extends object>({
   columns,
   data,
+  title,
   filterPlaceholder,
   isAnyRowSelected,
   deleteSelectedRows,
@@ -220,6 +222,7 @@ const GenericTable = <T extends object>({
         bordered ? "rounded-box border border-neutral-content" : ""
       } p-2`}
     >
+      {title && <h2 className="text-xl font-bold">{title}</h2>}
       <div className="my-4 flex justify-between items-center">
         {searchBar && (
           <SearchInput
