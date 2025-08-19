@@ -38,6 +38,7 @@ public partial class Project
 
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
+    
     [Column("config", TypeName = "jsonb")]
     public string ConfigJson { get; set; } = null!;
 

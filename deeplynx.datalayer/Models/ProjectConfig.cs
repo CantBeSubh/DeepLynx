@@ -21,13 +21,7 @@ public class ProjectConfig
     public bool TagsMutable { get; set; } = false;
     
     public ProjectConfig() { }
-
-    /// <summary>
-    /// Creates a new ProjectConfig with specified values.
-    /// </summary>
-    /// <param name="edgeRecordsMutable">Allow edge operations to create missing records</param>
-    /// <param name="ontologyMutable">Allow operations to create missing classes/relationships</param>
-    /// <param name="tagsMutable">Allow operations to create missing tags</param>
+    
     public ProjectConfig(bool edgeRecordsMutable, bool ontologyMutable, bool tagsMutable)
     {
         EdgeRecordsMutable = edgeRecordsMutable;
