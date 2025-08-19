@@ -2,8 +2,8 @@ import { translations } from "@/app/lib/translations";
 import React from "react";
 
 interface AddMemberModalProps {
-  isOpen: boolean; // Indicates whether the modal is open
-  onClose: () => void; // Function to call when closing the modal
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 // Main CreateWidget component

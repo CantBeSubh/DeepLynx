@@ -1,7 +1,6 @@
 // app/(home)/layout.tsx
 import React, { Suspense } from "react";
 import LayoutShell from "../(home)/components/LayoutShell";
-import PageAreaSkeleton from "./PageAreaSkeleton";
 
 // If you have client providers, wrap them here (but they must not suspend)
 import { UserSessionProvider } from "../contexts/UserSessionProvider";
