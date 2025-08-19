@@ -3452,5 +3452,20 @@ BEGIN
     VALUES ('20250813203941_AddEventSystemTables', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250818151955_AddProjectConfigColumn') THEN
+    ALTER TABLE deeplynx.projects ADD config jsonb NOT NULL DEFAULT ('{"edgeRecordsMutable":false,"ontologyMutable":false,"tagsMutable":false}'::jsonb);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250818151955_AddProjectConfigColumn') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250818151955_AddProjectConfigColumn', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
