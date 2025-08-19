@@ -30,7 +30,7 @@ namespace deeplynx.api.Controllers
             _logger = logger;
         }
         /// <summary>
-        /// Google-type search records 
+        /// Full text search for records
         /// </summary>
         /// <param name="userQuery">String phrase entered by user</param>
         /// <returns>List of historical record response DTOs</returns>
@@ -52,18 +52,19 @@ namespace deeplynx.api.Controllers
         
         }
         
+        
         /// <summary>
-        /// Query builder
+        /// Build a query for records
         /// </summary>
         /// <param name="filterArray">Array of QueryComponent dtos</param>
         /// <returns>List of historical record response DTOs</returns>
-        [HttpPost("QueryBuilder")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> AdvancedQuery(
-            [FromBody] AdvancedQueryRequestDto[] filterArray)
+        [HttpPost("BuildAQuery")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> BuildAQuery(
+            [FromBody] CustomQueryRequestDto[] filterArray)
         {
             try
             {
-                var records = _queryBusiness.BuildQuery(filterArray);
+                var records = _queryBusiness.BuildAQuery(filterArray);
                 return Ok(records);
             }
             catch (Exception exc)
