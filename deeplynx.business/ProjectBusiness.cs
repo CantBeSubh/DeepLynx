@@ -29,8 +29,6 @@ public class ProjectBusiness : IProjectBusiness
         _logger = logger;
         _classBusiness = classBusiness;
         _dataSourceBusiness = dataSourceBusiness;
-        
-        _logger.LogInformation("Project business initialized");
     }
 
     /// <summary>
