@@ -30,7 +30,7 @@ public class ClassBusiness : IClassBusiness
         IRecordBusiness recordBusiness,
         IRecordMappingBusiness recordMappingBusiness,
         IRelationshipBusiness relationshipBusiness
-        )
+    )
     {
         _context = context;
         _edgeMappingBusiness = edgeMappingBusiness;
@@ -381,6 +381,59 @@ public class ClassBusiness : IClassBusiness
         };
 
         return await CreateClass(projectId, classDto);
-    }
+    } 
+    /// <summary>
+    /// Validates that all provided class names exist in the database for the specified project.
+    /// Used by MetadataBusiness to enforce ontologyMutable settings.
+    /// </summary>
+    /// <param name="projectId">The project ID to search within</param>
+    /// <param name="classNames">List of class names to validate</param>
+    /// <returns>List of classes that were found</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if one or more class names not found</exception>
+    /// <exception cref="ArgumentException">Thrown if classNames list is null or empty</exception>
+    public async Task<List<ClassResponseDto>> GetClassesByName(long projectId, List<string> classNames)
+    {
+        if (classNames == null || !classNames.Any())
+            throw new ArgumentException("Class names list cannot be null or empty", nameof(classNames));
+
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
     
+        var cleanClassNames = classNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Distinct()
+            .ToList();
+
+        if (!cleanClassNames.Any())
+            throw new ArgumentException("No valid class names provided", nameof(classNames));
+
+        // Query for existing classes (excluding archived)
+        var existingClasses = await _context.Classes
+            .Where(c => c.ProjectId == projectId 
+                        && c.ArchivedAt == null 
+                        && cleanClassNames.Contains(c.Name))
+            .ToListAsync();
+    
+        var foundClassNames = existingClasses.Select(c => c.Name).ToHashSet();
+        var missingClassNames = cleanClassNames.Where(name => !foundClassNames.Contains(name)).ToList();
+
+        if (missingClassNames.Any())
+        {
+            throw new KeyNotFoundException(
+                $"Classes not found with names: {string.Join(", ", missingClassNames)}");
+        }
+    
+        return existingClasses.Select(c => new ClassResponseDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Description = c.Description,
+            Uuid = c.Uuid,
+            ProjectId = c.ProjectId,
+            CreatedBy = c.CreatedBy,
+            CreatedAt = c.CreatedAt,
+            ModifiedBy = c.ModifiedBy,
+            ModifiedAt = c.ModifiedAt,
+            ArchivedAt = c.ArchivedAt
+        }).ToList();
+    }
 }

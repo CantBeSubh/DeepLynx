@@ -20,4 +20,6 @@ public interface IRecordBusiness
     Task<bool> AttachTag(long projectId, long recordId, long tagId);
     Task<bool> UnattachTag(long projectId, long recordId, long tagId);
     Task<bool> BulkAttachTags(List<RecordTagLinkDto> dtos);
+    Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds);
+
 }
