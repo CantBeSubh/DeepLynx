@@ -26,7 +26,12 @@ export default function HomeDashboard({ initialProjects }: Props) {
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
-  const homeWidgets: WidgetType[] = ["Links", "DataOverview", "Graph"];
+  const [canCustomize, setCanCustomize] = useState(false);
+  const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
+    "Links",
+    "DataOverview",
+    "Graph",
+  ]);
 
   const filteredProjects = projects.filter((project) => {
     const term = searchTerm.toLowerCase();
@@ -62,6 +67,15 @@ export default function HomeDashboard({ initialProjects }: Props) {
     { header: "Last Viewed", data: (row: ProjectsList) => row.lastViewed },
   ];
 
+  const handleSave = (newWidgets: WidgetType[]) => {
+    setHomeWidgets(newWidgets);
+    setCanCustomize(false);
+  };
+
+  const handleCancel = () => {
+    setCanCustomize(false);
+  };
+
   return (
     <div className="bg-base-100">
       {/* Header */}
@@ -78,21 +92,8 @@ export default function HomeDashboard({ initialProjects }: Props) {
 
       {/* Main Content */}
       <div className="mr-6 py-6">
-        <div className="flex justify-between items-center justify-end mb-4">
-          <button className="btn btn-outline btn-secondary flex items-center mr-2">
-            <Cog6ToothIcon className="size-6" />
-            {t.translations.CUSTOMIZE}
-          </button>
-          <button
-            onClick={() => setWidgetModal(true)}
-            className="btn btn-secondary text-primary-content flex items-center"
-          >
-            <PlusIcon className="size-6" />
-            {t.translations.WIDGET}
-          </button>
-        </div>
         <div className="flex">
-          <div className="w-full md:w-1/2 px-4">
+          <div className={`w-full md:w-3/5 px-4 ${canCustomize ? "grayed-out" : ""}`}>
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">
@@ -125,8 +126,13 @@ export default function HomeDashboard({ initialProjects }: Props) {
               />
             </div>
           </div>
-          <div className="w-full md:w-1/2">
-            <WidgetCard widgets={homeWidgets} />
+
+          <div className="w-full md:w-2/5 px-4">
+            <WidgetCard
+              widgets={homeWidgets}
+              onSave={handleSave}
+              onCustomizeChange={setCanCustomize}
+            />
           </div>
         </div>
       </div>
