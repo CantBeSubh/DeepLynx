@@ -14,7 +14,7 @@ import GenericTable from "@/app/(home)/components/GenericTable";
 import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
-import { deleteEdge, getEdge } from "@/app/lib/edge_services";
+import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
