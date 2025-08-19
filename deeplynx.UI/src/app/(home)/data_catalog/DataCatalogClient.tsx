@@ -7,6 +7,7 @@ import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
+import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
 import SavedSearches from "../components/SavedSearches";
 import GridView from "../components/GridView";
@@ -50,9 +51,6 @@ export default function DataCatalogClient({
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
-  const [totalRecords, setTotalRecords] = useState<number>(
-    (initialRecords ?? []).length
-  );
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<
     Array<{ id: number; term: string }>
@@ -73,112 +71,105 @@ export default function DataCatalogClient({
     () => selectedProjects.join("|"),
     [selectedProjects]
   );
-  const projectIdsToken = useMemo(
-    () => projects.map((p) => p.id).join("|"),
-    [projects]
+
+  // Treat ALL / empty as "all projects"
+  const effectiveProjectIds = useMemo(() => {
+    const allIds = projects.map((p) => String(p.id));
+    if (
+      selectedProjects.length === 0 ||
+      selectedProjects.includes("ALL") ||
+      selectedProjects.length === projects.length
+    ) {
+      return allIds;
+    }
+    return selectedProjects.map(String);
+  }, [projects, selectedProjects]);
+
+  // Centralized fetch for dropdown-driven changes (no search term here)
+  const fetchRecordsForSelection = useCallback(
+    async (signal?: AbortSignal) => {
+      const idsNum = effectiveProjectIds.map(Number).filter(Number.isFinite);
+      if (idsNum.length === 0) {
+        setTableData([]);
+        return;
+      }
+
+      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
+        signal,
+      });
+      setTableData(data);
+      // setShowAll(true);
+      setViewMode("list");
+    },
+    [effectiveProjectIds]
   );
 
-  // Update clearAllFilters to respect project selection:
+  // Clear all now fetches from API for the current scope (not local filtering)
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
 
-    // Apply project filter even when clearing search filters
-    if (selectedProjects.length === 0 || selectedProjects.includes("ALL")) {
-      setTableData(initialRecords ?? []);
-      setTotalRecords((initialRecords ?? []).length);
-    } else {
-      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
-      const filteredData = (initialRecords ?? []).filter((record) =>
-        selectedProjectIdsNum.includes(Number(record.projectId))
-      );
-      setTableData(filteredData);
-      setTotalRecords(filteredData.length);
-    }
-  }, [initialRecords, selectedProjects]);
+    const ctrl = new AbortController();
+    fetchRecordsForSelection(ctrl.signal).catch((e: any) => {
+      if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
+        console.error("Clear all fetch failed:", e);
+      }
+    });
+  }, [fetchRecordsForSelection]);
 
+  // Search bar (unchanged) — still allowed to query by term and then locally scope
   const handleSearch = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
-      try {
-        const newFilter = { id: nextFilterId, term: trimmed };
-        const filteredData = await queryRecords(trimmed);
+      const newFilter = { id: nextFilterId, term: trimmed };
+      const results = await queryRecords(trimmed);
 
-        // Check if "ALL" is selected or no projects selected
-        const isAllSelected =
-          selectedProjects.length === 0 ||
-          selectedProjects.includes("ALL") ||
-          selectedProjects.length === projects.length;
+      const selectedNums = effectiveProjectIds.map(Number);
+      const scoped =
+        selectedNums.length === projects.length
+          ? results
+          : results.filter((r: FileViewerTableRow) =>
+              selectedNums.includes(Number(r.projectId))
+            );
 
-        const scopedResults = isAllSelected
-          ? filteredData
-          : filteredData.filter((r: FileViewerTableRow) => {
-              const selectedProjectIdsNum = selectedProjects.map((id) =>
-                Number(id)
-              );
-              return selectedProjectIdsNum.includes(Number(r.projectId));
-            });
-
-        setTableData(scopedResults);
-        setTotalRecords(scopedResults.length);
-
-        setActiveFilters((prev) => [...prev, newFilter]);
-        setNextFilterId((n) => n + 1);
-        setSearchTerm("");
-        setViewMode("list");
-        setShowAll(true);
-      } catch (error) {
-        console.error("Search error:", error);
-      }
+      setTableData(scoped);
+      setActiveFilters((prev) => [...prev, newFilter]);
+      setNextFilterId((n) => n + 1);
+      setSearchTerm("");
+      setViewMode("list");
+      // setShowAll(true);
     },
-    [activeFilters, nextFilterId, selectedProjects]
+    [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
   );
 
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {
     if (!hasLoaded) return;
     if (initialSearchTerm) {
-      // run once when session ready
       handleSearch(initialSearchTerm);
     }
   }, [hasLoaded, initialSearchTerm, handleSearch]);
 
-  // Add this useEffect to filter data when selected projects change
+  // Fetch from API whenever dropdown selection changes and there are no active search filters
   useEffect(() => {
     if (!hasLoaded) return;
+    if (activeFilters.length > 0) return; // search takes precedence
 
-    // If there are active filters, let the search handle the filtering
-    if (activeFilters.length > 0) return;
+    const ctrl = new AbortController();
+    fetchRecordsForSelection(ctrl.signal).catch((e: any) => {
+      if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
+        console.error("Fetch on selection change failed:", e);
+      }
+    });
 
-    // Filter the initial records based on selected projects
-    if (selectedProjects.length === 0 || selectedProjects.includes("ALL")) {
-      // Show all records if no specific projects selected
-      setTableData(initialRecords ?? []);
-      setTotalRecords((initialRecords ?? []).length);
-    } else {
-      // Filter records by selected project IDs
-      const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
-      const filteredData = (initialRecords ?? []).filter((record) =>
-        selectedProjectIdsNum.includes(Number(record.projectId))
-      );
-      setTableData(filteredData);
-      setTotalRecords(filteredData.length);
-    }
-  }, [hasLoaded, selectedProjects, initialRecords, activeFilters.length]);
-
-  // Fetch original records when filters are cleared and projects are selected
-  useEffect(() => {
-    if (!hasLoaded) return;
-    if (activeFilters.length > 0) return;
-    if (selectedProjects.length === 0) return;
+    return () => ctrl.abort();
   }, [
     hasLoaded,
     activeFilters.length,
-    selectedProjects.length,
     selectedProjectsToken,
-    projectIdsToken,
+    fetchRecordsForSelection,
   ]);
 
   function renderTags(tags: string) {
@@ -250,7 +241,7 @@ export default function DataCatalogClient({
               onClick={() => {
                 setShowAll(false);
                 setViewMode("list");
-                clearAllFilters();
+                // clearAllFilters();
               }}
             >
               <ArrowUturnLeftIcon className="h-6 w-6" />
