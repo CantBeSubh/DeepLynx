@@ -24,11 +24,13 @@ jobs:
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           NEXT_PUBLIC_OKTA_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}
-          NEXT_PUBLIC_OKTA_CLIENT_SECRET: ${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}
+          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           NEXT_PUBLIC_OKTA_ISSUER: ${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}
-          NEXT_PUBLIC_AUTH_SECRET: ${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
+          SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -43,8 +45,10 @@ jobs:
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
-            --build-arg NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }} \
-            --build-arg NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }} \
+            --build-arg OKTA_CLIENT_SECRET=${{ secrets._OKTA_CLIENT_SECRET }} \
+            --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
+            --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
+            --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             .
           
           az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
@@ -52,8 +56,10 @@ jobs:
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
             --build-arg NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }} \
-            --build-arg NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }} \
-            --build-arg NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }} \
+            --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
+            --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
+            --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             .
 
   kubernetes:
@@ -80,8 +86,9 @@ jobs:
         name: Create Kubernetes Secrets
         run: |
           kubectl create secret generic app-secrets \
-            --from-literal=okta-client-secret="${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" \
-            --from-literal=auth-secret="${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" \
+            --from-literal=okta-client-secret="${{ secrets.OKTA_CLIENT_SECRET }}" \
+            --from-literal=auth-secret="${{ secrets.AUTH_SECRET }}" \
+            --from-literal=service-token="${{ secrets.SERVICE_TOKEN }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
@@ -94,6 +101,7 @@ jobs:
             --from-literal=okta-issuer="${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" \
             --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
+            --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
 
