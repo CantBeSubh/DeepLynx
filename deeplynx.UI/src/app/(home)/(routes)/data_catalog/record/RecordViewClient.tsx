@@ -35,7 +35,7 @@ export default function RecordViewClient({
   projectId,
   recordId,
 }: Props) {
-  const [record, setRecord] = useState<FileViewerTableRow>(initialRecord);
+  const [record, setRecord] = useState<FileViewerTableRow | null>(initialRecord);
   const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
   const [selectedTags, setSelectedTags] = useState<{ id: string; name: string }[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -216,7 +216,7 @@ export default function RecordViewClient({
     setModalOpen(true);
     setIdToRemove(id);
     setSelectedOriginId(Number(id))
-    setSelectedDestinationId(record.id)
+    setSelectedDestinationId(Number(record?.id))
     setConfirmationType(type)
   };
 
