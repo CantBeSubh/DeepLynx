@@ -98,7 +98,7 @@ try
 
     builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
     builder.Services.AddTransient<IObjectStorageBusiness, ObjectStorageBusiness>();
-builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
+    builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
     builder.Services.AddTransient<IProjectBusiness, ProjectBusiness>();
     builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
     builder.Services.AddTransient<IDataSourceBusiness, DataSourceBusiness>();
@@ -177,6 +177,11 @@ builder.Services.AddTransient<IClassBusiness, ClassBusiness>();
                 {
                     Name = "Metadata",
                     Description = "Handles the management and processing of metadata associated with various entities."
+                },
+                new OpenApiTag
+                {
+                    Name = "ObjectStorage",
+                    Description = "Handles the management and processing of metadata associated with object storages."
                 },
                 new OpenApiTag
                 {
