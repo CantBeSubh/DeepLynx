@@ -17,14 +17,17 @@ namespace deeplynx.api.Controllers
     public class ClassController : ControllerBase
     {
         private readonly IClassBusiness _classBusiness;
+        private readonly ILogger<ClassController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClassController"/> class
         /// </summary>
         /// <param name="classBusiness">The business logic interface for handling class operations.</param>
-        public ClassController(IClassBusiness classBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public ClassController(IClassBusiness classBusiness, ILogger<ClassController> logger)
         {
             _classBusiness = classBusiness;
+            _logger = logger;
         }
         /// <summary>
         /// Get all classes
@@ -45,7 +48,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching all classes.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
 
@@ -71,7 +74,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching this class {classId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
 
@@ -96,7 +99,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while creating this class.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -120,7 +123,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while creating these classes: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -143,7 +146,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while updating this class {classId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -165,7 +168,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting class {classId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -187,7 +190,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving class {classId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -209,7 +212,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving class {classId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

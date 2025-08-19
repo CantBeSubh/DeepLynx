@@ -599,4 +599,68 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Datasource with id {datasourceId} not found");
         }
     }
+    // </summary>
+/// <param name="projectId">The project ID to search within</param>
+/// <param name="originalIds">List of original IDs to validate</param>
+/// <returns>List of records that were found</returns>
+/// <exception cref="KeyNotFoundException">Thrown if one or more original IDs not found</exception>
+/// <exception cref="ArgumentException">Thrown if originalIds list is null or empty</exception>
+public async Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds)
+{
+    if (originalIds == null || !originalIds.Any())
+        throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
+
+    await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+
+    // Remove duplicates and filter out null/empty values
+    var cleanOriginalIds = originalIds
+        .Where(id => !string.IsNullOrWhiteSpace(id))
+        .Distinct()
+        .ToList();
+
+    if (!cleanOriginalIds.Any())
+        throw new ArgumentException("No valid original IDs provided", nameof(originalIds));
+
+    // Query for existing records (excluding archived)
+    var existingRecords = await _context.Records
+        .Where(r => r.ProjectId == projectId 
+                   && r.ArchivedAt == null 
+                   && cleanOriginalIds.Contains(r.OriginalId))
+        .Include(r => r.Tags)
+        .ToListAsync();
+
+    // Check for missing records
+    var foundOriginalIds = existingRecords.Select(r => r.OriginalId).ToHashSet();
+    var missingOriginalIds = cleanOriginalIds.Where(id => !foundOriginalIds.Contains(id)).ToList();
+
+    if (missingOriginalIds.Any())
+    {
+        throw new KeyNotFoundException(
+            $"Records not found with original IDs: {string.Join(", ", missingOriginalIds)}");
+    }
+
+    // Convert to DTOs
+    return existingRecords.Select(r => new RecordResponseDto
+    {
+        Id = r.Id,
+        Description = r.Description,
+        Uri = r.Uri,
+        Properties = r.Properties,
+        OriginalId = r.OriginalId,
+        Name = r.Name,
+        ClassId = r.ClassId,
+        DataSourceId = r.DataSourceId,
+        ProjectId = r.ProjectId,
+        CreatedBy = r.CreatedBy,
+        CreatedAt = r.CreatedAt,
+        ModifiedBy = r.ModifiedBy,
+        ModifiedAt = r.ModifiedAt,
+        ArchivedAt = r.ArchivedAt,
+        Tags = r.Tags.Select(t => new RecordTagDto
+        {
+            Id = t.Id,
+            Name = t.Name
+        }).ToList()
+    }).ToList();
+}
 }

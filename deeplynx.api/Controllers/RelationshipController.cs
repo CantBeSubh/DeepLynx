@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class RelationshipController : ControllerBase
     {
         private readonly IRelationshipBusiness _business;
+        private readonly ILogger<RelationshipController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RelationshipController"/> class
         /// </summary>
         /// <param name="business">The business logic interface for handling relationship operations.</param>
-        public RelationshipController(IRelationshipBusiness business)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public RelationshipController(IRelationshipBusiness business, ILogger<RelationshipController> logger)
         {
             _business = business;
+            _logger = logger;
         }
 
         /// <summary>
@@ -39,7 +42,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching all relationships.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -67,7 +70,7 @@ namespace deeplynx.api.Controllers
             } catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching the relationship {relationshipId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -89,7 +92,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while creating relationship.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -113,7 +116,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while creating relationships: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -137,7 +140,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while updating relationship {relationshipId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -159,7 +162,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while deleting relationship {relationshipId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -181,7 +184,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while archiving relationship {relationshipId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -203,7 +206,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"Unexpected error while unarchiving relationship {relationshipId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

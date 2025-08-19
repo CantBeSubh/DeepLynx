@@ -2,11 +2,11 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Moq;
+using Microsoft.Extensions.Logging;
 using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests
@@ -16,10 +16,12 @@ namespace deeplynx.tests
     {
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
+        private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
         private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
+        private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
         public long pid;
         public long did;
@@ -34,11 +36,15 @@ namespace deeplynx.tests
             _recordBusiness = new Mock<IRecordBusiness>();
             _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
+            _dataSourceBusiness = new Mock<IDataSourceBusiness>();
+            _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             
 
-            _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness.Object, _relationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _objectStorageBusiness.Object);
+            _classBusiness = new ClassBusiness(
+                Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
+                _recordMappingBusiness.Object, _relationshipBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness.Object, _objectStorageBusiness.Object);
         }
 
         [Fact]

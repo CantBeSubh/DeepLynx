@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
+        private readonly ILogger<UserController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserController"/> class
         /// </summary>
         /// <param name="userBusiness">The business logic interface for handling user operations.</param>
-        public UserController(IUserBusiness userBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public UserController(IUserBusiness userBusiness, ILogger<UserController> logger)
         {
             _userBusiness = userBusiness;
+            _logger = logger;
         }
         /// <summary>
         /// Get all users
@@ -34,7 +37,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching all users.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
 
@@ -55,7 +58,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         
@@ -78,7 +81,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while creating this user.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -99,7 +102,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while updating this user {userId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -120,7 +123,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting user {userId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -141,7 +144,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving user {userId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -162,7 +165,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching user {userId} data overview: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         
@@ -185,7 +188,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while adding user {userId} to project {projectId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -207,7 +210,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while removing user {userId} from project {projectId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -228,7 +231,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving user {userId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -249,7 +252,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing historical records: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

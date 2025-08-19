@@ -17,7 +17,7 @@ const LinksWidget = () => {
   return (
     <div className="card-body">
       <div className="flex justify-between items-center">
-        <h2 className="card-title">{t.WidgetCards.LINKS}</h2>
+        <h2 className="card-title">{t.translations.LINKS}</h2>
         <button onClick={() => setLinkModal(true)}>
           <PlusCircleIcon className="w-10 h-10 text-secondary" />
         </button>
@@ -26,25 +26,25 @@ const LinksWidget = () => {
         <div className="flex flex-col items-center">
           <AdjustmentsHorizontalIcon className="size-8 text-secondary" />
           <button className="btn btn-link text-secondary">
-            {t.WidgetCards.ROLES}
+            {t.translations.ROLES}
           </button>
         </div>
         <div className="flex flex-col items-center">
           <FolderIcon className="size-8 text-secondary" />
           <button className="btn btn-link text-secondary flex flex-col items-center">
-            {t.WidgetCards.FILE_EXPLORER}
+            {t.translations.FILE_EXPLORER}
           </button>
         </div>
         <div className="flex flex-col items-center">
           <DocumentDuplicateIcon className="size-8 text-secondary" />
           <button className="btn btn-link text-secondary flex flex-col items-center">
-            {t.WidgetCards.REPORTS}
+            {t.translations.REPORTS}
           </button>
         </div>
         <div className="flex flex-col items-center">
           <ArrowTrendingUpIcon className="size-8 text-secondary" />
           <button className="btn btn-link text-secondary ">
-            {t.WidgetCards.TRENDS}
+            {t.translations.TRENDS}
           </button>
         </div>
       </div>

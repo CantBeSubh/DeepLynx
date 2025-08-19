@@ -36,10 +36,10 @@ metadata:
   namespace: deeplynxv3-dev
 spec:
   accessModes:
-    - ReadWriteMany  # Allows multiple pods to access the same volume
+    - ReadWriteMany # Allows multiple pods to access the same volume
   resources:
     requests:
-      storage: 20Gi  # Adjust size based on your timeseries data needs
+      storage: 20Gi # Adjust size based on your timeseries data needs
   storageClassName: azurefile-duckdb
 
 ---
@@ -78,16 +78,21 @@ spec:
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
-            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+            - name: OKTA_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
-            - name: NEXT_PUBLIC_AUTH_SECRET
+            - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: auth-secret
+            - name: SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: service-token
             # Runtime environment variables from configmap (non-sensitive)
             - name: NEXT_PUBLIC_OKTA_CLIENT_ID
               valueFrom:
@@ -109,6 +114,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: redirect-link
+            - name: BACKEND_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: backend-base-url
           resources:
             limits:
               memory: "4Gi"
@@ -160,16 +170,21 @@ spec:
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             # Backend may also need these environment variables
-            - name: NEXT_PUBLIC_OKTA_CLIENT_SECRET
+            - name: OKTA_CLIENT_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
-            - name: NEXT_PUBLIC_AUTH_SECRET
+            - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: auth-secret
+            - name: SERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: service-token
             - name: NEXT_PUBLIC_OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
@@ -190,6 +205,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: redirect-link
+            - name: BACKEND_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: backend-base-url
           resources:
             limits:
               memory: "4Gi"

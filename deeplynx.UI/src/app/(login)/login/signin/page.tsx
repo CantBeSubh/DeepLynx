@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import ArrowButton from "@/app/(home)/components/ArrowButton";
-import { links, LinkT } from "@/app/(home)/(routes)/links";
+import { links, LinkT } from "@/app/(home)/links";
 import "@/app/globals.css";
 import { translations } from "@/app/lib/translations";
 
@@ -28,7 +28,7 @@ export default function Signin() {
         <div className="w-full p-2 bg-white border-2 border-solid rounded-3xl">
           <div className="fieldset m-5">
             <h2 className="text-sm text-center text-slate-800">
-              {t.loginPage.USERNAME}
+              {t.translations.USERNAME}
             </h2>
             <div className="flex flex-col items-center">
               <label className="w-5/6 h-15 mb-2 bg-white border-black input">
@@ -42,24 +42,26 @@ export default function Signin() {
                 onChange={(e) => setChecked(e.target.checked)}
                 className="checkbox w-6 h-6 appearance-none border-1 border-black rounded-md ml-9"
               />
-              {t.loginPage.KEEP_SIGNED_IN}
+              {t.translations.KEEP_SIGNED_IN}
             </label>
             <div className="flex flex-col items-center mt-10">
               <Link
                 className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl"
                 href="/"
               >
-                <button className="">{t.loginPage.NEXT}</button>
+                <button className="">{t.translations.NEXT}</button>
               </Link>
               <div className="my-15 text-sm text-gray-800 divider divider-primary">
-                {t.loginPage.OR}
+                {t.translations.OR}
               </div>
 
               <Link
                 className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl"
                 href="/api/auth/signin"
               >
-                <button className="">{t.loginPage.PIV_CAC_CARD_SIGN_IN}</button>
+                <button className="">
+                  {t.translations.PIV_CAC_CARD_SIGN_IN}
+                </button>
               </Link>
             </div>
           </div>
@@ -70,7 +72,7 @@ export default function Signin() {
         href="/"
       >
         {" "}
-        <u>{t.loginPage.TROUBLE_LOGGING_IN}</u>
+        <u>{t.translations.TROUBLE_LOGGING_IN}</u>
       </Link>
       <footer className="flex flex-wrap items-center justify-center gap-8 mt-16 mb-8">
         {links

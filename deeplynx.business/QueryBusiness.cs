@@ -1,12 +1,9 @@
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
-using deeplynx.helpers;
-using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
 namespace deeplynx.business;
@@ -30,49 +27,87 @@ public class QueryBusiness : IQueryBusiness
     }
     
     /// <summary>
-    /// Advanced query builder
+    /// Build a query
     /// </summary>
-    /// <param name="queryRequests">Array of query component dtos</param>
+    /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> BuildQuery(AdvancedQueryRequestDto[] queryRequests)
+    public IEnumerable<HistoricalRecordResponseDto> BuildAQuery(CustomQueryRequestDto[] request)
     {
-        var histRec = _context.HistoricalRecords.AsQueryable();
-        // Creates a parameter expression that represents a single instance of the HistoricalRecord class
-        var parameter = Expression.Parameter(typeof(HistoricalRecord), "historicalRecord");
-        Expression combinedExpression = null;
+        IQueryable<HistoricalRecord> historicalRecords = _context.HistoricalRecords;
+        Expression<Func<HistoricalRecord, bool>> predicate = u => true;
 
-        foreach (var query in queryRequests)
+        foreach (var query in request)
         {
-            // Creates an expression that represents accessing a property of the HistoricalRecord class
-            var property = Expression.Property(parameter, query.Filter);
-            // Converts the value from the DTO to the type of the property being filtered.
-            var value = Expression.Constant(Convert.ChangeType(query.Value, property.Type));
-            // Create the comparison operation (e.g., x.Name == "value")
-            Expression comparison = null; 
             if (query.Operator == "LIKE")
             {
-                var method = query.Value.GetType().GetMethod("Contains");
-                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+                Expression<Func<HistoricalRecord, bool>> next =
+                    u => EF.Property<string>(u, query.Filter).Contains(query.Value);
+
+                predicate = query.Connector == "OR"
+                    ? Or(predicate, next)
+                    : And(predicate, next);
             }
-            if (query.Operator == "IN") // might already be handled by LIKE 
+
+            if (query.Operator == "=")
             {
-                var method = query.Value.GetType().GetMethod("Contains");
-                comparison = Expression.Call(Expression.Constant(query.Value), method, Expression.Property(parameter, query.Filter));
+                if (int.TryParse(query.Value, out var intVal))
+                {
+                    Expression<Func<HistoricalRecord, bool>> next =
+                        u => EF.Property<int>(u, query.Filter) == intVal;
+
+                    predicate = query.Connector == "OR"
+                        ? Or(predicate, next)
+                        : And(predicate, next);
+                }
+                else if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    Expression<Func<HistoricalRecord, bool>> next =
+                        u => EF.Property<DateTime>(u, query.Filter) == dateVal;
+
+                    predicate = query.Connector == "OR"
+                        ? Or(predicate, next)
+                        : And(predicate, next);
+                }
+                else
+                {
+                    Expression<Func<HistoricalRecord, bool>> next =
+                        u => EF.Property<string>(u, query.Filter) == query.Value;
+
+                    predicate = query.Connector == "OR"
+                        ? Or(predicate, next)
+                        : And(predicate, next);
+                }
             }
-            else
+            //TODO: Determine if less than, greater than should only be available to the DateTime columns 
+            if (query.Operator == ">")
             {
-                comparison = CreateComparisonExpression(property, value, query.Operator);
+                DateTime.TryParse(query.Value, out var dateVal);
+                Expression<Func<HistoricalRecord, bool>> next =
+                    u => EF.Property<DateTime>(u, query.Filter) > dateVal;
+
+                predicate = query.Connector == "OR"
+                    ? Or(predicate, next)
+                    : And(predicate, next);
             }
-         
-            // Combine the expressions using the connector (AND/OR)
-            combinedExpression = CombineExpressions(combinedExpression, comparison, query.Connector);
+            
+            if (query.Operator == "<")
+            {
+                DateTime.TryParse(query.Value, out var dateVal);
+                Expression<Func<HistoricalRecord, bool>> next =
+                    u => EF.Property<DateTime>(u, query.Filter) < dateVal;
+
+                predicate = query.Connector == "OR"
+                    ? Or(predicate, next)
+                    : And(predicate, next);
+            }
+            
         }
 
-        // Create the final lambda expression
-        var lambda = Expression.Lambda<Func<HistoricalRecord, bool>>(combinedExpression, parameter);
-        var records = histRec.Where(lambda).ToList();
-        return records
-            .Select(r => new HistoricalRecordResponseDto()
+        historicalRecords = historicalRecords.Where(predicate);
+
+       
+        return historicalRecords
+            .Select(r => new HistoricalRecordResponseDto
             {
                 Id = r.RecordId,
                 Uri = r.Uri,
@@ -92,47 +127,60 @@ public class QueryBusiness : IQueryBusiness
                 ModifiedBy = r.ModifiedBy,
                 ModifiedAt = r.ModifiedAt,
                 ArchivedAt = r.ArchivedAt,
-                LastUpdatedAt = r.LastUpdatedAt
-            });
-    }
-
-    private Expression CreateComparisonExpression(MemberExpression property, ConstantExpression value, string operatorType)
-    {
-        return operatorType switch
-        {
-            //TODO: include LIKE operator, IN  for arrays
-            //TODO: Logic for operator and value type 
-            "=" => Expression.Equal(property, value),
-            ">" => Expression.GreaterThan(property, value),
-            "<" => Expression.LessThan(property, value),
-            ">=" => Expression.GreaterThanOrEqual(property, value),
-            "<=" => Expression.LessThanOrEqual(property, value),
-            "!=" => Expression.NotEqual(property, value),
-            _ => throw new NotSupportedException($"Operator {operatorType} is not supported")
-        };
-    }
-
-    private Expression CombineExpressions(Expression existing, Expression newExpression, string connector)
-    {
-        if (existing == null)
-        {
-            return newExpression;
-        }
-
-        return connector switch
-        {
-            "AND" => Expression.AndAlso(existing, newExpression),
-            "OR" => Expression.OrElse(existing, newExpression),
-            _ => throw new NotSupportedException($"Connector {connector} is not supported")
-        };
+                LastUpdatedAt = r.LastUpdatedAt,
+                Description = r.Description
+            })
+            .ToList();
     }
     
+     // Combines two lambda expressions (x => condition1, x => condition2)
+    // into a single lambda (x => condition1 AND condition2).
+    private static Expression<Func<T, bool>> And<T>(
+        Expression<Func<T, bool>> left,
+        Expression<Func<T, bool>> right)
+    {
+        var param = left.Parameters[0];
+        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
+        var body = Expression.AndAlso(left.Body, rightBodyWithLeftParam);
+        return Expression.Lambda<Func<T, bool>>(body, param);
+    }
+
+    // Same as And<T>, but combines with OR instead of AND.
+    private static Expression<Func<T, bool>> Or<T>(
+        Expression<Func<T, bool>> left,
+        Expression<Func<T, bool>> right)
+    {
+        var param = left.Parameters[0];
+        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
+        var body = Expression.OrElse(left.Body, rightBodyWithLeftParam);
+        return Expression.Lambda<Func<T, bool>>(body, param);
+    }
+
+    // Walks the expression tree and swaps one ParameterExpression for another.
+    class Replace : ExpressionVisitor
+    {
+        private readonly ParameterExpression from; // the old parameter we want to replace
+        private readonly ParameterExpression to;   // the new parameter we want to use
+
+        public Replace(ParameterExpression from, ParameterExpression to)
+        {
+            this.from = from;
+            this.to = to;
+        }
+
+        // Whenever the visitor encounters a parameter node,
+        // if it's the old one ("from"), replace it with "to".
+        protected override Expression VisitParameter(ParameterExpression node)
+            => node == from ? to : node;
+    }
+    
+    
     /// <summary>
-    /// Google-type search
+    /// Full text records search
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search([FromQuery] string userQuery)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");

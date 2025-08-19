@@ -1,3 +1,5 @@
+"use client";
+
 import React from "react";
 import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
 import GenericTable from "./GenericTable";
@@ -9,7 +11,7 @@ interface SavedSearchProps {
   className?: string;
 }
 
-const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
+const SavedSearches = ({ className }: SavedSearchProps) => {
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -87,4 +89,4 @@ const SavedSearchesTabs = ({ className }: SavedSearchProps) => {
   );
 };
 
-export default SavedSearchesTabs;
+export default SavedSearches;

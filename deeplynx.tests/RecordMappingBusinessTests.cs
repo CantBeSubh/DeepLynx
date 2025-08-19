@@ -6,6 +6,7 @@ using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace deeplynx.tests;
@@ -22,6 +23,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
     private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
     private DataSourceBusiness _dataSourceBusiness = null!;
+    private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+    
     public long pid;
     public long tid;
     public long cid;
@@ -37,10 +40,11 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _edgeBusiness = new Mock<IEdgeBusiness>();
         _recordBusiness = new Mock<IRecordBusiness>();
         _relationshipBusiness = new Mock<IRelationshipBusiness>();
+        _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness, _relationshipBusiness.Object);
         _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
-        _projectBusiness = new ProjectBusiness(Context, _classBusiness, _objectStorageBusiness.Object);
         _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness.Object, _recordBusiness.Object);
+        _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object);
     }
 
     [Fact]

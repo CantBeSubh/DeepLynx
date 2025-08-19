@@ -805,6 +805,13 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("archived_at");
 
+                    b.Property<string>("ConfigJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config")
+                        .HasDefaultValueSql("'{\"edgeRecordsMutable\":false,\"ontologyMutable\":false,\"tagsMutable\":false}'::jsonb");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")

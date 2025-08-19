@@ -5,7 +5,7 @@ import {
   ArrowsRightLeftIcon,
   CircleStackIcon,
 } from "@heroicons/react/24/outline";
-import { getProjectStats } from "@/app/lib/projects_services";
+import { getProjectStats } from "@/app/lib/projects_services.client";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { translations } from "@/app/lib/translations";
 
@@ -38,11 +38,11 @@ const ProjectOverviewWidget = () => {
 
   return (
     <div className="card-body">
-      <h2 className="card-title">{t.WidgetCards.PROJECT_OVERVIEW}</h2>
+      <h2 className="card-title">{t.translations.PROJECT_OVERVIEW}</h2>
       <div className="stats shadow">
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.LINKED_SOURCES}
+            {t.translations.LINKED_SOURCES}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <LinkIcon className="size-7 mr-2" />
@@ -51,7 +51,7 @@ const ProjectOverviewWidget = () => {
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.DATA_RECORD}
+            {t.translations.DATA_RECORD}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <CircleStackIcon className="size-8 mr-2" />
@@ -62,7 +62,7 @@ const ProjectOverviewWidget = () => {
       <div className="stats shadow">
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.CLASSES}
+            {t.translations.CLASSES}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <RectangleGroupIcon className="size-8 mr-2" />
@@ -71,7 +71,7 @@ const ProjectOverviewWidget = () => {
         </div>
         <div className="stat">
           <div className="stat-title text-secondary">
-            {t.WidgetCards.CONNECTIONS}
+            {t.translations.CONNECTIONS}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <ArrowsRightLeftIcon className="size-8 mr-2" />
