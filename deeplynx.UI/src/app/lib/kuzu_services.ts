@@ -1,0 +1,29 @@
+import axios from 'axios';
+
+export const api = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    withCredentials: true
+})
+
+export const getNodesWithinDepth = async (
+    projectId: number, 
+    request: {
+        tablename: string | undefined,
+        id: number | undefined,
+        depth: number
+    }) => {
+    try {
+        const res = await api.post(
+            `/projects/${projectId}/graph/Query-N-Layers`, 
+            request,
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            });
+        return res.data;
+    } catch (error) {
+        console.error("Error fetching record:", error);
+        throw error;
+    }
+}
