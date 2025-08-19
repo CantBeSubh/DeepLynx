@@ -1,5 +1,5 @@
 // app/(home)/page.tsx
-import HomeDashboard from "./HomeDashboard";
+import HomeDashboard from "./HomeDashboardClient";
 import {
   getAllProjectsServer,
   type ProjectDTO, // make sure this includes optional fields below

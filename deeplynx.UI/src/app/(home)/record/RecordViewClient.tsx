@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import Tabs from "@/app/(home)/components/Tabs";
-import PropertyTable from "./PropertyTable";
+import PropertyTable from "../components/PropertyTable";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { updateRecord } from "@/app/lib/record_services.client"; // client-safe API call
 
