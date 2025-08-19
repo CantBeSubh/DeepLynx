@@ -1,4 +1,5 @@
 using DotNetEnv;
+using Serilog;
 
 /// <summary>
 ///  Provide a singular provider class to configure external deeplynx connections
@@ -29,12 +30,12 @@ public static class ConnectionStringsProvider
             !string.IsNullOrEmpty(postgresServer) &&
             !string.IsNullOrEmpty(postgresPort))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info("Using .env postgres connection credentials.");
+            Log.Information("Using .env postgres connection credentials.");
             return $"User ID={postgresUser};Password={postgresPassword};Database={postgresDatabaseName};Server={postgresServer};Port={postgresPort};";
         }
         else if (!string.IsNullOrEmpty(defaultConnectionString))
         {
-            NLog.LogManager.GetCurrentClassLogger().Info(".env postgres connection variables not configured. Falling back to default postgres connection credentials.");
+            Log.Information(".env postgres connection variables not configured. Falling back to default postgres connection credentials.");
             return defaultConnectionString;
         }
         else

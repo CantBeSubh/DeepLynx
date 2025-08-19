@@ -10,6 +10,7 @@ using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace deeplynx.business;
 
@@ -17,12 +18,14 @@ public class TimeseriesBusiness(
     DeeplynxContext context,
     IRecordBusiness recordBusiness,
     IClassBusiness classBusiness,
+    ILogger<TimeseriesBusiness> logger,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
+    
     private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
 
     private static class Status
@@ -303,7 +306,7 @@ public class TimeseriesBusiness(
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
 
-                NLog.LogManager.GetCurrentClassLogger().Error(e);
+                logger.LogError(e.Message);
                 throw new Exception("Failed while writing report to csv and postgres");
             }
         });

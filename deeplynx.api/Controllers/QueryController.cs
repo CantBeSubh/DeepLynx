@@ -17,10 +17,17 @@ namespace deeplynx.api.Controllers
     public class QueryController : ControllerBase
     {
         private readonly IQueryBusiness _queryBusiness;
+        private readonly ILogger<QueryController> _logger;
 
-        public QueryController(IQueryBusiness queryBusiness)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="queryBusiness">The business logic interface for handling querying operations.</param>
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public QueryController(IQueryBusiness queryBusiness, ILogger<QueryController> logger)
         {
             _queryBusiness = queryBusiness;
+            _logger = logger;
         }
         /// <summary>
         /// Full text search for records
@@ -39,7 +46,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while searching for records.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         
@@ -63,7 +70,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while searching for records.: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
 

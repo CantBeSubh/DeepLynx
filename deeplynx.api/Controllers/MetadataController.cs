@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers;
 public class MetadataController : ControllerBase
 {
     private readonly IMetadataBusiness _metadataBusiness;
+    private readonly ILogger<MetadataController> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetadataController"/> class.
     /// </summary>
     /// <param name="metadataBusiness">The business logic interface for handling metadata operations.</param>
-    public MetadataController(IMetadataBusiness metadataBusiness)
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public MetadataController(IMetadataBusiness metadataBusiness, ILogger<MetadataController> logger)
     {
         _metadataBusiness = metadataBusiness;
+        _logger = logger;
     }
 
     /// <summary>
@@ -40,7 +43,7 @@ public class MetadataController : ControllerBase
         {
             Console.WriteLine(exception.Message);
             var message = $"An error occurred while parsing metadata: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }

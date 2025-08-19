@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers;
 public class TagController : ControllerBase
 {
     private readonly ITagBusiness _tagBusiness;
+    private readonly ILogger<TagController> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TagController"/> class.
     /// </summary>
     /// <param name="tagBusiness">The business logic interface for handling tag operations.</param>
-    public TagController(ITagBusiness tagBusiness)
+    /// <param name="logger">Error/Info logging interface for database log table.</param>
+    public TagController(ITagBusiness tagBusiness, ILogger<TagController> logger)
     {
         _tagBusiness = tagBusiness;
+        _logger = logger;
     }
 
     /// <summary>
@@ -38,7 +41,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while listing all tags: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -64,7 +67,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while retrieving tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -88,7 +91,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while creating tag: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -112,7 +115,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An unexpected error occurred while creating these tags: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -135,7 +138,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while updating tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -157,7 +160,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while deleting tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -179,7 +182,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while archiving tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }
@@ -201,7 +204,7 @@ public class TagController : ControllerBase
         catch (Exception exception)
         {
             var message = $"An error occurred while unarchiving tag {tagId}: {exception}";
-            NLog.LogManager.GetCurrentClassLogger().Error(message);
+            _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
     }

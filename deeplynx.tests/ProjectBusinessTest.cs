@@ -5,6 +5,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 
@@ -21,6 +22,7 @@ namespace deeplynx.tests
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
+        private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
 
         public long TestProjectId;
         public long TestClassId;
@@ -36,12 +38,13 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
+            _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             
             _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
             _classBusiness = new ClassBusiness(
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
                 _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _classBusiness, _dataSourceBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness);
         }
 
         [Fact]

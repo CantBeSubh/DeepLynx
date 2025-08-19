@@ -10,14 +10,17 @@ namespace deeplynx.api.Controllers
     public class DataSourceController : ControllerBase
     {
         private readonly IDataSourceBusiness _dataSourceBusiness;
+        private readonly ILogger<DataSourceController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataSourceController"/> class
         /// </summary>
         /// <param name="dataSourceBusiness">The business logic interface for handling data source operations.</param>
-        public DataSourceController(IDataSourceBusiness dataSourceBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public DataSourceController(IDataSourceBusiness dataSourceBusiness, ILogger<DataSourceController> logger)
         {
             _dataSourceBusiness = dataSourceBusiness;
+            _logger = logger;
         }
 
         /// <summary>
@@ -39,7 +42,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing all data sources: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -65,7 +68,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving data source {dataSourceId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -87,7 +90,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while creating data source: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -113,7 +116,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while updating data source {dataSourceId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -137,7 +140,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while deleting data source {dataSourceId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -161,7 +164,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving data source {dataSourceId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -185,7 +188,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving data source {dataSourceId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }

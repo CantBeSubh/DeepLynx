@@ -9,14 +9,17 @@ namespace deeplynx.api.Controllers
     public class HistoricalRecordController : ControllerBase
     {
         private readonly IHistoricalRecordBusiness _historicalRecordBusiness;
+        private readonly ILogger<HistoricalRecordController> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HistoricalRecordController"/> class
         /// </summary>
         /// <param name="historicalRecordBusiness">The business logic interface for handling record operations.</param>
-        public HistoricalRecordController(IHistoricalRecordBusiness historicalRecordBusiness)
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public HistoricalRecordController(IHistoricalRecordBusiness historicalRecordBusiness, ILogger<HistoricalRecordController> logger)
         {
             _historicalRecordBusiness = historicalRecordBusiness;
+            _logger = logger;
         }
         
         /// <summary>
@@ -44,7 +47,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing historical records: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -72,7 +75,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving historical record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
@@ -94,7 +97,7 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving history for record {recordId}: {exc}";
-                NLog.LogManager.GetCurrentClassLogger().Error(message);
+                _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
