@@ -1,3 +1,5 @@
+"use client";
+
 import React from 'react';
 import PropertyTable from '../(routes)/data_catalog/record/PropertyTable';
 import { Column, FileViewerTableRow } from '../types/types';
@@ -6,7 +8,7 @@ import GenericTable from './GenericTable';
 interface RecordViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  record: FileViewerTableRow;
+  record: FileViewerTableRow | null;
   relatedRecords: RelatedRecord[]
   tags: { id: string; name: string}[]
 }
@@ -41,7 +43,6 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({ isOpen, onClose, reco
       { header: "ID", data: "id" },
       { header: "Class", data: "class" },
       { header: "Name", data: "name" },
-      { header: "Actions", data: "actions", sortable: false },
     ];
 
   const parsedProperties = JSON.parse(record.properties!);
@@ -56,40 +57,43 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({ isOpen, onClose, reco
     : [];
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box max-w-lg">
-        <h3 className="font-bold text-lg mb-4 text-neutral">Record Details</h3>
+    <dialog className={`modal ${isOpen ? 'modal-open' : ''}`}>
+      <div className="modal-box max-w-[70vh] max-h-[80vh]">
+        <h3 className="font-bold text-2xl mb-4 text-neutral">{record.name}</h3>
         
-        <div>
-          <h4 className="font-semibold">System Properties:</h4>
+        <div className="ml-20 mb-10 mr-20"> {/* Add margin-bottom for spacing */}
           <PropertyTable title="System Properties" rows={systemPropertiesRows} />
         </div>
 
-        <div>
-          <h4 className="font-semibold">Additional Properties:</h4>
+        <div className="ml-20 mb-10 mr-20"> {/* Add margin-bottom for spacing */}
           <PropertyTable title="Additional Properties" rows={additionalPropertiesRows} />
         </div>
 
-        <div>
-          <h4 className="font-semibold">Tags:</h4>
-          <ul>
-            {tags && tags.map((tag: { id: string; name: string }) => (
-              <li key={tag.id}>{tag.name}</li>
-            ))}
-          </ul>
+        <div className="ml-20 card bg-base-100 shadow-md p-2 relative mb-10 mr-20">
+          <div className="mb-4"> {/* Add margin-bottom for spacing */}
+            <h2 className="text-xl font-bold mb-4">Tags:</h2>
+            <div className="flex flex-wrap gap-2"> {/* Use flexbox for better layout */}
+              {tags && tags.map((tag: { id: string; name: string }) => (
+                <span key={tag.id} className="font-inter flex items-center border rounded-full px-2 py-1" style={{ borderColor: '#07519E', color: '#07519E' }}>
+                  {tag.name}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div>
-            <GenericTable
-                columns={relatedRecordsColumns}
-                data={relatedRecords}
-                title="Related Records"
-                bordered
-                searchBar={false}
-                enablePagination={false}
-                actionButtons={false}
-            />
+        <div className="ml-20 mb-4 mr-20"> {/* Add margin-bottom for spacing */}
+          <GenericTable
+            columns={relatedRecordsColumns}
+            data={relatedRecords} // Ensure this is the correct data structure
+            title="Related Records"
+            bordered
+            searchBar={false}
+            enablePagination={false}
+            actionButtons={false}
+          />
         </div>
+
         <div className="modal-action">
           <button className="btn" onClick={onClose}>Close</button>
         </div>

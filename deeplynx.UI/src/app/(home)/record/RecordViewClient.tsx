@@ -3,10 +3,11 @@
 import { useState } from "react";
 import React, { useEffect } from "react";
 import toast from "react-hot-toast";
+
 import TagButton from "@/app/(home)/components/TagButton"
 import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
 import { getAllTags } from "@/app/lib/tag_services";
-import PropertyTable from "./PropertyTable";
+import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { XMarkIcon, PencilIcon, CheckCircleIcon, XCircleIcon, EyeIcon } from "@heroicons/react/24/outline";
@@ -15,6 +16,7 @@ import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
 import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
+
 
 type Props = {
   initialRecord: FileViewerTableRow | null;

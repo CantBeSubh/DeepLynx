@@ -27,3 +27,26 @@ export const getNodesWithinDepth = async (
         throw error;
     }
 }
+
+export const queryKuzu = async (projectId: number, request: string) => {
+    try {
+        const payload = {
+            Query: request
+        };
+
+        const res = await api.post(
+            `/projects/${projectId}/graph/Query`, 
+            payload,
+            {
+                headers: {
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        return res.data;
+    } catch (error) {
+        console.error("Error querying Kuzu:", error);
+        throw error;
+    }
+}

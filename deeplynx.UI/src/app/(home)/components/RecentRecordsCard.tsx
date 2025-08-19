@@ -82,7 +82,7 @@ const RecentRecordsCard = ({
             className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 pl-0 rounded-sm"
             onClick={() =>
               router.push(
-                `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
+                `/record?recordId=${record.id}&projectId=${record.projectId}`
               )
             }
           >

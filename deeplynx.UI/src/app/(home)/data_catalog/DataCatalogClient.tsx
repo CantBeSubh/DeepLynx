@@ -7,12 +7,13 @@ import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
+import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
-import SavedSearches from "../../components/SavedSearches";
-import GridView from "./GridView";
-import ListView from "./ListView";
-import ProjectDropdown from "./ProjectDropdown";
-import RecentRecordsCard from "./RecentRecordsCard";
+import SavedSearches from "../components/SavedSearches";
+import GridView from "../components/GridView";
+import ListView from "../components/ListView";
+import ProjectDropdown from "../components/ProjectDropdown";
+import RecentRecordsCard from "../components/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 
 import {
@@ -50,9 +51,6 @@ export default function DataCatalogClient({
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
-  const [totalRecords, setTotalRecords] = useState<number>(
-    (initialRecords ?? []).length
-  );
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<
     Array<{ id: number; term: string }>
@@ -73,70 +71,105 @@ export default function DataCatalogClient({
     () => selectedProjects.join("|"),
     [selectedProjects]
   );
-  const projectIdsToken = useMemo(
-    () => projects.map((p) => p.id).join("|"),
-    [projects]
+
+  // Treat ALL / empty as "all projects"
+  const effectiveProjectIds = useMemo(() => {
+    const allIds = projects.map((p) => String(p.id));
+    if (
+      selectedProjects.length === 0 ||
+      selectedProjects.includes("ALL") ||
+      selectedProjects.length === projects.length
+    ) {
+      return allIds;
+    }
+    return selectedProjects.map(String);
+  }, [projects, selectedProjects]);
+
+  // Centralized fetch for dropdown-driven changes (no search term here)
+  const fetchRecordsForSelection = useCallback(
+    async (signal?: AbortSignal) => {
+      const idsNum = effectiveProjectIds.map(Number).filter(Number.isFinite);
+      if (idsNum.length === 0) {
+        setTableData([]);
+        return;
+      }
+
+      const data = await getAllRecordsForMultipleProjects(idsNum, true, {
+        signal,
+      });
+      setTableData(data);
+      // setShowAll(true);
+      setViewMode("list");
+    },
+    [effectiveProjectIds]
   );
 
-  // === handlers wrapped in useCallback so effects can depend on them ===
+  // Clear all now fetches from API for the current scope (not local filtering)
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
-    setTableData(initialRecords ?? []);
-    setTotalRecords((initialRecords ?? []).length);
-  }, [initialRecords]);
 
+    const ctrl = new AbortController();
+    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+      if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
+        console.error("Clear all fetch failed:", e);
+      }
+    });
+  }, [fetchRecordsForSelection]);
+
+  // Search bar (unchanged) — still allowed to query by term and then locally scope
   const handleSearch = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
       if (!trimmed || activeFilters.some((f) => f.term === trimmed)) return;
 
-      try {
-        const newFilter = { id: nextFilterId, term: trimmed };
-        const filteredData = await queryRecords(trimmed);
+      const newFilter = { id: nextFilterId, term: trimmed };
+      const results = await queryRecords(trimmed);
 
-        const selectedProjectIdsNum = selectedProjects.map((id) => Number(id));
-        const scopedResults = selectedProjectIdsNum.length
-          ? filteredData.filter((r: FileViewerTableRow) =>
-              selectedProjectIdsNum.includes(Number(r.projectId))
-            )
-          : filteredData;
+      const selectedNums = effectiveProjectIds.map(Number);
+      const scoped =
+        selectedNums.length === projects.length
+          ? results
+          : results.filter((r: FileViewerTableRow) =>
+              selectedNums.includes(Number(r.projectId))
+            );
 
-        setTableData(scopedResults);
-        setTotalRecords(scopedResults.length);
-
-        setActiveFilters((prev) => [...prev, newFilter]);
-        setNextFilterId((n) => n + 1);
-        setSearchTerm("");
-        setViewMode("list");
-        setShowAll(true);
-      } catch (error) {
-        console.error("Search error:", error);
-      }
+      setTableData(scoped);
+      setActiveFilters((prev) => [...prev, newFilter]);
+      setNextFilterId((n) => n + 1);
+      setSearchTerm("");
+      setViewMode("list");
+      // setShowAll(true);
     },
-    [activeFilters, nextFilterId, selectedProjects]
+    [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
   );
 
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {
     if (!hasLoaded) return;
     if (initialSearchTerm) {
-      // run once when session ready
       handleSearch(initialSearchTerm);
     }
   }, [hasLoaded, initialSearchTerm, handleSearch]);
 
-  // Fetch original records when filters are cleared and projects are selected
+  // Fetch from API whenever dropdown selection changes and there are no active search filters
   useEffect(() => {
     if (!hasLoaded) return;
-    if (activeFilters.length > 0) return;
-    if (selectedProjects.length === 0) return;
+    if (activeFilters.length > 0) return; // search takes precedence
+
+    const ctrl = new AbortController();
+    fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
+      if (e?.name !== "CanceledError" && e?.name !== "AbortError") {
+        console.error("Fetch on selection change failed:", e);
+      }
+    });
+
+    return () => ctrl.abort();
   }, [
     hasLoaded,
     activeFilters.length,
-    selectedProjects.length,
     selectedProjectsToken,
-    projectIdsToken,
+    fetchRecordsForSelection,
   ]);
 
   function renderTags(tags: string) {
@@ -208,7 +241,7 @@ export default function DataCatalogClient({
               onClick={() => {
                 setShowAll(false);
                 setViewMode("list");
-                clearAllFilters();
+                // clearAllFilters();
               }}
             >
               <ArrowUturnLeftIcon className="h-6 w-6" />

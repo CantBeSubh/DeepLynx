@@ -1,11 +1,13 @@
+"use client";
+
 import { translations } from "@/app/lib/translations";
 
 interface ConfirmationModalProps {
-  isOpen: boolean; // Indicates whether the modal is open
-  onClose: () => void; // Function to call when closing the modal
-  onConfirm: () => void; // Function to call when confirming the unlink action
-  tagName: string; // Name of the tag being unlinked
-  recordName: string | undefined; // Name of the record from which the tag is being unlinked
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  tagName: string;
+  recordName: string | undefined;
 }
 
 // Main ConfirmationModal component

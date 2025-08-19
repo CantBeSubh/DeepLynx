@@ -135,6 +135,10 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("projects_pkey");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.ConfigJson)
+                .HasColumnType("jsonb")
+                .HasDefaultValueSql("'{\"edgeRecordsMutable\":false,\"ontologyMutable\":false,\"tagsMutable\":false}'::jsonb")
+                .IsRequired();
         });
 
         modelBuilder.Entity<Record>(entity =>

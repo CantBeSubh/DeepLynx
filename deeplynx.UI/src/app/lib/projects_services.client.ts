@@ -3,11 +3,6 @@
 
 import axios from "axios";
 
-/**
- * ENV (public):
- * NEXT_PUBLIC_API_URL: e.g. http://localhost:5095/api
- * - Browser requests will include cookies via withCredentials.
- */
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   withCredentials: true,
@@ -21,14 +16,17 @@ export async function getAllProjects() {
 }
 
 export async function getAllRecordsForMultipleProjects(
-  projectIds: number[],
-  hideArchived = true
+  projectIds: number[] | string[],
+  hideArchived = true,
+  opts?: { signal?: AbortSignal }
 ) {
   const query =
     projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
     `&hideArchived=${hideArchived}`;
-  const res = await api.get(`/projects/MultiProjectRecords?${query}`);
-  return res.data;
+
+  return api.get(`/projects/MultiProjectRecords?${query}`, {
+    signal: opts?.signal,
+  }).then(r => r.data);
 }
 
 export async function getProject(projectId: string) {

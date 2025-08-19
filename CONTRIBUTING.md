@@ -41,6 +41,8 @@ public ClassIntegrationTests(TestSuiteFixture fixture) : base(fixture) {}
 [Collection("Test Suite Collection")] 
 ```
 
+#### Environment Variables
+When a change to environment variables is made, be sure to reflect those changes in both the `.env_sample` file on the backend as well as in GitHub actions. If you do not have access to GitHub actions to add the environment variable, please contact one of the codeowners.
 
 ## Submitting Pull Requests
 When you're ready to submit your changes, follow these steps:

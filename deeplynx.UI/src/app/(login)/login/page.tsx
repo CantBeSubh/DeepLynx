@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import ArrowButton from "@/app/(home)/components/ArrowButton";
-import { links, LinkT } from "@/app/(home)/(routes)/links";
+import { links, LinkT } from "@/app/(home)/links";
 import { translations } from "@/app/lib/translations";
 import "@/app/globals.css";
 

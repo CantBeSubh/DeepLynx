@@ -7,6 +7,8 @@ using deeplynx.models;
 using Microsoft.Extensions.Configuration;
 using System.Globalization;
 using System.Threading.Tasks;
+using Npgsql;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace deeplynx.graph
 {
@@ -18,6 +20,7 @@ namespace deeplynx.graph
         private bool _isDatabaseInitialized = false;
         private readonly string _pgParams;
         private readonly SemaphoreSlim _connectionLock = new SemaphoreSlim(1, 1);
+        private readonly string connectionString;
 
 
         /// <summary>
@@ -29,9 +32,9 @@ namespace deeplynx.graph
             _conn = new kuzu_connection();
 
             // Transform the connection string
-            string originalConnectionString = configuration.GetConnectionString("DefaultConnection")
+            connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("DefaultConnection is not configured.");
-            _pgParams = TransformConnectionString(originalConnectionString);
+            _pgParams = TransformConnectionString(connectionString);
         }
 
 
@@ -117,14 +120,44 @@ namespace deeplynx.graph
         }
 
 
+        private async Task<bool> ExecuteSqlFromFileAsync(string sqlCommand)
+        {
+
+            using (var connection = new NpgsqlConnection(connectionString))
+            {
+                try
+                {
+                    await connection.OpenAsync();
+
+                    using (var command = new NpgsqlCommand(sqlCommand, connection))
+                    {
+                        var result = await command.ExecuteNonQueryAsync();
+                        return result > 0;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Database operation failed: {ex.Message}");
+                    return false;
+                }
+            }
+        }
+
+
         /// <summary>
         /// Installs the necessary PostgreSQL extensions for KuzuDB.
         /// </summary>
         /// <param name="pgParams">The connection parameters for the PostgreSQL database.</param>
         /// <returns>Returns false if an error occurred and true if not.</returns>
-        public async Task<bool> InstallPostgresExtensionsAsync()
+        private async Task<bool> InstallExtensionsAsync()
         {
-            Console.WriteLine("Installing Postgres and Json extenstions.");
+            if (AreExtensionsAvailableOnDisk())
+            {
+                Console.WriteLine("Postgres and Json extensions are already installed");
+                return true;
+            }
+
+            Console.WriteLine("Installing Postgres and JSON extensions.");
             try
             {
                 if (_conn == null)
@@ -133,16 +166,95 @@ namespace deeplynx.graph
                 }
 
                 await Task.Run(() => PerformNonQueryAsync("INSTALL postgres;"));
-                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION postgres;"));
                 await Task.Run(() => PerformNonQueryAsync("INSTALL json;"));
-                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION json;"));
 
-                Console.WriteLine("Installed Postgres and Json extensions.");
+                Console.WriteLine("Installed Postgres and JSON extensions.");
                 return true;
             }
             catch (Exception e)
             {
-                Console.WriteLine($"An error occurred when installing the Postgres and Json extensions: {e}");
+                Console.WriteLine($"An error occurred when installing the Postgres and JSON extensions: {e}");
+                return false;
+            }
+        }
+
+
+        private bool AreExtensionsAvailableOnDisk()
+        {
+            var extensionNames = new List<string>
+            {
+                "libpostgres.kuzu_extension",
+                "libjson.kuzu_extension"
+            };
+
+            string userHomeDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            
+            string baseDirectory = Path.Combine(userHomeDirectory, ".kuzu", "extension");
+
+            bool allExtensionsAvailable = true;
+
+            foreach (var extensionName in extensionNames)
+            {
+                string? extensionPath = FindExtensionPath(baseDirectory, extensionName);
+                if (extensionPath == null)
+                {
+                    Console.WriteLine($"{extensionName} not found in {baseDirectory} or its subdirectories.");
+                    allExtensionsAvailable = false;
+                }
+                else
+                {
+                    Console.WriteLine($"{extensionName} found at: {extensionPath}");
+                }
+            }
+
+            return allExtensionsAvailable;
+        }
+
+        /// <summary>
+        /// Searches for the extension file in the specified directory and its subdirectories.
+        /// </summary>
+        /// <param name="directory">The directory to search in.</param>
+        /// <param name="fileName">The name of the file to find.</param>
+        /// <returns>The full path of the file if found; otherwise, null.</returns>
+        private string? FindExtensionPath(string directory, string fileName)
+        {
+            try
+            {
+                var files = Directory.GetFiles(directory, fileName, SearchOption.AllDirectories);
+                return files.Length > 0 ? files[0] : null;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while searching for {fileName}: {e.Message}");
+                return null;
+            }
+        }
+
+
+        /// <summary>
+        /// Installs the necessary PostgreSQL extensions for KuzuDB.
+        /// </summary>
+        /// <param name="pgParams">The connection parameters for the PostgreSQL database.</param>
+        /// <returns>Returns false if an error occurred and true if not.</returns>
+        public async Task<bool> LoadExtensionsAsync()
+        {
+            Console.WriteLine("Loading Postgres and JSON extensions.");
+            try
+            {
+                if (_conn == null)
+                {
+                    await ConnectAsync();
+                }
+
+                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION postgres;"));
+                await Task.Run(() => PerformNonQueryAsync("LOAD EXTENSION json;"));
+
+                Console.WriteLine("Loaded Postgres and JSON extensions.");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred when loading the Postgres and JSON extensions: {e}");
                 return false;
             }
         }
@@ -170,9 +282,16 @@ namespace deeplynx.graph
 
                 bool hasError = false;
 
-                await InstallPostgresExtensionsAsync();
-
                 string attachCommand = $"ATTACH '{_pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
+
+                await CreateHistorical_RecordsView();
+
+                await CreateEdges_CView();
+
+                await InstallExtensionsAsync();
+
+                await LoadExtensionsAsync();
+
                 await PerformNonQueryAsync(attachCommand);
 
                 await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS ProcessedProjectIds (project_id INT64 PRIMARY KEY);");
@@ -258,6 +377,80 @@ namespace deeplynx.graph
             }
         }
 
+        private async Task CreateEdges_CView()
+        {
+            try
+            {
+                var query = $@"
+                    SET search_path TO deeplynx;
+                    CREATE OR REPLACE VIEW edges_c AS
+                    SELECT c_o.name AS orig_class,
+                        e.origin_id,
+                        c_d.name AS dest_class,
+                        e.destination_id,
+                        e.relationship_name,
+                        o.project_id,
+                        e.id
+                    FROM deeplynx.historical_edges e
+                        JOIN deeplynx.historical_records_c o ON o.record_id = e.origin_id
+                        JOIN deeplynx.historical_records_c d ON d.record_id = e.destination_id
+                        JOIN deeplynx.classes c_o ON c_o.id = o.class_id
+                        JOIN deeplynx.classes c_d ON c_d.id = d.class_id
+                    WHERE o.project_id = d.project_id AND c_o.name <> 'test'::text AND c_d.name <> 'test'::text AND e.relationship_name <> 'test'::text;
+                    ";
+                await ExecuteSqlFromFileAsync(query);
+                Console.WriteLine($"Created the Edges_c view");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while creating the edges_c view: {e.Message}");
+            }
+        }
+
+        private async Task CreateHistorical_RecordsView()
+        {
+            try
+            {
+                var query = $@"
+                    SET search_path to deeplynx;
+                    CREATE OR REPLACE VIEW historical_records_c AS
+                    SELECT DISTINCT ON (record_id)
+                        id,
+                        record_id,
+                        uri,
+                        name,
+                        properties,
+                        original_id,
+                        class_id,
+                        class_name,
+                        mapping_id,
+                        data_source_id,
+                        data_source_name,
+                        project_id,
+                        project_name,
+                        tags,
+                        created_by,
+                        created_at,
+                        modified_by,
+                        modified_at,
+                        archived_at,
+                        last_updated_at,
+                        description
+                    FROM 
+                        historical_records
+                    ORDER BY 
+                        record_id, 
+                        id DESC;
+                    ";
+                await ExecuteSqlFromFileAsync(query);
+                Console.WriteLine($"Created the historical_records_c view");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while creating the historical_records_c view: {e.Message}");
+            }
+        }
+
 
         /// <summary>
         /// Dynamically sets up the necessary tables in the Kuzu database.
@@ -266,9 +459,8 @@ namespace deeplynx.graph
         {
             try
             {
-
                 await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS TableNames (id INT64, class_name STRING, PRIMARY KEY(id));");
-                await PerformNonQueryAsync("COPY TableNames FROM (LOAD FROM historical_records RETURN id, class_name);");
+                await PerformNonQueryAsync("COPY TableNames FROM (LOAD FROM historical_records_c RETURN id, class_name);");
 
                 await PerformNonQueryAsync("CREATE NODE TABLE IF NOT EXISTS RelTableNames (id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, PRIMARY KEY(id));");
                 await PerformNonQueryAsync("COPY RelTableNames FROM (LOAD FROM edges_c RETURN DISTINCT id, relationship_name, orig_class, dest_class);");
@@ -574,8 +766,8 @@ namespace deeplynx.graph
             try
             {
                 await PerformNonQueryAsync($@"
-                    COPY Entity FROM (LOAD FROM historical_records
-                        WHERE class_name IS NULL AND project_id = {project_id} AND current = TRUE
+                    COPY Entity FROM (LOAD FROM historical_records_c
+                        WHERE class_name IS NULL AND project_id = {project_id}
                         RETURN
                             id,
                             uri,
@@ -596,7 +788,7 @@ namespace deeplynx.graph
                             modified_by,
                             modified_at,
                             archived_at
-                    );"
+                    ) (IGNORE_ERRORS = true);"
                 );
 
                 var classNames = await GetUniqueClassNamesAsync();
@@ -605,8 +797,8 @@ namespace deeplynx.graph
                 {
                     string copyCommand = $@"
                         COPY {CapitalizeFirstLetter(className)} FROM (
-                            LOAD FROM historical_records
-                            WHERE class_name = '{className}' AND project_id = {project_id} AND current = TRUE
+                            LOAD FROM historical_records_c
+                            WHERE class_name = '{className}' AND project_id = {project_id}
                             RETURN
                                 id,
                                 uri,
@@ -627,7 +819,7 @@ namespace deeplynx.graph
                                 modified_by,
                                 modified_at,
                                 archived_at
-                    );";
+                    ) (IGNORE_ERRORS = true);";
 
                     await PerformNonQueryAsync(copyCommand);
                 }
