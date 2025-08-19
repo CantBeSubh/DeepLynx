@@ -47,7 +47,11 @@ RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 # Install tools needed for entrypoint.sh
 RUN apk --no-check-certificate add postgresql-client
 
-
+# Install DuckDB library
+RUN wget https://github.com/duckdb/duckdb/releases/download/v1.3.2/duckdb_cli-linux-amd64.zip \
+    && unzip duckdb_cli-linux-amd64.zip \
+    && mv duckdb /usr/local/bin/duckdb \
+    && ln -s /usr/local/bin/duckdb /usr/lib/libduckdb.so
 
 # Stage 4: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
