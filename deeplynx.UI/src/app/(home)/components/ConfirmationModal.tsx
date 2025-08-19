@@ -1,0 +1,54 @@
+import { translations } from "@/app/lib/translations";
+
+interface ConfirmationModalProps {
+  isOpen: boolean; // Indicates whether the modal is open
+  onClose: () => void; // Function to call when closing the modal
+  onConfirm: () => void; // Function to call when confirming the unlink action
+  tagName: string; // Name of the tag being unlinked
+  recordName: string | undefined; // Name of the record from which the tag is being unlinked
+}
+
+// Main ConfirmationModal component
+const ConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  tagName,
+  recordName,
+}: ConfirmationModalProps) => {
+  const locale = "en"; // You can use cookies, context, or router.locale to change language in the future
+  const t = translations[locale];
+
+  return (
+    <>
+      {/* Render the modal dialog if isOpen is true */}
+      {isOpen && (
+        <dialog className="modal modal-open">
+          {/* Modal dialog with styles */}
+          <div className="modal-box max-w-lg">
+            {/* Box for modal content with max width */}
+            <h3 className="font-bold text-lg mb-4 text-center text-black">
+              {t.ConfirmationModal.ARE_YOU_SURE}  {/* Header for the modal */}
+            </h3>
+            {/* Message for the confirmation */}
+            <p className="text-center">
+              <strong>{tagName}</strong> {t.ConfirmationModal.FROM} <strong>{recordName}</strong>
+            </p>
+            {/* Modal Action Buttons */}
+            <div className="modal-action flex justify-between mt-14">
+              <button className="btn text-blue-600" onClick={onClose}>
+                {/* No button calls onClose */}
+                {t.ConfirmationModal.NO}
+              </button>
+              <button className="btn btn-primary" onClick={onConfirm}>
+                {t.ConfirmationModal.YES} {/* Yes button confirms unlinking */}
+              </button>
+            </div>
+          </div>
+        </dialog>
+      )}
+    </>
+  );
+};
+
+export default ConfirmationModal;
