@@ -58,8 +58,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 EntityId = 1,
                 EntityType = "edge",
-                DataSourceId = null,
-                Operation = null,
+                DataSourceId = mockDataSourceId,
+                Operation = "create",
                 ActionId = mockActionId
             };
             
