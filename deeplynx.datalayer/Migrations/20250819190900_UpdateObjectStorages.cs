@@ -105,6 +105,24 @@ namespace deeplynx.datalayer.Migrations
                 type: "boolean",
                 nullable: false,
                 defaultValue: false);
+            
+            migrationBuilder.Sql(@"
+                CREATE OR REPLACE PROCEDURE deeplynx.archive_project(arc_project_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
+                LANGUAGE plpgsql AS $$
+                BEGIN
+                    UPDATE deeplynx.projects SET archived_at = arc_time WHERE id = arc_project_id;
+                    UPDATE deeplynx.data_sources SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.records SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edges SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.classes SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.object_storages SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.relationships SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edge_mappings SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.record_mappings SET archived_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.tags SET archived_at = arc_time WHERE project_id = arc_project_id;
+                END;
+                $$;
+            ");
         }
 
         /// <inheritdoc />
@@ -116,7 +134,7 @@ namespace deeplynx.datalayer.Migrations
                 table: "records");
 
             migrationBuilder.DropTable(
-                name: "object_storage",
+                name: "object_storages",
                 schema: "deeplynx");
 
             migrationBuilder.DropIndex(
@@ -139,16 +157,7 @@ namespace deeplynx.datalayer.Migrations
                 schema: "deeplynx",
                 table: "historical_records");
             
-            migrationBuilder.DropColumn(
-                name: "default",
-                schema: "deeplynx",
-                table: "object_storages");
-
-            migrationBuilder.RenameTable(
-                name: "object_storages",
-                schema: "deeplynx",
-                newName: "object_storage",
-                newSchema: "deeplynx");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_project;");
         }
     }
 }

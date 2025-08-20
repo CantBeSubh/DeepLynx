@@ -5,6 +5,8 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace deeplynx.tests;
 
@@ -12,6 +14,10 @@ namespace deeplynx.tests;
 public class ObjectStorageBusinessTests: IntegrationTestBase
 {
     private ObjectStorageBusiness _objectStorageBusiness;
+    private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+    private Mock<IClassBusiness> _mockClassBusiness = null!;
+    private Mock<IDataSourceBusiness> _mockDataSourceBusiness = null!;
+    private ProjectBusiness _projectBusiness;
     public long pid;
     public long pid2;
     public long os1;
@@ -26,6 +32,15 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _objectStorageBusiness = new ObjectStorageBusiness(Context);
+        _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+        _mockClassBusiness = new Mock<IClassBusiness>();
+        _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();
+        _projectBusiness = new ProjectBusiness(
+            Context,  
+            _mockLogger.Object,
+            _mockClassBusiness.Object, 
+            _mockDataSourceBusiness.Object, 
+            _objectStorageBusiness);
     }
 
     [Fact]
@@ -379,8 +394,20 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var result = () => _objectStorageBusiness.ChangeDefaultObjectStorage(pid, os1 + 1000);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
-    
-    
+
+    [Fact]
+    public async Task ObjectStoragesArchived_WhenProjectArchived()
+    {
+        var result = await _projectBusiness.ArchiveProject(pid);
+        result.Should().BeTrue();
+        
+        // need to clear change tracker for stored procedure
+        Context.ChangeTracker.Clear();
+        
+        var archivedObjectStorages = await Context.ObjectStorages.Where(os => os.ProjectId == pid).ToListAsync();
+        archivedObjectStorages.Should().NotBeNull();
+        archivedObjectStorages.Should().OnlyContain(os => os.ArchivedAt != null);
+    }
 
     protected override async Task SeedTestDataAsync()
     {
