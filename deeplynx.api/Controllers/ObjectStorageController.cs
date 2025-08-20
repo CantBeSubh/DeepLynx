@@ -11,9 +11,13 @@ namespace deeplynx.api.Controllers
         private readonly IObjectStorageBusiness _objectStorageBusiness;
         private readonly ILogger<ObjectStorageController> _logger;
 
-        public ObjectStorageController(IObjectStorageBusiness objectStorageBusiness)
+        public ObjectStorageController(
+            IObjectStorageBusiness objectStorageBusiness, 
+            ILogger<ObjectStorageController> logger
+            )
         {
             _objectStorageBusiness = objectStorageBusiness;
+            _logger = logger;
         }
         
         /// <summary>
@@ -29,7 +33,9 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(projectId, hidearchived);
+                var objectStorages = 
+                    await _objectStorageBusiness.GetAllObjectStorages(projectId, hidearchived);
+                
                 return Ok(objectStorages);
             }
             catch (Exception ex)
@@ -40,9 +46,8 @@ namespace deeplynx.api.Controllers
             }
         }
         
-        // TODO: get one object storage config
         /// <summary>
-        /// Get one object storage
+        /// Get object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="hidearchived">Flag indicating whether to hide archived object storages from the result (Default true)</param>
@@ -67,9 +72,29 @@ namespace deeplynx.api.Controllers
             }
         }
         
-        // TODO: create object storage config
         /// <summary>
-        /// Get one object storage
+        /// Get default object storage
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the object storages belong</param>
+        /// <returns></returns>
+        [HttpGet("GetDefaultObjectStorage", Name = "api_get_default_object_storage")]
+        public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(long projectId)
+        {
+            try
+            {
+                var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(projectId);
+                return Ok(defaultObjectStorage);
+            }
+            catch (Exception ex)
+            {
+                var message = $"An unexpected error occurred while fetching default object storage for project {projectId}: {ex}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Create object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
@@ -93,9 +118,9 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        // TODO: update object storage config
+        
         /// <summary>
-        /// Update one object storage
+        /// Update object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="dto">The dto of an object storage to be created</param>
@@ -119,9 +144,9 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        // TODO: delete object storage config
+        
         /// <summary>
-        /// Delete an object storage
+        /// Delete object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to delete</param> 
@@ -143,9 +168,9 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        // TODO: archive object storage config
+        
         /// <summary>
-        /// Archive an object storage
+        /// Archive object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to delete</param> 
@@ -168,9 +193,8 @@ namespace deeplynx.api.Controllers
             }
         }
         
-        // TODO: unarchive object storage config
         /// <summary>
-        /// Unarchive one object storage
+        /// Unarchive object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to retrieve</param> 

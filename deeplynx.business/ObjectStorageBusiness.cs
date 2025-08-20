@@ -60,7 +60,10 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        var objectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        var objectStorage =
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+                .FirstOrDefaultAsync();
         
         if (objectStorage == null)
         {
@@ -86,6 +89,44 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             ArchivedAt = objectStorage.ArchivedAt,
         };
     }
+    
+    /// <summary>
+    /// Gets default object storage for project
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the object storage belongs</param>
+    /// <exception cref="KeyNotFoundException">Thrown when the object storage is not found or archived</exception>
+    public async Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long projectId)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        var objectStorage = await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Default == true)
+                .FirstOrDefaultAsync();
+        
+        if (objectStorage == null)
+        {
+            throw new KeyNotFoundException($"Default object storage for project {projectId} not found");
+        }
+        
+        //Todo: update stored procedure to mark archived object storages default column as false
+        if (objectStorage.ArchivedAt != null)
+        {
+            throw new KeyNotFoundException($"Found archived default object storage");
+        }
+
+        return new ObjectStorageResponseDto
+        {
+            Id = objectStorage.Id,
+            Name = objectStorage.Name,
+            Type = objectStorage.Type,
+            ProjectId = objectStorage.ProjectId,
+            Default = objectStorage.Default,
+            CreatedBy = objectStorage.CreatedBy,
+            CreatedAt = objectStorage.CreatedAt,
+            ModifiedBy = objectStorage.ModifiedBy,
+            ModifiedAt = objectStorage.ModifiedAt,
+            ArchivedAt = objectStorage.ArchivedAt,
+        };
+    }
 
     /// <summary>
     /// Creates an object storage
@@ -93,12 +134,22 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <param name="projectId">The ID of the project to which the object storage belongs</param>
     /// <param name="dto">A data transfer object with details on the new object storage to be created.</param>
     /// <param name = "makeDefault"> A boolean that tells whether to make the object storage default or not</param>
-    public async Task<ObjectStorageResponseDto> CreateObjectStorage(long projectId, CreateObjectStorageRequestDto dto, bool makeDefault = false)
+    public async Task<ObjectStorageResponseDto> CreateObjectStorage(
+        long projectId,
+        CreateObjectStorageRequestDto dto,
+        bool makeDefault = false)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
 
-        string type = null!;
+        var objectStorageWithSameName = 
+            await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
+        if (objectStorageWithSameName != null)
+        {
+            throw new InvalidOperationException($"Object storage with name {dto.Name} already exists");
+        }
+        
+        string type;
         if (dto.Config.ContainsKey("mountPath"))
         {
             type = "filesystem";
@@ -159,7 +210,10 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         ValidationHelper.ValidateModel(dto);
-        var updatedObjectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        var updatedObjectStorage = 
+            await _context.ObjectStorages
+            .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+            .FirstOrDefaultAsync();
         if (updatedObjectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
@@ -169,6 +223,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
+
+        var objectStorageWithSameName = 
+            await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
         
         updatedObjectStorage.Name = dto.Name;
         updatedObjectStorage.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -202,13 +259,22 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<bool> DeleteObjectStorage(long projectId, long objectStorageId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        var objectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        
+        var objectStorage = 
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+                .FirstOrDefaultAsync();
         
         if (objectStorage == null)
         { 
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
-        
+
+        if (objectStorage.Default)
+        {
+            throw new InvalidOperationException("Default object storage cannot be deleted." +
+                                                " Please assign new default storage before deleting.");
+        }
         _context.ObjectStorages.Remove(objectStorage);
         await _context.SaveChangesAsync();
         return true;
@@ -223,7 +289,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<bool> ArchiveObjectStorage(long projectId, long objectStorageId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        var objectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        
+        var objectStorage =
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+                .FirstOrDefaultAsync();
+        
         if (objectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
@@ -232,6 +303,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         if (objectStorage.ArchivedAt is not null)
         {
             throw new InvalidOperationException($"Object storage with id {objectStorageId} is already archived");
+        }
+
+        if (objectStorage.Default)
+        {
+            throw new InvalidOperationException("Default object storage cannot be archived." +
+                                                " Please assign new default storage before archiving.");
         }
         
         objectStorage.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -249,7 +326,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<bool> UnarchiveObjectStorage(long projectId, long objectStorageId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        var objectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        
+        var objectStorage = 
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+                .FirstOrDefaultAsync();
+        
         if (objectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
@@ -277,7 +359,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<ObjectStorageResponseDto> ChangeDefaultObjectStorage(long projectId, long objectStorageId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        var defaultObjectStorage = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Id == objectStorageId).FirstOrDefaultAsync();
+        
+        var defaultObjectStorage = 
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
+                .FirstOrDefaultAsync();
+        
         if (defaultObjectStorage == null)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
@@ -314,7 +401,11 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
 
     private async Task MakePreviousDefaultsFalse(long projectId, long defaultObjectStorageId)
     {
-        var previousDefaults = await _context.ObjectStorages.Where(os => os.ProjectId == projectId && os.Default == true && os.Id != defaultObjectStorageId).ToListAsync();
+        var previousDefaults = 
+            await _context.ObjectStorages
+                .Where(os => os.ProjectId == projectId && os.Default == true && os.Id != defaultObjectStorageId)
+                .ToListAsync();
+        
         if (previousDefaults.Count > 0)
         {
             foreach (var previousDefault in previousDefaults)

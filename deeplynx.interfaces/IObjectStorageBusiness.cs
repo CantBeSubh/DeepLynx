@@ -13,6 +13,7 @@ public interface IObjectStorageBusiness
     // TODO: unarchive object storage config
     Task<List<ObjectStorageResponseDto>> GetAllObjectStorages(long projectId, bool hideArchived);
     Task<ObjectStorageResponseDto> GetObjectStorage(long projectId, long objectStorageId,  bool hideArchived);
+    Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long projectId);
     Task<ObjectStorageResponseDto> CreateObjectStorage(long projectId, CreateObjectStorageRequestDto dto, bool makeDefault = false);
     Task<ObjectStorageResponseDto> UpdateObjectStorage(long projectId, long objectStorageId, UpdateObjectStorageRequestDto dto);
     Task<bool>  DeleteObjectStorage(long projectId, long objectStorageId);

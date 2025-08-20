@@ -130,6 +130,41 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetDefaultObjectStorage_Success_ReturnsDefaultObject()
+    {
+        var defaultObjectStorage = await _objectStorageBusiness.GetDefaultObjectStorage(pid);
+        defaultObjectStorage.Should().NotBeNull();
+        defaultObjectStorage.Id.Should().Be(os1);
+    }
+
+    [Fact]
+    public async Task GetDefaultObjectStorage_Fails_WhenNoDefault()
+    {
+        var result = () => _objectStorageBusiness.GetDefaultObjectStorage(pid2);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
+    
+    [Fact]
+    public async Task GetDefaultObjectStorage_Fails_WhenDefaultIsArchived()
+    {
+        var os4Config = new JsonObject();
+        os4Config["mountPath"] = "Test Project 4";
+        var archivedDefaultObjectStorage = new ObjectStorage
+        {
+            Name = "Test Default Object Storage",
+            Type = "filesystem",
+            ProjectId = pid2,
+            Config = os4Config.ToString(),
+            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(archivedDefaultObjectStorage);
+        await Context.SaveChangesAsync();
+        
+        var result = () => _objectStorageBusiness.GetDefaultObjectStorage(pid2);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
     public async Task Create_Success_ReturnsNameAndType()
     {
         var config = new JsonObject();
@@ -249,6 +284,13 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var deleted =  () => _objectStorageBusiness.DeleteObjectStorage(pid, os1 + 1000);
         await deleted.Should().ThrowAsync<KeyNotFoundException>();
     }
+    
+    [Fact]
+    public async Task Delete_Fails_WhenObjectStorageIsDefault()
+    {
+        var deleted =  () => _objectStorageBusiness.DeleteObjectStorage(pid, os1);
+        await deleted.Should().ThrowAsync<InvalidOperationException>();
+    }
 
     [Fact]
     public async Task Archive_Success_ArchivesObjectStorage()
@@ -267,6 +309,13 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     {
         var archived = () => _objectStorageBusiness.ArchiveObjectStorage(pid, os1 + 1000);
         await archived.Should().ThrowAsync<KeyNotFoundException>();
+    }
+    
+    [Fact]
+    public async Task Archive_Fails_IfObjectStorageIsDefault()
+    {
+        var archived = () => _objectStorageBusiness.ArchiveObjectStorage(pid, os1);
+        await archived.Should().ThrowAsync<InvalidOperationException>();
     }
     
     [Fact]
