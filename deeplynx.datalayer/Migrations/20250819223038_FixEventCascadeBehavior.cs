@@ -1,12 +1,11 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace deeplynx.datalayer.Migrations
 {
     /// <inheritdoc />
-    public partial class FixEventTablesSchema : Migration
+    public partial class FixEventCascadeBehavior : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -51,6 +50,21 @@ namespace deeplynx.datalayer.Migrations
                 oldClrType: typeof(long),
                 oldType: "bigint",
                 oldNullable: true);
+            
+            migrationBuilder.DropForeignKey(
+                name: "events_dataSource_id_fkey",
+                schema: "deeplynx",
+                table: "events");
+
+            migrationBuilder.AddForeignKey(
+                name: "events_dataSource_id_fkey",
+                schema: "deeplynx",
+                table: "events",
+                column: "data_source_id",
+                principalSchema: "deeplynx",
+                principalTable: "data_sources",
+                principalColumn: "id",
+                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
@@ -108,6 +122,21 @@ namespace deeplynx.datalayer.Migrations
                 principalTable: "users",
                 principalColumn: "id",
                 onDelete: ReferentialAction.SetNull);
+            
+            migrationBuilder.DropForeignKey(
+                name: "events_dataSource_id_fkey",
+                schema: "deeplynx",
+                table: "events");
+
+            migrationBuilder.AddForeignKey(
+                name: "events_dataSource_id_fkey",
+                schema: "deeplynx",
+                table: "events",
+                column: "data_source_id",
+                principalSchema: "deeplynx",
+                principalTable: "data_sources",
+                principalColumn: "id",
+                onDelete: ReferentialAction.Cascade);
         }
     }
 }

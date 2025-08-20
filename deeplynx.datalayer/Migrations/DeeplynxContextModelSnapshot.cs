@@ -1361,7 +1361,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
                         .WithMany("Events")
                         .HasForeignKey("DataSourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("events_dataSource_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")

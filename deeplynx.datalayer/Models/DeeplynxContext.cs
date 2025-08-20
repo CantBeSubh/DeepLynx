@@ -275,7 +275,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.DataSource)
                 .WithMany(p => p.Events)
                 .HasForeignKey(d => d.DataSourceId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("events_dataSource_id_fkey");
         });
 
