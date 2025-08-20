@@ -648,7 +648,95 @@ namespace deeplynx.tests
             Assert.Equal(1, dto.OriginId);
             Assert.Equal(2, dto.DestinationId);
         }
+#region GetRelationshipsByName Tests
 
+[Fact]
+public async Task GetRelationshipsByName_ValidRelationshipNames_ReturnsMatchingRelationships()
+{
+    // Arrange
+    var testRelationship = new Relationship
+    {
+        Name = "TestValidationRelationship",
+        ProjectId = pid,
+        OriginId = originClassId,
+        DestinationId = destinationClassId,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Relationships.Add(testRelationship);
+    await Context.SaveChangesAsync();
+
+    var relationshipNames = new List<string> { "TestValidationRelationship" };
+
+    // Act
+    var result = await _relationshipBusiness.GetRelationshipsByName(pid, relationshipNames);
+
+    // Assert
+    Assert.Equal(1, result.Count);
+    Assert.Equal("TestValidationRelationship", result.First().Name);
+    Assert.Equal(pid, result.First().ProjectId);
+}
+
+[Fact]
+public async Task GetRelationshipsByName_MissingRelationshipNames_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var relationshipNames = new List<string> { "NonExistentRelationship" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _relationshipBusiness.GetRelationshipsByName(pid, relationshipNames));
+
+    Assert.Contains("Relationships not found with names", exception.Message);
+}
+
+[Fact]
+public async Task GetRelationshipsByName_NullRelationshipNames_ThrowsArgumentException()
+{
+    // Act & Assert
+    await Assert.ThrowsAsync<ArgumentException>(
+        () => _relationshipBusiness.GetRelationshipsByName(pid, null));
+}
+
+[Fact]
+public async Task GetRelationshipsByName_ExcludesArchivedRelationships()
+{
+    // Arrange
+    var archivedRelationship = new Relationship
+    {
+        Name = "ArchivedRelationship",
+        ProjectId = pid,
+        OriginId = originClassId,
+        DestinationId = destinationClassId,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Relationships.Add(archivedRelationship);
+    await Context.SaveChangesAsync();
+
+    var relationshipNames = new List<string> { "ArchivedRelationship" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _relationshipBusiness.GetRelationshipsByName(pid, relationshipNames));
+    
+    Assert.Contains("ArchivedRelationship", exception.Message);
+}
+
+[Fact]
+public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var relationshipNames = new List<string> { "SomeRelationship" };
+    var invalidProjectId = 999L;
+
+    // Act & Assert
+    await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _relationshipBusiness.GetRelationshipsByName(invalidProjectId, relationshipNames));
+}
+
+#endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

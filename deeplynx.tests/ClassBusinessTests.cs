@@ -753,7 +753,91 @@ namespace deeplynx.tests
         }
         
         # endregion
-        
+        #region GetClassesByName Tests
+
+[Fact]
+public async Task GetClassesByName_ValidClassNames_ReturnsMatchingClasses()
+{
+    // Arrange  
+    var testClass = new Class
+    {
+        Name = "TestValidationClass",
+        ProjectId = pid,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Classes.Add(testClass);
+    await Context.SaveChangesAsync();
+
+    var classNames = new List<string> { "TestValidationClass" };
+
+    // Act
+    var result = await _classBusiness.GetClassesByName(pid, classNames);
+
+    // Assert
+    Assert.Equal(1, result.Count);
+    Assert.Equal("TestValidationClass", result.First().Name);
+    Assert.Equal(pid, result.First().ProjectId);
+}
+
+[Fact]
+public async Task GetClassesByName_MissingClassNames_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var classNames = new List<string> { "NonExistentClass" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _classBusiness.GetClassesByName(pid, classNames));
+
+    Assert.Contains("Classes not found with names", exception.Message);
+}
+
+[Fact]
+public async Task GetClassesByName_NullClassNames_ThrowsArgumentException()
+{
+    // Act & Assert
+    await Assert.ThrowsAsync<ArgumentException>(
+        () => _classBusiness.GetClassesByName(pid, null));
+}
+
+[Fact]
+public async Task GetClassesByName_ExcludesArchivedClasses()
+{
+    // Arrange
+    var archivedClass = new Class
+    {
+        Name = "ArchivedClass",
+        ProjectId = pid,
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Classes.Add(archivedClass);
+    await Context.SaveChangesAsync();
+
+    var classNames = new List<string> { "ArchivedClass" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _classBusiness.GetClassesByName(pid, classNames));
+    
+    Assert.Contains("ArchivedClass", exception.Message);
+}
+
+[Fact]
+public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var classNames = new List<string> { "SomeClass" };
+    var invalidProjectId = 999L;
+
+    // Act & Assert
+    await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _classBusiness.GetClassesByName(invalidProjectId, classNames));
+}
+
+#endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

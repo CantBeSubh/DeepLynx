@@ -911,6 +911,100 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     #endregion
+#region GetRecordsByOriginalId Tests
 
+[Fact]
+public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords()
+{
+    // Arrange
+    var record1 = new Record
+    {
+        Name = "Test Record 1",
+        ProjectId = pid,
+        DataSourceId = did,
+        ClassId = cid,
+        Properties = "{}",
+        OriginalId = "original-id-1",
+        Description = "Test record 1",
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Records.Add(record1);
+    await Context.SaveChangesAsync();
+
+    var originalIds = new List<string> { "original-id-1" };
+
+    // Act
+    var result = await _recordBusiness.GetRecordsByOriginalId(pid, originalIds);
+
+    // Assert
+    Assert.Equal(1, result.Count);
+    Assert.Equal("original-id-1", result.First().OriginalId);
+    Assert.Equal(pid, result.First().ProjectId);
+}
+
+[Fact]
+public async Task GetRecordsByOriginalId_MissingOriginalIds_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var originalIds = new List<string> { "non-existent-id" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+    
+    Assert.Contains("Records not found with original IDs", exception.Message);
+}
+
+[Fact]
+public async Task GetRecordsByOriginalId_NullOriginalIds_ThrowsArgumentException()
+{
+    // Act & Assert
+    await Assert.ThrowsAsync<ArgumentException>(
+        () => _recordBusiness.GetRecordsByOriginalId(pid, null));
+}
+
+[Fact]
+public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
+{
+    // Arrange
+    var archivedRecord = new Record
+    {
+        Name = "Archived Record",
+        ProjectId = pid,
+        DataSourceId = did,
+        ClassId = cid,
+        Properties = "{}",
+        OriginalId = "archived-id",
+        Description = "Archived record",
+        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+    };
+
+    Context.Records.Add(archivedRecord);
+    await Context.SaveChangesAsync();
+
+    var originalIds = new List<string> { "archived-id" };
+
+    // Act & Assert
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+    
+    Assert.Contains("archived-id", exception.Message);
+}
+
+[Fact]
+public async Task GetRecordsByOriginalId_InvalidProjectId_ThrowsKeyNotFoundException()
+{
+    // Arrange
+    var originalIds = new List<string> { "some-id" };
+    var invalidProjectId = 999L;
+
+    // Act & Assert
+    await Assert.ThrowsAsync<KeyNotFoundException>(
+        () => _recordBusiness.GetRecordsByOriginalId(invalidProjectId, originalIds));
+}
+
+#endregion
     
 }
