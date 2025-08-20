@@ -215,7 +215,7 @@ export default function DataCatalogClient({
       </div>
       <div className="flex flex-col gap-4 mb-4 pt-4 pl-8 w-full">
         {/* Top: Search */}
-        <div className="flex justify-end">
+        <div className="flex justify-end pr-10">
           <LargeSearchBar
             placeholder="Search"
             value={searchTerm}
@@ -231,11 +231,11 @@ export default function DataCatalogClient({
             className="w-1/4"
           />
         </div>
-        <div className="divider mt-0"></div>
+        <div className="divider my-0"></div>
         {/* Bottom: Actions */}
         <div className="flex items-center justify-between">
           <div className="text-info-content px-4 text-lg">All Records</div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 pr-10">
             <button
               className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
                 }`}
@@ -252,7 +252,7 @@ export default function DataCatalogClient({
             </button>
           </div>
         </div>
-        <div className="divider"></div>
+        <div className="divider my-0"></div>
       </div>
 
 
