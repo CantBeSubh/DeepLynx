@@ -64,12 +64,12 @@ const ListView: React.FC<ListViewProps> = ({
   const filteredRecords = !selectedProjects?.length
     ? data
     : data.filter(
-        (record) =>
-          record.projectId !== undefined &&
-          selectedProjects.includes(record.projectId)
-      );
+      (record) =>
+        record.projectId !== undefined &&
+        selectedProjects.includes(record.projectId)
+    );
   return (
-    <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
+    <div className="bg-base-100 px-10 w-full mx-auto text-info-content">
       <ul className="list">
         {filteredRecords.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
@@ -84,14 +84,14 @@ const ListView: React.FC<ListViewProps> = ({
           return (
             <li
               key={index}
-              className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-3"
+              className="py-4 mb-2 card cursor-pointer hover:bg-base-200/30 p-3 shadow-md rounded"
               onClick={() =>
                 router.push(
                   `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
                 )
               }
             >
-              <div className="font-bold mb-1">{name.content}</div>
+              <div className="mb-1 text-lg">{name.content}</div>
               {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
               <span className="text-sm">{desc.content}</span>
               <div className="flex pt-2">
