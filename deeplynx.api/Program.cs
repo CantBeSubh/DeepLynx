@@ -37,10 +37,10 @@ try
         loggingBuilder.ClearProviders();
         loggingBuilder.AddSerilog(dispose: true);
     });
-    
-// ----------------------------------
-// CORS Configuration
-// ----------------------------------
+
+    // ----------------------------------
+    // CORS Configuration
+    // ----------------------------------
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowAll", policy =>
@@ -54,9 +54,9 @@ try
         });
     });
 
-// ----------------------------------
-// Authentication
-// ----------------------------------
+    // ----------------------------------
+    // Authentication
+    // ----------------------------------
     builder.Services.AddAuthentication(options =>
         {
             options.DefaultScheme = "Cookies";
@@ -84,11 +84,11 @@ try
             options.JsonSerializerOptions.MaxDepth = 64;
         });
 
-/*
-╔════════════════════════════╗
-║  Dependency Injection      ║
-╚════════════════════════════╝
-*/
+    /*
+    ╔════════════════════════════╗
+    ║  Dependency Injection      ║
+    ╚════════════════════════════╝
+    */
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddDbContext<DeeplynxContext>(
@@ -254,18 +254,20 @@ try
               </header>
             </div>"));
     }
-    
+
     app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
     app.UseHttpsRedirection();
     app.UseAuthorization();
     app.MapControllers();
     app.Run();
 }
-catch (Exception ex)
+// ignore entity framework aborting in design. See https://github.com/dotnet/efcore/issues/29923
+catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
 }
-finally{
+finally
+{
     Log.CloseAndFlush();
 }
 
