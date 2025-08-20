@@ -278,12 +278,6 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Event>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("events_pkey");
-        
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.Events)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("events_user_id_fkey");
             
             entity.HasOne(d => d.Project)
                 .WithMany(p => p.Events)
@@ -294,7 +288,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.DataSource)
                 .WithMany(p => p.Events)
                 .HasForeignKey(d => d.DataSourceId)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("events_dataSource_id_fkey");
         });
 

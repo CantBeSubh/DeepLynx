@@ -109,6 +109,12 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Tags.RemoveRange(tags);
         var dataSources = await Context.DataSources.ToListAsync();
         Context.DataSources.RemoveRange(dataSources);
+        var subscriptions = await Context.Subscriptions.ToListAsync();
+        Context.Subscriptions.RemoveRange(subscriptions);
+        var actions = await Context.Actions.ToListAsync();
+        Context.Actions.RemoveRange(actions);
+        var events = await Context.Events.ToListAsync();
+        Context.Events.RemoveRange(events);
         await Context.SaveChangesAsync();
     }
     
