@@ -271,10 +271,10 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     [Fact]
     public async Task Delete_Success_RemovesObjectStorage()
     {
-        var deleted =  await _objectStorageBusiness.DeleteObjectStorage(pid, os1);
+        var deleted =  await _objectStorageBusiness.DeleteObjectStorage(pid, os2);
         deleted.Should().BeTrue();
         
-        var deletedObjectStorage = await Context.ObjectStorages.Where(os => os.ProjectId == pid && os.Id == os1).FirstOrDefaultAsync();
+        var deletedObjectStorage = await Context.ObjectStorages.Where(os => os.ProjectId == pid && os.Id == os2).FirstOrDefaultAsync();
         deletedObjectStorage.Should().BeNull();
     }
 
@@ -295,12 +295,12 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     [Fact]
     public async Task Archive_Success_ArchivesObjectStorage()
     {
-        var archived = await _objectStorageBusiness.ArchiveObjectStorage(pid, os1);
+        var archived = await _objectStorageBusiness.ArchiveObjectStorage(pid, os2);
         archived.Should().BeTrue();
         
-        var archivedObjectStorage = await Context.ObjectStorages.Where(os => os.Id == os1 && os.ProjectId == pid).FirstOrDefaultAsync();
+        var archivedObjectStorage = await Context.ObjectStorages.Where(os => os.Id == os2 && os.ProjectId == pid).FirstOrDefaultAsync();
         archivedObjectStorage.Should().NotBeNull();
-        archivedObjectStorage.Id.Should().Be(os1);
+        archivedObjectStorage.Id.Should().Be(os2);
         archivedObjectStorage.ArchivedAt.Should().NotBeNull();
     }
     
