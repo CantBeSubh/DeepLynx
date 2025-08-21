@@ -22,8 +22,6 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public long pid2;
     public long os1;
     public long os2;
-    public long os3;
-    public long os4;
     public long archivedOs;
     
     public ObjectStorageBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -370,7 +368,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     [Fact]
     public async Task ChangeDefault_Success_ChangesDefault()
     {
-        var newDefaultObjectStorage = await _objectStorageBusiness.ChangeDefaultObjectStorage(pid, os2);
+        var newDefaultObjectStorage = await _objectStorageBusiness.SetDefaultObjectStorage(pid, os2);
         newDefaultObjectStorage.Should().NotBeNull();
         newDefaultObjectStorage.Id.Should().Be(os2);
         newDefaultObjectStorage.Default.Should().BeTrue();
@@ -384,14 +382,14 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     [Fact]
     public async Task ChangeDefault_Fails_WhenObjectStorageIsAlreadyDefault()
     {
-        var result = () => _objectStorageBusiness.ChangeDefaultObjectStorage(pid, os1);
+        var result = () => _objectStorageBusiness.SetDefaultObjectStorage(pid, os1);
         await result.Should().ThrowAsync<InvalidOperationException>();
     }
     
     [Fact]
     public async Task ChangeDefault_Fails_WhenObjectStorageDoesNotExist()
     {
-        var result = () => _objectStorageBusiness.ChangeDefaultObjectStorage(pid, os1 + 1000);
+        var result = () => _objectStorageBusiness.SetDefaultObjectStorage(pid, os1 + 1000);
         await result.Should().ThrowAsync<KeyNotFoundException>();
     }
 
@@ -480,9 +478,6 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         await Context.SaveChangesAsync();
         os1 = objectStorage.Id;
         os2 = objectStorage2.Id;
-        os3 = objectStorage3.Id;
-        os4 = objectStorage4.Id;
         archivedOs = objectStorage5.Id;
-
     }
 }

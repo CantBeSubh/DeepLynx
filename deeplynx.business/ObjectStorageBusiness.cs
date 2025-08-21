@@ -356,7 +356,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <returns></returns>
     /// <exception cref="KeyNotFoundException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task<ObjectStorageResponseDto> ChangeDefaultObjectStorage(long projectId, long objectStorageId)
+    public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long projectId, long objectStorageId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         

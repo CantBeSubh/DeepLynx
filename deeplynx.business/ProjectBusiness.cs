@@ -145,17 +145,17 @@ public class ProjectBusiness : IProjectBusiness
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
         
         var config = new JsonObject();
-        if (defaultObjectStorageMethod == "azure_object")
+        if (defaultObjectStorageMethod == "filesystem")
         {
-            config["mountPath"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_MOUNT_PATH");
+            config["mountPath"] =  Environment.GetEnvironmentVariable("STORAGE_DIRECTORY");
         }
-        else if (defaultObjectStorageMethod == "filesystem")
+        else if (defaultObjectStorageMethod == "azure_object")
         {
-            config["mountPath"] =  Environment.GetEnvironmentVariable("FILESYSTEM_STORAGE_DIRECTORY");
+            config["azureConnectionString"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING");
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            config["mountPath"] = Environment.GetEnvironmentVariable("AWS_S3_MOUNT_PATH");
+            config["awsConnectionString"] = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING");
         }
         
         if (defaultObjectStorageMethod != null)

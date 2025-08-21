@@ -29,6 +29,4 @@ deeplynx.sln.DotSettings.user
 duckdb
 deeplynx.graph/kuzu_db
 
-Timeseries.db
-
 global.json

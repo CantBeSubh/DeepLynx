@@ -29,7 +29,6 @@ namespace deeplynx.tests
         public long TestProjectId;
         public long TestClassId;
         public long TestDataSourceId;
-        public long os1;
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -451,7 +450,6 @@ namespace deeplynx.tests
                 Name = "Multi Project Record 1",
                 ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
-                ObjectStorageId = os1,
                 ClassId = TestClassId,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -464,7 +462,6 @@ namespace deeplynx.tests
                 Name = "Multi Project Record 2",
                 ProjectId = secondProject.Id,
                 DataSourceId = secondDataSource.Id,
-                ObjectStorageId = os1,
                 ClassId = secondClass.Id,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -481,7 +478,6 @@ namespace deeplynx.tests
                 RecordId = record1.Id,
                 Name = record1.Name,
                 ProjectId = TestProjectId,
-                ObjectStorageId = os1,
                 ObjectStorageName = secondProject.Name,
                 ProjectName = "Test Project",
                 Properties = record1.Properties,
@@ -543,9 +539,7 @@ namespace deeplynx.tests
         [Fact]
         public void ProjectResponseDto_AllProperties_CanBeSetAndRetrieved()
         {
-            
             var now = DateTime.UtcNow;
-
            
             var dto = new ProjectResponseDto
             {
@@ -606,26 +600,12 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestDataSourceId = testDataSource.Id;
             
-            var config = new JsonObject();
-            var objectStorage = new ObjectStorage
-            {
-                Name = "Object Storage 1",
-                Type = "filesystem",
-                Config = config.ToString(),
-                ProjectId = TestProjectId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.ObjectStorages.Add(objectStorage);
-            await Context.SaveChangesAsync();
-            os1 = objectStorage.Id;
-            
             
             var testRecord = new Record
             {
                 Name = "Test Record",
                 ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
-                ObjectStorageId = os1,
                 ClassId = TestClassId,
                 Properties = "{}",
                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -634,7 +614,6 @@ namespace deeplynx.tests
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();
-            
         }
     }
 }

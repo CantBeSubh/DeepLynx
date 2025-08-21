@@ -601,7 +601,6 @@ namespace deeplynx.tests
                 Name = "Test Record 1",
                 ClassId = testClass.Id,
                 DataSourceId = did,
-                ObjectStorageId = os1,
                 ProjectId = pid,
                 OriginalId = "og1",
                 Description = "Test Description 1",
@@ -615,7 +614,6 @@ namespace deeplynx.tests
                 Name = "Test Record 2",
                 ClassId = testClass.Id,
                 DataSourceId = did,
-                ObjectStorageId = os1,
                 ProjectId = pid,
                 OriginalId = "og2",
                 Description = "Test Description 2",
@@ -862,19 +860,6 @@ public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             did = dataSource.Id;
-
-            var config = new JsonObject();
-            var objectStorage = new ObjectStorage
-            {
-                Name = "Object Storage 1",
-                Type = "filesystem",
-                Config = config.ToString(),
-                ProjectId = project.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.ObjectStorages.Add(objectStorage);
-            await Context.SaveChangesAsync();
-            os1 = objectStorage.Id;
 
         }
     }

@@ -46,7 +46,7 @@ public partial class Record
     public long DataSourceId { get; set; }
     
     [Column("object_storage_id")]
-    public long ObjectStorageId { get; set; }
+    public long? ObjectStorageId { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }

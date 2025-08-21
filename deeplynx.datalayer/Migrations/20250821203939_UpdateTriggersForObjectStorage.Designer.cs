@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250819190900_UpdateObjectStorages")]
-    partial class UpdateObjectStorages
+    [Migration("20250821203939_UpdateTriggersForObjectStorage")]
+    partial class UpdateTriggersForObjectStorage
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -670,12 +670,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("ObjectStorageId")
+                    b.Property<long?>("ObjectStorageId")
                         .HasColumnType("bigint")
                         .HasColumnName("object_storage_id");
 
                     b.Property<string>("ObjectStorageName")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("object_storage_name");
 
@@ -808,6 +807,13 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("archived_at");
 
+                    b.Property<string>("ConfigJson")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config")
+                        .HasDefaultValueSql("'{\"edgeRecordsMutable\":false,\"ontologyMutable\":false,\"tagsMutable\":false}'::jsonb");
+
                     b.Property<DateTime>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -896,7 +902,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("ObjectStorageId")
+                    b.Property<long?>("ObjectStorageId")
                         .HasColumnType("bigint")
                         .HasColumnName("object_storage_id");
 
@@ -1535,8 +1541,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.ObjectStorage", "ObjectStorage")
                         .WithMany("Records")
                         .HasForeignKey("ObjectStorageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("records_object_storage_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")

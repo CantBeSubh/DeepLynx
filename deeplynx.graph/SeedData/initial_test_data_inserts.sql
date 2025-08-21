@@ -10,8 +10,8 @@ INSERT INTO data_sources (name, config, project_id)
 VALUES ('test', '{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
 
 -- Insert into object_storages with subquery for project_id
-INSERT INTO object_storages (name, type, config, project_id)
-VALUES ('test', 'filesystem', '{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
+INSERT INTO object_storages (name, type, config, project_id, "default")
+VALUES ('test', 'filesystem', '{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1), false);
 
 -- Insert into tags with subquery for project_id
 INSERT INTO tags (name, project_id)

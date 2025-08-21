@@ -97,7 +97,6 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Record",
             Description = "Test record for unit tests",
             OriginalId = "og_id",
-            ObjectStorageId = objectStorage.Id,
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
@@ -226,7 +225,6 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "New Test Record",
             Description = "Test Record Description",
-            ObjectStorageId = os1,
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",

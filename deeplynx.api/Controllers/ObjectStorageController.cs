@@ -218,19 +218,19 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Change the default object storage for a project
+        /// Sets default object storage
         /// </summary>
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <param name="objectStorageId">ID of object storage to make default</param> 
         /// <returns></returns>
-        [HttpPut("ChangeDefaultObjectStorage/{objectStorageId}", Name = "api_change_default_object_storage")]
-        public async Task<ActionResult<ObjectStorageResponseDto>> MakeObjectStorageDefault(
+        [HttpPut("SetDefaultObjectStorage/{objectStorageId}", Name = "api_change_default_object_storage")]
+        public async Task<ActionResult<ObjectStorageResponseDto>> SetDefaultObjectStorage(
             long projectId,
             long objectStorageId)
         {
             try
             {
-                await _objectStorageBusiness.ChangeDefaultObjectStorage(projectId, objectStorageId);
+                await _objectStorageBusiness.SetDefaultObjectStorage(projectId, objectStorageId);
                 return Ok(new { message = $"Made object storage with id {objectStorageId} default" });
             }
             catch (Exception ex)
