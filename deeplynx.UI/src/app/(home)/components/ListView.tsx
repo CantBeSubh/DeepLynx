@@ -46,16 +46,29 @@ const ListView: React.FC<ListViewProps> = ({
     return { content, matched: true };
   };
 
-  const renderTags = (tags: string) => {
+  const renderTags = (
+    tags: string | Record<string, string> | null | undefined
+  ) => {
     try {
-      const parsedTags: string[] = JSON.parse(tags);
-      return parsedTags
-        .filter((t: string) => t !== null && t !== undefined)
-        .map((t: string) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
+      const obj = typeof tags === "string" ? JSON.parse(tags) : tags;
+      if (!obj || typeof obj !== "object") return null;
+
+      const values = [...new Set(
+        Object.values(obj as Record<string, unknown>)
+          .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+      )];
+
+      if (!values.length) return null;
+
+      return (
+        <span className="inline-flex flex-wrap gap-2">
+          {values.map((v) => (
+            <span key={v} className="badge badge-sm">
+              {v}
+            </span>
+          ))}
+        </span>
+      );
     } catch {
       return null;
     }
@@ -77,6 +90,8 @@ const ListView: React.FC<ListViewProps> = ({
             record.description,
             activeSearchTerms
           );
+          const className = getHighlightedCell(record.className, activeSearchTerms);
+          // const time = getHighlightedCell(record.timeseries, activeSearchTerms);
           const date = getHighlightedCell(
             record.modifiedAt ?? record.createdAt,
             activeSearchTerms
@@ -92,15 +107,14 @@ const ListView: React.FC<ListViewProps> = ({
               }
             >
               <div className="mb-1 text-lg">{name.content}</div>
-              {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
               <span className="text-sm">{desc.content}</span>
               <div className="flex pt-2">
                 {record.className && (
                   <span className="font-bold">
                     {t.translations.CLASS}
-                    <span className="badge badge-sm text-xs ml-2">
-                      {t.translations.TIMESERIES}
-                    </span>
+                    <div className="badge badge-sm">
+                      {className.content}
+                    </div>
                   </span>
                 )}
                 <div className="ml-4">
