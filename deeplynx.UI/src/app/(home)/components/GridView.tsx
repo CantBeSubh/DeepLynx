@@ -3,6 +3,7 @@
 import React from "react";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
 import { useRouter } from "next/navigation";
+import GenericTable from "./GenericTable";
 
 type GridViewProps = {
   columns: Column<FileViewerTableRow>[];
@@ -55,41 +56,14 @@ const GridView = <T extends object>({
       );
 
   return (
-    <div className="h-150 overflow-x-auto px-8">
-      <table className="table table-pin-rows table-pin-cols">
-        <thead>
-          <tr>
-            {columns.map((column, index) => (
-              <th
-                key={index}
-                className="text-base-content border border-base-200 bg-info/30"
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredRecords.map((row, rowIndex) => (
-            <tr key={rowIndex} className="cursor-pointer hover:bg-base-200/30">
-              {columns.map((column, colIndex) => {
-                const rawValue = column.data ? row[column.data] : "";
-
-                return (
-                  <td
-                    key={colIndex}
-                    className="text-base-content border border-base-200"
-                  >
-                    {column.cell
-                      ? column.cell(row)
-                      : getHighlightedCell(rawValue, activeSearchTerms).content}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <GenericTable
+        columns={columns}
+        data={filteredRecords}
+        enablePagination
+        rowsPerPage={8}
+        gridView={true}
+      />
     </div>
   );
 };
