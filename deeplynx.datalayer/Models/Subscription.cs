@@ -28,7 +28,7 @@ namespace deeplynx.datalayer.Models
         public string? Operation { get; set; }
         
         [Column("project_id")] 
-        public long? ProjectId { get; set; }
+        public long ProjectId { get; set; }
         
         [Column("data_source_id")] 
         public long? DataSourceId { get; set; }

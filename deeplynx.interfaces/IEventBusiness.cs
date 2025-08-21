@@ -1,0 +1,10 @@
+using deeplynx.models;
+using deeplynx.datalayer.Models;
+namespace deeplynx.interfaces;
+
+public interface IEventBusiness
+{
+    Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId);
+
+    Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto);
+}
