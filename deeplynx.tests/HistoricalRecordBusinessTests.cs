@@ -27,6 +27,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public long os1;
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
+    private EventBusiness _eventBusiness;
     
     public HistoricalRecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -34,7 +35,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _historicalRecordBusiness = new HistoricalRecordBusiness(Context);
-        _recordBusiness = new RecordBusiness(Context);
+        _eventBusiness = new EventBusiness(Context);
+        _recordBusiness = new RecordBusiness(Context, _eventBusiness);
     }
 
     [Fact]

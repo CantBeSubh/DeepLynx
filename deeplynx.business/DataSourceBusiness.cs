@@ -6,6 +6,7 @@ using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace deeplynx.business
 {
@@ -16,6 +17,7 @@ namespace deeplynx.business
         // dependants used to trigger downstream soft deletes
         private readonly IEdgeBusiness _edgeBusiness;
         private readonly IRecordBusiness _recordBusiness;
+        private readonly IEventBusiness _eventBusiness;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DataSourceBusiness"/> class.
@@ -23,14 +25,18 @@ namespace deeplynx.business
         /// <param name="context">The database context used for the data source operations.</param>
         /// <param name="edgeBusiness">Passed in context for downstream edge objects.</param>
         /// <param name="recordBusiness">Passed in context for downstream record objects.</param>
+        /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
         public DataSourceBusiness(
             DeeplynxContext context,
             IEdgeBusiness edgeBusiness,
-            IRecordBusiness recordBusiness)
+            IRecordBusiness recordBusiness,
+            IEventBusiness eventBusiness
+            )
         {
             _context = context;
             _edgeBusiness = edgeBusiness;
             _recordBusiness = recordBusiness;
+            _eventBusiness = eventBusiness;
         }
 
         /// <summary>
@@ -141,6 +147,18 @@ namespace deeplynx.business
 
             await _context.DataSources.AddAsync(dataSource);
             await _context.SaveChangesAsync();
+            
+            // Log DataSource Create Event
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "create",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                CreatedBy = "" // TODO: add username when JWT are implemented
+            });
 
             return new DataSourceResponseDto
             {
@@ -190,6 +208,17 @@ namespace deeplynx.business
 
             //_context.DataSources.Update(dataSource);
             await _context.SaveChangesAsync();
+            
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "update",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                CreatedBy = "" // TODO: add username when JWT are implemented
+            });
 
             return new DataSourceResponseDto
             {
@@ -226,7 +255,7 @@ namespace deeplynx.business
 
             _context.DataSources.Remove(dataSource);
             await _context.SaveChangesAsync();
-
+            
             return true;
         }
 
@@ -262,6 +291,18 @@ namespace deeplynx.business
                         throw new DependencyDeletionException(
                             $"unable to archive data source {dataSourceId} or its downstream dependents.");
                     }
+                    
+                    // log event with datasource soft delete details
+                    await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                    {
+                        ProjectId = projectId,
+                        Operation = "delete",
+                        EntityType = "data_source",
+                        EntityId = dataSource.Id,
+                        DataSourceId = null,
+                        Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                        CreatedBy = "" // TODO: add username when JWT are implemented
+                    });
 
                     await transaction.CommitAsync();
                     return true;
