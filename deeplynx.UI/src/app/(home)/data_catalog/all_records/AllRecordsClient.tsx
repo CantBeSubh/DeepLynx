@@ -196,7 +196,7 @@ export default function DataCatalogClient({
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-info-content">
             {t.translations.DATA_CATALOG}
@@ -278,7 +278,6 @@ export default function DataCatalogClient({
                   </Link>
                 ),
               },
-              { header: "Description", data: "description" },
               {
                 header: "Class",
                 cell: (row) =>

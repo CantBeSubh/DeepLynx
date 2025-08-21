@@ -49,13 +49,13 @@ const GridView = <T extends object>({
     selectedProjects?.includes("All your Projects") || !selectedProjects
       ? data
       : data.filter(
-          (record) =>
-            record.projectId !== undefined &&
-            selectedProjects.includes(record.projectId?.toString())
-        );
+        (record) =>
+          record.projectId !== undefined &&
+          selectedProjects.includes(record.projectId?.toString())
+      );
 
   return (
-    <div className="h-150 overflow-x-auto">
+    <div className="h-150 overflow-x-auto px-8">
       <table className="table table-pin-rows table-pin-cols">
         <thead>
           <tr>

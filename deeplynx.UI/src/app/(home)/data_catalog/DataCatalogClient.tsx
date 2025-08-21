@@ -287,63 +287,14 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-
-      {
-        activeFilters.length > 0 || showAll ? (
-          viewMode === "list" ? (
-            <ListView
-              data={tableData}
-              activeSearchTerms={activeSearchTerms}
-              selectedProjects={selectedProjectIdsNum}
-            />
-          ) : (
-            <GridView
-              columns={[
-                { header: "ID", data: "id" },
-                {
-                  header: "Record Name",
-                  cell: (row) => (
-                    <Link
-                      href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
-                      className="text-base-content font-bold hover:underline"
-                    >
-                      {row.name}
-                    </Link>
-                  ),
-                },
-                { header: "Description", data: "description" },
-                {
-                  header: "Class",
-                  cell: (row) =>
-                    row.className ? (
-                      <span className="badge text-sm">{row.className}</span>
-                    ) : null,
-                },
-                {
-                  header: "Tags",
-                  cell: (row) => renderTags(row.tags),
-                },
-                {
-                  header: "Last Edited",
-                  cell: (row) => row.modifiedAt ?? row.createdAt,
-                },
-              ]}
-              data={tableData}
-              activeSearchTerms={activeSearchTerms}
-              selectedProjects={selectedProjects}
-            />
-          )
-        ) : (
-          <div className="flex w-full gap-8 pl-8">
-            <div className="w-2/3">
-              <RecentRecordsCard selectedProjects={selectedProjects} />
-            </div>
-            <div className="w-1/3">
-              <SavedSearches />
-            </div>
-          </div>
-        )
-      }
+      <div className="flex w-full gap-8 pl-8">
+        <div className="w-2/3">
+          <RecentRecordsCard selectedProjects={selectedProjects} />
+        </div>
+        <div className="w-1/3">
+          <SavedSearches />
+        </div>
+      </div>
     </div >
   );
 }
