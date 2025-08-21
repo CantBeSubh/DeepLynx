@@ -8,7 +8,6 @@ namespace deeplynx.datalayer.Models
 {
     [Table("events", Schema = "deeplynx")]
     [Index("Id", Name = "idx_events_id")]
-    [Index("UserId", Name = "idx_events_user_id")]
     [Index("ProjectId", Name = "idx_events_project_id")]
     public partial class Event
     {
@@ -16,9 +15,6 @@ namespace deeplynx.datalayer.Models
         [Column("id")]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
-
-        [Column("user_id")]
-        public long? UserId { get; set; }
 
         [Column("operation")]
         public string Operation { get; set; }
@@ -43,19 +39,6 @@ namespace deeplynx.datalayer.Models
 
         [Column("created_at", TypeName = "timestamp without time zone")]
         public DateTime CreatedAt { get; set; }
-
-        [Column("modified_by")]
-        public string? ModifiedBy { get; set; }
-
-        [Column("modified_at", TypeName = "timestamp without time zone")]
-        public DateTime? ModifiedAt { get; set; }
-
-        [Column("archived_at", TypeName = "timestamp without time zone")]
-        public DateTime? ArchivedAt { get; set; }
-        
-        [ForeignKey("UserId")]
-        [InverseProperty("Events")]
-        public virtual User? User { get; set; }
 
         [ForeignKey("ProjectId")]
         [InverseProperty("Events")]
