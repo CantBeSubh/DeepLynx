@@ -345,6 +345,7 @@ public class ProjectBusiness : IProjectBusiness
                 OriginalId = r.OriginalId,
                 Name = r.Name,
                 ClassId = r.ClassId,
+                ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
                 CreatedBy = r.CreatedBy,
