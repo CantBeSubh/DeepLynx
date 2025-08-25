@@ -7,7 +7,7 @@ export const api = axios.create({
 
 export const deleteEdge = async (projectId: number, edgeId: string | null, originId: string, destinationId: string) => {
     try {
-        let queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
         if (edgeId) queryParams.append('edgeId', edgeId);
         if (originId) queryParams.append('originId', originId);
         if (destinationId) queryParams.append('destinationId', destinationId);
@@ -24,7 +24,7 @@ export const deleteEdge = async (projectId: number, edgeId: string | null, origi
 
 export const getEdge = async (projectId: number, edgeId: string | null, originId: string, destinationId: string) => {
     try {
-        let queryParams = new URLSearchParams();
+        const queryParams = new URLSearchParams();
         if (edgeId) queryParams.append('edgeId', edgeId);
         if (originId) queryParams.append('originId', originId);
         if (destinationId) queryParams.append('destinationId', destinationId);
