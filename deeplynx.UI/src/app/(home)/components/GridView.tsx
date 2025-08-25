@@ -27,7 +27,7 @@ const GridView = ({
       );
 
   return (
-    <div className="p-8">
+    <div className="px-8">
       <GenericTable
         columns={columns}
         data={filteredRecords}

@@ -245,11 +245,11 @@ const GenericTable = <T extends object>({
           }`}
       >
         <thead>
-          <tr>
+          <tr className="text-info-content">
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`text-base-content  ${gridView ? "border border-base-200 bg-info/30" : ""
+                className={`${gridView ? "border border-base-200 bg-info/30" : ""
                   } ${column.sortable !== false ? "cursor-pointer select-none" : ""
                   } ${column.data === "id" ? "sticky left-0 z-10 bg-info-80" : ""
                   }`}
@@ -280,7 +280,7 @@ const GenericTable = <T extends object>({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="text-info-content">
           {currentData.map((row, rowIndex) => {
             const isPrivate = row["visibility" as keyof T] === "Private";
             const rowId = row["id" as keyof T];
@@ -291,9 +291,9 @@ const GenericTable = <T extends object>({
             return (
               <tr
                 key={rowIndex}
-                className={`${typeof rowClassName === "function"
-                    ? rowClassName(row, rowIndex)
-                    : rowClassName || ""
+                className={`text-info-content ${typeof rowClassName === "function"
+                  ? rowClassName(row, rowIndex)
+                  : rowClassName || ""
                   } ${isPrivate
                     ? "printer-events-none opacity-60"
                     : "hover:bg-base-200 bg-base-100"
@@ -303,10 +303,10 @@ const GenericTable = <T extends object>({
                   <td
                     key={colIndex}
                     className={`${column.data === "id"
-                        ? "sticky left-0 z-10 bg-info-80"
-                        : ""
+                      ? "sticky left-0 z-10 bg-info-80"
+                      : ""
                       } ${gridView ? "border border-base-200" : ""
-                      } text-base-content`}
+                      } text-info-content`}
                   >
                     {column.cell
                       ? column.cell(row)
@@ -315,7 +315,7 @@ const GenericTable = <T extends object>({
                 ))}
                 {isPrivate && (
                   <td
-                    className="text-right pr-4 text-secondary"
+                    className="text-right pr-4"
                     title="Private - request access"
                   >
                     <LockClosedIcon className="size-6" />

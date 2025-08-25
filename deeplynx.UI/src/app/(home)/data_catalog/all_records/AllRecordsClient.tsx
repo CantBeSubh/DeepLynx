@@ -286,7 +286,7 @@ export default function DataCatalogClient({
                 cell: (row) => (
                   <Link
                     href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
-                    className="text-base-content font-bold hover:underline"
+                    className="text-info-content font-bold hover:underline"
                   >
                     {row.name}
                   </Link>
