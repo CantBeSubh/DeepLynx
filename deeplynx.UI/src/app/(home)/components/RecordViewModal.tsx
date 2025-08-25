@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import PropertyTable from '../(routes)/data_catalog/record/PropertyTable';
+import PropertyTable from './PropertyTable';
 import { Column, FileViewerTableRow } from '../types/types';
 import GenericTable from './GenericTable';
 
