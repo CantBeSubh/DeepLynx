@@ -4,22 +4,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
 import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
-import SavedSearches from "../components/SavedSearches";
-import GridView from "../components/GridView";
-import ListView from "../components/ListView";
-import ProjectDropdown from "../components/ProjectDropdown";
-import RecentRecordsCard from "../components/RecentRecordsCard";
+import GridView from "../../components/GridView";
+import ListView from "../../components/ListView";
+import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 
 import {
-  ArrowUturnLeftIcon,
-  EyeIcon,
-  PlusIcon,
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
@@ -172,20 +167,34 @@ export default function DataCatalogClient({
     fetchRecordsForSelection,
   ]);
 
-  function renderTags(tags: string) {
+  const renderTags = (tags: string | null | undefined) => {
+    if (!tags) return null;
+
     try {
-      const parsed: string[] = JSON.parse(tags);
-      return parsed
-        .filter((t) => t != null)
-        .map((t) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
+      const parsed = JSON.parse(tags);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+
+      const values = arr.flatMap((item: Tags) => {
+        if (item && typeof item === "object") {
+          if (typeof item.name === "string") return [item.name];
+          return Object.values(item).filter((v) => typeof v === "string");
+        }
+        return [];
+      });
+
+      return (
+        <span className="inline-flex flex-wrap gap-2">
+          {values.map((v, i) => (
+            <span key={`${v}-${i}`} className="badge badge-sm">
+              {v}
+            </span>
+          ))}
+        </span>
+      );
     } catch {
       return null;
     }
-  }
+  };
 
   const selectedProjectIdsNum = useMemo(
     () => selectedProjects.map((id) => Number(id)),
@@ -196,7 +205,7 @@ export default function DataCatalogClient({
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-info-content">
             {t.translations.DATA_CATALOG}
@@ -213,10 +222,9 @@ export default function DataCatalogClient({
           />
         </div>
       </div>
-
-      <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
-        {/* Left: Search */}
-        <div className="flex flex-col md:w-1/2">
+      <div className="flex flex-col gap-4 mb-4 pt-4 pl-8 w-full">
+        {/* Top: Search */}
+        <div className="flex justify-end pr-10">
           <LargeSearchBar
             placeholder="Search"
             value={searchTerm}
@@ -229,72 +237,78 @@ export default function DataCatalogClient({
             onClearAll={clearAllFilters}
             resultCount={tableData.length}
             showResultsMessage={activeFilters.length > 0}
-            className="w-full"
+            className="w-1/4"
           />
         </div>
-
-        {/* Right: actions */}
-        <div className="flex gap-4 pr-4">
-          {showAll ? (
+        <div className="divider my-0"></div>
+        {/* Bottom: Actions */}
+        <div className="flex items-center justify-between">
+          <div className="text-info-content px-4 text-lg">All Records</div>
+          <div className="flex gap-1 pr-10">
             <button
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(false);
-                setViewMode("list");
-                // clearAllFilters();
-              }}
+              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
+              onClick={() => setViewMode("list")}
             >
-              <ArrowUturnLeftIcon className="h-6 w-6" />
-              {t.translations.RECENT_ACTIVITY}
+              <QueueListIcon className="h-7 w-7" />
             </button>
-          ) : (
-            <Link
-              href="data_catalog/all_records"
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(true);
-                setViewMode("list");
-                clearAllFilters();
-              }}
+            <button
+              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
+              onClick={() => setViewMode("table")}
             >
-              <EyeIcon className="h-6 w-6" />
-              {t.translations.EXPLORE_ALL_RECORDS}
-            </Link>
-          )}
-
-          <button className="btn btn-primary text-white">
-            <PlusIcon className="h-6 w-6" />
-            {t.translations.RECORD}
-          </button>
-
-          {(activeFilters.length > 0 || showAll) && (
-            <div className="flex gap-1">
-              <button
-                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
-                  }`}
-                onClick={() => setViewMode("list")}
-              >
-                <QueueListIcon className="h-7 w-7" />
-              </button>
-              <button
-                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
-                  }`}
-                onClick={() => setViewMode("table")}
-              >
-                <TableCellsIcon className="h-7 w-7" />
-              </button>
-            </div>
-          )}
+              <TableCellsIcon className="h-7 w-7" />
+            </button>
+          </div>
         </div>
+        <div className="divider my-0"></div>
       </div>
-      <div className="flex w-full gap-8 pl-8">
-        <div className="w-2/3">
-          <RecentRecordsCard selectedProjects={selectedProjects} />
-        </div>
-        <div className="w-1/3">
-          <SavedSearches />
-        </div>
-      </div>
-    </div >
+
+
+      {(
+        viewMode === "list" ? (
+          <ListView
+            data={tableData}
+            activeSearchTerms={activeSearchTerms}
+            selectedProjects={selectedProjectIdsNum}
+          />
+        ) : (
+          <GridView
+            columns={[
+              { header: "ID", data: "id", sortable: true },
+              {
+                header: "Record Name",
+                cell: (row) => (
+                  <Link
+                    href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
+                    className="text-info-content font-bold hover:underline"
+                  >
+                    {row.name}
+                  </Link>
+                ),
+              },
+              {
+                header: "Class",
+                cell: (row) =>
+                  row.className ? (
+                    <span className="badge text-sm">{row.className}</span>
+                  ) : null,
+              },
+              {
+                header: "Tags",
+                cell: (row) => renderTags(row.tags),
+              },
+              {
+                header: "Last Edited",
+                cell: (row) => row.modifiedAt ?? row.createdAt,
+              },
+            ]}
+            data={tableData}
+            activeSearchTerms={activeSearchTerms}
+            selectedProjects={selectedProjects}
+          />
+        )
+      )}
+    </div>
   );
 }

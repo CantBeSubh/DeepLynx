@@ -101,9 +101,9 @@ const GenericTable = <T extends object>({
   // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
-        (currentPage - 1) * rowsPerPage,
-        currentPage * rowsPerPage
-      )
+      (currentPage - 1) * rowsPerPage,
+      currentPage * rowsPerPage
+    )
     : sortedData;
 
   // Handle page click for pagination
@@ -120,9 +120,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -146,9 +145,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -188,9 +186,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -216,11 +213,10 @@ const GenericTable = <T extends object>({
 
   return (
     <div
-      className={`overflow-x-auto ${
-        bordered ? "rounded-box border border-neutral-content" : ""
-      } p-2`}
+      className={`overflow-x-auto ${bordered ? "rounded-box border border-neutral-content" : ""
+        } p-2`}
     >
-      <div className="my-4 flex justify-between items-center">
+      <div className="flex justify-between items-center">
         {searchBar && (
           <SearchInput
             placeholder={filterPlaceholder}
@@ -245,27 +241,23 @@ const GenericTable = <T extends object>({
         )}
       </div>
       <table
-        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${
-          tableClassName ?? ""
-        }`}
+        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${tableClassName ?? ""
+          }`}
       >
         <thead>
-          <tr>
+          <tr className="text-info-content">
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`text-base-content  ${
-                  gridView ? "border border-base-200 bg-info/30" : ""
-                } ${
-                  column.sortable !== false ? "cursor-pointer select-none" : ""
-                } ${
-                  column.data === "id" ? "sticky left-0 z-10 bg-info-80" : ""
-                }`}
+                className={`${gridView ? "border border-base-200 bg-info/30" : ""
+                  } ${column.sortable !== false ? "cursor-pointer select-none" : ""
+                  } ${column.data === "id" ? "sticky left-0 z-10 bg-info-80" : ""
+                  }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                    sortConfig?.direction === "asc"
+                      sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });
@@ -288,7 +280,7 @@ const GenericTable = <T extends object>({
             ))}
           </tr>
         </thead>
-        <tbody>
+        <tbody className="text-info-content">
           {currentData.map((row, rowIndex) => {
             const isPrivate = row["visibility" as keyof T] === "Private";
             const rowId = row["id" as keyof T];
@@ -299,26 +291,22 @@ const GenericTable = <T extends object>({
             return (
               <tr
                 key={rowIndex}
-                className={`${
-                  typeof rowClassName === "function"
-                    ? rowClassName(row, rowIndex)
-                    : rowClassName || ""
-                } ${
-                  isPrivate
+                className={`text-info-content ${typeof rowClassName === "function"
+                  ? rowClassName(row, rowIndex)
+                  : rowClassName || ""
+                  } ${isPrivate
                     ? "printer-events-none opacity-60"
                     : "hover:bg-base-200 bg-base-100"
-                }`}
+                  }`}
               >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className={`${
-                      column.data === "id"
-                        ? "sticky left-0 z-10 bg-info-80"
-                        : ""
-                    } ${
-                      gridView ? "border border-base-200" : ""
-                    } text-base-content`}
+                    className={`${column.data === "id"
+                      ? "sticky left-0 z-10 bg-info-80"
+                      : ""
+                      } ${gridView ? "border border-base-200" : ""
+                      } text-info-content`}
                   >
                     {column.cell
                       ? column.cell(row)
@@ -327,7 +315,7 @@ const GenericTable = <T extends object>({
                 ))}
                 {isPrivate && (
                   <td
-                    className="text-right pr-4 text-secondary"
+                    className="text-right pr-4"
                     title="Private - request access"
                   >
                     <LockClosedIcon className="size-6" />
