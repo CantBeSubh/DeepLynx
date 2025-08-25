@@ -72,8 +72,8 @@ export const translations = {
             SAVED_SEARCHES: "Saved Searches",
             TIMESERIES_VIEWER: "Timeseries Viewer",
             SETTINGS: "Settings",
-            HELP: "Help",
-            CONTACT: "Contact",
+            HELP: "Help", 
+            CONTACT: "Contact", 
             FILE_A_BUG: "File A Bug",
             EXPLORE_ALL_RECORDS: "Explore all records",
             SEE_MORE: "See more",
@@ -89,7 +89,13 @@ export const translations = {
             NEED_HELP_UPLOADING: "Need Help? Details can be creating or updating a project via an ontology file can be found on our",
             PREV: "Prev",
             LOGOUT: "Logout",
-
+        },
+        ConfirmationModal: {
+            UNLINK_TAG: "Unlink Tag",
+            ARE_YOU_SURE: "Are you sure you want to unlink?",
+            FROM: "from",
+            NO: "No",
+            YES: "Yes"
         }
     },
     es: {
@@ -167,7 +173,13 @@ export const translations = {
             HELP: "Ayuda",
             CONTACT: "Contacto",
             FILE_A_BUG: "Reportar un error"
-
+        },
+        ConfirmationModal: {
+            UNLINK_TAG: "Desvincular Etiqueta",
+            ARE_YOU_SURE: "¿Estás seguro de que deseas desvincular?",
+            FROM: "de",
+            NO: "No",
+            YES: "Sí"
         }
     }
 }

@@ -55,3 +55,31 @@ export async function updateRecord(
     throw error;
   }
 }
+
+export const attachTagToRecord = async (projectId: number, recordId: number, tagId: number) => {
+    try {
+        const res = await api.post(
+            `/projects/${projectId}/records/AttachTag/${recordId}`, 
+            null,
+            { params: { tagId: tagId } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error attaching tag to record:", error);
+        throw error;
+    }
+};
+
+export const unAttachTagFromRecord = async (projectId: number, recordId: number, tagId: number) => {
+    try {
+        const res = await api.post(
+            `/projects/${projectId}/records/UnattachTag/${recordId}`, 
+            null,
+            { params: { tagId: tagId } }
+        );
+        return res.data;
+    } catch (error) {
+        console.error("Error unattaching tag to record:", error);
+        throw error;
+    }
+};
