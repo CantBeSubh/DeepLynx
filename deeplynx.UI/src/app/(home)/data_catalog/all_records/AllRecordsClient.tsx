@@ -172,20 +172,34 @@ export default function DataCatalogClient({
     fetchRecordsForSelection,
   ]);
 
-  function renderTags(tags: string) {
+  const renderTags = (tags: string | null | undefined) => {
+    if (!tags) return null;
+
     try {
-      const parsed: string[] = JSON.parse(tags);
-      return parsed
-        .filter((t) => t != null)
-        .map((t) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
+      const parsed = JSON.parse(tags);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+
+      const values = arr.flatMap((item: any) => {
+        if (item && typeof item === "object") {
+          if (typeof item.name === "string") return [item.name];
+          return Object.values(item).filter((v) => typeof v === "string");
+        }
+        return [];
+      });
+
+      return (
+        <span className="inline-flex flex-wrap gap-2">
+          {values.map((v, i) => (
+            <span key={`${v}-${i}`} className="badge badge-sm">
+              {v}
+            </span>
+          ))}
+        </span>
+      );
     } catch {
       return null;
     }
-  }
+  };
 
   const selectedProjectIdsNum = useMemo(
     () => selectedProjects.map((id) => Number(id)),
@@ -266,7 +280,7 @@ export default function DataCatalogClient({
         ) : (
           <GridView
             columns={[
-              { header: "ID", data: "id" },
+              { header: "ID", data: "id", sortable: true },
               {
                 header: "Record Name",
                 cell: (row) => (

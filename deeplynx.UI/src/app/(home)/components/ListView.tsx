@@ -50,6 +50,7 @@ const ListView: React.FC<ListViewProps> = ({
     );
     return { content, matched: true };
   };
+
   const totalPages = Math.ceil(data.length / RECORDS_PER_PAGE);
   const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
   const paginatedRecords = data.slice(
@@ -57,24 +58,25 @@ const ListView: React.FC<ListViewProps> = ({
     startIndex + RECORDS_PER_PAGE
   );
 
-  const renderTags = (
-    tags: string | Record<string, string> | null | undefined
-  ) => {
+  const renderTags = (tags: string | null | undefined) => {
+    if (!tags) return null;
+
     try {
-      const obj = typeof tags === "string" ? JSON.parse(tags) : tags;
-      if (!obj || typeof obj !== "object") return null;
+      const parsed = JSON.parse(tags);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = [...new Set(
-        Object.values(obj as Record<string, unknown>)
-          .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
-      )];
-
-      if (!values.length) return null;
+      const values = arr.flatMap((item: any) => {
+        if (item && typeof item === "object") {
+          if (typeof item.name === "string") return [item.name];
+          return Object.values(item).filter((v) => typeof v === "string");
+        }
+        return [];
+      });
 
       return (
         <span className="inline-flex flex-wrap gap-2">
-          {values.map((v) => (
-            <span key={v} className="badge badge-sm">
+          {values.map((v, i) => (
+            <span key={`${v}-${i}`} className="badge badge-sm">
               {v}
             </span>
           ))}
@@ -121,7 +123,7 @@ const ListView: React.FC<ListViewProps> = ({
               <span className="text-sm">{desc.content}</span>
               <div className="flex pt-2">
                 {record.className && (
-                  <span className="font-bold">
+                  <span>
                     {t.translations.CLASS}
                     <div className="badge badge-sm">
                       {className.content}
