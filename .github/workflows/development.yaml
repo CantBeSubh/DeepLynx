@@ -6,14 +6,11 @@ on:
 
 jobs:
   build:
-    # Checkout the repository
     runs-on: [self-hosted]
     environment: development
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       # Builds the required image
       - shell: bash
@@ -34,33 +31,7 @@ jobs:
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
-          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER=: ${{ vars.OKTA_ISSUER }}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
         run: |
-          # Print all environment variables
-          echo "ACR_SP_USER=$ACR_SP_USER"
-          echo "ACR_SP_PASSWORD=$ACR_SP_PASSWORD"
-          echo "ACR_REGISTRY=$ACR_REGISTRY"
-          echo "ACR_PATH=$ACR_PATH"
-          echo "ACR_SP_TENANT=$ACR_SP_TENANT"
-          echo "ACR_SUBSCRIPTION=$ACR_SUBSCRIPTION"
-          echo "GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER"
-          echo "NEXT_PUBLIC_OKTA_CLIENT_ID=$NEXT_PUBLIC_OKTA_CLIENT_ID"
-          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=$NEXT_PUBLIC_OKTA_CLIENT_SECRET"
-          echo "NEXT_PUBLIC_OKTA_ISSUER=$NEXT_PUBLIC_OKTA_ISSUER"
-          echo "NEXT_PUBLIC_AUTH_SECRET=$NEXT_PUBLIC_AUTH_SECRET"
-          echo "NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL"
-          echo "NEXT_PUBLIC_REDIRECT_LINK=$NEXT_PUBLIC_REDIRECT_LINK"
-          
-          touch .env.production
-          echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }}" >> .env.production
-          echo "NEXT_PUBLIC_OKTA_CLIENT_SECRET=${{ secrets.NEXT_PUBLIC_OKTA_CLIENT_SECRET }}" >> .env.production
-          echo "NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }}" >> .env.production
-          echo "NEXT_PUBLIC_AUTH_SECRET=${{ secrets.NEXT_PUBLIC_AUTH_SECRET }}" >> .env.production
-          echo "NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}" >> .env.production
-          echo "NEXT_PUBLIC_REDIRECT_LINK=${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" >> .env.production
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
@@ -94,13 +65,12 @@ jobs:
     runs-on: [self-hosted]
     environment: development
     steps:
-      # Checkout the repository
       - name: Checkout
         uses: actions/checkout@v3
         with:
           ref: develop
 
-      #Download kubectl
+      # Download kubectl
       - uses: azure/setup-kubectl@v3
 
       # Initializes the kube context, introducing kubectl to the cluster
@@ -141,27 +111,14 @@ jobs:
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+          POSTGRES_DBHOST: ${{ vars.POSTGRES_DBHOST }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}
         run: |
-          # Print all environment variables
-          echo "CI_REGISTRY=$CI_REGISTRY"
-          echo "CI_REGISTRY_PATH=$CI_REGISTRY_PATH"
-          echo "GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER"
-          echo "DATABASE_CONNECTION_STRING=$DATABASE_CONNECTION_STRING"
-          echo "POSTGRES_DBHOST=$POSTGRES_DBHOST"
-          echo "POSTGRES_DB=$POSTGRES_DB"
-          echo "POSTGRES_USER=$POSTGRES_USER"
-          echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD"
-          
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
-
-      # Initializes the kube context, introducing kubectl to the cluster
-      - uses: azure/k8s-set-context@v3
-        name: Configure K8s
-        with:
-          method: kubeconfig
-          kubeconfig: ${{ secrets.KUBE_CONFIG_DE_DEV }}
-          context: deploy-service-account
 
       # Deploys the kube manifest
       - uses: Azure/k8s-deploy@v4
