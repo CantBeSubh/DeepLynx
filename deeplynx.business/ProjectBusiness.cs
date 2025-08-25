@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
@@ -8,6 +9,7 @@ using Serilog;
 using Microsoft.Extensions.Logging;
 
 namespace deeplynx.business;
+using DotNetEnv;
 
 public class ProjectBusiness : IProjectBusiness
 {
@@ -16,6 +18,7 @@ public class ProjectBusiness : IProjectBusiness
 
     private readonly IClassBusiness _classBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
+    private readonly IObjectStorageBusiness _objectStorageBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
@@ -23,12 +26,14 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="context">The database context used for the record mapping operations.</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
-    public ProjectBusiness(DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness)
+    public ProjectBusiness(DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness)
     {
         _context = context;
         _logger = logger;
         _classBusiness = classBusiness;
         _dataSourceBusiness = dataSourceBusiness;
+        _objectStorageBusiness = objectStorageBusiness;
+        
     }
 
     /// <summary>
@@ -135,6 +140,33 @@ public class ProjectBusiness : IProjectBusiness
             Description = "This data source was created alongside the project for ease of use."
         };
         await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
+        
+        Env.Load("../.env");
+        var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
+        
+        var config = new JsonObject();
+        if (defaultObjectStorageMethod == "filesystem")
+        {
+            config["mountPath"] =  Environment.GetEnvironmentVariable("STORAGE_DIRECTORY");
+        }
+        else if (defaultObjectStorageMethod == "azure_object")
+        {
+            config["azureConnectionString"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING");
+        }
+        else if (defaultObjectStorageMethod == "aws_s3")
+        {
+            config["awsConnectionString"] = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING");
+        }
+        
+        if (defaultObjectStorageMethod != null)
+        {
+            var objectStorageRequestDto = new CreateObjectStorageRequestDto
+            {
+                Name = "Instance Default",
+                Config = config
+            };
+            await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+        }
 
         return new ProjectResponseDto
         {
