@@ -1,0 +1,259 @@
+"use client";
+
+import React, { useEffect, useMemo, useState } from "react";
+import DropUpload from "../components/DropUpload";
+import NewFileUploadCard from "../components/NewFileUploadCard";
+import RecentUploadsCard from "../components/RecentUploadsCard";
+import SelectedFilesCard from "../components/SelectedFilesCard";
+import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
+
+type Props = {
+  initialAvailableFiles: ExistingFile[];
+  initialRecentUploads: RecentUpload[];
+  uploadText: string;
+};
+
+export default function UploadCenterClient({
+  initialAvailableFiles,
+  initialRecentUploads,
+  uploadText,
+}: Props) {
+  const [multi, setMulti] = useState(false);
+  const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
+  const [uploadType, setUploadType] = useState<UploadType>("");
+  const [targetFileId, setTargetFileId] = useState("");
+  const [destination, setDestination] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+
+  const needsTarget = uploadType === "version" || uploadType === "properties";
+  const availableFiles = useMemo(
+    () => initialAvailableFiles,
+    [initialAvailableFiles]
+  );
+  const recentUploads = useMemo(
+    () => initialRecentUploads,
+    [initialRecentUploads]
+  );
+
+  const selectedTarget = useMemo(
+    () => availableFiles.find((f) => f.id === targetFileId) ?? null,
+    [availableFiles, targetFileId]
+  );
+
+  useEffect(() => {
+    if (!needsTarget) setTargetFileId("");
+  }, [needsTarget]);
+
+  const removeAt = (idx: number) =>
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== idx));
+  const clearAll = () => setSelectedFiles([]);
+  const handleUpload = () =>
+    alert(`Uploading ${selectedFiles.length} file(s)…`);
+
+  return (
+    <div>
+      <div className="flex items-center bg-base-200/40 py-2 pl-12">
+        <h1 className="text-2xl font-bold text-info-content">Upload Center</h1>
+      </div>
+
+      <div className="flex lg:flex-grow justify-between gap-8 p-10 lg:p-20">
+        {/* LEFT */}
+        <div className="w-full lg:w-3/5">
+          <h2>Start an Upload by Choosing Upload Type and Destination:</h2>
+          <div className="p-4 space-y-4">
+            <fieldset>
+              <label className="label cursor-pointer justify-start gap-3">
+                <span className="label-text text-sm">
+                  Upload Multiple Files
+                </span>
+                <input
+                  type="checkbox"
+                  checked={multi}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    if (!checked && selectedFiles.length > 1) {
+                      setShowMultiFileWarning(true);
+                      return;
+                    }
+                    setMulti(checked);
+                  }}
+                  className="toggle toggle-secondary"
+                />
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <label className="label">
+                Uploading:
+                <select
+                  value={uploadType}
+                  onChange={(e) => setUploadType(e.target.value as UploadType)}
+                  className="select select-info select-sm mt-2"
+                  required
+                >
+                  <option value="" disabled>
+                    Choose a Type
+                  </option>
+                  <option value="new">New File</option>
+                  <option value="version" disabled={multi}>
+                    New Version of
+                  </option>
+                  <option value="properties" disabled={multi}>
+                    Properties for
+                  </option>
+                </select>
+                {needsTarget && (
+                  <select
+                    value={targetFileId}
+                    onChange={(e) => setTargetFileId(e.target.value)}
+                    className="select select-info select-sm mt-2"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select an existing file
+                    </option>
+                    {availableFiles.map((f) => (
+                      <option key={f.id} value={f.id}>
+                        {f.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <label className="label">
+                To Destination:
+                <select
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="select select-info select-sm mt-2"
+                  required
+                >
+                  <option value="" disabled>
+                    Choose a Destination
+                  </option>
+                  <option value="nexus">Nexus Default</option>
+                  <option value="remote-db">Remote Database</option>
+                  <option value="onsite-db">Onsite Database</option>
+                </select>
+              </label>
+            </fieldset>
+
+            {(multi || selectedFiles.length === 0) && (
+              <DropUpload
+                multiple={multi}
+                files={selectedFiles}
+                onFilesChange={setSelectedFiles}
+                disabled={
+                  !uploadType || !destination || (needsTarget && !targetFileId)
+                }
+              />
+            )}
+
+            {selectedFiles.length >= 1 &&
+              selectedFiles.map((_, i) => <NewFileUploadCard key={i} />)}
+          </div>
+        </div>
+
+        {/* RIGHT */}
+        <div className="w-auto">
+          <SelectedFilesCard
+            files={selectedFiles}
+            onRemoveAt={removeAt}
+            onClear={clearAll}
+            onUpload={handleUpload}
+          />
+          <RecentUploadsCard uploads={recentUploads} uploadText={uploadText} />
+
+          {needsTarget && (
+            <div className="card card-border">
+              <div className="card-body">
+                <div className="flex justify-between items-center card-title w-full">
+                  <h2>
+                    {selectedTarget
+                      ? selectedTarget.alias || selectedTarget.name
+                      : "File details"}
+                  </h2>
+                  {selectedTarget?.timeSeries && (
+                    <span className="badge badge-info">Time series</span>
+                  )}
+                </div>
+
+                {!selectedTarget ? (
+                  <p className="text-sm opacity-70">
+                    Select an existing file from the dropdown above.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm opacity-90">
+                      {selectedTarget.description}
+                    </p>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                      <div>
+                        <span className="opacity-60">File name:</span>{" "}
+                        {selectedTarget.name}
+                      </div>
+                      <div>
+                        <span className="opacity-60">Alias:</span>{" "}
+                        {selectedTarget.alias}
+                      </div>
+                      <div>
+                        <span className="opacity-60">Last update:</span>{" "}
+                        {selectedTarget.lastUpdate}
+                      </div>
+                      <div>
+                        <span className="opacity-60">Updated by:</span>{" "}
+                        {selectedTarget.updatedBy}
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="opacity-60">Data source:</span>{" "}
+                        {selectedTarget.dataSource}
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="opacity-60">Properties sources:</span>{" "}
+                        {selectedTarget.propertiesSources}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedTarget.tags?.map((tag) => (
+                        <span key={tag} className="badge badge-outline">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {showMultiFileWarning && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Can’t switch to single-file</h3>
+            <p className="py-2">
+              You currently have multiple files selected. Remove files in{" "}
+              <b>Selected files</b> until only one remains.
+            </p>
+            <div className="modal-action">
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowMultiFileWarning(false)}
+              >
+                Okay, got it
+              </button>
+            </div>
+          </div>
+          <div
+            className="modal-backdrop"
+            onClick={() => setShowMultiFileWarning(false)}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
