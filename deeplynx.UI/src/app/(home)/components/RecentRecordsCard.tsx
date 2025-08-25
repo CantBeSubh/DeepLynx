@@ -90,7 +90,7 @@ const RecentRecordsCard = ({
             <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
               <span>
                 {t.translations.CLASS}
-                <span className="badge badge-info badge-sm text-xs">
+                <span className="badge badge-sm text-xs">
                   {record.className}
                 </span>
               </span>

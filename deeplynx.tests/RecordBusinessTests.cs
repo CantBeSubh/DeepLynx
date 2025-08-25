@@ -21,6 +21,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public long cid;
     public long rid;
     public long tid;
+    public long os1;
     public string rprop;
     public string rogid;
     public string rdesc;
@@ -70,6 +71,19 @@ public class RecordBusinessTests : IntegrationTestBase
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
         cid = testClass.Id;
+        
+        var config = new JsonObject();
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Object Storage 1",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
 
         var testTag = new Tag
         {
@@ -327,6 +341,7 @@ public class RecordBusinessTests : IntegrationTestBase
             {
                 Name = "Bulk Record 1",
                 Description = "Bulk Record 1 Description",
+                ObjectStorageId = os1,
                 OriginalId = "br1",
                 Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
             },
@@ -334,6 +349,7 @@ public class RecordBusinessTests : IntegrationTestBase
             {
                 Name = "Bulk Record 2",
                 Description = "Bulk Record 2 Description",
+                ObjectStorageId = os1,
                 OriginalId = "br2",
                 Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
             }
@@ -659,6 +675,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Valid Depth Record",
             Description = "Valid Depth Description",
+            ObjectStorageId = os1,
             OriginalId = "VDR1",
             Properties = validDepthJson
         };
@@ -760,6 +777,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Archived Record",
             Description = "Archived Record Description",
             OriginalId = "Archived Record OriginalId",
+            ObjectStorageId = os1,
             Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
             ProjectId = projectId,
             DataSourceId = did,
@@ -922,6 +940,7 @@ public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords
         Name = "Test Record 1",
         ProjectId = pid,
         DataSourceId = did,
+        ObjectStorageId = os1,
         ClassId = cid,
         Properties = "{}",
         OriginalId = "original-id-1",
@@ -973,6 +992,7 @@ public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
         Name = "Archived Record",
         ProjectId = pid,
         DataSourceId = did,
+        ObjectStorageId = os1,
         ClassId = cid,
         Properties = "{}",
         OriginalId = "archived-id",

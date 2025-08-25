@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250821203939_UpdateTriggersForObjectStorage")]
+    partial class UpdateTriggersForObjectStorage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -441,6 +444,10 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("archived_at");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("created_at");
@@ -462,6 +469,14 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("entity_type");
 
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
                     b.Property<string>("Operation")
                         .IsRequired()
                         .HasColumnType("text")
@@ -476,6 +491,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("properties");
 
+                    b.Property<long?>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
                     b.HasKey("Id")
                         .HasName("events_pkey");
 
@@ -484,6 +503,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Id" }, "idx_events_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_events_project_id");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_events_user_id");
 
                     b.ToTable("events", "deeplynx");
                 });
@@ -1128,7 +1149,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("operation");
 
-                    b.Property<long>("ProjectId")
+                    b.Property<long?>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -1439,7 +1460,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
                         .WithMany("Events")
                         .HasForeignKey("DataSourceId")
-                        .OnDelete(DeleteBehavior.SetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("events_dataSource_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
@@ -1449,9 +1470,17 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasConstraintName("events_project_id_fkey");
 
+                    b.HasOne("deeplynx.datalayer.Models.User", "User")
+                        .WithMany("Events")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("events_user_id_fkey");
+
                     b.Navigation("DataSource");
 
                     b.Navigation("Project");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.HistoricalEdge", b =>
@@ -1607,7 +1636,6 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Subscriptions")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("subscriptions_project_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.User", "User")
@@ -1737,6 +1765,8 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.User", b =>
                 {
+                    b.Navigation("Events");
+
                     b.Navigation("Subscriptions");
                 });
 #pragma warning restore 612, 618

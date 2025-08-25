@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -23,13 +24,13 @@ namespace deeplynx.tests
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         public long pid;
         public long dsid;
         public long originRecordId;
         public long destinationRecordId;
         public long destinationRecordId2;
         public long relationshipId;
-
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -40,13 +41,14 @@ namespace deeplynx.tests
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
             _edgeBusiness = new EdgeBusiness(Context);
             _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _mockRecordBusiness.Object);
             _classBusiness = new ClassBusiness(
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
                 _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object,_classBusiness, _dataSourceBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object,_classBusiness, _dataSourceBusiness,  _mockObjectStorageBusiness.Object);
         }
 
         [Fact]

@@ -1,15 +1,18 @@
 "use client";
 
-import React from "react";
-import { FileViewerTableRow } from "../types/types";
+import React, { useState } from "react";
+import { FileViewerTableRow, Tags } from "../types/types";
 import { useRouter } from "next/navigation";
 import { translations } from "@/app/lib/translations";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface ListViewProps {
   data: FileViewerTableRow[];
   activeSearchTerms?: string[];
   selectedProjects?: number[];
 }
+
+const RECORDS_PER_PAGE = 5;
 
 const ListView: React.FC<ListViewProps> = ({
   data,
@@ -18,6 +21,7 @@ const ListView: React.FC<ListViewProps> = ({
 }) => {
   const locale = "en";
   const t = translations[locale];
+  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
     const safeText = String(text);
@@ -30,6 +34,8 @@ const ListView: React.FC<ListViewProps> = ({
 
     const regex = new RegExp(`(${match})`, "gi");
     const parts = safeText.split(regex);
+
+
 
     const content = parts.map((part, index) =>
       regex.test(part) ? (
@@ -46,16 +52,37 @@ const ListView: React.FC<ListViewProps> = ({
     return { content, matched: true };
   };
 
-  const renderTags = (tags: string) => {
+  const totalPages = Math.ceil(data.length / RECORDS_PER_PAGE);
+  const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
+  const paginatedRecords = data.slice(
+    startIndex,
+    startIndex + RECORDS_PER_PAGE
+  );
+
+  const renderTags = (tags: string | null | undefined) => {
+    if (!tags) return null;
+
     try {
-      const parsedTags: string[] = JSON.parse(tags);
-      return parsedTags
-        .filter((t: string) => t !== null && t !== undefined)
-        .map((t: string) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
+      const parsed = JSON.parse(tags);
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+
+      const values = arr.flatMap((item: Tags) => {
+        if (item && typeof item === "object") {
+          if (typeof item.name === "string") return [item.name];
+          return Object.values(item).filter((v) => typeof v === "string");
+        }
+        return [];
+      });
+
+      return (
+        <span className="inline-flex flex-wrap gap-2">
+          {values.map((v, i) => (
+            <span key={`${v}-${i}`} className="badge badge-sm">
+              {v}
+            </span>
+          ))}
+        </span>
+      );
     } catch {
       return null;
     }
@@ -64,19 +91,21 @@ const ListView: React.FC<ListViewProps> = ({
   const filteredRecords = !selectedProjects?.length
     ? data
     : data.filter(
-        (record) =>
-          record.projectId !== undefined &&
-          selectedProjects.includes(record.projectId)
-      );
+      (record) =>
+        record.projectId !== undefined &&
+        selectedProjects.includes(record.projectId)
+    );
   return (
-    <div className="bg-base-100 rounded-xl shadow p-4 w-full mx-auto">
+    <div className="bg-base-100 px-10 w-full mx-auto text-info-content">
       <ul className="list">
-        {filteredRecords.map((record, index) => {
+        {paginatedRecords.map((record, index) => {
           const name = getHighlightedCell(record.name, activeSearchTerms);
           const desc = getHighlightedCell(
             record.description,
             activeSearchTerms
           );
+          const className = getHighlightedCell(record.className, activeSearchTerms);
+          // const time = getHighlightedCell(record.timeseries, activeSearchTerms);
           const date = getHighlightedCell(
             record.modifiedAt ?? record.createdAt,
             activeSearchTerms
@@ -84,23 +113,22 @@ const ListView: React.FC<ListViewProps> = ({
           return (
             <li
               key={index}
-              className="py-4 border-b border-base-content cursor-pointer hover:bg-base-200/30 p-3"
+              className="py-4 mb-2 card cursor-pointer hover:bg-base-200/30 p-3 shadow-md rounded"
               onClick={() =>
                 router.push(
                   `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
                 )
               }
             >
-              <div className="font-bold mb-1">{name.content}</div>
-              {/* We dont have description field coming back from the endpoint yet. When we do we can uncomment this and search and highlight search term in description */}
+              <div className="mb-1 text-lg">{name.content}</div>
               <span className="text-sm">{desc.content}</span>
               <div className="flex pt-2">
                 {record.className && (
-                  <span className="font-bold">
+                  <span>
                     {t.translations.CLASS}
-                    <span className="badge badge-sm text-xs ml-2">
-                      {t.translations.TIMESERIES}
-                    </span>
+                    <div className="badge badge-sm">
+                      {className.content}
+                    </div>
                   </span>
                 )}
                 <div className="ml-4">
@@ -116,6 +144,28 @@ const ListView: React.FC<ListViewProps> = ({
           );
         })}
       </ul>
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4 p-4">
+          <button
+            className="btn btn-sm btn-ghost"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            <ChevronLeftIcon className="size-6" />
+          </button>
+          <span className="px-2 text-sm">
+            {t.translations.PAGE} {currentPage} {t.translations.OF} {totalPages}
+          </span>
+          <button
+            className="btn btn-sm btn-ghost"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            <ChevronRightIcon className="size-6" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };

@@ -108,6 +108,7 @@ public class RecordBusiness : IRecordBusiness
             Uri = record.Uri,
             Properties = record.Properties,
             OriginalId = record.OriginalId,
+            ObjectStorageId = record.ObjectStorageId,
             Name = record.Name,
             ClassId = record.ClassId,
             DataSourceId = record.DataSourceId,
@@ -148,12 +149,18 @@ public class RecordBusiness : IRecordBusiness
         {
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
+
+        if (dto.ObjectStorageId != null)
+        {
+            await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
+        }
         
         var record = new Record
         {
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             Uri = dto.Uri,
+            ObjectStorageId = dto.ObjectStorageId,
             Properties = dto.Properties.ToString()!,
             OriginalId = dto.OriginalId,
             Name = dto.Name,
@@ -172,6 +179,7 @@ public class RecordBusiness : IRecordBusiness
             Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
+            ObjectStorageId = record.ObjectStorageId,
             OriginalId = record.OriginalId,
             Name = record.Name,
             ClassId = record.ClassId,
@@ -207,10 +215,19 @@ public class RecordBusiness : IRecordBusiness
            throw new Exception("Unable to bulk create records: no records selected for creation");
        }
        
+       // Checks to see if Object Storage Ids refertence an existing object storage in the project
+       foreach (var dto in records)
+       {
+           if (dto.ObjectStorageId != null)
+           {
+               await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
+           }
+       }
+       
        // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
        var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
-                                          original_id, properties, class_id, created_at)
+                                          original_id, properties, class_id, object_storage_id, created_at)
             VALUES {0}
             ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
                 name = COALESCE(EXCLUDED.name, records.name),
@@ -218,6 +235,7 @@ public class RecordBusiness : IRecordBusiness
                 uri = COALESCE(EXCLUDED.uri, records.uri),
                 properties = COALESCE(EXCLUDED.properties, records.properties),
                 class_id = COALESCE(EXCLUDED.class_id, records.class_id),
+                object_storage_id = COALESCE(EXCLUDED.object_storage_id,  records.object_storage_id),
                 modified_at = @now
             RETURNING *;                                                          
         ";
@@ -239,12 +257,13 @@ public class RecordBusiness : IRecordBusiness
            new NpgsqlParameter($"@p{i}_props", JsonSerializer.Serialize(dto.Properties)),
            new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
            new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
+           new NpgsqlParameter($"@p{i}_object_storage", (object?)dto.ObjectStorageId ?? DBNull.Value),
        }));
 
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @now)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -277,10 +296,16 @@ public class RecordBusiness : IRecordBusiness
         {
             throw new Exception($"The depth of the JSON structure exceeds the maximum allowed depth of 3. Current depth of properties is {maxDepth}.");
         }
+
+        if (dto.ObjectStorageId != null)
+        {
+            await CheckObjectStorageExists(projectId, dto.ObjectStorageId.Value);
+        }
         
         record.Uri = dto.Uri ?? record.Uri;
         record.Properties = dto.Properties != null ? dto.Properties.ToString() : record.Properties;
         record.OriginalId = dto.OriginalId ?? record.OriginalId;
+        record.ObjectStorageId = dto.ObjectStorageId ?? record.ObjectStorageId;
         record.Name = dto.Name ?? record.Name;
         record.Description = dto.Description ?? record.Description;
         record.ClassId = dto.ClassId ?? record.ClassId;
@@ -296,6 +321,7 @@ public class RecordBusiness : IRecordBusiness
             Description = record.Description,
             Uri = record.Uri,
             Properties = record.Properties,
+            ObjectStorageId = record.ObjectStorageId,
             OriginalId = record.OriginalId,
             Name = record.Name,
             ClassId = record.ClassId,
@@ -559,67 +585,76 @@ public class RecordBusiness : IRecordBusiness
         }
     }
     // </summary>
-/// <param name="projectId">The project ID to search within</param>
-/// <param name="originalIds">List of original IDs to validate</param>
-/// <returns>List of records that were found</returns>
-/// <exception cref="KeyNotFoundException">Thrown if one or more original IDs not found</exception>
-/// <exception cref="ArgumentException">Thrown if originalIds list is null or empty</exception>
-public async Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds)
-{
-    if (originalIds == null || !originalIds.Any())
-        throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
-
-    await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-
-    // Remove duplicates and filter out null/empty values
-    var cleanOriginalIds = originalIds
-        .Where(id => !string.IsNullOrWhiteSpace(id))
-        .Distinct()
-        .ToList();
-
-    if (!cleanOriginalIds.Any())
-        throw new ArgumentException("No valid original IDs provided", nameof(originalIds));
-
-    // Query for existing records (excluding archived)
-    var existingRecords = await _context.Records
-        .Where(r => r.ProjectId == projectId 
-                   && r.ArchivedAt == null 
-                   && cleanOriginalIds.Contains(r.OriginalId))
-        .Include(r => r.Tags)
-        .ToListAsync();
-
-    // Check for missing records
-    var foundOriginalIds = existingRecords.Select(r => r.OriginalId).ToHashSet();
-    var missingOriginalIds = cleanOriginalIds.Where(id => !foundOriginalIds.Contains(id)).ToList();
-
-    if (missingOriginalIds.Any())
+    /// <param name="projectId">The project ID to search within</param>
+    /// <param name="originalIds">List of original IDs to validate</param>
+    /// <returns>List of records that were found</returns>
+    /// <exception cref="KeyNotFoundException">Thrown if one or more original IDs not found</exception>
+    /// <exception cref="ArgumentException">Thrown if originalIds list is null or empty</exception>
+    public async Task<List<RecordResponseDto>> GetRecordsByOriginalId(long projectId, List<string> originalIds)
     {
-        throw new KeyNotFoundException(
-            $"Records not found with original IDs: {string.Join(", ", missingOriginalIds)}");
+        if (originalIds == null || !originalIds.Any())
+            throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
+
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+
+        // Remove duplicates and filter out null/empty values
+        var cleanOriginalIds = originalIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct()
+            .ToList();
+
+        if (!cleanOriginalIds.Any())
+            throw new ArgumentException("No valid original IDs provided", nameof(originalIds));
+
+        // Query for existing records (excluding archived)
+        var existingRecords = await _context.Records
+            .Where(r => r.ProjectId == projectId 
+                       && r.ArchivedAt == null 
+                       && cleanOriginalIds.Contains(r.OriginalId))
+            .Include(r => r.Tags)
+            .ToListAsync();
+
+        // Check for missing records
+        var foundOriginalIds = existingRecords.Select(r => r.OriginalId).ToHashSet();
+        var missingOriginalIds = cleanOriginalIds.Where(id => !foundOriginalIds.Contains(id)).ToList();
+
+        if (missingOriginalIds.Any())
+        {
+            throw new KeyNotFoundException(
+                $"Records not found with original IDs: {string.Join(", ", missingOriginalIds)}");
+        }
+
+        // Convert to DTOs
+        return existingRecords.Select(r => new RecordResponseDto
+        {
+            Id = r.Id,
+            Description = r.Description,
+            Uri = r.Uri,
+            Properties = r.Properties,
+            OriginalId = r.OriginalId,
+            Name = r.Name,
+            ClassId = r.ClassId,
+            DataSourceId = r.DataSourceId,
+            ProjectId = r.ProjectId,
+            CreatedBy = r.CreatedBy,
+            CreatedAt = r.CreatedAt,
+            ModifiedBy = r.ModifiedBy,
+            ModifiedAt = r.ModifiedAt,
+            ArchivedAt = r.ArchivedAt,
+            Tags = r.Tags.Select(t => new RecordTagDto
+            {
+                Id = t.Id,
+                Name = t.Name
+            }).ToList()
+        }).ToList();
     }
 
-    // Convert to DTOs
-    return existingRecords.Select(r => new RecordResponseDto
+    private async Task CheckObjectStorageExists(long projectId, long objectStorageId)
     {
-        Id = r.Id,
-        Description = r.Description,
-        Uri = r.Uri,
-        Properties = r.Properties,
-        OriginalId = r.OriginalId,
-        Name = r.Name,
-        ClassId = r.ClassId,
-        DataSourceId = r.DataSourceId,
-        ProjectId = r.ProjectId,
-        CreatedBy = r.CreatedBy,
-        CreatedAt = r.CreatedAt,
-        ModifiedBy = r.ModifiedBy,
-        ModifiedAt = r.ModifiedAt,
-        ArchivedAt = r.ArchivedAt,
-        Tags = r.Tags.Select(t => new RecordTagDto
+        var referencedObjectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(o => o.ProjectId == projectId && o.Id == objectStorageId);
+        if (referencedObjectStorage == null)
         {
-            Id = t.Id,
-            Name = t.Name
-        }).ToList()
-    }).ToList();
-}
+            throw new KeyNotFoundException($"Object storage with ID {objectStorageId} does not exist");
+        }
+    }
 }
