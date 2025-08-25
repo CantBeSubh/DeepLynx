@@ -34,7 +34,6 @@ export default function UploadCenterClient({
     () => initialRecentUploads,
     [initialRecentUploads]
   );
-
   const selectedTarget = useMemo(
     () => availableFiles.find((f) => f.id === targetFileId) ?? null,
     [availableFiles, targetFileId]
@@ -49,6 +48,17 @@ export default function UploadCenterClient({
   const clearAll = () => setSelectedFiles([]);
   const handleUpload = () =>
     alert(`Uploading ${selectedFiles.length} file(s)…`);
+
+  // inside component state/logic
+  const isMultiAllowed = uploadType === "new";
+
+  // If user switches away from "new", force multi off
+  useEffect(() => {
+    if (!isMultiAllowed && multi) setMulti(false);
+  }, [isMultiAllowed, multi]);
+
+  // Use this so DropUpload never gets multiple=true unless allowed
+  const effectiveMultiple = isMultiAllowed ? multi : false;
 
   return (
     <div>
@@ -69,7 +79,9 @@ export default function UploadCenterClient({
                 <input
                   type="checkbox"
                   checked={multi}
+                  disabled={!isMultiAllowed} // 🔒 only enabled for "New File"
                   onChange={(e) => {
+                    if (!isMultiAllowed) return; // guard: ignore clicks when not allowed
                     const checked = e.target.checked;
                     if (!checked && selectedFiles.length > 1) {
                       setShowMultiFileWarning(true);
@@ -78,8 +90,14 @@ export default function UploadCenterClient({
                     setMulti(checked);
                   }}
                   className="toggle toggle-secondary"
+                  aria-describedby="multi-files-hint"
                 />
               </label>
+              {!isMultiAllowed && (
+                <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
+                  Multiple uploads are only available for <b>New File</b>.
+                </p>
+              )}
             </fieldset>
 
             <fieldset>
@@ -153,19 +171,21 @@ export default function UploadCenterClient({
             )}
 
             {selectedFiles.length >= 1 &&
-              selectedFiles.map((_, i) => <NewFileUploadCard key={i} />)}
+              selectedFiles.map((file, index) => (
+                <NewFileUploadCard key={index} defaultName={file.name} />
+              ))}
           </div>
         </div>
 
         {/* RIGHT */}
-        <div className="w-auto">
-          <SelectedFilesCard
-            files={selectedFiles}
-            onRemoveAt={removeAt}
-            onClear={clearAll}
-            onUpload={handleUpload}
-          />
-          <RecentUploadsCard uploads={recentUploads} uploadText={uploadText} />
+        <div className="lg:w-2/5">
+          {selectedFiles.length === 0 &&
+            (uploadType === "" || uploadType === "new") && (
+              <RecentUploadsCard
+                uploads={recentUploads}
+                uploadText={uploadText}
+              />
+            )}
 
           {needsTarget && (
             <div className="card card-border">
@@ -228,6 +248,12 @@ export default function UploadCenterClient({
               </div>
             </div>
           )}
+          <SelectedFilesCard
+            files={selectedFiles}
+            onRemoveAt={removeAt}
+            onClear={clearAll}
+            onUpload={handleUpload}
+          />
         </div>
       </div>
 

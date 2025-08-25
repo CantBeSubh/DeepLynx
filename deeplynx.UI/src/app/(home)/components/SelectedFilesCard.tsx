@@ -14,8 +14,9 @@ export default function SelectedFilesCard({
   onClear,
   onUpload,
 }: Props) {
+  if (files.length === 0) return null;
   return (
-    <div className="card card-border w-auto mb-4">
+    <div className="card card-border mt-4">
       <div className="card-body">
         <h2 className="card-title">Selected files</h2>
         {files.length === 0 ? (
