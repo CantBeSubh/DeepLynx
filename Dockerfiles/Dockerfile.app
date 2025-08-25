@@ -34,11 +34,11 @@ RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}"
 
 # Copy package.json and package-lock.json
-COPY deeplynx.UI/deeplynx-v3/package*.json ./
+COPY deeplynx.UI/package*.json ./
 RUN npm install
 
 # Copy the rest of the frontend source code
-COPY deeplynx.UI/deeplynx-v3/ ./
+COPY deeplynx.UI/ ./
 
 # Build the frontend
 RUN npm run build
@@ -62,18 +62,15 @@ RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 # Install tools needed for entrypoint.sh
 RUN apk --no-check-certificate add postgresql-client
 
-# Install DuckDB library
-RUN wget https://github.com/duckdb/duckdb/releases/download/v1.3.2/duckdb_cli-linux-amd64.zip \
-    && unzip duckdb_cli-linux-amd64.zip \
-    && mv duckdb /usr/local/bin/duckdb \
-    && ln -s /usr/local/bin/duckdb /usr/lib/libduckdb.so
-
 # Copy the entrypoint script
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Stage 3: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
 WORKDIR /app/backend
 
