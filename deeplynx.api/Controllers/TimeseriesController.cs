@@ -150,16 +150,20 @@ namespace deeplynx.api.Controllers
         {
             try
             {
+                var duckdbTable = Request.Form["duckdb_table"].ToString();
+
                 using (var reader = new StreamReader(file.OpenReadStream()))
                 {
                     var fileContent = await reader.ReadToEndAsync();
-                    Console.WriteLine(fileContent); // Print the file content
+                    Console.WriteLine($"DuckDB Table: {duckdbTable}"); 
+                    Console.WriteLine(fileContent); 
                 }
+
                 return Ok("Data Received 👍");
             }
             catch (Exception e)
             {
-                var message = $"An error occurred while completing a timeseries file upload for {file.FileName}: {e}";
+                var message = $"An error occurred while appending to a timeseries file for {file.FileName}: {e}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
