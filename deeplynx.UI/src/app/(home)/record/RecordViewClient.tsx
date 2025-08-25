@@ -24,13 +24,44 @@ type Props = {
   recordId: number;
 };
 
-interface RelatedRecord {
+interface ParsedRecord {
   relationship: string;
   id: string;
   class: string;
   name: string;
   actions: React.JSX.Element;
 }
+
+type Record = {
+  recordId: number;
+  internalId: string;
+  label: string;
+  id: number;
+  projectId: number;
+  className: string;
+  projectName: string;
+  name: string;
+  uri: string;
+  dataSourceId: number;
+  originalId: string;
+  classId: number;
+  properties: string;
+  tags: string;
+  createdBy: string;
+  createdAt: string;
+  modifiedAt: string;
+  modifiedBy: string;
+  archivedAt: string | null;
+  lastUpdatedAt: string;
+};
+
+type Relationship = {
+  relationshipName: string;
+  sourceId: string;
+  destId: string;
+};
+
+type RelatedRecord = Relationship | Record;
 
 export default function RecordViewClient({
   initialRecord,
@@ -43,9 +74,9 @@ export default function RecordViewClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
-  const [relatedRecords, setRelatedRecords] = useState<string>();
+  const [relatedRecords, setRelatedRecords] = useState<RelatedRecord[]>();
   const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] = useState(false);
-  const [parsedRelatedRecords, setParsedRelatedRecords] = useState<RelatedRecord[]>([]);
+  const [parsedRelatedRecords, setParsedRelatedRecords] = useState<ParsedRecord[]>([]);
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedNameToRemove, setSelectedNameToRemove] = useState<string>('');
   const [selectedRecordNameToRemove, setSelectedRecordNameToRemove] = useState<string | undefined>('');
@@ -102,8 +133,6 @@ export default function RecordViewClient({
 
           setHasFetchedRelatedRecords(true);
 
-          console.log("Has Fetched Set True")
-
         }
         
       } catch (error) {
@@ -116,68 +145,81 @@ export default function RecordViewClient({
   }, [initialRecord])
 
   useEffect(() => {
+    console.log("Related records: ");
     console.log(relatedRecords);
+    
+    const parseRelatedRecords = (relatedRecords: RelatedRecord[] | undefined) => {
+        if (!relatedRecords) return [];
 
-    const parseRelatedRecords = (relatedRecordsString: string | undefined) => {
-      if (!relatedRecordsString) return [];
+        const relationshipNames: string[] = [];
+        const classNames: string[] = [];
+        const names: string[] = [];
+        const recordIds: number[] = [];
 
-      const relatedRecordsArray: RelatedRecord[] = [];
-      const mainRegex = /Relationship:\s*\((.*?)\)-\{_LABEL:\s*(\w+)\}\->[\s\S]*?Related_Node:[\s\S]*?class_name:\s*(\w+)[\s\S]*?properties:\s*{[^}]*?"name":\s*"(.*?)"/g;
-      const recordIdRegex = /Related_Node:[\s\S]*?record_id:\s*(\d+)/g;
-      const mainMatches: RegExpExecArray[] = [];
-      let mainMatch: RegExpExecArray | null;
-
-      while ((mainMatch = mainRegex.exec(relatedRecordsString)) !== null) {
-        mainMatches.push(mainMatch);
-      }
-
-      let recordIdMatch: RegExpExecArray | null;
-      const recordIds: string[] = [];
-      while ((recordIdMatch = recordIdRegex.exec(relatedRecordsString)) !== null) {
-        recordIds.push(recordIdMatch[1]);
-      }
-
-      mainMatches.forEach((match, index) => {
-        if (!relationship) {
-          setRelationship(match[2])
-        }
-        relatedRecordsArray.push({
-          relationship: match[2],
-          id: recordIds[index],
-          class: match[3],
-          name: match[4],
-          actions: (
-            <div className="flex items-center">
-              <button
-                className="text-blue-500 cursor-pointer"
-                onClick={async () => {
-                  const selectedRecord = await getRecord(Number(projectId), Number(recordIds[index]));
-                  setSelectedRecord(selectedRecord)
-                  setRecordViewModalOpen(true);
-                }}
-              >
-                <EyeIcon className="w-4 h-4" />
-              </button>
-              <button 
-                className="text-red-500 ml-2 cursor-pointer border rounded px-1"
-                onClick={() => {
-                  handleToggleToRemove(recordIds[index], match[4], match[3], 'relatedRecord')
-                }} 
-              >
-                Remove Link
-              </button>
-            </div>
-          ),
+        relatedRecords.forEach(item => {
+            if ('relationshipName' in item) {
+                relationshipNames.push(item.relationshipName);
+            } else {
+                if (item.recordId == recordId) {
+                  return;
+                }
+                classNames.push(item.className);
+                names.push(item.name);
+                recordIds.push(item.recordId);
+            }
         });
-      });
 
-      return relatedRecordsArray;
+        const relatedRecordsArray: ParsedRecord[] = [];
+        const relationshipIndex = 0;
+
+        console.log('relationshipNames:', relationshipNames);
+        console.log('classNames:', classNames);
+        console.log('names:', names);
+        console.log('recordIds:', recordIds);
+
+        relatedRecords.forEach((item, _) => {
+            if (!('relationshipName' in item)) {
+                if (item.recordId == recordId) {
+                  return;
+                }
+                const relationship = relationshipNames.length > relationshipIndex ? relationshipNames[relationshipIndex] : '';
+                relatedRecordsArray.push({
+                    relationship: relationship,
+                    id: item.recordId.toString(),
+                    class: item.className,
+                    name: item.name,
+                    actions: (
+                        <div className="flex items-center">
+                            <button
+                                className="text-blue-500 cursor-pointer"
+                                onClick={async () => {
+                                    const selectedRecord = await getRecord(Number(projectId), item.recordId);
+                                    setSelectedRecord(selectedRecord);
+                                    setRecordViewModalOpen(true);
+                                }}
+                            >
+                                <EyeIcon className="w-4 h-4" />
+                            </button>
+                            <button
+                                className="text-red-500 ml-2 cursor-pointer border rounded px-1"
+                                onClick={() => {
+                                    handleToggleToRemove(item.recordId.toString(), item.name, item.className, 'relatedRecord');
+                                }}
+                            >
+                                Remove Link
+                            </button>
+                        </div>
+                    ),
+                });
+            }
+        });
+
+        return relatedRecordsArray;
     };
 
     const parsedRecords = parseRelatedRecords(relatedRecords);
-
     setParsedRelatedRecords(parsedRecords);
-  }, [relatedRecords]);
+}, [relatedRecords]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -340,7 +382,7 @@ export default function RecordViewClient({
     { label: "Modified At", value: formatDate(record.modifiedAt) },
   ];
 
-  const relatedRecordsColumns: Column<RelatedRecord>[] = [
+  const relatedRecordsColumns: Column<ParsedRecord>[] = [
     { header: "Relationship", data: "relationship" },
     { header: "ID", data: "id" },
     { header: "Class", data: "class" },
