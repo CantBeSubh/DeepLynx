@@ -6,6 +6,7 @@ import NewFileUploadCard from "../components/NewFileUploadCard";
 import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
+import FileDetailsCard from "../components/FileDetailCard";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -79,9 +80,9 @@ export default function UploadCenterClient({
                 <input
                   type="checkbox"
                   checked={multi}
-                  disabled={!isMultiAllowed} // 🔒 only enabled for "New File"
+                  disabled={!isMultiAllowed}
                   onChange={(e) => {
-                    if (!isMultiAllowed) return; // guard: ignore clicks when not allowed
+                    if (!isMultiAllowed) return;
                     const checked = e.target.checked;
                     if (!checked && selectedFiles.length > 1) {
                       setShowMultiFileWarning(true);
@@ -172,7 +173,11 @@ export default function UploadCenterClient({
 
             {selectedFiles.length >= 1 &&
               selectedFiles.map((file, index) => (
-                <NewFileUploadCard key={index} defaultName={file.name} />
+                <NewFileUploadCard
+                  key={index}
+                  defaultName={file.name}
+                  uploadType={uploadType}
+                />
               ))}
           </div>
         </div>
@@ -187,67 +192,11 @@ export default function UploadCenterClient({
               />
             )}
 
-          {needsTarget && (
-            <div className="card card-border">
-              <div className="card-body">
-                <div className="flex justify-between items-center card-title w-full">
-                  <h2>
-                    {selectedTarget
-                      ? selectedTarget.alias || selectedTarget.name
-                      : "File details"}
-                  </h2>
-                  {selectedTarget?.timeSeries && (
-                    <span className="badge badge-info">Time series</span>
-                  )}
-                </div>
+          <FileDetailsCard
+            needsTarget={needsTarget}
+            selectedTarget={selectedTarget}
+          />
 
-                {!selectedTarget ? (
-                  <p className="text-sm opacity-70">
-                    Select an existing file from the dropdown above.
-                  </p>
-                ) : (
-                  <>
-                    <p className="text-sm opacity-90">
-                      {selectedTarget.description}
-                    </p>
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <span className="opacity-60">File name:</span>{" "}
-                        {selectedTarget.name}
-                      </div>
-                      <div>
-                        <span className="opacity-60">Alias:</span>{" "}
-                        {selectedTarget.alias}
-                      </div>
-                      <div>
-                        <span className="opacity-60">Last update:</span>{" "}
-                        {selectedTarget.lastUpdate}
-                      </div>
-                      <div>
-                        <span className="opacity-60">Updated by:</span>{" "}
-                        {selectedTarget.updatedBy}
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="opacity-60">Data source:</span>{" "}
-                        {selectedTarget.dataSource}
-                      </div>
-                      <div className="sm:col-span-2">
-                        <span className="opacity-60">Properties sources:</span>{" "}
-                        {selectedTarget.propertiesSources}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {selectedTarget.tags?.map((tag) => (
-                        <span key={tag} className="badge badge-outline">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
           <SelectedFilesCard
             files={selectedFiles}
             onRemoveAt={removeAt}

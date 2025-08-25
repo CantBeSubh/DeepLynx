@@ -6,6 +6,7 @@ import {
   LinkIcon,
   CircleStackIcon,
 } from "@heroicons/react/24/outline";
+import AvatarCell from "./Avatar";
 
 const iconMap = {
   arrows: ArrowsRightLeftIcon,
@@ -33,14 +34,7 @@ export default function RecentUploadsCard({
             const Icon = iconMap[u.icon as IconKey];
             return (
               <li className="list-row" key={u.id}>
-                <div className="avatar indicator relative inline-block">
-                  <span className="indicator-item indicator-bottom">
-                    <div className="h-7 w-7 rounded-full border-2 border-secondary bg-white flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-secondary" />
-                    </div>
-                  </span>
-                  <div className="h-10 w-10 rounded-full bg-base-200" />
-                </div>
+                <AvatarCell name={u.name} image={u.avatar} />
                 <div className="pt-2">
                   <b className="text-black">{u.name}</b> {uploadText} {u.file}
                 </div>
