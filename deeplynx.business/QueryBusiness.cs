@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
+using DuckDB.NET.Native;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -30,11 +31,14 @@ public class QueryBusiness : IQueryBusiness
     /// Build a query
     /// </summary>
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
+    /// <param name="textSearch">Full text search phrase</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> BuildAQuery(CustomQueryRequestDto[] request)
+    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch)
     {
         IQueryable<HistoricalRecord> historicalRecords = _context.HistoricalRecords;
         Expression<Func<HistoricalRecord, bool>> predicate = u => true;
+        
+        textSearch = textSearch?.ToLower(); 
 
         foreach (var query in request)
         {
@@ -102,9 +106,32 @@ public class QueryBusiness : IQueryBusiness
             }
             
         }
+        
+        // If we have a full-text query, start from a composable raw SQL that includes JSONB -> text
+        if (!string.IsNullOrWhiteSpace(textSearch))
+        {
+            // NOTE: This is safe from SQL injection because interpolated values are parameterized.
+            historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
+            SELECT *
+            FROM deeplynx.historical_records
+            WHERE to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(created_by, '') || ' ' ||
+                coalesce(modified_by, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            ) @@ websearch_to_tsquery('english', {textSearch})
+        ");
+        }
 
+        // Compose your dynamic subset on top (EF will AND the WHEREs)
         historicalRecords = historicalRecords.Where(predicate);
-
        
         return historicalRecords
             .Select(r => new HistoricalRecordResponseDto

@@ -57,14 +57,15 @@ namespace deeplynx.api.Controllers
         /// Build a query for records
         /// </summary>
         /// <param name="filterArray">Array of QueryComponent dtos</param>
+        /// <param name="textSearch">Full text search phrase</param>
         /// <returns>List of historical record response DTOs</returns>
-        [HttpPost("BuildAQuery")]
-        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> BuildAQuery(
-            [FromBody] CustomQueryRequestDto[] filterArray)
+        [HttpPost("QueryBuilder")]
+        public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
+            [FromBody] CustomQueryRequestDto[] filterArray, string? textSearch)
         {
             try
             {
-                var records = _queryBusiness.BuildAQuery(filterArray);
+                var records = _queryBusiness.QueryBuilder(filterArray, textSearch);
                 return Ok(records);
             }
             catch (Exception exc)

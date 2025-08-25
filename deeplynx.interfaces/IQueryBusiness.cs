@@ -6,6 +6,6 @@ public interface IQueryBusiness
 {
     Task<IEnumerable<HistoricalRecordResponseDto>> Search(string query);
 
-    IEnumerable<HistoricalRecordResponseDto> BuildAQuery(CustomQueryRequestDto[] request);
+    IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request,  string? textSearch);
 
 }
