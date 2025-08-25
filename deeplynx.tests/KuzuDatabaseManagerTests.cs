@@ -68,7 +68,10 @@ namespace deeplynx.tests {
 
             _ = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
 
-            _kuzuDatabaseManager = new KuzuDatabaseManager(_configuration, ConnectionString ?? "NULL", "g72g72");
+            if (enableKuzu)
+            {
+                _kuzuDatabaseManager = new KuzuDatabaseManager(_configuration, ConnectionString ?? "NULL", "g72g72");
+            }
 
             if (enableKuzu && _kuzuDatabaseManager != null)
             {
@@ -151,21 +154,25 @@ namespace deeplynx.tests {
             var kuzuDbFilePath = Path.Combine(projectRoot, "deeplynx.tests/bin/Debug/deeplynx.graph");
 
             Console.WriteLine("KuzuDB Path: " + kuzuDbFilePath);
-
+            
             try
             {
                 Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
 
                 Log.Information("Starting InitalSeedDatabaseAsync test...");
 
-                // Arrange
-                _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
-                bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
+                if (_kuzuDatabaseManager != null)
+                {
+                    // Arrange
+                    _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
+                    bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
 
-                // Assert
-                _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
-                Assert.True(result);
-                Log.Information("Test InitalSeedDatabaseAsync passed.");
+                    // Assert
+                    _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
+                    Assert.True(result);
+                    Log.Information("Test InitalSeedDatabaseAsync passed.");
+                }
+                
             }
             catch (Exception ex)
             {
@@ -192,14 +199,18 @@ namespace deeplynx.tests {
 
                 Log.Information("Starting SeedDatabaseAsync test...");
 
-                // Arrange
-                _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
-                _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
-                bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
+                if (_kuzuDatabaseManager != null && enableKuzu)
+                {
+                   // Arrange
+                    _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/clear_database.sql");
+                    _ = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/initial_test_data_inserts.sql");
+                    bool result = await ExecuteSqlFromFileAsync("../../../../deeplynx.graph/SeedData/test_data_sql_inserts.sql");
 
-                // Assert
-                Assert.True(result);
-                Log.Information("Test SeedDatabaseAsync passed.");
+                    // Assert
+                    Assert.True(result);
+                    Log.Information("Test SeedDatabaseAsync passed."); 
+                }
+                
             }
             catch (Exception ex)
             {
@@ -228,7 +239,7 @@ namespace deeplynx.tests {
 
                 Log.Information("Starting ConnectAsync test...");
 
-                if (_kuzuDatabaseManager != null)
+                if (_kuzuDatabaseManager != null && enableKuzu)
                 {
                     // Arrange & Act
                     bool connected = await _kuzuDatabaseManager.ConnectAsync();
