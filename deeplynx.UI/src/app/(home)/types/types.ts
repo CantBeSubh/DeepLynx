@@ -1,12 +1,12 @@
 
 export type DataSourceTableRow = {
-    name: string;
-    country: string;
-    adapterType: string;
-    active: boolean;
-    id: string | number;
-    select?: boolean;
-  };
+  name: string;
+  country: string;
+  adapterType: string;
+  active: boolean;
+  id: string | number;
+  select?: boolean;
+};
 
 export type Tag = {
   id?: number;
@@ -40,48 +40,53 @@ export type FileViewerTableRow = {
   fileSize?: number;
   select?: boolean;
   associatedRecords?: string[];
-  };
+};
+
+export type Tags = {
+  id: string;
+  name: string;
+}
 
 export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
-    accessor?: string;
-    header?: string;
-    data?: keyof T;
-    sortable?: boolean;
-    cell?: (row: T) => React.ReactNode
-  };
+  accessor?: string;
+  header?: string;
+  data?: keyof T;
+  sortable?: boolean;
+  cell?: (row: T) => React.ReactNode
+};
 
 export type ProjectsList = {
-    id?: string;
-    name: string;
-    description: string;
-    lastViewed: string;
-    createdAt: string;
-  };
-  
-  export type PopularTable = {
-    id: number;
-    name: string;
-    image: string;
-    nickname: string;
-    visibility: string;
-  };
-  
-  export type MySearchsTable = {
-    id: number;
-    name: string;
-    filters: string[];
-    createdAt: string;
-    sortable?: boolean;
-  }
+  id?: string;
+  name: string;
+  description: string;
+  lastViewed: string;
+  createdAt: string;
+};
 
-  export type TeamMember = {
-    id: number;
-    name: string;
-    image: string;
-    nickname: string;
-    visibility: string;
-    role: string;
-    lastLogin: string;
+export type PopularTable = {
+  id: number;
+  name: string;
+  image: string;
+  nickname: string;
+  visibility: string;
+};
+
+export type MySearchsTable = {
+  id: number;
+  name: string;
+  filters: string[];
+  createdAt: string;
+  sortable?: boolean;
+}
+
+export type TeamMember = {
+  id: number;
+  name: string;
+  image: string;
+  nickname: string;
+  visibility: string;
+  role: string;
+  lastLogin: string;
 };

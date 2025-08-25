@@ -4,22 +4,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
 import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
-import SavedSearches from "../../components/SavedSearches";
 import GridView from "../../components/GridView";
 import ListView from "../../components/ListView";
 import ProjectDropdown from "../../components/ProjectDropdown";
-import RecentRecordsCard from "../../components/RecentRecordsCard";
 import { translations } from "@/app/lib/translations";
 
 import {
-  ArrowUturnLeftIcon,
-  EyeIcon,
-  PlusIcon,
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
@@ -179,7 +174,7 @@ export default function DataCatalogClient({
       const parsed = JSON.parse(tags);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = arr.flatMap((item: any) => {
+      const values = arr.flatMap((item: Tags) => {
         if (item && typeof item === "object") {
           if (typeof item.name === "string") return [item.name];
           return Object.values(item).filter((v) => typeof v === "string");

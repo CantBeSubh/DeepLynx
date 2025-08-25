@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FileViewerTableRow } from "../types/types";
+import { FileViewerTableRow, Tags } from "../types/types";
 import { useRouter } from "next/navigation";
 import { translations } from "@/app/lib/translations";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
@@ -11,6 +11,7 @@ interface ListViewProps {
   activeSearchTerms?: string[];
   selectedProjects?: number[];
 }
+
 const RECORDS_PER_PAGE = 5;
 
 const ListView: React.FC<ListViewProps> = ({
@@ -65,7 +66,7 @@ const ListView: React.FC<ListViewProps> = ({
       const parsed = JSON.parse(tags);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
 
-      const values = arr.flatMap((item: any) => {
+      const values = arr.flatMap((item: Tags) => {
         if (item && typeof item === "object") {
           if (typeof item.name === "string") return [item.name];
           return Object.values(item).filter((v) => typeof v === "string");
