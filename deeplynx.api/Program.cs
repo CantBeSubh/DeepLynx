@@ -107,7 +107,11 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
-    builder.Services.AddTransient<IKuzuDatabaseManager, KuzuDatabaseManager>();
+    builder.Services.AddTransient<IKuzuDatabaseManager>(provider => 
+    {
+        var configuration = provider.GetRequiredService<IConfiguration>();
+        return new KuzuDatabaseManager(configuration, connectionString, "d332f23f");
+    });
     builder.Services.AddTransient<IQueryBusiness, QueryBusiness>();
     builder.Services.AddTransient<IMetadataBusiness, MetadataBusiness>();
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
