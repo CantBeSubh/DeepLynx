@@ -144,6 +144,26 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        [HttpPatch("append", Name = "api_append_timeseries_file")]
+        public async Task<ActionResult<string>> AppendFile(long projectId, long dataSourceId, IFormFile file)
+        {
+            try
+            {
+                using (var reader = new StreamReader(file.OpenReadStream()))
+                {
+                    var fileContent = await reader.ReadToEndAsync();
+                    Console.WriteLine(fileContent); // Print the file content
+                }
+                return Ok("Data Received 👍");
+            }
+            catch (Exception e)
+            {
+                var message = $"An error occurred while completing a timeseries file upload for {file.FileName}: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Get every nth timeseries table row
