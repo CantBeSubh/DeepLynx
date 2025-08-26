@@ -52,4 +52,6 @@ RUN apk update && apk upgrade
 
 # CMD ["postgres", "-c", "config_file=/etc/postgresql.conf"]
 
+EXPOSE 5432
+
 CMD ["postgres"]
