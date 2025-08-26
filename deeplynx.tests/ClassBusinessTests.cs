@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -21,8 +22,10 @@ namespace deeplynx.tests
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
         public long pid;
         public long did;
+        public long os1;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -35,11 +38,13 @@ namespace deeplynx.tests
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
+            
 
             _classBusiness = new ClassBusiness(
                 Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
                 _recordMappingBusiness.Object, _relationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness.Object);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness.Object, _objectStorageBusiness.Object);
         }
 
         [Fact]
@@ -855,6 +860,7 @@ public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             did = dataSource.Id;
+
         }
     }
 }

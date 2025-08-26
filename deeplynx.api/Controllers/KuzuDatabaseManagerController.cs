@@ -79,8 +79,14 @@ namespace deeplynx.api.Controllers
 
                 await _kuzuDatabaseManager.ExportDataAsync(projectId);
 
-                var result = await _kuzuDatabaseManager.ExecuteQueryAsync(request);
-                return Ok(result);
+                (string formattedString, object[] results) = await _kuzuDatabaseManager.ExecuteQueryAsync(request);
+
+                if (request.Query.Contains("CALL"))
+                {
+                    return Ok(formattedString);
+                }
+
+                return Ok(results);
             }
             catch (Exception e)
             {
@@ -111,8 +117,16 @@ namespace deeplynx.api.Controllers
 
                 await _kuzuDatabaseManager.ExportDataAsync(projectId);
 
-                string result = await _kuzuDatabaseManager.GetNodesWithinDepthByIdAsync(request);
-                return Ok(result);
+                (object[]? results, string formattedString) = await _kuzuDatabaseManager.GetNodesWithinDepthByIdAsync(request);
+
+                if (results != null)
+                {
+                    return Ok(results);
+                }
+                else
+                {
+                    return Ok(formattedString);
+                }
             }
             catch (Exception e)
             {

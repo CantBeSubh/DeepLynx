@@ -94,6 +94,9 @@ public partial class Project
     [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     
+    [InverseProperty("Project")]
+    public virtual ICollection<ObjectStorage> ObjectStorages { get; set; } = new List<ObjectStorage>();
+    
     [InverseProperty("Projects")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
     

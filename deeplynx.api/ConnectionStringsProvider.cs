@@ -21,7 +21,7 @@ public static class ConnectionStringsProvider
         var postgresUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
         var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
         var postgresDatabaseName = Environment.GetEnvironmentVariable("POSTGRES_DB_NAME");
-        var postgresServer = Environment.GetEnvironmentVariable("POSTGRES_DB_HOST");
+        var postgresServer = Environment.GetEnvironmentVariable("POSTGRES_DBHOST");
         var postgresPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
 
         if (!string.IsNullOrEmpty(postgresUser) &&

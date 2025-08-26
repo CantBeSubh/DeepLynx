@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -41,7 +42,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetAllHistoricalEdges_ReturnsListOfCurrentHistoricalRecordsForProject()
     {
-        await SeedTestDataAsync();
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
         historicalEdges.Should().NotBeNull();
         historicalEdges.Should().HaveCount(2);
@@ -54,8 +54,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
      public async Task GetAllHistoricalEdges_ReturnsListOfUpdatedHistoricalEdges()
      {
-         await SeedTestDataAsync();
-         
          var dto = new UpdateEdgeRequestDto()
          {
              OriginId = (int)destinationRecordId,
@@ -86,8 +84,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetAllHistoricalEdges_FiltersByDataSource()
     {
-        await SeedTestDataAsync();
-        
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid, dsid);
         historicalEdges.Should().NotBeNull();
         historicalEdges.Should().HaveCount(1);
@@ -98,7 +94,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetAllHistoricalEdges_ExcludesArchivedHistoricalEdgesByDefault()
     {
-        await SeedTestDataAsync();
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
@@ -111,7 +106,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetAllHistoricalEdges_InlcudesArchivedHistoricalEdges()
     {
-        await SeedTestDataAsync();
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid,null, null, false);
@@ -124,7 +118,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdges_ReturnsEmptyListWhenNoEdges()
     {
-        await SeedTestDataAsync();
         await _edgeBusiness.DeleteEdge(pid, eid, null, null);
         await _edgeBusiness.DeleteEdge(pid, eid2, null, null);
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
@@ -135,7 +128,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdges_FiltersByTime()
     {
-        await SeedTestDataAsync();
         var pointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         var edgeLate = new Edge()
         {
@@ -159,7 +151,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoryForEdge_ReturnsFullHistory()
     {
-        await SeedTestDataAsync();
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -178,7 +169,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoryForEdge_ThrowsError_WhenEdgeDoesNotExist()
     {
-        await SeedTestDataAsync();
         var historicalEdges = () => _historicalEdgeBusiness.GetHistoryForEdge(eid4 + 100000, null, null);
         await historicalEdges.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -186,7 +176,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdge_ThrowsError_WhenEdgeDoesNotExist()
     {
-        await SeedTestDataAsync();
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid4 + 100000, null, null, null);
         await historicalEdge.Should().ThrowAsync<KeyNotFoundException>();
     }
@@ -194,7 +183,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdge_ReturnsMostCurrentEdge()
     {
-        await SeedTestDataAsync();
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -212,7 +200,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdge_CanIncludeArchivedHistoricalEdges()
     {
-        await SeedTestDataAsync();
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -232,7 +219,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdge_FiltersByTime()
     {
-        await SeedTestDataAsync();
         var pointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         var dto = new UpdateEdgeRequestDto
         {
@@ -251,7 +237,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     [Fact]
     public async Task GetHistoricalEdge_ThrowsError_WhenCurrentRecordIsArchived()
     {
-        await SeedTestDataAsync();
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
         await historicalEdge.Should().ThrowAsync<KeyNotFoundException>();
@@ -260,7 +245,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
-
         var project = new Project() { Name = "Project 1" };
         var project2 = new Project() { Name = "Project 2" };
         Context.Projects.Add(project);
@@ -447,5 +431,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         eid2 = edge2.Id;
         eid3 = edge3.Id;
         eid4 = edge4.Id;
+        
+        Context.ChangeTracker.Clear();
     }
 }

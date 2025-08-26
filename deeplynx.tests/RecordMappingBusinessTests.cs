@@ -21,6 +21,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     private Mock<IEdgeMappingBusiness> _edgeMappingBusiness;
     private Mock<IRecordBusiness> _recordBusiness;
     private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
+    private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
     private DataSourceBusiness _dataSourceBusiness = null!;
     private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
     
@@ -41,8 +42,9 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         _relationshipBusiness = new Mock<IRelationshipBusiness>();
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness, _relationshipBusiness.Object);
+        _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
         _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness.Object, _recordBusiness.Object);
-        _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness);
+        _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object);
     }
 
     [Fact]

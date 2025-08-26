@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -23,6 +24,7 @@ namespace deeplynx.tests
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
 
         public long TestProjectId;
         public long TestClassId;
@@ -33,6 +35,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
@@ -44,7 +47,7 @@ namespace deeplynx.tests
             _classBusiness = new ClassBusiness(
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
                 _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object);
         }
 
         [Fact]
@@ -410,6 +413,18 @@ namespace deeplynx.tests
             };
             Context.Projects.Add(secondProject);
             await Context.SaveChangesAsync();
+            
+            var config = new JsonObject();
+            var secondObjectStorage = new ObjectStorage
+            {
+                Name = "Object Storage 1",
+                Type = "filesystem",
+                Config = config.ToString(),
+                ProjectId = secondProject.Id,
+                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.ObjectStorages.Add(secondObjectStorage);
+            await Context.SaveChangesAsync();
 
             // Create additional class and datasource for second project
             var secondClass = new Class
@@ -463,6 +478,7 @@ namespace deeplynx.tests
                 RecordId = record1.Id,
                 Name = record1.Name,
                 ProjectId = TestProjectId,
+                ObjectStorageName = secondProject.Name,
                 ProjectName = "Test Project",
                 Properties = record1.Properties,
                 ClassName = "Test Class",
@@ -479,6 +495,8 @@ namespace deeplynx.tests
                 RecordId = record2.Id,
                 Name = record2.Name,
                 ProjectId = secondProject.Id,
+                ObjectStorageId = secondObjectStorage.Id,
+                ObjectStorageName = secondObjectStorage.Name,
                 ProjectName = secondProject.Name,
                 Properties = record2.Properties,
                 DataSourceName = secondDataSource.Name,
@@ -521,9 +539,7 @@ namespace deeplynx.tests
         [Fact]
         public void ProjectResponseDto_AllProperties_CanBeSetAndRetrieved()
         {
-            
             var now = DateTime.UtcNow;
-
            
             var dto = new ProjectResponseDto
             {
@@ -584,6 +600,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestDataSourceId = testDataSource.Id;
             
+            
             var testRecord = new Record
             {
                 Name = "Test Record",
@@ -597,7 +614,6 @@ namespace deeplynx.tests
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();
-            
         }
     }
 }
