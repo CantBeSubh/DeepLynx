@@ -37,8 +37,6 @@ public class QueryBusiness : IQueryBusiness
     {
         IQueryable<HistoricalRecord> historicalRecords = _context.HistoricalRecords;
         Expression<Func<HistoricalRecord, bool>> predicate = u => true;
-        
-        textSearch = textSearch?.ToLower(); 
 
         foreach (var query in request)
         {
@@ -82,7 +80,6 @@ public class QueryBusiness : IQueryBusiness
                         : And(predicate, next);
                 }
             }
-            //TODO: Determine if less than, greater than should only be available to the DateTime columns 
             if (query.Operator == ">")
             {
                 DateTime.TryParse(query.Value, out var dateVal);
