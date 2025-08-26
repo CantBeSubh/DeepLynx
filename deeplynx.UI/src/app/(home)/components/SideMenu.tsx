@@ -196,18 +196,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
-                href="/settings"
-                onClick={(e) => handleItemClick("/settings", e)}
-                className={getItemClass("/settings")}
-              >
-                <Cog6ToothIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.SETTINGS}</p>
-                )}
-              </Link>
-            </li>
-            <li className="mt-2">
-              <Link
                 href="#"
                 onClick={(e) => handleItemClick("/help", e)}
                 className={getItemClass("/help")}
