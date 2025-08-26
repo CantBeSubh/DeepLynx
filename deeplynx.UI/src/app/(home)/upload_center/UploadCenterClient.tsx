@@ -7,6 +7,7 @@ import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
 import FileDetailsCard from "../components/FileDetailCard";
+import { translations } from "@/app/lib/translations";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -19,6 +20,7 @@ export default function UploadCenterClient({
   initialRecentUploads,
   uploadText,
 }: Props) {
+  const t = translations["en"];
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
   const [uploadType, setUploadType] = useState<UploadType>("");
@@ -64,18 +66,20 @@ export default function UploadCenterClient({
   return (
     <div>
       <div className="flex items-center bg-base-200/40 py-2 pl-12">
-        <h1 className="text-2xl font-bold text-info-content">Upload Center</h1>
+        <h1 className="text-2xl font-bold text-info-content">
+          {t.translations.UPLOAD_CENTER}
+        </h1>
       </div>
 
       <div className="flex lg:flex-grow justify-between gap-8 p-10 lg:p-20">
         {/* LEFT */}
         <div className="w-full lg:w-3/5">
-          <h2>Start an Upload by Choosing Upload Type and Destination:</h2>
+          <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
             <fieldset>
               <label className="label cursor-pointer justify-start gap-3">
                 <span className="label-text text-sm">
-                  Upload Multiple Files
+                  {t.translations.UPLOAD_MULTIPLE_FILES}
                 </span>
                 <input
                   type="checkbox"
@@ -96,14 +100,14 @@ export default function UploadCenterClient({
               </label>
               {!isMultiAllowed && (
                 <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
-                  Multiple uploads are only available for <b>New File</b>.
+                  {t.translations.MULTI_FILES_ONLY_AVAILABLE}.
                 </p>
               )}
             </fieldset>
 
             <fieldset>
               <label className="label">
-                Uploading:
+                {t.translations.UPLOADING}
                 <select
                   value={uploadType}
                   onChange={(e) => setUploadType(e.target.value as UploadType)}
@@ -111,14 +115,14 @@ export default function UploadCenterClient({
                   required
                 >
                   <option value="" disabled>
-                    Choose a Type
+                    {t.translations.CHOOSE_A_TYPE}
                   </option>
-                  <option value="new">New File</option>
+                  <option value="new">{t.translations.NEW_FILE}</option>
                   <option value="version" disabled={multi}>
-                    New Version of
+                    {t.translations.NEW_VERSION_OF}
                   </option>
                   <option value="properties" disabled={multi}>
-                    Properties for
+                    {t.translations.PROPERTIES_FOR}
                   </option>
                 </select>
                 {needsTarget && (
@@ -129,7 +133,7 @@ export default function UploadCenterClient({
                     required
                   >
                     <option value="" disabled>
-                      Select an existing file
+                      {t.translations.SELECT_EXISTING_FILE}
                     </option>
                     {availableFiles.map((f) => (
                       <option key={f.id} value={f.id}>
@@ -143,7 +147,7 @@ export default function UploadCenterClient({
 
             <fieldset>
               <label className="label">
-                To Destination:
+                {t.translations.TO_DESTINATION}
                 <select
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
@@ -151,11 +155,11 @@ export default function UploadCenterClient({
                   required
                 >
                   <option value="" disabled>
-                    Choose a Destination
+                    {t.translations.CHOOSE_A_DESTINATION}
                   </option>
-                  <option value="nexus">Nexus Default</option>
-                  <option value="remote-db">Remote Database</option>
-                  <option value="onsite-db">Onsite Database</option>
+                  <option value="nexus">{t.translations.NEXUS_DEFAULT}</option>
+                  <option value="remote-db">{t.translations.REMOTE_DB}</option>
+                  <option value="onsite-db">{t.translations.ONSITE_DB}</option>
                 </select>
               </label>
             </fieldset>
@@ -209,17 +213,16 @@ export default function UploadCenterClient({
       {showMultiFileWarning && (
         <div className="modal modal-open">
           <div className="modal-box">
-            <h3 className="font-bold text-lg">Can’t switch to single-file</h3>
-            <p className="py-2">
-              You currently have multiple files selected. Remove files in{" "}
-              <b>Selected files</b> until only one remains.
-            </p>
+            <h3 className="font-bold text-lg">
+              {t.translations.CANT_SWITCH_TO_SINGLE_FILE}
+            </h3>
+            <p className="py-2">{t.translations.MULTI_FILE_WARNING}</p>
             <div className="modal-action">
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowMultiFileWarning(false)}
               >
-                Okay, got it
+                {t.translations.OKAY}
               </button>
             </div>
           </div>

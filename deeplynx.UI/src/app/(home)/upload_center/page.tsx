@@ -37,6 +37,13 @@ export default async function Page() {
       file: "weather_data.csv",
       icon: "link",
     },
+    {
+      id: "3",
+      name: "John Deer",
+      avatar: "/images/johnD.png",
+      file: "weather_data.csv",
+      icon: "link",
+    },
   ];
 
   return (

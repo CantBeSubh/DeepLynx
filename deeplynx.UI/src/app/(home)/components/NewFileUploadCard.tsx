@@ -1,5 +1,6 @@
 "use client";
 
+import { translations } from "@/app/lib/translations";
 import React, { useEffect, useState } from "react";
 
 type UploadType = "new" | "version" | "properties" | "";
@@ -11,6 +12,7 @@ export default function NewFileUploadCard({
   defaultName?: string;
   uploadType: UploadType;
 }) {
+  const t = translations["en"];
   const [updateAction, setUpdateAction] = useState<"" | "merge" | "overwrite">(
     ""
   );
@@ -37,10 +39,12 @@ export default function NewFileUploadCard({
           {/* Row 1: Time Series toggle + Name input */}
           <div className="grid grid-cols-[auto,1fr] items-center gap-4">
             <div className="flex items-center">
-              <span className="label-text mr-2">Time Series</span>
+              <span className="label-text mr-2">
+                {t.translations.TIMESERIES}
+              </span>
               <input type="checkbox" className="toggle toggle-secondary" />
               <label className="flex items-center gap-2 flex-1">
-                <span className="label-text ml-4">Name</span>
+                <span className="label-text ml-4">{t.translations.NAME}</span>
                 <input
                   type="text"
                   className="input input-sm w-full"
@@ -55,7 +59,9 @@ export default function NewFileUploadCard({
           {/* Row 2: Description textarea */}
           <div className="grid grid-cols-[auto,1fr] items-start gap-4">
             <div className="flex">
-              <span className="label-text mr-2">Description</span>
+              <span className="label-text mr-2">
+                {t.translations.DESCRIPTION}
+              </span>
               <textarea
                 className="textarea textarea-bordered w-full"
                 placeholder="Example: This file contains ..."
@@ -65,7 +71,7 @@ export default function NewFileUploadCard({
             {showUpdate && (
               <fieldset>
                 <label className="label">
-                  Update Existing
+                  {t.translations.UPDATE_EXISTING}
                   <select
                     className="select select-info select-sm mt-2"
                     value={updateAction}
@@ -75,10 +81,12 @@ export default function NewFileUploadCard({
                     required
                   >
                     <option value="" disabled>
-                      Choose option
+                      {t.translations.CHOOSE_OPTION}
                     </option>
-                    <option value="nexus">Merge</option>
-                    <option value="remote-db">Overwrite</option>
+                    <option value="nexus">{t.translations.MERGE}</option>
+                    <option value="remote-db">
+                      {t.translations.OVERWRITE}
+                    </option>
                   </select>
                 </label>
               </fieldset>

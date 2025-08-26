@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { ExistingFile } from "@/app/(home)/types/upload";
+import { translations } from "@/app/lib/translations";
 
 type Props = {
   needsTarget: boolean;
@@ -13,6 +14,7 @@ export default function FileDetailsCard({
   selectedTarget,
   className = "",
 }: Props) {
+  const t = translations["en"];
   if (!needsTarget) return null;
 
   return (
@@ -25,13 +27,15 @@ export default function FileDetailsCard({
               : "File details"}
           </h2>
           {selectedTarget?.timeSeries && (
-            <span className="badge badge-info">Time series</span>
+            <span className="badge badge-info">
+              {t.translations.TIMESERIES}
+            </span>
           )}
         </div>
 
         {!selectedTarget ? (
           <p className="text-sm opacity-70">
-            Select an existing file from the dropdown.
+            {t.translations.SELECT_EXISTING_FILE_FROM_DROPDOWN}
           </p>
         ) : (
           <>
@@ -39,27 +43,29 @@ export default function FileDetailsCard({
 
             <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               <div>
-                <span className="opacity-60">File name:</span>{" "}
+                <span className="opacity-60">{t.translations.FILE_NAME}</span>{" "}
                 {selectedTarget.name}
               </div>
               <div>
-                <span className="opacity-60">Alias:</span>{" "}
+                <span className="opacity-60">{t.translations.ALIAS}</span>{" "}
                 {selectedTarget.alias}
               </div>
               <div>
-                <span className="opacity-60">Last update:</span>{" "}
+                <span className="opacity-60">{t.translations.LAST_UPDATE}</span>{" "}
                 {selectedTarget.lastUpdate}
               </div>
               <div>
-                <span className="opacity-60">Updated by:</span>{" "}
+                <span className="opacity-60">{t.translations.UPDATED_BY}</span>{" "}
                 {selectedTarget.updatedBy}
               </div>
               <div className="sm:col-span-2">
-                <span className="opacity-60">Data source:</span>{" "}
+                <span className="opacity-60">{t.translations.DATA_SOURCE}</span>{" "}
                 {selectedTarget.dataSource}
               </div>
               <div className="sm:col-span-2">
-                <span className="opacity-60">Properties sources:</span>{" "}
+                <span className="opacity-60">
+                  {t.translations.PROPERTIES_SOURCE}
+                </span>{" "}
                 {selectedTarget.propertiesSources}
               </div>
             </div>

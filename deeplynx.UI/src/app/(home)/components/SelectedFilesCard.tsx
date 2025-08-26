@@ -1,4 +1,5 @@
 "use client";
+import { translations } from "@/app/lib/translations";
 import React from "react";
 
 type Props = {
@@ -14,13 +15,16 @@ export default function SelectedFilesCard({
   onClear,
   onUpload,
 }: Props) {
+  const t = translations["en"];
   if (files.length === 0) return null;
   return (
     <div className="card card-border mt-4">
       <div className="card-body">
-        <h2 className="card-title">Selected files</h2>
+        <h2 className="card-title">{t.translations.SELECTED_FILES}</h2>
         {files.length === 0 ? (
-          <p className="text-sm opacity-70">No files selected yet.</p>
+          <p className="text-sm opacity-70">
+            {t.translations.NO_FILES_SELECTED_YET}
+          </p>
         ) : (
           <>
             <ul className="space-y-2">
@@ -33,17 +37,17 @@ export default function SelectedFilesCard({
                     </span>
                   </div>
                   <button className="btn btn-xs" onClick={() => onRemoveAt(i)}>
-                    Remove
+                    {t.translations.REMOVE}
                   </button>
                 </li>
               ))}
             </ul>
             <div className="mt-4 flex gap-2">
               <button className="btn btn-ghost btn-sm" onClick={onClear}>
-                Clear all
+                {t.translations.CLEAR_ALL}
               </button>
               <button className="btn btn-secondary btn-sm" onClick={onUpload}>
-                Upload
+                {t.translations.UPLOAD}
               </button>
             </div>
           </>

@@ -1,4 +1,5 @@
 "use client";
+import { translations } from "@/app/lib/translations";
 import React, { useRef, useState, useCallback } from "react";
 
 type Props = {
@@ -16,6 +17,7 @@ export default function DropUpload({
   onFilesChange,
   accept,
 }: Props) {
+  const t = translations["en"];
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -88,10 +90,10 @@ export default function DropUpload({
       onDragEnter={handleDragOver}
       onDragLeave={handleDragLeave}
       className={[
-        "rounded-xl border border-dashed p-6 transition",
+        "rounded-xl border p-6 transition",
         "flex flex-col items-center justify-center text-center gap-2",
         disabled
-          ? "opacity-50 pointer-events-none"
+          ? "opacity-30 pointer-events-none"
           : isDragging
           ? "border-secondary/70 bg-secondary/10"
           : "border-base-300 hover:bg-base-200/40",
@@ -108,26 +110,19 @@ export default function DropUpload({
         disabled={disabled}
       />
 
-      <div className="text-lg font-medium">Drag & drop files here</div>
-      <div className="text-sm opacity-70">
-        or <span className="link link-secondary">click to browse</span>
+      <div className="text-lg font-medium">
+        {t.translations.DRAG_N_DROP_FILES_HERE}
       </div>
-      {accept && <div className="text-xs opacity-60">Accepted: {accept}</div>}
-
-      {files.length > 0 && (
-        <ul className="mt-3 w-full text-sm">
-          {files.map((f, i) => (
-            <li
-              key={`${f.name}-${f.size}-${f.lastModified}-${i}`}
-              className="opacity-80"
-            >
-              {f.name}{" "}
-              <span className="opacity-50">
-                ({Math.round(f.size / 1024)} KB)
-              </span>
-            </li>
-          ))}
-        </ul>
+      <div className="text-sm opacity-70">
+        {t.translations.OR}{" "}
+        <span className="link link-secondary">
+          {t.translations.CLICK_TO_BROWSE}
+        </span>
+      </div>
+      {accept && (
+        <div className="text-xs opacity-60">
+          {t.translations.ACCEPTED} {accept}
+        </div>
       )}
     </div>
   );
