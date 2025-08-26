@@ -129,6 +129,7 @@ public class ProjectBusiness : IProjectBusiness
         {
             new CreateClassRequestDto {Name = "Timeseries"},
             new CreateClassRequestDto {Name = "Report"},
+            new CreateClassRequestDto {Name = "File"}
         };
         await _classBusiness.BulkCreateClasses(project.Id, defaultClasses);
         
