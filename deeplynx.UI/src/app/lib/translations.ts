@@ -123,6 +123,10 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No files selected yet.",
             REMOVE: "Remove",
             UPLOAD: "Upload",
+            ARE_YOU_SURE: "Are you sure?",
+            FROM: "From",
+            NO: "No",
+            YES: "Yes"
         }
     },
     es: {
