@@ -1,17 +1,17 @@
 services:
-  app:
-    build:
-      context: ./
-      dockerfile: Dockerfiles/Dockerfile.app.local
-    ports:
-      - "3000:3000"
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
-      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-    depends_on:
-      - postgres
+#  frontend:
+#    build:
+#      context: ./
+#      dockerfile: Dockerfiles/Dockerfile.app.local
+#    ports:
+#      - "3000:3000"
+#    environment:
+#      NODE_ENV: production
+#      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
+#      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
+#      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+#    depends_on:
+#      - nexus-postgres
 
   backend:
     build:
@@ -24,13 +24,29 @@ services:
       NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
       NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nexuscore
+      POSTGRES_DB_NAME: deeplynx
+      POSTGRES_DB_HOST: nexus-postgres
+      POSTGRES_PORT: 5432
     depends_on:
-      - postgres
+      - nexus-postgres
     entrypoint: /usr/local/bin/entrypoint.sh
+    networks:
+      - nexus-network
 
-  postgres:
+  nexus-postgres:
     build:
       context: ./database
       dockerfile: Dockerfiles/Dockerfile.db.local
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nexuscore
     ports:
       - "5433:5432"
+    networks:
+      - nexus-network
+    
+networks:
+  nexus-network:
+    driver: bridge

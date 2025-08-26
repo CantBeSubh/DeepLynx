@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
+using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
@@ -228,6 +229,11 @@ try
             };
         });
     });
+
+    /* ╔════════════════════════════╗
+       ║      Apply Migrations      ║
+       ╚════════════════════════════╝ */
+    MigrationRunner.ApplyMigrations(connectionString);
 
     var app = builder.Build();
 
