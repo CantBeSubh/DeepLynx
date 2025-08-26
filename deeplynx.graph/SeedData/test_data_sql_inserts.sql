@@ -7,14 +7,15 @@ VALUES
 ('song', (SELECT id FROM projects where name = 'test' LIMIT 1));
 
 -- Insert into records table
-INSERT INTO records (properties, data_source_id, original_id, name, project_id, class_id, description) 
+INSERT INTO records (properties, data_source_id, original_id, name, project_id, object_storage_id, class_id, description) 
 VALUES
 (
     ('{"name": "series", "genre": "country", "year": 1997}'::jsonb),
     (SELECT id FROM data_sources WHERE name = 'test' AND project_id = (SELECT id FROM projects where name = 'test' LIMIT 1) LIMIT 1),
     5,
     'series',
-    (SELECT id FROM projects where name = 'test' LIMIT 1),
+    (SELECT id FROM projects WHERE name = 'test' LIMIT 1),
+    (SELECT id FROM object_storages WHERE name = 'test' LIMIT 1),
     (SELECT id FROM classes WHERE name = 'musician' AND project_id = (SELECT id FROM projects where name = 'test' LIMIT 1) LIMIT 1),
     'test'
 ),
@@ -24,6 +25,7 @@ VALUES
     6,
     'possible',
     (SELECT id FROM projects where name = 'test' LIMIT 1),
+    (SELECT id FROM object_storages WHERE name = 'test' LIMIT 1),
     (SELECT id FROM classes WHERE name = 'song' AND project_id = (SELECT id FROM projects where name = 'test' LIMIT 1) LIMIT 1),
     'test'
 );

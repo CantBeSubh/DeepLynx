@@ -131,8 +131,8 @@ export default function DataCatalogClient({
         selectedNums.length === projects.length
           ? results
           : results.filter((r: FileViewerTableRow) =>
-              selectedNums.includes(Number(r.projectId))
-            );
+            selectedNums.includes(Number(r.projectId))
+          );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -248,7 +248,8 @@ export default function DataCatalogClient({
               {t.translations.RECENT_ACTIVITY}
             </button>
           ) : (
-            <button
+            <Link
+              href="data_catalog/all_records"
               className="btn btn-outline btn-primary"
               onClick={() => {
                 setShowAll(true);
@@ -258,7 +259,7 @@ export default function DataCatalogClient({
             >
               <EyeIcon className="h-6 w-6" />
               {t.translations.EXPLORE_ALL_RECORDS}
-            </button>
+            </Link>
           )}
 
           <button className="btn btn-primary text-white">
@@ -269,17 +270,15 @@ export default function DataCatalogClient({
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="h-7 w-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="h-7 w-7" />
@@ -288,61 +287,14 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-
-      {activeFilters.length > 0 || showAll ? (
-        viewMode === "list" ? (
-          <ListView
-            data={tableData}
-            activeSearchTerms={activeSearchTerms}
-            selectedProjects={selectedProjectIdsNum}
-          />
-        ) : (
-          <GridView
-            columns={[
-              { header: "ID", data: "id" },
-              {
-                header: "Record Name",
-                cell: (row) => (
-                  <Link
-                    href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
-                    className="text-base-content font-bold hover:underline"
-                  >
-                    {row.name}
-                  </Link>
-                ),
-              },
-              { header: "Description", data: "description" },
-              {
-                header: "Class",
-                cell: (row) =>
-                  row.className ? (
-                    <span className="badge text-sm">{row.className}</span>
-                  ) : null,
-              },
-              {
-                header: "Tags",
-                cell: (row) => renderTags(row.tags),
-              },
-              {
-                header: "Last Edited",
-                cell: (row) => row.modifiedAt ?? row.createdAt,
-              },
-            ]}
-            data={tableData}
-            activeSearchTerms={activeSearchTerms}
-            selectedProjects={selectedProjects}
-          />
-        )
-      ) : (
-        <div className="flex w-full gap-8 pl-8">
-          <div className="w-2/3">
-            <RecentRecordsCard selectedProjects={selectedProjects} />
-          </div>
-          <div className="w-1/3">
-            <SavedSearches />
-          </div>
+      <div className="flex w-full gap-8 pl-8">
+        <div className="w-2/3">
+          <RecentRecordsCard selectedProjects={selectedProjects} />
         </div>
-      )}
-    </div>
+        <div className="w-1/3">
+          <SavedSearches />
+        </div>
+      </div>
+    </div >
   );
 }

@@ -36,8 +36,6 @@ jobs:
           az cloud set --name AzureUSGovernment
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
-          
-          # Build the Docker images and pass the environment variables as build arguments
           az acr build --registry $ACR_REGISTRY \
             --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
             --file Dockerfiles/Dockerfile.app \
@@ -91,7 +89,6 @@ jobs:
             --from-literal=service-token="${{ secrets.SERVICE_TOKEN }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
-
       # Create Kubernetes ConfigMap for non-sensitive environment variables
       - shell: bash
         name: Create Kubernetes ConfigMap
@@ -104,7 +101,6 @@ jobs:
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
-
       # Overwrites ${VARIABLES} in the kube manifest with secrets
       - shell: bash
         name: Manifest env substitute

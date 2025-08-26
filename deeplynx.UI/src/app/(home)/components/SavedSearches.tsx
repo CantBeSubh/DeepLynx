@@ -6,12 +6,17 @@ import GenericTable from "./GenericTable";
 import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
 import Tabs from "./Tabs";
+import { translations } from "@/app/lib/translations";
+import Link from "next/link";
+
 
 interface SavedSearchProps {
   className?: string;
 }
 
 const SavedSearches = ({ className }: SavedSearchProps) => {
+  const locale = "en";
+  const t = translations[locale];
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -80,9 +85,14 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
   ];
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card card-border mt-6">
+    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
-        <h2 className="card-title">Saved Searches</h2>
+        <span className="flex justify-between">
+          <h2 className="card-title">Saved Searches</h2>
+          <Link className="btn btn-secondary text-white" href="/savedsearchesplaceholder">
+            {t.translations.VISIT}
+          </Link>
+        </span>
         <Tabs tabs={tabData} className="tabs tabs-border" />
       </div>
     </div>
