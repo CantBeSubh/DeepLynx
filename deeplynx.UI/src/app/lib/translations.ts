@@ -123,8 +123,9 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No files selected yet.",
             REMOVE: "Remove",
             UPLOAD: "Upload",
-            ARE_YOU_SURE: "Are you sure?",
-            FROM: "From",
+            UNLINK_TAG: "Unlink Tag",
+            ARE_YOU_SURE: "Are you sure you want to unlink?",
+            FROM: "from",
             NO: "No",
             YES: "Yes"
         }
@@ -253,6 +254,11 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No se han seleccionado archivos aún.",
             REMOVE: "Eliminar",
             UPLOAD: "Cargar",
+            UNLINK_TAG: "Desvincular Etiqueta",
+            ARE_YOU_SURE: "¿Estás seguro de que deseas desvincular?",
+            FROM: "de",
+            NO: "No",
+            YES: "Sí"
 
         }
     }
