@@ -91,7 +91,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
         )}
         <div className="text-right mt-1">
           <a
-            href="/placeholder for advanced"
+            href="/data_catalog/query_builder"
             className="text-sm underline text-secondary hover:underline"
           >
             {t.translations.ADITIONAL_FILTERS}
