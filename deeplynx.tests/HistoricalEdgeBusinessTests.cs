@@ -282,13 +282,13 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             Name = "Class 1",
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var testClass2 = new Class
         {
             Name = "Class 2",
             ProjectId = pid2,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
         Context.Classes.Add(testClass2);

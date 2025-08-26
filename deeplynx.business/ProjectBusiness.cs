@@ -330,7 +330,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         //classes”: number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p => p.IsArchived == null && p.ProjectId == projectId).Count();
         var records = _context.Records
             .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources

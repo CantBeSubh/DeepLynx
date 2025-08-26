@@ -660,7 +660,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
             {
                 Name = "Class 1",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();

@@ -45,7 +45,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         // add filter for class or tag if specified
         if (classId.HasValue)
         {
-            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ArchivedAt == null);
+            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && !c.IsArchived );
             if (rmClass == null)
             {
                 throw new KeyNotFoundException($"Class with id {classId} not found");

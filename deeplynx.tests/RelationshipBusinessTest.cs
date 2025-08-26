@@ -762,7 +762,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(originClass);
 
@@ -770,7 +770,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();

@@ -431,7 +431,7 @@ namespace deeplynx.tests
             {
                 Name = "Second Test Class",
                 ProjectId = secondProject.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(secondClass);
 
@@ -584,7 +584,7 @@ namespace deeplynx.tests
             {
                 Name = "Test Class",
                 ProjectId = TestProjectId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();

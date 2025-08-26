@@ -14,14 +14,7 @@ public class ClassResponseDto
     public string? Uuid { get; set; }
     [Column("project_id")]
     public long ProjectId { get; set; }
-    [Column("created_by")]
-    public string? CreatedBy { get; set; }
-    [Column("created_at")]
-    public DateTime CreatedAt { get; set; }
-    [Column("modified_by")]
-    public string? ModifiedBy { get; set; }
-    [Column("modified_at")]
-    public DateTime? ModifiedAt { get; set; }
-    [Column("archived_at")]
-    public DateTime? ArchivedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string? LastUpdatedBy { get; set; }
+    public bool IsArchived { get; set; }
 }

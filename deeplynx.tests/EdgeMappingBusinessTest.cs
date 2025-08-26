@@ -197,8 +197,7 @@ namespace deeplynx.tests
             {
                 Name = $"Other Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(otherClass);
             await Context.SaveChangesAsync();
@@ -668,7 +667,7 @@ namespace deeplynx.tests
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(originClass);
 
@@ -676,7 +675,7 @@ namespace deeplynx.tests
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();

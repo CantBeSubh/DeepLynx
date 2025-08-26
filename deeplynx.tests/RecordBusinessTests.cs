@@ -66,7 +66,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Class",
             Description = "Test class for unit tests",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();

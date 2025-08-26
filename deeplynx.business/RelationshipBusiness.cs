@@ -143,7 +143,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         if (dto.OriginId != null)
         { 
-            var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && c.ArchivedAt == null);
+            var originClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.OriginId && !c.IsArchived);
             if (originClass == null)
             {
                 throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
@@ -152,7 +152,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         if (dto.DestinationId != null)
         {
-            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.ArchivedAt == null);
+            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.IsArchived == null);
             if (destinationClass == null)
             {
                 throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
@@ -275,13 +275,13 @@ public class RelationshipBusiness: IRelationshipBusiness
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
 
-        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.OriginId ?? relationship.OriginId) && c.ArchivedAt == null);
+        var orignClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.OriginId ?? relationship.OriginId) && !c.IsArchived);
         if (orignClass == null)
         {
             throw new KeyNotFoundException($"Origin class with ID {dto.OriginId} not found.");
         }
 
-        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.DestinationId ?? relationship.DestinationId) && c.ArchivedAt == null);
+        var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == (dto.DestinationId ?? relationship.DestinationId) && !c.IsArchived);
         if (destinationClass == null)
         {
             throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
