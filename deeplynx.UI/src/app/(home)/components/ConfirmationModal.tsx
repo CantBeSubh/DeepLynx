@@ -30,21 +30,21 @@ const ConfirmationModal = ({
           <div className="modal-box max-w-lg">
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-center text-black">
-              {t.ConfirmationModal.ARE_YOU_SURE} {/* Header for the modal */}
+              {t.translations.ARE_YOU_SURE} {/* Header for the modal */}
             </h3>
             {/* Message for the confirmation */}
             <p className="text-center">
-              <strong>{tagName}</strong> {t.ConfirmationModal.FROM}{" "}
+              <strong>{tagName}</strong> {t.translations.FROM}{" "}
               <strong>{recordName}</strong>
             </p>
             {/* Modal Action Buttons */}
             <div className="modal-action flex justify-between mt-14">
               <button className="btn text-blue-600" onClick={onClose}>
                 {/* No button calls onClose */}
-                {t.ConfirmationModal.NO}
+                {t.translations.NO}
               </button>
               <button className="btn btn-primary" onClick={onConfirm}>
-                {t.ConfirmationModal.YES} {/* Yes button confirms unlinking */}
+                {t.translations.YES} {/* Yes button confirms unlinking */}
               </button>
             </div>
           </div>

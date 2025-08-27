@@ -8,7 +8,6 @@ namespace deeplynx.business;
 public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 {
     private readonly DeeplynxContext _context;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="HistoricalRecordBusiness"/> class.
     /// </summary>

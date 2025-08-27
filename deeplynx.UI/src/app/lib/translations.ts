@@ -124,6 +124,11 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No files selected yet.",
             REMOVE: "Remove",
             UPLOAD: "Upload",
+            UNLINK_TAG: "Unlink Tag",
+            ARE_YOU_SURE: "Are you sure you want to unlink?",
+            FROM: "from",
+            NO: "No",
+            YES: "Yes",
             ENGLISH: "English",
             ESPANOL: "Español",
             USER_SETTINGS: "User Settings",
@@ -263,18 +268,7 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No se han seleccionado archivos aún.",
             REMOVE: "Eliminar",
             UPLOAD: "Cargar",
-            ENGLISH: "English",
-            ESPANOL: "Español",
-            USER_SETTINGS: "Configuración de usuario",
-            GENERAL: "General",
-            EMAIL: "Correo electrónico",
-            PROFILE_PICTURE: "Foto de perfil",
-            PREFERENCES: "Preferencias",
-            DARK_MODE: "Modo oscuro",
-            EMAIL_NOTIFICATIONS: "Notificaciones por correo",
-            LANGUAGE: "Idioma",
-            RECORD_NAME: "Nombre de Registro",
-            LAST_VIEWED: "Última visualización"
+
         }
     }
 }

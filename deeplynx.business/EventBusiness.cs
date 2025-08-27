@@ -5,7 +5,7 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
-
+using Newtonsoft.Json;
 
 public class EventBusiness : IEventBusiness
 {
@@ -94,11 +94,11 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
-    /// <param name="dto">A data transfer object with details on the new class to be created.</param>
+    /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
     public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, false);
         ValidationHelper.ValidateModel(dto);
         Validate(dto.EntityType, "EntityType");
         Validate(dto.Operation, "Operation");
@@ -131,8 +131,62 @@ public class EventBusiness : IEventBusiness
             CreatedAt = newEvent.CreatedAt,
         };
     }
-    
-    private string Validate(string value, string type)
+
+    /// <summary>
+    /// Bulk creates Events based on the event data provided.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the event belongs</param>
+    /// <param name="events">A List of data transfer objects with details on the new event to be created.</param>
+    /// <returns>The list of new Events which were created.</returns>
+    public async Task<List<EventResponseDto>> BulkCreateEvents(long projectId, List<CreateEventRequestDto> events)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, false);
+
+        foreach (var dto in events)
+        {
+            Validate(dto.EntityType, "EntityType");
+            Validate(dto.Operation, "Operation");
+        }
+
+        // Bulk Insert into Events
+        var sql = @"
+            INSERT INTO deeplynx.events (project_id, operation, entity_type, entity_id, properties, data_source_id, created_by, created_at)
+            VALUES {0}
+            RETURNING *;
+        ";
+
+        var parameters = new List<NpgsqlParameter>
+        {
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+
+        var utcNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        parameters.AddRange(events.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_operation", dto.Operation),
+            new NpgsqlParameter($"@p{i}_entity_type", dto.EntityType),
+            new NpgsqlParameter($"@p{i}_entity_id", dto.EntityId ?? (object)DBNull.Value),
+            new NpgsqlParameter($"@p{i}_properties", NpgsqlTypes.NpgsqlDbType.Jsonb) { Value = dto.Properties },
+            new NpgsqlParameter($"@p{i}_data_source_id", dto.DataSourceId ?? (object)DBNull.Value),
+            new NpgsqlParameter($"@p{i}_created_by", dto.CreatedBy),
+        }));
+
+        var valueTuples = string.Join(", ", events.Select((dto, i) =>
+            $"(@projectId, @p{i}_operation, @p{i}_entity_type, @p{i}_entity_id, @p{i}_properties, @p{i}_data_source_id, @p{i}_created_by, @now)"));
+
+        sql = string.Format(sql, valueTuples);
+
+        // Execute the SQL command and map results to EventResponseDto
+        var result = await _context.Database
+            .SqlQueryRaw<EventResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
+
+        return result;
+    }
+
+    private bool Validate(string value, string type)
     {
         if (type == "EntityType")
         {
@@ -141,7 +195,7 @@ public class EventBusiness : IEventBusiness
                 throw new ArgumentException($"EntityType must be one of {string.Join(", ", AllowedEntityTypes)}");
             }
 
-            return value;
+            return true;
         }
 
         if (type == "Operation")
@@ -151,9 +205,9 @@ public class EventBusiness : IEventBusiness
                 throw new ArgumentException($"Operation must be one of {string.Join(", ", AllowedOperations)}");
             }
 
-            return value;
+            return true;
         }
-            
-        throw new ArgumentException("Invalid type for validation.");
+
+        return false;
     }
 }
