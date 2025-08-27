@@ -20,6 +20,9 @@ public class RecordResponseDto
     public string? Uri { get; set; }
     [Column("properties")]
     public string Properties { get; set; } = null!;
+    
+    [Column("object_storage_id")]
+    public long? ObjectStorageId { get; set; }
     [Column("original_id")]
     public string OriginalId { get; set; }
     [Column("class_id")]

@@ -21,8 +21,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     private Mock<IEdgeMappingBusiness> _edgeMappingBusiness;
     private Mock<IRecordBusiness> _recordBusiness;
     private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
+    private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
     private DataSourceBusiness _dataSourceBusiness = null!;
     private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+    private EventBusiness _eventBusiness = null!;
     
     public long pid;
     public long tid;
@@ -34,15 +36,24 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _recordMappingBusiness = new RecordMappingBusiness(Context);
+        _eventBusiness = new EventBusiness(Context);
+        _recordMappingBusiness = new RecordMappingBusiness(Context, _eventBusiness);
         _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
         _edgeBusiness = new Mock<IEdgeBusiness>();
         _recordBusiness = new Mock<IRecordBusiness>();
         _relationshipBusiness = new Mock<IRelationshipBusiness>();
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
-        _classBusiness = new ClassBusiness(Context, _edgeMappingBusiness.Object, _recordBusiness.Object, _recordMappingBusiness, _relationshipBusiness.Object);
-        _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness.Object, _recordBusiness.Object);
-        _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness);
+        _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
+        
+        _classBusiness = new ClassBusiness(
+            Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
+            _recordMappingBusiness, _relationshipBusiness.Object, _eventBusiness);
+        
+        _dataSourceBusiness = new DataSourceBusiness(
+            Context, _edgeBusiness.Object, _recordBusiness.Object, _eventBusiness);
+        
+        _projectBusiness = new ProjectBusiness(
+            Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
     }
 
     [Fact]
@@ -57,6 +68,19 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         result.ClassId.Should().Be(cid);
         result.TagId.Should().Be(tid);
         result.DataSourceId.Should().Be(did);
+        
+        // Ensure that mapping create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(1);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = result.ProjectId,
+            Operation = "create",
+            DataSourceId = result.DataSourceId,
+            EntityType = "record_mapping",
+            EntityId = result.Id,
+            Properties = "{}"
+        });
     }
     
     [Fact]
@@ -65,6 +89,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new CreateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<ValidationException>();
+        
+        // Ensure that mapping create event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(0);
     }
     
     [Fact]
@@ -73,6 +101,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new CreateRecordMappingRequestDto {RecordParams = null, ClassId = cid, TagId = tid};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<ValidationException>();
+        
+        // Ensure that mapping create event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(0);
     }
     
     [Fact]
@@ -81,6 +113,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new CreateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid + 99, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
+        
+        // Ensure that mapping create event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(0);
     }
     
     [Fact]
@@ -93,6 +129,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new CreateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<KeyNotFoundException>();
+        
+        // Ensure that mapping create event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(0);
     }
     
     [Fact]
@@ -101,6 +141,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new CreateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = null, TagId = null,  DataSourceId = did};
         var result = () => _recordMappingBusiness.CreateRecordMapping(pid, dto);
         await result.Should().ThrowAsync<InvalidRequestException>();
+        
+        // Ensure that mapping create event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Should().HaveCount(0);
     }
     
     [Fact]
@@ -118,7 +162,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     }
     
     [Fact]
-    public async Task GetAllrecordMappings_ExcludesSoftDeleted()
+    public async Task GetAllRecordMappings_ExcludesSoftDeleted()
     {
         var recordMapping1 = new RecordMapping
         {
@@ -267,6 +311,18 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.NotNull(updatedMapping);
         Assert.Contains("updated_value", updatedMapping.RecordParams);
         Assert.NotNull(updatedMapping.ModifiedAt);
+        
+        // Ensure that mapping update event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(1);
+        eventList[0].Should().BeEquivalentTo( new
+        { 
+          ProjectId = pid,
+          Operation = "update",
+          EntityType = "record_mapping",
+          EntityId = updatedMapping.Id,
+          DataSourceId = updatedMapping.DataSourceId,
+        });
     }
     
     [Fact]
@@ -275,6 +331,10 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new UpdateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = () => _recordMappingBusiness.UpdateRecordMapping(pid, 0, dto);
         await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+        
+        // Ensure that the mapping update event was not logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
     
     [Fact]
@@ -303,6 +363,17 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.NotNull(archivedRecordMapping.ArchivedAt);
         Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
         Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow);
+        
+        // Ensure that the mapping soft delete event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(1);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = pid,
+            Operation = "delete",
+            EntityType = "record_mapping",
+            DataSourceId = did,
+        });
     }
     
     [Fact]

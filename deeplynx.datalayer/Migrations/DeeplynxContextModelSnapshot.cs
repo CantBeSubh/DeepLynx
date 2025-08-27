@@ -649,6 +649,14 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long?>("ObjectStorageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("object_storage_id");
+
+                    b.Property<string>("ObjectStorageName")
+                        .HasColumnType("text")
+                        .HasColumnName("object_storage_name");
+
                     b.Property<string>("OriginalId")
                         .HasColumnType("text")
                         .HasColumnName("original_id");
@@ -695,6 +703,70 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "RecordId" }, "idx_historical_records_record_id");
 
                     b.ToTable("historical_records", "deeplynx");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("archived_at");
+
+                    b.Property<string>("Config")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("config");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("created_by");
+
+                    b.Property<bool>("Default")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default");
+
+                    b.Property<DateTime?>("ModifiedAt")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("modified_at");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("modified_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("type");
+
+                    b.HasKey("Id")
+                        .HasName("object_storage_pkey");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
+
+                    b.ToTable("object_storages", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
@@ -809,6 +881,10 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<long?>("ObjectStorageId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("object_storage_id");
+
                     b.Property<string>("OriginalId")
                         .IsRequired()
                         .HasColumnType("text")
@@ -829,6 +905,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("records_pkey");
+
+                    b.HasIndex("ObjectStorageId");
 
                     b.HasIndex(new[] { "ClassId" }, "idx_records_class_id");
 
@@ -1400,6 +1478,18 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Record");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
+                        .WithMany("ObjectStorages")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("object_storage_project_id_fkey");
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Record", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Class", "Class")
@@ -1419,6 +1509,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("MappingId")
                         .HasConstraintName("records_mapping_id_fkey");
 
+                    b.HasOne("deeplynx.datalayer.Models.ObjectStorage", "ObjectStorage")
+                        .WithMany("Records")
+                        .HasForeignKey("ObjectStorageId")
+                        .HasConstraintName("records_object_storage_id_fkey");
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Records")
                         .HasForeignKey("ProjectId")
@@ -1429,6 +1524,8 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Class");
 
                     b.Navigation("DataSource");
+
+                    b.Navigation("ObjectStorage");
 
                     b.Navigation("Project");
 
@@ -1585,6 +1682,11 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Edges");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
+                {
+                    b.Navigation("Records");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
                 {
                     b.Navigation("Actions");
@@ -1598,6 +1700,8 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Edges");
 
                     b.Navigation("Events");
+
+                    b.Navigation("ObjectStorages");
 
                     b.Navigation("RecordMappings");
 

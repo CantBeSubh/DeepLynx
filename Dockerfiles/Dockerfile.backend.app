@@ -47,8 +47,6 @@ RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 # Install tools needed for entrypoint.sh
 RUN apk --no-check-certificate add postgresql-client
 
-
-
 # Stage 4: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
 

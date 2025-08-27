@@ -128,7 +128,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
           <li className="mt-2">
-            <Link href={""} className={getItemClass("/upload_center")}>
+            <Link href={"/upload_center"} className={getItemClass("/upload_center")}>
               <ArrowUpTrayIcon className="size-6" />
               {!isCollapsed && (
                 <p className="ml-2">{t.translations.UPLOAD_CENTER}</p>

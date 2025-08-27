@@ -152,3 +152,21 @@ body {
 .top-shadow {
   box-shadow: 0 0px 10px rgba(0, 0, 0, 0.3);
 }
+
+/* Custom styles for the table */
+.table-bordered {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #ccc; /* Set border color */
+  padding: 8px; /* Padding for table cells */
+  text-align: left; /* Align text to the left */
+}
+
+.table-bordered th {
+  background-color: #f2f2f2; /* Background color for header */
+  font-weight: bold; /* Bold for header */
+}

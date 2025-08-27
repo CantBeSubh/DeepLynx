@@ -1,0 +1,119 @@
+import React, { useEffect, useRef, useState } from "react";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import { attachTagToRecord, unAttachTagFromRecord } from "@/app/lib/record_services.client";
+
+interface TagButtonProps {
+  tags: { id: string; name: string }[];
+  onSelectionChange?: (selected: string[]) => void;
+  projectId: number;
+  recordId: number;
+  selectedIds: string[];
+  setSelectedIds: (ids: string[]) => void;
+}
+
+const TagButton: React.FC<TagButtonProps> = ({
+  tags,
+  onSelectionChange,
+  projectId,
+  recordId,
+  selectedIds,
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [tempSelectedIds, setTempSelectedIds] = useState<string[]>(selectedIds);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const longestNameRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    setTempSelectedIds(selectedIds);
+  }, [selectedIds]);
+
+  useEffect(() => {
+    if (longestNameRef.current) {
+      const longestNameWidth = longestNameRef.current.offsetWidth;
+      if (dropdownRef.current) {
+        dropdownRef.current.style.minWidth = `${longestNameWidth + 40}px`;
+      }
+    }
+  }, [isOpen, tempSelectedIds]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const toggleTag = async (id: string) => {
+    let newSelectionIds: string[];
+
+    if (tempSelectedIds.includes(id)) {
+      newSelectionIds = tempSelectedIds.filter((sid) => sid !== id);
+      await unAttachTagFromRecord(projectId, recordId, Number(id));
+    } else {
+      newSelectionIds = [...tempSelectedIds, id];
+      try {
+        await attachTagToRecord(projectId, recordId, Number(id));
+      } catch (error) {
+        console.error("Error attaching tag to record:", error);
+      }
+    }
+
+    setTempSelectedIds(newSelectionIds);
+
+    if (onSelectionChange) {
+      onSelectionChange(newSelectionIds);
+    }
+  };
+
+  const filteredTags = tags.filter((t) =>
+    t.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="relative inline-flex text-left text-accent-content">
+      <button
+        className="flex items-center justify-center w-7 h-7 rounded-full bg-primary text-white cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <PlusIcon className="w-6 h-5" />
+      </button>
+
+      {isOpen && (
+        <div
+          className="absolute z-10 mt-2 bg-base-100 shadow rounded-box p-4 max-h-80 overflow-auto"
+          ref={dropdownRef}
+        >
+          <input
+            type="text"
+            placeholder="Search"
+            className="input input-bordered w-full mb-4"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <div className="flex flex-col gap-2">
+            {filteredTags.map((tag) => (
+              <label key={tag.id} className="label cursor-pointer justify-start gap-2">
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-primary"
+                  checked={tempSelectedIds.includes(tag.id)}
+                  onChange={() => toggleTag(tag.id)}
+                />
+                <span className="label-text" ref={tag.id === filteredTags[0]?.id ? longestNameRef : null}>
+                  {tag.name}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default TagButton;

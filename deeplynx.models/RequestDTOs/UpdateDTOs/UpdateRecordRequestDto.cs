@@ -26,4 +26,7 @@ public class UpdateRecordRequestDto
     
     [JsonPropertyName("description")]
     public string? Description { get; set; }
+    
+    [JsonPropertyName("object_storage_id")]
+    public long? ObjectStorageId { get; set; }
 }

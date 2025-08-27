@@ -9,6 +9,10 @@ INSERT INTO projects (name) VALUES ('test');
 INSERT INTO data_sources (name, config, project_id)
 VALUES ('test', '{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
 
+-- Insert into object_storages with subquery for project_id
+INSERT INTO object_storages (name, type, config, project_id, "default")
+VALUES ('test', 'filesystem', '{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1), false);
+
 -- Insert into tags with subquery for project_id
 INSERT INTO tags (name, project_id)
 VALUES ('test', (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
@@ -38,10 +42,10 @@ VALUES ('{}', '{}',
 		(SELECT id FROM data_sources WHERE name = 'test' LIMIT 1));
 
 -- Insert into records with subquery for project_id, data_source_id, and class_id
-INSERT INTO records (name, description, original_id, properties, project_id, data_source_id, class_id)
+INSERT INTO records (name, description, original_id, properties, project_id, object_storage_id, data_source_id, class_id)
 VALUES ('test', 'test', 'test', '{"test": true}',
-		-- (SELECT id FROM object_storage WHERE name = 'test' LIMIT 1),
         (SELECT id FROM projects WHERE name = 'test' LIMIT 1),
+        (SELECT id FROM object_storages WHERE name = 'test' LIMIT 1),
         (SELECT id FROM data_sources WHERE name = 'test' LIMIT 1),
         (SELECT id FROM classes WHERE name = 'test' LIMIT 1));
 

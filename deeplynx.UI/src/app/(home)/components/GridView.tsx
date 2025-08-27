@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
-import { useRouter } from "next/navigation";
+import GenericTable from "./GenericTable";
 
 type GridViewProps = {
   columns: Column<FileViewerTableRow>[];
@@ -11,85 +11,30 @@ type GridViewProps = {
   selectedProjects?: string[];
 };
 
-const GridView = <T extends object>({
+const GridView = ({
   columns,
   data,
-  activeSearchTerms = [],
   selectedProjects,
 }: GridViewProps) => {
-  const router = useRouter();
-  const getHighlightedCell = (text: unknown, queries: string[]) => {
-    const safeText = String(text);
-    if (!queries.length) return { content: safeText, matched: false };
-
-    const lowerText = safeText.toLowerCase();
-    const match = queries.find((q) => lowerText.includes(q.toLowerCase()));
-
-    if (!match) return { content: safeText, matched: false };
-
-    const regex = new RegExp(`(${match})`, "gi");
-    const parts = safeText.split(regex);
-
-    const content = parts.map((part, index) =>
-      regex.test(part) ? (
-        <span
-          key={index}
-          className="font-bold text-info-content bg-info rounded px-1"
-        >
-          {part}
-        </span>
-      ) : (
-        part
-      )
-    );
-    return { content, matched: true };
-  };
 
   const filteredRecords =
     selectedProjects?.includes("All your Projects") || !selectedProjects
       ? data
       : data.filter(
-          (record) =>
-            record.projectId !== undefined &&
-            selectedProjects.includes(record.projectId?.toString())
-        );
+        (record) =>
+          record.projectId !== undefined &&
+          selectedProjects.includes(record.projectId?.toString())
+      );
 
   return (
-    <div className="h-150 overflow-x-auto">
-      <table className="table table-pin-rows table-pin-cols">
-        <thead>
-          <tr>
-            {columns.map((column, index) => (
-              <th
-                key={index}
-                className="text-base-content border border-base-200 bg-info/30"
-              >
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {filteredRecords.map((row, rowIndex) => (
-            <tr key={rowIndex} className="cursor-pointer hover:bg-base-200/30">
-              {columns.map((column, colIndex) => {
-                const rawValue = column.data ? row[column.data] : "";
-
-                return (
-                  <td
-                    key={colIndex}
-                    className="text-base-content border border-base-200"
-                  >
-                    {column.cell
-                      ? column.cell(row)
-                      : getHighlightedCell(rawValue, activeSearchTerms).content}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="px-8">
+      <GenericTable
+        columns={columns}
+        data={filteredRecords}
+        enablePagination
+        rowsPerPage={8}
+        gridView={true}
+      />
     </div>
   );
 };

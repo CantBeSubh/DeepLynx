@@ -1,9 +1,11 @@
+using System.Text.Json.Nodes;
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 using Microsoft.Extensions.Logging;
 using Record = deeplynx.datalayer.Models.Record;
@@ -15,14 +17,17 @@ namespace deeplynx.tests
     {
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
+        private EventBusiness _eventBusiness = null!;
         private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
         private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
         private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
         public long pid;
         public long did;
+        public long os1;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -35,11 +40,16 @@ namespace deeplynx.tests
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _eventBusiness = new EventBusiness(Context);
+            _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
             _classBusiness = new ClassBusiness(
                 Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
-                _recordMappingBusiness.Object, _relationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness.Object);
+                _recordMappingBusiness.Object, _relationshipBusiness.Object, _eventBusiness);
+            
+            _projectBusiness = new ProjectBusiness(
+                Context, _mockLogger.Object, _classBusiness, 
+                _dataSourceBusiness.Object, _objectStorageBusiness.Object, _eventBusiness);
         }
 
         [Fact]
@@ -59,11 +69,23 @@ namespace deeplynx.tests
             result.Name.Should().Be(dto.Name);
             result.Description.Should().Be(dto.Description);
             result.ProjectId.Should().Be(pid);
+            
+            // Ensure the create event is logged
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "class",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
         public async Task CreateClasses_Success_OnBulkCreate()
         {
+            var now = DateTime.UtcNow;
             var bulkDto = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto
@@ -84,6 +106,24 @@ namespace deeplynx.tests
             result.Should().HaveCount(2);
             result.First().Name.Should().Be("Test Class 1");
             result.Last().Name.Should().Be("Test Class 2");
+            
+            // Ensure the create event is logged for each class create
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(2);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "class",
+                EntityId = result[0].Id,
+            });
+            eventList[1].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "class",
+                EntityId = result[1].Id,
+            });
         }
 
         [Fact]
@@ -92,6 +132,10 @@ namespace deeplynx.tests
             var dto = new CreateClassRequestDto { Name = null, Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no events were created on failed class creation
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -100,6 +144,10 @@ namespace deeplynx.tests
             var dto = new CreateClassRequestDto { Name = "", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no events were created on failed class creation
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -108,6 +156,10 @@ namespace deeplynx.tests
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no events were created on failed class creation
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -120,6 +172,10 @@ namespace deeplynx.tests
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no events were created on failed class creation
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -129,11 +185,17 @@ namespace deeplynx.tests
             var dto = new CreateClassRequestDto { Name = duplicateName, Description = "Test Description" };
 
             // Create first class
-            await _classBusiness.CreateClass(pid, dto);
+            var firstClass = await _classBusiness.CreateClass(pid, dto);
 
             // Try to create duplicate
             var result = () => _classBusiness.CreateClass(pid, dto);
             await result.Should().ThrowAsync<Exception>();
+            
+            // Ensure that only one event was logged (not the duplicate)
+            var eventList = await Context.Events.ToListAsync();
+        
+            eventList.Count.Should().Be(1);
+            eventList[0].Operation.Should().Be("create");
         }
 
         [Fact]
@@ -252,6 +314,16 @@ namespace deeplynx.tests
             
             Assert.NotEqual(updatedResult.ModifiedAt, updatedResult.CreatedAt);
             Assert.Equal("Updated Description", updatedResult.Description);
+            
+            // ensure that an event was logged for the update
+            var eventList = Context.Events.ToList();
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "update",
+                EntityType = "class",
+                EntityId = updatedResult.Id,
+            });
         }
 
         [Fact]
@@ -299,6 +371,17 @@ namespace deeplynx.tests
             Assert.Equal("Updated Description", getResult.Description);
             Assert.Equal(testClass.Name, getResult.Name);
             Assert.NotNull(getResult.ModifiedAt);
+            
+            // Ensure that Update Event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "update",
+                EntityType = "class",
+                EntityId = updatedResult.Id,
+            });
         }
 
         [Fact]
@@ -308,6 +391,10 @@ namespace deeplynx.tests
             var updatedResult = () => _classBusiness.UpdateClass(pid, 99, dto);
 
             await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure No Event was logged if update fails
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -337,6 +424,17 @@ namespace deeplynx.tests
             Assert.NotNull(archivedClass.ArchivedAt);
             Assert.True(archivedClass.ArchivedAt >= beforeArchive);
             Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+            
+            // Ensure that class soft delete event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "delete",
+                EntityType = "class",
+                EntityId = archivedClass.Id,
+            });
         }
 
         [Fact]
@@ -364,6 +462,10 @@ namespace deeplynx.tests
 
             var deletedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.Null(deletedClass);
+            
+            // Ensure that class soft delete event was NOT logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -392,6 +494,7 @@ namespace deeplynx.tests
             Assert.True(archivedClass.ArchivedAt >= beforeArchive);
             Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
         }
+        
         [Fact]
         public async Task ForceDeleteClass_RemovesFromDatabase()
         {
@@ -579,6 +682,7 @@ namespace deeplynx.tests
             Assert.Null(deletedRelationship4);
             Assert.NotNull(intactRelationship5);
         }
+        
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRecords()
         {

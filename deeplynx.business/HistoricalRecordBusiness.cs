@@ -8,7 +8,6 @@ namespace deeplynx.business;
 public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 {
     private readonly DeeplynxContext _context;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="HistoricalRecordBusiness"/> class.
     /// </summary>
@@ -78,6 +77,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
                 MappingId = r.MappingId,
+                ObjectStorageId = r.ObjectStorageId,
+                ObjectStorageName = r.ObjectStorageName,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
@@ -119,6 +120,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
                 MappingId = r.MappingId,
+                ObjectStorageId = r.ObjectStorageId,
+                ObjectStorageName = r.ObjectStorageName,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
@@ -169,12 +172,12 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
 
         if (record == null)
         {
-            throw new KeyNotFoundException($"Record with id {recordId} not found at point in time {pointInTime}.");
+            throw new KeyNotFoundException($"Historical record with id {recordId} not found at point in time {pointInTime}.");
         }
         
         if (hideArchived && record.ArchivedAt != null)
         {
-            throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
+            throw new KeyNotFoundException($"Historical record with id {recordId} not found or is archived.");
         }
 
         return new HistoricalRecordResponseDto()
@@ -190,6 +193,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             DataSourceId = record.DataSourceId,
             DataSourceName = record.DataSourceName,
             MappingId = record.MappingId,
+            ObjectStorageId = record.ObjectStorageId,
+            ObjectStorageName = record.ObjectStorageName,
             ProjectId = record.ProjectId,
             ProjectName = record.ProjectName,
             Tags = record.Tags,

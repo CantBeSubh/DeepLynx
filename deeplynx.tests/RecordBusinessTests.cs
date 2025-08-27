@@ -6,6 +6,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
+using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
@@ -16,11 +17,13 @@ namespace deeplynx.tests;
 public class RecordBusinessTests : IntegrationTestBase
 {
     private RecordBusiness _recordBusiness;
+    private EventBusiness _eventBusiness;
     public long pid;
     public long did;
     public long cid;
     public long rid;
     public long tid;
+    public long os1;
     public string rprop;
     public string rogid;
     public string rdesc;
@@ -31,7 +34,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _recordBusiness = new RecordBusiness(Context);
+        _eventBusiness =  new EventBusiness(Context);
+        _recordBusiness = new RecordBusiness(Context, _eventBusiness);
     }
 
     protected override async Task SeedTestDataAsync()
@@ -70,6 +74,19 @@ public class RecordBusinessTests : IntegrationTestBase
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
         cid = testClass.Id;
+        
+        var config = new JsonObject();
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Object Storage 1",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid,
+            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
 
         var testTag = new Tag
         {
@@ -234,6 +251,18 @@ public class RecordBusinessTests : IntegrationTestBase
         var createdRecord = await Context.Records.FindAsync(result.Id);
         Assert.NotNull(createdRecord);
         Assert.Equal("New Test Record", createdRecord.Name);
+        
+        // Ensure that record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(1);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = createdRecord.ProjectId,
+            Operation = "create",
+            EntityType = "record",
+            EntityId = createdRecord.Id,
+            
+        });
     }
 
     [Fact]
@@ -253,6 +282,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.CreateRecord(invalidProjectId, dataSourceId, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -272,6 +305,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.CreateRecord(projectId, invalidDataSourceId, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -309,6 +346,10 @@ public class RecordBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<Exception>(() => 
             _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
         Assert.Contains("depth of the JSON structure exceeds", exception.Message);
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
     
     #endregion
@@ -327,6 +368,7 @@ public class RecordBusinessTests : IntegrationTestBase
             {
                 Name = "Bulk Record 1",
                 Description = "Bulk Record 1 Description",
+                ObjectStorageId = os1,
                 OriginalId = "br1",
                 Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value1" }))!
             },
@@ -334,6 +376,7 @@ public class RecordBusinessTests : IntegrationTestBase
             {
                 Name = "Bulk Record 2",
                 Description = "Bulk Record 2 Description",
+                ObjectStorageId = os1,
                 OriginalId = "br2",
                 Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "Value2" }))!
             }
@@ -351,6 +394,26 @@ public class RecordBusinessTests : IntegrationTestBase
         // Verify records were actually created in database
         var recordCount = await Context.Records.CountAsync(r => r.ProjectId == projectId);
         Assert.Equal(3, recordCount); // 1 from seed + 2 new
+        
+        // Ensure that a record create event was logged for each record
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(2);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = projectId,
+            EntityId = result[0].Id,
+            EntityType = "record",
+            Operation = "create",
+            DataSourceId = result[0].DataSourceId,
+        });
+        eventList[1].Should().BeEquivalentTo(new
+        {
+            ProjectId = projectId,
+            EntityId = result[1].Id,
+            EntityType = "record",
+            Operation = "create",
+            DataSourceId = result[1].DataSourceId,
+        });
     }
 
     [Fact]
@@ -364,6 +427,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<Exception>(() =>
             _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records));
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -386,6 +453,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, records));
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     #endregion
@@ -430,6 +501,18 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
         Assert.NotNull(getResult.ModifiedAt);
+        
+        // Ensure that a record update event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(1);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = projectId,
+            EntityId = result.Id,
+            EntityType = "record",
+            Operation = "update",
+            DataSourceId = result.DataSourceId,
+        });
     }
 
     [Fact]
@@ -468,6 +551,18 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("New-ish Test Record", getResult.Name);
         Assert.Equal(rdesc, getResult.Description);
         Assert.NotNull(getResult.ModifiedAt);
+        
+        // Ensure that a record update event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(1);
+        eventList[0].Should().BeEquivalentTo(new
+        {
+            ProjectId = projectId,
+            EntityId = result.Id,
+            EntityType = "record",
+            Operation = "update",
+            DataSourceId = result.DataSourceId,
+        });
     }
     
     [Fact]
@@ -485,6 +580,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.UpdateRecord(projectId, invalidRecordId, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -537,6 +636,10 @@ public class RecordBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<Exception>(() => 
             _recordBusiness.UpdateRecord(projectId, recordId, dto));
         Assert.Contains("depth of the JSON structure exceeds", exception.Message);
+        
+        // Ensure that no record create event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     #endregion
@@ -603,6 +706,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.ArchiveRecord(projectId, invalidRecordId));
+        
+        // Ensure that no record soft delete event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -615,6 +722,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.ArchiveRecord(wrongProjectId, recordId));
+        
+        // Ensure that no record soft delete event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     [Fact]
@@ -632,6 +743,10 @@ public class RecordBusinessTests : IntegrationTestBase
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.ArchiveRecord(projectId, recordId));
+        
+        // Ensure that no record soft delete event was logged
+        var eventList = Context.Events.ToList();
+        eventList.Count.Should().Be(0);
     }
 
     #endregion
@@ -659,6 +774,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Valid Depth Record",
             Description = "Valid Depth Description",
+            ObjectStorageId = os1,
             OriginalId = "VDR1",
             Properties = validDepthJson
         };
@@ -760,6 +876,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Archived Record",
             Description = "Archived Record Description",
             OriginalId = "Archived Record OriginalId",
+            ObjectStorageId = os1,
             Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
             ProjectId = projectId,
             DataSourceId = did,
@@ -922,6 +1039,7 @@ public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords
         Name = "Test Record 1",
         ProjectId = pid,
         DataSourceId = did,
+        ObjectStorageId = os1,
         ClassId = cid,
         Properties = "{}",
         OriginalId = "original-id-1",
@@ -973,6 +1091,7 @@ public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
         Name = "Archived Record",
         ProjectId = pid,
         DataSourceId = did,
+        ObjectStorageId = os1,
         ClassId = cid,
         Properties = "{}",
         OriginalId = "archived-id",
