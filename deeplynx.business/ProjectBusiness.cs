@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
@@ -7,15 +6,16 @@ using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
 using Serilog;
 using Microsoft.Extensions.Logging;
-
+using System.Text.Json;
+using System.Text.Json.Nodes;
 namespace deeplynx.business;
 using DotNetEnv;
 
 public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
     private readonly ILogger<ProjectBusiness> _logger;
-
     private readonly IClassBusiness _classBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
@@ -26,14 +26,17 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="context">The database context used for the record mapping operations.</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
-    public ProjectBusiness(DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness)
+    /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
+    public ProjectBusiness(
+        DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, 
+        IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
         _logger = logger;
         _classBusiness = classBusiness;
         _dataSourceBusiness = dataSourceBusiness;
         _objectStorageBusiness = objectStorageBusiness;
-        
+        _eventBusiness = eventBusiness;
     }
 
     /// <summary>
@@ -122,7 +125,7 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
-
+        
         // TODO: project config should determine whether to do this (true by default)
         // create built-in classes for Timeseries and Report
         var defaultClasses = new List<CreateClassRequestDto>
@@ -139,7 +142,6 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
         
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
@@ -167,7 +169,21 @@ public class ProjectBusiness : IProjectBusiness
             };
             await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
         }
-
+        
+        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
+        
+        // Log create Project event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = project.Id,
+            Operation = "create",
+            EntityType = "project",
+            EntityId = project.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {project.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
         return new ProjectResponseDto
         {
             Id = project.Id,
@@ -201,6 +217,18 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
+        
+        // Log update Project event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = project.Id,
+            Operation = "update",
+            EntityType = "project",
+            EntityId = project.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {project.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new ProjectResponseDto
         {
@@ -267,9 +295,8 @@ public class ProjectBusiness : IProjectBusiness
                     throw new DependencyDeletionException(
                         $"unable to archive project {projectId} or its downstream dependents.");
                 }
-
+                
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
@@ -278,6 +305,19 @@ public class ProjectBusiness : IProjectBusiness
                     $"unable to archive project {projectId} or its downstream dependents: {exc}");
             }
         }
+
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "project",
+            EntityId = project.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { project.Name }),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
     
     /// <summary>

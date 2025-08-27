@@ -16,6 +16,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
 {
     public HistoricalEdgeBusiness _historicalEdgeBusiness = null!;
     public EdgeBusiness _edgeBusiness = null!;
+    public EventBusiness _eventBusiness = null!;
     public long pid;
     public long pid2;
     public long eid;
@@ -35,8 +36,9 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
+        _eventBusiness = new EventBusiness(Context);
         _historicalEdgeBusiness = new HistoricalEdgeBusiness(Context);
-        _edgeBusiness = new EdgeBusiness(Context);
+        _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
     }
 
     [Fact]

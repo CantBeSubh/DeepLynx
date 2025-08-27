@@ -17,6 +17,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
     private Mock<IClassBusiness> _mockClassBusiness = null!;
     private Mock<IDataSourceBusiness> _mockDataSourceBusiness = null!;
+    private EventBusiness _eventBusiness = null!;
     private ProjectBusiness _projectBusiness;
     public long pid;
     public long pid2;
@@ -30,6 +31,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _objectStorageBusiness = new ObjectStorageBusiness(Context);
+        _eventBusiness = new EventBusiness(Context);
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _mockClassBusiness = new Mock<IClassBusiness>();
         _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();
@@ -38,7 +40,8 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             _mockLogger.Object,
             _mockClassBusiness.Object, 
             _mockDataSourceBusiness.Object, 
-            _objectStorageBusiness);
+            _objectStorageBusiness,
+            _eventBusiness);
     }
 
     [Fact]
