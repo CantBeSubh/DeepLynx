@@ -86,7 +86,7 @@ const SettingsPageClient = () => {
         </div>
         <div className="my-20">
           {" "}
-          <span>API Keyspairs</span> <div className="divider"></div>{" "}
+          <span>API Keypairs</span> <div className="divider"></div>{" "}
         </div>
       </div>
     </div>
