@@ -268,7 +268,23 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No se han seleccionado archivos aún.",
             REMOVE: "Eliminar",
             UPLOAD: "Cargar",
-
+            UNLINK_TAG: "Desvincular Etiqueta",
+            ARE_YOU_SURE: "¿Estás seguro de que deseas desvincular?",
+            FROM: "de",
+            NO: "No",
+            YES: "Sí",
+            ENGLISH: "English",
+            ESPANOL: "Español",
+            USER_SETTINGS: "Configuración de usuario",
+            GENERAL: "General",
+            EMAIL: "Correo electrónico",
+            PROFILE_PICTURE: "Foto de perfil",
+            PREFERENCES: "Preferencias",
+            DARK_MODE: "Modo oscuro",
+            EMAIL_NOTIFICATIONS: "Notificaciones por correo",
+            LANGUAGE: "Idioma",
+            RECORD_NAME: "Nombre de Registro",
+            LAST_VIEWED: "Última visualización"
         }
     }
 }
