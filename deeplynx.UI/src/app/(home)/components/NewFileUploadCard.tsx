@@ -1,7 +1,7 @@
 "use client";
 
-import { translations } from "@/app/lib/translations";
-import React, { useEffect, useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import { useEffect, useState } from "react";
 
 type UploadType = "new" | "version" | "properties" | "";
 
@@ -12,7 +12,7 @@ export default function NewFileUploadCard({
   defaultName?: string;
   uploadType: UploadType;
 }) {
-  const t = translations["en"];
+  const { t } = useLanguage();
   const [updateAction, setUpdateAction] = useState<"" | "merge" | "overwrite">(
     ""
   );

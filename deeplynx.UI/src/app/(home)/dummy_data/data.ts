@@ -977,6 +977,7 @@ export const peopleData = [
       visibility: "Private",
       role: "Developer",
       lastLogin: "2025-07-20",
+      email: "json@inl.gov"
   },
   {
       id: 10,

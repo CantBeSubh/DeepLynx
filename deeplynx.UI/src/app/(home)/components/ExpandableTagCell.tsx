@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { Tag } from "../types/types";
-import { translations } from "@/app/lib/translations";
 import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
 
 const ExpandableTagsCell = ({ tags }: { tags: Tag[] }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   if (!Array.isArray(tags)) return null;
   const tagsToShow = expanded ? tags : tags.slice(0, 3);

@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react";
+import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
+import { peopleData } from "@/app/(home)/dummy_data/data";
+import { Column, TeamMember } from "@/app/(home)/types/types";
+import { useLanguage } from "@/app/contexts/Language";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { getAllUsers } from "@/app/lib/user_services.client";
 import { ChevronDownIcon } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
-import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
-import { peopleData } from "@/app/(home)/dummy_data/data";
-import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
-import { Column, TeamMember } from "@/app/(home)/types/types";
+import React, { useEffect, useState } from "react";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
-import { translations } from "@/app/lib/translations";
-import { getAllUsers } from "@/app/lib/user_services.client";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import AvatarCarousel from "./WidgetCardModals/AvatarCarousel";
 
 const TeamMembersWidget: React.FC = () => {
   const [showTable, setShowTable] = useState(false);
   const [addMemberModal, setAddMemberModal] = useState(false);
   const [users, setUsers] = useState<{ name: string; email: string }[]>([]);
   const { project } = useProjectSession();
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   const handleToggle = () => {
     setShowTable((prev) => !prev);
@@ -35,7 +34,7 @@ const TeamMembersWidget: React.FC = () => {
 
     fetchAllUsers();
   }, [project]);
-  console.log(users);
+
   const teamMemberColumns: Column<TeamMember>[] = [
     {
       header: "Name",

@@ -1,15 +1,19 @@
 "use client";
 
-import { UserCircleIcon } from "@heroicons/react/24/outline";
+import { useLanguage } from "@/app/contexts/Language";
+import {
+  ArrowRightStartOnRectangleIcon,
+  Cog6ToothIcon,
+  UserCircleIcon,
+} from "@heroicons/react/24/outline";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import SideMenu from "./SideMenu";
-import { useRouter } from "next/navigation";
-import { translations } from "@/app/lib/translations";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
@@ -38,14 +42,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           }}
           onClick={() => router.push("/")}
         />
-        {/* <label className="toggle text-neutral">
-          <input type="checkbox" value="dark" className="theme-controller" />
-
-          <SunIcon className="size-4" />
-
-          <MoonIcon className="size-4" />
-        </label> */}
-        <div className="dropdown">
+        <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost m-1">
             <UserCircleIcon className="size-10" />
           </div>
@@ -54,10 +51,17 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
           >
             <li>
-              <a className="text-secondary-content">Item 1</a>
+              <a className="text-black">Item 1</a>
+            </li>
+            <li className="mt-2">
+              <Link href="/settings" className="text-black">
+                <Cog6ToothIcon className="size-6" />
+                {t.translations.SETTINGS}
+              </Link>
             </li>
             <li>
-              <button className="text-secondary-content">
+              <button className="text-black">
+                <ArrowRightStartOnRectangleIcon className="size-6" />
                 {t.translations.LOGOUT}
               </button>
             </li>

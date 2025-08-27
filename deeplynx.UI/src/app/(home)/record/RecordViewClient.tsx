@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import React, { useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -120,6 +120,24 @@ export default function RecordViewClient({
     });
   }
 
+  const handleToggleToRemove = useCallback(
+    (
+      id: string,
+      name: string,
+      recordName: string | undefined,
+      type: "tag" | "relatedRecord"
+    ) => {
+      setSelectedNameToRemove(name);
+      setSelectedRecordNameToRemove(recordName);
+      setModalOpen(true);
+      setIdToRemove(id);
+      setSelectedOriginId(Number(id));
+      setSelectedDestinationId(Number(record?.id));
+      setConfirmationType(type);
+    },
+    [record?.id]
+  );
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -168,9 +186,6 @@ export default function RecordViewClient({
   }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
-    console.log("Related records: ");
-    console.log(relatedRecords);
-
     const parseRelatedRecords = (
       relatedRecords: RelatedRecord[] | undefined
     ) => {
@@ -196,11 +211,6 @@ export default function RecordViewClient({
 
       const relatedRecordsArray: ParsedRecord[] = [];
       const relationshipIndex = 0;
-
-      console.log("relationshipNames:", relationshipNames);
-      console.log("classNames:", classNames);
-      console.log("names:", names);
-      console.log("recordIds:", recordIds);
 
       relatedRecords.forEach((item, _) => {
         if (!("relationshipName" in item)) {
@@ -255,7 +265,7 @@ export default function RecordViewClient({
 
     const parsedRecords = parseRelatedRecords(relatedRecords);
     setParsedRelatedRecords(parsedRecords);
-  }, [relatedRecords, projectId, recordId]);
+  }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -290,21 +300,6 @@ export default function RecordViewClient({
     }
   };
 
-  const handleToggleToRemove = (
-    id: string,
-    name: string,
-    recordName: string | undefined,
-    type: "tag" | "relatedRecord"
-  ) => {
-    setSelectedNameToRemove(name);
-    setSelectedRecordNameToRemove(recordName);
-    setModalOpen(true);
-    setIdToRemove(id);
-    setSelectedOriginId(Number(id));
-    setSelectedDestinationId(Number(record?.id));
-    setConfirmationType(type);
-  };
-
   const handleSave = async () => {
     for (const tagId of tagsToRemove) {
       await unAttachTagFromRecord(
@@ -336,7 +331,6 @@ export default function RecordViewClient({
     } else if (confirmationType === "relatedRecord") {
       if (idToRemove && selectedOriginId && selectedDestinationId) {
         try {
-          console.log("deleting edge");
           if (
             await getEdge(
               projectId,

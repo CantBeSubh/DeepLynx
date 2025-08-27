@@ -52,8 +52,9 @@ export const translations = {
             CREATE: "Create",
             NAME: "Name",
             ABBREVIATION: "Abbreviation (optional)",
-            DESCRIPTION: "Description (optional)",
-            PROJECT_NAME: "Project Name: ",
+            DESCRIPTION_OPTIONAL: "Description (optional)",
+            DESCRIPTION: "Description",
+            PROJECT_NAME: "Project Name ",
             DATA_CATALOG_OVERVIEW: "Data Catalog Overview",
             CREATED: "Created",
             LOADING: "Loading ...",
@@ -127,7 +128,19 @@ export const translations = {
             ARE_YOU_SURE: "Are you sure you want to unlink?",
             FROM: "from",
             NO: "No",
-            YES: "Yes"
+            YES: "Yes",
+            ENGLISH: "English",
+            ESPANOL: "Español",
+            USER_SETTINGS: "User Settings",
+            GENERAL: "General",
+            EMAIL: "Email",
+            PROFILE_PICTURE: "Profile Picture", 
+            PREFERENCES: "Preferences",
+            DARK_MODE: "Dark Mode",
+            EMAIL_NOTIFICATIONS: "Email Notifications",
+            LANGUAGE: "Language",
+            RECORD_NAME: "Record Name",
+            LAST_VIEWED: "Last Viewed"
         }
     },
     es: {
@@ -183,8 +196,9 @@ export const translations = {
             CREATE: "Crear",
             NAME: "Nombre",
             ABBREVIATION: "Abreviatura (opcional)",
-            DESCRIPTION: "Descripción (opcional)",
-            PROJECT_NAME: "Nombre del proyecto: ",
+            DESCRIPTION_OPTIONAL: "Descripción (opcional)",
+            DESCRIPTION: "Descripción",
+            PROJECT_NAME: "Nombre del proyecto ",
             DATA_CATALOG_OVERVIEW: "Resumen del catálogo de datos",
             CREATED: "Creado",
             LOADING: "Cargando ...",
@@ -258,8 +272,19 @@ export const translations = {
             ARE_YOU_SURE: "¿Estás seguro de que deseas desvincular?",
             FROM: "de",
             NO: "No",
-            YES: "Sí"
-
+            YES: "Sí",
+            ENGLISH: "English",
+            ESPANOL: "Español",
+            USER_SETTINGS: "Configuración de usuario",
+            GENERAL: "General",
+            EMAIL: "Correo electrónico",
+            PROFILE_PICTURE: "Foto de perfil",
+            PREFERENCES: "Preferencias",
+            DARK_MODE: "Modo oscuro",
+            EMAIL_NOTIFICATIONS: "Notificaciones por correo",
+            LANGUAGE: "Idioma",
+            RECORD_NAME: "Nombre de Registro",
+            LAST_VIEWED: "Última visualización"
         }
     }
 }
