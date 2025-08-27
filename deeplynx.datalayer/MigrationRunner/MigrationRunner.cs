@@ -18,7 +18,7 @@ namespace deeplynx.datalayer.MigrationRunner
                 using (var scope = serviceProvider.CreateScope())
                 {
                     var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
-                    dbContext.Database.Migrate();
+                    await dbContext.Database.MigrateAsync();
                 }
 
                 Console.WriteLine("Migrations applied successfully.");
