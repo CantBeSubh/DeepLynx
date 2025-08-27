@@ -118,6 +118,7 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    builder.Services.AddSingleton(CacheBusiness.Instance);
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
