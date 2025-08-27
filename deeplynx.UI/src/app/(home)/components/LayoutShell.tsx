@@ -42,7 +42,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           }}
           onClick={() => router.push("/")}
         />
-        <div className="dropdown">
+        <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost m-1">
             <UserCircleIcon className="size-10" />
           </div>

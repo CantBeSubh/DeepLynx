@@ -5,6 +5,7 @@ import { peopleData } from "../dummy_data/data";
 import AvatarCell from "../components/Avatar";
 import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
+import ThemeToggle from "../components/ThemeToggle";
 
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]
@@ -60,15 +61,7 @@ const SettingsPageClient = () => {
             <span className="font-bold text-base-content text-black">
               {t.translations.DARK_MODE ?? "Dark Mode"}
             </span>
-            <label className="toggle text-base-content">
-              <input
-                type="checkbox"
-                value="dark"
-                className="theme-controller"
-              />
-              <SunIcon className="size-4" />
-              <MoonIcon className="size-4" />
-            </label>
+            <ThemeToggle />
           </p>
           <p>
             {" "}
