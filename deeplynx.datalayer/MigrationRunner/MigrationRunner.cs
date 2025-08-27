@@ -26,7 +26,6 @@ namespace deeplynx.datalayer.MigrationRunner
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred while applying migrations: {ex.Message}");
-                //Console.WriteLine(ex.StackTrace);
                 Console.WriteLine("Are the database connection credentials correct?");
                 Console.WriteLine("Migrations were NOT applied.");
             }
