@@ -243,7 +243,7 @@ try
     /* ╔════════════════════════════╗
        ║      Apply Migrations      ║
        ╚════════════════════════════╝ */
-    MigrationRunner.ApplyMigrations(connectionString);
+    await MigrationRunner.ApplyMigrations(connectionString);
 
     var app = builder.Build();
 

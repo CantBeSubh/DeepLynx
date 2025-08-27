@@ -6,7 +6,7 @@ namespace deeplynx.datalayer.MigrationRunner
 {
     public static class MigrationRunner
     {
-        public static void ApplyMigrations(string connectionString)
+        public static async Task ApplyMigrations(string connectionString)
         {
             try
             {
