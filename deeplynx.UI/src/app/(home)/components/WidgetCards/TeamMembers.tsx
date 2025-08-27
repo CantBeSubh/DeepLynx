@@ -34,7 +34,7 @@ const TeamMembersWidget: React.FC = () => {
 
     fetchAllUsers();
   }, [project]);
-  console.log(users);
+
   const teamMemberColumns: Column<TeamMember>[] = [
     {
       header: "Name",

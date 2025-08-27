@@ -32,7 +32,6 @@ const RecentRecordsCard = ({
   useEffect(() => {
     const fetchRecentRecords = async () => {
       try {
-        console.log("selected Project", selectedProjects);
         const data = await getRecentlyAddedRecords(selectedProjects);
         setRecords(data);
         setCurrentPage(1);
