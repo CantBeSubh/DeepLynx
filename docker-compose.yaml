@@ -1,5 +1,5 @@
 services:
-  frontend:
+  ui:
     build:
       context: ./
       dockerfile: Dockerfiles/Dockerfile.app.local
@@ -13,7 +13,7 @@ services:
     depends_on:
       - nx-postgres
 
-  backend:
+  server:
     build:
       context: ./
       dockerfile: Dockerfiles/Dockerfile.backend.local
@@ -44,9 +44,15 @@ services:
       - POSTGRES_PASSWORD=nexuscore
     ports:
       - "5432"
+    volumes:
+      - nx-postgres-data:/var/lib/postgresql/data
     networks:
       - nexus-network
     
 networks:
   nexus-network:
     driver: bridge
+  
+volumes:
+  nx-postgres-data:
+    driver: local
