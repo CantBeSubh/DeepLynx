@@ -10,7 +10,7 @@ export default function RootLayout({
 }) {
   return (
     // Set a safe default to prevent a white flash; will be replaced by script
-    <html lang="en">
+    <html lang="en" data-theme="light" suppressHydrationWarning>
       <head>
         {/* Theme initializer: runs before React hydrates */}
         <script
@@ -23,6 +23,9 @@ export default function RootLayout({
     if (saved) {
       document.documentElement.setAttribute('data-theme', saved);
     }
+    var saved = localStorage.getItem(KEY);
+    document.documentElement.setAttribute('data-theme', saved || 'light');
+    
     // Persist changes from any DaisyUI theme controller (checkbox or radio)
     document.addEventListener('change', function (e) {
       var t = e.target;
