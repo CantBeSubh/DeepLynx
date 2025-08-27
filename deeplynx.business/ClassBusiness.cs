@@ -275,42 +275,37 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        // using dbClass since "class" is a reserved word
-        var dbClass = await _context.Classes.FindAsync(classId);
 
+        var dbClass = await _context.Classes.FindAsync(classId);
         if (dbClass == null || dbClass.ProjectId != projectId || dbClass.IsArchived)
             throw new KeyNotFoundException("Class not found.");
 
-        dbClass.IsArchived = true;
-        dbClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        var archivedAt = dbClass.LastUpdatedAt;
+        // Ensure we can pass to a Postgres INTEGER param safely
+        if (classId < int.MinValue || classId > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(classId), "classId exceeds INTEGER range required by stored procedure.");
 
-        // run archive procedure in a transaction to roll back any errors
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        int arcClassId = (int)classId;
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                // run the archive class procedure, which archives this class
-                // and all child objects with class_id as a foreign key
-                var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", classId, archivedAt);
+            // Call your one-parameter procedure (integer). Let the DB set timestamps and archive dependents.
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"CALL deeplynx.archive_class({arcClassId})");
 
-                if (archived == 0) // if 0 records were updated, assume a failure
-                {
-                    throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents.");
-                }
+            // Refresh tracked entity to reflect DB-side changes
+            await _context.Entry(dbClass).ReloadAsync();
 
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception exc)
-            {
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
-            }
+            await tx.CommitAsync();
+            return true;
+        }
+        catch (Exception exc)
+        {
+            await tx.RollbackAsync();
+            throw new DependencyDeletionException(
+                $"unable to archive class {classId} or its downstream dependents: {exc}");
         }
     }
-    
     /// <summary>
     /// Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>
