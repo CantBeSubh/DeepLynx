@@ -439,7 +439,7 @@ namespace deeplynx.tests
             {
                 Name = "Second Test DataSource",
                 ProjectId = secondProject.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(secondDataSource);
             await Context.SaveChangesAsync();
@@ -594,7 +594,7 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = TestProjectId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(testDataSource);
             await Context.SaveChangesAsync();

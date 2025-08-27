@@ -842,8 +842,8 @@ public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
             {
                 Name = "Test Datasource",
                 ProjectId = project.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();

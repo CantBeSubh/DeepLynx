@@ -401,7 +401,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
                 : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource)
         {

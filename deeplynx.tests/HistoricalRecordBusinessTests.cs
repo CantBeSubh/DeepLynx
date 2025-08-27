@@ -418,7 +418,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var dataSource2 = new DataSource
@@ -426,7 +426,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Data Source 2",
             Description = "Test data source 2 for unit tests",
             ProjectId = project2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var dataSource3 = new DataSource
@@ -434,7 +434,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Name = "Test Data Source 3",
             Description = "Test data source 3 for unit tests",
             ProjectId = project2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         Context.DataSources.Add(dataSource);

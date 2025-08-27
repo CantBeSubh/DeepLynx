@@ -55,7 +55,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();

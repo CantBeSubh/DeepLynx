@@ -752,7 +752,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "DataSource 1",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();

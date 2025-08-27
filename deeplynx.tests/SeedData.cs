@@ -239,11 +239,9 @@ public static class SeedData
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             },
             new DataSource
             {
@@ -254,11 +252,9 @@ public static class SeedData
                 BaseUri = "https://api.ecommerce.company.com/v2/",
                 Config = @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "api.developer@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedBy= "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                IsArchived = false
             },
 
             // Supply Chain Optimization Data Sources
@@ -271,11 +267,9 @@ public static class SeedData
                 BaseUri = "Server=erp-oracle.company.com;Database=SUPPLY_CHAIN;",
                 Config = @"{""driver"":""oracle"",""host"":""erp-oracle.company.com"",""port"":1521,""service_name"":""SUPPLY_CHAIN""}",
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
-                ModifiedBy = "erp.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
+                IsArchived = false
             },
             new DataSource
             {
@@ -286,11 +280,9 @@ public static class SeedData
                 BaseUri = "mqtt://iot-broker.warehouse.company.com:1883",
                 Config = @"{""protocol"":""MQTT"",""broker_host"":""iot-broker.warehouse.company.com"",""port"":1883,""qos"":2}",
                 ProjectId = 2,
-                CreatedBy = "iot.specialist@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "warehouse.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedBy = "iot.specialist@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                IsArchived = false
             },
 
             // Legacy System Migration Data Sources (Archived)
@@ -303,11 +295,9 @@ public static class SeedData
                 BaseUri = "Server=mainframe.legacy.com;Database=LEGACY_PROD;",
                 Config = @"{""driver"":""db2"",""host"":""mainframe.legacy.com"",""port"":50000,""database"":""LEGACY_PROD""}",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy= "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
+                IsArchived = false
             },
             new DataSource
             {
@@ -318,11 +308,9 @@ public static class SeedData
                 BaseUri = "file://legacy-archive.company.com/data/",
                 Config = @"{""type"":""network_share"",""base_path"":""//legacy-archive.company.com/data/"",""compression"":""gzip""}",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "data.migration@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                IsArchived = false
             }
         };
 

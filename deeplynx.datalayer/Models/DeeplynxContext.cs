@@ -63,8 +63,10 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.Id).HasIdentityOptions(startValue: 1);
             entity.HasKey(e => e.Id).HasName("data_sources_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
+            entity.Property(e => e.LastUpdatedAt).HasColumnType("timestamp without time zone").HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.Property(e => e.IsArchived)
+                .HasDefaultValue(false);
             entity.HasOne(d => d.Project).WithMany(p => p.DataSources).HasConstraintName("data_sources_project_id_fkey");
         });
 

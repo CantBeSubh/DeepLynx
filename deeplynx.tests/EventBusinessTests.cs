@@ -329,15 +329,15 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
-                    CreatedBy = "user123",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedBy = "user123",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
                 new DataSource
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
-                    CreatedBy = "user123",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedBy = "user123",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }
             };
             

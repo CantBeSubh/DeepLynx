@@ -334,7 +334,7 @@ public class ProjectBusiness : IProjectBusiness
         var records = _context.Records
             .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         
         var response = new ProjectStatResponseDto()
             {
