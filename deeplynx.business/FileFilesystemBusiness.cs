@@ -3,15 +3,12 @@ using deeplynx.datalayer.Models;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
 using deeplynx.helpers;
-using deeplynx.helpers.json;
 using deeplynx.interfaces;
-using deeplynx.datalayer.Models;
-using deeplynx.models;
 using Newtonsoft.Json;
 
 namespace deeplynx.business;
 
-public class FileFilesystemBusiness
+public class FileFilesystemBusiness : IFileBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
@@ -52,8 +49,8 @@ public class FileFilesystemBusiness
         
         var filePath = Path.Combine(
             configData.MountPath, 
-            "project=" + projectId.ToString(),
-            "datasource-" + dataSourceId.ToString(),
+            "project_" + projectId.ToString(),
+            "datasource_" + dataSourceId.ToString(),
             file.FileName);
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path."));
 

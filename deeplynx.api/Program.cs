@@ -118,6 +118,7 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    builder.Services.AddTransient<IFileBusiness, FileFilesystemBusiness>();
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
@@ -230,10 +231,15 @@ try
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
                 },
-                new OpenApiTag 
-                { 
-                    Name = "Event", 
-                    Description = "Handles Event fetching by project and user subscriptions." 
+                new OpenApiTag
+                {
+                    Name = "Event",
+                    Description = "Handles Event fetching by project and user subscriptions."
+                },
+                new OpenApiTag
+                {
+                    Name = "File",
+                    Description = "Handles operations related to file management"
                 }
             };
         });
