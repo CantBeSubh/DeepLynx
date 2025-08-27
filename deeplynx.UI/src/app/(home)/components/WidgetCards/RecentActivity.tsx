@@ -1,16 +1,14 @@
-import React, { useState } from "react";
-import Image from "next/image";
+import { useLanguage } from "@/app/contexts/Language";
 import {
+  ArrowsRightLeftIcon,
   CircleStackIcon,
   DocumentChartBarIcon,
   LinkIcon,
-  ArrowsRightLeftIcon,
 } from "@heroicons/react/24/outline";
-import { translations } from "@/app/lib/translations";
+import Image from "next/image";
 
 const RecentActivityWidget = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   return (
     <div className="card-body">
       <h2 className="card-title">{t.translations.RECENT_ACTIVITY}</h2>

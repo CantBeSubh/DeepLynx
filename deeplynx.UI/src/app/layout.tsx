@@ -1,4 +1,5 @@
 // app/layout.tsx
+import { LanguageProvider } from "./contexts/Language";
 import "./globals.css"; // <— Tailwind/DaisyUI
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -10,7 +11,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       {/* Apply your theme if you use daisyUI */}
-      <body data-theme="light">{children}</body>
+      <body>
+        <LanguageProvider>{children}</LanguageProvider>
+      </body>
     </html>
   );
 }

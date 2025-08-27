@@ -1,4 +1,4 @@
-import { translations } from "@/app/lib/translations";
+import { useLanguage } from "@/app/contexts/Language";
 
 interface translationsProps {
   isOpen: boolean; // Indicates whether the modal is open
@@ -7,8 +7,7 @@ interface translationsProps {
 
 // Main CreateWidget component
 const CreateWidget = ({ isOpen, onClose }: translationsProps) => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}

@@ -1,21 +1,19 @@
 "use client";
 
+import { useLanguage } from "@/app/contexts/Language";
 import {
-  ArrowPathRoundedSquareIcon,
   ArrowRightStartOnRectangleIcon,
   Cog6ToothIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 import SideMenu from "./SideMenu";
-import { useRouter } from "next/navigation";
-import { translations } from "@/app/lib/translations";
-import Link from "next/link";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);

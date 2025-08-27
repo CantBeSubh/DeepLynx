@@ -1,25 +1,24 @@
 // app/(home)/ProjectsClient.tsx  — Client Component
 "use client";
 
-import React, { useState, useEffect } from "react";
-import Link from "next/link"; // prefer Link over useRouter().push
-import CreateProject from "./components/CreateProjectsModal";
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import { PlusIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
-import SearchInput from "./components/SearchInput";
-import { translations } from "../lib/translations";
-import { getAllProjects } from "../lib/projects_services.client"; // optional (for refresh)
+import { ProjectsList } from "@/app/(home)/types/types";
+import { PlusIcon } from "@heroicons/react/24/outline";
+import Link from "next/link"; // prefer Link over useRouter().push
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useLanguage } from "../contexts/Language";
+import { getAllProjects } from "../lib/projects_services.client"; // optional (for refresh)
+import CreateProject from "./components/CreateProjectsModal";
+import SearchInput from "./components/SearchInput";
 
 type Props = { initialProjects: ProjectsList[] };
 
 export default function HomeDashboard({ initialProjects }: Props) {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,15 +55,21 @@ export default function HomeDashboard({ initialProjects }: Props) {
 
   const columns = [
     {
-      header: "Project Name",
+      header: t.translations.PROJECT_NAME,
       data: (row: ProjectsList) => (
         <Link href={`/project/${row.id}`} className="font-bold underline">
           {row.name}
         </Link>
       ),
     },
-    { header: "Description", data: (row: ProjectsList) => row.description },
-    { header: "Last Viewed", data: (row: ProjectsList) => row.lastViewed },
+    {
+      header: t.translations.DESCRIPTION,
+      data: (row: ProjectsList) => row.description,
+    },
+    {
+      header: t.translations.LAST_VIEWED,
+      data: (row: ProjectsList) => row.lastViewed,
+    },
   ];
 
   const handleSave = (newWidgets: WidgetType[]) => {
@@ -93,7 +98,11 @@ export default function HomeDashboard({ initialProjects }: Props) {
       {/* Main Content */}
       <div className="mr-6 py-6">
         <div className="flex">
-          <div className={`w-full md:w-3/5 px-4 ${canCustomize ? "grayed-out" : ""}`}>
+          <div
+            className={`w-full md:w-3/5 px-4 ${
+              canCustomize ? "grayed-out" : ""
+            }`}
+          >
             <div className="card card-border p-4">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-info-content text-lg font-semibold">

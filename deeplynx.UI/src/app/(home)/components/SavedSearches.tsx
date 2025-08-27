@@ -1,22 +1,19 @@
 "use client";
 
-import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import Link from "next/link";
 import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
-import GenericTable from "./GenericTable";
 import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
+import GenericTable from "./GenericTable";
 import Tabs from "./Tabs";
-import { translations } from "@/app/lib/translations";
-import Link from "next/link";
-
 
 interface SavedSearchProps {
   className?: string;
 }
 
 const SavedSearches = ({ className }: SavedSearchProps) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -89,7 +86,10 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
       <div className="card-body">
         <span className="flex justify-between">
           <h2 className="card-title">Saved Searches</h2>
-          <Link className="btn btn-secondary text-white" href="/savedsearchesplaceholder">
+          <Link
+            className="btn btn-secondary text-white"
+            href="/savedsearchesplaceholder"
+          >
             {t.translations.VISIT}
           </Link>
         </span>

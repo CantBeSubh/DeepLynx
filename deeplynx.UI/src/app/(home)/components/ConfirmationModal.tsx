@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/app/contexts/Language";
 import { translations } from "@/app/lib/translations";
 
 interface ConfirmationModalProps {
@@ -18,8 +19,7 @@ const ConfirmationModal = ({
   tagName,
   recordName,
 }: ConfirmationModalProps) => {
-  const locale = "en"; // You can use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   return (
     <>
@@ -30,11 +30,12 @@ const ConfirmationModal = ({
           <div className="modal-box max-w-lg">
             {/* Box for modal content with max width */}
             <h3 className="font-bold text-lg mb-4 text-center text-black">
-              {t.ConfirmationModal.ARE_YOU_SURE}  {/* Header for the modal */}
+              {t.ConfirmationModal.ARE_YOU_SURE} {/* Header for the modal */}
             </h3>
             {/* Message for the confirmation */}
             <p className="text-center">
-              <strong>{tagName}</strong> {t.ConfirmationModal.FROM} <strong>{recordName}</strong>
+              <strong>{tagName}</strong> {t.ConfirmationModal.FROM}{" "}
+              <strong>{recordName}</strong>
             </p>
             {/* Modal Action Buttons */}
             <div className="modal-action flex justify-between mt-14">

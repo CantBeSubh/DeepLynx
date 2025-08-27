@@ -1,10 +1,9 @@
 "use client";
 
-import { translations } from "@/app/lib/translations";
+import { useLanguage } from "@/app/contexts/Language";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
-import React from "react";
 import { useEffect, useState } from "react";
 
 export type RecentRecord = {
@@ -25,8 +24,7 @@ const RecentRecordsCard = ({
 }: {
   selectedProjects: string[];
 }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter();
   const [records, setRecords] = useState<RecentRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,7 +93,7 @@ const RecentRecordsCard = ({
                 </span>
               </span>
               <span className="ml-4">
-                Last Edited:{" "}
+                {t.translations.LAST_EDIT}
                 {formatDate(record.lastUpdatedAt ?? record.createdAt)}
               </span>
               <span className="ml-4">
