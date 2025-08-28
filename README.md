@@ -21,14 +21,14 @@ This application may be run from docker using the following docker command:
 ```
 docker compose up
 ```
-The containers must always be rebuilt after code changes, including pulled code from GitHub, using the following:
+Built containers must always be rebuilt after code changes, including pulled code from GitHub, using the following:
 ```
 docker compose up --build
 ```
 The default credentials in `.env_sample`, which should now be in `.env`, are set to connect to the composed database automatically for rapid deployment.
 
 ## Local Setup
-Regardless of your postgres database setup either below or otherwise, you must immediately change your `.env` to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
+Regardless of your postgres database setup either below or otherwise, you must immediately update your `.env` variables to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
 
 1. PostgreSQL Setup:
     * Native Install:
@@ -66,7 +66,7 @@ Regardless of your postgres database setup either below or otherwise, you must i
 ## Development
 
 ### Load the Database
-Migrations should be applied automatically on application startup either locally or within Docker and fail gracefully. The most common reason for failure will be either a PostgreSQL database is not running or listening for incoming connections, or incorrect credentials to an intended PostgreSQL database. 
+Migrations should be applied automatically on application startup either locally or within docker and fail gracefully. The most common reason for failure will be either a PostgreSQL database is not running or listening for incoming connections, or incorrect credentials to an intended PostgreSQL database. 
 1. Navigate to the root folder in your project directory.
 
 2. Run the following command to apply the latest migrations and update the database:
@@ -75,7 +75,7 @@ Migrations should be applied automatically on application startup either locally
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
-If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to the PATH.  
+If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to your PATH.  
 Please update your path to include the .NET tools directory, similar to: `export PATH="$PATH:/Users/_username_/.dotnet/tools"`
 
 ### Create Migration
