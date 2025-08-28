@@ -17,10 +17,11 @@ export const getAllTags = async (projectId: number) => {
 }
 
 // Duplicate but unsure of format we will go with
-export async function getTagsForProject(
-    projectId?: string
+export async function getTagsForProjects(
+    projectId: string, projectIds: string[]
 ): Promise<TagResponseDto[]> {
-    const res = await api.get(`/projects/${projectId}/tags/GetAllTags`);
+    const query = projectIds.map(id => `projectIds=${id}`).join("&");
+    const res = await api.get(`/projects/${projectId}/tags/GetAllTags?${query}`);
     return res.data as TagResponseDto[];
 }
 

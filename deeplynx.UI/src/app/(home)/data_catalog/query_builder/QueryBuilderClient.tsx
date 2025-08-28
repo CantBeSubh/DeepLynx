@@ -11,7 +11,7 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
 import { getClassesForProjects } from "@/app/lib/class_services client";
 import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
-import { getTagsForProject } from "@/app/lib/tag_services.client";
+import { getTagsForProjects } from "@/app/lib/tag_services.client";
 
 
 type Props = {
@@ -132,7 +132,7 @@ export default function QueryBuilderClient({
     async function loadTags() {
       try {
         setIsLoadingTags(true);
-        const data = await getTagsForProject(currentProjectId);
+        const data = await getTagsForProjects(currentProjectId, selectedProjects);
         setTags(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -229,7 +229,7 @@ export default function QueryBuilderClient({
                                 .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
                             if (value === "Tag") {
-                              getTagsForProject(currentProjectId)
+                              getTagsForProjects(currentProjectId, selectedProjects)
                                 .then(setTags)
                                 .catch((err) => console.error("Failed to fetch tags:", err));
                             }
