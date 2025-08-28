@@ -21,7 +21,7 @@ This application may be run from docker using the following docker command:
 ```
 docker compose up
 ```
-The container must always be rebuilt after code changes, including pulled code from GitHub, using the following:
+The containers must always be rebuilt after code changes, including pulled code from GitHub, using the following:
 ```
 docker compose up --build
 ```
