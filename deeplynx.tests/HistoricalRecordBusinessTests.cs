@@ -366,8 +366,6 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public async Task GetHistoricalRecord_FiltersByTime()
     {
         var pointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        await Task.Delay(1000);
-        Context.ChangeTracker.Clear();
         var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Test Record",
