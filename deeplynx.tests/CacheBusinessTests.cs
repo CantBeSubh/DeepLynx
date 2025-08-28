@@ -13,7 +13,7 @@ namespace deeplynx.tests
     public class CacheBusinessTests : IntegrationTestBase
     {
         private CacheBusiness _cacheBusiness;
-        private Mock<ICacheService> _mockCacheService;
+        private Mock<ICacheBusiness> _mockCacheService;
         private EventBusiness _eventBusiness;
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
@@ -49,7 +49,7 @@ namespace deeplynx.tests
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
                 _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
             _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
-            _mockCacheService = new Mock<ICacheService>();
+            _mockCacheService = new Mock<ICacheBusiness>();
             _cacheBusiness = CacheBusiness.Instance;
             _cacheBusiness.SetCacheService(_mockCacheService.Object);
         }
