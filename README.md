@@ -12,7 +12,7 @@
       1. Create a new file named `.env` in the root directory.
       2. Copy the contents of `.env_sample` to `.env`.
 
-The default credentials are set to work with the docker compose version for quick startup. For local development, these will need to altered in the development steps as stated in [Local Setup](##Local Setup). 
+The default credentials are set to work with the docker compose version for quick startup. For local development, these will need to altered in the development steps as stated in [Local Setup](##Local-Setup). 
 
 ## Docker Setup
 This application may be run from docker using the following docker command:
