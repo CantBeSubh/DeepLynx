@@ -14,6 +14,8 @@
 
 The default credentials are set to work with the docker compose version for quick startup. For local development, these will need to altered in the development steps as stated in [Local Setup](##Local-Setup). 
 
+Once you have a `.env` file, be sure to periodically check `.env_sample` for updates as they won't automatically apply to your `.env`.
+
 ## Docker Setup
 This application may be run from docker using the following docker command:
 ```
@@ -23,10 +25,10 @@ The container must always be rebuilt after code changes, including pulled code f
 ```
 docker compose up --build
 ```
-The default credentials in .env_sample are set to connect to the composed database automatically for quick launch.
+The default credentials in `.env_sample` are set to connect to the composed database automatically for quick launch.
 
 ## Local Setup
-Regardless of your postgres database setup either below or otherwise, you must immediately change your .env to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
+Regardless of your postgres database setup either below or otherwise, you must immediately change your `.env` to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
 
 1. PostgreSQL Setup:
     * Native Install:
@@ -34,7 +36,7 @@ Regardless of your postgres database setup either below or otherwise, you must i
         * Create a PostgreSQL server.
     * Postgres on  Docker:
         * Run the following command: `docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres`
-    * Add appropriate credentials for the newly created PostgreSQL server to their respective variables in .env. For example: 
+    * Add appropriate credentials for the newly created PostgreSQL server to their respective variables in `.env`. For example: 
         * `POSTGRES_DB_HOST=localhost`
         * `POSTGRES_PASSWORD=your_password`
 
@@ -58,7 +60,7 @@ Regardless of your postgres database setup either below or otherwise, you must i
             ./setup_kuzu.sh
             ```
         4. This script will copy the necessary library files, update your environment variables, and clean up any temporary directories.
-        5. To run the KuzuDatabaseManagerTests, set the ENABLE_KUZU variable in .env to True.
+        5. To run the KuzuDatabaseManagerTests, set the ENABLE_KUZU variable in `.env` to True.
         6. Open a new terminal to test Kuzu.
 
 ## Development
