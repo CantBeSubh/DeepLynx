@@ -25,7 +25,7 @@ Built containers must always be rebuilt after code changes, including pulled cod
 ```
 docker compose up --build
 ```
-The default credentials in `.env_sample`, which should now be in `.env`, are set to connect to the composed database automatically for rapid deployment.
+The default credentials in `.env_sample`, which should be set in `.env`, are set to connect to the composed database automatically for rapid deployment.
 
 ## Local Setup
 Regardless of your postgres database setup either below or otherwise, you must immediately update your `.env` variables to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
