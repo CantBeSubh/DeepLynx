@@ -150,8 +150,10 @@ namespace deeplynx.tests
 
             await _classBusiness.CreateClass(pid, new CreateClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
             await _classBusiness.CreateClass(p2.Id, new CreateClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
-
-            var list = await _classBusiness.GetAllClasses(pid,true);
+            
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var list = await _classBusiness.GetAllClasses(projectid,true);
             Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
         }
 
@@ -177,8 +179,10 @@ namespace deeplynx.tests
             Context.Classes.Add(activeClass);
             Context.Classes.Add(archivedClass);
             await Context.SaveChangesAsync();
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
 
-            var list = await _classBusiness.GetAllClasses(pid,true);
+            var list = await _classBusiness.GetAllClasses(projectid,true);
             Assert.DoesNotContain(list, c => c.Id == archivedClass.Id);
         }
 

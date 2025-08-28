@@ -4,7 +4,7 @@ namespace deeplynx.interfaces;
 
 public interface IClassBusiness
 {
-    Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived);
+    Task<List<ClassResponseDto>> GetAllClasses(List<long> projectId, bool hideArchived);
     Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived);
     Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto);
     Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classRequestDtos);

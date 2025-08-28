@@ -83,8 +83,10 @@ namespace deeplynx.tests
            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
+            var projectid = new List<long>(); 
+            projectid.Add(project.Id);
 
-            var classResult = await _classBusiness.GetAllClasses(project.Id, true);
+            var classResult = await _classBusiness.GetAllClasses(projectid, true);
             classResult.Count.Should().Be(2);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");

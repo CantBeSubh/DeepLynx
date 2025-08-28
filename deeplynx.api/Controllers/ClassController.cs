@@ -37,12 +37,11 @@ namespace deeplynx.api.Controllers
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
         public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
-            long projectId, 
-            [FromQuery] bool hideArchived = true)
+            [FromQuery] List<long>? projectIds, bool hideArchived = true)
         {
             try
             {
-                var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
+                var classes = await _classBusiness.GetAllClasses(projectIds, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)
