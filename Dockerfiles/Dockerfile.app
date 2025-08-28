@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
+FROM node:lts AS frontend-build
 
 # Set working directory
 WORKDIR /app
@@ -44,7 +44,7 @@ COPY deeplynx.UI/ ./
 RUN npm run build
 
 # Stage 2: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
 
 WORKDIR /source
 
@@ -61,17 +61,22 @@ FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
 # Install tools needed for entrypoint.sh
-RUN apk --no-check-certificate add postgresql-client
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
 
 # Copy the entrypoint script
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Stage 3: Create the final image
-FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
 # Install Node.js and npm
-RUN apk add --no-cache nodejs npm
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    && apt-get clean
 
 WORKDIR /app/backend
 
