@@ -9,7 +9,7 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { getClassesForProject } from "@/app/lib/class_services client";
+import { getClassesForProjects } from "@/app/lib/class_services client";
 import { getDataSourcesForProject } from "@/app/lib/data_source_services.client";
 import { getTagsForProject } from "@/app/lib/tag_services.client";
 
@@ -45,7 +45,7 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR", "NOT"],
-  filters = ["Time Range", "Class", "Tag", "Project", "Original Data ID", "Data Source", "Property Field"],
+  filters = ["Time Range", "Class", "Tag", "Original Data ID", "Data Source", "Property Field"],
   operators = ["=", "<", ">", "LIKE"],
   values = ["ClassOne", "ClassTwo", "ClassThree"]
 }: Props) {
@@ -93,7 +93,7 @@ export default function QueryBuilderClient({
     async function loadClasses() {
       try {
         setIsLoadingClasses(true);
-        const data = await getClassesForProject(currentProjectId);
+        const data = await getClassesForProjects(currentProjectId, selectedProjects);
         setClasses(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -219,9 +219,9 @@ export default function QueryBuilderClient({
                             updateRow(row.id, { filter: value, value: "" });
 
                             if (value === "Class") {
-                              getClassesForProject(currentProjectId)
+                              getClassesForProjects(currentProjectId, selectedProjects)
                                 .then(setClasses)
-                                .catch((err) => console.error("Failed to fetch classes:", err));
+                                .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
                             if (value === "Data Source") {
                               getDataSourcesForProject(currentProjectId)
