@@ -67,12 +67,5 @@ namespace deeplynx.business
         /// </summary>
         /// <returns>bool based on flush success</returns>
         public Task<bool> Flush() => Cache.Flush();
-        
-        /// <summary>
-        /// Wrapper methods to expose FlushByPattern cache operations
-        /// </summary>
-        /// <param name="pattern">The pattern by which matching cached data will be found</param>
-        /// <returns>bool based on flush-by-pattern success</returns>
-        public Task<bool> FlushByPattern(string pattern) => Cache.FlushByPattern(pattern);
     }
 }

@@ -7,5 +7,4 @@ public interface ICacheBusiness
     Task<bool> Set(string key, object value, int? ttl = null);
     Task<bool> Delete(string key);
     Task<bool> Flush();
-    Task<bool> FlushByPattern(string pattern);
 }

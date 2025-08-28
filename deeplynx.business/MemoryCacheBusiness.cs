@@ -92,14 +92,4 @@ public class MemoryCacheBusiness : ICacheBusiness
         _keys.Clear();
         return Task.FromResult(true);
     }
-
-    /// <summary>
-    /// Operation to flush all existing data
-    /// </summary>
-    /// <returns>bool based on flush success</returns>
-    public Task<bool> FlushByPattern(string pattern)
-    {
-        // In the case of memory cache, this method is the same as flush
-        return Flush();
-    }
 }

@@ -113,24 +113,4 @@ public class RedisCacheBusiness : ICacheBusiness
 
             return true;
         }
-
-        /// <summary>
-        /// Operation to flush all existing data that matches the provided pattern
-        /// </summary>
-        /// <returns>bool based on flush success</returns>
-        public async Task<bool> FlushByPattern(string pattern)
-        {
-            var endpoints = _redis.GetEndPoints();
-            foreach (var endpoint in endpoints)
-            {
-                var server = _redis.GetServer(endpoint);
-                var keys = server.Keys(pattern: pattern + "*");
-                foreach (var key in keys)
-                {
-                    await _db.KeyDeleteAsync(key);
-                }
-            }
-
-            return true;
-        }
     }
