@@ -34,7 +34,7 @@ Regardless of your postgres database setup either below or otherwise, you must i
     * Native Install:
         * Install and launch PostgreSQL.
         * Create a PostgreSQL server.
-    * Postgres on  Docker:
+    * Postgres on Docker:
         * Run the following command: `docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres`
     * Add appropriate credentials for the newly created PostgreSQL server to their respective variables in `.env`. For example: 
         * `POSTGRES_DB_HOST=localhost`
