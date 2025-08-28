@@ -1,6 +1,5 @@
 "use client";
-import { translations } from "@/app/lib/translations";
-import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
   files: File[];
@@ -15,7 +14,7 @@ export default function SelectedFilesCard({
   onClear,
   onUpload,
 }: Props) {
-  const t = translations["en"];
+  const { t } = useLanguage();
   if (files.length === 0) return null;
   return (
     <div className="card card-border mt-4">

@@ -1,10 +1,10 @@
 "use client";
 
+import { useLanguage } from "@/app/contexts/Language";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { FileViewerTableRow, Tags } from "../types/types";
-import { useRouter } from "next/navigation";
-import { translations } from "@/app/lib/translations";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 interface ListViewProps {
   data: FileViewerTableRow[];
@@ -19,8 +19,7 @@ const ListView: React.FC<ListViewProps> = ({
   activeSearchTerms = [],
   selectedProjects,
 }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
   const getHighlightedCell = (text: unknown, queries: string[]) => {
@@ -34,8 +33,6 @@ const ListView: React.FC<ListViewProps> = ({
 
     const regex = new RegExp(`(${match})`, "gi");
     const parts = safeText.split(regex);
-
-
 
     const content = parts.map((part, index) =>
       regex.test(part) ? (
@@ -91,10 +88,10 @@ const ListView: React.FC<ListViewProps> = ({
   const filteredRecords = !selectedProjects?.length
     ? data
     : data.filter(
-      (record) =>
-        record.projectId !== undefined &&
-        selectedProjects.includes(record.projectId)
-    );
+        (record) =>
+          record.projectId !== undefined &&
+          selectedProjects.includes(record.projectId)
+      );
   return (
     <div className="bg-base-100 px-10 w-full mx-auto text-info-content">
       <ul className="list">
@@ -104,7 +101,10 @@ const ListView: React.FC<ListViewProps> = ({
             record.description,
             activeSearchTerms
           );
-          const className = getHighlightedCell(record.className, activeSearchTerms);
+          const className = getHighlightedCell(
+            record.className,
+            activeSearchTerms
+          );
           // const time = getHighlightedCell(record.timeseries, activeSearchTerms);
           const date = getHighlightedCell(
             record.modifiedAt ?? record.createdAt,
@@ -126,9 +126,7 @@ const ListView: React.FC<ListViewProps> = ({
                 {record.className && (
                   <span>
                     {t.translations.CLASS}
-                    <div className="badge badge-sm">
-                      {className.content}
-                    </div>
+                    <div className="badge badge-sm">{className.content}</div>
                   </span>
                 )}
                 <div className="ml-4">

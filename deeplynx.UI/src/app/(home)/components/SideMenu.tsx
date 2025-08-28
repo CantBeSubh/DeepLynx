@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 // Importing Hero-UI icons
+import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
   AdjustmentsHorizontalIcon,
@@ -14,14 +15,11 @@ import {
   ChatBubbleLeftRightIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  Cog6ToothIcon,
   FolderIcon,
-  HomeIcon,
   PresentationChartLineIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
 } from "@heroicons/react/24/outline";
-import { translations } from "@/app/lib/translations";
 
 // Define the props for the SideMenu component
 interface SideMenuProps {
@@ -30,8 +28,7 @@ interface SideMenuProps {
 
 // Main translations component
 const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter(); // Router hook for navigation
   const pathname = usePathname(); // Hook to get the current pathname
   const { project } = useProjectSession();
@@ -128,7 +125,10 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
           <li className="mt-2">
-            <Link href={"/upload_center"} className={getItemClass("/upload_center")}>
+            <Link
+              href={"/upload_center"}
+              className={getItemClass("/upload_center")}
+            >
               <ArrowUpTrayIcon className="size-6" />
               {!isCollapsed && (
                 <p className="ml-2">{t.translations.UPLOAD_CENTER}</p>
@@ -194,18 +194,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
         <div className="mt-auto">
           <ul>
-            <li className="mt-2">
-              <Link
-                href="/settings"
-                onClick={(e) => handleItemClick("/settings", e)}
-                className={getItemClass("/settings")}
-              >
-                <Cog6ToothIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.SETTINGS}</p>
-                )}
-              </Link>
-            </li>
             <li className="mt-2">
               <Link
                 href="#"

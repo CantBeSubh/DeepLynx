@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/app/contexts/Language";
 import { translations } from "@/app/lib/translations";
 
 interface ConfirmationModalProps {
@@ -18,8 +19,7 @@ const ConfirmationModal = ({
   tagName,
   recordName,
 }: ConfirmationModalProps) => {
-  const locale = "en"; // You can use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use client";
-import { translations } from "@/app/lib/translations";
-import React, { useRef, useState, useCallback } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import React, { useCallback, useRef, useState } from "react";
 
 type Props = {
   multiple: boolean;
@@ -17,7 +17,7 @@ export default function DropUpload({
   onFilesChange,
   accept,
 }: Props) {
-  const t = translations["en"];
+  const { t } = useLanguage();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
