@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
+FROM node:lts AS frontend-build
 
 # Set working directory
 WORKDIR /app
@@ -43,10 +43,45 @@ COPY deeplynx.UI/ ./
 # Build the frontend
 RUN npm run build
 
-# Stage 2: Create the final image
-FROM node:lts-alpine3.20 AS final
+# Stage 2: Build the C# backend
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
+WORKDIR /source
 
-# Set working directory
+# Copy the solution file and restore dependencies
+COPY . ./Backend
+RUN dotnet restore ./Backend/deeplynx.sln
+
+# Build the backend
+WORKDIR /source/Backend
+RUN dotnet build -c Release -o /app/build
+
+# Publish the backend
+FROM backend-build AS publish
+RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
+
+# Copy the entrypoint script
+COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Stage 3: Create the final image
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
+
+# Install Node.js and npm
+RUN apt-get update && apt-get install -y \
+    nodejs \
+    npm \
+    && apt-get clean
+
+WORKDIR /app/backend
+
+# Copy the published backend code
+COPY --from=publish /app/publish .
+
 WORKDIR /app/frontend
 
 # Copy the built frontend code
@@ -59,4 +94,4 @@ COPY --from=frontend-build /app/package.json ./package.json
 RUN npm install --production
 
 # Set the command point to run the application
-CMD ["npm", "start"]
+CMD [ "npm", "start" ]

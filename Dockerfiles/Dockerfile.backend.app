@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
 
 # Define build arguments
 ARG NEXT_PUBLIC_OKTA_CLIENT_ID
@@ -21,15 +21,6 @@ ENV AUTH_SECRET=${AUTH_SECRET}
 ENV SERVICE_TOKEN=${SERVICE_TOKEN}
 ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
 
-# Print out the value of the environment variables
-RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
-    && echo "NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}" \
-    && echo "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" \
-    && echo "NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}" \
-    && echo "OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}" \
-    && echo "AUTH_SECRET=${AUTH_SECRET}" \
-    && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}"
-
 WORKDIR /source
 
 # Copy the solution file and restore dependencies
@@ -45,13 +36,14 @@ FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
 # Stage 4: Create the final image
-FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
 # Install required packages
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
     postgresql-client \
     wget \
-    ca-certificates
+    ca-certificates \
+    && apt-get clean
 
 # Copy the entrypoint script
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
