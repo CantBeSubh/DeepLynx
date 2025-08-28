@@ -90,3 +90,16 @@ export type TeamMember = {
   role: string;
   lastLogin: string;
 };
+
+export type ClassResponseDto = {
+  id: number;
+  name: string;
+  description: string | null;
+  uuid: string | null;
+  projectid: number;
+  createdby: string | null;
+  createdat: string;
+  modifiedby: string | null;
+  modifiedat: string | null;
+  archivedat: string | null;
+};

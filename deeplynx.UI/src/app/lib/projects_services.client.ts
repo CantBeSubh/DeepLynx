@@ -2,6 +2,7 @@
 "use client";
 
 import axios from "axios";
+import { ClassResponseDto } from "../(home)/types/types";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -48,4 +49,11 @@ export async function createProject(data: {
     headers: { "Content-Type": "application/json" },
   });
   return res.data;
+}
+
+export async function getClassesForProject(
+  projectId?: string
+): Promise<ClassResponseDto[]> {
+  const res = await api.get(`/projects/${projectId}/classes/GetAllClasses`);
+  return res.data as ClassResponseDto[];
 }

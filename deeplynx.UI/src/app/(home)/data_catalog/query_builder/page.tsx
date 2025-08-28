@@ -1,5 +1,4 @@
 // app/(home)/(routes)/data_catalog/page.tsx
-import { FileViewerTableRow } from "../../types/types";
 import QueryBuilderClient from "./QueryBuilderClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 
@@ -24,14 +23,12 @@ export default async function Page({
 
   // Let the client fetch records after mount based on the dropdown selection
   const initialSelectedProjects = fromProject ? [fromProject] : [];
-  const initialRecords = [] as FileViewerTableRow[];
 
   return (
     <QueryBuilderClient
       initialProjects={initialProjects}
       initialSelectedProjects={initialSelectedProjects}
       initialSearchTerm={initialSearch}
-      initialRecords={initialRecords}
     />
   );
 }
