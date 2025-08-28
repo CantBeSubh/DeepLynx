@@ -22,6 +22,6 @@ export async function getClassesForProjects(projectId: string,
     projectIds: string[],
 ): Promise<ClassResponseDto[]> {
     const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`/projects/${projectId}/classes/GetAllClasse/${query}`);
+    const res = await api.get(`/projects/${projectId}/classes/GetAllClasses?${query}`);
     return res.data as ClassResponseDto[];
 }
