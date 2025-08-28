@@ -41,7 +41,9 @@ namespace deeplynx.tests
         public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid, true);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _tagBusiness.GetAllTags(projectid, true);
             var tags = result.ToList();
 
             // Assert
@@ -57,7 +59,9 @@ namespace deeplynx.tests
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid2, true);
+            var projectid = new List<long>(); 
+            projectid.Add(pid2);
+            var result = await _tagBusiness.GetAllTags(projectid, true);
             var tags = result.ToList();
 
             // Assert
@@ -68,7 +72,9 @@ namespace deeplynx.tests
         public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid, true);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _tagBusiness.GetAllTags(projectid, true);
             var tags = result.ToList();
 
             // Assert
@@ -420,11 +426,13 @@ namespace deeplynx.tests
          public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
          {
              // Arrange
-             var initialCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
+             var projectid = new List<long>(); 
+             projectid.Add(pid);
+             var initialCount = (await _tagBusiness.GetAllTags(projectid, true)).Count();
 
              // Act
              await _tagBusiness.ArchiveTag(pid, tid);
-             var finalCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
+             var finalCount = (await _tagBusiness.GetAllTags(projectid, true)).Count();
 
              // Assert
              Assert.Equal(initialCount - 1, finalCount);
