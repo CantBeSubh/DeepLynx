@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:lts AS frontend-build
+FROM node:lts-alpine3.20 AS frontend-build
 
 # Set working directory
 WORKDIR /app
@@ -44,7 +44,7 @@ COPY deeplynx.UI/ ./
 RUN npm run build
 
 # Stage 2: Create the final image
-FROM node:lts AS final
+FROM node:lts-alpine3.20 AS final
 
 # Set working directory
 WORKDIR /app/frontend
