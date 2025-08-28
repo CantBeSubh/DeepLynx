@@ -6,10 +6,10 @@ import toast from "react-hot-toast";
 
 import TagButton from "@/app/(home)/components/TagButton"
 import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
-import { getAllTags } from "@/app/lib/tag_services.client";
+import { getTagsForProjects } from "@/app/lib/tag_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
-import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
+import { Column, FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
 import { XMarkIcon, PencilIcon, CheckCircleIcon, XCircleIcon, EyeIcon } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
@@ -69,8 +69,8 @@ export default function RecordViewClient({
   recordId,
 }: Props) {
   const [record, setRecord] = useState<FileViewerTableRow | null>(initialRecord);
-  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
-  const [selectedTags, setSelectedTags] = useState<{ id: string; name: string }[]>([]);
+  const [tags, setTags] = useState<TagResponseDto[]>([]);
+  const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
@@ -224,7 +224,7 @@ export default function RecordViewClient({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const data = await getAllTags(Number(projectId));
+        const data = await getTagsForProjects(projectId.toString(), [projectId.toString()]);
         setTags(data);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -235,7 +235,7 @@ export default function RecordViewClient({
 
   const handleTagSelectionChange = async (selected: string[]) => {
     if (JSON.stringify(selected) !== JSON.stringify(selectedIds)) {
-      const newTags = tags.filter(tag => selected.includes(tag.id));
+      const newTags = tags.filter(tag => selected.includes(tag.id.toString()));
       setSelectedTags(newTags);
       setSelectedIds(selected);
 
@@ -268,7 +268,7 @@ export default function RecordViewClient({
     for (const tagId of tagsToRemove) {
       await unAttachTagFromRecord(Number(projectId), Number(recordId), Number(tagId));
     }
-    setSelectedTags((prevTags) => prevTags.filter(tag => !tagsToRemove.includes(tag.id)));
+    setSelectedTags((prevTags) => prevTags.filter(tag => !tagsToRemove.includes(tag.id.toString())));
     setSelectedIds((prevIds) => prevIds.filter(id => !tagsToRemove.includes(id)));
     setTagsToRemove([]);
     setIsEditing(false);
@@ -455,10 +455,10 @@ export default function RecordViewClient({
                 {selectedTags.map((tag) => (
                   <span key={tag.id} className="font-inter flex items-center border rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0" style={{ borderColor: '#07519E', color: '#07519E', font: 'Inter' }}>
                     {tag.name}
-                    {!tagsToRemove.includes(tag.id) && isEditing && (
+                    {!tagsToRemove.includes(tag.id.toString()) && isEditing && (
                       <XMarkIcon
                         className="w-4 h-4 ml-1 cursor-pointer text-red-600"
-                        onClick={() => handleToggleToRemove(tag.id, tag.name, record?.name || "Unknown Record", 'tag')}
+                        onClick={() => handleToggleToRemove(tag.id.toString(), tag.name, record?.name || "Unknown Record", 'tag')}
                       />
                     )}
                   </span>

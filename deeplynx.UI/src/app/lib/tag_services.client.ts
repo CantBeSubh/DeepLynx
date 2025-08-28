@@ -6,16 +6,6 @@ export const api = axios.create({
     withCredentials: true
 })
 
-export const getAllTags = async (projectId: number) => {
-    try {
-        const res = await api.get(`/projects/${projectId}/tags/GetAllTags`);
-        return res.data;
-    } catch (error) {
-        console.error("Error getting all tags:", error);
-        throw error;
-    }
-}
-
 // Duplicate but unsure of format we will go with
 export async function getTagsForProjects(
     projectId: string, projectIds: string[]

@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { attachTagToRecord, unAttachTagFromRecord } from "@/app/lib/record_services.client";
+import { TagResponseDto } from "../types/types";
 
 interface TagButtonProps {
-  tags: { id: string; name: string }[];
+  tags: TagResponseDto[];
   onSelectionChange?: (selected: string[]) => void;
   projectId: number;
   recordId: number;
@@ -101,8 +102,8 @@ const TagButton: React.FC<TagButtonProps> = ({
                 <input
                   type="checkbox"
                   className="checkbox checkbox-primary"
-                  checked={tempSelectedIds.includes(tag.id)}
-                  onChange={() => toggleTag(tag.id)}
+                  checked={tempSelectedIds.includes(tag.id.toString())}
+                  onChange={() => toggleTag(tag.id.toString())}
                 />
                 <span className="label-text" ref={tag.id === filteredTags[0]?.id ? longestNameRef : null}>
                   {tag.name}
