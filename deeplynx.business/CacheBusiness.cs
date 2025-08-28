@@ -48,7 +48,7 @@ namespace deeplynx.business
         // Static property to provide access to the singleton instance
         public static CacheBusiness Instance => _instance;
         
-        // Used to set the CacheService to a mocked version in tests (not available in production)
+        // Used to set the CacheService to a mocked version in tests
         public void SetCacheService(ICacheService cacheService)
         {
             Cache = cacheService;
