@@ -43,52 +43,10 @@ COPY deeplynx.UI/ ./
 # Build the frontend
 RUN npm run build
 
-# Stage 2: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
+# Stage 2: Create the final image
+FROM node:lts AS final
 
-WORKDIR /source
-
-# Copy the solution file and restore dependencies
-COPY . ./Backend
-RUN dotnet restore ./Backend/deeplynx.sln
-
-# Build the backend
-WORKDIR /source/Backend
-RUN dotnet build -c Release -o /app/build
-
-# Publish the backend
-FROM backend-build AS publish
-RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
-
-# Install required packages (including Node.js and npm)
-RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    nodejs \
-    npm \
-    && apt-get clean
-
-# Copy the entrypoint script
-COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Stage 3: Create the final image
-FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
-
-WORKDIR /app/backend
-
-# Copy the published backend code
-COPY --from=publish /app/publish .
-
-# Copy the shared libraries into the appropriate directory
-COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-arm64/native/
-COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-arm64/native/
-
-# Ensure the shared libraries are in the expected path
-RUN mkdir -p /app/backend/runtimes/linux-arm64/native
-
-# Set the LD_LIBRARY_PATH to include the directory of your libraries
-ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-arm64/native/:$LD_LIBRARY_PATH"
-
+# Set working directory
 WORKDIR /app/frontend
 
 # Copy the built frontend code
@@ -101,4 +59,4 @@ COPY --from=frontend-build /app/package.json ./package.json
 RUN npm install --production
 
 # Set the command point to run the application
-CMD [ "npm", "start" ]
+CMD ["npm", "start"]

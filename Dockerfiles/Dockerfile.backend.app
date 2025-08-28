@@ -44,15 +44,12 @@ RUN dotnet build -c Release -o /app/build
 FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
-# Install tools needed for entrypoint.sh
-RUN apt-get update && apt-get install -y \
-    postgresql-client
-
 # Stage 4: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
-# Add missing package
+# Install required packages
 RUN apt-get update && apt-get install -y \
+    postgresql-client \
     wget \
     ca-certificates \
     && apt-get clean
@@ -61,13 +58,10 @@ RUN apt-get update && apt-get install -y \
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-
 WORKDIR /app/backend
 
 # Copy the published backend code
 COPY --from=publish /app/publish .
-COPY database /database
-COPY deeplynx.api/moon.css /app/backend/moon.css
 
 # Copy the shared libraries into the appropriate directory
 COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-arm64/native/
