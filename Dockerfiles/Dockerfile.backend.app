@@ -69,4 +69,14 @@ COPY --from=publish /app/publish .
 COPY database /database
 COPY deeplynx.api/moon.css /app/backend/moon.css
 
+# Copy the shared libraries into the appropriate directory
+COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-arm64/native/
+COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-arm64/native/
+
+# Ensure the shared libraries are in the expected path
+RUN mkdir -p /app/backend/runtimes/linux-arm64/native
+
+# Set the LD_LIBRARY_PATH to include the directory of your libraries
+ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-arm64/native/:$LD_LIBRARY_PATH"
+
 CMD [ "dotnet", "run" ]
