@@ -64,8 +64,8 @@ spec:
           env:
             - name: ConnectionStrings__DefaultConnection
               value: "${DATABASE_CONNECTION_STRING}"
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
+            - name: POSTGRES_DB_HOST
+              value: ${POSTGRES_DB_HOST}
             - name: POSTGRES_DB
               value: ${POSTGRES_DB}
             - name: POSTGRES_USER
@@ -156,8 +156,8 @@ spec:
           env:
             - name: ConnectionStrings__DefaultConnection
               value: ${DATABASE_CONNECTION_STRING}
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
+            - name: POSTGRES_DB_HOST
+              value: ${POSTGRES_DB_HOST}
             - name: POSTGRES_DB
               value: ${POSTGRES_DB}
             - name: POSTGRES_USER
