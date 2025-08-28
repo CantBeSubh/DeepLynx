@@ -8,11 +8,15 @@ export type Query = {
     operator?: string;
     value?: string; // you can store the combined timestamp here if you want
 };
+interface DatePickerProps {
+    row: Query;
+    onChange: (value: string) => void;
+}
 
 type DateState = { dateValue?: string };
 type TimeState = { timeValue?: string };
 
-export default function DatePicker({ row }: { row: Query }) {
+export const DatePicker: React.FC<DatePickerProps> = ({ row, onChange }) => {
     const [date, setDate] = useState<DateState>({});
     const [time, setTime] = useState<TimeState>({});
 
@@ -22,6 +26,7 @@ export default function DatePicker({ row }: { row: Query }) {
         const [d, t] = value.split("T");
         setDate((r) => ({ ...r, dateValue: d }));
         setTime((r) => ({ ...r, timeValue: t }));
+        onChange(e.target.value);
     };
 
     return (

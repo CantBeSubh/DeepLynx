@@ -50,10 +50,3 @@ export async function createProject(data: {
   });
   return res.data;
 }
-
-export async function getClassesForProject(
-  projectId?: string
-): Promise<ClassResponseDto[]> {
-  const res = await api.get(`/projects/${projectId}/classes/GetAllClasses`);
-  return res.data as ClassResponseDto[];
-}

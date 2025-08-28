@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 import TagButton from "@/app/(home)/components/TagButton"
 import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
-import { getAllTags } from "@/app/lib/tag_services";
+import { getAllTags } from "@/app/lib/tag_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
@@ -108,7 +108,7 @@ export default function RecordViewClient({
             setSelectedTags(tags);
             setSelectedIds(tags.map((tag: { id: string }) => tag.id));
           }
-    
+
         }
       } catch (error) {
         console.error("Error fetching record:", error);
@@ -134,12 +134,12 @@ export default function RecordViewClient({
           setHasFetchedRelatedRecords(true);
 
         }
-        
+
       } catch (error) {
         console.error("Error fetching related records:", error)
       }
     };
-    if (record?.className && record?.id){
+    if (record?.className && record?.id) {
       fetchRelatedRecords();
     }
   }, [initialRecord])
@@ -147,79 +147,79 @@ export default function RecordViewClient({
   useEffect(() => {
     console.log("Related records: ");
     console.log(relatedRecords);
-    
+
     const parseRelatedRecords = (relatedRecords: RelatedRecord[] | undefined) => {
-        if (!relatedRecords) return [];
+      if (!relatedRecords) return [];
 
-        const relationshipNames: string[] = [];
-        const classNames: string[] = [];
-        const names: string[] = [];
-        const recordIds: number[] = [];
+      const relationshipNames: string[] = [];
+      const classNames: string[] = [];
+      const names: string[] = [];
+      const recordIds: number[] = [];
 
-        relatedRecords.forEach(item => {
-            if ('relationshipName' in item) {
-                relationshipNames.push(item.relationshipName);
-            } else {
-                if (item.recordId == recordId) {
-                  return;
-                }
-                classNames.push(item.className);
-                names.push(item.name);
-                recordIds.push(item.recordId);
-            }
-        });
+      relatedRecords.forEach(item => {
+        if ('relationshipName' in item) {
+          relationshipNames.push(item.relationshipName);
+        } else {
+          if (item.recordId == recordId) {
+            return;
+          }
+          classNames.push(item.className);
+          names.push(item.name);
+          recordIds.push(item.recordId);
+        }
+      });
 
-        const relatedRecordsArray: ParsedRecord[] = [];
-        const relationshipIndex = 0;
+      const relatedRecordsArray: ParsedRecord[] = [];
+      const relationshipIndex = 0;
 
-        console.log('relationshipNames:', relationshipNames);
-        console.log('classNames:', classNames);
-        console.log('names:', names);
-        console.log('recordIds:', recordIds);
+      console.log('relationshipNames:', relationshipNames);
+      console.log('classNames:', classNames);
+      console.log('names:', names);
+      console.log('recordIds:', recordIds);
 
-        relatedRecords.forEach((item, _) => {
-            if (!('relationshipName' in item)) {
-                if (item.recordId == recordId) {
-                  return;
-                }
-                const relationship = relationshipNames.length > relationshipIndex ? relationshipNames[relationshipIndex] : '';
-                relatedRecordsArray.push({
-                    relationship: relationship,
-                    id: item.recordId.toString(),
-                    class: item.className,
-                    name: item.name,
-                    actions: (
-                        <div className="flex items-center">
-                            <button
-                                className="text-blue-500 cursor-pointer"
-                                onClick={async () => {
-                                    const selectedRecord = await getRecord(Number(projectId), item.recordId);
-                                    setSelectedRecord(selectedRecord);
-                                    setRecordViewModalOpen(true);
-                                }}
-                            >
-                                <EyeIcon className="w-4 h-4" />
-                            </button>
-                            <button
-                                className="text-red-500 ml-2 cursor-pointer border rounded px-1"
-                                onClick={() => {
-                                    handleToggleToRemove(item.recordId.toString(), item.name, item.className, 'relatedRecord');
-                                }}
-                            >
-                                Remove Link
-                            </button>
-                        </div>
-                    ),
-                });
-            }
-        });
+      relatedRecords.forEach((item, _) => {
+        if (!('relationshipName' in item)) {
+          if (item.recordId == recordId) {
+            return;
+          }
+          const relationship = relationshipNames.length > relationshipIndex ? relationshipNames[relationshipIndex] : '';
+          relatedRecordsArray.push({
+            relationship: relationship,
+            id: item.recordId.toString(),
+            class: item.className,
+            name: item.name,
+            actions: (
+              <div className="flex items-center">
+                <button
+                  className="text-blue-500 cursor-pointer"
+                  onClick={async () => {
+                    const selectedRecord = await getRecord(Number(projectId), item.recordId);
+                    setSelectedRecord(selectedRecord);
+                    setRecordViewModalOpen(true);
+                  }}
+                >
+                  <EyeIcon className="w-4 h-4" />
+                </button>
+                <button
+                  className="text-red-500 ml-2 cursor-pointer border rounded px-1"
+                  onClick={() => {
+                    handleToggleToRemove(item.recordId.toString(), item.name, item.className, 'relatedRecord');
+                  }}
+                >
+                  Remove Link
+                </button>
+              </div>
+            ),
+          });
+        }
+      });
 
-        return relatedRecordsArray;
+      return relatedRecordsArray;
     };
 
     const parsedRecords = parseRelatedRecords(relatedRecords);
     setParsedRelatedRecords(parsedRecords);
-}, [relatedRecords]);
+  }, [relatedRecords]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -272,34 +272,34 @@ export default function RecordViewClient({
     setSelectedIds((prevIds) => prevIds.filter(id => !tagsToRemove.includes(id)));
     setTagsToRemove([]);
     setIsEditing(false);
-    
+
   };
 
   const handleConfirmUnlink = async () => {
     if (confirmationType === 'tag') {
-        if (idToRemove) {
-            setTagsToRemove((prev) =>
-                prev.includes(idToRemove) ? prev.filter(id => id !== idToRemove) : [...prev, idToRemove]
-            );
-            toast.success(`Tag ${selectedNameToRemove} removed successfully.`);
-        }
+      if (idToRemove) {
+        setTagsToRemove((prev) =>
+          prev.includes(idToRemove) ? prev.filter(id => id !== idToRemove) : [...prev, idToRemove]
+        );
+        toast.success(`Tag ${selectedNameToRemove} removed successfully.`);
+      }
     } else if (confirmationType === 'relatedRecord') {
-        if (idToRemove && selectedOriginId && selectedDestinationId) {
-            try {
-                console.log("deleting edge")
-                if (await getEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId))) {
-                  await deleteEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId));
-                }
-                await queryKuzu(projectId, `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`);
-                setParsedRelatedRecords((prevRecords) =>
-                    prevRecords.filter((record) => record.id !== idToRemove)
-                );
-                toast.success("Link removed successfully");
-            } catch (error) {
-                toast.error("Failed to remove link");
-                console.error("Error removing link:", error);
-            }
+      if (idToRemove && selectedOriginId && selectedDestinationId) {
+        try {
+          console.log("deleting edge")
+          if (await getEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId))) {
+            await deleteEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId));
+          }
+          await queryKuzu(projectId, `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`);
+          setParsedRelatedRecords((prevRecords) =>
+            prevRecords.filter((record) => record.id !== idToRemove)
+          );
+          toast.success("Link removed successfully");
+        } catch (error) {
+          toast.error("Failed to remove link");
+          console.error("Error removing link:", error);
         }
+      }
     }
     setModalOpen(false);
   };
@@ -394,12 +394,12 @@ export default function RecordViewClient({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value: typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   const tabs = [
@@ -465,31 +465,31 @@ export default function RecordViewClient({
                 ))}
               </span>
             </div>
-              <GenericTable
-                columns={relatedRecordsColumns}
-                data={parsedRelatedRecords}
-                title="Related Records:"
-                bordered
-                searchBar={false}
-                enablePagination={false}
-                actionButtons={false}
-                tableClassName=".table-bordered"
-              />
+            <GenericTable
+              columns={relatedRecordsColumns}
+              data={parsedRelatedRecords}
+              title="Related Records:"
+              bordered
+              searchBar={false}
+              enablePagination={false}
+              actionButtons={false}
+              tableClassName=".table-bordered"
+            />
           </div>
-            <ConfirmationModal 
-              isOpen={isModalOpen} 
-              onClose={() => setModalOpen(false)} 
-              onConfirm={handleConfirmUnlink} 
-              tagName={selectedNameToRemove} 
-              recordName={selectedRecordNameToRemove} 
-            />
-            <RecordViewModal 
-              isOpen={isRecordViewModalOpen} 
-              onClose={() => setRecordViewModalOpen(false)} 
-              record={selectedRecord} 
-              relatedRecords={parsedRelatedRecords}
-              tags={tags}
-            />
+          <ConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={handleConfirmUnlink}
+            tagName={selectedNameToRemove}
+            recordName={selectedRecordNameToRemove}
+          />
+          <RecordViewModal
+            isOpen={isRecordViewModalOpen}
+            onClose={() => setRecordViewModalOpen(false)}
+            record={selectedRecord}
+            relatedRecords={parsedRelatedRecords}
+            tags={tags}
+          />
         </div>
       ),
     },
@@ -508,9 +508,9 @@ export default function RecordViewClient({
         </div>
       </div>
 
-        <div className="divider"></div>
+      <div className="divider"></div>
 
-        <Tabs tabs={tabs} className={""}></Tabs>
-      </div>
-    );
-  };
+      <Tabs tabs={tabs} className={""}></Tabs>
+    </div>
+  );
+};

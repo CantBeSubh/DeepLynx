@@ -2,15 +2,17 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ClassResponseDto } from "@/app/(home)/types/types";
-import { getClassesForProject } from "@/app/lib/projects_services.client";
-
+import { ClassResponseDto, DataSourceResponseDto, TagResponseDto } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import DatePicker from "../../components/DatePicker";
+import { DatePicker } from "../../components/DatePicker";
+import { getClassesForProject } from "@/app/lib/class_services client";
+import { getDataSourcesForProject } from "@/app/lib/data_source_services.client";
+import { getTagsForProject } from "@/app/lib/tag_services.client";
+
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -54,8 +56,13 @@ export default function QueryBuilderClient({
   const [projects] = useState(initialProjects);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(initialSelectedProjects);
   const [classes, setClasses] = useState<ClassResponseDto[]>([]);
+  const [datasources, setDataSources] = useState<DataSourceResponseDto[]>([]);
+  const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
+  const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
+  const [isLoadingTags, setIsLoadingTags] = useState(false);
+
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
@@ -99,6 +106,45 @@ export default function QueryBuilderClient({
 
     if (hasLoaded && currentProjectId) {
       loadClasses();
+    }
+  }, [hasLoaded, currentProjectId]);
+
+  useEffect(() => {
+    async function loadDataSources() {
+      try {
+        setIsLoadingDataSources(true);
+        const data = await getDataSourcesForProject(currentProjectId);
+        setDataSources(data);
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+        setDataSources([]);
+      } finally {
+        setIsLoadingDataSources(false);
+        setLoading(false);
+      }
+    }
+    if (hasLoaded && currentProjectId) {
+      loadDataSources();
+    }
+  }, [hasLoaded, currentProjectId]);
+
+  useEffect(() => {
+    async function loadTags() {
+      try {
+        setIsLoadingTags(true);
+        const data = await getTagsForProject(currentProjectId);
+        setTags(data);
+      } catch (error) {
+        console.error("Failed to fetch classes:", error);
+        setTags([]);
+      } finally {
+        setIsLoadingTags(false);
+        setLoading(false);
+      }
+    }
+
+    if (hasLoaded && currentProjectId) {
+      loadTags();
     }
   }, [hasLoaded, currentProjectId]);
 
@@ -175,6 +221,16 @@ export default function QueryBuilderClient({
                                 .then(setClasses)
                                 .catch((err) => console.error("Failed to fetch classes:", err));
                             }
+                            if (value === "Data Source") {
+                              getDataSourcesForProject(currentProjectId)
+                                .then(setDataSources)
+                                .catch((err) => console.error("Failed to fetch datasources:", err));
+                            }
+                            if (value === "Tag") {
+                              getTagsForProject(currentProjectId)
+                                .then(setTags)
+                                .catch((err) => console.error("Failed to fetch tags:", err));
+                            }
                           }}
                         >
                           <option value="" disabled>
@@ -208,13 +264,16 @@ export default function QueryBuilderClient({
                             className="select select-sm select-bordered w-full"
                             value={row.value}
                             onChange={(e) => updateRow(row.id, { value: e.target.value })}
-                            disabled={row.filter === "Class" && isLoadingClasses}
+                            disabled={
+                              (row.filter === "Class" && isLoadingClasses) ||
+                              (row.filter === "Datasource" && isLoadingDataSources)
+                            }
                           >
                             <option value="" disabled>{t.translations.VALUE}</option>
+
                             {row.filter === "Class" ? (
                               classes.length ? (
                                 classes.map((opt) => (
-
                                   <option key={opt.id} value={opt.name}>
                                     {opt.name}
                                   </option>
@@ -222,6 +281,30 @@ export default function QueryBuilderClient({
                               ) : (
                                 <option disabled value="">
                                   {isLoadingClasses ? "Loading classes..." : "No classes found"}
+                                </option>
+                              )
+                            ) : row.filter === "Data Source" ? (
+                              datasources.length ? (
+                                datasources.map((opt) => (
+                                  <option key={opt.id} value={opt.name}>
+                                    {opt.name}
+                                  </option>
+                                ))
+                              ) : (
+                                <option disabled value="">
+                                  {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
+                                </option>
+                              )
+                            ) : row.filter === "Tag" ? (
+                              tags.length ? (
+                                tags.map((opt) => (
+                                  <option key={opt.id} value={opt.name}>
+                                    {opt.name}
+                                  </option>
+                                ))
+                              ) : (
+                                <option disabled value="">
+                                  {isLoadingTags ? "Loading tags..." : "No tags found"}
                                 </option>
                               )
                             ) : (
@@ -234,9 +317,12 @@ export default function QueryBuilderClient({
                           </select>
                         )}
 
+
                         {/* When Time Range, render the calendar instead of options */}
                         {row.filter === "Time Range" ? (
-                          <DatePicker row={row} />
+                          <DatePicker row={row}
+                            onChange={(dateTime: string) => updateRow(row.id, { value: dateTime })  // store datetime in row.value
+                            } />
                         ) : null}
                         <div className="w-full"></div>
                         <div className="w-full">

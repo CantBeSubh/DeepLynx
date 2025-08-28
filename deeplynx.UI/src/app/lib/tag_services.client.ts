@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { TagResponseDto } from '../(home)/types/types';
 
 export const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -13,6 +14,14 @@ export const getAllTags = async (projectId: number) => {
         console.error("Error getting all tags:", error);
         throw error;
     }
+}
+
+// Duplicate but unsure of format we will go with
+export async function getTagsForProject(
+    projectId?: string
+): Promise<TagResponseDto[]> {
+    const res = await api.get(`/projects/${projectId}/tags/GetAllTags`);
+    return res.data as TagResponseDto[];
 }
 
 export const getTag = async (projectId: number, tagId: number) => {

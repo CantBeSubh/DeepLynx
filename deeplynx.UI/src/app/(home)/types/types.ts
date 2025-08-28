@@ -103,3 +103,31 @@ export type ClassResponseDto = {
   modifiedat: string | null;
   archivedat: string | null;
 };
+
+export type DataSourceResponseDto = {
+  id: number;
+  name: string;
+  description: string | null;
+  abbreviation: string | null;
+  type: string | null;
+  baseuri: string | null;
+  config: Record<string, unknown> | null; // object | null
+  projectid: number;
+  createdby: string | null;
+  createdat: string;          // RFC 3339 date-time
+  modifiedby: string | null;
+  modifiedat: string | null;  // RFC 3339 or null
+  archivedat: string | null;  // RFC 3339 or null
+};
+
+export type TagResponseDto = {
+  id: number;
+  name: string;
+  projectId: number;
+  createdBy?: string | null;
+  createdAt: string; // ISO date string from backend
+  modifiedBy?: string | null;
+  modifiedAt?: string | null;
+  archivedAt?: string | null;
+};
+
