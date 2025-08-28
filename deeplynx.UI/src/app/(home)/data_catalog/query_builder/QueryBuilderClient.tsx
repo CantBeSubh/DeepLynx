@@ -10,7 +10,7 @@ import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroi
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
 import { getClassesForProjects } from "@/app/lib/class_services client";
-import { getDataSourcesForProject } from "@/app/lib/data_source_services.client";
+import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
 import { getTagsForProject } from "@/app/lib/tag_services.client";
 
 
@@ -113,7 +113,7 @@ export default function QueryBuilderClient({
     async function loadDataSources() {
       try {
         setIsLoadingDataSources(true);
-        const data = await getDataSourcesForProject(currentProjectId);
+        const data = await getDataSourcesForProjects(currentProjectId, selectedProjects);
         setDataSources(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -224,9 +224,9 @@ export default function QueryBuilderClient({
                                 .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
                             if (value === "Data Source") {
-                              getDataSourcesForProject(currentProjectId)
+                              getDataSourcesForProjects(currentProjectId, selectedProjects)
                                 .then(setDataSources)
-                                .catch((err) => console.error("Failed to fetch datasources:", err));
+                                .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
                             if (value === "Tag") {
                               getTagsForProject(currentProjectId)
