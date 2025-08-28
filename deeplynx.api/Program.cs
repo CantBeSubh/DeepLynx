@@ -119,6 +119,10 @@ try
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
     builder.Services.AddTransient<IFileBusiness, FileFilesystemBusiness>();
+    builder.Services.AddTransient<IFileBusiness, FileAzureBusiness>();
+    builder.Services.AddTransient<IFileBusiness, FileS3Business>();
+    builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
+
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
