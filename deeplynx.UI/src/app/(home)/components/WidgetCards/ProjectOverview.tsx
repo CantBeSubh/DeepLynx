@@ -1,17 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { getProjectStats } from "@/app/lib/projects_services.client";
 import {
-  LinkIcon,
-  RectangleGroupIcon,
   ArrowsRightLeftIcon,
   CircleStackIcon,
+  LinkIcon,
+  RectangleGroupIcon,
 } from "@heroicons/react/24/outline";
-import { getProjectStats } from "@/app/lib/projects_services.client";
-import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { translations } from "@/app/lib/translations";
+import { useEffect, useState } from "react";
 
 const ProjectOverviewWidget = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const { project, hasLoaded } = useProjectSession();
   const [stats, setStats] = useState<{
     classes: number;

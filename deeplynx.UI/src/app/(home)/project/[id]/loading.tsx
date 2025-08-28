@@ -1,25 +1,22 @@
+"use client";
+
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import SavedSearches from "@/app/(home)/components/SavedSearches";
+import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowsRightLeftIcon,
-  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
   CircleStackIcon,
   Cog6ToothIcon,
-  PlusCircleIcon,
   PlusIcon,
   RectangleGroupIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import React from "react";
-import { translations } from "@/app/lib/translations";
 import Skeleton from "react-loading-skeleton";
 
 const LoadingProjectDetail = () => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   const project = [1];
   const paginatedRecords = [1, 2, 3, 4, 5];

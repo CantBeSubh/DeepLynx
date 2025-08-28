@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import { useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
+import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard from "../components/NewFileUploadCard";
 import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
-import FileDetailsCard from "../components/FileDetailCard";
-import { translations } from "@/app/lib/translations";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -20,7 +20,7 @@ export default function UploadCenterClient({
   initialRecentUploads,
   uploadText,
 }: Props) {
-  const t = translations["en"];
+  const { t } = useLanguage();
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
   const [uploadType, setUploadType] = useState<UploadType>("");

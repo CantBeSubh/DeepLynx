@@ -1,7 +1,6 @@
 "use client";
-import React from "react";
 import { ExistingFile } from "@/app/(home)/types/upload";
-import { translations } from "@/app/lib/translations";
+import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
   needsTarget: boolean;
@@ -14,7 +13,7 @@ export default function FileDetailsCard({
   selectedTarget,
   className = "",
 }: Props) {
-  const t = translations["en"];
+  const { t } = useLanguage();
   if (!needsTarget) return null;
 
   return (
