@@ -6,6 +6,11 @@ namespace deeplynx.business
 {
     public class CacheFactory
     {
+        /// <summary>
+        /// Used to determine what cache service to use by the ENV CACHE_PROVIDER_TYPE variable
+        /// </summary>
+        /// <returns>The Cache Business Object</returns>
+        /// <exception cref="Exception">Returned if CACHE_PROVIDER_TYPE = redis but no REDIS_CONNECTION_STRING is provided</exception>
         public static ICacheBusiness CreateCache()
         {
             Env.Load("../.env");
