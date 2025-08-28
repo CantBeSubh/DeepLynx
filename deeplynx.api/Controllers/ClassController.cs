@@ -32,12 +32,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all classes
         /// </summary>
-        /// <param name="projectId">The ID of the project to which the class belongs</param>
+        /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
         public async Task<ActionResult<IEnumerable<ClassResponseDto>>> GetAllClasses(
-            [FromQuery] List<long>? projectIds, bool hideArchived = true)
+            [FromQuery] List<long> projectIds, bool hideArchived = true)
         {
             try
             {

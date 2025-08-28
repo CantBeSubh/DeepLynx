@@ -47,7 +47,6 @@ public class ClassBusiness : IClassBusiness
     /// <returns>A list of classes</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(List<long> projectIds, bool hideArchived)
     {
-        // Ensure each project exists (if you want to keep this check)
         foreach (var projectId in projectIds)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
