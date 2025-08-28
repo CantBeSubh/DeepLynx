@@ -17,7 +17,7 @@ namespace deeplynx.api.Controllers
                 _logger = logger;
             }
 
-            [HttpPost("UploadFile")]
+            [HttpPost("UploadFile", Name = "api_upload_file")]
             public async Task<ActionResult<RecordResponseDto>> UploadFile(
                 long projectId,
                 [FromQuery] long dataSourceId,

@@ -33,6 +33,8 @@ public class FileFilesystemBusiness : IFileBusiness
         IFormFile file
     )
     {
+        // TODO: check for default obj storage / datasource and don't require them
+        // TODO: Cache these
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var objectStorage = await _context.ObjectStorages.FindAsync(objectStorageId);
@@ -41,39 +43,47 @@ public class FileFilesystemBusiness : IFileBusiness
             throw new ArgumentException("File is required and cannot be empty.");
         }
         
+        // Check config to confirm it is valid (could be part of the object storage fetch)
         var configData = JsonConvert.DeserializeObject<ObjectStorageConfigDto>(objectStorage.Config);
         if (configData == null || configData.MountPath == null)
         {
             throw new Exception("Config data is null or invalid.");
         }
         
+        // create a file path in the format <mountdir>/project_<id>/datasource_<id>/filename
         var filePath = Path.Combine(
             configData.MountPath, 
             "project_" + projectId.ToString(),
             "datasource_" + dataSourceId.ToString(),
             file.FileName);
+        // create the directory for the file if not exists
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path."));
 
+        // copy the file to its new location
         await using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
 
-        var recordClass = await _classBusiness.GetClassInfo(projectId, "File");
+        // retrieve or insert the File class to assign it to the new record
+        // TODO: record creation + return could be moved to FileBusiness
+        var fileClass = await _classBusiness.GetClassInfo(projectId, "File");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
-                ["fileType"] = file.ContentType
+                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             },
             Name = file.FileName,
             Description = file.FileName,
             OriginalId = Guid.NewGuid().ToString(),
             Uri = filePath,
-            ClassId = recordClass.Id,
-            ClassName = recordClass.Name,
+            ClassId = fileClass.Id,
+            ClassName = fileClass.Name,
         };
 
+        // return the newly created metadata record for the file
+        // TODO: set object storage ID
         return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
     }
     // TODO: Upload File
