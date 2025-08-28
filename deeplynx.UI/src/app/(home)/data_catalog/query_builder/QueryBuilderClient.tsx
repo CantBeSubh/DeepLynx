@@ -45,7 +45,7 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR", "NOT"],
-  filters = ["Time Range", "Storage Destination Type", "Class", "Tag", "Project", "Original Data ID", "Data Source", "Property Field"],
+  filters = ["Time Range", "Class", "Tag", "Project", "Original Data ID", "Data Source", "Property Field"],
   operators = ["=", "<", ">", "LIKE"],
   values = ["ClassOne", "ClassTwo", "ClassThree"]
 }: Props) {
@@ -210,12 +210,14 @@ export default function QueryBuilderClient({
                             </option>
                           ))}
                         </select>
+
                         <select
                           className="select select-sm select-bordered w-full"
                           value={row.filter}
                           onChange={async (e) => {
                             const value = e.target.value;
                             updateRow(row.id, { filter: value, value: "" });
+
                             if (value === "Class") {
                               getClassesForProject(currentProjectId)
                                 .then(setClasses)
@@ -242,6 +244,7 @@ export default function QueryBuilderClient({
                             </option>
                           ))}
                         </select>
+
                         <select
                           className="select select-sm select-bordered w-full"
                           value={row.operator}
@@ -257,74 +260,88 @@ export default function QueryBuilderClient({
                           ))}
                         </select>
 
-
-                        {/* ONLY render <option>s when it's not Time Range */}
+                        {/* Value control: input for Property Field; select for others (except Time Range) */}
                         {row.filter !== "Time Range" && (
-                          <select
-                            className="select select-sm select-bordered w-full"
-                            value={row.value}
-                            onChange={(e) => updateRow(row.id, { value: e.target.value })}
-                            disabled={
-                              (row.filter === "Class" && isLoadingClasses) ||
-                              (row.filter === "Datasource" && isLoadingDataSources)
-                            }
-                          >
-                            <option value="" disabled>{t.translations.VALUE}</option>
+                          (row.filter === "Property Field" || row.filter === "Original Data ID") ? (
+                            <input
+                              type="text"
+                              className="input input-sm input-bordered w-full"
+                              value={row.value}
+                              onChange={(e) => updateRow(row.id, { value: e.target.value })}
+                              placeholder={t.translations.VALUE}
+                            />
+                          ) : (
+                            <select
+                              className="select select-sm select-bordered w-full"
+                              value={row.value}
+                              onChange={(e) => updateRow(row.id, { value: e.target.value })}
+                              disabled={
+                                (row.filter === "Class" && isLoadingClasses) ||
+                                (row.filter === "Data Source" && isLoadingDataSources) ||
+                                (row.filter === "Tag" && isLoadingTags)
+                              }
+                            >
+                              <option value="" disabled>{t.translations.VALUE}</option>
 
-                            {row.filter === "Class" ? (
-                              classes.length ? (
-                                classes.map((opt) => (
-                                  <option key={opt.id} value={opt.name}>
-                                    {opt.name}
+                              {row.filter === "Class" ? (
+                                classes.length ? (
+                                  classes.map((opt) => (
+                                    <option key={opt.id} value={opt.name}>
+                                      {opt.name}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled value="">
+                                    {isLoadingClasses ? "Loading classes..." : "No classes found"}
+                                  </option>
+                                )
+                              ) : row.filter === "Data Source" ? (
+                                datasources.length ? (
+                                  datasources.map((opt) => (
+                                    <option key={opt.id} value={opt.name}>
+                                      {opt.name}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled value="">
+                                    {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
+                                  </option>
+                                )
+                              ) : row.filter === "Tag" ? (
+                                tags.length ? (
+                                  tags.map((opt) => (
+                                    <option key={opt.id} value={opt.name}>
+                                      {opt.name}
+                                    </option>
+                                  ))
+                                ) : (
+                                  <option disabled value="">
+                                    {isLoadingTags ? "Loading tags..." : "No tags found"}
+                                  </option>
+                                )
+                              ) : (
+                                values.map((opt) => (
+                                  <option key={opt} value={opt}>
+                                    {opt}
                                   </option>
                                 ))
-                              ) : (
-                                <option disabled value="">
-                                  {isLoadingClasses ? "Loading classes..." : "No classes found"}
-                                </option>
-                              )
-                            ) : row.filter === "Data Source" ? (
-                              datasources.length ? (
-                                datasources.map((opt) => (
-                                  <option key={opt.id} value={opt.name}>
-                                    {opt.name}
-                                  </option>
-                                ))
-                              ) : (
-                                <option disabled value="">
-                                  {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
-                                </option>
-                              )
-                            ) : row.filter === "Tag" ? (
-                              tags.length ? (
-                                tags.map((opt) => (
-                                  <option key={opt.id} value={opt.name}>
-                                    {opt.name}
-                                  </option>
-                                ))
-                              ) : (
-                                <option disabled value="">
-                                  {isLoadingTags ? "Loading tags..." : "No tags found"}
-                                </option>
-                              )
-                            ) : (
-                              values.map((opt) => (
-                                <option key={opt} value={opt}>
-                                  {opt}
-                                </option>
-                              ))
-                            )}
-                          </select>
+                              )}
+                            </select>
+                          )
                         )}
-
 
                         {/* When Time Range, render the calendar instead of options */}
                         {row.filter === "Time Range" ? (
-                          <DatePicker row={row}
-                            onChange={(dateTime: string) => updateRow(row.id, { value: dateTime })  // store datetime in row.value
-                            } />
+                          <DatePicker
+                            row={row}
+                            onChange={(dateTime: string) =>
+                              updateRow(row.id, { value: dateTime }) // store datetime in row.value
+                            }
+                          />
                         ) : null}
+
                         <div className="w-full"></div>
+
                         <div className="w-full">
                           <button
                             type="button"
@@ -334,6 +351,7 @@ export default function QueryBuilderClient({
                             <TrashIcon className="w-4 h-4" />
                           </button>
                         </div>
+
                         {idx === rows.length - 1 && (
                           <div className="md:col-span-6 flex items-center justify-between pt-2 pr-15">
                             <button
@@ -349,6 +367,7 @@ export default function QueryBuilderClient({
                           </div>
                         )}
                       </div>
+
                     </div>
                   ))}
                 </div>
