@@ -42,7 +42,9 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ValidProjectId_ReturnsActiveDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _dataSourceBusiness.GetAllDataSources(projectid, true);
             var dataSources = result.ToList();
 
             // Assert
@@ -58,8 +60,10 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_NonExistentProjectWithNoDataSources_ThrowsKeyNotFoundException()
         {
             // Act & Assert
+            var projectid = new List<long>(); 
+            projectid.Add(999);
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetAllDataSources(999, false)); 
+                () => _dataSourceBusiness.GetAllDataSources(projectid, false)); 
             
             Assert.Contains("Project with id 999 not found", exception.Message);
            
@@ -76,7 +80,9 @@ namespace deeplynx.tests
             Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = newProjectId });
             await Context.SaveChangesAsync();
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _dataSourceBusiness.GetAllDataSources(projectid, true);
             var dataSources = result.ToList();
 
             // Assert
@@ -89,7 +95,9 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ConfigParsing_ReturnsValidJsonObject()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _dataSourceBusiness.GetAllDataSources(projectid, false);
             var dataSource = result.First(ds => ds.Id == did);
 
             // Assert
@@ -122,7 +130,9 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var result = await _dataSourceBusiness.GetAllDataSources(projectid, false);
             var dataSource = result.First(ds => ds.Name == "Null Config Test");
 
             // Assert
@@ -557,11 +567,13 @@ namespace deeplynx.tests
         public async Task ArchiveDataSource_ArchivedDataSourceNotReturnedInGetAll()
         {
             // Arrange
-            var initialCount = (await _dataSourceBusiness.GetAllDataSources(pid, false)).Count();
+            var projectid = new List<long>(); 
+            projectid.Add(pid);
+            var initialCount = (await _dataSourceBusiness.GetAllDataSources(projectid, false)).Count();
 
             // Act
             await _dataSourceBusiness.ArchiveDataSource(pid, did);
-            var finalCount = (await _dataSourceBusiness.GetAllDataSources(pid, true)).Count();
+            var finalCount = (await _dataSourceBusiness.GetAllDataSources(projectid, true)).Count();
 
             // Assert
             Assert.Equal(initialCount - 1, finalCount);

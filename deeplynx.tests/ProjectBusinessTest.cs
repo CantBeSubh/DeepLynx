@@ -105,8 +105,10 @@ namespace deeplynx.tests
            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
-
-            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
+            
+            var projectid = new List<long>(); 
+            projectid.Add(project.Id);
+            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(projectid, true);
             dataSourceResult.Count.Should().Be(1);
             dataSourceResult[0].Name.Should().Be("Default Data Source");
             dataSourceResult[0].Description.Should().Be("This data source was created alongside the project for ease of use.");
