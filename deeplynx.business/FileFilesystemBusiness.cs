@@ -27,33 +27,23 @@ public class FileFilesystemBusiness : IFileBusiness
         _classBusiness = classBusiness;
         _recordBusiness = recordBusiness;
     }
-    public async Task<RecordResponseDto> UploadFile(
+    public async Task<string> UploadFile(
         long projectId,
         long dataSourceId,
-        long objectStorageId,
+        ObjectStorageConfigDto objectStorageConfig,
         IFormFile file
     )
     {
         // TODO: check for default obj storage / datasource and don't require them
         // TODO: Cache these
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var objectStorage = await _context.ObjectStorages.FindAsync(objectStorageId);
-        if (file == null || file.Length == 0)
+        if (objectStorageConfig.MountPath == null)
         {
-            throw new ArgumentException("File is required and cannot be empty.");
-        }
-        
-        // Check config to confirm it is valid (could be part of the object storage fetch)
-        var configData = JsonConvert.DeserializeObject<ObjectStorageConfigDto>(objectStorage.Config);
-        if (configData == null || configData.MountPath == null)
-        {
-            throw new Exception("Config data is null or invalid.");
+            throw new Exception("File system mount path not set in object storage");
         }
         
         // create a file path in the format <mountdir>/project_<id>/datasource_<id>/filename
         var filePath = Path.Combine(
-            configData.MountPath, 
+            objectStorageConfig.MountPath, 
             "project_" + projectId.ToString(),
             "datasource_" + dataSourceId.ToString(),
             file.FileName);
@@ -65,28 +55,11 @@ public class FileFilesystemBusiness : IFileBusiness
         {
             await file.CopyToAsync(stream);
         }
-
-        // retrieve or insert the File class to assign it to the new record
-        // TODO: record creation + return could be moved to FileBusiness
-        var fileClass = await _classBusiness.GetClassInfo(projectId, "File");
-        var recordRequest = new CreateRecordRequestDto
-        {
-            Properties = new JsonObject
-            {
-                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
-            },
-            Name = file.FileName,
-            Description = file.FileName,
-            OriginalId = Guid.NewGuid().ToString(),
-            Uri = filePath,
-            ClassId = fileClass.Id,
-            ClassName = fileClass.Name,
-        };
-
-        // return the newly created metadata record for the file
+        
         // TODO: set object storage ID
-        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        return filePath;
     }
+    
     public async Task<RecordResponseDto> UpdateFile(long projectId, long datasourceId, long objectStorageId,
         long recordId, IFormFile file)
     {

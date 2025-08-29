@@ -1,3 +1,4 @@
+using deeplynx.business;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -8,10 +9,10 @@ namespace deeplynx.api.Controllers
     [Route("api/projects/{projectId}/files")]
     public class FileController : ControllerBase
         {
-            private readonly IFileBusiness _fileBusiness;
+            private readonly FileBusiness _fileBusiness;
             private readonly ILogger<FileController> _logger;
 
-            public FileController(IFileBusiness fileBusiness, ILogger<FileController> logger)
+            public FileController(FileBusiness fileBusiness, ILogger<FileController> logger)
             {
                 _fileBusiness = fileBusiness;
                 _logger = logger;
@@ -20,8 +21,8 @@ namespace deeplynx.api.Controllers
             [HttpPost("UploadFile", Name = "api_upload_file")]
             public async Task<ActionResult<RecordResponseDto>> UploadFile(
                 long projectId,
-                [FromQuery] long dataSourceId,
-                [FromQuery] long objectStorageId,
+                [FromQuery] long? dataSourceId,
+                [FromQuery] long? objectStorageId,
                 IFormFile file)
             {
                 try

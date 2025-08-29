@@ -7,10 +7,10 @@ namespace deeplynx.business;
 
 public class FileAzureBusiness: IFileBusiness
 {
-    public async Task<RecordResponseDto> UploadFile(long projectId, long datasourceId, long objectStorageId,
+    public async Task<string> UploadFile(long projectId, long datasourceId, ObjectStorageConfigDto objectStorageId,
         IFormFile file)
     {
-        return new RecordResponseDto();
+        return "";
     }
 
     public async Task<RecordResponseDto> UpdateFile(long projectId, long datasourceId, long objectStorageId,

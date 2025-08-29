@@ -7,10 +7,10 @@ namespace deeplynx.business;
 
 public class FileS3Business:  IFileBusiness
 {
-    public async Task<RecordResponseDto> UploadFile(long projectId, long datasourceId, long objectStorageId,
+    public async Task<string> UploadFile(long projectId, long datasourceId, ObjectStorageConfigDto objectStorageConfig,
         IFormFile file)
     {
-        return new RecordResponseDto();
+        return "";
     }
 
     public async Task<RecordResponseDto> UpdateFile(long projectId, long datasourceId, long objectStorageId,
