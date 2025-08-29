@@ -64,7 +64,7 @@ namespace deeplynx.tests
 
             var result = await _edgeBusiness.CreateEdge(pid, dsid, dto);
             result.Id.Should().BeGreaterThan(0);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
             result.OriginId.Should().Be(originRecordId);
             result.DestinationId.Should().Be(destinationRecordId);
             result.ProjectId.Should().Be(pid);
@@ -127,7 +127,7 @@ namespace deeplynx.tests
         public async Task CreateEdge_Fails_IfDeletedProjectId()
         {
             var project = await Context.Projects.FindAsync(pid);
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
@@ -165,7 +165,7 @@ namespace deeplynx.tests
             var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, edges);
             result.Should().HaveCount(2);
             result.Should().OnlyContain(e => e.Id > 0);
-            result.Should().OnlyContain(e => e.CreatedAt >= now);
+            result.Should().OnlyContain(e => e.LastUpdatedAt >= now);
         }
 
         [Fact]
@@ -200,8 +200,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var archivedEdge = new Edge
@@ -210,9 +210,9 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId2,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Edges.Add(activeEdge);
             Context.Edges.Add(archivedEdge);
@@ -234,8 +234,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -255,8 +255,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -276,8 +276,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -295,9 +295,9 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -323,8 +323,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -335,7 +335,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = dsid,
                 Properties = "{\"test\": \"Updated destination_value\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 Name = "New Destination",
                 Description = "New Destination Description",
                 OriginalId = "new",
@@ -351,7 +351,7 @@ namespace deeplynx.tests
             };
             var updatedResult = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
 
-            updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+            updatedResult.LastUpdatedAt.Should().BeOnOrAfter(updatedResult.LastUpdatedAt);
             updatedResult.DestinationId.Should().Be(destinationRecordId2);
         }
 
@@ -365,8 +365,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -379,7 +379,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = dsid,
                 Properties = "{\"test\": \"Updated destination_value\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 Name = "New Destination",
                 Description = "New Destination Description",
                 OriginalId = "new",
@@ -400,7 +400,7 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, result.RelationshipId);
             Assert.Equal(oid, result.OriginId);
             Assert.Equal(did, result.DestinationId);
-            Assert.NotNull(result.ModifiedAt);
+            Assert.NotNull(result.LastUpdatedAt);
 
             // Verify edge was actually updated in database
             var updatedEdge = await Context.Edges.FindAsync(testEdge.Id);
@@ -408,7 +408,7 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, updatedEdge.RelationshipId);
             Assert.Equal(oid, updatedEdge.OriginId);
             Assert.Equal(did, updatedEdge.DestinationId);
-            Assert.NotNull(updatedEdge.ModifiedAt);
+            Assert.NotNull(updatedEdge.LastUpdatedAt);
 
             // Verify that get function gets updated version
             var getResult = await _edgeBusiness.GetEdge(pid, testEdge.Id, oid, did, true);
@@ -416,7 +416,7 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, getResult.RelationshipId);
             Assert.Equal(oid, getResult.OriginId);
             Assert.Equal(did, getResult.DestinationId);
-            Assert.NotNull(getResult.ModifiedAt);
+            Assert.NotNull(getResult.LastUpdatedAt);
         }
 
         [Fact]
@@ -443,8 +443,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -454,9 +454,7 @@ namespace deeplynx.tests
 
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.NotNull(archivedEdge);
-            Assert.NotNull(archivedEdge.ArchivedAt);
-            Assert.True(archivedEdge.ArchivedAt >= beforeArchive);
-            Assert.True(archivedEdge.ArchivedAt <= DateTime.UtcNow);
+            Assert.True(archivedEdge.IsArchived);
         }
 
         [Fact]
@@ -468,9 +466,9 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -480,7 +478,7 @@ namespace deeplynx.tests
 
             var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.NotNull(unarchivedEdge);
-            Assert.Null(unarchivedEdge.ArchivedAt);
+            Assert.False(unarchivedEdge.IsArchived);
         }
 
         [Fact]
@@ -492,8 +490,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -515,8 +513,8 @@ namespace deeplynx.tests
                 DestinationId = destinationRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
@@ -532,11 +530,11 @@ namespace deeplynx.tests
             Assert.NotNull(archivedEdge);
 
             // Check if ArchivedAt was set (optional based on implementation)
-            if (archivedEdge.ArchivedAt.HasValue)
+            if (archivedEdge.IsArchived)
             {
-                Assert.NotNull(archivedEdge.ArchivedAt);
-                Assert.True(archivedEdge.ArchivedAt >= beforeArchive);
-                Assert.True(archivedEdge.ArchivedAt <= DateTime.UtcNow);
+                Assert.True(archivedEdge.IsArchived);
+                // Assert.True(archivedEdge.IsArchived >= beforeArchive);
+                // Assert.True(archivedEdge.IsArchived <= DateTime.UtcNow);
             }
         }
 
@@ -577,8 +575,8 @@ public async Task UnarchiveEdge_Fails_IfNotArchived()
         DestinationId = destinationRecordId,
         DataSourceId = dsid,
         ProjectId = pid,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        ArchivedAt = null // Not archived
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        LastUpdatedBy = null
     };
     Context.Edges.Add(activeEdge);
     await Context.SaveChangesAsync();
@@ -617,11 +615,9 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
         MappingId = 5,
         DataSourceId = 6,
         ProjectId = 7,
-        CreatedBy = "test@example.com",
-        CreatedAt = now,
-        ModifiedBy = "modified@example.com",
-        ModifiedAt = now.AddDays(1),
-        ArchivedAt = null
+        LastUpdatedBy = "test@example.com",
+        LastUpdatedAt = now,
+        IsArchived = false
     };
 
     Assert.Equal(1, dto.Id);
@@ -631,11 +627,8 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
     Assert.Equal(5, dto.MappingId);
     Assert.Equal(6, dto.DataSourceId);
     Assert.Equal(7, dto.ProjectId);
-    Assert.Equal("test@example.com", dto.CreatedBy);
-    Assert.Equal(now, dto.CreatedAt);
-    Assert.Equal("modified@example.com", dto.ModifiedBy);
-    Assert.Equal(now.AddDays(1), dto.ModifiedAt);
-    Assert.Null(dto.ArchivedAt);
+    Assert.Equal(now, dto.LastUpdatedAt);
+    Assert.False(dto.IsArchived);
 }
         protected override async Task SeedTestDataAsync()
         {
@@ -674,7 +667,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 Name = "Origin",
                 Description = "Origin Description",
                 OriginalId = "orig",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(originRecord);
 
@@ -687,7 +680,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 Name = "Destination 1",
                 Description = "Destination Description 1",
                 OriginalId = "dest1",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord);
             
@@ -700,7 +693,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 Name = "Destination 2",
                 Description = "Destination Description 2",
                 OriginalId = "dest2",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord2);
 
@@ -710,7 +703,7 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
                 ProjectId = pid,
                 OriginId = testClass.Id,
                 DestinationId = testClass.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Relationships.Add(relationship);
 

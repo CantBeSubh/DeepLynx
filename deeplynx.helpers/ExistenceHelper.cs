@@ -11,7 +11,7 @@ namespace deeplynx.helpers
         public static async Task EnsureProjectExistsAsync(DeeplynxContext context, long projectId, bool hideArchived = true)
         {
             var projectExists = hideArchived
-                ? await context.Projects.AnyAsync(p => p.Id == projectId && p.ArchivedAt == null)
+                ? await context.Projects.AnyAsync(p => p.Id == projectId && p.IsArchived == false)
                 : await context.Projects.AnyAsync(p => p.Id == projectId);
 
             if (!projectExists)

@@ -24,20 +24,16 @@ public partial class Project
     [Column("description")]
     public string? Description { get; set; }
 
-    [Column("created_by")]
-    public string? CreatedBy { get; set; }
-
-    [Column("created_at", TypeName = "timestamp without time zone")]
-    public DateTime CreatedAt { get; set; }
-
-    [Column("modified_by")]
-    public string? ModifiedBy { get; set; }
-
-    [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime? ModifiedAt { get; set; }
-
-    [Column("archived_at", TypeName = "timestamp without time zone")]
-    public DateTime? ArchivedAt { get; set; }
+    [Required]
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+    
+    [Column("last_updated_by")]
+    public string? LastUpdatedBy { get; set; }
+    
+    [Required]
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
     
     [Column("config", TypeName = "jsonb")]
     public string ConfigJson { get; set; } = null!;

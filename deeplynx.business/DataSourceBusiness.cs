@@ -251,15 +251,14 @@ namespace deeplynx.business
                     // run the archive data source procedure, which archives this datasource
                     // and all child objects with data_source_id as a foreign key
                     var archived = await _context.Database.ExecuteSqlRawAsync(
-                        "CALL deeplynx.archive_data_source({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", dataSourceId,
-                        archivedAt);
+                        "CALL deeplynx.archive_data_source({0}::INTEGER)", dataSourceId);
 
                     if (archived == 0) // if 0 records were updated, assume a failure
                     {
                         throw new DependencyDeletionException(
                             $"unable to archive data source {dataSourceId} or its downstream dependents.");
                     }
-
+                    await _context.Entry(dataSource).ReloadAsync();
                     await transaction.CommitAsync();
                     return true;
                 }
@@ -301,7 +300,7 @@ namespace deeplynx.business
                         throw new DependencyDeletionException(
                             $"unable to unarchive data source {dataSourceId} or its downstream dependents.");
                     }
-
+                    await _context.Entry(dataSource).ReloadAsync();
                     await transaction.CommitAsync();
                     return true;
                 }

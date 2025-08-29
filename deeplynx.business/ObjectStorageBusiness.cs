@@ -28,7 +28,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
 
         if (hideArchived)
         {
-            objectStoragesQuery = objectStoragesQuery.Where(os => os.ArchivedAt == null);
+            objectStoragesQuery = objectStoragesQuery.Where(os => !os.IsArchived);
         }
 
         var objectStorages = await objectStoragesQuery.ToListAsync();
@@ -40,11 +40,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
                 Type = os.Type,
                 ProjectId = os.ProjectId,
                 Default = os.Default,
-                CreatedBy = os.CreatedBy,
-                CreatedAt = os.CreatedAt,
-                ModifiedBy = os.ModifiedBy,
-                ModifiedAt = os.ModifiedAt,
-                ArchivedAt = os.ArchivedAt,
+                LastUpdatedAt = os.LastUpdatedAt,
+                LastUpdatedBy = os.LastUpdatedBy,
+                IsArchived = os.IsArchived,
             }).ToList();
 
     }
@@ -70,7 +68,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
 
-        if (hideArchived && objectStorage.ArchivedAt != null)
+        if (hideArchived && objectStorage.IsArchived)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
@@ -82,11 +80,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = objectStorage.Type,
             ProjectId = objectStorage.ProjectId,
             Default = objectStorage.Default,
-            CreatedBy = objectStorage.CreatedBy,
-            CreatedAt = objectStorage.CreatedAt,
-            ModifiedBy = objectStorage.ModifiedBy,
-            ModifiedAt = objectStorage.ModifiedAt,
-            ArchivedAt = objectStorage.ArchivedAt,
+            LastUpdatedAt = objectStorage.LastUpdatedAt,
+            LastUpdatedBy = objectStorage.LastUpdatedBy,
+            IsArchived = objectStorage.IsArchived,
         };
     }
     
@@ -108,7 +104,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         }
         
         //Todo: update stored procedure to mark archived object storages default column as false
-        if (objectStorage.ArchivedAt != null)
+        if (objectStorage.IsArchived)
         {
             throw new KeyNotFoundException($"Found archived default object storage");
         }
@@ -120,11 +116,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = objectStorage.Type,
             ProjectId = objectStorage.ProjectId,
             Default = objectStorage.Default,
-            CreatedBy = objectStorage.CreatedBy,
-            CreatedAt = objectStorage.CreatedAt,
-            ModifiedBy = objectStorage.ModifiedBy,
-            ModifiedAt = objectStorage.ModifiedAt,
-            ArchivedAt = objectStorage.ArchivedAt,
+            LastUpdatedAt = objectStorage.LastUpdatedAt,
+            LastUpdatedBy = objectStorage.LastUpdatedBy,
+            IsArchived = objectStorage.IsArchived,
         };
     }
 
@@ -172,8 +166,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Default = makeDefault,
             ProjectId = projectId,
             Config = dto.Config.ToString(),
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null // TODO: Implement user ID here when JWT tokens are ready
         };
         
         _context.ObjectStorages.Add(newObjectStorage);
@@ -190,11 +184,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = newObjectStorage.Type,
             ProjectId = newObjectStorage.ProjectId,
             Default = newObjectStorage.Default,
-            CreatedBy = newObjectStorage.CreatedBy,
-            CreatedAt = newObjectStorage.CreatedAt,
-            ModifiedBy = newObjectStorage.ModifiedBy,
-            ModifiedAt = newObjectStorage.ModifiedAt,
-            ArchivedAt = newObjectStorage.ArchivedAt,
+            LastUpdatedAt = newObjectStorage.LastUpdatedAt,
+            LastUpdatedBy = newObjectStorage.LastUpdatedBy,
+            IsArchived = newObjectStorage.IsArchived,
         };
     }
     
@@ -219,7 +211,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
 
-        if (updatedObjectStorage.ArchivedAt is not null)
+        if (updatedObjectStorage.IsArchived)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
@@ -228,8 +220,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
         
         updatedObjectStorage.Name = dto.Name;
-        updatedObjectStorage.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        updatedObjectStorage.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        updatedObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        updatedObjectStorage.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
         
         _context.ObjectStorages.Update(updatedObjectStorage);
         await _context.SaveChangesAsync();
@@ -241,11 +233,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = updatedObjectStorage.Type,
             ProjectId = updatedObjectStorage.ProjectId,
             Default = updatedObjectStorage.Default,
-            CreatedAt = updatedObjectStorage.CreatedAt,
-            CreatedBy = updatedObjectStorage.CreatedBy,
-            ModifiedBy = updatedObjectStorage.ModifiedBy,
-            ModifiedAt = updatedObjectStorage.ModifiedAt,
-            ArchivedAt = updatedObjectStorage.ArchivedAt,
+            LastUpdatedAt = updatedObjectStorage.LastUpdatedAt,
+            LastUpdatedBy = updatedObjectStorage.LastUpdatedBy,
+            IsArchived = updatedObjectStorage.IsArchived,
         };
 
     }
@@ -300,7 +290,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
 
-        if (objectStorage.ArchivedAt is not null)
+        if (objectStorage.IsArchived)
         {
             throw new InvalidOperationException($"Object storage with id {objectStorageId} is already archived");
         }
@@ -310,8 +300,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new InvalidOperationException("Default object storage cannot be archived." +
                                                 " Please assign new default storage before archiving.");
         }
-        
-        objectStorage.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+
+        objectStorage.IsArchived = true;
         _context.ObjectStorages.Update(objectStorage);
         await _context.SaveChangesAsync();
         return true;
@@ -337,12 +327,12 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
 
-        if (objectStorage.ArchivedAt is null)
+        if (!objectStorage.IsArchived)
         {
             throw new InvalidOperationException($"Object storage with id {objectStorageId} is not archived already");
         }
         
-        objectStorage.ArchivedAt = null;
+        objectStorage.IsArchived = false;
         _context.ObjectStorages.Update(objectStorage);
         await _context.SaveChangesAsync();
         return true;
@@ -370,7 +360,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} not found");
         }
 
-        if (defaultObjectStorage.ArchivedAt is not null)
+        if (defaultObjectStorage.IsArchived)
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
@@ -391,11 +381,9 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             Type = defaultObjectStorage.Type,
             ProjectId = defaultObjectStorage.ProjectId,
             Default = defaultObjectStorage.Default,
-            CreatedAt = defaultObjectStorage.CreatedAt,
-            CreatedBy = defaultObjectStorage.CreatedBy,
-            ModifiedBy = defaultObjectStorage.ModifiedBy,
-            ModifiedAt = defaultObjectStorage.ModifiedAt,
-            ArchivedAt = defaultObjectStorage.ArchivedAt,
+            LastUpdatedAt = defaultObjectStorage.LastUpdatedAt,
+            LastUpdatedBy = defaultObjectStorage.LastUpdatedBy,
+            IsArchived = defaultObjectStorage.IsArchived,
         };
     }
 

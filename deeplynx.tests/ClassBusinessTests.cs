@@ -119,7 +119,7 @@ namespace deeplynx.tests
         public async Task CreateClass_Fails_IfDeletedProjectId()
         {
             var project = await Context.Projects.FindAsync(pid);
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
@@ -163,7 +163,7 @@ namespace deeplynx.tests
                 Name = $"Active Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = true
+                IsArchived = false
 
             };
 
@@ -431,8 +431,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where testClass is Destination and orig is null
@@ -442,8 +442,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where orig and dest are null
@@ -453,8 +453,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             Context.Relationships.Add(relationship1);
@@ -505,8 +505,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = otherClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             // Create relationship where testClass is Destination
@@ -516,8 +516,8 @@ namespace deeplynx.tests
                 OriginId = otherClass.Id,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where testClass is Origin and dest is null
@@ -527,8 +527,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             // Create relationship where testClass is Destination and orig is null
@@ -538,8 +538,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where orig and dest are null
@@ -549,8 +549,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.Relationships.Add(relationship1);
@@ -594,8 +594,8 @@ namespace deeplynx.tests
                 OriginalId = "og1",
                 Description = "Test Description 1",
                 Properties = "{\"test\": \"value1\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var record2 = new Record
@@ -607,8 +607,8 @@ namespace deeplynx.tests
                 OriginalId = "og2",
                 Description = "Test Description 2",
                 Properties = "{\"test\": \"value2\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.Records.AddRange(record1, record2);
@@ -646,8 +646,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var mapping2 = new RecordMapping
@@ -656,8 +656,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.RecordMappings.Add(mapping1);
@@ -686,7 +686,7 @@ namespace deeplynx.tests
                 Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = true
+                IsArchived = false
 
             };
             Context.Classes.Add(testClass);
@@ -699,7 +699,7 @@ namespace deeplynx.tests
             Context.ChangeTracker.Clear();
             
             var updated = await Context.Classes.FindAsync(testClass.Id);
-            Assert.Null(updated?.IsArchived);
+            Assert.False(updated?.IsArchived);
         }
 
         [Fact]

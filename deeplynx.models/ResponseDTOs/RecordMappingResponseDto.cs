@@ -10,9 +10,7 @@ public class RecordMappingResponseDto
     public long ProjectId { get; set; }
     public long DataSourceId { get; set; }
     public long? TagId { get; set; }
-    public string? CreatedBy { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public string? ModifiedBy { get; set; }
-    public DateTime? ModifiedAt { get; set; }
-    public DateTime? ArchivedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string? LastUpdatedBy { get; set; }
+    public bool IsArchived { get; set; } = false;
 }

@@ -86,8 +86,8 @@ public class EventBusiness : IEventBusiness
                 EntityId = e.EntityId,
                 EntityType = e.EntityType,
                 Properties = e.Properties,
-                CreatedBy = e.CreatedBy,
-                CreatedAt = e.CreatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                LastUpdatedAt = e.LastUpdatedAt,
             }).ToList();
     }
     
@@ -109,8 +109,8 @@ public class EventBusiness : IEventBusiness
             EntityType = dto.EntityType,
             ProjectId = dto.ProjectId,
             Properties = dto.Properties,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = dto.LastUpdatedBy,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             DataSourceId = dto.DataSourceId,
             EntityId = dto.EntityId,
         };
@@ -127,8 +127,8 @@ public class EventBusiness : IEventBusiness
             EntityId = newEvent.EntityId,
             DataSourceId = newEvent.DataSourceId,
             Properties = newEvent.Properties,
-            CreatedBy = newEvent.CreatedBy,
-            CreatedAt = newEvent.CreatedAt,
+            LastUpdatedBy = newEvent.LastUpdatedBy,
+            LastUpdatedAt = newEvent.LastUpdatedAt,
         };
     }
     

@@ -22,8 +22,9 @@ public partial class User
     [Column("password")]
     public string? Password { get; set; }
 
-    [Column("archived_at", TypeName = "timestamp without time zone")]
-    public DateTime? ArchivedAt { get; set; }
+    [Required]
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
     
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();

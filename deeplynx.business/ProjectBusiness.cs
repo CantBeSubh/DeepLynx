@@ -48,7 +48,7 @@ public class ProjectBusiness : IProjectBusiness
 
         if (hideArchived)
         {
-            projects = projects.Where(p => p.ArchivedAt == null).ToList();
+            projects = projects.Where(p => !p.IsArchived).ToList();
         }
 
         return projects
@@ -58,11 +58,9 @@ public class ProjectBusiness : IProjectBusiness
                 Name = p.Name,
                 Description = p.Description,
                 Abbreviation = p.Abbreviation,
-                CreatedBy = p.CreatedBy,
-                CreatedAt = p.CreatedAt,
-                ModifiedBy = p.ModifiedBy,
-                ModifiedAt = p.ModifiedAt,
-                ArchivedAt = p.ArchivedAt,
+                LastUpdatedAt = p.LastUpdatedAt,
+                LastUpdatedBy = p.LastUpdatedBy,
+                IsArchived = p.IsArchived,
             });
     }
 
@@ -84,7 +82,7 @@ public class ProjectBusiness : IProjectBusiness
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
         
-        if (hideArchived && project.ArchivedAt != null)
+        if (hideArchived && project.IsArchived)
         {
             throw new KeyNotFoundException($"Project with id {projectId} is archived");
         }
@@ -95,11 +93,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt,
-            ModifiedBy = project.ModifiedBy,
-            ModifiedAt = project.ModifiedAt,
-            ArchivedAt = project.ArchivedAt,
+            LastUpdatedAt = project.LastUpdatedAt,
+            LastUpdatedBy = project.LastUpdatedBy,
+            IsArchived = project.IsArchived,
         };
     }
 
@@ -116,8 +112,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Projects.Add(project);
@@ -174,8 +170,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt
+            LastUpdatedBy = project.LastUpdatedBy,
+            LastUpdatedAt = project.LastUpdatedAt
         };
     }
 
@@ -190,14 +186,14 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null || project.IsArchived)
             throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
         project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
-        project.ModifiedBy = null; // TODO: handled in future by JWT.
-        project.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        project.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        project.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
@@ -208,10 +204,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt,
-            ModifiedBy = project.ModifiedBy,
-            ModifiedAt = project.ModifiedAt
+            LastUpdatedAt = project.LastUpdatedAt,
+            LastUpdatedBy = project.LastUpdatedBy,
+            IsArchived = project.IsArchived,
         };
     }
 
@@ -245,7 +240,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null || project.IsArchived)
             throw new KeyNotFoundException("Project not found.");
 
         // set archivedAt timestamp
@@ -291,7 +286,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is null)
+        if (project == null || !project.IsArchived)
             throw new KeyNotFoundException("Project not found or is not archived.");
 
         // run unarchive procedure in a transaction to roll back any errors
@@ -332,7 +327,7 @@ public class ProjectBusiness : IProjectBusiness
         var classes = _context.Classes
             .Where(p => p.IsArchived == null && p.ProjectId == projectId).Count();
         var records = _context.Records
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived  && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources
             .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         
@@ -359,7 +354,7 @@ public class ProjectBusiness : IProjectBusiness
 
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+            recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
         
         var records = await recordQuery
@@ -380,11 +375,9 @@ public class ProjectBusiness : IProjectBusiness
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 Tags = r.Tags
             });
     }

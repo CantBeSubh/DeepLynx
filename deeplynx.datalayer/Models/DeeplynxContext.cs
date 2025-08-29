@@ -76,7 +76,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(e => e.ProjectId).HasDefaultValue(0L);
             
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");
 
@@ -97,7 +98,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("edge_mappings_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Destination).WithMany(p => p.EdgeMappingDestinations).HasConstraintName("edge_mappings_destination_id_fkey");
 
@@ -115,8 +117,8 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("historical_edges_pkey");
 
             entity.Property(e => e.ProjectId).HasDefaultValue(0L);
-            
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges)
                 .HasForeignKey(d => d.EdgeId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
@@ -129,7 +131,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasIndex(e => e.Properties, "idx_historical_records_properties").HasMethod("gin");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
             
             entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords)
                 .HasForeignKey(d => d.RecordId).IsRequired(true).OnDelete(DeleteBehavior.Cascade)
@@ -140,7 +143,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("object_storage_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Project).WithMany(p => p.ObjectStorages).HasConstraintName("object_storage_project_id_fkey");
         });
@@ -149,7 +153,9 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("projects_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
             entity.Property(e => e.ConfigJson)
                 .HasColumnType("jsonb")
                 .HasDefaultValueSql("'{\"edgeRecordsMutable\":false,\"ontologyMutable\":false,\"tagsMutable\":false}'::jsonb")
@@ -162,7 +168,8 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasIndex(e => e.Properties, "idx_records_properties").HasMethod("gin");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Class).WithMany(p => p.Records)
                 .HasForeignKey(d => d.ClassId).IsRequired(false).HasConstraintName("records_class_id_fkey");
@@ -200,7 +207,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("record_mappings_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
             entity.Property(e => e.ProjectId).HasDefaultValue(0L);
 
             entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_class_id_fkey");
@@ -233,7 +241,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("relationships_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Destination).WithMany(p => p.RelationshipDestinations)
                 .HasForeignKey(d => d.DestinationId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
@@ -250,7 +259,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("tags_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Project).WithMany(p => p.Tags).HasConstraintName("tags_project_id_fkey");
         });
@@ -258,6 +268,7 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
             entity.HasMany(u => u.Projects).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
                     "UserProject",
@@ -282,7 +293,7 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<Event>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("events_pkey");
-            
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnType("timestamp without time zone") ;
             entity.HasOne(d => d.Project)
                 .WithMany(p => p.Events)
                 .HasForeignKey(d => d.ProjectId)

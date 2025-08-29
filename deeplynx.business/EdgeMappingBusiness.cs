@@ -59,7 +59,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             
             if (hideArchived)
             {
-                mappingQuery = mappingQuery.Where(m => m.ArchivedAt == null);
+                mappingQuery = mappingQuery.Where(m => !m.IsArchived);
             }
             
             var mappings = await mappingQuery.ToListAsync();
@@ -75,11 +75,9 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
                 DestinationId = m.DestinationId,
                 DataSourceId = m.DataSourceId,
                 ProjectId = m.ProjectId,
-                CreatedBy = m.CreatedBy,
-                CreatedAt = m.CreatedAt,
-                ModifiedBy = m.ModifiedBy,
-                ModifiedAt = m.ModifiedAt,
-                ArchivedAt = m.ArchivedAt,
+                LastUpdatedAt = m.LastUpdatedAt,
+                LastUpdatedBy = m.LastUpdatedBy,
+                IsArchived = m.IsArchived,
             })
             .ToList();
     }
@@ -107,7 +105,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
         
-        if (hideArchived && mapping.ArchivedAt != null)
+        if (hideArchived && mapping.IsArchived)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} is archived");
         }
@@ -122,11 +120,9 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             DestinationId = mapping.DestinationId,
             DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt,
-            ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt,
-            ArchivedAt = mapping.ArchivedAt,
+            LastUpdatedAt = mapping.LastUpdatedAt,
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            IsArchived = mapping.IsArchived,
         };
     }
 
@@ -150,8 +146,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             DataSourceId = dto.DataSourceId,
             OriginId = dto.OriginId,
             DestinationId = dto.DestinationId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
         
         _context.EdgeMappings.Add(mapping);
@@ -167,8 +163,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             DestinationId = mapping.DestinationId,
             DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            LastUpdatedAt = mapping.LastUpdatedAt
         };
     }
 
@@ -189,7 +185,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
        
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.IsArchived)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -201,8 +197,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         mapping.DestinationId = dto.DestinationId ?? mapping.DestinationId;
         mapping.DataSourceId = dto.DataSourceId ?? mapping.DataSourceId;
         mapping.ProjectId = projectId;
-        mapping.ModifiedBy = null; // TODO: handled in future by JWT.
-        mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        mapping.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        mapping.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
@@ -217,10 +213,8 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             DestinationId = mapping.DestinationId,
             DataSourceId = mapping.DataSourceId,
             ProjectId = mapping.ProjectId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt,
-            ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            LastUpdatedAt = mapping.LastUpdatedAt
         };
     }
 
@@ -257,10 +251,10 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.IsArchived)
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
-        mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        mapping.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
 
@@ -279,10 +273,10 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var mapping = await _context.EdgeMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is null)
+        if (mapping == null || mapping.ProjectId != projectId || !mapping.IsArchived)
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found or is not archived.");
 
-        mapping.ArchivedAt = null;
+        mapping.IsArchived = false;
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
 
@@ -297,7 +291,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
     /// <returns>Throws error if relationship does not exist</returns>
     private void DoesRelationshipExist(long relationshipId, bool hideArchived = true)
     {
-        var relationship = hideArchived ? _context.Relationships.Any(p => p.Id == relationshipId && p.ArchivedAt == null)
+        var relationship = hideArchived ? _context.Relationships.Any(p => p.Id == relationshipId && p.IsArchived == false)
             :  _context.Relationships.Any(p => p.Id == relationshipId);
         if (!relationship)
         {

@@ -47,11 +47,9 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.Description,
                 r.Uuid,
                 r.ProjectId,
-                r.CreatedBy,
-                r.CreatedAt,
-                r.ModifiedBy,
-                r.ModifiedAt,
-                r.ArchivedAt,
+                r.LastUpdatedBy,
+                r.LastUpdatedAt,
+                r.IsArchived,
                 r.OriginId,
                 r.DestinationId
             })
@@ -59,7 +57,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         if (hideArchived)
         {
-            relationships = relationships.Where(r => r.ArchivedAt == null).ToList();
+            relationships = relationships.Where(r => !r.IsArchived).ToList();
         }
         
         // Manual mapping to Relationship objects to match return type without getting infite loop on Origin or Destination
@@ -70,13 +68,11 @@ public class RelationshipBusiness: IRelationshipBusiness
             Description = r.Description,
             Uuid = r.Uuid,
             ProjectId = r.ProjectId,
-            CreatedBy = r.CreatedBy,
-            CreatedAt = r.CreatedAt,
-            ModifiedBy = r.ModifiedBy,
-            ModifiedAt = r.ModifiedAt,
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
-            ArchivedAt = r.ArchivedAt,
+            LastUpdatedBy = r.LastUpdatedBy,
+            LastUpdatedAt = r.LastUpdatedAt,
+            IsArchived = r.IsArchived,
         }).ToList();
     }
     /// <summary>
@@ -101,7 +97,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
         
-        if (hideArchived && relationship.ArchivedAt != null)
+        if (hideArchived && relationship.IsArchived)
         {
             throw new KeyNotFoundException($"Relationship with id {relationshipId} is archived");
         }
@@ -113,13 +109,11 @@ public class RelationshipBusiness: IRelationshipBusiness
             Description = relationship.Description,
             Uuid = relationship.Uuid,
             ProjectId = relationship.ProjectId,
-            CreatedBy = relationship.CreatedBy,
-            CreatedAt = relationship.CreatedAt,
-            ModifiedBy = relationship.ModifiedBy,
-            ModifiedAt = relationship.ModifiedAt,
+            LastUpdatedBy = relationship.LastUpdatedBy,
+            LastUpdatedAt = relationship.LastUpdatedAt,
+            IsArchived = relationship.IsArchived,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId,
-            ArchivedAt = relationship.ArchivedAt,
         };
     }
     
@@ -167,10 +161,8 @@ public class RelationshipBusiness: IRelationshipBusiness
             OriginId = dto.OriginId,
             DestinationId = dto.DestinationId,
             ProjectId = projectId,
-            CreatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
-            ModifiedBy =null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null , // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Relationships.Add(relationship);
@@ -197,10 +189,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Description = relationship.Description,
             Uuid = relationship.Uuid,
             ProjectId = relationship.ProjectId,
-            CreatedBy = relationship.CreatedBy,
-            CreatedAt = relationship.CreatedAt,
-            ModifiedBy = relationship.ModifiedBy,
-            ModifiedAt = relationship.ModifiedAt,
+            LastUpdatedBy = relationship.LastUpdatedBy,
+            LastUpdatedAt = relationship.LastUpdatedAt,
+            IsArchived = relationship.IsArchived,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId
         };
@@ -226,7 +217,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, relationships.description),
                 uuid = COALESCE(EXCLUDED.uuid, relationships.uuid),
-                modified_at = @now
+                last_updated_at = @now
             RETURNING *;
         ";
         
@@ -247,7 +238,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", relationships.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, NULL)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -270,7 +261,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
-        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
+        if (relationship == null || relationship.ProjectId != projectId || relationship.IsArchived)
         {
             throw new KeyNotFoundException($"Relationship with ID {relationshipId} not found.");
         }
@@ -292,8 +283,8 @@ public class RelationshipBusiness: IRelationshipBusiness
         relationship.Uuid = dto.Uuid ?? relationship.Uuid;
         relationship.OriginId = dto.OriginId ?? relationship.OriginId;
         relationship.DestinationId = dto.DestinationId ?? relationship.DestinationId;
-        relationship.ModifiedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        relationship.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
+        relationship.LastUpdatedAt =  DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        relationship.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);
         await _context.SaveChangesAsync();
         return new RelationshipResponseDto
@@ -303,10 +294,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Description = relationship.Description,
             Uuid = relationship.Uuid,
             ProjectId = relationship.ProjectId,
-            CreatedBy = relationship.CreatedBy,
-            CreatedAt = relationship.CreatedAt,
-            ModifiedBy = relationship.ModifiedBy,
-            ModifiedAt = relationship.ModifiedAt,
+            LastUpdatedBy = relationship.LastUpdatedBy,
+            LastUpdatedAt = relationship.LastUpdatedAt,
+            IsArchived = relationship.IsArchived,
             OriginId = relationship.OriginId,
             DestinationId = relationship.DestinationId
         };
@@ -345,7 +335,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
-        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is not null)
+        if (relationship == null || relationship.ProjectId != projectId || relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
 
         // set archivedAt timestamp
@@ -389,7 +379,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var relationship = await _context.Relationships.FindAsync(relationshipId);
 
-        if (relationship == null || relationship.ProjectId != projectId || relationship.ArchivedAt is null)
+        if (relationship == null || relationship.ProjectId != projectId || !relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found or is not archived.");
         
         // run unarchive procedure in a transaction to roll back any errors
@@ -443,7 +433,7 @@ public class RelationshipBusiness: IRelationshipBusiness
     
         var existingRelationships = await _context.Relationships
             .Where(r => r.ProjectId == projectId 
-                        && r.ArchivedAt == null 
+                        && r.IsArchived == false
                         && cleanRelationshipNames.Contains(r.Name))
             .Include(r => r.Origin)
             .Include(r => r.Destination)
@@ -454,11 +444,9 @@ public class RelationshipBusiness: IRelationshipBusiness
                 r.Description,
                 r.Uuid,
                 r.ProjectId,
-                r.CreatedBy,
-                r.CreatedAt,
-                r.ModifiedBy,
-                r.ModifiedAt,
-                r.ArchivedAt,
+                r.LastUpdatedBy,
+                r.LastUpdatedAt,
+                r.IsArchived,
                 r.OriginId,
                 r.DestinationId
             })
@@ -482,13 +470,11 @@ public class RelationshipBusiness: IRelationshipBusiness
             Description = r.Description,
             Uuid = r.Uuid,
             ProjectId = r.ProjectId,
-            CreatedBy = r.CreatedBy,
-            CreatedAt = r.CreatedAt,
-            ModifiedBy = r.ModifiedBy,
-            ModifiedAt = r.ModifiedAt,
+            LastUpdatedBy = r.LastUpdatedBy,
+            LastUpdatedAt = r.LastUpdatedAt,
             OriginId = r.OriginId,
             DestinationId = r.DestinationId,
-            ArchivedAt = r.ArchivedAt
+            IsArchived = r.IsArchived
         }).ToList();
     }
 }

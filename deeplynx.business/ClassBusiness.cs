@@ -165,7 +165,7 @@ public class ClassBusiness : IClassBusiness
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
-            INSERT INTO deeplynx.classes (project_id, name, description, uuid, last_updated_at, is_archived)
+            INSERT INTO deeplynx.classes (project_id, name, description, uuid, last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, classes.description),
@@ -191,7 +191,7 @@ public class ClassBusiness : IClassBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", classes.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now),false"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, NULL)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);

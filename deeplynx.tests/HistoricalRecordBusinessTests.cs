@@ -144,7 +144,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = pid,
             DataSourceId = did,
             ClassId = cid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Uri = "localhost:8090"
         };
         
@@ -180,8 +180,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         recordHistory.Should().HaveCount(4);
         recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == null);
         recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != null);
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt == null);
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.ArchivedAt != null);
+        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && !x.IsArchived );
+        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.IsArchived);
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
         historicalRecord.Should().NotBeNull();
         historicalRecord.Name.Should().Be("Updated Test Record");
-        historicalRecord.ArchivedAt.Should().NotBeNull();
+        historicalRecord.IsArchived.Should().BeTrue();
     }
     
     // Ask if this should be good behavior
@@ -399,13 +399,13 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var project2 = new Project
         {
             Name = "Test Project 2",
             Description = "Test project 2 for unit tests",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);
@@ -468,13 +468,13 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         {
             Name = "Test Tag",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var testTag2 = new Tag
         {
             Name = "Test Tag 2",
             ProjectId = project2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var config = new JsonObject();
@@ -484,7 +484,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             Type = "filesystem",
             Config = config.ToString(),
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.ObjectStorages.Add(objectStorage);
         
@@ -501,7 +501,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag },
             Uri = "localhost:8090"
         };
@@ -516,7 +516,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Uri = "localhost:8090"
         };
         
@@ -529,7 +529,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = project2.Id,
             DataSourceId = dataSource2.Id,
             ClassId = testClass2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag2 },
             Uri = "localhost:8090"
         };
@@ -543,7 +543,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
             ProjectId = project2.Id,
             DataSourceId = dataSource3.Id,
             ClassId = testClass2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag2 },
             Uri = "localhost:8090"
         };

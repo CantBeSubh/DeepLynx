@@ -61,7 +61,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
         // result in inaccurate "most recent" results if a record has been archived
         if (hideArchived && records.Count > 0)
         {
-            records = records.Where(r => r.ArchivedAt == null).ToList();
+            records = records.Where(r => !r.IsArchived).ToList();
         }
 
         return records
@@ -83,11 +83,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt
             });
     }
@@ -126,11 +123,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt
             })
             .ToListAsync();
@@ -176,7 +170,7 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             throw new KeyNotFoundException($"Historical record with id {recordId} not found at point in time {pointInTime}.");
         }
         
-        if (hideArchived && record.ArchivedAt != null)
+        if (hideArchived && record.IsArchived)
         {
             throw new KeyNotFoundException($"Historical record with id {recordId} not found or is archived.");
         }
@@ -199,11 +193,8 @@ public class HistoricalRecordBusiness : IHistoricalRecordBusiness
             ProjectId = record.ProjectId,
             ProjectName = record.ProjectName,
             Tags = record.Tags,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
+            LastUpdatedBy = record.LastUpdatedBy,
+            IsArchived = record.IsArchived,
             LastUpdatedAt = record.LastUpdatedAt,
         };
     }

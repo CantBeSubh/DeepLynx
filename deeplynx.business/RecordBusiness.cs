@@ -41,7 +41,7 @@ public class RecordBusiness : IRecordBusiness
 
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+            recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
         
         var records = await recordQuery
@@ -60,11 +60,9 @@ public class RecordBusiness : IRecordBusiness
                 ClassId = r.ClassId,
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                LastUpdatedAt = r.LastUpdatedAt,
+                IsArchived = r.IsArchived,
                 Tags = r.Tags.Select(t => new RecordTagDto()
                 {
                     Id = t.Id,
@@ -96,7 +94,7 @@ public class RecordBusiness : IRecordBusiness
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
 
-        if (hideArchived && record.ArchivedAt != null)
+        if (hideArchived && record.IsArchived)
         {
             throw new KeyNotFoundException($"Record with id {recordId} is archived");
         }
@@ -113,11 +111,9 @@ public class RecordBusiness : IRecordBusiness
             ClassId = record.ClassId,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
+            LastUpdatedBy = record.LastUpdatedBy,
+            LastUpdatedAt = record.LastUpdatedAt,
+            IsArchived = record.IsArchived,
             Tags = record.Tags.Select(t => new RecordTagDto()
             {
                 Id = t.Id,
@@ -166,8 +162,8 @@ public class RecordBusiness : IRecordBusiness
             Name = dto.Name,
             Description = dto.Description,
             ClassId = dto.ClassId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Records.Add(record);
@@ -185,11 +181,9 @@ public class RecordBusiness : IRecordBusiness
             ClassId = record.ClassId,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
+            LastUpdatedBy = record.LastUpdatedBy,
+            LastUpdatedAt = record.LastUpdatedAt,
+            IsArchived = record.IsArchived,
         };
     }
     
@@ -236,7 +230,7 @@ public class RecordBusiness : IRecordBusiness
                 properties = COALESCE(EXCLUDED.properties, records.properties),
                 class_id = COALESCE(EXCLUDED.class_id, records.class_id),
                 object_storage_id = COALESCE(EXCLUDED.object_storage_id,  records.object_storage_id),
-                modified_at = @now
+                last_updated_at = @now
             RETURNING *;                                                          
         ";
        
@@ -263,7 +257,7 @@ public class RecordBusiness : IRecordBusiness
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now, false)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -286,7 +280,7 @@ public class RecordBusiness : IRecordBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record= await _context.Records.FindAsync(recordId);
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
@@ -309,8 +303,8 @@ public class RecordBusiness : IRecordBusiness
         record.Name = dto.Name ?? record.Name;
         record.Description = dto.Description ?? record.Description;
         record.ClassId = dto.ClassId ?? record.ClassId;
-        record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        record.ModifiedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        record.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
@@ -327,11 +321,9 @@ public class RecordBusiness : IRecordBusiness
             ClassId = record.ClassId,
             DataSourceId = record.DataSourceId,
             ProjectId = record.ProjectId,
-            CreatedBy = record.CreatedBy,
-            CreatedAt = record.CreatedAt,
-            ModifiedBy = record.ModifiedBy,
-            ModifiedAt = record.ModifiedAt,
-            ArchivedAt = record.ArchivedAt,
+            LastUpdatedBy = record.LastUpdatedBy,
+            LastUpdatedAt = record.LastUpdatedAt,
+            IsArchived = record.IsArchived,
         };
         
     }
@@ -370,7 +362,7 @@ public class RecordBusiness : IRecordBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
         // set archivedAt timestamp
@@ -384,7 +376,7 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record(@p0::INTEGER, @p1::TIMESTAMP WITHOUT TIME ZONE)", recordId, archivedAt);
+                    "CALL deeplynx.archive_record({0})", recordId);
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
@@ -414,7 +406,7 @@ public class RecordBusiness : IRecordBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var record = await _context.Records.FindAsync(recordId);
         
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt is null)
+        if (record == null || record.ProjectId != projectId || !record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found or is not archived.");
 
         // run unarchive procedure in a transaction to roll back any errors
@@ -460,12 +452,12 @@ public class RecordBusiness : IRecordBusiness
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
         var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
         
         // find tag
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
         
         // ensure the tag is not already attached to the record
@@ -493,12 +485,12 @@ public class RecordBusiness : IRecordBusiness
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
         var record = await recordQueryable.FirstOrDefaultAsync(r => r.Id == recordId);
-        if (record == null || record.ProjectId != projectId || record.ArchivedAt is not null)
+        if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found or is archived.");
         
         // find tag
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is archived.");
         
         record.Tags.Remove(tag);
@@ -609,7 +601,7 @@ public class RecordBusiness : IRecordBusiness
         // Query for existing records (excluding archived)
         var existingRecords = await _context.Records
             .Where(r => r.ProjectId == projectId 
-                       && r.ArchivedAt == null 
+                       && !r.IsArchived
                        && cleanOriginalIds.Contains(r.OriginalId))
             .Include(r => r.Tags)
             .ToListAsync();
@@ -636,11 +628,9 @@ public class RecordBusiness : IRecordBusiness
             ClassId = r.ClassId,
             DataSourceId = r.DataSourceId,
             ProjectId = r.ProjectId,
-            CreatedBy = r.CreatedBy,
-            CreatedAt = r.CreatedAt,
-            ModifiedBy = r.ModifiedBy,
-            ModifiedAt = r.ModifiedAt,
-            ArchivedAt = r.ArchivedAt,
+            LastUpdatedBy = r.LastUpdatedBy,
+            LastUpdatedAt = r.LastUpdatedAt,
+            IsArchived = r.IsArchived,
             Tags = r.Tags.Select(t => new RecordTagDto
             {
                 Id = t.Id,

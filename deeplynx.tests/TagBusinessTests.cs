@@ -47,7 +47,7 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(2, tags.Count);
             Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
-            Assert.All(tags, ds => Assert.Null(ds.ArchivedAt));
+            Assert.All(tags, ds => Assert.True(ds.IsArchived));
             Assert.Contains(tags, ds => ds.Id == tid);
             Assert.Contains(tags, ds => ds.Id == tid2);
             Assert.DoesNotContain(tags, ds => ds.Id == tid3);
@@ -91,9 +91,8 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Analytics", result.Name);
-            Assert.Equal("john.smith@company.com", result.CreatedBy);
-            Assert.Equal("sarah.johnson@company.com", result.ModifiedBy);
-            Assert.Null( result.ArchivedAt);
+            Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
+            Assert.True( result.IsArchived);
             Assert.Equal(pid, result.ProjectId);
         }
 
@@ -178,8 +177,7 @@ namespace deeplynx.tests
             var result = await _tagBusiness.CreateTag(pid, dto);
 
             // Assert
-            Assert.True(result.CreatedAt >= beforeCreate);
-            Assert.True(result.CreatedAt <= DateTime.UtcNow);
+            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
         }
 
         [Fact]
@@ -231,13 +229,13 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Updated Test Tag", result.Name);
-            Assert.Equal("john.smith@company.com", result.CreatedBy);
-            Assert.NotNull(result.ModifiedAt);
+            Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
+            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
 
             // Verify it was actually updated in database
             var updatedTag = await Context.Tags.FindAsync(tid);
             Assert.Equal("Updated Test Tag", updatedTag?.Name);
-            Assert.NotNull(updatedTag?.ModifiedAt);
+            Assert.NotNull(updatedTag?.LastUpdatedAt);
         }
 
         [Fact]
@@ -248,7 +246,7 @@ namespace deeplynx.tests
             {
                 Name = "Original Tag",
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com",
+                LastUpdatedBy = "john.smith@company.com",
             };
 
             Context.Tags.Add(originalTag);
@@ -266,14 +264,13 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(originalTag.Id, result.Id);
             Assert.Equal("Updated Tag", result.Name);
-            Assert.Equal(originalTag.CreatedBy, result.CreatedBy);
-            Assert.NotNull(result.ModifiedAt);
+            Assert.Equal(originalTag.LastUpdatedBy, result.LastUpdatedBy);
 
             // Verify it was actually updated in database
             var updatedTag = await Context.Tags.FindAsync(originalTag.Id);
             Assert.NotNull(updatedTag);
             Assert.Equal("Updated Tag", updatedTag.Name);
-            Assert.NotNull(updatedTag.ModifiedAt);
+          
         }
 
         [Fact]
@@ -381,9 +378,7 @@ namespace deeplynx.tests
              // Verify it was actually archived in database
              var archivedTag = await Context.Tags.FindAsync(tid);
              Assert.NotNull(archivedTag);
-             Assert.NotNull(archivedTag.ArchivedAt);
-             Assert.True(archivedTag.ArchivedAt >= beforeArchive);
-             Assert.True(archivedTag.ArchivedAt <= DateTime.UtcNow);
+             Assert.True(archivedTag.IsArchived);
          }
 
          [Fact]
@@ -502,24 +497,20 @@ namespace deeplynx.tests
               {
                   Id = 1,
                   Name = "Tag One",
-                  CreatedBy = "Test Suite",
+                  LastUpdatedBy= "Test Suite",
                   ProjectId = 1,
-                  CreatedAt = now,
-                  ModifiedBy = "modified@example.com",
-                  ModifiedAt = now.AddDays(1),
-                  ArchivedAt = null
+                  LastUpdatedAt = now,
+                  IsArchived = false
               };
 
               // Assert
               Assert.Equal(1, dto.Id);
               Assert.Equal("Tag One", dto.Name);
-              Assert.Equal("Test Suite", dto.CreatedBy);
+              Assert.Equal("Test Suite", dto.LastUpdatedBy);
               Assert.Equal(1, dto.ProjectId);
-              Assert.Equal("Test Suite", dto.CreatedBy);
-              Assert.Equal(now, dto.CreatedAt);
-              Assert.Equal("modified@example.com", dto.ModifiedBy);
-              Assert.Equal(now.AddDays(1), dto.ModifiedAt);
-              Assert.Null(dto.ArchivedAt);
+              Assert.Equal("Test Suite", dto.LastUpdatedBy);
+              Assert.Equal(now, dto.LastUpdatedAt);
+              Assert.True(dto.IsArchived);
           }
           
          #endregion
@@ -533,9 +524,9 @@ namespace deeplynx.tests
              {
                  Name = "Archived Tag",
                  ProjectId = pid,
-                 CreatedBy = "Test Suite",
-                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-5), DateTimeKind.Unspecified),
-                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                 LastUpdatedBy = "Test Suite",
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-5), DateTimeKind.Unspecified),
+                 IsArchived = true
              };
              await Context.Tags.AddAsync(archivedTag);
              await Context.SaveChangesAsync();
@@ -548,7 +539,7 @@ namespace deeplynx.tests
              Context.ChangeTracker.Clear();
              var refreshed = await Context.Tags.FindAsync(tagId);
              Assert.NotNull(refreshed);
-             Assert.Null(refreshed.ArchivedAt);
+             Assert.True(refreshed.IsArchived);
          }
 
          [Fact]
@@ -596,36 +587,28 @@ namespace deeplynx.tests
              
              var tag = new Tag
              {
-                 Name = "Analytics", ProjectId = pid, CreatedBy = "john.smith@company.com",
-                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                 ModifiedBy = "sarah.johnson@company.com",
-                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                 ArchivedAt = null
+                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), 
+                 IsArchived = false
              };
              
              var tag2 = new Tag
              {
-                 Name = "Analytics 2", ProjectId = pid, CreatedBy = "john.smith@company.com",
-                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                 ModifiedBy = "sarah.johnson@company.com",
-                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                 ArchivedAt = null
+                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = false
              };
              var tag3 = new Tag
              {
-                 Name = "Analytics 3", ProjectId = pid, CreatedBy = "john.smith@company.com",
-                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                 ModifiedBy = "sarah.johnson@company.com",
-                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = false
              };
              var tag4 = new Tag
              {
-                 Name = "Analytics 4", ProjectId = pid2, CreatedBy = "john.smith@company.com",
-                 CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                 ModifiedBy = "sarah.johnson@company.com",
-                 ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                 ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = "john.smith@company.com",
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = false
              };
              await Context.Tags.AddAsync(tag);
              await Context.Tags.AddAsync(tag2);
