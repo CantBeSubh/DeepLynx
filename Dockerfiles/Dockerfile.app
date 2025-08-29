@@ -84,14 +84,14 @@ WORKDIR /app/backend
 COPY --from=publish /app/publish .
 
 # Copy the shared libraries into the appropriate directory
-COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-arm64/native/
-COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-arm64/native/
+COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-x64/native/
+COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-x64/native/
 
 # Ensure the shared libraries are in the expected path
-RUN mkdir -p /app/backend/runtimes/linux-arm64/native
+RUN mkdir -p /app/backend/runtimes/linux-x64/native
 
 # Set the LD_LIBRARY_PATH to include the directory of your libraries
-ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-arm64/native/:$LD_LIBRARY_PATH"
+ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-x64/native/:$LD_LIBRARY_PATH"
 
 WORKDIR /app/frontend
 
