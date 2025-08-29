@@ -150,28 +150,34 @@ public class ProjectBusiness : IProjectBusiness
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
-            config["mountPath"] =  Environment.GetEnvironmentVariable("STORAGE_DIRECTORY");
+            var mountPath =
+                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ?? throw new NullReferenceException($"Storage file path not set");
+            config["mountPath"] =  mountPath;
         }
         else if (defaultObjectStorageMethod == "azure_object")
         {
-            config["azureConnectionString"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING");
+            var azureConnectionString = 
+                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ?? throw new NullReferenceException($"Azure connection string not set");
+            config["azureConnectionString"] = azureConnectionString;
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            config["awsConnectionString"] = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING");
+            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ?? throw new NullReferenceException($"AWS connection string not set");
+            config["awsConnectionString"] = awsConnectionString;
         }
-        
-        if (defaultObjectStorageMethod != null)
+        else
         {
-            var objectStorageRequestDto = new CreateObjectStorageRequestDto
-            {
-                Name = "Instance Default",
-                Config = config
-            };
-            await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+            throw new NullReferenceException($"Unknown object storage method, make sure your environment variables are correctly set");
         }
         
-        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
+        var objectStorageRequestDto = new CreateObjectStorageRequestDto
+        {
+            Name = "Instance Default",
+            Config = config
+        };
+        await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+        
+        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
         
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto

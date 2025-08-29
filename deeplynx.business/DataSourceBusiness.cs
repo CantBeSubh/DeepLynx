@@ -62,6 +62,7 @@ namespace deeplynx.business
                     Id = d.Id,
                     Name = d.Name,
                     Description = d.Description,
+                    Default = d.Default,
                     Abbreviation = d.Abbreviation,
                     Type = d.Type,
                     BaseUri = d.BaseUri,
@@ -106,6 +107,7 @@ namespace deeplynx.business
                 Id = dataSource.Id,
                 Name = dataSource.Name,
                 Description = dataSource.Description,
+                Default = dataSource.Default,
                 Abbreviation = dataSource.Abbreviation,
                 Type = dataSource.Type,
                 BaseUri = dataSource.BaseUri,
@@ -126,7 +128,7 @@ namespace deeplynx.business
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dto">The data transfer object containing data source details</param>
         /// <returns>The created data source.</returns>
-        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto)
+        public async Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
             if (dto == null)
@@ -137,6 +139,7 @@ namespace deeplynx.business
                 Name = dto.Name,
                 ProjectId = projectId,
                 Description = dto.Description,
+                Default = makeDefault,
                 BaseUri = dto.BaseUri,
                 Abbreviation = dto.Abbreviation,
                 Config = dto.Config?.ToString(),
@@ -146,6 +149,10 @@ namespace deeplynx.business
             };
 
             await _context.DataSources.AddAsync(dataSource);
+            
+            if (makeDefault)
+                await MakePreviousDefaultsFalse(projectId, dataSource.Id);
+            
             await _context.SaveChangesAsync();
             
             // Log DataSource Create Event
@@ -165,6 +172,7 @@ namespace deeplynx.business
                 Id = dataSource.Id,
                 Name = dataSource.Name,
                 Description = dataSource.Description,
+                Default = dataSource.Default,
                 Abbreviation = dataSource.Abbreviation,
                 Type = dataSource.Type,
                 BaseUri = dataSource.BaseUri,
@@ -225,6 +233,7 @@ namespace deeplynx.business
                 Id = dataSource.Id,
                 Name = dataSource.Name,
                 Description = dataSource.Description,
+                Default = dataSource.Default,
                 Abbreviation = dataSource.Abbreviation,
                 Type = dataSource.Type,
                 BaseUri = dataSource.BaseUri,
@@ -354,6 +363,84 @@ namespace deeplynx.business
                     await transaction.RollbackAsync();
                     throw new DependencyDeletionException(
                         $"unable to unarchive data source {dataSourceId} or its downstream dependents: {exc}");
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Asynchronously updates an existing data source based on its ID.
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <param name="dataSourceId">The ID of the existing data source to update.</param>
+        /// <returns>The updated data source.</returns>
+        /// <exception cref="KeyNotFoundException">Returned if data source not found</exception>
+        public async Task<DataSourceResponseDto> SetDefaultDataSource(
+            long projectId,
+            long dataSourceId)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            var dataSource = await _context.DataSources.FindAsync(dataSourceId);
+
+            if (dataSource == null || dataSource.ProjectId != projectId || dataSource.ArchivedAt is not null)
+            {
+                throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
+            }
+
+            if (dataSource.Default)
+            {
+                throw new InvalidOperationException($"Data source with id {dataSourceId} is already default");
+            }
+
+            dataSource.Default = true;
+            dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
+            dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            await MakePreviousDefaultsFalse(projectId, dataSource.Id);
+            await _context.SaveChangesAsync();
+            
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "update",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                CreatedBy = "" // TODO: add username when JWT are implemented
+            });
+
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Default = dataSource.Default,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                CreatedBy = dataSource.CreatedBy,
+                CreatedAt = dataSource.CreatedAt,
+                ModifiedBy = dataSource.ModifiedBy,
+                ModifiedAt = dataSource.ModifiedAt
+            };
+        }
+        
+        private async Task MakePreviousDefaultsFalse(long projectId, long defaultDataSourceId)
+        {
+            var previousDefaults = 
+                await _context.DataSources
+                    .Where(ds => ds.ProjectId == projectId && ds.Default == true && ds.Id != defaultDataSourceId)
+                    .ToListAsync();
+        
+            if (previousDefaults.Count > 0)
+            {
+                foreach (var previousDefault in previousDefaults)
+                {
+                    previousDefault.Default = false;
+                    _context.DataSources.Update(previousDefault);
                 }
             }
         }

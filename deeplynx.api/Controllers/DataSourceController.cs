@@ -192,5 +192,29 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Set default data source
+        /// </summary>
+        /// <param name="dataSourceId">The ID of the data source to update</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <returns>The newly updated data source</returns>
+        [HttpPut("SetDefaultDataSource/{dataSourceId}", Name = "api_update_a_data_source")]
+        public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
+            long projectId,
+            long dataSourceId)
+        {
+            try
+            {
+                var dataSource = await _dataSourceBusiness.SetDefaultDataSource(projectId, dataSourceId);
+                return Ok(dataSource);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while setting default data source {dataSourceId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
     }
 }

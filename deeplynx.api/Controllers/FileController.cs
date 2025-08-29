@@ -17,7 +17,15 @@ namespace deeplynx.api.Controllers
                 _fileBusiness = fileBusiness;
                 _logger = logger;
             }
-
+            
+            /// <summary>
+            /// Upload file
+            /// </summary>
+            /// <param name="projectId"></param>
+            /// <param name="dataSourceId"></param>
+            /// <param name="objectStorageId"></param>
+            /// <param name="file"></param>
+            /// <returns></returns>
             [HttpPost("UploadFile", Name = "api_upload_file")]
             public async Task<ActionResult<RecordResponseDto>> UploadFile(
                 long projectId,
