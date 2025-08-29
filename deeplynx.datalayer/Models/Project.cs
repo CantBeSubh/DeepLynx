@@ -9,6 +9,7 @@ namespace deeplynx.datalayer.Models;
 
 [Table("projects", Schema = "deeplynx")]
 [Index("Id", Name = "idx_projects_id")]
+[Index("OrganizationId", Name = "idx_projects_organization_id")]
 public partial class Project
 {
     [Key]
@@ -41,6 +42,9 @@ public partial class Project
     
     [Column("config", TypeName = "jsonb")]
     public string ConfigJson { get; set; } = null!;
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
 
     /// <summary>
     /// Strongly-typed access to project configuration.
@@ -108,4 +112,8 @@ public partial class Project
     
     [InverseProperty("Project")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Projects")]
+    public virtual Organization Organization { get; set; } = null!;
 }
