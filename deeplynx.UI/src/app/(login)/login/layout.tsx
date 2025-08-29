@@ -1,3 +1,5 @@
+// src/app/(login)/login/layout.tsx
+
 import { ProjectSessionProvider } from "@/app/contexts/ProjectSessionProvider";
 import { UserSessionProvider } from "@/app/contexts/UserSessionProvider";
 

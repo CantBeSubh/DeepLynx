@@ -15,11 +15,15 @@ import { getAllProjects } from "../lib/projects_services.client"; // optional (f
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 
+import { useSession } from "next-auth/react";
+
 type Props = { initialProjects: ProjectsList[] };
 
 export default function HomeDashboard({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
+
+  const { data: session, status } = useSession();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
@@ -142,6 +146,11 @@ export default function HomeDashboard({ initialProjects }: Props) {
               onSave={handleSave}
               onCustomizeChange={setCanCustomize}
             />
+            <div className="bg-yellow-100 p-4 m-4 rounded">
+              <h3>Debug Session:</h3>
+              <p>Status: {status}</p>
+              <pre>{JSON.stringify(session, null, 2)}</pre>
+            </div>
           </div>
         </div>
       </div>
