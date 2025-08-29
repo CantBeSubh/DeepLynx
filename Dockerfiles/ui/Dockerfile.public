@@ -34,7 +34,7 @@ RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
 WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json first
-COPY ../../deeplynx.UI/package*.json ./
+COPY deeplynx.UI/package*.json ./
 
 # Install Node.js and npm
 RUN apk add --no-cache nodejs npm
@@ -43,7 +43,7 @@ RUN apk add --no-cache nodejs npm
 RUN npm install
 
 # Copy the rest of the frontend source code
-COPY ../../deeplynx.UI .
+COPY deeplynx.UI .
 
 # Build the frontend
 RUN npm run build

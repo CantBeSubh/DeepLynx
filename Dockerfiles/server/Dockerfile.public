@@ -33,15 +33,15 @@ RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
 WORKDIR /usr/src/app
 
 # Copy the solution file and restore dependencies
-COPY ../../deeplynx.sln .
-COPY ../../deeplynx.api ./deeplynx.api
-COPY ../../deeplynx.business ./deeplynx.business
-COPY ../../deeplynx.datalayer ./deeplynx.datalayer
-COPY ../../deeplynx.graph ./deeplynx.graph
-COPY ../../deeplynx.helpers ./deeplynx.helpers
-COPY ../../deeplynx.interfaces ./deeplynx.interfaces
-COPY ../../deeplynx.models ./deeplynx.models
-COPY ../../deeplynx.tests ./deeplynx.tests
+COPY deeplynx.sln .
+COPY deeplynx.api ./deeplynx.api
+COPY deeplynx.business ./deeplynx.business
+COPY deeplynx.datalayer ./deeplynx.datalayer
+COPY deeplynx.graph ./deeplynx.graph
+COPY deeplynx.helpers ./deeplynx.helpers
+COPY deeplynx.interfaces ./deeplynx.interfaces
+COPY deeplynx.models ./deeplynx.models
+COPY deeplynx.tests ./deeplynx.tests
 RUN dotnet restore deeplynx.sln
 
 # Build the backend
@@ -63,7 +63,7 @@ WORKDIR /usr/src/app
 COPY --from=publish /app/publish .
 
 # Copy additional files if needed
-COPY ../../deeplynx.api/moon.css ./moon.css
+COPY deeplynx.api/moon.css ./moon.css
 
 # This will run the .NET application directly
 CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:5000"]
