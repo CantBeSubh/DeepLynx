@@ -1,8 +1,5 @@
-# Stage 1: Build the frontend
-FROM node:lts-alpine3.20 AS frontend-build
-
-# Set working directory
-WORKDIR /app
+# Stage 1: Build the C# backend
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
 
 # Define build arguments
 ARG NEXT_PUBLIC_OKTA_CLIENT_ID
@@ -33,60 +30,40 @@ RUN echo "NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}" \
     && echo "AUTH_SECRET=${AUTH_SECRET}" \
     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}"
 
-# Copy package.json and package-lock.json
-COPY deeplynx.UI/package*.json ./
-RUN npm install
-
-# Copy the rest of the frontend source code
-COPY deeplynx.UI/ ./
-
-# Build the frontend
-RUN npm run build
-
-# Stage 2: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
-WORKDIR /source
+WORKDIR /usr/src/app
 
 # Copy the solution file and restore dependencies
-COPY . ./Backend
-RUN dotnet restore ./Backend/deeplynx.sln
+COPY ../../deeplynx.sln .
+COPY ../../deeplynx.api ./deeplynx.api
+COPY ../../deeplynx.business ./deeplynx.business
+COPY ../../deeplynx.datalayer ./deeplynx.datalayer
+COPY ../../deeplynx.graph ./deeplynx.graph
+COPY ../../deeplynx.helpers ./deeplynx.helpers
+COPY ../../deeplynx.interfaces ./deeplynx.interfaces
+COPY ../../deeplynx.models ./deeplynx.models
+COPY ../../deeplynx.tests ./deeplynx.tests
+RUN dotnet restore deeplynx.sln
 
 # Build the backend
-WORKDIR /source/Backend
-RUN dotnet build -c Release -o /app/build
+RUN dotnet build deeplynx.sln -c Release -o /app/build
 
 # Publish the backend
 FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
-# Install tools needed for entrypoint.sh
-RUN apk --no-check-certificate add postgresql-client
-
-# Copy the entrypoint script
-COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
 # Stage 3: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
 
-# Install Node.js and npm
-RUN apk add --no-cache nodejs npm
+# Install tools needed for database operations
+#RUN apk --no-cache add postgresql-client
 
-WORKDIR /app/backend
+WORKDIR /usr/src/app
 
 # Copy the published backend code
 COPY --from=publish /app/publish .
 
-WORKDIR /app/frontend
+# Copy additional files if needed
+COPY ../../deeplynx.api/moon.css ./moon.css
 
-# Copy the built frontend code
-COPY --from=frontend-build /app/next.config.ts ./
-COPY --from=frontend-build /app/public ./public
-COPY --from=frontend-build /app/.next ./.next
-COPY --from=frontend-build /app/package.json ./package.json
-
-# Install production dependencies
-RUN npm install --production
-
-# Set the command point to run the application
-CMD [ "npm", "start" ]
+# This will run the .NET application directly
+CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:5000"]

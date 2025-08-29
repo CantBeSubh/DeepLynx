@@ -2,7 +2,7 @@ services:
   ui:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.app.local
+      dockerfile: Dockerfiles/ui/Dockerfile.local
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
@@ -18,7 +18,7 @@ services:
   server:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.backend.local
+      dockerfile: Dockerfiles/server/Dockerfile.local
     env_file:
       - .env
     environment:
