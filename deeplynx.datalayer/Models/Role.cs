@@ -1,17 +1,13 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("groups", Schema = "deeplynx")]
-[Index("Id", Name = "idx_groups_id")]
-[Index("OrganizationId", Name = "idx_groups_organization_id")]
-public partial class Group
+[Table("roles", Schema = "deeplynx")]
+[Index("Id", Name = "idx_roles_id")]
+[Index("ProjectId", Name = "idx_roles_project_id")]
+public partial class Role
 {
     [Key]
     [Column("id")]
@@ -29,13 +25,13 @@ public partial class Group
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     
-    [Column("organization_id")]
-    public long OrganizationId { get; set; }
+    [Column("project_id")]
+    public long ProjectId { get; set; }
     
-    [ForeignKey("OrganizationId")]
-    [InverseProperty("Groups")]
-    public virtual Organization Organization { get; set; } = null!;
+    [ForeignKey("ProjectId")]
+    [InverseProperty("Roles")]
+    public virtual Project Project { get; set; } = null!;
     
-    [InverseProperty("Group")]
+    [InverseProperty("Role")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
 }

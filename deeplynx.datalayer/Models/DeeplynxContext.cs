@@ -37,12 +37,16 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<OrganizationUser> OrganizationUsers { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
+    
+    public virtual DbSet<ProjectMember> ProjectMembers { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
 
     public virtual DbSet<RecordMapping> RecordMappings { get; set; }
 
     public virtual DbSet<Relationship> Relationships { get; set; }
+    
+    public virtual DbSet<Role> Roles { get; set; }
     public virtual DbSet<Tag> Tags { get; set; }
     public virtual DbSet<User> Users { get; set; }
     
@@ -194,6 +198,27 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("projects_organization_id_fkey");
         });
 
+        modelBuilder.Entity<ProjectMember>(entity =>
+        {
+            entity.HasKey(pm => pm.Id).HasName("project_members_pkey");
+            
+            entity.HasOne(pm => pm.Project).WithMany(p => p.ProjectMembers)
+                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("project_members_project_id_fkey");
+            
+            entity.HasOne(pm => pm.Role).WithMany(r => r.ProjectMembers)
+                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("project_members_role_id_fkey");
+            
+            entity.HasOne(pm => pm.Group).WithMany(g => g.ProjectMembers)
+                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
+                .HasConstraintName("project_members_group_id_fkey");
+            
+            entity.HasOne(pm => pm.User).WithMany(u => u.ProjectMembers)
+                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
+                .HasConstraintName("project_members_user_id_fkey");
+        });
+
         modelBuilder.Entity<Record>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("records_pkey");
@@ -282,6 +307,17 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("relationships_origin_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Relationships).HasConstraintName("relationships_project_id_fkey");
+        });
+        
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("roles_pkey");
+
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(g => g.Project).WithMany(p => p.Roles)
+                .HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("roles_project_id_fkey");
         });
 
         modelBuilder.Entity<Tag>(entity =>

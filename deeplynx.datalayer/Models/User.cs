@@ -36,4 +36,7 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<OrganizationUser> OrganizationUsers { get; set; } = new List<OrganizationUser>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
 }

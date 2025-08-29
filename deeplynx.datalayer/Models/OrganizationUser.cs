@@ -6,7 +6,8 @@ namespace deeplynx.datalayer.Models;
 [Table("organization_users", Schema = "deeplynx")]
 [Index("OrganizationId", Name = "idx_organization_users_organization_id")]
 [Index("UserId", Name = "idx_organization_users_user_id")]
-[Index(nameof(OrganizationId), nameof(UserId), IsUnique = true, Name = "unique_organization_user_ids")]
+[Index(nameof(OrganizationId), nameof(UserId), 
+    IsUnique = true, Name = "unique_organization_user_ids")]
 public partial class OrganizationUser
 {
     [Column("organization_id")]

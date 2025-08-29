@@ -25,7 +25,7 @@ public partial class Organization
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
     
-    [Column("last_updated_at")]
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     
     [InverseProperty("Organization")]
