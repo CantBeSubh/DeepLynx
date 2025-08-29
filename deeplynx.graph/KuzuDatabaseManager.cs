@@ -73,10 +73,10 @@ namespace deeplynx.graph
 
             // Build the transformed connection string
             var transformed = $"dbname={dictionary["Database"]} " +
-                   $"user={(dictionary.TryGetValue("User ID", out string? value1) ? value1 : dictionary["Username"])} " +
-                   $"host={(dictionary.TryGetValue("Server", out string? value) ? value : dictionary["Host"])} " +
-                   $"password={dictionary["Password"]} " +
-                   $"port={dictionary["Port"]}";
+                  $"user={(dictionary.TryGetValue("User ID", out string? value1) ? value1 : (dictionary.TryGetValue("User Id", out string? value2) ? value2 : dictionary["Username"]))} " +
+                  $"host={(dictionary.TryGetValue("Server", out string? value3) ? value3 : dictionary["Host"])} " +
+                  $"password={dictionary["Password"]} " +
+                  $"port={dictionary["Port"]}";
 
             return transformed;
         }
