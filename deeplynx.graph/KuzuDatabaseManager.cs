@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Npgsql;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using System.Text.RegularExpressions;
+using deeplynx.datalayer.Models;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace deeplynx.graph
 {
@@ -25,6 +27,7 @@ namespace deeplynx.graph
         private readonly string _tenantId;
         private List<string>? _cachedClassNames;
         private List<RelationshipInfo>? _cachedRelationshipNames;
+        private  int _projectId;
 
 
         /// <summary>
@@ -36,7 +39,14 @@ namespace deeplynx.graph
             _conn = new kuzu_connection();
             _tenantId = tenantId;
 
-            _connectionString = connectionString ?? configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection is not configured.");
+            Console.WriteLine("Argument connString: " + connectionString);
+
+            _connectionString = connectionString ?? configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("DefaultConnection is not configured and connection string is null.");
+
+
+            Console.WriteLine("KuzuDBM: " + _connectionString);
+
+
             _pgParams = TransformConnectionString(_connectionString);
         }
 
@@ -282,6 +292,8 @@ namespace deeplynx.graph
                     await ConnectAsync();
                 }
 
+                _projectId = project_id;
+
                 bool hasError = false;
 
                 string attachCommand = $"ATTACH '{_pgParams}' AS test (dbtype postgres, skip_unsupported_table = TRUE, schema = 'deeplynx');";
@@ -304,6 +316,7 @@ namespace deeplynx.graph
                 {
                     Console.WriteLine($"Project ID {project_id} has already been processed. Skipping data load.");
                     await SyncRecordsAsync(project_id);
+                    await SyncEdgesAsync(project_id);
                     return false;
                 }
 
@@ -364,6 +377,7 @@ namespace deeplynx.graph
         {
             try
             {
+                className = className?.Replace("-", "_");
                 var query = $"CREATE NODE TABLE IF NOT EXISTS {_tenantId}_{className} (record_id INT64 PRIMARY KEY, last_updated_at TIMESTAMP, id INT64, class_name STRING, project_name STRING, project_id INT64, name STRING, uri STRING, data_source_id INT64, original_id STRING, class_id INT64, properties STRING, tags STRING, created_at TIMESTAMP, modified_at TIMESTAMP);";
 
                 await ExecuteQueryAsync(new KuzuDBMQueryRequestDto { Query = query }, false);
@@ -497,7 +511,7 @@ namespace deeplynx.graph
         }
 
 
-        private async Task<List<EdgeDto>?> GetEdgesFromPostgresAsync(int projectId)
+        private async Task<List<KuzuRel>?> GetEdgesFromPostgresAsync(int projectId)
         {
             try
             {
@@ -521,16 +535,14 @@ namespace deeplynx.graph
                     {
                         using (var reader = await command.ExecuteReaderAsync())
                         {
-                            List<EdgeDto> edges = new();
+                            List<KuzuRel> edges = [];
 
                             while (await reader.ReadAsync())
                             {
-                                EdgeDto edgeInfo = new()
+                                KuzuRel edgeInfo = new()
                                 {
-                                    OriginClass = reader.GetString(reader.GetOrdinal("OriginClass")),
-                                    OriginId = reader.GetInt32(reader.GetOrdinal("OriginId")),
-                                    DestinationClass = reader.GetString(reader.GetOrdinal("DestinationClass")),
-                                    DestinationId = reader.GetInt32(reader.GetOrdinal("DestinationId")),
+                                    SourceId = reader.GetString(reader.GetOrdinal("OriginId")),
+                                    DestId = reader.GetString(reader.GetOrdinal("DestinationId")),
                                     RelationshipName = reader.GetString(reader.GetOrdinal("RelationshipName")),
                                     ProjectId = reader.GetInt32(reader.GetOrdinal("ProjectId")),
                                     EdgeId = reader.GetInt32(reader.GetOrdinal("EdgeId")),
@@ -563,21 +575,21 @@ namespace deeplynx.graph
                 var request = new KuzuDBMQueryRequestDto
                 {
                     Query = $@"
-                        MATCH (e:{_tenantId}_{record?.ClassName}) 
+                        MATCH (e:{_tenantId}_{record?.ClassName?.Replace("-","_")}) 
                         WHERE e.record_id = {record?.RecordId}
                         SET 
                             e.last_updated_at = TIMESTAMP('{record?.LastUpdatedAt:yyyy-MM-dd HH:mm:ss.fffffff}'),
                             e.id = {record?.Id},
-                            e.class_name = '{record?.ClassName}',
-                            e.project_name = '{record?.ProjectName}',
+                            e.class_name = '{record?.ClassName ?? "NULL"}',
+                            e.project_name = '{record?.ProjectName ?? "NULL"}',
                             e.project_id = {record?.ProjectId},
-                            e.name = '{record?.Name}',
-                            e.uri = '{record?.Uri}',
+                            e.name = '{record?.Name ?? "NULL"}',
+                            e.uri = '{record?.Uri ?? "NULL"}',
                             e.data_source_id = {record?.DataSourceId},
                             e.original_id = '{record?.OriginalId}',
                             e.class_id = {record?.ClassId},
-                            e.properties = '{record?.Properties}',
-                            e.tags = '{record?.Tags}',
+                            e.properties = '{record?.Properties ?? "NULL"}',
+                            e.tags = '{record?.Tags ?? "NULL"}',
                             e.created_at = TIMESTAMP('{record?.CreatedAt:yyyy-MM-dd HH:mm:ss.fffffff}'),
                             e.modified_at = TIMESTAMP('{record?.ModifiedAt:yyyy-MM-dd HH:mm:ss.fffffff}')
                         RETURN e;"
@@ -639,7 +651,7 @@ namespace deeplynx.graph
         {
             try
             {
-                record.ClassName = record?.ClassName?.Replace(" ", "");
+                record.ClassName = record?.ClassName?.Replace(" ", "").Replace("-", "_");
 
                 await EnsureTableExistsAsync(record?.ClassName);
 
@@ -675,7 +687,7 @@ namespace deeplynx.graph
         }
 
 
-        private async Task AddEdgeToKuzuAsync(EdgeDto edge)
+        private async Task AddEdgeToKuzuAsync(KuzuRel edge)
         {
             if (edge == null)
             {
@@ -686,7 +698,7 @@ namespace deeplynx.graph
             try
             {
                 string query = $"MATCH (source), (destination) " +
-                            $"WHERE id(source) = {edge.OriginId} AND id(destination) = {edge.DestinationId} " +
+                            $"WHERE id(source) = {edge.SourceId} AND id(destination) = {edge.DestId} " +
                             $"CREATE (source)-[e:{edge.RelationshipName}]->(destination) " +
                             $"SET e.lastUpdatedAt = '{edge.LastUpdatedAt}' ";
 
@@ -700,7 +712,7 @@ namespace deeplynx.graph
         }
 
 
-        private async Task UpdateEdgeInKuzuAsync(EdgeDto edge)
+        private async Task UpdateEdgeInKuzuAsync(KuzuRel edge)
         {
             if (edge == null)
             {
@@ -710,11 +722,19 @@ namespace deeplynx.graph
 
             try
             {
-                string query = $"MATCH ()-[e]->() WHERE id(e) = {edge.EdgeId} " +
-                            $"SET e.lastUpdatedAt = '{edge.LastUpdatedAt}' " +
-                            $"RETURN e;";
+                await RemoveEdgeFromKuzuAsync(edge.EdgeId);
 
-                var result = await ExecuteQueryAsync(new KuzuDBMQueryRequestDto { Query = query });
+                KuzuRel newEdge = new ()
+                {
+                    SourceId = edge.SourceId,
+                    DestId = edge.DestId,
+                    RelationshipName = edge.RelationshipName,
+                    ProjectId = edge.ProjectId,
+                    EdgeId = edge.EdgeId,
+                    LastUpdatedAt = DateTime.UtcNow
+                };
+
+                await AddEdgeToKuzuAsync(newEdge);
                 Console.WriteLine($"Edge with ID {edge.EdgeId} updated successfully.");
             }
             catch (Exception e)
@@ -776,18 +796,18 @@ namespace deeplynx.graph
         {
             try
             {
-                await PerformNonQueryAsync($"CREATE NODE TABLE IF NOT EXISTS {_tenantId}_TableNames (id INT64, class_name STRING, PRIMARY KEY(id));");
-                await PerformNonQueryAsync($"COPY {_tenantId}_TableNames FROM (LOAD FROM historical_records_c RETURN id, class_name);");
+                await PerformNonQueryAsync($"CREATE NODE TABLE IF NOT EXISTS {_tenantId}_TableNames (id INT64, class_name STRING, project_id INT64 PRIMARY KEY(id));");
+                await PerformNonQueryAsync($"COPY {_tenantId}_TableNames FROM (LOAD FROM historical_records_c WHERE project_id = {_projectId} RETURN id, class_name, project_id);");
 
-                await PerformNonQueryAsync($"CREATE NODE TABLE IF NOT EXISTS {_tenantId}_RelTableNames (id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, PRIMARY KEY(id));");
-                await PerformNonQueryAsync($"COPY {_tenantId}_RelTableNames FROM (LOAD FROM edges_c RETURN DISTINCT id, relationship_name, orig_class, dest_class);");
+                await PerformNonQueryAsync($"CREATE NODE TABLE IF NOT EXISTS {_tenantId}_RelTableNames (id INT64, relationship_name STRING, orig_class STRING, dest_class STRING, project_id INT64 PRIMARY KEY(id));");
+                await PerformNonQueryAsync($"COPY {_tenantId}_RelTableNames FROM (LOAD FROM edges_c WHERE project_id = {_projectId} RETURN DISTINCT id, relationship_name, orig_class, dest_class, project_id);");
 
                 var classNames = await GetUniqueClassNamesAsync();
 
                 foreach (var className in classNames)
                 {
                     string createNodeTableQuery = $@"
-                        CREATE NODE TABLE {_tenantId}_{CapitalizeFirstLetter(className)} (
+                        CREATE NODE TABLE {_tenantId}_{CapitalizeFirstLetter(className).Replace(" ", "_")} (
                             id INT64,
                             uri STRING,
                             record_id INT64,
@@ -829,9 +849,9 @@ namespace deeplynx.graph
                     var fromToClause = string.Join(", ", fromToClauses);
 
                     string createRelTableQuery = $@"
-                        CREATE REL TABLE IF NOT EXISTS {_tenantId}_{relationshipName} (
+                        CREATE REL TABLE IF NOT EXISTS {_tenantId}_{relationshipName.Replace("-", "_").Replace(" ", "_")} (
                             {fromToClause},
-                            relationship_name STRING
+                            relationship_name STRING, project_id INT64, id INT64, last_updated_at TIMESTAMP
                         );";
 
                     await PerformNonQueryAsync(createRelTableQuery);
@@ -895,7 +915,7 @@ namespace deeplynx.graph
                 string createRelTableQuery = $@"
                     CREATE REL TABLE IF NOT EXISTS {_tenantId}_RELATES_TO (
                         {combinedFromToClauses},
-                        relationship_name STRING
+                        relationship_name STRING, project_id INT64, id INT64, last_updated_at TIMESTAMP
                     );";
 
                 await PerformNonQueryAsync(createRelTableQuery);
@@ -915,12 +935,12 @@ namespace deeplynx.graph
         /// <returns>The modified string with the first letter capitalized and the rest in lowercase. If the input is null or empty, it returns the input as is.</returns>
         private static string CapitalizeFirstLetter(string input)
         {
-            input = input.Replace(" ", "_");
+            input = input.Replace(" ", "_").Replace("-", "_");
 
             if (string.IsNullOrEmpty(input))
                 return input;
 
-            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
+            return char.ToUpper(input[0]) + input[1..].ToLower();
         }
 
 
@@ -937,11 +957,11 @@ namespace deeplynx.graph
 
             try
             {
-                string query = $"MATCH (t:{_tenantId}_TableNames) WHERE t.class_name IS NOT NULL RETURN DISTINCT t.class_name;";
+                string query = $"MATCH (t:{_tenantId}_TableNames) WHERE t.class_name IS NOT NULL AND t.project_id = {_projectId} RETURN DISTINCT t.class_name;";
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
-                (string formattedString, object[] results) = await ExecuteQueryAsync(requestDto);
+                (string formattedString, object[] results) = await ExecuteUniqueNamesAsync(requestDto);
 
-                List<string> classNames = new();
+                List<string> classNames = [];
 
                 var lines = formattedString.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
 
@@ -960,7 +980,7 @@ namespace deeplynx.graph
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while retrieving unique class names: {e.Message}");
-                return new List<string>();
+                return [];
             }
         }
 
@@ -978,11 +998,11 @@ namespace deeplynx.graph
 
             try
             {
-                string query = $"MATCH (r:{_tenantId}_RelTableNames) WHERE r.relationship_name IS NOT NULL AND r.orig_class IS NOT NULL AND r.dest_class IS NOT NULL RETURN DISTINCT r.relationship_name AS relationship_name, r.orig_class AS orig_class, r.dest_class AS dest_class;";
+                string query = $"MATCH (r:{_tenantId}_RelTableNames) WHERE r.relationship_name IS NOT NULL AND r.orig_class IS NOT NULL AND r.dest_class IS NOT NULL AND r.project_id = {_projectId} RETURN DISTINCT r.relationship_name AS relationship_name, r.orig_class AS orig_class, r.dest_class AS dest_class;";
                 var requestDto = new KuzuDBMQueryRequestDto { Query = query };
-                (string formattedString, object[] results) = await ExecuteQueryAsync(requestDto);
+                (string formattedString, object[] results) = await ExecuteUniqueNamesAsync(requestDto);
 
-                List<RelationshipInfo> relationships = new();
+                List<RelationshipInfo> relationships = [];
 
                 var lines = formattedString.Split(['\n'], StringSplitOptions.RemoveEmptyEntries);
 
@@ -992,7 +1012,7 @@ namespace deeplynx.graph
                     {
                         var relationshipInfo = new RelationshipInfo
                         {
-                            RelationshipName = lines[i].Trim().Split(':')[1].Trim(),
+                            RelationshipName = lines[i].Trim().Split(':')[1].Trim().ToUpper(),
                             OrigClass = lines[i + 1].Trim().Split(':')[1].Trim(),
                             DestClass = lines[i + 2].Trim().Split(':')[1].Trim()
                         };
@@ -1010,7 +1030,7 @@ namespace deeplynx.graph
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while retrieving unique relationship names: {e.Message}");
-                return new List<RelationshipInfo>();
+                return [];
             }
         }
 
@@ -1031,7 +1051,7 @@ namespace deeplynx.graph
             try
             {
                 string query = $@"
-                MATCH (a:{_tenantId}_{request.TableName}) WHERE a.record_id = {request.Id}
+                MATCH (a:{_tenantId}_{request.TableName}) WHERE a.record_id = {request.Id} AND a.project_id = {_projectId}
                 MATCH (a)-[r*1..{request.Depth}]-(b)
                 RETURN
                     a AS Original_Node,
@@ -1196,7 +1216,7 @@ namespace deeplynx.graph
                             COPY {_tenantId}_{relationship.RelationshipName.ToUpper()} FROM (
                                 LOAD FROM edges_c
                                 WHERE relationship_name =~ '(?i){relationship.RelationshipName}' AND project_id = {project_id} AND orig_class =~ '(?i){relationship.OrigClass}' AND dest_class =~ '(?i){relationship.DestClass}'
-                                RETURN origin_id AS FROM, destination_id AS TO, '{relationship.RelationshipName}' AS relationship_name
+                                RETURN origin_id AS FROM, destination_id AS TO, '{relationship.RelationshipName}' AS relationship_name, project_id, id, last_updated_at
                             ) (from='{_tenantId}_{CapitalizeFirstLetter(relationship.OrigClass)}', to='{_tenantId}_{CapitalizeFirstLetter(relationship.DestClass)}');";
                     await PerformNonQueryAsync(copyCommand);
                 }
@@ -1266,6 +1286,58 @@ namespace deeplynx.graph
         }
 
 
+        private async Task SyncEdgesAsync(int projectId)
+        {
+            try
+            {
+                List<KuzuRel>? currentEdges = await GetEdgesFromPostgresAsync(projectId);
+                if (currentEdges == null || currentEdges.Count == 0)
+                {
+                    Console.WriteLine("No current edges found in the PostgreSQL database.");
+                    return;
+                }
+
+                List<KuzuRel?>? kuzuEdges = await GetEdgesFromKuzu(projectId);
+                if (kuzuEdges == null || kuzuEdges.Count == 0)
+                {
+                    Console.WriteLine("No edges found in the Kuzu database.");
+                    return;
+                }
+
+                foreach (var currentEdge in currentEdges)
+                {
+                    var existingEdge = kuzuEdges.FirstOrDefault(e => e?.EdgeId == currentEdge.EdgeId);
+
+                    if (existingEdge != null)
+                    {
+                        if (currentEdge.LastUpdatedAt > existingEdge.LastUpdatedAt)
+                        {
+                            await UpdateEdgeInKuzuAsync(currentEdge);
+                        }
+                    }
+                    else
+                    {
+                        await AddEdgeToKuzuAsync(currentEdge);
+                    }
+                }
+
+                foreach (var kuzuEdge in kuzuEdges)
+                {
+                    if (!currentEdges.Any(e => e.EdgeId == kuzuEdge?.EdgeId))
+                    {
+                        await RemoveEdgeFromKuzuAsync(kuzuEdge?.EdgeId);
+                    }
+                }
+
+                Console.WriteLine("Synchronization of edges completed successfully.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred during edge synchronization: {e.Message}");
+            }
+        }
+
+
         private async Task<List<KuzuDBMResponseDto?>?> GetRecordsFromKuzu(int projectId)
         {
             try
@@ -1309,6 +1381,58 @@ namespace deeplynx.graph
         }
 
 
+        private async Task<List<KuzuRel?>?> GetEdgesFromKuzu(int projectId)
+        {
+            try
+            {
+                var request = new KuzuDBMQueryRequestDto
+                {
+                    Query = $@"
+                        MATCH ()-[e]->() 
+                        WHERE e.project_id = {projectId} 
+                        RETURN e;"
+                };
+
+                (string formattedResponse, object[] edges) = await ExecuteQueryAsync(request);
+
+                if (edges == null || edges.Length == 0)
+                {
+                    return [];
+                }
+
+                List<KuzuRel?> responseList = [];
+
+                foreach (var edge in edges)
+                {
+                    if (edge is KuzuRel edgeRecord)
+                    {
+                        KuzuRel newEdge = new ()
+                        {
+                            SourceId = edgeRecord.SourceId,
+                            DestId = edgeRecord.DestId,
+                            RelationshipName = edgeRecord.RelationshipName,
+                            ProjectId = edgeRecord.ProjectId,
+                            EdgeId = edgeRecord.EdgeId
+                        };
+
+                        responseList.Add(newEdge);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Record is not of a valid edge type.");
+                    }
+                }
+
+                return responseList;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while retrieving edges from Kuzu: {e.Message}");
+                return null;
+            }
+        }
+
+
         public async Task<bool> UpdateRelationshipInEdgeAsync(string originTableName, long originNodeId, string relatedTableName, long relatedNodeId, string newRelationshipType, string oldRelationshipType)
         {
             Console.WriteLine("Getting update relationship edges lock");
@@ -1318,10 +1442,10 @@ namespace deeplynx.graph
             try
             {
                 string createRelTableQuery = $@"
-                    CREATE REL TABLE IF NOT EXISTS {_tenantId}_{newRelationshipType} (
+                    CREATE REL TABLE IF NOT EXISTS {_tenantId}_{newRelationshipType.Replace("-", "_")} (
                         FROM {_tenantId}_{originTableName}
                         TO {_tenantId}_{relatedTableName},
-                        relationship_name STRING
+                        relationship_name STRING, project_id INT64, id INT64, last_updated_at TIMESTAMP
                     );";
                 await PerformNonQueryAsync(createRelTableQuery);
                 Console.WriteLine($"Ensured the REL TABLE {newRelationshipType} exists.");
@@ -1414,7 +1538,7 @@ namespace deeplynx.graph
                             COPY {_tenantId}_RELATES_TO FROM (
                                 LOAD FROM edges_c
                                 WHERE relationship_name IS NULL AND project_id = {project_id} AND orig_class = '{relationship.OrigClass.ToLower()}' AND dest_class = '{relationship.DestClass.ToLower()}'
-                                RETURN origin_id AS FROM, destination_id AS TO, relationship_name
+                                RETURN origin_id AS FROM, destination_id AS TO, relationship_name, project_id, id, last_updated_at
                             ) (from='{_tenantId}_{CapitalizeFirstLetter(relationship.OrigClass)}', to='{_tenantId}_{CapitalizeFirstLetter(relationship.DestClass)}');";
 
                         await PerformNonQueryAsync(copyCommand);
@@ -1485,8 +1609,41 @@ namespace deeplynx.graph
             {
                 if (DoAddTenantIdToQuery)
                 {
-                    request.Query = AddTenantIdToQuery(request.Query);
+                    request.Query = await AddTenantIdToQuery(request.Query);
                 }
+
+                var state = await Task.Run(() => kuzu_connection_query(_conn, request.Query, result));
+
+                if (state == kuzu_state.KuzuError)
+                {
+                    string errorMessage = kuzu_query_result_get_error_message(result);
+                    Console.WriteLine($"Error executing query: {request.Query}");
+                    Console.WriteLine($"Error Message: {errorMessage}");
+                    throw new InvalidOperationException($"Error: {errorMessage}");
+                }
+
+                (string formattedString, object[] results) = await FormatQueryResultAsync(result);
+                return (formattedString, results);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while executing the query: {e.Message}");
+                throw;
+            }
+        }
+
+
+        private async Task<(string formattedString, object[] results)> ExecuteUniqueNamesAsync(KuzuDBMQueryRequestDto request)
+        {
+            kuzu_query_result result = new();
+
+            if (_conn == null)
+            {
+                await ConnectAsync();
+            }
+
+            try
+            {
 
                 var state = await Task.Run(() => kuzu_connection_query(_conn, request.Query, result));
 
@@ -1514,14 +1671,28 @@ namespace deeplynx.graph
         /// </summary>
         /// <param name="query">The original query string.</param>
         /// <returns>The modified query string with tenantId prepended to labels.</returns>
-        private string AddTenantIdToQuery(string query)
+        private async Task<string> AddTenantIdToQuery(string query)
         {
+            query = Regex.Replace(query, @"(?<![\)\]])-", "_");
+
+            if (_cachedClassNames == null)
+            {
+                Console.WriteLine("Setting cached class names.");
+                await GetUniqueClassNamesAsync();
+            }
+
+            if (_cachedRelationshipNames == null)
+            {
+                Console.WriteLine("Setting cached relationship names.");
+                await GetUniqueRelationshipNamesAsync();
+            }
 
             if (_cachedClassNames != null)
             {
                 foreach (var className in _cachedClassNames)
                 {
-                    query = query.Replace($":{CapitalizeFirstLetter(className)}", $":{_tenantId}_{CapitalizeFirstLetter(className)}");
+                    string modifiedClassName = Regex.Replace(className, @"(?<![\)\]])-", "_");
+                    query = Regex.Replace(query, $":{Regex.Escape(CapitalizeFirstLetter(modifiedClassName))}", $":{_tenantId}_{CapitalizeFirstLetter(modifiedClassName)}", RegexOptions.IgnoreCase);
                 }
             }
 
@@ -1529,10 +1700,10 @@ namespace deeplynx.graph
             {
                 foreach (var relationship in _cachedRelationshipNames)
                 {
-                    query = query.Replace($":{relationship.RelationshipName}", $":{_tenantId}_{relationship.RelationshipName}");
+                    string relationshipName = relationship.RelationshipName.ToUpper();
+                    query = Regex.Replace(query, $@":{Regex.Escape(relationshipName)}", $":{_tenantId}_{relationshipName}", RegexOptions.IgnoreCase);
                 }
             }
-
 
             return query;
         }
@@ -1614,6 +1785,15 @@ namespace deeplynx.graph
                         {
                             results.Add(record);
                             sb.AppendLine(record.ToString());
+                        }
+                    }
+                    else if (dataTypeId == kuzu_data_type_id.KUZU_REL)
+                    {
+                        KuzuRel? kuzuRel = await GetEdgeAsync(singleValue, singleValueType);
+
+                        if (kuzuRel != null)
+                        {
+                            results.Add(kuzuRel);
                         }
                     }
                     else
@@ -1774,9 +1954,6 @@ namespace deeplynx.graph
 
                             string propertyValueString = await GetValueStringAsync(propertyValue, propertyDataType);
 
-                            // Console.WriteLine(" Property value string: " + propertyValueString);
-                            // Console.WriteLine(" Property name: " + propertyName);
-
                             switch (propertyName)
                             {
                                 case "created_at":
@@ -1851,6 +2028,61 @@ namespace deeplynx.graph
             catch (Exception e)
             {
                 Console.WriteLine($"An error occurred while converting value to RecordInfo: {e.Message}");
+                return null;
+            }
+        }
+
+
+        private async Task<KuzuRel?> GetEdgeAsync(kuzu_value value, kuzu_logical_type dataType)
+        {
+            try
+            {
+                if (await Task.Run(() => kuzu_value_is_null(value)))
+                {
+                    Console.WriteLine("The Edge Kuzu value is null");
+                    return null;
+                }
+
+                var dataTypeId = await Task.Run(() => kuzu_data_type_get_id(dataType));
+                KuzuRel edgeInfo = new ();
+
+                if (dataTypeId == kuzu_data_type_id.KUZU_REL)
+                {
+                    return await Task.Run( () =>
+                    {
+                        kuzu_internal_id_t internalSrcId = new();
+                        kuzu_internal_id_t internalDstId = new();
+
+                        kuzu_value srcIdValue = new();
+                        kuzu_rel_val_get_src_id_val(value, srcIdValue);
+                        kuzu_value_get_internal_id(srcIdValue, internalSrcId);
+
+                        kuzu_value dstIdValue = new();
+                        kuzu_rel_val_get_dst_id_val(value, dstIdValue);
+                        kuzu_value_get_internal_id(dstIdValue, internalDstId);
+
+                        kuzu_value labelRelValue = new();
+                        kuzu_rel_val_get_label_val(value, labelRelValue);
+                        kuzu_value_get_string(labelRelValue, out string relLabel);
+
+                        relLabel = relLabel.Replace($"{_tenantId}_", "");
+
+                        edgeInfo.SourceId = internalSrcId.ToString();
+                        edgeInfo.DestId = internalDstId.ToString();
+                        edgeInfo.RelationshipName = relLabel;
+
+                        return edgeInfo;
+                    });
+                }
+                else
+                {
+                    Console.WriteLine("The Edge Value is Not a Kuzu_rel: " + dataTypeId);
+                    return null;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"An error occurred while converting value to KuzuRel: {e.Message}");
                 return null;
             }
         }
@@ -2158,6 +2390,9 @@ namespace deeplynx.graph
         public string? RelationshipName { get; set; }
         public string? SourceId { get; set; }
         public string? DestId { get; set; }
+        public DateTime? LastUpdatedAt { get; set; }
+        public int? ProjectId { get; set; }
+        public int? EdgeId { get; set; }
 
         /// <summary>
         /// Returns a string that represents the current object.
@@ -2167,18 +2402,6 @@ namespace deeplynx.graph
         {
             return $"({SourceId})-{{_LABEL: {RelationshipName}}}->({DestId})";
         }
-    }
-    
-    public class EdgeDto
-    {
-        public string? OriginClass { get; set; }
-        public int? OriginId { get; set; }
-        public string? DestinationClass { get; set; }
-        public int? DestinationId { get; set; }
-        public string? RelationshipName { get; set; }
-        public int? ProjectId { get; set; }
-        public int? EdgeId { get; set; }
-        public DateTime? LastUpdatedAt { get; set; }
     }
 
 }

@@ -108,6 +108,9 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+
+    Console.WriteLine("Program cs: " + connectionString);
+
     builder.Services.AddTransient<IKuzuDatabaseManager>(provider => 
     {
         var configuration = provider.GetRequiredService<IConfiguration>();
