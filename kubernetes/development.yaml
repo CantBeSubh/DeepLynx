@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
         - name: deeplynxv3
-          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-ui-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
             - name: ConnectionStrings__DefaultConnection
@@ -150,7 +150,7 @@ spec:
     spec:
       containers:
         - name: deeplynxv3
-          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-backend-${GITHUB_RUN_NUMBER}
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-server-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           command: ["/usr/local/bin/entrypoint.sh"]
           env:

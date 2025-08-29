@@ -37,7 +37,7 @@ jobs:
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY \
-            --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
+            --image $ACR_PATH:deeplynxv3-ui-$GITHUB_RUN_NUMBER \
             --file Dockerfiles/Dockerfile.app \
             --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
@@ -49,7 +49,7 @@ jobs:
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             .
           
-          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-server-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
             --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
