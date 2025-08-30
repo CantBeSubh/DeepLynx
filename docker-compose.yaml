@@ -36,8 +36,8 @@ services:
 
   nx-postgres:
     build:
-      context: ./database
-      dockerfile: Dockerfiles/Dockerfile.db.local
+      context: ./
+      dockerfile: Dockerfiles/database/Dockerfile.local
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=nexuscore

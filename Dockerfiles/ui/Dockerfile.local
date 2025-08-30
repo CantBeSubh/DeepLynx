@@ -1,25 +1,32 @@
-# Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
+# Stage 1: Build the frontend
+FROM node:lts-alpine3.20 AS frontend-build
 
 # Define build arguments
 ARG NEXT_PUBLIC_OKTA_CLIENT_ID
 ARG NEXT_PUBLIC_OKTA_ISSUER
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_REDIRECT_LINK
+ARG OKTA_CLIENT_SECRET
+ARG AUTH_SECRET
+ARG SERVICE_TOKEN
 
 # Set environment variables
 ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
 ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
+ENV OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
+ENV AUTH_SECRET=${AUTH_SECRET}
+ENV SERVICE_TOKEN=${SERVICE_TOKEN}
 
-# Set the working directory
-WORKDIR /source
+# Set working directory
+WORKDIR /usr/src/app
 
-# Add missing packages
-RUN apk --no-check-certificate add wget ca-certificates
+# Copy package.json and package-lock.json first
+COPY deeplynx.UI/package*.json ./
 
 # Configure INL certs and environment variables
+RUN apk --no-check-certificate add wget ca-certificates
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
 RUN /usr/sbin/update-ca-certificates
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -28,41 +35,26 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-# Copy the solution file and restore dependencies
-COPY . ./Backend
-RUN dotnet restore ./Backend/deeplynx.sln
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
 
-# Build the backend
-WORKDIR /source/Backend
-RUN dotnet build -c Release -o /app/build
+# Install frontend dependencies
+RUN npm install
 
-# Publish the backend
-FROM backend-build AS publish
-RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
+# Copy the rest of the frontend source code
+COPY deeplynx.UI .
+
+# Build the frontend
+RUN npm run build
 
 # Stage 2: Create the final image
 FROM node:lts-alpine3.20 AS final
 
-# Set the working directory
-WORKDIR /app/backend
-
-# Copy the published backend code
-COPY --from=publish /app/publish .
-
-# Install tools needed for entrypoint.sh
-RUN apk --no-check-certificate add postgresql-client
-
-# Copy the entrypoint script
-COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# Set the working directory for the frontend
-WORKDIR /app/frontend
-
-# Add missing packages
-RUN apk --no-check-certificate add wget ca-certificates
+# Set working directory
+WORKDIR /usr/src/app
 
 # Configure INL certs and environment variables
+RUN apk --no-check-certificate add wget ca-certificates
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
 RUN /usr/sbin/update-ca-certificates
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
@@ -71,14 +63,14 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-# Copy the frontend code
-COPY deeplynx.UI/ ./
+# Copy the built frontend code from the previous stage
+COPY --from=frontend-build /usr/src/app .
 
-# Install dependencies
-RUN rm -rf node_modules package-lock.json
-RUN npm install
-RUN npm run build
+# Install production dependencies
+RUN npm install --production
 
-# Set the command point to run the application
-# Currently overriden by entrypoint.sh
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Set the command to run the application
 CMD ["npm", "start"]

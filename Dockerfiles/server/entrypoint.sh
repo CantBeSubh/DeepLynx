@@ -17,16 +17,13 @@ else
     CREATE DATABASE deeplynx;
 EOSQL
 fi
+
 #
 #echo "PostgreSQL is ready. Applying migrations..."
-##for file in /database/*.sql; do
+##for file in ../database/*.sql; do
 #  echo "Applying migration: $file"
 #  psql -h "$POSTGRES_DB_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f "$file"
 #done
-# Install dotnet-ef tool
-#dotnet tool install --global dotnet-ef
-#export PATH="$PATH:/root/.dotnet/tools"
-#dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 #echo "Migrations complete."
 
 # Execute the dotnet application
