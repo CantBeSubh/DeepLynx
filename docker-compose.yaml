@@ -13,7 +13,7 @@ services:
     networks:
       - nexus-network
     depends_on:
-      - nx-postgres
+      - server
 
   server:
     build:
