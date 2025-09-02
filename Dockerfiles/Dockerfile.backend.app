@@ -1,5 +1,5 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
 
 # Define build arguments
 ARG NEXT_PUBLIC_OKTA_CLIENT_ID
@@ -45,18 +45,21 @@ FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
 # Install tools needed for entrypoint.sh
-RUN apk --no-check-certificate add postgresql-client
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
 
 # Stage 4: Create the final image
-FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
-# Add missing package
-RUN apk --no-check-certificate add postgresql-client
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
 
 # Copy the entrypoint script
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
-
 
 WORKDIR /app/backend
 
@@ -64,5 +67,15 @@ WORKDIR /app/backend
 COPY --from=publish /app/publish .
 COPY database /database
 COPY deeplynx.api/moon.css /app/backend/moon.css
+
+# Copy the shared libraries into the appropriate directory
+COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-x64/native/
+COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-x64/native/
+
+# Ensure the shared libraries are in the expected path
+RUN mkdir -p /app/backend/runtimes/linux-x64/native
+
+# Set the LD_LIBRARY_PATH to include the directory of your libraries
+ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-x64/native/:$LD_LIBRARY_PATH"
 
 CMD [ "dotnet", "run" ]
