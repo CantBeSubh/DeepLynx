@@ -284,6 +284,19 @@ metadata:
       more_clear_headers "content-security-policy";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/server-snippets: |
+      location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Host $host;
+        proxy_set_header   X-Cluster-Client-Ip $remote_addr;
+        }
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "cache-Control: no-cache, no-store";
 spec:
   rules:
     - host: nexus.dev.inl.gov
