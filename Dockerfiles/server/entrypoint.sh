@@ -18,7 +18,7 @@ else
 EOSQL
 fi
 
-#
+# Deprecated. Requires the use of the dotnet ef migrations dump file
 #echo "PostgreSQL is ready. Applying migrations..."
 ##for file in ../database/*.sql; do
 #  echo "Applying migration: $file"
