@@ -295,7 +295,19 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Notificaciones por correo",
             LANGUAGE: "Idioma",
             RECORD_NAME: "Nombre de Registro",
-            LAST_VIEWED: "Última visualización"
+            LAST_VIEWED: "Última visualización",
+            QUERY_BUILDER: "Constructor de consultas",
+            CLEAR_SEARCH: "Borrar búsqueda",
+            NO_OPTIONS: "Sin opciones",
+            OPTIONS: "Opciones",
+            ADD: "Agregar",
+            ADDITIONAL_FILTERS: "Filtros adicionales",
+            SELECT_FILTERS: "Seleccionar filtros",
+            CONNECTOR: "Conector",
+            FILTER: "Filtro",
+            OPERATOR: "Operador",
+            VALUE: "Valor",
+            DELETE_ALL_FILTERS: "Eliminar todos los filtros"
         }
     }
 }

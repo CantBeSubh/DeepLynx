@@ -172,7 +172,8 @@ export default function RecordViewClient({
       if (record?.className && record?.id) {
         fetchRelatedRecords();
       }
-    }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
+    }
+  }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
     console.log("Related records: ");
