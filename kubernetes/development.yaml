@@ -282,6 +282,7 @@ metadata:
       more_clear_headers "x-content-type-options";
       more_clear_headers "x-frame-options";
       more_clear_headers "content-security-policy";
+      more_set_headers "cache-Control: no-cache, no-store";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
     nginx.ingress.kubernetes.io/server-snippets: |
@@ -295,8 +296,6 @@ metadata:
         proxy_set_header   X-Forwarded-Host $host;
         proxy_set_header   X-Cluster-Client-Ip $remote_addr;
         }
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "cache-Control: no-cache, no-store";
 spec:
   rules:
     - host: nexus.dev.inl.gov
@@ -316,6 +315,13 @@ spec:
                 name: deeplynxv3-backend-service
                 port:
                   number: 80
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:  
+                name: deeplynxv3-service
+                port:  
+                number: 80 
 ---
 # # Database if needed for deployment
 # Dummy change to force build.
