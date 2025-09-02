@@ -4252,5 +4252,20 @@ BEGIN
     VALUES ('20250902222805_AddRolesAndPermissions', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250902225544_FixSubscriptionsTimestampDefault') THEN
+    ALTER TABLE deeplynx.subscriptions ALTER COLUMN created_at SET DEFAULT (CURRENT_TIMESTAMP);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250902225544_FixSubscriptionsTimestampDefault') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250902225544_FixSubscriptionsTimestampDefault', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 

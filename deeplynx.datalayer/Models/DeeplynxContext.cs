@@ -441,8 +441,6 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
 
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
             entity.HasOne(d => d.User)
                 .WithMany(p => p.Subscriptions)
                 .HasForeignKey(d => d.UserId)
