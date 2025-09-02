@@ -16,7 +16,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             clientId: process.env.OKTA_CLIENT_ID!,
             clientSecret: process.env.OKTA_CLIENT_SECRET!,
             issuer: process.env.OKTA_ISSUER,
-            authorization: { params: { scope: "openid profile email" } },
+            authorization: {
+                params: {
+                    scope: "openid profile email",
+                    redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_LINK
+                }
+            },
         }),
         Credentials({
             name: "Test",
