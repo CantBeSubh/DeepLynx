@@ -94,12 +94,12 @@ spec:
                   name: app-secrets
                   key: service-token
             # Runtime environment variables from configmap (non-sensitive)
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+            - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
+            - name: OKTA_ISSUER
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -185,12 +185,12 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: service-token
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+            - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
+            - name: OKTA_ISSUER
               valueFrom:
                 configMapKeyRef:
                   name: app-config
