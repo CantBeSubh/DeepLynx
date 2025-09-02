@@ -3,11 +3,13 @@ services:
     build:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+        BACKEND_BASE_URL: "http://server:5000/api"
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
       NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     ports:
       - "3000:3000"
     networks:
@@ -25,7 +27,6 @@ services:
       NODE_ENV: production
       NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
       NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"

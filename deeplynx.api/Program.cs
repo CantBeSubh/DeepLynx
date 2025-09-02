@@ -48,7 +48,7 @@ try
         {
             policy
                 .WithOrigins(
-                    "http://localhost:3000") //Added this to make work in Dev env, might need to change for Prod env.
+                    "http://localhost:3000", "http://ui:3000") //Added this to make work in Dev env, might need to change for Prod env.
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
