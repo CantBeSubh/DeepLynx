@@ -1,12 +1,10 @@
 FROM postgres:16-alpine3.20 AS deeplynx-db
 
+# Set working directory
 WORKDIR /var/lib/postgresql/data
 
-# Add missing packages
-RUN apk --no-check-certificate add wget ca-certificates
-
 # Configure INL certs and environment variables
-RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN apk --no-check-certificate add wget ca-certificates
 RUN /usr/sbin/update-ca-certificates
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
@@ -14,11 +12,14 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
+EXPOSE 5432
 
-
-RUN apk update && apk upgrade
+CMD ["postgres"]
 
 ## Below is config for hardening Postgres for production release
+
+# Update alpine package manager
+# RUN apk update && apk upgrade
 
 # # Install build dependencies
 # RUN apk add --virtual build-dependencies \
@@ -51,7 +52,3 @@ RUN apk update && apk upgrade
 # RUN chmod 740 /etc/certs
 
 # CMD ["postgres", "-c", "config_file=/etc/postgresql.conf"]
-
-EXPOSE 5432
-
-CMD ["postgres"]
