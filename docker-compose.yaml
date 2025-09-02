@@ -8,6 +8,7 @@ services:
     environment:
       NODE_ENV: production
       OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET}
       OKTA_ISSUER: ${OKTA_ISSUER}
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
