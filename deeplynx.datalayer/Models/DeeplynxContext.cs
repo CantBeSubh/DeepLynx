@@ -35,6 +35,8 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Organization> Organizations { get; set; }
 
     public virtual DbSet<OrganizationUser> OrganizationUsers { get; set; }
+    
+    public virtual DbSet<Permission> Permissions { get; set; }
 
     public virtual DbSet<Project> Projects { get; set; }
     
@@ -47,6 +49,8 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Relationship> Relationships { get; set; }
     
     public virtual DbSet<Role> Roles { get; set; }
+    
+    public virtual DbSet<SensitivityLabel> SensitivityLabels { get; set; }
     public virtual DbSet<Tag> Tags { get; set; }
     public virtual DbSet<User> Users { get; set; }
     
@@ -131,17 +135,17 @@ public partial class DeeplynxContext : DbContext
                 .UsingEntity<Dictionary<string, object>>(
                     "GroupUser",
                     gu => gu.HasOne<User>().WithMany()
-                        .HasForeignKey("GroupId")
+                        .HasForeignKey("UserId")
                         .HasConstraintName("group_users_group_id_fkey"),
                     gu => gu.HasOne<Group>().WithMany()
-                        .HasForeignKey("UserId")
+                        .HasForeignKey("GroupId")
                         .HasConstraintName("group_users_user_id_fkey"),
                     gu =>
                     {
                         gu.HasKey("GroupId", "UserId").HasName("group_users_pkey");
                         gu.ToTable("group_users", "deeplynx");
-                        gu.HasIndex(new[] {"GroupId"}).HasName("idx_group_users_group_id");
-                        gu.HasIndex(new[] {"UserId"}).HasName("idx_group_users_user_id");
+                        gu.HasIndex(new[] {"GroupId"}, "idx_group_users_group_id");
+                        gu.HasIndex(new[] {"UserId"}, "idx_group_users_user_id");
                         gu.IndexerProperty<long>("GroupId").HasColumnName("group_id");
                         gu.IndexerProperty<long>("UserId").HasColumnName("user_id");
                     });
@@ -202,6 +206,17 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("organization_users_user_id_fkey");
         });
 
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("permission_pkey");
+
+            entity.Property(p => p.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(p => p.SensitivityLabel).WithMany(s => s.Permissions)
+                .HasForeignKey(p => p.LabelId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("permissions_label_id_fkey");
+        });
+
         modelBuilder.Entity<Project>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("projects_pkey");
@@ -226,15 +241,15 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("project_members_project_id_fkey");
             
             entity.HasOne(pm => pm.Role).WithMany(r => r.ProjectMembers)
-                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade)
+                .HasForeignKey(pm => pm.RoleId).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("project_members_role_id_fkey");
             
             entity.HasOne(pm => pm.Group).WithMany(g => g.ProjectMembers)
-                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
+                .HasForeignKey(pm => pm.GroupId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
                 .HasConstraintName("project_members_group_id_fkey");
             
             entity.HasOne(pm => pm.User).WithMany(u => u.ProjectMembers)
-                .HasForeignKey(pm => pm.ProjectId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
+                .HasForeignKey(pm => pm.UserId).OnDelete(DeleteBehavior.Cascade).IsRequired(false)
                 .HasConstraintName("project_members_user_id_fkey");
         });
 
@@ -275,6 +290,25 @@ public partial class DeeplynxContext : DbContext
                         j.HasIndex(new[] { "TagId" }, "idx_record_tags_tag_id");
                         j.IndexerProperty<long>("RecordId").HasColumnName("record_id");
                         j.IndexerProperty<long>("TagId").HasColumnName("tag_id");
+                    });
+
+            entity.HasMany(r => r.SensitivityLabels).WithMany(p => p.Records)
+                .UsingEntity<Dictionary<string, object>>(
+                    "RecordLabel",
+                    rl => rl.HasOne<SensitivityLabel>().WithMany()
+                        .HasForeignKey("LabelId")
+                        .HasConstraintName("record_labels_label_id_fkey"),
+                    rl => rl.HasOne<Record>().WithMany()
+                        .HasForeignKey("RecordId")
+                        .HasConstraintName("record_labels_record_id_fkey"),
+                    rl =>
+                    {
+                        rl.HasKey("RecordId", "LabelId").HasName("record_labels_pkey");
+                        rl.ToTable("record_labels", "deeplynx");
+                        rl.HasIndex(new[] { "RecordId" }, "idx_record_labels_record_id");
+                        rl.HasIndex(new[] { "LabelId" }, "idx_record_labels_label_id");
+                        rl.IndexerProperty<long>("LabelId").HasColumnName("label_id");
+                        rl.IndexerProperty<long>("RecordId").HasColumnName("record_id");
                     });
         });
 
@@ -351,11 +385,22 @@ public partial class DeeplynxContext : DbContext
                     {
                         gu.HasKey("RoleId", "PermissionId").HasName("role_permissions_pkey");
                         gu.ToTable("role_permissions", "deeplynx");
-                        gu.HasIndex(new[] {"RoleId"}).HasName("idx_role_permissions_role_id");
-                        gu.HasIndex(new[] {"PermissionId"}).HasName("idx_role_permissions_permission_id");
+                        gu.HasIndex(new[] {"RoleId"}, "idx_role_permissions_role_id");
+                        gu.HasIndex(new[] {"PermissionId"}, "idx_role_permissions_permission_id");
                         gu.IndexerProperty<long>("RoleId").HasColumnName("role_id");
                         gu.IndexerProperty<long>("PermissionId").HasColumnName("permission_id");
                     });
+        });
+
+        modelBuilder.Entity<SensitivityLabel>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("sensitivity_labels_pkey");
+
+            entity.Property(s => s.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.HasOne(g => g.Organization).WithMany(p => p.SensitivityLabels)
+                .HasForeignKey(d => d.OrganizationId).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("sensitivity_labels_organization_id_fkey");
         });
 
         modelBuilder.Entity<Tag>(entity =>

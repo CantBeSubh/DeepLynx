@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -40,4 +41,8 @@ public partial class Permission
     
     [InverseProperty("Permissions")]
     public ICollection<Role> Roles { get; set; } = new List<Role>();
+    
+    [ForeignKey("LabelId")]
+    [InverseProperty("Permissions")]
+    public virtual SensitivityLabel? SensitivityLabel { get; set; }
 }

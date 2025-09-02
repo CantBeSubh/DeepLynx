@@ -1,0 +1,46 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Runtime.InteropServices;
+using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+
+namespace deeplynx.datalayer.Models;
+
+[Table("sensitivity_labels", Schema = "deeplynx")]
+[Index("Id", Name = "idx_sensitivity_labels_id")]
+[Index("Name", Name = "idx_sensitivity_labels_name")]
+[Index("OrganizationId", Name = "idx_sensitivity_labels_organization_id")]
+public partial class SensitivityLabel
+{
+    [Key]
+    [Column("id")]
+    public long Id { get; set; }
+    
+    [Column("name")]
+    public string Name { get; set; } = null!;
+    
+    [Column("description")]
+    public string? Description { get; set; }
+    
+    [Column("last_updated_by")]
+    public string? LastUpdatedBy { get; set; }
+    
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+    
+    [Column("organization_id")]
+    public long OrganizationId { get; set; }
+    
+    [InverseProperty("SensitivityLabel")]
+    public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("SensitivityLabels")]
+    public virtual Organization Organization { get; set; } = null!;
+    
+    [ForeignKey("LabelId")]
+    [InverseProperty("SensitivityLabels")]
+    public virtual ICollection<Record> Records { get; set; } = new List<Record>();
+}

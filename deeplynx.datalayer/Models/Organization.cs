@@ -37,4 +37,6 @@ public partial class Organization
     [InverseProperty("Organization")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 
+    [InverseProperty("Organization")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
 }
