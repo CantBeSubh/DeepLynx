@@ -88,6 +88,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: auth-secret
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: next-auth-secret
             - name: SERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
