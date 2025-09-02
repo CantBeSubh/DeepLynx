@@ -30,5 +30,3 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         debug(code, metadata) { console.debug("NextAuth debug", code, metadata); },
     },
 });
-
-export const { GET, POST } = handlers;
