@@ -1,8 +1,7 @@
 // app/(home)/(routes)/data_catalog/loading.tsx
 "use client";
 
-import { useSearchParams } from "next/navigation";
-import { translations } from "@/app/lib/translations";
+import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowUturnLeftIcon,
   ChevronLeftIcon,
@@ -12,6 +11,7 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import { useSearchParams } from "next/navigation";
 import Skeleton from "react-loading-skeleton";
 
 // Small helpers so maps always have keys
@@ -94,8 +94,7 @@ function ToolbarSkeleton({ showListButtons }: { showListButtons: boolean }) {
 }
 
 function ListViewSkeleton() {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const tagsCount = 3;
   const rows = 5;
 
@@ -140,8 +139,7 @@ function ListViewSkeleton() {
 }
 
 function CatalogViewSkeleton() {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const rows = 6;
   const totalPages = 2;
 

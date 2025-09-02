@@ -12,6 +12,7 @@ namespace deeplynx.tests
     public class TagBusinessTests : IntegrationTestBase
     {
         private DeeplynxContext _context;
+        private EventBusiness _eventBusiness;
         private TagBusiness _tagBusiness;
         private readonly Mock<IRecordMappingBusiness> _mockRecordMappingBusiness;
         public long pid;
@@ -29,10 +30,12 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            _eventBusiness = new EventBusiness(Context);
 
             _tagBusiness = new TagBusiness( 
                 Context, 
-                _mockRecordMappingBusiness.Object);
+                _mockRecordMappingBusiness.Object,
+                _eventBusiness);
         }
 
         #region GetAllTags Tests
@@ -143,6 +146,10 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _tagBusiness.CreateTag(pid, null));
+            
+            // Ensure that the Tag create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -167,6 +174,17 @@ namespace deeplynx.tests
             var savedTag = await Context.Tags.FindAsync(result.Id);
             Assert.NotNull(savedTag);
             Assert.Equal("Tag One", savedTag.Name);
+            
+            // Ensure that the Tag create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = result.ProjectId,
+                Operation = "create",
+                EntityType = "tag",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -186,6 +204,17 @@ namespace deeplynx.tests
             // Assert
             Assert.True(result.CreatedAt >= beforeCreate);
             Assert.True(result.CreatedAt <= DateTime.UtcNow);
+            
+            // Ensure that the Tag create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = result.ProjectId,
+                Operation = "create",
+                EntityType = "tag",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -207,6 +236,24 @@ namespace deeplynx.tests
             result.Should().HaveCount(2);
             result.First().Name.Should().Be("Test Tag 1");
             result.Last().Name.Should().Be("Test Tag 2");
+            
+            // Ensure that create event was logged for each created tag
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(2);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "tag",
+                ProjectId = result[0].ProjectId,
+                EntityId = result[0].Id,
+            });
+            eventList[1].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "tag",
+                ProjectId = result[1].ProjectId,
+                EntityId = result[1].Id,
+            });
         }
                 
         [Fact]
@@ -215,6 +262,10 @@ namespace deeplynx.tests
             var dto = new CreateTagRequestDto() { Name = null };
             var result = () => _tagBusiness.CreateTag(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no tag create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         #endregion
@@ -244,6 +295,17 @@ namespace deeplynx.tests
             var updatedTag = await Context.Tags.FindAsync(tid);
             Assert.Equal("Updated Test Tag", updatedTag?.Name);
             Assert.NotNull(updatedTag?.ModifiedAt);
+            
+            // Ensure that the tag update event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = result.ProjectId,
+                Operation = "update",
+                EntityType = "tag",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -280,6 +342,17 @@ namespace deeplynx.tests
             Assert.NotNull(updatedTag);
             Assert.Equal("Updated Tag", updatedTag.Name);
             Assert.NotNull(updatedTag.ModifiedAt);
+            
+            // Ensure that the tag update event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = result.ProjectId,
+                Operation = "update",
+                EntityType = "tag",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -296,6 +369,10 @@ namespace deeplynx.tests
                 () => _tagBusiness.UpdateTag(pid, 999, dto));
 
             Assert.Contains("Tag with id 999 not found", exception.Message);
+            
+            // Ensure that the update tag event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -312,6 +389,10 @@ namespace deeplynx.tests
                 () => _tagBusiness.UpdateTag(pid2, tid, dto)); // Tag 1 belongs to project 2
 
             Assert.Contains($"Tag with id {tid} not found", exception.Message);
+            
+            // Ensure that the update tag event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -328,6 +409,10 @@ namespace deeplynx.tests
                 () => _tagBusiness.UpdateTag(pid, tid3, dto)); // Tag 3 is archived
 
             Assert.Contains($"Tag with id {tid3} not found", exception.Message);
+            
+            // Ensure that the update tag event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         #endregion
@@ -390,6 +475,16 @@ namespace deeplynx.tests
              Assert.NotNull(archivedTag.ArchivedAt);
              Assert.True(archivedTag.ArchivedAt >= beforeArchive);
              Assert.True(archivedTag.ArchivedAt <= DateTime.UtcNow);
+             
+             // Ensure that the tag delete event was logged
+             var eventList = Context.Events.ToList();
+             eventList.Count.Should().Be(1);
+             eventList[0].Should().BeEquivalentTo(new
+             {
+                 ProjectId = pid,
+                 Operation = "delete",
+                 EntityType = "tag",
+             });
          }
 
          [Fact]
@@ -400,6 +495,10 @@ namespace deeplynx.tests
                  () => _tagBusiness.ArchiveTag(pid, 999));
 
              Assert.Contains("Tag with id 999 not found", exception.Message);
+             
+             // Ensure that no tag delete event was logged
+             var eventList = Context.Events.ToList();
+             eventList.Count.Should().Be(0);
          }
 
          [Fact]
@@ -410,6 +509,10 @@ namespace deeplynx.tests
                  () => _tagBusiness.ArchiveTag(pid2, tid));
 
              Assert.Contains($"Tag with id {tid} not found", exception.Message);
+             
+             // Ensure that no tag delete event was logged
+             var eventList = Context.Events.ToList();
+             eventList.Count.Should().Be(0);
          }
 
          [Fact]
@@ -420,6 +523,10 @@ namespace deeplynx.tests
                  () => _tagBusiness.ArchiveTag(pid, tid3)); // Tag 3 is already archived
 
              Assert.Contains($"Tag with id {tid3} not found", exception.Message);
+             
+             // Ensure that no tag delete event was logged
+             var eventList = Context.Events.ToList();
+             eventList.Count.Should().Be(0);
          }
 
          [Fact]

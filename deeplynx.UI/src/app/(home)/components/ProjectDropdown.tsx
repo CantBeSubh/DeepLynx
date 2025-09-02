@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
-import { translations } from "@/app/lib/translations";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 interface ProjectDropdownProps {
   projects: { id: string; name: string }[];
@@ -15,8 +15,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
   onSelectionChange,
   defaultSelected,
 }) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);

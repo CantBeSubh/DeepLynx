@@ -6,12 +6,14 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
+using System.Text.Json;
 
 namespace deeplynx.business;
 
 public class TagBusiness : ITagBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
     private readonly IRecordMappingBusiness _recordMappingBusiness;
 
     /// <summary>
@@ -19,9 +21,10 @@ public class TagBusiness : ITagBusiness
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
     /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
-    public TagBusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness)
+    public TagBusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness,  IEventBusiness eventBusiness)
     {
         _context = context;
+        _eventBusiness = eventBusiness;
         _recordMappingBusiness = recordMappingBusiness;
     }
     
@@ -139,6 +142,18 @@ public class TagBusiness : ITagBusiness
 
         _context.Tags.Add(tag);
         await _context.SaveChangesAsync();
+        
+        // Log Tag Create Event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = tag.ProjectId,
+            Operation = "create",
+            EntityType = "tag",
+            EntityId = tag.Id,
+            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            DataSourceId = null,
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new TagResponseDto // Return validated response DTO back to user.
         {
@@ -193,9 +208,28 @@ public class TagBusiness : ITagBusiness
         sql = string.Format(sql, valueTuples);
 
         // returns the resulting upserted classes
-        return await _context.Database
+        var result = await _context.Database
             .SqlQueryRaw<TagResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
+        
+        // log tag create event for each tag created
+        var events = new List<CreateEventRequestDto>{ };
+        foreach (var item in result)
+        {
+            events.Add(new CreateEventRequestDto
+            {
+                ProjectId = item.ProjectId,
+                Operation = "create",
+                EntityType = "tag",
+                EntityId = item.Id,
+                Properties = JsonSerializer.Serialize(new {item.Name}),
+                DataSourceId = null,
+                CreatedBy = "" // TODO: add username when JWT are implemented
+            });
+        }
+        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        return result;
     }
 
     /// <summary>
@@ -226,6 +260,18 @@ public class TagBusiness : ITagBusiness
         tag.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         await _context.SaveChangesAsync();
+        
+        // Log tag update event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "update",
+            EntityType = "tag",
+            EntityId = tag.Id,
+            ProjectId = tag.ProjectId,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new TagResponseDto
         {
@@ -275,6 +321,19 @@ public class TagBusiness : ITagBusiness
         tag.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
+        
+        // Log tag soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "delete",
+            EntityType = "tag",
+            EntityId = tag.Id,
+            ProjectId = tag.ProjectId,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {tag.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
         return true;
     }
     

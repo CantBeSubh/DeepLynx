@@ -1,21 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Reorder } from "framer-motion";
-import { translations } from "@/app/lib/translations";
-import DataOverviewWidget from "./WidgetCards/DataOverviewWidget";
-import LinksWidget from "./WidgetCards/LinksWidget";
-import GraphWidget from "./WidgetCards/GraphWidget";
-import RecentActivityWidget from "./WidgetCards/RecentActivity";
-import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
-import TeamMembersWidget from "./WidgetCards/TeamMembers";
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
+import { useLanguage } from "@/app/contexts/Language";
 import {
   Cog6ToothIcon,
+  DocumentCheckIcon,
   PlusIcon,
   XMarkIcon,
-  DocumentCheckIcon,
 } from "@heroicons/react/24/outline";
+import { Reorder } from "framer-motion";
+import React, { useEffect, useState } from "react";
+import GraphWidget from "./WidgetCards/GraphWidget";
+import LinksWidget from "./WidgetCards/LinksWidget";
+import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
+import TeamMembersWidget from "./WidgetCards/TeamMembers";
 
 export type WidgetType =
   | "DataOverview"
@@ -40,8 +38,7 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
   const [initialWidgets, setInitialWidgets] = useState<WidgetType[]>(widgets);
   const [canCustomize, setCanCustomize] = useState<boolean>(false);
   const [widgetModal, setWidgetModal] = useState<boolean>(false);
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (canCustomize) {

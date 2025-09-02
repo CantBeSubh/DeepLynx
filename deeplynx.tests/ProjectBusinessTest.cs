@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -9,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
+using System.Text.Json.Nodes;
 
 namespace deeplynx.tests
 {
@@ -18,6 +18,7 @@ namespace deeplynx.tests
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;
+        private EventBusiness _eventBusiness = null!;
         private Mock<IEdgeBusiness> _mockEdgeBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
@@ -35,6 +36,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            _eventBusiness = new EventBusiness(Context);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
@@ -43,13 +45,13 @@ namespace deeplynx.tests
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             
-            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
+            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object);
+                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
         }
-
+        
         [Fact]
         public async Task CreateProject_Success_ReturnsIdAndCreatedAt()
         {
@@ -68,6 +70,18 @@ namespace deeplynx.tests
             result.Name.Should().Be(dto.Name);
             result.Description.Should().Be(dto.Description);
             result.Abbreviation.Should().Be(dto.Abbreviation);
+            
+            // Ensure that the project create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(4);
+            // two classes and a datasource will be logged before project event is logged
+            eventList[3].Should().BeEquivalentTo(new
+            {
+                ProjectId = result.Id,
+                Operation = "create",
+                EntityType = "project",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -90,6 +104,18 @@ namespace deeplynx.tests
             classResult.Count.Should().Be(2);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");
+            
+            // Ensure that the project create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(4);
+            // two classes and a datasource will be logged before project event is logged
+            eventList[3].Should().BeEquivalentTo(new
+            {
+                ProjectId = project.Id,
+                Operation = "create",
+                EntityType = "project",
+                EntityId = project.Id,
+            });
         }
         
         [Fact]
@@ -112,6 +138,18 @@ namespace deeplynx.tests
             dataSourceResult.Count.Should().Be(1);
             dataSourceResult[0].Name.Should().Be("Default Data Source");
             dataSourceResult[0].Description.Should().Be("This data source was created alongside the project for ease of use.");
+            
+            // Ensure that the project create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(4);
+            // two classes and a datasource will be logged before project event is logged
+            eventList[3].Should().BeEquivalentTo(new
+            {
+                ProjectId = project.Id,
+                Operation = "create",
+                EntityType = "project",
+                EntityId = project.Id,
+            });
         }
 
         [Fact]
@@ -123,6 +161,10 @@ namespace deeplynx.tests
            
             var result = () => _projectBusiness.CreateProject(dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no project create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -134,6 +176,10 @@ namespace deeplynx.tests
            
             var result = () => _projectBusiness.CreateProject(dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no project create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -244,6 +290,17 @@ namespace deeplynx.tests
             updatedResult.Name.Should().Be(dto.Name);
             updatedResult.Description.Should().Be(dto.Description);
             updatedResult.Abbreviation.Should().Be(dto.Abbreviation);
+            
+            // Ensure that Project Update Event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = testProject.Id,
+                EntityType = "project",
+                EntityId = testProject.Id,
+                Operation = "update"
+            });
         }
 
         [Fact]
@@ -261,6 +318,10 @@ namespace deeplynx.tests
            
             var result = () => _projectBusiness.UpdateProject(nonExistentId, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no project create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -299,11 +360,11 @@ namespace deeplynx.tests
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
-
+            
+            var verify = Context.Projects.Find(testProject.Id);
            
             var archivedResult = await _projectBusiness.ArchiveProject(testProject.Id);
-
-          
+            
             archivedResult.Should().BeTrue();
 
             // Force EF to sync with database
@@ -314,6 +375,17 @@ namespace deeplynx.tests
             archivedProject!.ArchivedAt.Should().NotBeNull();
             archivedProject.ArchivedAt.Should().BeOnOrAfter(beforeArchive);
             archivedProject.ArchivedAt.Should().BeOnOrBefore(DateTime.UtcNow);
+            
+            // Ensure that project soft delete event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = testProject.Id,
+                EntityType = "project",
+                EntityId = testProject.Id,
+                Operation = "delete"
+            });
         }
 
         [Fact]
@@ -353,6 +425,10 @@ namespace deeplynx.tests
            
             var result = () => _projectBusiness.ArchiveProject(nonExistentId);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that project soft delete event was NOT logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -543,7 +619,9 @@ namespace deeplynx.tests
         [Fact]
         public void ProjectResponseDto_AllProperties_CanBeSetAndRetrieved()
         {
+            
             var now = DateTime.UtcNow;
+
            
             var dto = new ProjectResponseDto
             {
@@ -604,7 +682,6 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestDataSourceId = testDataSource.Id;
             
-            
             var testRecord = new Record
             {
                 Name = "Test Record",
@@ -618,6 +695,7 @@ namespace deeplynx.tests
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();
+            
         }
     }
 }

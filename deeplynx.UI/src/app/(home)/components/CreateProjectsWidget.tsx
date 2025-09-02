@@ -1,5 +1,4 @@
-import { translations } from "@/app/lib/translations";
-import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
 
 interface CreateProjectsWidgetProps {
   isOpen: boolean; // Indicates whether the modal is open
@@ -8,8 +7,7 @@ interface CreateProjectsWidgetProps {
 
 // Main CreateProject component
 const CreateProject = ({ isOpen, onClose }: CreateProjectsWidgetProps) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}

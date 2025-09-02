@@ -1,17 +1,17 @@
 "use client";
-import React, { useEffect, useState } from "react";
 import { ProjectsList } from "@/app/(home)/types/types";
-import { useRouter } from "next/navigation";
+import { useLanguage } from "@/app/contexts/Language";
 import { getProjectStats } from "@/app/lib/projects_services.client";
-import { peopleData } from "../dummy_data/data";
-import Image from "next/image";
 import {
-  XMarkIcon,
-  RectangleGroupIcon,
-  CircleStackIcon,
   ArrowsRightLeftIcon,
+  CircleStackIcon,
+  RectangleGroupIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
-import { translations } from "@/app/lib/translations";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { peopleData } from "../dummy_data/data";
 
 interface Props {
   project: ProjectsList;
@@ -20,8 +20,7 @@ interface Props {
 
 const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
   const router = useRouter();
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   const [stats, setStats] = useState<{
     classes: number;

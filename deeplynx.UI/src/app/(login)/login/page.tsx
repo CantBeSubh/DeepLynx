@@ -1,16 +1,15 @@
 "use client";
+import ArrowButton from "@/app/(home)/components/ArrowButton";
+import { links, LinkT } from "@/app/(home)/links";
+import { useLanguage } from "@/app/contexts/Language";
+import "@/app/globals.css";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import ArrowButton from "@/app/(home)/components/ArrowButton";
-import { links, LinkT } from "@/app/(home)/links";
-import { translations } from "@/app/lib/translations";
-import "@/app/globals.css";
 
 export default function Login() {
   const [isChecked, setChecked] = useState(true);
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">

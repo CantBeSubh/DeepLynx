@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import React, { useEffect } from "react";
 import toast from "react-hot-toast";
 
@@ -16,7 +16,6 @@ import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
 import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
-
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
@@ -75,17 +74,27 @@ export default function RecordViewClient({
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
   const [relatedRecords, setRelatedRecords] = useState<RelatedRecord[]>();
-  const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] = useState(false);
-  const [parsedRelatedRecords, setParsedRelatedRecords] = useState<ParsedRecord[]>([]);
+  const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] =
+    useState(false);
+  const [parsedRelatedRecords, setParsedRelatedRecords] = useState<
+    ParsedRecord[]
+  >([]);
   const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedNameToRemove, setSelectedNameToRemove] = useState<string>('');
-  const [selectedRecordNameToRemove, setSelectedRecordNameToRemove] = useState<string | undefined>('');
-  const [selectedRecord, setSelectedRecord] = useState<FileViewerTableRow | null>(null);
+  const [selectedNameToRemove, setSelectedNameToRemove] = useState<string>("");
+  const [selectedRecordNameToRemove, setSelectedRecordNameToRemove] = useState<
+    string | undefined
+  >("");
+  const [selectedRecord, setSelectedRecord] =
+    useState<FileViewerTableRow | null>(null);
   const [idToRemove, setIdToRemove] = useState<string | null>(null);
   const [isRecordViewModalOpen, setRecordViewModalOpen] = useState(false);
   const [selectedOriginId, setSelectedOriginId] = useState<number | null>(null);
-  const [selectedDestinationId, setSelectedDestinationId] = useState<number | null>(null);
-  const [confirmationType, setConfirmationType] = useState<'tag' | 'relatedRecord' | null>(null);
+  const [selectedDestinationId, setSelectedDestinationId] = useState<
+    number | null
+  >(null);
+  const [confirmationType, setConfirmationType] = useState<
+    "tag" | "relatedRecord" | null
+  >(null);
   const [relationship, setRelationship] = useState<string | null>(null);
 
   function formatDate(date?: string | null) {
@@ -96,6 +105,24 @@ export default function RecordViewClient({
       day: "2-digit",
     });
   }
+
+  const handleToggleToRemove = useCallback(
+    (
+      id: string,
+      name: string,
+      recordName: string | undefined,
+      type: "tag" | "relatedRecord"
+    ) => {
+      setSelectedNameToRemove(name);
+      setSelectedRecordNameToRemove(recordName);
+      setModalOpen(true);
+      setIdToRemove(id);
+      setSelectedOriginId(Number(id));
+      setSelectedDestinationId(Number(record?.id));
+      setConfirmationType(type);
+    },
+    [record?.id]
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,25 +151,28 @@ export default function RecordViewClient({
           const request = {
             tablename: record.className,
             id: record.id,
-            depth: 1
-          }
+            depth: 1,
+          };
 
-          const relatedRecordsData = await getNodesWithinDepth(Number(projectId), request)
+          const relatedRecordsData = await getNodesWithinDepth(
+            Number(projectId),
+            request
+          );
 
-          setRelatedRecords(relatedRecordsData)
+          setRelatedRecords(relatedRecordsData);
 
           setHasFetchedRelatedRecords(true);
-
         }
 
       } catch (error) {
-        console.error("Error fetching related records:", error)
+        console.error("Error fetching related records:", error);
       }
     };
     if (record?.className && record?.id) {
-      fetchRelatedRecords();
-    }
-  }, [initialRecord])
+      if (record?.className && record?.id) {
+        fetchRelatedRecords();
+      }
+    }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
     console.log("Related records: ");
@@ -215,11 +245,12 @@ export default function RecordViewClient({
       });
 
       return relatedRecordsArray;
+      return relatedRecordsArray;
     };
 
     const parsedRecords = parseRelatedRecords(relatedRecords);
     setParsedRelatedRecords(parsedRecords);
-  }, [relatedRecords]);
+  }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -254,19 +285,13 @@ export default function RecordViewClient({
     }
   };
 
-  const handleToggleToRemove = (id: string, name: string, recordName: string | undefined, type: 'tag' | 'relatedRecord') => {
-    setSelectedNameToRemove(name);
-    setSelectedRecordNameToRemove(recordName);
-    setModalOpen(true);
-    setIdToRemove(id);
-    setSelectedOriginId(Number(id))
-    setSelectedDestinationId(Number(record?.id))
-    setConfirmationType(type)
-  };
-
   const handleSave = async () => {
     for (const tagId of tagsToRemove) {
-      await unAttachTagFromRecord(Number(projectId), Number(recordId), Number(tagId));
+      await unAttachTagFromRecord(
+        Number(projectId),
+        Number(recordId),
+        Number(tagId)
+      );
     }
     setSelectedTags((prevTags) => prevTags.filter(tag => !tagsToRemove.includes(tag.id.toString())));
     setSelectedIds((prevIds) => prevIds.filter(id => !tagsToRemove.includes(id)));
@@ -303,7 +328,6 @@ export default function RecordViewClient({
     }
     setModalOpen(false);
   };
-
 
   if (!record) {
     return <div className="loading loading-spinner loading-xl" />;
@@ -390,7 +414,6 @@ export default function RecordViewClient({
     { header: "Actions", data: "actions", sortable: false },
   ];
 
-
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
@@ -453,7 +476,15 @@ export default function RecordViewClient({
               </div>
               <span className="flex items-center flex-wrap mt-2">
                 {selectedTags.map((tag) => (
-                  <span key={tag.id} className="font-inter flex items-center border rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0" style={{ borderColor: '#07519E', color: '#07519E', font: 'Inter' }}>
+                  <span
+                    key={tag.id}
+                    className="font-inter flex items-center border rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0"
+                    style={{
+                      borderColor: "#07519E",
+                      color: "#07519E",
+                      font: "Inter",
+                    }}
+                  >
                     {tag.name}
                     {!tagsToRemove.includes(tag.id.toString()) && isEditing && (
                       <XMarkIcon
@@ -475,7 +506,31 @@ export default function RecordViewClient({
               actionButtons={false}
               tableClassName=".table-bordered"
             />
+            <GenericTable
+              columns={relatedRecordsColumns}
+              data={parsedRelatedRecords}
+              title="Related Records:"
+              bordered
+              searchBar={false}
+              enablePagination={false}
+              actionButtons={false}
+              tableClassName=".table-bordered"
+            />
           </div>
+          <ConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={handleConfirmUnlink}
+            tagName={selectedNameToRemove}
+            recordName={selectedRecordNameToRemove}
+          />
+          <RecordViewModal
+            isOpen={isRecordViewModalOpen}
+            onClose={() => setRecordViewModalOpen(false)}
+            record={selectedRecord}
+            relatedRecords={parsedRelatedRecords}
+            tags={tags}
+          />
           <ConfirmationModal
             isOpen={isModalOpen}
             onClose={() => setModalOpen(false)}
@@ -508,6 +563,7 @@ export default function RecordViewClient({
         </div>
       </div>
 
+      <div className="divider"></div>
       <div className="divider"></div>
 
       <Tabs tabs={tabs} className={""}></Tabs>
