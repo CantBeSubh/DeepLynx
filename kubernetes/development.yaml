@@ -321,7 +321,7 @@ spec:
               service:  
                 name: deeplynxv3-service
                 port:  
-                number: 80 
+                  number: 80 
 ---
 # # Database if needed for deployment
 # Dummy change to force build.
