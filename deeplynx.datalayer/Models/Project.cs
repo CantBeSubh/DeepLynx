@@ -42,7 +42,7 @@ public partial class Project
     public string ConfigJson { get; set; } = null!;
     
     [Column("organization_id")]
-    public long OrganizationId { get; set; }
+    public long? OrganizationId { get; set; }
 
     /// <summary>
     /// Strongly-typed access to project configuration.
@@ -113,7 +113,7 @@ public partial class Project
     
     [ForeignKey("OrganizationId")]
     [InverseProperty("Projects")]
-    public virtual Organization Organization { get; set; } = null!;
+    public virtual Organization? Organization { get; set; } = null!;
     
     [InverseProperty("Project")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();

@@ -922,7 +922,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("user_id");
 
                     b.Property<bool>("IsOrgAdmin")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("is_org_admin");
 
                     b.HasKey("OrganizationId", "UserId")
@@ -1040,7 +1042,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("OrganizationId")
+                    b.Property<long?>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
 
@@ -1586,7 +1588,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("email");
 
                     b.Property<bool>("IsSysAdmin")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
+                        .HasDefaultValue(false)
                         .HasColumnName("is_sysadmin");
 
                     b.Property<string>("Name")
@@ -1953,7 +1957,6 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("projects_organization_id_fkey");
 
                     b.Navigation("Organization");

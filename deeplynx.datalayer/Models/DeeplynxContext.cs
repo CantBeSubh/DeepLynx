@@ -229,6 +229,8 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(ou => new { ou.OrganizationId, ou.UserId }).HasName("organization_user_pkey");
 
+            entity.Property(ou => ou.IsOrgAdmin).HasDefaultValue(false);
+
             entity.HasOne(ou => ou.Organization).WithMany(o => o.OrganizationUsers)
                 .HasForeignKey(ou => ou.OrganizationId).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("organization_users_organization_id_fkey");
@@ -478,6 +480,9 @@ public partial class DeeplynxContext : DbContext
         modelBuilder.Entity<User>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("users_pkey");
+
+            entity.Property(e => e.IsSysAdmin).HasDefaultValue(false);
+
             entity.HasMany(u => u.Projects).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
                     "UserProject",
