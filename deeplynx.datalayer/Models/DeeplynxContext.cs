@@ -16,6 +16,8 @@ public partial class DeeplynxContext : DbContext
     }
 
     
+    public virtual DbSet<Action> Actions { get; set; }
+
     public virtual DbSet<Class> Classes { get; set; }
 
     public virtual DbSet<DataSource> DataSources { get; set; }
@@ -23,6 +25,8 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Edge> Edges { get; set; }
     
     public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
+
+    public virtual DbSet<Event> Events { get; set; }
 
     public virtual DbSet<Group> Groups { get; set; }
 
@@ -51,17 +55,28 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
     
     public virtual DbSet<SensitivityLabel> SensitivityLabels { get; set; }
-    public virtual DbSet<Tag> Tags { get; set; }
-    public virtual DbSet<User> Users { get; set; }
-    
-    public virtual DbSet<Event> Events { get; set; }
-    
-    public virtual DbSet<Action> Actions { get; set; }
-    
+
     public virtual DbSet<Subscription> Subscriptions { get; set; }
+
+    public virtual DbSet<Tag> Tags { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Action>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("actions_pkey");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Actions)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("actions_project_id_fkey");
+        });
+
         modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("classes_pkey");
@@ -119,6 +134,25 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
 
             entity.HasOne(r => r.DataSource).WithMany(d => d.EdgeMappings).HasConstraintName("edge_mappings_data_source_id_fkey");
+        });
+
+        modelBuilder.Entity<Event>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("events_pkey");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("events_project_id_fkey");
+
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Events)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("events_dataSource_id_fkey");
         });
 
         modelBuilder.Entity<Group>(entity =>
@@ -403,6 +437,37 @@ public partial class DeeplynxContext : DbContext
                 .HasConstraintName("sensitivity_labels_organization_id_fkey");
         });
 
+         modelBuilder.Entity<Subscription>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_user_id_fkey");
+
+            entity.HasOne(d => d.Action)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.ActionId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_action_id_fkey");
+
+            entity.HasOne(d => d.Project)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_project_id_fkey");
+
+            entity.HasOne(d => d.DataSource)
+                .WithMany(p => p.Subscriptions)
+                .HasForeignKey(d => d.DataSourceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("subscriptions_dataSource_id_fkey");
+        });
+
         modelBuilder.Entity<Tag>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("tags_pkey");
@@ -434,69 +499,6 @@ public partial class DeeplynxContext : DbContext
                         j.IndexerProperty<long>("ProjectId").HasColumnName("project_id");
                     });
 
-        });
-
-        modelBuilder.Entity<Event>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("events_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.Project)
-                .WithMany(p => p.Events)
-                .HasForeignKey(d => d.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("events_project_id_fkey");
-
-            entity.HasOne(d => d.DataSource)
-                .WithMany(p => p.Events)
-                .HasForeignKey(d => d.DataSourceId)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("events_dataSource_id_fkey");
-        });
-
-        modelBuilder.Entity<Action>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("actions_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.Project)
-                .WithMany(p => p.Actions)
-                .HasForeignKey(d => d.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("actions_project_id_fkey");
-        });
-
-        modelBuilder.Entity<Subscription>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.User)
-                .WithMany(p => p.Subscriptions)
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("subscriptions_user_id_fkey");
-
-            entity.HasOne(d => d.Action)
-                .WithMany(p => p.Subscriptions)
-                .HasForeignKey(d => d.ActionId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("subscriptions_action_id_fkey");
-
-            entity.HasOne(d => d.Project)
-                .WithMany(p => p.Subscriptions)
-                .HasForeignKey(d => d.ProjectId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("subscriptions_project_id_fkey");
-
-            entity.HasOne(d => d.DataSource)
-                .WithMany(p => p.Subscriptions)
-                .HasForeignKey(d => d.DataSourceId)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("subscriptions_dataSource_id_fkey");
         });
 
         OnModelCreatingPartial(modelBuilder);
