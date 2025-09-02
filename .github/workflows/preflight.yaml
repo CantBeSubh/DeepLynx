@@ -5,6 +5,27 @@ on:
     branches: ["develop", "main"]
 
 jobs:
+  dotnet-build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0' 
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build the project
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --verbosity normal
+        
   build-check:
     runs-on: [self-hosted]
     steps:
@@ -27,7 +48,7 @@ jobs:
           # Build app image without pushing to registry
           az acr build --registry $ACR_REGISTRY \
             --no-push \
-            --file Dockerfiles/Dockerfile.app \
+            --file Dockerfiles/ui/Dockerfile.public \
             --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
@@ -41,7 +62,7 @@ jobs:
           # Build backend image without pushing to registry
           az acr build --registry $ACR_REGISTRY \
             --no-push \
-            --file Dockerfiles/Dockerfile.backend.app \
+            --file Dockerfiles/server/Dockerfile.public \
             --build-arg NEXT_PUBLIC_OKTA_CLIENT_ID=${{ vars.NEXT_PUBLIC_OKTA_CLIENT_ID }} \
             --build-arg NEXT_PUBLIC_OKTA_ISSUER=${{ vars.NEXT_PUBLIC_OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
