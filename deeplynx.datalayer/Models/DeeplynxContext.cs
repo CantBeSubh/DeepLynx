@@ -126,6 +126,25 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(g => g.Organization).WithMany(p => p.Groups)
                 .HasForeignKey(d => d.OrganizationId).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("groups_organization_id_fkey");
+
+            entity.HasMany(g => g.Users).WithMany(u => u.Groups)
+                .UsingEntity<Dictionary<string, object>>(
+                    "GroupUser",
+                    gu => gu.HasOne<User>().WithMany()
+                        .HasForeignKey("GroupId")
+                        .HasConstraintName("group_users_group_id_fkey"),
+                    gu => gu.HasOne<Group>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("group_users_user_id_fkey"),
+                    gu =>
+                    {
+                        gu.HasKey("GroupId", "UserId").HasName("group_users_pkey");
+                        gu.ToTable("group_users", "deeplynx");
+                        gu.HasIndex(new[] {"GroupId"}).HasName("idx_group_users_group_id");
+                        gu.HasIndex(new[] {"UserId"}).HasName("idx_group_users_user_id");
+                        gu.IndexerProperty<long>("GroupId").HasColumnName("group_id");
+                        gu.IndexerProperty<long>("UserId").HasColumnName("user_id");
+                    });
         });
 
         modelBuilder.Entity<HistoricalEdge>(entity =>
@@ -318,6 +337,25 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(g => g.Project).WithMany(p => p.Roles)
                 .HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("roles_project_id_fkey");
+            
+            entity.HasMany(g => g.Permissions).WithMany(u => u.Roles)
+                .UsingEntity<Dictionary<string, object>>(
+                    "RolePermission",
+                    gu => gu.HasOne<Permission>().WithMany()
+                        .HasForeignKey("PermissionId")
+                        .HasConstraintName("role_permissions_permission_id_fkey"),
+                    gu => gu.HasOne<Role>().WithMany()
+                        .HasForeignKey("RoleId")
+                        .HasConstraintName("role_permissions_role_id_fkey"),
+                    gu =>
+                    {
+                        gu.HasKey("RoleId", "PermissionId").HasName("role_permissions_pkey");
+                        gu.ToTable("role_permissions", "deeplynx");
+                        gu.HasIndex(new[] {"RoleId"}).HasName("idx_role_permissions_role_id");
+                        gu.HasIndex(new[] {"PermissionId"}).HasName("idx_role_permissions_permission_id");
+                        gu.IndexerProperty<long>("RoleId").HasColumnName("role_id");
+                        gu.IndexerProperty<long>("PermissionId").HasColumnName("permission_id");
+                    });
         });
 
         modelBuilder.Entity<Tag>(entity =>

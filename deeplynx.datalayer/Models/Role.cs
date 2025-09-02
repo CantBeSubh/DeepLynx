@@ -34,4 +34,7 @@ public partial class Role
     
     [InverseProperty("Role")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
+    
+    [InverseProperty("Roles")]
+    public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 }

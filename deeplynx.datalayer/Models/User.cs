@@ -39,4 +39,7 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
+    
+    [InverseProperty("Users")]
+    public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 }

@@ -8,10 +8,10 @@ using System.Text.Json;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("groups", Schema = "deeplynx")]
-[Index("Id", Name = "idx_groups_id")]
-[Index("OrganizationId", Name = "idx_groups_organization_id")]
-public partial class Group
+[Table("permissions", Schema = "deeplynx")]
+[Index("Id", Name = "idx_permissions_id")]
+[Index("LabelId", Name = "idx_permissions_label_id")]
+public partial class Permission
 {
     [Key]
     [Column("id")]
@@ -23,22 +23,21 @@ public partial class Group
     [Column("description")]
     public string? Description { get; set; }
     
+    [Column("action")]
+    public string Action { get; set; } = null!;
+    
+    [Column("domain")]
+    public string? Domain { get; set; }
+    
+    [Column("label_id")]
+    public long? LabelId { get; set; }
+    
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
     
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     
-    [Column("organization_id")]
-    public long OrganizationId { get; set; }
-    
-    [ForeignKey("OrganizationId")]
-    [InverseProperty("Groups")]
-    public virtual Organization Organization { get; set; } = null!;
-    
-    [InverseProperty("Group")]
-    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
-    
-    [InverseProperty("Groups")]
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
+    [InverseProperty("Permissions")]
+    public ICollection<Role> Roles { get; set; } = new List<Role>();
 }
