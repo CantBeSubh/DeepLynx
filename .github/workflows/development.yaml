@@ -100,7 +100,7 @@ jobs:
             --from-literal=okta-client-id="${{ vars.OKTA_CLIENT_ID }}" \
             --from-literal=okta-issuer="${{ vars.OKTA_ISSUER }}" \
             --from-literal=api-url="${{ vars.NEXT_PUBLIC_API_URL }}" \
-            --from-literal=api-url="${{ vars.NEXTAUTH_URL }}" \
+            --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
             --namespace=deeplynxv3-dev \

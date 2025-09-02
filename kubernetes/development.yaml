@@ -109,6 +109,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: api-url
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: auth-url
             - name: NEXT_PUBLIC_REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
@@ -200,6 +205,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: api-url
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: auth-url
             - name: NEXT_PUBLIC_REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
