@@ -1,39 +1,56 @@
 services:
-  app:
+  ui:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.app.local
+      dockerfile: Dockerfiles/ui/Dockerfile.local
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+    environment:
+      NODE_ENV: production
+      BACKEND_BASE_URL: "http://server:5000/api"
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: production
-      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
-      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET}
-      OKTA_ISSUER: ${OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
+    networks:
+      - nexus-network
     depends_on:
-      - postgres
+      - server
 
-  backend:
+  server:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.backend.local
+      dockerfile: Dockerfiles/server/Dockerfile.local
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nexuscore
+      POSTGRES_DB_NAME: deeplynx
+      POSTGRES_DB_HOST: nx-postgres
+      POSTGRES_PORT: 5432
+    entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
-    environment:
-      NODE_ENV: production
-      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
-      OKTA_ISSUER: ${OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
+    networks:
+      - nexus-network
     depends_on:
-      - postgres
-    entrypoint: /usr/local/bin/entrypoint.sh
+        - nx-postgres
 
-  postgres:
+  nx-postgres:
     build:
-      context: ./database
-      dockerfile: Dockerfiles/Dockerfile.db.local
+      context: ./
+      dockerfile: Dockerfiles/database/Dockerfile.local
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nexuscore
     ports:
-      - "5433:5432"
+      - "5432"
+    networks:
+      - nexus-network
+    volumes:
+      - nx-postgres-data:/var/lib/postgresql/data
+    
+networks:
+  nexus-network:
+    driver: bridge
+  
+volumes:
+  nx-postgres-data:
+    driver: local
