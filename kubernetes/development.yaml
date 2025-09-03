@@ -83,7 +83,7 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
-            - name: AUTH_TRUST_HOST          # REQUIRED behind proxies/CDNs
+            - name: AUTH_TRUST_HOST          
               value: "true"
             - name: AUTH_SECRET
               valueFrom:
