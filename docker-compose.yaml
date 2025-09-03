@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
         NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+    env_file:
+      - deeplynx.UI/.env
     environment:
       NODE_ENV: production
       OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
