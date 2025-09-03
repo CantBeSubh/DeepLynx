@@ -7,47 +7,40 @@
 2. .NET SDK: Ensure .NET SDK version 10.0 is installed on your system. Download [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). You can verify you are using the correct version by running `dotnet --version` in the command line.
 
 ## Docker Setup
-This application may be run from docker using the following docker command:
-```
-docker compose up
-```
-Built containers must always be rebuilt after code changes, including pulled code from GitHub, using the following:
-```
-docker compose up --build
-```
-PostgreSQL databse connection credentials are set in `docker-compose.yaml` and the default values are set to connect to the composed database automatically for rapid deployment.
+1. Environment variables:
+    * Create a .env file in the root directory
+    * Copy the contents of .env_sample to .env
+    * Make any necessary changes
 
-## Local Developmental Setup
+2. Docker:
+This application can be run from docker using the following docker commands:
+```
+docker compose -f docker-compose.yaml build
+docker compose -f docker-compose.yaml up
+```
+Docker users can skip the steps in [Load the Database](#load-the-database), as `database/migration.sql` is automatically applied during container creation. 
 
-### First Step
-* Environment variables:
-   * Either rename the file `.env_sample` in the root directory to `.env`, or:
-      1. Create a new file named `.env` in the root directory.
-      2. Copy the contents of `.env_sample` to `.env`.
-
-Once you have a `.env` file, be sure to periodically check `.env_sample` for updates as they won't automatically apply to your `.env`.
-
+## Local Setup
 1. PostgreSQL Setup:
     * Native Install:
         * Install and launch PostgreSQL.
         * Create a PostgreSQL server.
-    * Postgres on Docker:
+    * Docker Install:
         * Run the following command: `docker run --name DeepLynx -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=deeplynx -d -p 5432:5432 postgres`
-    * Add appropriate credentials for the newly created PostgreSQL server to their respective variables in `.env`. For example: 
-        * `POSTGRES_DB_HOST=localhost`
-        * `POSTGRES_PASSWORD=your_password`
+    * Add credentials (Username/Password) for the newly created PostgreSQL server to the connection string in appsettings.json. For example: 
+        * `"User ID=postgres;Database=deeplynx;Password=postgres;Server=localhost;Port=5432;"`
 
 2. .NET SDK Setup:
     * Install the .NET SDK version 9.0.
 
-3. (Optional) Entity Framework CLI to create and run migrations manually:
+3. Entity Framework CLI:
 
     * Install the .NET Entity Framework CLI tool globally:
         * `dotnet tool install --global dotnet-ef`
 
 4. Setup Kuzu:
     * After completing the above steps, run the `setup_kuzu.sh` script to set up the Kuzu environment and copy necessary files. To do this, follow these steps:
-        1. Open a terminal to the Nexus root directory.
+        1. Open a terminal and make sure you're in the Nexus root directory.
         2. Make the script executable by running:
             ```bash
             chmod +x setup_kuzu.sh
@@ -57,13 +50,12 @@ Once you have a `.env` file, be sure to periodically check `.env_sample` for upd
             ./setup_kuzu.sh
             ```
         4. This script will copy the necessary library files, update your environment variables, and clean up any temporary directories.
-        5. To run the KuzuDatabaseManagerTests, set the ENABLE_KUZU variable in `.env` to True.
-        6. Open a new terminal to test Kuzu.
+        5. To run the KuzuDatabaseManagerTests change the ENABLE_KUZU variable in .env_sample to True.
+        6. Open a new terminal and Kuzu should work fine.
 
 ## Development
 
 ### Load the Database
-Migrations should be applied automatically on application startup either locally or within docker and fail gracefully. The most common reason for failure will be either a PostgreSQL database is not running or listening for incoming connections, or incorrect credentials to an intended PostgreSQL database. 
 1. Navigate to the root folder in your project directory.
 
 2. Run the following command to apply the latest migrations and update the database:
@@ -72,7 +64,7 @@ Migrations should be applied automatically on application startup either locally
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
-If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to your PATH.  
+If the above command fails with a `Could not exeucte` or similar message, `dotnet ef` may need to be added to the PATH.  
 Please update your path to include the .NET tools directory, similar to: `export PATH="$PATH:/Users/_username_/.dotnet/tools"`
 
 ### Create Migration
@@ -81,8 +73,13 @@ If you make changes to the datalayer, create a new database migration with a des
 dotnet ef migrations add UpdateUsersExample -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
+Additionally, please update the `migration.sql` file used for applying migrations to Docker containers using the following command from the project root:
+```
+dotnet ef migrations script -o database/migration.sql --project deeplynx.datalayer --startup-project deeplynx.api --idempotent
+```
+This creates an idempotent migration script that will only apply missing migrations to the database.  
 
 See [CONTRIBUTING](./CONTRIBUTING.md) for more details.
 
 ### Additional Notes
-* Ensure that your PostgreSQL server is running before attempting to launch the app, update the database, or create migrations.
+* Ensure that your PostgreSQL server is running before attempting to update the database or create migrations.

@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
-using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
@@ -49,7 +48,6 @@ try
             policy
                 .WithOrigins(
                       "http://localhost:3000",
-                      "http://ui:3000",
                       "https://nexus.dev.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -245,11 +243,6 @@ try
             };
         });
     });
-
-    /* ╔════════════════════════════╗
-       ║      Apply Migrations      ║
-       ╚════════════════════════════╝ */
-    await MigrationRunner.ApplyMigrations(connectionString);
 
     var app = builder.Build();
 
