@@ -1,22 +1,27 @@
 # Stage 1: Build the C# backend
-FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview-alpine AS backend-build
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-build
 
 # Define build arguments
-ARG NEXT_PUBLIC_OKTA_CLIENT_ID
-ARG NEXT_PUBLIC_OKTA_ISSUER
+ARG OKTA_CLIENT_ID
+ARG OKTA_ISSUER
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_REDIRECT_LINK
+ARG NEXTAUTH_URL
 
 # Set environment variables
-ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
-ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
+ENV OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
+ENV OKTA_ISSUER=${OKTA_ISSUER}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
 WORKDIR /source
 
 # Add missing packages
-RUN apk --no-check-certificate add wget ca-certificates
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    && apt-get clean
 
 # Configure INL certs and environment variables
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
@@ -26,7 +31,6 @@ ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
-
 
 # Copy the solution file and restore dependencies
 COPY . ./Backend
@@ -41,7 +45,8 @@ FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
 # Install tools needed for entrypoint.sh
-RUN apk --no-check-certificate add postgresql-client
+RUN apt-get update && apt-get install -y \
+    postgresql-client
 
 # Configure INL certs and environment variables
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
@@ -52,18 +57,19 @@ ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
 
-
 # Stage 4: Create the final image
-FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview-alpine AS final
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
 # Copy the entrypoint script
 COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
-
 # Add missing packages
-RUN apk --no-check-certificate add wget ca-certificates
-RUN apk --no-check-certificate add postgresql-client
+RUN apt-get update && apt-get install -y \
+    wget \
+    ca-certificates \
+    postgresql-client \
+    && apt-get clean
 
 # Configure INL certs and environment variables
 RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
@@ -73,7 +79,6 @@ ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_DIR=/etc/ssl/certs/
-
 
 WORKDIR /app/backend
 
