@@ -83,23 +83,30 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
+            - name: AUTH_TRUST_HOST          
+              value: "true"
             - name: AUTH_SECRET
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: auth-secret
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: next-auth-secret
             - name: SERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: app-secrets
                   key: service-token
             # Runtime environment variables from configmap (non-sensitive)
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+            - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
+            - name: OKTA_ISSUER
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -109,6 +116,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: api-url
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: auth-url
             - name: NEXT_PUBLIC_REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
@@ -184,12 +196,12 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: service-token
-            - name: NEXT_PUBLIC_OKTA_CLIENT_ID
+            - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: okta-client-id
-            - name: NEXT_PUBLIC_OKTA_ISSUER
+            - name: OKTA_ISSUER
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -199,6 +211,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: api-url
+            - name: NEXTAUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: auth-url
             - name: NEXT_PUBLIC_REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
@@ -266,8 +283,20 @@ metadata:
       more_clear_headers "x-content-type-options";
       more_clear_headers "x-frame-options";
       more_clear_headers "content-security-policy";
+      more_set_headers "cache-Control: no-cache, no-store";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/server-snippets: |
+      location / {
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   X-Forwarded-Host $host;
+        proxy_set_header   X-Cluster-Client-Ip $remote_addr;
+        }
 spec:
   rules:
     - host: nexus.dev.inl.gov
@@ -287,6 +316,13 @@ spec:
                 name: deeplynxv3-backend-service
                 port:
                   number: 80
+          - path: /api/auth
+            pathType: Prefix
+            backend:
+              service:  
+                name: deeplynxv3-service
+                port:  
+                  number: 80 
 ---
 # # Database if needed for deployment
 # Dummy change to force build.

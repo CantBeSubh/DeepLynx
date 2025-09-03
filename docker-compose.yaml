@@ -7,8 +7,11 @@ services:
         NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
-      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET}
+      OKTA_ISSUER: ${OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
       BACKEND_BASE_URL: "http://server:5000/api"
     ports:
       - "3000:3000"
@@ -25,8 +28,10 @@ services:
       - .env
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
-      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_ISSUER: ${OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
