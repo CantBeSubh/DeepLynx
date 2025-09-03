@@ -6,16 +6,6 @@
 
 2. .NET SDK: Ensure .NET SDK version 10.0 is installed on your system. Download [.NET 10.0](https://dotnet.microsoft.com/en-us/download/dotnet/10.0). You can verify you are using the correct version by running `dotnet --version` in the command line.
 
-## First Step
-* Environment variables:
-   * Either rename the file `.env_sample` in the root directory to `.env`, or:
-      1. Create a new file named `.env` in the root directory.
-      2. Copy the contents of `.env_sample` to `.env`.
-
-Once you have a `.env` file, be sure to periodically check `.env_sample` for updates as they won't automatically apply to your `.env`.
-
-The default credentials are set to work with the docker compose version for quick startup. For local development, these will need to altered in the development steps as stated in [Local Setup](#local-setup).
-
 ## Docker Setup
 This application may be run from docker using the following docker command:
 ```
@@ -25,10 +15,17 @@ Built containers must always be rebuilt after code changes, including pulled cod
 ```
 docker compose up --build
 ```
-The default credentials in `.env_sample`, which should be set in `.env`, are set to connect to the composed database automatically for rapid deployment.
+PostgreSQL databse connection credentials are set in `docker-compose.yaml` and the default values are set to connect to the composed database automatically for rapid deployment.
 
-## Local Setup
-Regardless of your postgres database setup either below or otherwise, you must immediately update your `.env` variables to accomodate your specific postgres and development environment. This includes likely changing your postgres database hostname to `localhost` as well as associated passwords.
+## Local Developmental Setup
+
+### First Step
+* Environment variables:
+   * Either rename the file `.env_sample` in the root directory to `.env`, or:
+      1. Create a new file named `.env` in the root directory.
+      2. Copy the contents of `.env_sample` to `.env`.
+
+Once you have a `.env` file, be sure to periodically check `.env_sample` for updates as they won't automatically apply to your `.env`.
 
 1. PostgreSQL Setup:
     * Native Install:
