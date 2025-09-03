@@ -5,8 +5,6 @@ services:
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
         NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
-#    env_file:
-#      - deeplynx.UI/.env
     environment:
       NODE_ENV: production
       OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
@@ -27,11 +25,6 @@ services:
       context: ./
       dockerfile: Dockerfiles/server/Dockerfile.local
     environment:
-      NODE_ENV: production
-      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
-      OKTA_ISSUER: ${OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: nexuscore
       POSTGRES_DB_NAME: deeplynx
