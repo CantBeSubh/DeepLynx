@@ -128,6 +128,7 @@ try
     builder.Services.AddTransient<FileS3Business>();
     builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
 
+    builder.Services.AddSingleton(CacheBusiness.Instance);
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 

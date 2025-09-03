@@ -85,6 +85,7 @@ public class IntegrationTestBase : IAsyncLifetime
     //Runs after every test in the test suite
     public async Task DisposeAsync()
     {
+        Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         await Context.DisposeAsync();
     }
 
