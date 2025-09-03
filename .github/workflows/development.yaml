@@ -39,8 +39,8 @@ jobs:
           az login --service-principal -u $ACR_SP_USER -p $ACR_SP_PASSWORD --tenant $ACR_SP_TENANT
           az account set --subscription $ACR_SUBSCRIPTION
           az acr build --registry $ACR_REGISTRY \
-            --image $ACR_PATH:deeplynxv3-ui-$GITHUB_RUN_NUMBER \
-            --file Dockerfiles/ui/Dockerfile.public \
+            --image $ACR_PATH:deeplynxv3-app-$GITHUB_RUN_NUMBER \
+            --file Dockerfiles/Dockerfile.app \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
@@ -53,9 +53,7 @@ jobs:
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             .
           
-          az acr build --registry $ACR_REGISTRY \
-            --image $ACR_PATH:deeplynxv3-server-$GITHUB_RUN_NUMBER \
-            --file Dockerfiles/server/Dockerfile.public \
+          az acr build --registry $ACR_REGISTRY --image $ACR_PATH:deeplynxv3-backend-$GITHUB_RUN_NUMBER --file Dockerfiles/Dockerfile.backend.app \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
             --build-arg NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }} \
@@ -119,8 +117,8 @@ jobs:
           CI_REGISTRY_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
           DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
-          POSTGRES_DB_HOST: ${{ vars.POSTGRES_DB_HOST }}
-          POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
+          POSTGRES_DBHOST: ${{ vars.POSTGRES_DBHOST }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}

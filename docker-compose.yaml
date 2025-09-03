@@ -1,56 +1,39 @@
 services:
-  ui:
+  app:
     build:
       context: ./
-      dockerfile: Dockerfiles/ui/Dockerfile.local
-      args:
-        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
-    environment:
-      NODE_ENV: production
-      BACKEND_BASE_URL: "http://server:5000/api"
+      dockerfile: Dockerfiles/Dockerfile.app.local
     ports:
       - "3000:3000"
-    networks:
-      - nexus-network
+    environment:
+      NODE_ENV: production
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_CLIENT_SECRET: ${OKTA_CLIENT_SECRET}
+      OKTA_ISSUER: ${OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
     depends_on:
-      - server
+      - postgres
 
-  server:
+  backend:
     build:
       context: ./
-      dockerfile: Dockerfiles/server/Dockerfile.local
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: nexuscore
-      POSTGRES_DB_NAME: deeplynx
-      POSTGRES_DB_HOST: nx-postgres
-      POSTGRES_PORT: 5432
-    entrypoint: /usr/local/bin/entrypoint.sh
+      dockerfile: Dockerfiles/Dockerfile.backend.local
     ports:
       - "5000:5000"
-    networks:
-      - nexus-network
-    depends_on:
-        - nx-postgres
-
-  nx-postgres:
-    build:
-      context: ./
-      dockerfile: Dockerfiles/database/Dockerfile.local
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=nexuscore
+      NODE_ENV: production
+      OKTA_CLIENT_ID: ${OKTA_CLIENT_ID}
+      OKTA_ISSUER: ${OKTA_ISSUER}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+    depends_on:
+      - postgres
+    entrypoint: /usr/local/bin/entrypoint.sh
+
+  postgres:
+    build:
+      context: ./database
+      dockerfile: Dockerfiles/Dockerfile.db.local
     ports:
-      - "5432"
-    networks:
-      - nexus-network
-    volumes:
-      - nx-postgres-data:/var/lib/postgresql/data
-    
-networks:
-  nexus-network:
-    driver: bridge
-  
-volumes:
-  nx-postgres-data:
-    driver: local
+      - "5433:5432"

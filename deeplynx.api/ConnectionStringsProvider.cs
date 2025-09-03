@@ -20,15 +20,15 @@ public static class ConnectionStringsProvider
 
         var postgresUser = Environment.GetEnvironmentVariable("POSTGRES_USER");
         var postgresPassword = Environment.GetEnvironmentVariable("POSTGRES_PASSWORD");
-        var postgresServer = Environment.GetEnvironmentVariable("POSTGRES_DB_HOST");
-        var postgresPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
         var postgresDatabaseName = Environment.GetEnvironmentVariable("POSTGRES_DB_NAME");
+        var postgresServer = Environment.GetEnvironmentVariable("POSTGRES_DBHOST");
+        var postgresPort = Environment.GetEnvironmentVariable("POSTGRES_PORT");
 
         if (!string.IsNullOrEmpty(postgresUser) &&
             !string.IsNullOrEmpty(postgresPassword) &&
+            !string.IsNullOrEmpty(postgresDatabaseName) &&
             !string.IsNullOrEmpty(postgresServer) &&
-            !string.IsNullOrEmpty(postgresPort) &&
-            !string.IsNullOrEmpty(postgresDatabaseName))
+            !string.IsNullOrEmpty(postgresPort))
         {
             Log.Information("Using .env postgres connection credentials.");
             return $"User ID={postgresUser};Password={postgresPassword};Database={postgresDatabaseName};Server={postgresServer};Port={postgresPort};";

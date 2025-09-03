@@ -36,52 +36,52 @@ RUN echo "OKTA_CLIENT_ID=${OKTA_CLIENT_ID}" \
     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}" \
     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
 
-# Set working directory
-WORKDIR /usr/src/app
+WORKDIR /source
 
 # Copy the solution file and restore dependencies
-COPY deeplynx.sln .
-COPY deeplynx.api ./deeplynx.api
-COPY deeplynx.business ./deeplynx.business
-COPY deeplynx.datalayer ./deeplynx.datalayer
-COPY deeplynx.graph ./deeplynx.graph
-COPY deeplynx.helpers ./deeplynx.helpers
-COPY deeplynx.interfaces ./deeplynx.interfaces
-COPY deeplynx.models ./deeplynx.models
-COPY deeplynx.tests ./deeplynx.tests
-RUN dotnet restore deeplynx.sln
+COPY . ./Backend
+RUN dotnet restore ./Backend/deeplynx.sln
 
 # Build the backend
-RUN dotnet build deeplynx.sln -c Release -o /app/build
+WORKDIR /source/Backend
+RUN dotnet build -c Release -o /app/build
 
 # Publish the backend
 FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
-# Stage 3: Create the final image
+# Install tools needed for entrypoint.sh
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
+
+# Stage 4: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
-# Install tools needed for entrypoint.sh operations
-#RUN apt-get update && apt-get install -y \
-#    postgresql-client \
-#    && apt-get clean
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    && apt-get clean
 
-# Set working directory
-WORKDIR /usr/src/app
+# Copy the entrypoint script
+COPY database/Dockerfiles/entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+WORKDIR /app/backend
 
 # Copy the published backend code
 COPY --from=publish /app/publish .
+COPY database /database
+COPY deeplynx.api/moon.css /app/backend/moon.css
 
-# Copy additional files if needed
-COPY deeplynx.api/moon.css ./moon.css
-
-# Kuzu ops
+# Copy the shared libraries into the appropriate directory
 COPY deeplynx.graph/KuzuFiles/libkuzunet.so /app/backend/runtimes/linux-x64/native/
 COPY deeplynx.graph/KuzuFiles/libkuzu.so /app/backend/runtimes/linux-x64/native/
+
 # Ensure the shared libraries are in the expected path
 RUN mkdir -p /app/backend/runtimes/linux-x64/native
+
 # Set the LD_LIBRARY_PATH to include the directory of your libraries
 ENV LD_LIBRARY_PATH="/app/backend/runtimes/linux-x64/native/:$LD_LIBRARY_PATH"
 
-# This will run the .NET application directly
-CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:5000"]
+CMD [ "dotnet", "run" ]
