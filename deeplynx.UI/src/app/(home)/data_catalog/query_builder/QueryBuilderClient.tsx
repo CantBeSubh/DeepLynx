@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ClassResponseDto, DataSourceResponseDto, TagResponseDto } from "@/app/(home)/types/types";
+import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
@@ -12,6 +12,7 @@ import { DatePicker } from "../../components/DatePicker";
 import { getClassesForProjects } from "@/app/lib/class_services client";
 import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
 import { getTagsForProjects } from "@/app/lib/tag_services.client";
+import { queryBuilder } from "@/app/lib/query_services.client";
 
 
 type Props = {
@@ -19,33 +20,25 @@ type Props = {
   initialSelectedProjects: string[];
   initialSearchTerm: string;
   connectors?: string[];
-  filters?: string[];
+  filters?: { name: string; value: string }[];
   operators?: string[];
   values?: string[];
 };
 
-export type postSearch = {
-  text: string;
-  query: Query[];
-}
-
 export type Query = {
   id: string;
-  connector?: string;
-  filter?: string;
-  operator?: string;
-  value?: string;
+  query: CustomQueryRequestDto;
 };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): Query => ({ id: newId(), connector: "", filter: "", operator: "", value: "" });
+const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "" } });
 
 export default function QueryBuilderClient({
   initialProjects,
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR", "NOT"],
-  filters = ["Time Range", "Class", "Tag", "Original Data ID", "Data Source", "Property Field"],
+  filters = [{ name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Property Field", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE"],
   values = ["ClassOne", "ClassTwo", "ClassThree"]
 }: Props) {
@@ -148,6 +141,16 @@ export default function QueryBuilderClient({
     }
   }, [hasLoaded, currentProjectId]);
 
+  const handleSubmit = async () => {
+    try {
+      const queryDtos = rows.map(r => r.query);
+      let data = await queryBuilder(queryDtos, searchTerm);
+      console.log(data)
+    } catch (error) {
+      console.error("Failed to send query")
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
@@ -198,8 +201,15 @@ export default function QueryBuilderClient({
                       <div className="card-body grid grid-cols-1 sm:grid-cols-6 gap-2 w-full">
                         <select
                           className="select select-sm select-bordered w-full"
-                          value={row.connector}
-                          onChange={(e) => updateRow(row.id, { connector: e.target.value })}
+                          value={row.query.connector ?? ""}
+                          onChange={(e) =>
+                            updateRow(row.id, {
+                              query: {
+                                ...row.query,
+                                connector: e.target.value,
+                              },
+                            })
+                          }
                         >
                           <option value="" disabled>
                             {t.translations.CONNECTOR}
@@ -213,22 +223,28 @@ export default function QueryBuilderClient({
 
                         <select
                           className="select select-sm select-bordered w-full"
-                          value={row.filter}
+                          value={row.query.filter}
                           onChange={async (e) => {
                             const value = e.target.value;
-                            updateRow(row.id, { filter: value, value: "" });
+                            console.log(value)
+                            updateRow(row.id, {
+                              query: {
+                                ...row.query,
+                                filter: e.target.value,
+                              },
+                            });
 
-                            if (value === "Class") {
+                            if (value === "ClassName") {
                               getClassesForProjects(currentProjectId, selectedProjects)
                                 .then(setClasses)
                                 .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
-                            if (value === "Data Source") {
+                            if (value === "DataSourceName") {
                               getDataSourcesForProjects(currentProjectId, selectedProjects)
                                 .then(setDataSources)
                                 .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
-                            if (value === "Tag") {
+                            if (value === "Tags") {
                               getTagsForProjects(currentProjectId, selectedProjects)
                                 .then(setTags)
                                 .catch((err) => console.error("Failed to fetch tags:", err));
@@ -239,16 +255,21 @@ export default function QueryBuilderClient({
                             {t.translations.FILTER}
                           </option>
                           {filters.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
+                            <option key={opt.name} value={opt.value}>
+                              {opt.name}
                             </option>
                           ))}
                         </select>
 
                         <select
                           className="select select-sm select-bordered w-full"
-                          value={row.operator}
-                          onChange={(e) => updateRow(row.id, { operator: e.target.value })}
+                          value={row.query.operator}
+                          onChange={(e) => updateRow(row.id, {
+                            query: {
+                              ...row.query,
+                              operator: e.target.value,
+                            },
+                          })}
                         >
                           <option value="" disabled>
                             {t.translations.OPERATOR}
@@ -260,30 +281,40 @@ export default function QueryBuilderClient({
                           ))}
                         </select>
 
-                        {/* Value control: input for Property Field; select for others (except Time Range) */}
-                        {row.filter !== "Time Range" && (
-                          (row.filter === "Property Field" || row.filter === "Original Data ID") ? (
+                        {/* Text input for Property Field; select for others (except Time Range) */}
+                        {row.query.filter !== "Time Range" && (
+                          (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
                             <input
                               type="text"
                               className="input input-sm input-bordered w-full"
-                              value={row.value}
-                              onChange={(e) => updateRow(row.id, { value: e.target.value })}
+                              value={row.query.value}
+                              onChange={(e) => updateRow(row.id, {
+                                query: {
+                                  ...row.query,
+                                  value: e.target.value,
+                                },
+                              })}
                               placeholder={t.translations.VALUE}
                             />
                           ) : (
                             <select
                               className="select select-sm select-bordered w-full"
-                              value={row.value}
-                              onChange={(e) => updateRow(row.id, { value: e.target.value })}
+                              value={row.query.value}
+                              onChange={(e) => updateRow(row.id, {
+                                query: {
+                                  ...row.query,
+                                  value: e.target.value,
+                                },
+                              })}
                               disabled={
-                                (row.filter === "Class" && isLoadingClasses) ||
-                                (row.filter === "Data Source" && isLoadingDataSources) ||
-                                (row.filter === "Tag" && isLoadingTags)
+                                (row.query.filter === "ClassName" && isLoadingClasses) ||
+                                (row.query.filter === "DataSourceName" && isLoadingDataSources) ||
+                                (row.query.filter === "Tags" && isLoadingTags)
                               }
                             >
                               <option value="" disabled>{t.translations.VALUE}</option>
 
-                              {row.filter === "Class" ? (
+                              {row.query.filter === "ClassName" ? (
                                 classes.length ? (
                                   classes.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -295,7 +326,7 @@ export default function QueryBuilderClient({
                                     {isLoadingClasses ? "Loading classes..." : "No classes found"}
                                   </option>
                                 )
-                              ) : row.filter === "Data Source" ? (
+                              ) : row.query.filter === "DataSourceName" ? (
                                 datasources.length ? (
                                   datasources.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -307,7 +338,7 @@ export default function QueryBuilderClient({
                                     {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
                                   </option>
                                 )
-                              ) : row.filter === "Tag" ? (
+                              ) : row.query.filter === "Tags" ? (
                                 tags.length ? (
                                   tags.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -330,12 +361,17 @@ export default function QueryBuilderClient({
                           )
                         )}
 
-                        {/* When Time Range, render the calendar instead of options */}
-                        {row.filter === "Time Range" ? (
+                        {/* Time Range*/}
+                        {row.query.filter === "Time Range" ? (
                           <DatePicker
                             row={row}
                             onChange={(dateTime: string) =>
-                              updateRow(row.id, { value: dateTime }) // store datetime in row.value
+                              updateRow(row.id, {
+                                query: {
+                                  ...row.query,
+                                  connector: dateTime,
+                                },
+                              }) // store datetime in row.value
                             }
                           />
                         ) : null}
@@ -398,7 +434,7 @@ export default function QueryBuilderClient({
           </div>
           {/* Submit search */}
           <div className="grid justify-items-end p-4">
-            <button onClick={reset} className="btn btn-primary btn-sm">Search Records
+            <button onClick={handleSubmit} className="btn btn-primary btn-sm">Search Records
             </button>
           </div>
         </div>

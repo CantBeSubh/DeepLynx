@@ -131,3 +131,10 @@ export type TagResponseDto = {
   archivedAt?: string | null;
 };
 
+export type CustomQueryRequestDto = {
+  connector: string | null;
+  filter: string;
+  operator: string;
+  value: string;
+};
+
