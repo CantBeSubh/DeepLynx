@@ -1,57 +1,36 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using deeplynx.business;
+using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
 using Moq;
-using Microsoft.Extensions.Logging;
 
 namespace deeplynx.tests;
 
 [Collection("Test Suite Collection")]
 public class FileFileSystemBusinessTests: IntegrationTestBase
 {
-    private ClassBusiness _classBusiness = null!;
-    private ProjectBusiness _projectBusiness = null!;
-    private EventBusiness _eventBusiness = null!;
     private FileFilesystemBusiness _fileBusiness;
-    private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
-    private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
     private Mock<IRecordBusiness> _recordBusiness = null!;
-    private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
-    private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
-    private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
     private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
+    private Mock<IClassBusiness> _classBusiness = null!;
     private readonly string _testDirectory = Path.Combine(Path.GetTempPath(), "FileBusinessTests");
-    
+    public long pid;
+    public long os1;
+    public long os2;
     
     public FileFileSystemBusinessTests(TestSuiteFixture fixture) : base(fixture) {}
 
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
         _recordBusiness = new Mock<IRecordBusiness>();
-        _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
-        _relationshipBusiness = new Mock<IRelationshipBusiness>();
-        _dataSourceBusiness = new Mock<IDataSourceBusiness>();
-        _mockLogger = new Mock<ILogger<ProjectBusiness>>();
-        _eventBusiness = new EventBusiness(Context);
         _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
-
-        _classBusiness = new ClassBusiness(
-            Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
-            _recordMappingBusiness.Object, _relationshipBusiness.Object, _eventBusiness);
-            
-        _projectBusiness = new ProjectBusiness(
-            Context, _mockLogger.Object, _classBusiness, 
-            _dataSourceBusiness.Object, _objectStorageBusiness.Object, _eventBusiness);
-        
-        _fileBusiness = new FileFilesystemBusiness(Context, _objectStorageBusiness.Object, _classBusiness, _recordBusiness.Object);
+        _classBusiness = new Mock<IClassBusiness>();
+        _fileBusiness = new FileFilesystemBusiness(Context, _objectStorageBusiness.Object, _classBusiness.Object, _recordBusiness.Object);
     }
-    
-    
-    
     
     [Fact]
     public async Task UploadFile_ShouldSaveFileAndReturnPath() {
@@ -163,7 +142,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     }
     
     [Fact]
-    public async Task DeleteFile_ShouldDeleteFile() {
+    public async Task DeleteFile_ShouldDeleteFileAndEmptyDirectoriesCreated() {
         // Arrange
         var config = new ObjectStorageConfigDto { MountPath = _testDirectory };
         var fileMock = new Mock<IFormFile>();
@@ -175,7 +154,6 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
             .Returns((Stream stream, CancellationToken token) => ms.CopyToAsync(stream));
     
         var guid = Guid.NewGuid();
-        
         // need the try finally for if the test fails, still want to do cleanup
         try
         {
@@ -186,6 +164,21 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
             Assert.Contains(guid.ToString(), result);
             Assert.True(File.Exists(result));
             Assert.True(Directory.Exists(_testDirectory));
+
+            var record = new RecordResponseDto()
+            {
+                Uri = result,
+                Name = "test.txt",
+                ObjectStorageId = os1,
+                ProjectId = pid
+            };
+
+            var delete = await _fileBusiness.DeleteFile(record);
+            Assert.True(delete);
+            Assert.False(File.Exists(result));
+            Assert.False(Directory.Exists(result));
+            Assert.True(Directory.Exists(_testDirectory));
+            Assert.True(Directory.GetFileSystemEntries(_testDirectory).Length == 0);
         }
         finally
         {
@@ -197,5 +190,41 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
             Assert.False(Directory.Exists(_testDirectory));
         }
     }
+    
+    
+     protected override async Task SeedTestDataAsync()
+    {
+        await base.SeedTestDataAsync();
+        var project = new Project() { Name = "Test Project 1" };
+        Context.Projects.Add(project);
+        await Context.SaveChangesAsync();
+        pid = project.Id;
 
+        var os1Config = new JsonObject();
+        os1Config["mountPath"] = _testDirectory;
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Test Object Storage 1",
+            ProjectId = pid,
+            Type = "filesystem",
+            Config = os1Config.ToString(),
+            Default = true
+        };
+        
+        var os2Config = new JsonObject();
+        os2Config["mountPath"] = _testDirectory;
+        var objectStorage2 = new ObjectStorage
+        {
+            Name = "Test Object Storage 2",
+            Type = "filesystem",
+            ProjectId = pid,
+            Config = os2Config.ToString()
+        };
+        
+        Context.ObjectStorages.Add(objectStorage);
+        Context.ObjectStorages.Add(objectStorage2);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
+        os2 = objectStorage2.Id;
+    }
 }
