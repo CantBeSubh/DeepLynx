@@ -121,6 +121,44 @@ namespace deeplynx.business
                 ArchivedAt = dataSource.ArchivedAt,
             };
         }
+        
+        /// <summary>
+        /// Retrieve a specific data source by its ID
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <returns>The data source in question</returns>
+        /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
+        public async Task<DataSourceResponseDto> GetDefaultDataSource(long projectId)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            var dataSource = await _context.DataSources
+                .Where(d => d.ProjectId == projectId && d.Default == true && d.ArchivedAt == null)
+                .FirstOrDefaultAsync();
+
+            if (dataSource == null || dataSource.ProjectId != projectId)
+            {
+                throw new KeyNotFoundException($"Default data source for project {projectId} not found");
+            }
+
+            return new DataSourceResponseDto
+            {
+                Id = dataSource.Id,
+                Name = dataSource.Name,
+                Description = dataSource.Description,
+                Default = dataSource.Default,
+                Abbreviation = dataSource.Abbreviation,
+                Type = dataSource.Type,
+                BaseUri = dataSource.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(dataSource.Config ?? "{}") as JsonObject,
+                ProjectId = dataSource.ProjectId,
+                CreatedBy = dataSource.CreatedBy,
+                CreatedAt = dataSource.CreatedAt,
+                ModifiedBy = dataSource.ModifiedBy,
+                ModifiedAt = dataSource.ModifiedAt,
+                ArchivedAt = dataSource.ArchivedAt,
+            };
+        }
 
         /// <summary>
         /// Asynchronously creates a new data source for a specified project.

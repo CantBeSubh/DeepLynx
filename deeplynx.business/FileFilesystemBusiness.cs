@@ -6,6 +6,7 @@ using deeplynx.helpers;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace deeplynx.business;
 
@@ -31,7 +32,8 @@ public class FileFilesystemBusiness : IFileBusiness
         long projectId,
         long dataSourceId,
         ObjectStorageConfigDto objectStorageConfig,
-        IFormFile file
+        IFormFile file,
+        Guid guid
     )
     {
         // TODO: check for default obj storage / datasource and don't require them
@@ -41,12 +43,14 @@ public class FileFilesystemBusiness : IFileBusiness
             throw new Exception("File system mount path not set in object storage");
         }
         
+        var fileName = $"{guid}_{file.FileName}";
+        
         // create a file path in the format <mountdir>/project_<id>/datasource_<id>/filename
         var filePath = Path.Combine(
             objectStorageConfig.MountPath, 
             "project_" + projectId.ToString(),
             "datasource_" + dataSourceId.ToString(),
-            file.FileName);
+            fileName);
         // create the directory for the file if not exists
         Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path."));
 
@@ -60,25 +64,88 @@ public class FileFilesystemBusiness : IFileBusiness
         return filePath;
     }
     
-    public async Task<RecordResponseDto> UpdateFile(long projectId, long datasourceId, long objectStorageId,
-        long recordId, IFormFile file)
+    public async Task<string> UpdateFile(RecordResponseDto record, IFormFile file)
     {
-        return new RecordResponseDto();
-    }
-
-    public async Task<FileStreamResult> DownloadFile(long projectId, long datasourceId, long objectStorageId,
-        long recordId)
-    {
-        // Create a simple stub with empty content
-        var emptyStream = new MemoryStream();
-        return new FileStreamResult(emptyStream, "application/octet-stream")
+        var filePath = record.Uri;
+        
+        if (string.IsNullOrWhiteSpace(filePath))
         {
-            FileDownloadName = "stub-file.txt"
-        };
+            throw new ArgumentException("File path is not specified in the record.");
+        }
+        
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("The file to update does not exist.", filePath);
+        }
+        
+        string? directory = Path.GetDirectoryName(filePath);
+
+        if (directory == null || !Directory.Exists(directory))
+        {
+            throw new DirectoryNotFoundException("Directory not found.");
+        }
+
+        var newFileName = $"{record.OriginalId}_{file.FileName}";
+        
+        var updatedPath = Path.Combine(directory, newFileName);
+        
+        // Delete the original file
+        File.Delete(filePath);
+        
+        //write new file
+        await using (var stream = new FileStream(updatedPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+        
+        return updatedPath;
     }
 
-    public async Task<bool> DeleteFile(long projectId, long objectStorageId, long recordId)
+    public async Task<FileStreamResult> DownloadFile(RecordResponseDto record)
     {
+        var filePath = record.Uri;
+        var fileName = record.Name;
+        
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("File path must be provided.");
+        }
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("The requested file does not exist.", filePath);
+        }
+
+        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        
+        // Detect file type
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(filePath, out var contentType))
+        {
+            contentType = "application/octet-stream"; // Default fallback
+        }
+        
+        return new FileStreamResult(stream, contentType)
+        {
+            FileDownloadName = fileName
+        };
+
+    }
+
+    public async Task<bool> DeleteFile(RecordResponseDto record)
+    {
+        var filePath = record.Uri;
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            throw new ArgumentException("File path is not specified in the record.");
+        }
+        
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("The file to update does not exist.", filePath);
+        }
+        
+        File.Delete(filePath);
         return true;
     }
 }

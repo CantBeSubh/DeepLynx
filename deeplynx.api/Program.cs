@@ -118,9 +118,10 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
-    builder.Services.AddTransient<IFileBusiness, FileFilesystemBusiness>();
-    builder.Services.AddTransient<IFileBusiness, FileAzureBusiness>();
-    builder.Services.AddTransient<IFileBusiness, FileS3Business>();
+    builder.Services.AddTransient<FileBusiness>();
+    builder.Services.AddTransient<FileFilesystemBusiness>();
+    builder.Services.AddTransient<FileAzureBusiness>();
+    builder.Services.AddTransient<FileS3Business>();
     builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
 
     

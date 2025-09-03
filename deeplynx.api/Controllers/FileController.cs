@@ -46,6 +46,82 @@ namespace deeplynx.api.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, message);
                 }
             }
+            
+            /// <summary>
+            /// Update file
+            /// </summary>
+            /// <param name="projectId"></param>
+            /// <param name="recordId"></param>
+            /// <param name="file"></param>
+            /// <returns></returns>
+            [HttpPut("UpdateFile/{recordId}", Name = "api_update_file")]
+            public async Task<ActionResult<RecordResponseDto>> UpdateFile(
+                long projectId,
+                long recordId,
+                IFormFile file)
+            {
+                try
+                {
+                    var updatedFileInfo = await _fileBusiness
+                        .UpdateFile(projectId, recordId, file);
+                    return Ok(updatedFileInfo);
+                }
+                catch (Exception e)
+                {
+                    var message = $"An error occurred while updating file in record {recordId}: {e}";
+                    _logger.LogError(message);
+                    return StatusCode(StatusCodes.Status500InternalServerError, message);
+                }
+            }
+            
+            /// <summary>
+            /// Download file
+            /// </summary>
+            /// <param name="projectId"></param>
+            /// <param name="recordId"></param>
+            /// <returns></returns>
+            [HttpGet("DownloadFile/{recordId}", Name = "api_download_file")]
+            public async Task<IActionResult> DownloadFile(long projectId, long recordId)
+            {
+                try
+                {
+                    var fileStreamResult = await _fileBusiness.DownloadFile(projectId, recordId);
+                    return fileStreamResult;
+                }
+                catch (Exception e)
+                {
+                    var message = $"An error occurred while downloading file in record {recordId}: {e}";
+                    _logger.LogError(message);
+                    return StatusCode(StatusCodes.Status500InternalServerError, message);
+                }
+            }
+            
+            
+            
+            /// <summary>
+            /// Delete file
+            /// </summary>
+            /// <param name="projectId"></param>
+            /// <param name="recordId"></param>
+            /// <param name="file"></param>
+            /// <returns></returns>
+            [HttpDelete("DeleteFile/{recordId}", Name = "api_delete_file")]
+            public async Task<IActionResult> DeleteFile(long projectId, long recordId)
+            {
+                try
+                {
+                    await _fileBusiness.DeleteFile(projectId, recordId);
+                    return Ok(new {message = $"Deleted record {recordId} and its file"} );
+                }
+                catch (Exception e)
+                {
+                    var message = $"An error occurred while updating file in record {recordId}: {e}";
+                    _logger.LogError(message);
+                    return StatusCode(StatusCodes.Status500InternalServerError, message);
+                }
+            }
+            
+            
             // TODO: Upload File
             // TODO: Update File (upload a newer copy)
             // TODO: Download File
