@@ -272,8 +272,7 @@ try
             </div>"));
     }
 
-    app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
-    // app.UseHttpsRedirection();
+    app.UseCors("AllowAll"); 
     app.UseAuthorization();
     app.MapControllers();
     app.Run();
