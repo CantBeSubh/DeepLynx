@@ -262,7 +262,7 @@ public partial class DeeplynxContext : DbContext
                 .IsRequired();
 
             entity.HasOne(p => p.Organization).WithMany(p => p.Projects)
-                .HasForeignKey(p => p.OrganizationId).OnDelete(DeleteBehavior.Cascade)
+                .HasForeignKey(p => p.OrganizationId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("projects_organization_id_fkey");
         });
 
@@ -403,8 +403,12 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.HasOne(g => g.Project).WithMany(p => p.Roles)
-                .HasForeignKey(d => d.ProjectId).OnDelete(DeleteBehavior.Cascade)
+                .HasForeignKey(d => d.ProjectId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("roles_project_id_fkey");
+
+            entity.HasOne(g => g.Organization).WithMany(p => p.Roles)
+                .HasForeignKey(d => d.OrganizationId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("roles_organization_id_fkey");
             
             entity.HasMany(g => g.Permissions).WithMany(u => u.Roles)
                 .UsingEntity<Dictionary<string, object>>(
@@ -432,9 +436,13 @@ public partial class DeeplynxContext : DbContext
 
             entity.Property(s => s.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             
+            entity.HasOne(g => g.Project).WithMany(p => p.SensitivityLabels)
+                .HasForeignKey(d => d.ProjectId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("sensitivity_label_project_id_fkey");
+
             entity.HasOne(g => g.Organization).WithMany(p => p.SensitivityLabels)
-                .HasForeignKey(d => d.OrganizationId).OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("sensitivity_labels_organization_id_fkey");
+                .HasForeignKey(d => d.OrganizationId).IsRequired(false).OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("sensitivity_label_organization_id_fkey");
         });
 
          modelBuilder.Entity<Subscription>(entity =>

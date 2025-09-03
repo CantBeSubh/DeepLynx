@@ -117,6 +117,9 @@ public partial class Project
     
     [InverseProperty("Project")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    [InverseProperty("Project")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
     
     [InverseProperty("Project")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();

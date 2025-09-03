@@ -7,6 +7,7 @@ namespace deeplynx.datalayer.Models;
 [Table("sensitivity_labels", Schema = "deeplynx")]
 [Index("Id", Name = "idx_sensitivity_labels_id")]
 [Index("Name", Name = "idx_sensitivity_labels_name")]
+[Index("ProjectId", Name = "idx_sensitivity_labels_project_id")]
 [Index("OrganizationId", Name = "idx_sensitivity_labels_organization_id")]
 public partial class SensitivityLabel
 {
@@ -26,15 +27,22 @@ public partial class SensitivityLabel
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     
+    [Column("project_id")]
+    public long? ProjectId { get; set; }
+
     [Column("organization_id")]
-    public long OrganizationId { get; set; }
+    public long? OrganizationId { get; set; }
+    
+    [ForeignKey("ProjectId")]
+    [InverseProperty("SensitivityLabels")]
+    public virtual Project? Project { get; set; } = null!;
+
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("SensitivityLabels")]
+    public virtual Organization? Organization { get; set; } = null!;
     
     [InverseProperty("SensitivityLabel")]
     public ICollection<Permission> Permissions { get; set; } = new List<Permission>();
-    
-    [ForeignKey("OrganizationId")]
-    [InverseProperty("SensitivityLabels")]
-    public virtual Organization Organization { get; set; } = null!;
     
     [ForeignKey("LabelId")]
     [InverseProperty("SensitivityLabels")]

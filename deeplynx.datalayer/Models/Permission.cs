@@ -7,6 +7,8 @@ namespace deeplynx.datalayer.Models;
 [Table("permissions", Schema = "deeplynx")]
 [Index("Id", Name = "idx_permissions_id")]
 [Index("LabelId", Name = "idx_permissions_label_id")]
+[Index("Domain", Name = "idx_permissions_domain")]
+[Index("Action", Name = "idx_permissions_action")]
 public partial class Permission
 {
     [Key]

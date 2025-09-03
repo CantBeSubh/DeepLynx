@@ -7,6 +7,7 @@ namespace deeplynx.datalayer.Models;
 [Table("roles", Schema = "deeplynx")]
 [Index("Id", Name = "idx_roles_id")]
 [Index("ProjectId", Name = "idx_roles_project_id")]
+[Index("OrganizationId", Name = "idx_roles_organization_id")]
 public partial class Role
 {
     [Key]
@@ -26,11 +27,18 @@ public partial class Role
     public DateTime LastUpdatedAt { get; set; }
     
     [Column("project_id")]
-    public long ProjectId { get; set; }
+    public long? ProjectId { get; set; }
+
+    [Column("organization_id")]
+    public long? OrganizationId { get; set; }
     
     [ForeignKey("ProjectId")]
     [InverseProperty("Roles")]
-    public virtual Project Project { get; set; } = null!;
+    public virtual Project? Project { get; set; } = null!;
+
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Roles")]
+    public virtual Organization? Organization { get; set; } = null!;
     
     [InverseProperty("Role")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();

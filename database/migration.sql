@@ -4267,5 +4267,97 @@ BEGIN
     VALUES ('20250902225544_FixSubscriptionsTimestampDefault', '10.0.0-preview.5.25277.114');
     END IF;
 END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.sensitivity_labels DROP CONSTRAINT sensitivity_labels_organization_id_fkey;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.sensitivity_labels ALTER COLUMN organization_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.sensitivity_labels ADD project_id bigint;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.roles ALTER COLUMN project_id DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.roles ADD organization_id bigint;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    CREATE INDEX idx_sensitivity_labels_project_id ON deeplynx.sensitivity_labels (project_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    CREATE INDEX idx_roles_organization_id ON deeplynx.roles (organization_id);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    CREATE INDEX idx_permissions_action ON deeplynx.permissions (action);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    CREATE INDEX idx_permissions_domain ON deeplynx.permissions (domain);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.roles ADD CONSTRAINT roles_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES deeplynx.organizations (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.sensitivity_labels ADD CONSTRAINT sensitivity_label_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES deeplynx.organizations (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    ALTER TABLE deeplynx.sensitivity_labels ADD CONSTRAINT sensitivity_label_project_id_fkey FOREIGN KEY (project_id) REFERENCES deeplynx.projects (id) ON DELETE CASCADE;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250903165442_MultiScopedPermissions') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20250903165442_MultiScopedPermissions', '10.0.0-preview.5.25277.114');
+    END IF;
+END $EF$;
 COMMIT;
 
