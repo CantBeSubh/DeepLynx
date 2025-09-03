@@ -47,7 +47,8 @@ try
         {
             policy
                 .WithOrigins(
-                    "http://localhost:3000") //Added this to make work in Dev env, might need to change for Prod env.
+                      "http://localhost:3000",
+                      "https://nexus.dev.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -274,8 +275,7 @@ try
             </div>"));
     }
 
-    app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
-    app.UseHttpsRedirection();
+    app.UseCors("AllowAll"); 
     app.UseAuthorization();
     app.MapControllers();
     app.Run();
