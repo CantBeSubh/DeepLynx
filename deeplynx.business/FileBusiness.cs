@@ -34,6 +34,14 @@ public class FileBusiness
         _classBusiness = classBusiness;
         _recordBusiness = recordBusiness;
     }
+    
+    /// <summary>
+    /// Uploads file using specified object storage method
+    /// </summary>
+    /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="dataSourceId">Id of the data source to which the file belongs</param>
+    /// <param name="objectStorageId">Id of the object storage method to use</param>
+    /// <param name="file">file to upload</param>
     public async Task<RecordResponseDto> UploadFile( 
         long projectId,
         long? dataSourceId,
@@ -111,6 +119,12 @@ public class FileBusiness
         return await _recordBusiness.CreateRecord(projectId, realDataSourceId, recordRequest);
     }
 
+    /// <summary>
+    /// Relaces a file but uses the same guid for the file name
+    /// </summary>
+    /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="recordId">Id of record that contains the info of the file to replace</param>
+    /// <param name="file">file to update to</param>
     public async Task<RecordResponseDto> UpdateFile(long projectId, long recordId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
@@ -143,7 +157,12 @@ public class FileBusiness
         };
         return await _recordBusiness.UpdateRecord(projectId, recordId, updateRecordRequest);
     }
-
+    
+    /// <summary>
+    /// Downloads file
+    /// </summary>
+    /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="recordId">Id of record that contains the info of the file to download</param>
     public async Task<FileStreamResult> DownloadFile(long projectId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
@@ -156,7 +175,12 @@ public class FileBusiness
         var fileBusiness = _factory.CreateFileBusiness(objectStorage.Type);
         return await fileBusiness.DownloadFile(record);
     }
-
+    
+    /// <summary>
+    /// Deletes a file
+    /// </summary>
+    /// <param name="projectId">Id of the project to which the file belongs</param>
+    /// <param name="recordId">Id of record that contains the info of the file to delete</param>
     public async Task<bool> DeleteFile(long projectId, long recordId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);

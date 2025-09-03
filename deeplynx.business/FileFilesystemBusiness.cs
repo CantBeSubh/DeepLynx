@@ -7,6 +7,7 @@ using deeplynx.interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
@@ -28,6 +29,15 @@ public class FileFilesystemBusiness : IFileBusiness
         _classBusiness = classBusiness;
         _recordBusiness = recordBusiness;
     }
+    
+    /// <summary>
+    /// Uploads a file to the local file system
+    /// </summary>
+    /// <param name="projectId">The project the file is associated with</param>
+    /// <param name="dataSourceId">The data source the file is associated with</param>
+    /// <param name="objectStorageConfig">The config containing the file path</param>
+    /// <param name="file">The file the user wants to upload</param>
+    /// <param name="guid">The unique identifier for file names</param>
     public async Task<string> UploadFile(
         long projectId,
         long dataSourceId,
@@ -36,7 +46,6 @@ public class FileFilesystemBusiness : IFileBusiness
         Guid guid
     )
     {
-        // TODO: check for default obj storage / datasource and don't require them
         // TODO: Cache these
         if (objectStorageConfig.MountPath == null)
         {
@@ -60,10 +69,18 @@ public class FileFilesystemBusiness : IFileBusiness
             await file.CopyToAsync(stream);
         }
         
-        // TODO: set object storage ID
         return filePath;
     }
     
+    /// <summary>
+    /// Replaces local file
+    /// </summary>
+    /// <param name="record">The record the file info is in</param>
+    /// <param name="file">The file that the user wants to change the old file to</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
+    /// <exception cref="DirectoryNotFoundException"></exception>
     public async Task<string> UpdateFile(RecordResponseDto record, IFormFile file)
     {
         var filePath = record.Uri;
@@ -100,7 +117,14 @@ public class FileFilesystemBusiness : IFileBusiness
         
         return updatedPath;
     }
-
+    
+    /// <summary>
+    /// Downloads a file from local file storage
+    /// </summary>
+    /// <param name="record">The record that has the file info</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
     public async Task<FileStreamResult> DownloadFile(RecordResponseDto record)
     {
         var filePath = record.Uri;
@@ -131,7 +155,14 @@ public class FileFilesystemBusiness : IFileBusiness
         };
 
     }
-
+    
+    /// <summary>
+    /// Deletes a file from local file storage
+    /// </summary>
+    /// <param name="record">Record that contains file info</param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
     public async Task<bool> DeleteFile(RecordResponseDto record)
     {
         var filePath = record.Uri;
@@ -146,6 +177,41 @@ public class FileFilesystemBusiness : IFileBusiness
         }
         
         File.Delete(filePath);
+        
+        var objectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == record.ProjectId && os.Id == record.ObjectStorageId && os.ArchivedAt == null);
+
+        if (objectStorage == null)
+        {
+            throw new Exception("Object storage does not exist.");
+        }
+        var configData = JsonConvert.DeserializeObject<ObjectStorageConfigDto>(objectStorage.Config);
+        
+        var directory = Path.GetDirectoryName(filePath);
+
+        if (configData == null || configData.MountPath == null)
+        {
+            throw new Exception("File system mount path not set in object storage");
+        }
+
+        // Normalize paths for comparison
+        var normalizedBasePath = Path.GetFullPath(configData.MountPath).TrimEnd(Path.DirectorySeparatorChar);
+        
+        // deletes all empty directories up to but not including the base path
+        while (!string.IsNullOrEmpty(directory) &&
+               Directory.Exists(directory) &&
+               !Path.GetFullPath(directory).Equals(normalizedBasePath, StringComparison.OrdinalIgnoreCase))
+        {
+            if (Directory.GetFileSystemEntries(directory).Length == 0)
+            {
+                Directory.Delete(directory);
+                directory = Path.GetDirectoryName(directory);
+            }
+            else
+            {
+                break;
+            }
+        }
+
         return true;
     }
 }
