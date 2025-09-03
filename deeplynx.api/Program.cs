@@ -122,6 +122,7 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
     builder.Services.AddTransient<FileBusiness>();
     builder.Services.AddTransient<FileFilesystemBusiness>();
     builder.Services.AddTransient<FileAzureBusiness>();
@@ -241,10 +242,15 @@ try
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
                 },
-                new OpenApiTag
-                {
-                    Name = "Event",
-                    Description = "Handles Event fetching by project and user subscriptions."
+                new OpenApiTag 
+                { 
+                    Name = "Event", 
+                    Description = "Handles Event fetching by project and user subscriptions." 
+                },
+                new OpenApiTag 
+                { 
+                    Name = "Subscription", 
+                    Description = "Handles operations related to subscription creation, retrieval, and deletion." 
                 },
                 new OpenApiTag
                 {
