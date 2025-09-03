@@ -47,7 +47,8 @@ try
         {
             policy
                 .WithOrigins(
-                    "http://localhost:3000") //Added this to make work in Dev env, might need to change for Prod env.
+                      "http://localhost:3000",
+                      "https://nexus.dev.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -108,6 +109,9 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+
+    Console.WriteLine("Program cs: " + connectionString);
+
     builder.Services.AddTransient<IKuzuDatabaseManager>(provider => 
     {
         var configuration = provider.GetRequiredService<IConfiguration>();
@@ -271,8 +275,7 @@ try
             </div>"));
     }
 
-    app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
-    app.UseHttpsRedirection();
+    app.UseCors("AllowAll"); 
     app.UseAuthorization();
     app.MapControllers();
     app.Run();
