@@ -21,7 +21,10 @@ public partial class User
     
     [Column("password")]
     public string? Password { get; set; }
-
+    
+    [Column("is_sysadmin")]
+    public bool IsSysAdmin { get; set; } = false;
+    
     [Column("archived_at", TypeName = "timestamp without time zone")]
     public DateTime? ArchivedAt { get; set; }
     
@@ -30,4 +33,13 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<OrganizationUser> OrganizationUsers { get; set; } = new List<OrganizationUser>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
+    
+    [InverseProperty("Users")]
+    public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 }

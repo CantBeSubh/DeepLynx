@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20250902225544_FixSubscriptionsTimestampDefault")]
+    partial class FixSubscriptionsTimestampDefault
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -984,10 +987,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("permission_pkey");
 
-                    b.HasIndex(new[] { "Action" }, "idx_permissions_action");
-
-                    b.HasIndex(new[] { "Domain" }, "idx_permissions_domain");
-
                     b.HasIndex(new[] { "Id" }, "idx_permissions_id");
 
                     b.HasIndex(new[] { "LabelId" }, "idx_permissions_label_id");
@@ -1383,11 +1382,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("organization_id");
-
-                    b.Property<long?>("ProjectId")
+                    b.Property<long>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -1395,8 +1390,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasName("roles_pkey");
 
                     b.HasIndex(new[] { "Id" }, "idx_roles_id");
-
-                    b.HasIndex(new[] { "OrganizationId" }, "idx_roles_organization_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_roles_project_id");
 
@@ -1431,13 +1424,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long?>("OrganizationId")
+                    b.Property<long>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
-
-                    b.Property<long?>("ProjectId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("project_id");
 
                     b.HasKey("Id")
                         .HasName("sensitivity_labels_pkey");
@@ -1447,8 +1436,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Name" }, "idx_sensitivity_labels_name");
 
                     b.HasIndex(new[] { "OrganizationId" }, "idx_sensitivity_labels_organization_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_sensitivity_labels_project_id");
 
                     b.ToTable("sensitivity_labels", "deeplynx");
                 });
@@ -2113,19 +2100,12 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
                 {
-                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
-                        .WithMany("Roles")
-                        .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("roles_organization_id_fkey");
-
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Roles")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("roles_project_id_fkey");
-
-                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2136,17 +2116,10 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("SensitivityLabels")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("sensitivity_label_organization_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("SensitivityLabels")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("sensitivity_label_project_id_fkey");
+                        .IsRequired()
+                        .HasConstraintName("sensitivity_labels_organization_id_fkey");
 
                     b.Navigation("Organization");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Subscription", b =>
@@ -2261,8 +2234,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Projects");
 
-                    b.Navigation("Roles");
-
                     b.Navigation("SensitivityLabels");
                 });
 
@@ -2291,8 +2262,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Relationships");
 
                     b.Navigation("Roles");
-
-                    b.Navigation("SensitivityLabels");
 
                     b.Navigation("Subscriptions");
 
