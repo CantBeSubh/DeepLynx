@@ -33,7 +33,7 @@ const CreateProject = ({
       });
 
       setToastType("success");
-      setToastMessage("Porject Created Successfully");
+      setToastMessage("Project Created Successfully");
 
       setName("");
       setAbbreviation("");
