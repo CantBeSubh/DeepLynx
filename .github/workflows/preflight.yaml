@@ -1,6 +1,7 @@
 name: Preflight Build Check
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: ["develop", "main"]
 
