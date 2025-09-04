@@ -21,10 +21,10 @@ namespace deeplynx.api.Controllers
             /// <summary>
             /// Upload file
             /// </summary>
-            /// <param name="projectId"></param>
-            /// <param name="dataSourceId"></param>
-            /// <param name="objectStorageId"></param>
-            /// <param name="file"></param>
+            /// <param name="projectId">Id of project to which the file belongs</param>
+            /// <param name="dataSourceId">Id of data source to which the file belongs</param>
+            /// <param name="objectStorageId">Id of object storage method</param>
+            /// <param name="file">File to upload</param>
             /// <returns></returns>
             [HttpPost("UploadFile", Name = "api_upload_file")]
             public async Task<ActionResult<RecordResponseDto>> UploadFile(
@@ -50,9 +50,9 @@ namespace deeplynx.api.Controllers
             /// <summary>
             /// Update file
             /// </summary>
-            /// <param name="projectId"></param>
-            /// <param name="recordId"></param>
-            /// <param name="file"></param>
+            /// <param name="projectId">Id of project to which the file belongs</param>
+            /// <param name="recordId">Id of record that contains file info</param>
+            /// <param name="file">The file to replace the old one</param>
             /// <returns></returns>
             [HttpPut("UpdateFile/{recordId}", Name = "api_update_file")]
             public async Task<ActionResult<RecordResponseDto>> UpdateFile(
@@ -77,9 +77,8 @@ namespace deeplynx.api.Controllers
             /// <summary>
             /// Download file
             /// </summary>
-            /// <param name="projectId"></param>
-            /// <param name="recordId"></param>
-            /// <returns></returns>
+            /// <param name="projectId">Id of project to which the file belongs</param>
+            /// <param name="recordId">Id of record that contains file info</param>
             [HttpGet("DownloadFile/{recordId}", Name = "api_download_file")]
             public async Task<IActionResult> DownloadFile(long projectId, long recordId)
             {
@@ -101,10 +100,8 @@ namespace deeplynx.api.Controllers
             /// <summary>
             /// Delete file
             /// </summary>
-            /// <param name="projectId"></param>
-            /// <param name="recordId"></param>
-            /// <param name="file"></param>
-            /// <returns></returns>
+            /// <param name="projectId">Id of project to which the file belongs</param>
+            /// <param name="recordId">Id of record that contains file info</param>
             [HttpDelete("DeleteFile/{recordId}", Name = "api_delete_file")]
             public async Task<IActionResult> DeleteFile(long projectId, long recordId)
             {
@@ -120,12 +117,6 @@ namespace deeplynx.api.Controllers
                     return StatusCode(StatusCodes.Status500InternalServerError, message);
                 }
             }
-            
-            
-            // TODO: Upload File
-            // TODO: Update File (upload a newer copy)
-            // TODO: Download File
-            // TODO: Delete File
         }
 }
     

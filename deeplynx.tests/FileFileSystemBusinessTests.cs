@@ -33,8 +33,8 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     }
     
     [Fact]
-    public async Task UploadFile_ShouldSaveFileAndReturnPath() {
-        // Arrange
+    public async Task UploadFile_ShouldSaveFileAndReturnPath() 
+    {
         var config = new ObjectStorageConfigDto { MountPath = _testDirectory };
         var fileMock = new Mock<IFormFile>();
         var content = "Test file content";
@@ -49,17 +49,15 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         // need the try finally for if the test fails, still want to do cleanup
         try
         {
-            // Act
             var result = await _fileBusiness.UploadFile(1, 1, config, fileMock.Object, guid);
-
-            // Assert
+            
             Assert.Contains(guid.ToString(), result);
             Assert.True(File.Exists(result));
             Assert.True(Directory.Exists(_testDirectory));
         }
         finally
         {
-            // Simple cleanup - delete the entire test directory
+            // delete the entire test directory
             if (Directory.Exists(_testDirectory))
             {
                 Directory.Delete(_testDirectory, recursive: true);
@@ -72,7 +70,6 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     [Fact]
     public async Task UpdateFile_ShouldReplaceExistingFile()
     {
-        // Arrange
         Directory.CreateDirectory(_testDirectory);
         var originalFilePath = Path.Combine(_testDirectory, "original.txt");
         await File.WriteAllTextAsync(originalFilePath, "Old content");
@@ -92,16 +89,15 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
 
         try
         {
-            // Act
             var updatedPath = await _fileBusiness.UpdateFile(record, fileMock.Object);
-
-            // Assert
+            
             Assert.True(File.Exists(updatedPath));
             var updatedContent = await File.ReadAllTextAsync(updatedPath);
             Assert.Equal(newContent, updatedContent);
         }
         finally
         {
+            // delete the entire test directory
             if (Directory.Exists(_testDirectory))
                 Directory.Delete(_testDirectory, true);
         }
@@ -111,7 +107,6 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     [Fact]
     public async Task DownloadFile_ShouldReturnFileStreamResult()
     {
-        // Arrange
         Directory.CreateDirectory(_testDirectory);
         var filePath = Path.Combine(_testDirectory, "download.txt");
         var content = "Downloadable content";
@@ -125,10 +120,8 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
 
         try
         {
-            // Act
             var result = await _fileBusiness.DownloadFile(record);
-
-            // Assert
+            
             Assert.NotNull(result);
             using var reader = new StreamReader(result.FileStream);
             var resultContent = await reader.ReadToEndAsync();
@@ -142,8 +135,8 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     }
     
     [Fact]
-    public async Task DeleteFile_ShouldDeleteFileAndEmptyDirectoriesCreated() {
-        // Arrange
+    public async Task DeleteFile_ShouldDeleteFileAndEmptyDirectoriesCreated() 
+    {
         var config = new ObjectStorageConfigDto { MountPath = _testDirectory };
         var fileMock = new Mock<IFormFile>();
         var content = "Test file content";
@@ -154,13 +147,12 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
             .Returns((Stream stream, CancellationToken token) => ms.CopyToAsync(stream));
     
         var guid = Guid.NewGuid();
+        
         // need the try finally for if the test fails, still want to do cleanup
         try
         {
-            // Act
             var result = await _fileBusiness.UploadFile(1, 1, config, fileMock.Object, guid);
-
-            // Assert
+            
             Assert.Contains(guid.ToString(), result);
             Assert.True(File.Exists(result));
             Assert.True(Directory.Exists(_testDirectory));
@@ -182,7 +174,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
         }
         finally
         {
-            // Simple cleanup - delete the entire test directory
+            // delete the entire test directory
             if (Directory.Exists(_testDirectory))
             {
                 Directory.Delete(_testDirectory, recursive: true);
