@@ -25,11 +25,16 @@ services:
       POSTGRES_DB_NAME: deeplynx
       POSTGRES_DB_HOST: nx-postgres
       POSTGRES_PORT: 5432
+      FILE_STORAGE_METHOD: filesystem
+      STORAGE_DIRECTORY: /data
+      ScalarApi__BaseUrl: http://scalar-api-url:5050 # http://localhost:5000/scalar/, not 5050.
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
     networks:
       - nexus-network
+    volumes:
+      - object_storage:/data
     depends_on:
         - nx-postgres
 
@@ -45,12 +50,14 @@ services:
     networks:
       - nexus-network
     volumes:
-      - nx-postgres-data:/var/lib/postgresql/data
+      - nx_postgres_data:/var/lib/postgresql/data
     
 networks:
   nexus-network:
     driver: bridge
   
 volumes:
-  nx-postgres-data:
+  object_storage:
+    driver: local
+  nx_postgres_data:
     driver: local
