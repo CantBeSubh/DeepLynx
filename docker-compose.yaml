@@ -29,6 +29,7 @@ services:
       STORAGE_DIRECTORY: /data
       AZURE_OBJECT_CONNECTION_STRING: azure-example-connection-string
       AWS_S3_CONNECTION_STRING: aws-example-connection-string
+      ScalarApi__BaseUrl: http://scalar-api:5050 # http://localhost:5000/scalar/, not 5050.
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
