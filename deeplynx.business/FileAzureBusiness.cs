@@ -7,20 +7,18 @@ namespace deeplynx.business;
 
 public class FileAzureBusiness: IFileBusiness
 {
-    public async Task<RecordResponseDto> UploadFile(long projectId, long datasourceId, long objectStorageId,
-        IFormFile file)
+    public async Task<string> UploadFile(long projectId, long datasourceId, ObjectStorageConfigDto objectStorageId,
+        IFormFile file, Guid guid)
     {
-        return new RecordResponseDto();
+        return "";
     }
 
-    public async Task<RecordResponseDto> UpdateFile(long projectId, long datasourceId, long objectStorageId,
-        long recordId, IFormFile file)
+    public async Task<string> UpdateFile(RecordResponseDto record,  IFormFile file)
     {
-        return new RecordResponseDto();
+        return "";
     }
 
-    public async Task<FileStreamResult> DownloadFile(long projectId, long datasourceId, long objectStorageId,
-        long recordId)
+    public async Task<FileStreamResult> DownloadFile(RecordResponseDto record)
     {
         // Create a simple stub with empty content
         var emptyStream = new MemoryStream();
@@ -30,7 +28,7 @@ public class FileAzureBusiness: IFileBusiness
         };
     }
 
-    public async Task<bool> DeleteFile(long projectId, long objectStorageId, long recordId)
+    public async Task<bool> DeleteFile(RecordResponseDto record)
     {
         return true;
     }
