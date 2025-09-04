@@ -123,7 +123,7 @@ namespace deeplynx.business
         }
         
         /// <summary>
-        /// Retrieve a specific data source by its ID
+        /// Retrieve a project's default data source.
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <returns>The data source in question</returns>
@@ -406,7 +406,7 @@ namespace deeplynx.business
         }
         
         /// <summary>
-        /// Asynchronously updates an existing data source based on its ID.
+        /// Sets an existing data source as default for a project.
         /// </summary>
         /// <param name="projectId">The ID of the project to which the data source belongs</param>
         /// <param name="dataSourceId">The ID of the existing data source to update.</param>
@@ -424,28 +424,26 @@ namespace deeplynx.business
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
             }
 
-            if (dataSource.Default)
+            if (!dataSource.Default)
             {
-                throw new InvalidOperationException($"Data source with id {dataSourceId} is already default");
-            }
+                dataSource.Default = true;
+                dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
+                dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
-            dataSource.Default = true;
-            dataSource.ModifiedBy = null; // TODO: handled in future by JWT.
-            dataSource.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
-            await MakePreviousDefaultsFalse(projectId, dataSource.Id);
-            await _context.SaveChangesAsync();
-            
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
-            {
-                ProjectId = projectId,
-                Operation = "update",
-                EntityType = "data_source",
-                EntityId = dataSource.Id,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                CreatedBy = "" // TODO: add username when JWT are implemented
-            });
+                await MakePreviousDefaultsFalse(projectId, dataSource.Id);
+                await _context.SaveChangesAsync();
+
+                await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                {
+                    ProjectId = projectId,
+                    Operation = "update",
+                    EntityType = "data_source",
+                    EntityId = dataSource.Id,
+                    DataSourceId = null,
+                    Properties = JsonSerializer.Serialize(new { dataSource.Name }),
+                    CreatedBy = "" // TODO: add username when JWT are implemented
+                });
+            }
 
             return new DataSourceResponseDto
             {
