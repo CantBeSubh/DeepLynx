@@ -25,9 +25,11 @@ services:
       POSTGRES_DB_NAME: deeplynx
       POSTGRES_DB_HOST: nx-postgres
       POSTGRES_PORT: 5432
-      FILE_STORAGE_METHOD: filesystem
+      FILE_STORAGE_METHOD: filesystem # values can be filesystem, azure_object, and aws_s3
       STORAGE_DIRECTORY: /data
-      ScalarApi__BaseUrl: http://scalar-api-url:5050 # http://localhost:5000/scalar/, not 5050.
+      AZURE_OBJECT_CONNECTION_STRING: azure-example-connection-string
+      AWS_S3_CONNECTION_STRING: aws-example-connection-string
+      ScalarApi__BaseUrl: http://scalar-api:5050 # http://localhost:5000/scalar/, not 5050.
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
