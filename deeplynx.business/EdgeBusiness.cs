@@ -170,7 +170,7 @@ public class EdgeBusiness : IEdgeBusiness
         
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
-            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at))
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at,is_archived)
             VALUES {0}
             ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
                 relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),

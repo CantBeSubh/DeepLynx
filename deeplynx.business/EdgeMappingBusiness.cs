@@ -255,6 +255,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found");
 
         mapping.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        mapping.IsArchived = true;
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
 
@@ -275,7 +276,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
 
         if (mapping == null || mapping.ProjectId != projectId || !mapping.IsArchived)
             throw new KeyNotFoundException($"Edge Mapping with id {mappingId} not found or is not archived.");
-
+        mapping.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         mapping.IsArchived = false;
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();

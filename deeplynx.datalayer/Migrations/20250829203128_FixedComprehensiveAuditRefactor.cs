@@ -349,28 +349,496 @@ namespace deeplynx.datalayer.Migrations
             // STEP 6: ADD STORED PROCEDURES
             // =================================================================
 
-            migrationBuilder.Sql(@"
+                migrationBuilder.Sql(@"
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_class(IN arc_class_id integer)
                 LANGUAGE 'plpgsql'
                 AS $BODY$
+                DECLARE
+                    archive_time TIMESTAMP := NOW();
                 BEGIN
-                    UPDATE deeplynx.classes SET is_archived = true, last_updated_at = NOW() WHERE id = arc_class_id;
-                    UPDATE deeplynx.relationships SET is_archived = true, last_updated_at = NOW() WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
-                    UPDATE deeplynx.record_mappings SET is_archived = true, last_updated_at = NOW() WHERE class_id = arc_class_id;
+                    UPDATE deeplynx.classes SET is_archived = true, last_updated_at = archive_time WHERE id = arc_class_id;
+                    UPDATE deeplynx.relationships SET is_archived = true, last_updated_at = archive_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.edge_mappings SET is_archived = true, last_updated_at = archive_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.record_mappings SET is_archived = true, last_updated_at = archive_time WHERE class_id = arc_class_id;
                 END;
-                $BODY$;");
+                $BODY$;
+                 ");
 
-            migrationBuilder.Sql(@"
+                migrationBuilder.Sql(@"
                 CREATE OR REPLACE PROCEDURE deeplynx.unarchive_class(IN arc_class_id integer)
                 LANGUAGE 'plpgsql'
                 AS $BODY$
+                DECLARE
+                    archive_time TIMESTAMP := NOW();
                 BEGIN
-                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = NOW() WHERE id = arc_class_id;
-                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = NOW() WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
-                    UPDATE deeplynx.record_mappings SET is_archived = false, last_updated_at = NOW() WHERE class_id = arc_class_id;
+                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = archive_time WHERE id = arc_class_id;
+                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.edge_mappings SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_class_id OR destination_id = arc_class_id;
+                    UPDATE deeplynx.record_mappings SET is_archived = false, last_updated_at = archive_time WHERE class_id = arc_class_id;
                 END;
-                $BODY$;");
-        }
+                $BODY$;
+                ");
+                    migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.archive_data_source(IN arc_data_source_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.data_sources SET is_archived = true, last_updated_at = archive_time WHERE id = arc_data_source_id;
+                UPDATE deeplynx.record_mappings SET is_archived = true, last_updated_at = archive_time WHERE data_source_id = arc_data_source_id;
+                UPDATE deeplynx.edge_mappings SET is_archived = true, last_updated_at = archive_time WHERE data_source_id = arc_data_source_id;
+            END;
+            $BODY$;
+            ");
+
+            migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.unarchive_data_source(IN arc_data_source_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = archive_time WHERE id = arc_data_source_id;
+                UPDATE deeplynx.record_mappings SET is_archived = false, last_updated_at = archive_time WHERE data_source_id = arc_data_source_id;
+                UPDATE deeplynx.edge_mappings SET is_archived = false, last_updated_at = archive_time WHERE data_source_id = arc_data_source_id;
+            END;
+            $BODY$;
+        ");
+                    migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.archive_project(
+                IN arc_project_id integer,
+                IN arc_time timestamp without time zone)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                UPDATE deeplynx.projects SET is_archived = true, last_updated_at = arc_time WHERE id = arc_project_id;
+                UPDATE deeplynx.classes SET is_archived = true, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.data_sources SET is_archived = true, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.records SET is_archived = true, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.edges SET is_archived = true, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.relationships SET is_archived = true, last_updated_at = arc_time WHERE project_id = arc_project_id;
+            END;
+            $BODY$;
+        ");
+
+            migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.unarchive_project(IN arc_project_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.projects SET is_archived = false, last_updated_at = archive_time WHERE id = arc_project_id;
+                UPDATE deeplynx.classes SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+            END;
+            $BODY$;
+        ");
+            migrationBuilder.Sql(@"CREATE OR REPLACE PROCEDURE deeplynx.archive_record(IN arc_record_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.records SET is_archived = true, last_updated_at = archive_time WHERE id = arc_record_id;
+                UPDATE deeplynx.edges SET is_archived = true, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+            END;
+            $BODY$;");
+            migrationBuilder.Sql(@"CREATE OR REPLACE PROCEDURE deeplynx.unarchive_record(IN arc_record_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE id = arc_record_id;
+                UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+            END;
+            $BODY$;");
+       
+migrationBuilder.Sql(@"
+    CREATE OR REPLACE PROCEDURE deeplynx.archive_record(IN arc_record_id integer)
+    LANGUAGE 'plpgsql'
+    AS $BODY$
+    DECLARE
+        archive_time TIMESTAMP := NOW();
+    BEGIN
+        UPDATE deeplynx.records SET is_archived = true, last_updated_at = archive_time WHERE id = arc_record_id;
+        UPDATE deeplynx.edges SET is_archived = true, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+    END;
+    $BODY$;
+");
+
+    migrationBuilder.Sql(@"
+        CREATE OR REPLACE PROCEDURE deeplynx.unarchive_record(IN arc_record_id integer)
+        LANGUAGE 'plpgsql'
+        AS $BODY$
+        DECLARE
+            archive_time TIMESTAMP := NOW();
+        BEGIN
+            UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE id = arc_record_id;
+            UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
+        END;
+        $BODY$;
+    ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.archive_relationship(IN arc_rel_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.relationships SET is_archived = true, last_updated_at = archive_time WHERE id = arc_rel_id;
+                UPDATE deeplynx.edge_mappings SET is_archived = true, last_updated_at = archive_time WHERE relationship_id = arc_rel_id;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE PROCEDURE deeplynx.unarchive_relationship(IN arc_rel_id integer)
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            DECLARE
+                archive_time TIMESTAMP := NOW();
+            BEGIN
+                UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = archive_time WHERE id = arc_rel_id;
+                UPDATE deeplynx.edge_mappings SET is_archived = false, last_updated_at = archive_time WHERE relationship_id = arc_rel_id;
+            END;
+            $BODY$;
+        ");
+            // =================================================================
+            // STEP 7: Update TRIGGERS
+            // =================================================================   
+            // Create this as a NEW migration: dotnet ef migrations add FixAllHistoricalTriggers
+            
+        // 1. Fix update_modified_at - change modified_at to last_updated_at
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.update_modified_at()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                NEW.last_updated_at = CURRENT_TIMESTAMP;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        // 2. Fix all historical_edges triggers - remove old columns, use only new ones
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.create_historical_edges_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_edges (
+                    edge_id, origin_id, destination_id, mapping_id,
+                    relationship_id, data_source_id, project_id,
+                    last_updated_at, last_updated_by, is_archived,
+                    relationship_name, data_source_name, project_name)
+                SELECT 
+                    NEW.id, NEW.origin_id, NEW.destination_id, NEW.mapping_id,
+                    NEW.relationship_id, NEW.data_source_id, NEW.project_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    r.name, d.name, p.name
+                FROM deeplynx.edges e
+                LEFT JOIN deeplynx.relationships r ON r.id = e.relationship_id
+                JOIN deeplynx.data_sources d ON d.id = e.data_source_id
+                JOIN deeplynx.projects p ON p.id = e.project_id
+                WHERE e.id = NEW.id;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.update_historical_edges_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_edges (
+                    edge_id, origin_id, destination_id, mapping_id,
+                    relationship_id, data_source_id, project_id,
+                    last_updated_at, last_updated_by, is_archived,
+                    relationship_name, data_source_name, project_name)
+                SELECT 
+                    NEW.id, NEW.origin_id, NEW.destination_id, NEW.mapping_id,
+                    NEW.relationship_id, NEW.data_source_id, NEW.project_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    r.name, d.name, p.name
+                FROM deeplynx.edges e
+                LEFT JOIN deeplynx.relationships r ON r.id = e.relationship_id
+                JOIN deeplynx.data_sources d ON d.id = e.data_source_id
+                JOIN deeplynx.projects p ON p.id = e.project_id
+                WHERE e.id = NEW.id;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.archive_historical_edges_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_edges (
+                    edge_id, origin_id, destination_id, mapping_id,
+                    relationship_id, data_source_id, project_id,
+                    last_updated_at, last_updated_by, is_archived,
+                    relationship_name, data_source_name, project_name)
+                SELECT 
+                    NEW.id, NEW.origin_id, NEW.destination_id, NEW.mapping_id,
+                    NEW.relationship_id, NEW.data_source_id, NEW.project_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    r.name, d.name, p.name
+                FROM deeplynx.edges e
+                LEFT JOIN deeplynx.relationships r ON r.id = e.relationship_id
+                JOIN deeplynx.data_sources d ON d.id = e.data_source_id
+                JOIN deeplynx.projects p ON p.id = e.project_id
+                WHERE e.id = NEW.id;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.unarchive_historical_edges_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_edges (
+                    edge_id, origin_id, destination_id, mapping_id,
+                    relationship_id, data_source_id, project_id,
+                    last_updated_at, last_updated_by, is_archived,
+                    relationship_name, data_source_name, project_name)
+                SELECT 
+                    NEW.id, NEW.origin_id, NEW.destination_id, NEW.mapping_id,
+                    NEW.relationship_id, NEW.data_source_id, NEW.project_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    r.name, d.name, p.name
+                FROM deeplynx.edges e
+                LEFT JOIN deeplynx.relationships r ON r.id = e.relationship_id
+                JOIN deeplynx.data_sources d ON d.id = e.data_source_id
+                JOIN deeplynx.projects p ON p.id = e.project_id
+                WHERE e.id = NEW.id;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        // 3. Fix all historical_records triggers - remove old columns, use only new ones
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.create_historical_records_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    NEW.id, NEW.uri, NEW.name, NEW.description, NEW.properties, NEW.original_id, 
+                    NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, NEW.object_storage_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = NEW.id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                        r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                        r.last_updated_at, r.last_updated_by, r.is_archived, 
+                        c.name, d.name, p.name, o.name;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.update_historical_records_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    NEW.id, NEW.uri, NEW.name, NEW.description, NEW.properties, NEW.original_id, 
+                    NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, NEW.object_storage_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = NEW.id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                        r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                        r.last_updated_at, r.last_updated_by, r.is_archived,
+                        c.name, d.name, p.name, o.name;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.archive_historical_records_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    NEW.id, NEW.uri, NEW.name, NEW.description, NEW.properties, NEW.original_id, 
+                    NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, NEW.object_storage_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = NEW.id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                        r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                        r.last_updated_at, r.last_updated_by, r.is_archived,
+                        c.name, d.name, p.name, o.name;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.unarchive_historical_records_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    NEW.id, NEW.uri, NEW.name, NEW.description, NEW.properties, NEW.original_id, 
+                    NEW.class_id, NEW.mapping_id, NEW.data_source_id, NEW.project_id, NEW.object_storage_id,
+                    NEW.last_updated_at, NEW.last_updated_by, NEW.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = NEW.id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                        r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                        r.last_updated_at, r.last_updated_by, r.is_archived,
+                        c.name, d.name, p.name, o.name;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        // 4. Fix record tag triggers - these use OLD.record_id and NEW.record_id
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.insert_recordtag_historical_record_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN  
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    NEW.record_id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id, 
+                    LOCALTIMESTAMP, r.last_updated_by, r.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = NEW.record_id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                      r.last_updated_at, r.last_updated_by, r.is_archived,
+                      c.name, d.name, p.name, o.name;
+                RETURN NEW;
+            END;
+            $BODY$;
+        ");
+
+        migrationBuilder.Sql(@"
+            CREATE OR REPLACE FUNCTION deeplynx.delete_recordtag_historical_record_trigger()
+            RETURNS trigger
+            LANGUAGE 'plpgsql'
+            AS $BODY$
+            BEGIN  
+                INSERT INTO deeplynx.historical_records (
+                    record_id, uri, name, description, properties, original_id, 
+                    class_id, mapping_id, data_source_id, project_id, object_storage_id,
+                    last_updated_at, last_updated_by, is_archived, tags,
+                    class_name, data_source_name, project_name, object_storage_name)
+                SELECT 
+                    OLD.record_id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                    r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                    LOCALTIMESTAMP, r.last_updated_by, r.is_archived,
+                    json_agg(jsonb_build_object('id', t.id, 'name', t.name)) FILTER (WHERE t.id IS NOT NULL AND t.name IS NOT NULL),
+                    c.name, d.name, p.name, o.name
+                FROM deeplynx.records r
+                LEFT JOIN deeplynx.record_tags rt ON r.id = rt.record_id
+                LEFT JOIN deeplynx.tags t ON t.id = rt.tag_id
+                LEFT JOIN deeplynx.classes c ON c.id = r.class_id
+                LEFT JOIN deeplynx.object_storages o ON o.id = r.object_storage_id
+                JOIN deeplynx.data_sources d ON d.id = r.data_source_id
+                JOIN deeplynx.projects p ON p.id = r.project_id
+                WHERE r.id = OLD.record_id
+                GROUP BY r.id, r.uri, r.name, r.description, r.properties, r.original_id, 
+                      r.class_id, r.mapping_id, r.data_source_id, r.project_id, r.object_storage_id,
+                      r.last_updated_at, r.last_updated_by, r.is_archived,
+                      c.name, d.name, p.name, o.name;
+                RETURN OLD;
+            END;
+            $BODY$;
+        ");
+      }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -378,6 +846,8 @@ namespace deeplynx.datalayer.Migrations
             // Simple rollback
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_class;");
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_class;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_data_source(INTEGER);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_data_source(INTEGER);");
             
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.idx_classes_is_archived;");
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.idx_data_sources_is_archived;");

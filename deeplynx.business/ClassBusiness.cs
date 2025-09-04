@@ -171,7 +171,7 @@ public class ClassBusiness : IClassBusiness
                 description = COALESCE(EXCLUDED.description, classes.description),
                 uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
                 last_updated_at = @now
-            RETURNING *;
+           RETURNING id, project_id, name, description, uuid, last_updated_at, last_updated_by, is_archived;
         ";
 
         // establish "constant" parameters
