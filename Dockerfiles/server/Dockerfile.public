@@ -58,7 +58,7 @@ RUN dotnet build deeplynx.sln -c Release -o /app/build
 FROM backend-build AS publish
 RUN dotnet publish deeplynx.sln -c Release -o /app/publish /p:UseAppHost=false
 
-# Stage 3: Create the final image
+# Stage 2: Create the final image
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
 
 # Install tools needed for entrypoint.sh operations
