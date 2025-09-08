@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
+using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
@@ -48,6 +49,7 @@ try
             policy
                 .WithOrigins(
                       "http://localhost:3000",
+                      "http://ui:3000",
                       "https://nexus.dev.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -122,6 +124,13 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    builder.Services.AddTransient<FileBusiness>();
+    builder.Services.AddTransient<FileFilesystemBusiness>();
+    builder.Services.AddTransient<FileAzureBusiness>();
+    builder.Services.AddTransient<FileS3Business>();
+    builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
+
+    builder.Services.AddSingleton(CacheBusiness.Instance);
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
@@ -234,14 +243,24 @@ try
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
                 },
-                new OpenApiTag 
-                { 
-                    Name = "Event", 
-                    Description = "Handles Event fetching by project and user subscriptions." 
+                new OpenApiTag
+                {
+                    Name = "Event",
+                    Description = "Handles Event fetching by project and user subscriptions."
+                },
+                new OpenApiTag
+                {
+                    Name = "File",
+                    Description = "Handles operations related to file management"
                 }
             };
         });
     });
+
+    /* ╔════════════════════════════╗
+       ║      Apply Migrations      ║
+       ╚════════════════════════════╝ */
+    await MigrationRunner.ApplyMigrations(connectionString);
 
     var app = builder.Build();
 

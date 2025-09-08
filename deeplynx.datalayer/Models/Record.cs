@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -80,7 +78,7 @@ public partial class Record
     
     [ForeignKey("ObjectStorageId")]
     [InverseProperty("Records")]
-    public virtual ObjectStorage ObjectStorage { get; set; } = null!;
+    public virtual ObjectStorage? ObjectStorage { get; set; }
 
     [InverseProperty("Destination")]
     public virtual ICollection<Edge> EdgeDestinations { get; set; } = new List<Edge>();
@@ -91,11 +89,15 @@ public partial class Record
     [ForeignKey("ProjectId")]
     [InverseProperty("Records")]
     public virtual Project Project { get; set; } = null!;
-
+    
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     
     [InverseProperty("Record")]
     public virtual ICollection<HistoricalRecord> HistoricalRecords { get; set; } = new List<HistoricalRecord>();
+    
+    [ForeignKey("RecordId")]
+    [InverseProperty("Records")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
 }

@@ -73,9 +73,9 @@ namespace deeplynx.tests
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = result.Id,
                 Operation = "create",
@@ -87,7 +87,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateProject_Creates_DefaultClasses()
         {
-            var now = DateTime.UtcNow;
             var dto = new CreateProjectRequestDto
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -101,15 +100,16 @@ namespace deeplynx.tests
             projectid.Add(project.Id);
 
             var classResult = await _classBusiness.GetAllClasses(projectid, true);
-            classResult.Count.Should().Be(2);
+            classResult.Count.Should().Be(3);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");
+            classResult[2].Name.Should().Be("File");
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = project.Id,
                 Operation = "create",
@@ -141,9 +141,9 @@ namespace deeplynx.tests
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = project.Id,
                 Operation = "create",

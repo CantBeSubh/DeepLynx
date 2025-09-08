@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
@@ -223,9 +224,6 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         {
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
-
-        var objectStorageWithSameName = 
-            await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == projectId && os.Name == dto.Name);
         
         updatedObjectStorage.Name = dto.Name;
         updatedObjectStorage.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -375,15 +373,17 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
             throw new KeyNotFoundException($"Object storage with id {objectStorageId} is archived");
         }
 
-        if (defaultObjectStorage.Default)
+        if (!defaultObjectStorage.Default)
         {
-            throw new InvalidOperationException($"Object storage with id {objectStorageId} is already default");
+            defaultObjectStorage.Default = true;
+            defaultObjectStorage.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            defaultObjectStorage.ModifiedBy = null; // TODO: handled in future by JWT.
+
+            await MakePreviousDefaultsFalse(projectId, defaultObjectStorage.Id);
+            _context.ObjectStorages.Update(defaultObjectStorage);
+            await _context.SaveChangesAsync();
         }
-        
-        defaultObjectStorage.Default = true;
-        await MakePreviousDefaultsFalse(projectId, defaultObjectStorage.Id);
-        _context.ObjectStorages.Update(defaultObjectStorage);
-        await _context.SaveChangesAsync();
+
         return new ObjectStorageResponseDto
         {
             Id = defaultObjectStorage.Id,

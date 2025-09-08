@@ -1,0 +1,36 @@
+# Stage 1: Build the C# backend
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0-preview AS backend-test-build
+
+ENV ENABLE_KUZU=False
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Copy the solution file and restore dependencies
+COPY . .
+RUN dotnet restore
+
+# Build the project
+RUN dotnet build --configuration Release --no-restore
+
+# Run tests
+RUN dotnet test --configuration Release --no-build --verbosity diagnostic
+
+# The final image has been omitted to ensure this container is just used to run dotnet test
+# Stage 2: Create the final image
+# FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0-preview AS final
+
+# Set working directory
+# WORKDIR /usr/src/app
+
+# Copy the published backend code
+# COPY --from=backend-test-build usr/src/app .
+
+# Copy additional files if needed
+# COPY deeplynx.api/moon.css ./moon.css
+
+# Expose a container port
+# EXPOSE 8090
+
+# This will run the .NET application directly
+# CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:8090"]
