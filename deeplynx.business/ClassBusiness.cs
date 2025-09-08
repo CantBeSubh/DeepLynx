@@ -5,6 +5,7 @@ using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
 using Npgsql;
+using System.Text.Json;
 
 namespace deeplynx.business;
 
@@ -15,6 +16,7 @@ public class ClassBusiness : IClassBusiness
     private readonly IRecordBusiness _recordBusiness;
     private readonly IRecordMappingBusiness _recordMappingBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
+    private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
@@ -24,12 +26,14 @@ public class ClassBusiness : IClassBusiness
     /// <param name="recordBusiness">Passed in context of record objects</param>
     /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
     /// <param name="relationshipBusiness">Passed in context of relationship objects</param>
+    /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public ClassBusiness(
         DeeplynxContext context,
         IEdgeMappingBusiness edgeMappingBusiness,
         IRecordBusiness recordBusiness,
         IRecordMappingBusiness recordMappingBusiness,
-        IRelationshipBusiness relationshipBusiness
+        IRelationshipBusiness relationshipBusiness,
+        IEventBusiness eventBusiness
     )
     {
         _context = context;
@@ -37,27 +41,32 @@ public class ClassBusiness : IClassBusiness
         _recordBusiness = recordBusiness;
         _recordMappingBusiness = recordMappingBusiness;
         _relationshipBusiness = relationshipBusiness;
+        _eventBusiness = eventBusiness;
     }
 
     /// <summary>
     /// Retrieves all classes
     /// </summary>
-    /// <param name="projectId">The ID of the project to which the class belongs</param>
+    /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
-    public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
+    public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
-        
+        foreach (var projectId in projectIds)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        }
+
         var classes = await _context.Classes
-            .Where(c => c.ProjectId == projectId).ToListAsync();
-        
+            .Where(c => projectIds.Contains(c.ProjectId))
+            .ToListAsync();
+
         if (hideArchived)
         {
             classes = classes.Where(c => !c.IsArchived).ToList();
         }
-        
-        return classes 
+
+        return classes
             .Select(c => new ClassResponseDto()
             {
                 Id = c.Id,
@@ -71,6 +80,7 @@ public class ClassBusiness : IClassBusiness
 
             }).ToList();
     }
+
 
     /// <summary>
     /// Retrieves a specific class by ID
@@ -137,6 +147,18 @@ public class ClassBusiness : IClassBusiness
 
         _context.Classes.Add(newClass);
         await _context.SaveChangesAsync();
+        
+        // log event with class create details
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "create",
+            EntityType = "class",
+            EntityId = newClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {newClass.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new ClassResponseDto
         {
@@ -195,11 +217,30 @@ public class ClassBusiness : IClassBusiness
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
-
+        
         // returns the resulting upserted classes
-        return await _context.Database
+        var result = await _context.Database
             .SqlQueryRaw<ClassResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
+
+        // for each created class Bulk log events
+        var events = new List<CreateEventRequestDto> { };
+        foreach (var item in result)
+        {
+            events.Add(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "create",
+                EntityType = "class",
+                EntityId = item.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {item.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+        }
+        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        return result;
     }
 
     /// <summary>
@@ -228,6 +269,18 @@ public class ClassBusiness : IClassBusiness
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
+        
+        // log event with class update details
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "update",
+            EntityType = "class",
+            EntityId = updatedClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new ClassResponseDto
         {
@@ -261,6 +314,7 @@ public class ClassBusiness : IClassBusiness
 
         _context.Classes.Remove(classToDelete);
         await _context.SaveChangesAsync();
+        
         return true;
     }
     
@@ -274,6 +328,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
+        Console.WriteLine("Archive ProjectID: " + projectId);
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
         var dbClass = await _context.Classes.FindAsync(classId);
@@ -295,17 +350,29 @@ public class ClassBusiness : IClassBusiness
 
             // Refresh tracked entity to reflect DB-side changes
             await _context.Entry(dbClass).ReloadAsync();
-
+            
             await tx.CommitAsync();
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "delete",
+                EntityType = "class",
+                EntityId = dbClass.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dbClass.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+
             return true;
         }
         catch (Exception exc)
         {
             await tx.RollbackAsync();
-            throw new DependencyDeletionException(
-                $"unable to archive class {classId} or its downstream dependents: {exc}");
+            throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
         }
     }
+        
+        
     /// <summary>
     /// Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>

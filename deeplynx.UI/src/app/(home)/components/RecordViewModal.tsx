@@ -2,7 +2,7 @@
 
 import React from 'react';
 import PropertyTable from './PropertyTable';
-import { Column, FileViewerTableRow } from '../types/types';
+import { Column, FileViewerTableRow, TagResponseDto } from '../types/types';
 import GenericTable from './GenericTable';
 
 interface RecordViewModalProps {
@@ -10,7 +10,7 @@ interface RecordViewModalProps {
   onClose: () => void;
   record: FileViewerTableRow | null;
   relatedRecords: RelatedRecord[]
-  tags: { id: string; name: string}[]
+  tags: TagResponseDto[]
 }
 
 interface RelatedRecord {
@@ -39,28 +39,28 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({ isOpen, onClose, reco
   ];
 
   const relatedRecordsColumns: Column<RelatedRecord>[] = [
-      { header: "Relationship", data: "relationship" },
-      { header: "ID", data: "id" },
-      { header: "Class", data: "class" },
-      { header: "Name", data: "name" },
-    ];
+    { header: "Relationship", data: "relationship" },
+    { header: "ID", data: "id" },
+    { header: "Class", data: "class" },
+    { header: "Name", data: "name" },
+  ];
 
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value: typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   return (
     <dialog className={`modal ${isOpen ? 'modal-open' : ''}`}>
       <div className="modal-box max-w-[70vh] max-h-[80vh]">
         <h3 className="font-bold text-2xl mb-4 text-neutral">{record.name}</h3>
-        
+
         <div className="ml-20 mb-10 mr-20"> {/* Add margin-bottom for spacing */}
           <PropertyTable title="System Properties" rows={systemPropertiesRows} />
         </div>
@@ -73,7 +73,7 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({ isOpen, onClose, reco
           <div className="mb-4"> {/* Add margin-bottom for spacing */}
             <h2 className="text-xl font-bold mb-4">Tags:</h2>
             <div className="flex flex-wrap gap-2"> {/* Use flexbox for better layout */}
-              {tags && tags.map((tag: { id: string; name: string }) => (
+              {tags && tags.map((tag: TagResponseDto) => (
                 <span key={tag.id} className="font-inter flex items-center border rounded-full px-2 py-1" style={{ borderColor: '#07519E', color: '#07519E' }}>
                   {tag.name}
                 </span>

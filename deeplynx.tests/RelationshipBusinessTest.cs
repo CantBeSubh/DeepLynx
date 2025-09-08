@@ -22,6 +22,7 @@ namespace deeplynx.tests
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private EventBusiness _eventBusiness = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         public long pid;
         public long dsid;
@@ -37,12 +38,23 @@ namespace deeplynx.tests
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
-            _mockLogger = new Mock<ILogger<ProjectBusiness>>();   
-            _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
-            _relationshipBusiness = new RelationshipBusiness(Context, _mockEdgeMappingBusiness.Object, _mockEdgeBusiness.Object);
-            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
-            _classBusiness = new ClassBusiness(Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, _mockRecordMappingBusiness.Object, _relationshipBusiness);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _mockObjectStorageBusiness.Object);
+            _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _eventBusiness = new EventBusiness(Context);
+            _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>(); // Add this line
+
+            _relationshipBusiness = new RelationshipBusiness(
+                Context, _mockEdgeMappingBusiness.Object, _mockEdgeBusiness.Object, _eventBusiness);
+    
+            _dataSourceBusiness = new DataSourceBusiness(
+                Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
+    
+            _classBusiness = new ClassBusiness(
+                Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
+                _mockRecordMappingBusiness.Object, _relationshipBusiness, _eventBusiness);
+    
+            _projectBusiness = new ProjectBusiness(
+                Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, 
+                _mockObjectStorageBusiness.Object, _eventBusiness);
         }
 
         [Fact]
@@ -68,6 +80,17 @@ namespace deeplynx.tests
             result.ProjectId.Should().Be(pid);
             result.OriginId.Should().NotBeNull();
             result.DestinationId.Should().NotBeNull();
+            
+            // Ensure that relationship create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = result.Id,
+                ProjectId = result.ProjectId,
+            });
         }
 
         [Fact]
@@ -85,7 +108,17 @@ namespace deeplynx.tests
             result.Id.Should().BeGreaterThan(0);
             result.OriginId.Should().BeNull();
             result.DestinationId.Should().Be(destinationClassId);
-           
+            
+            // Ensure that relationship create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = result.Id,
+                ProjectId = result.ProjectId,
+            });
         }
 
         [Fact]
@@ -103,6 +136,17 @@ namespace deeplynx.tests
             result.Id.Should().BeGreaterThan(0);
             result.OriginId.Should().Be(originClassId);
             result.DestinationId.Should().BeNull();
+            
+            // Ensure that relationship create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = result.Id,
+                ProjectId = result.ProjectId,
+            });
         }
 
         [Fact]
@@ -134,6 +178,24 @@ namespace deeplynx.tests
             result.Should().OnlyContain(r => r.LastUpdatedAt >= now);
             result.First().Name.Should().Be("Bulk Relationship 1");
             result.Last().Name.Should().Be("Bulk Relationship 2");
+            
+            // Ensure that relationship create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(2);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = result[0].Id,
+                ProjectId = result[0].ProjectId,
+            });
+            eventList[1].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = result[1].Id,
+                ProjectId = result[1].ProjectId,
+            });
         }
 
         [Fact]
@@ -142,6 +204,10 @@ namespace deeplynx.tests
             var dto = new CreateRelationshipRequestDto { Name = null!, Description = "Test Description" };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -150,6 +216,10 @@ namespace deeplynx.tests
             var dto = new CreateRelationshipRequestDto { Name = "", Description = "Test Description" };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<ValidationException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -164,6 +234,10 @@ namespace deeplynx.tests
             };
             var result = () => _relationshipBusiness.CreateRelationship(pid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -183,6 +257,10 @@ namespace deeplynx.tests
             };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -197,6 +275,10 @@ namespace deeplynx.tests
             };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -211,6 +293,10 @@ namespace deeplynx.tests
             };
             var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no relationship create event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -373,6 +459,17 @@ namespace deeplynx.tests
             updatedResult.Description.Should().Be(dto.Description);
             updatedResult.OriginId.Should().Be(destinationClassId);
             updatedResult.DestinationId.Should().Be(originClassId);
+            
+            // Ensure that relationship update event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "update",
+                EntityType = "relationship",
+                EntityId = updatedResult.Id,
+                ProjectId = updatedResult.ProjectId,
+            });
         }
 
         [Fact]
@@ -412,6 +509,18 @@ namespace deeplynx.tests
             Assert.NotNull(updatedRelationship);
             Assert.Equal("Updated Description", updatedRelationship.Description);
             Assert.Equal(originalRelationship.Name, updatedRelationship.Name);
+            Assert.NotNull(updatedRelationship.LastUpdatedAt);
+            
+            // Ensure that relationship update event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "update",
+                EntityType = "relationship",
+                EntityId = result.Id,
+                ProjectId = result.ProjectId
+            });
         }
 
         [Fact]
@@ -427,6 +536,10 @@ namespace deeplynx.tests
             var updatedResult = () => _relationshipBusiness.UpdateRelationship(pid, 99, dto);
 
             await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that no relationship update event is logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -479,6 +592,16 @@ namespace deeplynx.tests
             var archivedRelationship = await Context.Relationships.FindAsync(testRelationship.Id);
             Assert.NotNull(archivedRelationship);
             Assert.True(archivedRelationship.IsArchived);
+            // Ensure that relationship delete event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = testRelationship.ProjectId,
+                Operation = "delete",
+                EntityType = "relationship",
+                EntityId = archivedRelationship.Id,
+            });
         }
 
         [Fact]
@@ -547,6 +670,10 @@ namespace deeplynx.tests
         {
             var result = () => _relationshipBusiness.BulkCreateRelationships(pid, null!);
             await result.Should().ThrowAsync<ArgumentNullException>();
+            
+            // Ensure that no relationship create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]

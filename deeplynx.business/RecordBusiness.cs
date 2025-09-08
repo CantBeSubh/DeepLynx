@@ -15,14 +15,17 @@ namespace deeplynx.business;
 public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
-    public RecordBusiness(DeeplynxContext context)
+    /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
+    public RecordBusiness(DeeplynxContext context,  IEventBusiness eventBusiness)
     {
         _context = context;
+        _eventBusiness = eventBusiness;
     }
     
     /// <summary>
@@ -168,6 +171,18 @@ public class RecordBusiness : IRecordBusiness
 
         _context.Records.Add(record);
         await _context.SaveChangesAsync();
+        
+        // Log Record Create Event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = record.ProjectId,
+            EntityType = "record",
+            EntityId = record.Id,
+            Operation = "create",
+            Properties = "{}",
+            DataSourceId = record.DataSourceId,
+            CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+        });
 
         return new RecordResponseDto
         {
@@ -264,9 +279,28 @@ public class RecordBusiness : IRecordBusiness
        sql = string.Format(sql, valueTuples);
 
        // returns the resulting upserted classes
-       return await _context.Database
+       var result = await _context.Database
            .SqlQueryRaw<RecordResponseDto>(sql, parameters.ToArray())
            .ToListAsync();
+       
+       // Log Event for all records created
+       var events = new List<CreateEventRequestDto> { };
+       foreach (var record in result)
+       {
+           events.Add(new CreateEventRequestDto
+                  {
+                      Operation = "create",
+                      EntityType = "record",
+                      EntityId = record.Id,
+                      ProjectId = record.ProjectId,
+                      Properties = "{}",
+                      DataSourceId = record.DataSourceId,
+                      CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+                  });
+       }
+       await _eventBusiness.BulkCreateEvents(projectId, events);
+       
+       return result;
     }
 
     /// <summary>
@@ -309,6 +343,18 @@ public class RecordBusiness : IRecordBusiness
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
+        
+        // Log Record Update Event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = record.ProjectId,
+            EntityType = "record",
+            EntityId = record.Id,
+            Operation = "update",
+            Properties = "{}",
+            DataSourceId = record.DataSourceId,
+            CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+        });
         
         return new RecordResponseDto
         {
@@ -385,7 +431,6 @@ public class RecordBusiness : IRecordBusiness
                 }
 
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
@@ -393,6 +438,20 @@ public class RecordBusiness : IRecordBusiness
                 throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
+        
+        // Log record soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "record",
+            EntityId = record.Id,
+            DataSourceId = record.DataSourceId,
+            Properties = JsonSerializer.Serialize(new {record.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
     
     /// <summary>

@@ -1,20 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { useLanguage } from "@/app/contexts/Language";
+import { useUserSession } from "@/app/contexts/UserSessionProvider";
+import { getDataOverview } from "@/app/lib/user_services.client";
 import {
-  UserSessionProvider,
-  useUserSession,
-} from "@/app/contexts/UserSessionProvider";
-import {
-  Squares2X2Icon,
-  RectangleGroupIcon,
   ArrowsRightLeftIcon,
   CircleStackIcon,
+  RectangleGroupIcon,
+  Squares2X2Icon,
 } from "@heroicons/react/24/outline";
-import { getDataOverview } from "@/app/lib/user_services.client";
-import { translations } from "@/app/lib/translations";
+import { useEffect, useState } from "react";
 
 const DataOverviewWidget = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const { user } = useUserSession();
   const [stats, setStats] = useState<{
     projects: number;

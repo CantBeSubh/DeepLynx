@@ -5,4 +5,5 @@ public class UserResponseDto
     public string Name { get; set; }
     public string Email { get; set; }
     public DateTime? ArchivedAt { get; set; }
+    public bool IsSysAdmin { get; set; }
 }

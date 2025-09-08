@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
@@ -9,13 +9,11 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
 import { getAllRecordsForMultipleProjects } from "@/app/lib/projects_services.client";
 
-import SavedSearches from "../components/SavedSearches";
-import GridView from "../components/GridView";
-import ListView from "../components/ListView";
 import ProjectDropdown from "../components/ProjectDropdown";
 import RecentRecordsCard from "../components/RecentRecordsCard";
-import { translations } from "@/app/lib/translations";
+import SavedSearches from "../components/SavedSearches";
 
+import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowUturnLeftIcon,
   EyeIcon,
@@ -37,8 +35,7 @@ export default function DataCatalogClient({
   initialSearchTerm,
   initialRecords,
 }: Props) {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
 
   // Project session (client provider)
   const { hasLoaded } = useProjectSession();
@@ -287,7 +284,7 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-      <div className="flex w-full gap-8 pl-8">
+      <div className="flex w-full gap-8 p-8">
         <div className="w-2/3">
           <RecentRecordsCard selectedProjects={selectedProjects} />
         </div>
@@ -295,6 +292,6 @@ export default function DataCatalogClient({
           <SavedSearches />
         </div>
       </div>
-    </div >
+    </div>
   );
 }

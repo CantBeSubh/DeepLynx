@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,6 +34,9 @@ public partial class DataSource
 
     [Column("project_id")]
     public long ProjectId { get; set; }
+    
+    [Column("default")]
+    public bool Default { get; set; }
 
     [Required]
     [Column("last_updated_at", TypeName = "timestamp without time zone")]

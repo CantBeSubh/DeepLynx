@@ -23,6 +23,7 @@ namespace deeplynx.tests
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
+        private EventBusiness _eventBusiness = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         public long pid;
         public long dsid;
@@ -40,14 +41,25 @@ namespace deeplynx.tests
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context);
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
-            _edgeMappingBusiness = new EdgeMappingBusiness(Context);
-            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object);
+            _edgeMappingBusiness = new EdgeMappingBusiness(Context, _eventBusiness);
+            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
+            _edgeMappingBusiness = new EdgeMappingBusiness(
+                Context, _eventBusiness);
+           
+            _dataSourceBusiness = new DataSourceBusiness(
+                Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
+            
             _classBusiness = new ClassBusiness(
                 Context, _edgeMappingBusiness, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness,  _mockObjectStorageBusiness.Object);
+                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
+
+            _projectBusiness = new ProjectBusiness(
+                Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness,
+                _mockObjectStorageBusiness.Object, _eventBusiness);
         }
 
         [Fact]
@@ -74,6 +86,19 @@ namespace deeplynx.tests
             result.DataSourceId.Should().Be(dsid);
             result.OriginParams.Should().NotBeNull();
             result.DestinationParams.Should().NotBeNull();
+            
+            // Ensure that the create edgeMapping event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Should().HaveCount(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                EntityId = result.Id,
+                EntityType = "edge_mapping",
+                DataSourceId = result.DataSourceId,
+                Operation = "create",
+                ProjectId = result.ProjectId,
+            });
+            
         }
 
         [Fact]
@@ -90,6 +115,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeMappingBusiness.CreateEdgeMapping(pid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that the create edgeMapping event is not logged
+            var evetList = Context.Events.ToList();
+            evetList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -111,6 +140,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeMappingBusiness.CreateEdgeMapping(pid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that the create edgeMapping event is not logged
+            var evetList = Context.Events.ToList();
+            evetList.Should().HaveCount(0);
         }
 
         [Fact]
@@ -400,6 +433,18 @@ namespace deeplynx.tests
             updatedResult.LastUpdatedAt.Should().BeOnOrAfter(updatedResult.LastUpdatedAt);
             updatedResult.OriginParams!["param1"]!.ToString().Should().Be("updated_value");
             updatedResult.DestinationParams!["param1"]!.ToString().Should().Be("updated_value");
+            
+            // Ensure that the update eventMapping event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                EntityId = updatedResult.Id,
+                EntityType = "edge_mapping",
+                Operation = "update",
+                ProjectId = updatedResult.ProjectId,
+                DataSourceId = updatedResult.DataSourceId,
+            });
         }
 
         [Fact]
@@ -416,6 +461,10 @@ namespace deeplynx.tests
             };
             var updatedResult = () => _edgeMappingBusiness.UpdateEdgeMapping(pid, 99, dto);
             await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that the update eventMapping event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -444,7 +493,17 @@ namespace deeplynx.tests
             var archivedMapping = await Context.EdgeMappings.FindAsync(testMapping.Id);
             Assert.NotNull(archivedMapping);
             Assert.True(archivedMapping.IsArchived);
-            
+            // Ensure that mapping soft delete event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "delete",
+                EntityType = "edge_mapping",
+                EntityId = testMapping.Id,
+                DataSourceId = testMapping.DataSourceId,
+            });
         }
 
         [Fact]
@@ -542,6 +601,10 @@ namespace deeplynx.tests
         {
             var result = () => _edgeMappingBusiness.ArchiveEdgeMapping(pid, 999);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that mapping soft delete event was NOT logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]

@@ -1,9 +1,7 @@
-import { translations } from "@/app/lib/translations";
-import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
 
 const GraphWidget = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   return (
     <div className="card-body">
       <h2 className="card-title">{t.translations.GRAPH}</h2>

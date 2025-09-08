@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
@@ -9,6 +7,7 @@ namespace deeplynx.datalayer.Models;
 
 [Table("projects", Schema = "deeplynx")]
 [Index("Id", Name = "idx_projects_id")]
+[Index("OrganizationId", Name = "idx_projects_organization_id")]
 public partial class Project
 {
     [Key]
@@ -37,6 +36,9 @@ public partial class Project
     
     [Column("config", TypeName = "jsonb")]
     public string ConfigJson { get; set; } = null!;
+    
+    [Column("organization_id")]
+    public long? OrganizationId { get; set; }
 
     /// <summary>
     /// Strongly-typed access to project configuration.
@@ -104,4 +106,17 @@ public partial class Project
     
     [InverseProperty("Project")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [ForeignKey("OrganizationId")]
+    [InverseProperty("Projects")]
+    public virtual Organization? Organization { get; set; } = null!;
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    [InverseProperty("Project")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
+    
+    [InverseProperty("Project")]
+    public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
 }

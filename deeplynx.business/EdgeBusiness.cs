@@ -11,15 +11,18 @@ namespace deeplynx.business;
 public class EdgeBusiness : IEdgeBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EdgeBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge operations.</param>
     /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
-    public EdgeBusiness(DeeplynxContext context)
+    /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
+    public EdgeBusiness(DeeplynxContext context,  IEventBusiness eventBusiness)
     {
         _context = context;
+        _eventBusiness = eventBusiness;
     }
 
     /// <summary>
@@ -140,6 +143,18 @@ public class EdgeBusiness : IEdgeBusiness
         _context.Edges.Add(edge);
         await _context.SaveChangesAsync();
         
+        // log edge create event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "create",
+            EntityType = "edge",
+            EntityId = edge.Id,
+            DataSourceId = edge.DataSourceId,
+            Properties = "{}", // TODO: Determine the extent of data edge properties need
+            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+        });
+        
         return new EdgeResponseDto
         {
             Id = edge.Id,
@@ -202,9 +217,28 @@ public class EdgeBusiness : IEdgeBusiness
         sql = string.Format(sql, valueTuples);
 
         // returns the resulting upserted classes
-        return await _context.Database
+        var result = await _context.Database
             .SqlQueryRaw<EdgeResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
+        
+        // log edge create event for each create
+        var events = new List<CreateEventRequestDto> { };
+        foreach (var newEdge in result)
+        {
+            events.Add(new CreateEventRequestDto
+                {
+                    ProjectId = projectId,
+                    Operation = "create",
+                    EntityType = "edge",
+                    EntityId = newEdge.Id,
+                    DataSourceId = newEdge.DataSourceId,
+                    Properties = "{}", // TODO: Determine the extent of data edge properties need
+                    CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+                });
+        }
+        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        return result;
     }
 
     /// <summary>
@@ -240,6 +274,18 @@ public class EdgeBusiness : IEdgeBusiness
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
+        
+        // log edge update event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "update",
+            EntityType = "edge",
+            EntityId = edge.Id,
+            DataSourceId = edge.DataSourceId,
+            Properties = "{}", // TODO: Determine the extent of data edge properties need
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
         
         return new EdgeResponseDto
         {
@@ -278,6 +324,7 @@ public class EdgeBusiness : IEdgeBusiness
 
         _context.Edges.Remove(edge);
         await _context.SaveChangesAsync();
+        
         return edge.Id;
     }
     
@@ -305,6 +352,19 @@ public class EdgeBusiness : IEdgeBusiness
         edge.IsArchived = true;
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
+        
+        // Log Edge soft Delete Event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "edge",
+            EntityId = edgeId,
+            DataSourceId = edge.DataSourceId,
+            Properties = "{}", // TODO: Determine the extent of data edge properties need
+            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+        });
+
         
         return edge.Id;
     }

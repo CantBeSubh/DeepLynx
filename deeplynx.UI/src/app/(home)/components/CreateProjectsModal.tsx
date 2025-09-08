@@ -1,6 +1,5 @@
+import { useLanguage } from "@/app/contexts/Language";
 import { createProject } from "@/app/lib/projects_services.client";
-import { translations } from "@/app/lib/translations";
-import React from "react";
 import { useState } from "react";
 
 interface CreateProjectsModalProps {
@@ -15,8 +14,7 @@ const CreateProject = ({
   onClose,
   onProjectCreated,
 }: CreateProjectsModalProps) => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
@@ -35,7 +33,7 @@ const CreateProject = ({
       });
 
       setToastType("success");
-      setToastMessage("Porject Created Successfully");
+      setToastMessage("Project Created Successfully");
 
       setName("");
       setAbbreviation("");

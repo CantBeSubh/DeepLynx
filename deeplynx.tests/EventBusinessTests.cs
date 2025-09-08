@@ -288,6 +288,58 @@ namespace deeplynx.tests
             await result.Should().ThrowAsync<ArgumentException>();
         }
         
+        [Fact]
+        public async Task BulkCreateEvents_Success_ReturnsIdAndCreatedAt()
+        {
+
+            var events = new List<CreateEventRequestDto> { };
+            
+            var dto1 = new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "metadata",
+                EntityId = 1,
+                ProjectId = pid,
+                DataSourceId = null,
+                Properties = "{}",
+                CreatedBy = "user123"
+            };
+            
+            var dto2 = new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "metadata",
+                EntityId = 2,
+                ProjectId = pid,
+                DataSourceId = null,
+                Properties = "{}",
+                CreatedBy = "user123"
+            };
+            
+            events.AddRange(dto1,  dto2);
+
+            var results = await _eventBusiness.BulkCreateEvents(pid, events);
+            results.Should().NotBeNull();
+            results[0].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "metadata",
+                EntityId = 1,
+                ProjectId = pid,
+                Properties = "{}",
+                CreatedBy = "user123"
+            });
+            results[1].Should().BeEquivalentTo(new
+            {
+                Operation = "create",
+                EntityType = "metadata",
+                EntityId = 2,
+                ProjectId = pid,
+                Properties = "{}",
+                CreatedBy = "user123"
+            });
+        }
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

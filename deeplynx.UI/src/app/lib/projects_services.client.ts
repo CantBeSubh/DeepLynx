@@ -2,6 +2,7 @@
 "use client";
 
 import axios from "axios";
+import { ClassResponseDto } from "../(home)/types/types";
 
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,

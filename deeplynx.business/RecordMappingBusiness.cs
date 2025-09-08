@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Nodes;
 using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
+using System.Text.Json;
 
 namespace deeplynx.business;
 //todo:
@@ -13,14 +14,16 @@ namespace deeplynx.business;
 public class RecordMappingBusiness : IRecordMappingBusiness
 {
     private readonly DeeplynxContext _context;
-
+    private readonly IEventBusiness _eventBusiness;
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordMappingBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record mapping operations.</param>
-    public RecordMappingBusiness(DeeplynxContext context)
+    public RecordMappingBusiness(DeeplynxContext context,  IEventBusiness eventBusiness)
     {
         _context = context;
+        _eventBusiness = eventBusiness;
     }
 
     /// <summary>
@@ -162,6 +165,18 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         _context.RecordMappings.Add(mapping);
         await _context.SaveChangesAsync();
         
+        // log mapping create event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "create",
+            EntityType = "record_mapping",
+            EntityId = mapping.Id,
+            ProjectId = mapping.ProjectId,
+            Properties = "{}",
+            DataSourceId = mapping.DataSourceId,
+            CreatedBy = "", // TODO: add username when JWT are implemented
+        });
+        
         return new RecordMappingResponseDto
         {
             Id = mapping.Id,
@@ -208,6 +223,19 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         
         _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
+        
+        // log mapping update event
+        await _eventBusiness.CreateEvent( new CreateEventRequestDto
+        {
+            Operation = "update",
+            EntityType = "record_mapping",
+            EntityId = mapping.Id,
+            ProjectId = mapping.ProjectId,
+            Properties = "{}",
+            DataSourceId = mapping.DataSourceId,
+            CreatedBy = "", // TODO: add username when JWT are implemented
+        });
+
         
         return new RecordMappingResponseDto
         {
@@ -262,6 +290,18 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         mapping.IsArchived = true;
         _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
+        
+        // Log Mapping soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "record_mapping",
+            EntityId = mapping.Id,
+            DataSourceId = mapping.DataSourceId,
+            Properties = "{}",
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return true;
     }

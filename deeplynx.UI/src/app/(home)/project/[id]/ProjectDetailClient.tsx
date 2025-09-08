@@ -1,18 +1,18 @@
 // app/(home)/project/[id]/ProjectDetailClient.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import SavedSearches from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
+import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import RecentRecordsCard from "../../components/RecentRecordsCard";
-import { translations } from "@/app/lib/translations";
 import { format } from "date-fns";
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import RecentRecordsCard from "../../components/RecentRecordsCard";
 
 type Props = {
   initialProject: ProjectsList | null;
@@ -23,8 +23,7 @@ export default function ProjectDetailClient({
   initialProject,
   projectId,
 }: Props) {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   const router = useRouter();
 
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
@@ -45,7 +44,10 @@ export default function ProjectDetailClient({
 
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
-    localStorage.setItem(`projectWidgets-${projectId}`, JSON.stringify(newWidgets));
+    localStorage.setItem(
+      `projectWidgets-${projectId}`,
+      JSON.stringify(newWidgets)
+    );
   };
 
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
@@ -66,7 +68,11 @@ export default function ProjectDetailClient({
 
         <div className="flex w-full mt-6">
           {/* left column */}
-          <div className={`w-full md:w-3/5 pr-4 ${canCustomize ? "grayed-out" : ""}`}>
+          <div
+            className={`w-full md:w-3/5 pr-4 ${
+              canCustomize ? "grayed-out" : ""
+            }`}
+          >
             <div className="flex flex-col">
               <LargeSearchBar
                 className="mb-4 px-4"

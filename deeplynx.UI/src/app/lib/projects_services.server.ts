@@ -5,9 +5,6 @@ import type { FileViewerTableRow } from "@/app/(home)/types/types";
 const BASE = process.env.BACKEND_BASE_URL || "BASE URL IS NOT DEFINED";
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "SERVICE TOKEN IS NOT DEFINED";
 
-console.log("BACKEND BASE URL:", BASE)
-console.log("SERVICE TOKEN:", SERVICE_TOKEN)
-
 /** ----- Types ----- */
 export type ProjectDTO = {
   id: number | string;

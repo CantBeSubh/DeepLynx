@@ -25,17 +25,16 @@ public class TagController : ControllerBase
     /// <summary>
     /// Get all tags
     /// </summary>
-    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
+    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result (Default true)</param>
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags", Name = "api_get_all_tags")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
-        long projectId, 
-        [FromQuery] bool hideArchived = true)
+        [FromQuery] long[] projectIds, bool hideArchived = true)
     {
         try
         {
-            var tags = await _tagBusiness.GetAllTags(projectId,  hideArchived);
+            var tags = await _tagBusiness.GetAllTags(projectIds,  hideArchived);
             return Ok(tags);
         }
         catch (Exception exception)

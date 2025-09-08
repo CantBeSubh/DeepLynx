@@ -5,12 +5,14 @@ using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Text.Json;
 
 namespace deeplynx.business;
 
 public class RelationshipBusiness: IRelationshipBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
     private readonly IEdgeMappingBusiness _edgeMappingBusiness;
     private readonly IEdgeBusiness _edgeBusiness;
 
@@ -20,11 +22,12 @@ public class RelationshipBusiness: IRelationshipBusiness
     /// <param name="context">The database context used for the relationship operations.</param>
     /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects.</param>
     /// <param name="edgeBusiness">Passed in context of edge objects.</param>
-    public RelationshipBusiness(DeeplynxContext context, IEdgeMappingBusiness edgeMappingBusiness, IEdgeBusiness edgeBusiness)
+    public RelationshipBusiness(DeeplynxContext context, IEdgeMappingBusiness edgeMappingBusiness, IEdgeBusiness edgeBusiness, IEventBusiness eventBusiness)
     {
         _edgeMappingBusiness = edgeMappingBusiness;
         _edgeBusiness = edgeBusiness;
         _context = context;
+        _eventBusiness = eventBusiness;
     }
     
     /// <summary>
@@ -182,6 +185,17 @@ public class RelationshipBusiness: IRelationshipBusiness
                 .LoadAsync();
         }
         
+        // log relationship create event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "create",
+            EntityType = "relationship",
+            EntityId = relationship.Id,
+            ProjectId = relationship.ProjectId,
+            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            CreatedBy = "", // TODO: add username when JWT are implemented
+        });
+        
         return new RelationshipResponseDto
         {
             Id = relationship.Id,
@@ -244,9 +258,29 @@ public class RelationshipBusiness: IRelationshipBusiness
         sql = string.Format(sql, valueTuples);
 
         // returns the resulting upserted relationships
-        return await _context.Database
+        var result = await _context.Database
             .SqlQueryRaw<RelationshipResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
+
+        // Bulk log events for each relationship creation
+        var events = new List<CreateEventRequestDto> { };
+        
+        foreach (var relationship in result)
+        {
+            events.Add(new CreateEventRequestDto
+            {
+                Operation = "create",
+                EntityType = "relationship",
+                EntityId = relationship.Id,
+                ProjectId = relationship.ProjectId,
+                Properties = "{}",
+                CreatedBy = "", // TODO: add username when JWT are implemented
+            });
+        }
+        
+        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        return result;
     }
 
     /// <summary>
@@ -287,6 +321,18 @@ public class RelationshipBusiness: IRelationshipBusiness
         relationship.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready;
         _context.Relationships.Update(relationship);
         await _context.SaveChangesAsync();
+        
+        // log relationship update event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "update",
+            EntityType = "relationship",
+            EntityId = relationship.Id,
+            ProjectId = relationship.ProjectId,
+            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            CreatedBy = "", // TODO: add username when JWT are implemented
+        });
+        
         return new RelationshipResponseDto
         {
             Id = relationship.Id,
@@ -357,7 +403,6 @@ public class RelationshipBusiness: IRelationshipBusiness
                 }
 
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
@@ -365,6 +410,20 @@ public class RelationshipBusiness: IRelationshipBusiness
                 throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents: {exc}");
             }
         }
+        
+        // Log relationship soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "relationship",
+            EntityId = relationship.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
     
     /// <summary>

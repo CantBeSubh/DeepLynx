@@ -1,5 +1,4 @@
-import { translations } from "@/app/lib/translations";
-import React from "react";
+import { useLanguage } from "@/app/contexts/Language";
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -8,8 +7,7 @@ interface AddMemberModalProps {
 
 // Main CreateWidget component
 const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
-  const locale = "en";
-  const t = translations[locale];
+  const { t } = useLanguage();
   return (
     <>
       {/* Render the modal dialog if isOpen is true */}

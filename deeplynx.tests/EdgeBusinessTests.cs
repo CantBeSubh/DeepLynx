@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -19,6 +18,7 @@ namespace deeplynx.tests
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;
+        private EventBusiness _eventBusiness = null!;
         private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
@@ -41,14 +41,18 @@ namespace deeplynx.tests
             _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _eventBusiness = new EventBusiness(Context);
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
-            _edgeBusiness = new EdgeBusiness(Context);
-            _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _mockRecordBusiness.Object);
+            _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
+            _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
                 Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object,_classBusiness, _dataSourceBusiness,  _mockObjectStorageBusiness.Object);
+                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
+            
+            _projectBusiness = new ProjectBusiness(
+                Context, _mockLogger.Object,_classBusiness, _dataSourceBusiness, 
+                _mockObjectStorageBusiness.Object,_eventBusiness);
         }
 
         [Fact]
@@ -69,6 +73,17 @@ namespace deeplynx.tests
             result.DestinationId.Should().Be(destinationRecordId);
             result.ProjectId.Should().Be(pid);
             result.DataSourceId.Should().Be(dsid);
+            
+            // Ensure that edge create event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "edge",
+                EntityId = result.Id,
+            });
         }
 
         [Fact]
@@ -82,6 +97,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
             await result.Should().ThrowAsync<DbUpdateException>();
+            
+            // Ensure that edge create event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -95,6 +114,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
             await result.Should().ThrowAsync<DbUpdateException>();
+            
+            // Ensure that edge create event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -108,6 +131,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeBusiness.CreateEdge(pid + 99, dsid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that edge create event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -121,6 +148,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeBusiness.CreateEdge(pid, dsid + 99, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that edge create event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -139,6 +170,10 @@ namespace deeplynx.tests
             };
             var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
             await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that edge create event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -166,6 +201,21 @@ namespace deeplynx.tests
             result.Should().HaveCount(2);
             result.Should().OnlyContain(e => e.Id > 0);
             result.Should().OnlyContain(e => e.LastUpdatedAt >= now);
+
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(2);
+            eventList[0].Should().BeEquivalentTo(new {
+               ProjectId = result[0].ProjectId, 
+               EntityId = result[0].Id,
+               EntityType = "edge",
+               Operation = "create",
+            });
+            eventList[1].Should().BeEquivalentTo(new {
+                ProjectId = result[0].ProjectId, 
+                EntityId = result[1].Id,
+                EntityType = "edge",
+                Operation = "create",
+            });
         }
 
         [Fact]
@@ -353,6 +403,16 @@ namespace deeplynx.tests
 
             updatedResult.LastUpdatedAt.Should().BeOnOrAfter(updatedResult.LastUpdatedAt);
             updatedResult.DestinationId.Should().Be(destinationRecordId2);
+            
+            // Ensure that update edge event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                EntityId = testEdge.Id,
+                EntityType = "edge",
+                Operation = "update"
+            });
         }
 
         [Fact]
@@ -417,6 +477,15 @@ namespace deeplynx.tests
             Assert.Equal(oid, getResult.OriginId);
             Assert.Equal(did, getResult.DestinationId);
             Assert.NotNull(getResult.LastUpdatedAt);
+            // Ensure that update edge event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                EntityId = testEdge.Id,
+                EntityType = "edge",
+                Operation = "update"
+            });
         }
 
         [Fact]
@@ -430,6 +499,10 @@ namespace deeplynx.tests
             };
             var updatedResult = () => _edgeBusiness.UpdateEdge(pid, dto, 99, null, null);
             await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that update edge event was not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
 
         [Fact]
@@ -455,6 +528,16 @@ namespace deeplynx.tests
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.NotNull(archivedEdge);
             Assert.True(archivedEdge.IsArchived);
+            // Ensure that soft delete edge event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                EntityId = testEdge.Id,
+                EntityType = "edge",
+                Operation = "delete"
+            });
+
         }
 
         [Fact]
@@ -543,6 +626,10 @@ public async Task BulkCreateEdges_Fails_IfNullDto()
 {
     var result = () => _edgeBusiness.BulkCreateEdges(pid, dsid, null);
     await result.Should().ThrowAsync<ArgumentNullException>();
+    
+    // Ensure that create edge event is not logged
+    var eventList = Context.Events.ToList();
+    eventList.Count.Should().Be(0);
 }
 
 [Fact]
@@ -550,6 +637,9 @@ public async Task ArchiveEdge_Fails_IfNotFound()
 {
     var result = () => _edgeBusiness.ArchiveEdge(pid, 999, null, null);
     await result.Should().ThrowAsync<KeyNotFoundException>();
+    // Ensure that create edge event is not logged
+    var eventList = Context.Events.ToList();
+    eventList.Count.Should().Be(0);
 }
 
 [Fact]
@@ -564,6 +654,10 @@ public async Task UnarchiveEdge_Fails_IfNotFound()
 {
     var result = () => _edgeBusiness.UnarchiveEdge(pid, 999, null, null);
     await result.Should().ThrowAsync<KeyNotFoundException>();
+    
+    // Ensure that create edge event is not logged
+    var eventList = Context.Events.ToList();
+    eventList.Count.Should().Be(0);
 }
 
 [Fact]
@@ -583,6 +677,10 @@ public async Task UnarchiveEdge_Fails_IfNotArchived()
 
     var result = () => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null);
     await result.Should().ThrowAsync<KeyNotFoundException>();
+    
+    // Ensure that create edge event is not logged
+    var eventList = Context.Events.ToList();
+    eventList.Count.Should().Be(0);
 }
 
 [Fact]

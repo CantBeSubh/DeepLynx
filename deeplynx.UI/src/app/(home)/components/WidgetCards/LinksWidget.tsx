@@ -1,17 +1,16 @@
-import React, { useState } from "react";
 import CreateLink from "@/app/(home)/components/WidgetCards/WidgetCardModals/CreateLinksModal";
+import { useLanguage } from "@/app/contexts/Language";
 import {
   AdjustmentsHorizontalIcon,
-  FolderIcon,
-  DocumentDuplicateIcon,
   ArrowTrendingUpIcon,
+  DocumentDuplicateIcon,
+  FolderIcon,
 } from "@heroicons/react/24/outline";
 import { PlusCircleIcon } from "@heroicons/react/24/solid";
-import { translations } from "@/app/lib/translations";
+import { useState } from "react";
 
 const LinksWidget = () => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [linkModal, setLinkModal] = useState(false);
 
   return (

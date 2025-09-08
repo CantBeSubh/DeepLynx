@@ -1,36 +1,66 @@
 services:
-  app:
+  ui:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.app.local
+      dockerfile: Dockerfiles/ui/Dockerfile.local
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+    environment:
+      NODE_ENV: production
+      BACKEND_BASE_URL: "http://server:5000/api"
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
-      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    networks:
+      - nexus-network
     depends_on:
-      - postgres
+      - server
 
-  backend:
+  server:
     build:
       context: ./
-      dockerfile: Dockerfiles/Dockerfile.backend.local
+      dockerfile: Dockerfiles/server/Dockerfile.local
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nexuscore
+      POSTGRES_DB_NAME: deeplynx
+      POSTGRES_DB_HOST: nx-postgres
+      POSTGRES_PORT: 5432
+      FILE_STORAGE_METHOD: filesystem # values can be filesystem, azure_object, and aws_s3
+      STORAGE_DIRECTORY: /data
+      AZURE_OBJECT_CONNECTION_STRING: azure-example-connection-string
+      AWS_S3_CONNECTION_STRING: aws-example-connection-string
+      # this is under development, ask about getting scalar working for the docker server
+      ScalarApi__BaseUrl: http://scalar-api:5050 # http://localhost:5000/scalar/, not 5050.
+    entrypoint: /usr/local/bin/entrypoint.sh
     ports:
       - "5000:5000"
-    environment:
-      NODE_ENV: production
-      NEXT_PUBLIC_OKTA_CLIENT_ID: ${NEXT_PUBLIC_OKTA_CLIENT_ID}
-      NEXT_PUBLIC_OKTA_ISSUER: ${NEXT_PUBLIC_OKTA_ISSUER}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+    networks:
+      - nexus-network
+    volumes:
+      - object_storage:/data
     depends_on:
-      - postgres
-    entrypoint: /usr/local/bin/entrypoint.sh
+        - nx-postgres
 
-  postgres:
+  nx-postgres:
     build:
-      context: ./database
-      dockerfile: Dockerfiles/Dockerfile.db.local
+      context: ./
+      dockerfile: Dockerfiles/database/Dockerfile.local
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nexuscore
     ports:
-      - "5433:5432"
+      - "5432"
+    networks:
+      - nexus-network
+    volumes:
+      - nx_postgres_data:/var/lib/postgresql/data
+    
+networks:
+  nexus-network:
+    driver: bridge
+  
+volumes:
+  object_storage:
+    driver: local
+  nx_postgres_data:
+    driver: local

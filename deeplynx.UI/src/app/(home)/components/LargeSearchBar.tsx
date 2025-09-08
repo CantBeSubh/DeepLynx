@@ -1,6 +1,6 @@
 "use client";
 
-import { translations } from "@/app/lib/translations";
+import { useLanguage } from "@/app/contexts/Language";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import React, { useRef, useState } from "react";
 
@@ -34,8 +34,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   resultCount,
   showResultsMessage,
 }) => {
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
-  const t = translations[locale];
+  const { t } = useLanguage();
   const [internalValue, setInternalValue] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -91,7 +90,7 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
         )}
         <div className="text-right mt-1">
           <a
-            href="/placeholder for advanced"
+            href="/data_catalog/query_builder"
             className="text-sm underline text-secondary hover:underline"
           >
             {t.translations.ADITIONAL_FILTERS}

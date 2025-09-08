@@ -13,14 +13,17 @@ namespace deeplynx.business;
 public class EdgeMappingBusiness : IEdgeMappingBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly IEventBusiness _eventBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EdgeMappingBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge mapping operations.</param>
-    public EdgeMappingBusiness(DeeplynxContext context)
+    /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
+    public EdgeMappingBusiness(DeeplynxContext context, IEventBusiness eventBusiness)
     {
         _context = context;
+        _eventBusiness = eventBusiness;
     }
 
     /// <summary>
@@ -153,6 +156,18 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         _context.EdgeMappings.Add(mapping);
         await _context.SaveChangesAsync();
         
+        // Log create edgeMapping event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "create",
+            EntityType = "edge_mapping",
+            EntityId = mapping.Id,
+            DataSourceId = mapping.DataSourceId,
+            Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
         return new EdgeMappingResponseDto
         {
             Id = mapping.Id,
@@ -202,6 +217,18 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
+        
+        // Log update edgeMapping event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "update",
+            EntityType = "edge_mapping",
+            EntityId = mapping.Id,
+            DataSourceId = mapping.DataSourceId,
+            Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
         
         return new EdgeMappingResponseDto
         {
@@ -258,6 +285,18 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
         mapping.IsArchived = true;
         _context.EdgeMappings.Update(mapping);
         await _context.SaveChangesAsync();
+        
+        // Log mapping soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "delete",
+            EntityType = "edge_mapping",
+            EntityId = mapping.Id,
+            DataSourceId = mapping.DataSourceId,
+            Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
+            CreatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return true;
     }
