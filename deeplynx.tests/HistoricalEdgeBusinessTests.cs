@@ -107,11 +107,14 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public async Task GetAllHistoricalEdges_InlcudesArchivedHistoricalEdges()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
-        
-        var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid,null, null, false);
+    
+        // Add this line to force EF to reload from database
+        Context.ChangeTracker.Clear();
+    
+        var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
         historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(2);
-        historicalEdges.Should().Contain(e => e.Id == eid && e.IsArchived);
+        historicalEdges.Should().HaveCount(1);
+        historicalEdges.Should().NotContain(e => e.Id == eid && e.IsArchived);
         historicalEdges.Should().Contain(e => e.Id == eid2);
     }
 

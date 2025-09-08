@@ -621,7 +621,7 @@ namespace deeplynx.tests
                 DestinationId = 4,
                 DataSourceId = 5,
                 ProjectId = 6,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = now,
                 LastUpdatedBy = null,
                 IsArchived = false
             };
@@ -634,7 +634,7 @@ namespace deeplynx.tests
             Assert.Equal(4, dto.DestinationId);
             Assert.Equal(5, dto.DataSourceId);
             Assert.Equal(6, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.Null( dto.LastUpdatedBy);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
         }
