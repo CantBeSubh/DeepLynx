@@ -42,7 +42,7 @@ export default function QueryBuilderClient({
   connectors = ["AND", "OR"], //TODO: Add NOT
   filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
-  values = ["ClassOne", "ClassTwo", "ClassThree"],
+  values = [],
   queriedRecords
 }: Props) {
 
