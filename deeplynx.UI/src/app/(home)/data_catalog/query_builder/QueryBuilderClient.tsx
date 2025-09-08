@@ -39,7 +39,7 @@ export default function QueryBuilderClient({
   initialProjects,
   initialSelectedProjects,
   initialSearchTerm,
-  connectors = ["AND", "OR", "NOT"],
+  connectors = ["AND", "OR"], //TODO: Add NOT
   filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = ["ClassOne", "ClassTwo", "ClassThree"],
