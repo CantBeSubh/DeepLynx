@@ -123,8 +123,8 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
             </button>
           )}
         </div>
-
-        <div className="dropdown">
+        {/* TODO: Hook up drop down search select */}
+        {/* <div className="dropdown">
           <button
             type="button"
             tabIndex={0}
@@ -159,7 +159,7 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
       </div>
 
       {/* Active filters UI below stays intact (if you still want it) */}
