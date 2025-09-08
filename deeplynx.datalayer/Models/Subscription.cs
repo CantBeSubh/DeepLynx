@@ -21,19 +21,26 @@ namespace deeplynx.datalayer.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public long Id { get; set; }
         
-        [Column("user_id")] public long UserId { get; set; }
+        [Column("user_id")] 
+        public long UserId { get; set; }
 
-        [Column("action_id")] public long ActionId { get; set; }
+        [Column("action_id")] 
+        public long ActionId { get; set; }
 
-        [Column("operation")] public string? Operation { get; set; }
+        [Column("operation")] 
+        public string? Operation { get; set; }
 
-        [Column("project_id")] public long ProjectId { get; set; }
+        [Column("project_id")] 
+        public long ProjectId { get; set; }
 
-        [Column("data_source_id")] public long? DataSourceId { get; set; }
+        [Column("data_source_id")] 
+        public long? DataSourceId { get; set; }
 
-        [Column("entity_type")] public string? EntityType { get; set; }
+        [Column("entity_type")] 
+        public string? EntityType { get; set; }
 
-        [Column("entity_id")] public long? EntityId { get; set; }
+        [Column("entity_id")] 
+        public long? EntityId { get; set; }
 
         [Column("created_at", TypeName = "timestamp without time zone")]
         public DateTime CreatedAt { get; set; }

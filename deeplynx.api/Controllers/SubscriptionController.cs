@@ -35,7 +35,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscription belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>List of subscription response DTOs</returns>
-        [HttpGet(Name = "api_get_all_subscriptions")]
+        [HttpGet("GetAllSubscriptions", Name = "api_get_all_subscriptions")]
         public async Task<ActionResult<IEnumerable<SubscriptionResponseDto>>> GetAllSubscriptions(
             long userId, long projectId, [FromQuery] bool hideArchived = true)
         {
@@ -60,7 +60,7 @@ namespace deeplynx.api.Controllers
         /// <param name="subscriptionId">The ID of the subscription to retrieve</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived subscriptions from the result</param>
         /// <returns>Subscription response DTO</returns>
-        [HttpGet("{subscriptionId}", Name = "api_get_a_subscription")]
+        [HttpGet("GetSubscription/{subscriptionId}", Name = "api_get_a_subscription")]
         public async Task<ActionResult<SubscriptionResponseDto>> GetSubscription(
             long userId, long projectId, long subscriptionId, [FromQuery] bool hideArchived = true)
         {
@@ -84,7 +84,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
-        [HttpPost(Name = "api_create_many_subscriptions")]
+        [HttpPost("BulkCreateSubscriptions", Name = "api_create_many_subscriptions")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkCreateSubscriptions(
             long userId, long projectId, [FromBody] List<CreateSubscriptionRequestDto> subscriptions)
         {
@@ -108,7 +108,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptions">List of request DTOs for subscriptions</param>
         /// <returns>Bulk subscription response DTOs</returns>
-        [HttpPut(Name = "api_update_many_subscriptions")]
+        [HttpPut("BulkUpdateSubscriptions", Name = "api_update_many_subscriptions")]
         public async Task<ActionResult<List<SubscriptionResponseDto>>> BulkUpdateSubscriptions(
             long userId, long projectId, [FromBody] List<UpdateSubscriptionRequestDto> subscriptions)
         {
@@ -132,7 +132,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to delete</param>
         /// <returns>A message stating the subscriptions were successfully deleted.</returns>
-        [HttpDelete(Name = "api_delete_many_subscriptions")]
+        [HttpDelete("BulkDeleteSubscriptions", Name = "api_delete_many_subscriptions")]
         public async Task<IActionResult> BulkDeleteSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
@@ -155,7 +155,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to archive</param>
         /// <returns>A message stating the subscriptions were successfully archived.</returns>
-        [HttpPut("archive", Name = "api_archive_many_subscriptions")]
+        [HttpPut("BulkArchiveSubscriptions", Name = "api_archive_many_subscriptions")]
         public async Task<IActionResult> BulkArchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
@@ -178,7 +178,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the subscriptions belong</param>
         /// <param name="subscriptionIds">List of subscription IDs to unarchive</param>
         /// <returns>A message stating the subscriptions were successfully unarchived.</returns>
-        [HttpPut("unarchive", Name = "api_unarchive_many_subscriptions")]
+        [HttpPut("BulkUnarchiveSubscriptions", Name = "api_unarchive_many_subscriptions")]
         public async Task<IActionResult> BulkUnarchiveSubscriptions(long userId, long projectId, [FromBody] List<long> subscriptionIds)
         {
             try
