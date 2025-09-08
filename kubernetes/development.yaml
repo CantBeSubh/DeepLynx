@@ -59,7 +59,7 @@ spec:
     spec:
       containers:
         - name: deeplynxv3
-          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-app-${GITHUB_RUN_NUMBER}
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-ui-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
             - name: AWS_S3_CONNECTION_STRING
@@ -72,10 +72,10 @@ spec:
               value: ${FILE_STORAGE_METHOD}
             - name: STORAGE_DIRECTORY
               value: ${STORAGE_DIRECTORY}
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
-            - name: POSTGRES_DB
-              value: ${POSTGRES_DB}
+            - name: POSTGRES_DB_HOST
+              value: ${POSTGRES_DB_HOST}
+            - name: POSTGRES_DB_NAME
+              value: ${POSTGRES_DB_NAME}
             - name: POSTGRES_USER
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
@@ -170,16 +170,15 @@ spec:
     spec:
       containers:
         - name: deeplynxv3
-          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-backend-${GITHUB_RUN_NUMBER}
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-server-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
-          command: ["/usr/local/bin/entrypoint.sh"]
           env:
             - name: ConnectionStrings__DefaultConnection
               value: ${DATABASE_CONNECTION_STRING}
-            - name: POSTGRES_DBHOST
-              value: ${POSTGRES_DBHOST}
-            - name: POSTGRES_DB
-              value: ${POSTGRES_DB}
+            - name: POSTGRES_DB_HOST
+              value: ${POSTGRES_DB_HOST}
+            - name: POSTGRES_DB_NAME
+              value: ${POSTGRES_DB_NAME}
             - name: POSTGRES_USER
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
@@ -363,8 +362,8 @@ spec:
 #                   key: POSTGRES_PASSWORD
 #             - name: POSTGRES_USER
 #               value: ${POSTGRES_USER}
-#             - name: POSTGRES_DB
-#               value: ${POSTGRES_DB}
+#             - name: POSTGRES_DB_NAME
+#               value: ${POSTGRES_DB_NAME}
 #           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-db-${GITHUB_RUN_NUMBER}
 #           name: deeplynxv3-db
 #           ports:
