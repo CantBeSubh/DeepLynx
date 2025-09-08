@@ -686,7 +686,7 @@ namespace deeplynx.tests
                 Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = true
 
             };
             Context.Classes.Add(testClass);
@@ -736,7 +736,7 @@ namespace deeplynx.tests
             {
                 Name = "Active Class",
                 ProjectId = pid,
-                IsArchived = true
+                IsArchived = false
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
