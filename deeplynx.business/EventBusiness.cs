@@ -10,28 +10,6 @@ using Newtonsoft.Json;
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
-    private static readonly List<string> AllowedEntityTypes = new List<string>
-    {
-        "class", 
-        "data_source", 
-        "relationship", 
-        "project", 
-        "edge", 
-        "edge_mapping", 
-        "record", 
-        "record_mapping",
-        "metadata", 
-        "user", 
-        "tag"
-    };
-
-    private static readonly List<string> AllowedOperations = new List<string>
-    {
-        "create",
-        "update",
-        "delete",
-    };
-    
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
@@ -100,8 +78,8 @@ public class EventBusiness : IEventBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, false);
         ValidationHelper.ValidateModel(dto);
-        Validate(dto.EntityType, "EntityType");
-        Validate(dto.Operation, "Operation");
+        ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
+        ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         
         var newEvent = new Event
         {
@@ -144,8 +122,8 @@ public class EventBusiness : IEventBusiness
 
         foreach (var dto in events)
         {
-            Validate(dto.EntityType, "EntityType");
-            Validate(dto.Operation, "Operation");
+            ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
+            ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         }
 
         // Bulk Insert into Events
@@ -184,30 +162,5 @@ public class EventBusiness : IEventBusiness
             .ToListAsync();
 
         return result;
-    }
-
-    private bool Validate(string value, string type)
-    {
-        if (type == "EntityType")
-        {
-            if (string.IsNullOrEmpty(value) || !AllowedEntityTypes.Contains(value))
-            {
-                throw new ArgumentException($"EntityType must be one of {string.Join(", ", AllowedEntityTypes)}");
-            }
-
-            return true;
-        }
-
-        if (type == "Operation")
-        {
-            if (string.IsNullOrEmpty(value) || !AllowedOperations.Contains(value))
-            {
-                throw new ArgumentException($"Operation must be one of {string.Join(", ", AllowedOperations)}");
-            }
-
-            return true;
-        }
-
-        return false;
     }
 }
