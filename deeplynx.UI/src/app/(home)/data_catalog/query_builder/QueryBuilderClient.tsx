@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
-import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto } from "@/app/(home)/types/types";
+import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
@@ -13,6 +13,7 @@ import { getClassesForProjects } from "@/app/lib/class_services client";
 import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
 import { getTagsForProjects } from "@/app/lib/tag_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
+import ListView from "../../components/ListView";
 
 
 type Props = {
@@ -23,6 +24,7 @@ type Props = {
   filters?: { name: string; value: string }[];
   operators?: string[];
   values?: string[];
+  queriedRecords: FileViewerTableRow[];
 };
 
 export type Query = {
@@ -38,9 +40,10 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR", "NOT"],
-  filters = [{ name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
-  values = ["ClassOne", "ClassTwo", "ClassThree"]
+  values = ["ClassOne", "ClassTwo", "ClassThree"],
+  queriedRecords
 }: Props) {
 
   const locale = "en";
@@ -55,6 +58,7 @@ export default function QueryBuilderClient({
   const [isLoadingClasses, setIsLoadingClasses] = useState(false);
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
+  const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
 
 
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
@@ -79,7 +83,12 @@ export default function QueryBuilderClient({
   const removeRow = (id: string) => setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
   const updateRow = (id: string, patch: Partial<Query>) =>
     setRows((r) => r.map((row) => (row.id === id ? { ...row, ...patch } : row)));
-  const reset = () => setRows([emptyRow()]);
+  const reset = () => {
+    setRows([emptyRow()]);
+    setQueriedRecords(null);
+  }
+
+
 
 
   useEffect(() => {
@@ -146,9 +155,13 @@ export default function QueryBuilderClient({
       const queryDtos = rows.map(r => r.query);
       let data = await queryBuilder(queryDtos, searchTerm);
       console.log(data)
+      if (data) {
+        setQueriedRecords(data);
+      }
     } catch (error) {
       console.error("Failed to send query")
     }
+
   };
 
   return (
@@ -302,8 +315,6 @@ export default function QueryBuilderClient({
                               </option>
                             ))}
                         </select>
-
-
 
                         {/* Text input for Property Field; select for others (except Time Range) */}
                         {/* Value */}
@@ -470,6 +481,11 @@ export default function QueryBuilderClient({
           </div>
         </div>
       </div>
+      {records &&
+        <ListView
+          data={records}
+        />
+      }
     </div>
   );
 }
