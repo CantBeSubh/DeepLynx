@@ -30,7 +30,7 @@ public class TagController : ControllerBase
     /// <returns>A list of tags belonging to the project.</returns>
     [HttpGet("GetAllTags", Name = "api_get_all_tags")]
     public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags(
-        [FromQuery] List<long> projectIds, bool hideArchived = true)
+        [FromQuery] long[] projectIds, bool hideArchived = true)
     {
         try
         {

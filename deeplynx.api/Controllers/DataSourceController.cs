@@ -31,7 +31,7 @@ namespace deeplynx.api.Controllers
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
         public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
-           [FromQuery] List<long> projectIds, bool hideArchived = true)
+           [FromBody] long[] projectIds, bool hideArchived = true)
         {
             try
             {

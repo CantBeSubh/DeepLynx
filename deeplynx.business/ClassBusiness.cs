@@ -50,7 +50,7 @@ public class ClassBusiness : IClassBusiness
     /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
-    public async Task<List<ClassResponseDto>> GetAllClasses(List<long> projectIds, bool hideArchived)
+    public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds)
         {

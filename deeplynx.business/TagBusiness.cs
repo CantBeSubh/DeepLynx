@@ -34,7 +34,7 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(List<long> projectIds, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds)
         {

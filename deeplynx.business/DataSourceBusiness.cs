@@ -45,7 +45,7 @@ namespace deeplynx.business
         /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<List<DataSourceResponseDto>> GetAllDataSources(List<long> projectIds, bool hideArchived)
+        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
         {
             foreach (var projectId in projectIds)
             {
