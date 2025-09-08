@@ -109,7 +109,7 @@ export default function QueryBuilderClient({
     if (hasLoaded && currentProjectId) {
       loadClasses();
     }
-  }, [hasLoaded, currentProjectId]);
+  }, [hasLoaded, currentProjectId, selectedProjects]);
 
   useEffect(() => {
     async function loadDataSources() {
@@ -128,7 +128,7 @@ export default function QueryBuilderClient({
     if (hasLoaded && currentProjectId) {
       loadDataSources();
     }
-  }, [hasLoaded, currentProjectId]);
+  }, [hasLoaded, currentProjectId, selectedProjects]);
 
   useEffect(() => {
     async function loadTags() {
@@ -148,13 +148,12 @@ export default function QueryBuilderClient({
     if (hasLoaded && currentProjectId) {
       loadTags();
     }
-  }, [hasLoaded, currentProjectId]);
+  }, [hasLoaded, currentProjectId, selectedProjects]);
 
   const handleSubmit = async () => {
     try {
       const queryDtos = rows.map(r => r.query);
-      let data = await queryBuilder(queryDtos, searchTerm);
-      console.log(data)
+      const data = await queryBuilder(queryDtos, searchTerm);
       if (data) {
         setQueriedRecords(data);
       }

@@ -29,6 +29,6 @@ export default async function Page({
       initialProjects={initialProjects}
       initialSelectedProjects={initialSelectedProjects}
       initialSearchTerm={initialSearch}
-    />
+      queriedRecords={[]} />
   );
 }
