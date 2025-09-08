@@ -1,4 +1,3 @@
-
 export type DataSourceTableRow = {
   name: string;
   country: string;
@@ -136,5 +135,39 @@ export type CustomQueryRequestDto = {
   filter: string;
   operator: string;
   value: string;
+  json?: string;
 };
+
+export type CustomQueryRequestDtoJson = {
+  connector: string | null;
+  filter: string;
+  operator: string;
+  value: string;
+  json?: JSON;
+};
+
+export type HistoricalRecordResponseDto = {
+  Id?: number;
+  Uri?: string;
+  Properties: string;
+  OriginalId?: string;
+  Name?: string;
+  Description?: string;
+  ClassId?: number;
+  ClassName?: string;
+  MappingId?: number;
+  DataSourceId?: number;
+  DataSourceName?: string;
+  ObjectStorageId?: number;
+  ObjectStorageName?: string;
+  ProjectId: number;
+  ProjectName: string;
+  Tags?: string;
+  CreatedBy?: string;
+  CreatedAt?: Date;
+  ModifiedBy?: string;
+  ModifiedAt?: Date;
+  ArchivedAt?: Date;
+  LastUpdatedAt?: Date;
+}
 

@@ -1,4 +1,6 @@
 using System.Linq.Expressions;
+using System.Runtime.InteropServices.JavaScript;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -40,6 +42,18 @@ public class QueryBusiness : IQueryBusiness
 
         foreach (var query in request)
         {
+            if (query.Operator == "KEY_VALUE")
+            {
+                
+                // var contained = JsonSerializer.Deserialize<JsonElement>(query.Json);
+                Expression<Func<HistoricalRecord, bool>> next =
+                    e => EF.Functions.JsonContains(EF.Property<string>(e, query.Filter),(query.Json!));
+
+                predicate = query.Connector == "OR"
+                    ? Or(predicate, next)
+                    : And(predicate, next);
+            }
+            
             if (query.Operator == "LIKE")
             {
                 Expression<Func<HistoricalRecord, bool>> next =

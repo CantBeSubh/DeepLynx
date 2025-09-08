@@ -38,8 +38,8 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR", "NOT"],
-  filters = [{ name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Property Field", value: "Properties" }],
-  operators = ["=", "<", ">", "LIKE"],
+  filters = [{ name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = ["ClassOne", "ClassTwo", "ClassThree"]
 }: Props) {
 
@@ -199,6 +199,7 @@ export default function QueryBuilderClient({
                   {rows.map((row, idx) => (
                     <div key={row.id} className="card">
                       <div className="card-body grid grid-cols-1 sm:grid-cols-6 gap-2 w-full">
+                        {/* Connector */}
                         <select
                           className="select select-sm select-bordered w-full"
                           value={row.query.connector ?? ""}
@@ -221,12 +222,12 @@ export default function QueryBuilderClient({
                           ))}
                         </select>
 
+                        {/* Filter */}
                         <select
                           className="select select-sm select-bordered w-full"
                           value={row.query.filter}
                           onChange={async (e) => {
                             const value = e.target.value;
-                            console.log(value)
                             updateRow(row.id, {
                               query: {
                                 ...row.query,
@@ -261,37 +262,67 @@ export default function QueryBuilderClient({
                           ))}
                         </select>
 
+                        {/* Operator */}
                         <select
                           className="select select-sm select-bordered w-full"
-                          value={row.query.operator}
-                          onChange={(e) => updateRow(row.id, {
-                            query: {
-                              ...row.query,
-                              operator: e.target.value,
-                            },
-                          })}
+                          value={
+                            row.query.operator
+                          }
+                          onChange={(e) =>
+                            updateRow(row.id, {
+                              query: {
+                                ...row.query,
+                                operator: e.target.value,
+                              },
+                            })
+                          }
+
                         >
                           <option value="" disabled>
                             {t.translations.OPERATOR}
                           </option>
-                          {operators.map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt}
-                            </option>
-                          ))}
+
+                          {operators
+                            // filter logic
+                            .filter((opt) => {
+                              if (row.query.filter === "Properties") {
+                                return opt === "KEY_VALUE";
+                              }
+                              if (row.query.filter === "Time Range") {
+                                return opt === "<" || opt === ">" || opt === '='; // only show < or >
+                              }
+                              if (row.query.filter === "ClassName" || row.query.filter === "OriginalId" || row.query.filter === "DataSourceName" || row.query.filter === "Tags") {
+                                return opt !== "<" && opt !== ">" && opt !== 'KEY'; // hide < and >
+                              }
+                              return true; // otherwise allow all
+                            })
+                            .map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
                         </select>
 
+
+
                         {/* Text input for Property Field; select for others (except Time Range) */}
+                        {/* Value */}
                         {row.query.filter !== "Time Range" && (
                           (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
                             <input
                               type="text"
                               className="input input-sm input-bordered w-full"
-                              value={row.query.value}
+                              value={
+                                row.query.filter === "Properties"
+                                  ? (row.query.json ?? "")
+                                  : (row.query.value ?? "")
+                              }
                               onChange={(e) => updateRow(row.id, {
                                 query: {
                                   ...row.query,
-                                  value: e.target.value,
+                                  ...(row.query.filter === "Properties"
+                                    ? { json: e.target.value }
+                                    : { value: e.target.value }),
                                 },
                               })}
                               placeholder={t.translations.VALUE}

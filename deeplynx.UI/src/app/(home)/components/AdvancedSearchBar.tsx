@@ -20,7 +20,7 @@ interface AdvancedSearchBarProps {
   value?: string;
 
   /** Dropdown options = array of strings (e.g. ["Title", "Author", "Tag"]) */
-  options?: string[];
+  options?: { name: string; value: string }[];
 
   /** Optional controlled dropdown value */
   selectedOption?: string;
@@ -42,7 +42,7 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
   onEnter,
   onSubmit,
   value,
-  options = ["Anywhere", "Description", "Class name"],
+  options = [{ name: "Anywhere", value: "Anywhere" }, { name: "Time Range", value: "Time Range" }, { name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
   selectedOption,
   onOptionChange,
   activeFilters = [],
@@ -69,13 +69,13 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
   };
 
   // Dropdown controlled/uncontrolled
-  const [internalOption, setInternalOption] = useState<string | undefined>(options[0]);
+  const [internalOption, setInternalOption] = useState<string | undefined>(options[0].value);
   const optionControlled = selectedOption !== undefined && onOptionChange !== undefined;
   const currentOption = optionControlled ? selectedOption : internalOption;
 
-  const setOption = (opt: string) => {
-    if (optionControlled && onOptionChange) onOptionChange(opt);
-    else setInternalOption(opt);
+  const setOption = (opt: { name: string; value: string }) => {
+    if (optionControlled && onOptionChange) onOptionChange(opt.name);
+    else setInternalOption(opt.value);
   };
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -144,17 +144,17 @@ const AdvancedSearchBar: React.FC<AdvancedSearchBarProps> = ({
               </li>
             )}
             {options.map((opt) => (
-              <li key={opt}>
+              <li key={opt.name}>
                 <button
                   type="button"
-                  className={`justify-between ${opt === currentOption ? "active" : ""}`}
+                  className={`justify-between ${opt.name === currentOption ? "active" : ""}`}
                   onClick={() => {
                     setOption(opt);
                     inputRef.current?.focus();
                   }}
                 >
-                  <span>{opt}</span>
-                  {opt === currentOption && <span className="badge badge-primary">✓</span>}
+                  <span>{opt.name}</span>
+                  {opt.name === currentOption && <span className="badge badge-primary">✓</span>}
                 </button>
               </li>
             ))}
