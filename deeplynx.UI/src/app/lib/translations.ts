@@ -2,8 +2,8 @@ export const translations = {
     en: {
         translations: {
             WARNING: "All data contained within DOE computer systems is owned by DOE and may be audited, intercepted, recorded, read, copied, or captured in any manner and disclosed in any manner by authorized personnel. " +
-            "THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. System personnel may disclose any potential evidence of crime found on DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR " + 
-            "UNAUTHORIZED, CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. **WARNING**WARNING**WARNING**WARNING**WARNING**",
+                "THERE IS NO RIGHT OF PRIVACY IN THIS SYSTEM. System personnel may disclose any potential evidence of crime found on DOE computer systems to appropriate authorities. USE OF THIS SYSTEM BY ANY USER, AUTHORIZED OR " +
+                "UNAUTHORIZED, CONSTITUTES CONSENT TO THIS AUDITING, INTERCEPTION, RECORDING, READING, COPYING, CAPTURING, and DISCLOSURE OF COMPUTER ACTIVITY. **WARNING**WARNING**WARNING**WARNING**WARNING**",
             VULNERABILITY_DISCLOSURE: "Click here for the Vulnerability Disclosure",
             SIGN_IN: "Sign In",
             USERNAME: "Username",
@@ -73,8 +73,8 @@ export const translations = {
             SAVED_SEARCHES: "Saved Searches",
             TIMESERIES_VIEWER: "Timeseries Viewer",
             SETTINGS: "Settings",
-            HELP: "Help", 
-            CONTACT: "Contact", 
+            HELP: "Help",
+            CONTACT: "Contact",
             FILE_A_BUG: "File A Bug",
             EXPLORE_ALL_RECORDS: "Explore all records",
             SEE_MORE: "See more",
@@ -91,7 +91,7 @@ export const translations = {
             PREV: "Prev",
             LOGOUT: "Logout",
             START_UPLOAD_BY_CHOOSING_TYPE: "Start an Upload by Choosing Upload Type and Destination:",
-            UPLOAD_MULTIPLE_FILES: "Upload Multiple Files", 
+            UPLOAD_MULTIPLE_FILES: "Upload Multiple Files",
             MULTI_FILES_ONLY_AVAILABLE: "Multiple uploads are only available for New File",
             UPLOADING: "Uploading",
             CHOOSE_A_TYPE: "Choose a Type",
@@ -124,6 +124,18 @@ export const translations = {
             NO_FILES_SELECTED_YET: "No files selected yet.",
             REMOVE: "Remove",
             UPLOAD: "Upload",
+            QUERY_BUILDER: "Query Builder",
+            CLEAR_SEARCH: "Clear search",
+            NO_OPTIONS: "No options",
+            OPTIONS: "Options",
+            ADD: "Add",
+            ADDITIONAL_FILTERS: "Additional Filters",
+            SELECT_FILTERS: "Select Filters",
+            CONNECTOR: "Connector",
+            FILTER: "Filter",
+            OPERATOR: "Operator",
+            VALUE: "Value",
+            DELETE_ALL_FILTERS: "Delete all filters",
             UNLINK_TAG: "Unlink Tag",
             ARE_YOU_SURE: "Are you sure you want to unlink?",
             FROM: "from",
@@ -134,7 +146,7 @@ export const translations = {
             USER_SETTINGS: "User Settings",
             GENERAL: "General",
             EMAIL: "Email",
-            PROFILE_PICTURE: "Profile Picture", 
+            PROFILE_PICTURE: "Profile Picture",
             PREFERENCES: "Preferences",
             DARK_MODE: "Dark Mode",
             EMAIL_NOTIFICATIONS: "Email Notifications",
@@ -145,9 +157,8 @@ export const translations = {
     },
     es: {
         translations: {
-             WARNING: "Todos los datos contenidos en los sistemas informáticos del DOE son propiedad del DOE y pueden ser auditados, interceptados, registrados, leídos, copiados o capturados de cualquier manera y divulgados de cualquier manera por personal autorizado. " +
-            "NO EXISTE DERECHO A LA PRIVACIDAD EN ESTE SISTEMA. El personal del sistema puede divulgar cualquier evidencia potencial de delito encontrada en los sistemas informáticos del DOE a las autoridades correspondientes. EL USO DE ESTE SISTEMA POR CUALQUIER USUARIO, AUTORIZADO O " + 
-            "NO AUTORIZADO, CONSTITUYE CONSENTIMIENTO A ESTA AUDITORÍA, INTERCEPCIÓN, REGISTRO, LECTURA, COPIA, CAPTURA Y DIVULGACIÓN DE LA ACTIVIDAD INFORMÁTICA. **ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**",
+            WARNING: "Todos los datos contenidos en los sistemas informáticos del DOE son propiedad del DOE y pueden ser auditados, interceptados, grabados, leídos, copiados o capturados de cualquier manera y divulgados de cualquier manera por personal autorizado. " +
+                "NO EXISTE DERECHO A LA PRIVACIDAD EN ESTE SISTEMA. El personal del sistema puede divulgar cualquier posible evidencia de un delito encontrado en los sistemas informáticos del DOE a las autoridades correspondientes. EL USO DE ESTE SISTEMA POR CUALQUIER USUARIO, AUTORIZADO O NO AUTORIZADO, CONSTITUYE CONSENTIMIENTO PARA ESTA AUDITORÍA, INTERCEPCIÓN, GRABACIÓN, LECTURA, COPIA, CAPTURA Y DIVULGACIÓN DE LA ACTIVIDAD INFORMÁTICA. **ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**ADVERTENCIA**",
             VULNERABILITY_DISCLOSURE: "Haga clic aquí para la Divulgación de Vulnerabilidades",
             SIGN_IN: "Iniciar sesión",
             USERNAME: "Nombre de usuario",
@@ -284,7 +295,19 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Notificaciones por correo",
             LANGUAGE: "Idioma",
             RECORD_NAME: "Nombre de Registro",
-            LAST_VIEWED: "Última visualización"
+            LAST_VIEWED: "Última visualización",
+            QUERY_BUILDER: "Constructor de consultas",
+            CLEAR_SEARCH: "Borrar búsqueda",
+            NO_OPTIONS: "Sin opciones",
+            OPTIONS: "Opciones",
+            ADD: "Agregar",
+            ADDITIONAL_FILTERS: "Filtros adicionales",
+            SELECT_FILTERS: "Seleccionar filtros",
+            CONNECTOR: "Conector",
+            FILTER: "Filtro",
+            OPERATOR: "Operador",
+            VALUE: "Valor",
+            DELETE_ALL_FILTERS: "Eliminar todos los filtros"
         }
     }
 }

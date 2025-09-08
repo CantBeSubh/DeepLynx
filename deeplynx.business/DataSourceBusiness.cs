@@ -42,14 +42,18 @@ namespace deeplynx.business
         /// <summary>
         /// Retrieves all data sources for a specific project.
         /// </summary>
-        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
+        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            foreach (var projectId in projectIds)
+            {
+                await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            }
+            
             var dataSources = await _context.DataSources
-                .Where(d => d.ProjectId == projectId).ToListAsync();
+                .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
 
             if (hideArchived)
             {

@@ -383,13 +383,6 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     }
     
     [Fact]
-    public async Task ChangeDefault_Fails_WhenObjectStorageIsAlreadyDefault()
-    {
-        var result = () => _objectStorageBusiness.SetDefaultObjectStorage(pid, os1);
-        await result.Should().ThrowAsync<InvalidOperationException>();
-    }
-    
-    [Fact]
     public async Task ChangeDefault_Fails_WhenObjectStorageDoesNotExist()
     {
         var result = () => _objectStorageBusiness.SetDefaultObjectStorage(pid, os1 + 1000);

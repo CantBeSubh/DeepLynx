@@ -128,8 +128,8 @@ export default function DataCatalogClient({
         selectedNums.length === projects.length
           ? results
           : results.filter((r: FileViewerTableRow) =>
-              selectedNums.includes(Number(r.projectId))
-            );
+            selectedNums.includes(Number(r.projectId))
+          );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -267,17 +267,15 @@ export default function DataCatalogClient({
           {(activeFilters.length > 0 || showAll) && (
             <div className="flex gap-1">
               <button
-                className={`btn btn-sm ${
-                  viewMode === "list" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("list")}
               >
                 <QueueListIcon className="h-7 w-7" />
               </button>
               <button
-                className={`btn btn-sm ${
-                  viewMode === "table" ? "btn-primary" : "btn-ghost"
-                }`}
+                className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                  }`}
                 onClick={() => setViewMode("table")}
               >
                 <TableCellsIcon className="h-7 w-7" />
@@ -286,7 +284,7 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-      <div className="flex w-full gap-8 pl-8">
+      <div className="flex w-full gap-8 p-8">
         <div className="w-2/3">
           <RecentRecordsCard selectedProjects={selectedProjects} />
         </div>
