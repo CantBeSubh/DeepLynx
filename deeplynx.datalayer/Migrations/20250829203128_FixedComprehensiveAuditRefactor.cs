@@ -348,9 +348,6 @@ namespace deeplynx.datalayer.Migrations
             // =================================================================
             // STEP 6: ADD STORED PROCEDURES
             // =================================================================
-            // =================================================================
-
-            // Drop ALL old procedures first (both single and double parameter versions)
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_class(integer, timestamp without time zone);");
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_class(integer);");
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_data_source(integer, timestamp without time zone);");
@@ -828,11 +825,14 @@ namespace deeplynx.datalayer.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            // Simple rollback
-            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_class;");
-            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_class;");
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_data_source(INTEGER);");
             migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_data_source(INTEGER);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_project;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_project;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_record;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_record;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_relationship;");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_relationship;");
             
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.idx_classes_is_archived;");
             migrationBuilder.Sql("DROP INDEX IF EXISTS deeplynx.idx_data_sources_is_archived;");
