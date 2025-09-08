@@ -221,7 +221,8 @@ public class RecordBusiness : IRecordBusiness
        // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
        var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
-                                          original_id, properties, class_id, object_storage_id, created_at)
+                              original_id, properties, class_id, object_storage_id, 
+                              last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
                 name = COALESCE(EXCLUDED.name, records.name),
@@ -257,7 +258,7 @@ public class RecordBusiness : IRecordBusiness
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now, false)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now, false, NULL)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -376,7 +377,7 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0})", recordId);
+                    "CALL deeplynx.archive_record({0}::INTEGER)", recordId);
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {

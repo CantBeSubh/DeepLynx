@@ -94,16 +94,19 @@ public class UserBusiness : IUserBusiness
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value);
-
-        var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
-
-        if (project != null)
+        if (dto.ProjectId.HasValue)
         {
-            project.Users.Add(user);
-            _context.SaveChanges();
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value);
+
+            var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
+
+            if (project != null)
+            {
+                project.Users.Add(user);
+                _context.SaveChanges();
+            }
         }
+     
 
         return new UserResponseDto()
         {

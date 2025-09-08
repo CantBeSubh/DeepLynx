@@ -146,7 +146,7 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         if (dto.DestinationId != null)
         {
-            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && c.IsArchived == null);
+            var destinationClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.DestinationId && !c.IsArchived);
             if (destinationClass == null)
             {
                 throw new KeyNotFoundException($"Destination class with ID {dto.DestinationId} not found.");
@@ -212,7 +212,7 @@ public class RelationshipBusiness: IRelationshipBusiness
         
         // Bulk insert into relationships; if there is a name collision, update the description and uuid if present
         var sql = @"
-            INSERT INTO deeplynx.relationships (project_id, name, description, uuid, created_at)
+          INSERT INTO deeplynx.relationships (project_id, name, description, uuid, last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, relationships.description),
@@ -349,7 +349,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 // run the archive relationship procedure, which archives this relationship
                 // and all child objects with relationship_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_relationship({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", relationshipId, archivedAt);
+                    "CALL deeplynx.archive_relationship({0}::INTEGER)", relationshipId);
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {

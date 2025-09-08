@@ -348,6 +348,20 @@ namespace deeplynx.datalayer.Migrations
             // =================================================================
             // STEP 6: ADD STORED PROCEDURES
             // =================================================================
+            // =================================================================
+
+            // Drop ALL old procedures first (both single and double parameter versions)
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_class(integer, timestamp without time zone);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_class(integer);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_data_source(integer, timestamp without time zone);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_data_source(integer);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_project(integer, timestamp without time zone);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_project(integer);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_record(integer, timestamp without time zone);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_record(integer);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_relationship(integer, timestamp without time zone);");
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.unarchive_relationship(integer);");
+
 
                 migrationBuilder.Sql(@"
                 CREATE OR REPLACE PROCEDURE deeplynx.archive_class(IN arc_class_id integer)
@@ -458,33 +472,6 @@ namespace deeplynx.datalayer.Migrations
                 UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
             END;
             $BODY$;");
-       
-migrationBuilder.Sql(@"
-    CREATE OR REPLACE PROCEDURE deeplynx.archive_record(IN arc_record_id integer)
-    LANGUAGE 'plpgsql'
-    AS $BODY$
-    DECLARE
-        archive_time TIMESTAMP := NOW();
-    BEGIN
-        UPDATE deeplynx.records SET is_archived = true, last_updated_at = archive_time WHERE id = arc_record_id;
-        UPDATE deeplynx.edges SET is_archived = true, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
-    END;
-    $BODY$;
-");
-
-    migrationBuilder.Sql(@"
-        CREATE OR REPLACE PROCEDURE deeplynx.unarchive_record(IN arc_record_id integer)
-        LANGUAGE 'plpgsql'
-        AS $BODY$
-        DECLARE
-            archive_time TIMESTAMP := NOW();
-        BEGIN
-            UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE id = arc_record_id;
-            UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
-        END;
-        $BODY$;
-    ");
-
         migrationBuilder.Sql(@"
             CREATE OR REPLACE PROCEDURE deeplynx.archive_relationship(IN arc_rel_id integer)
             LANGUAGE 'plpgsql'
@@ -513,8 +500,6 @@ migrationBuilder.Sql(@"
             // =================================================================
             // STEP 7: Update TRIGGERS
             // =================================================================   
-            // Create this as a NEW migration: dotnet ef migrations add FixAllHistoricalTriggers
-            
         // 1. Fix update_modified_at - change modified_at to last_updated_at
         migrationBuilder.Sql(@"
             CREATE OR REPLACE FUNCTION deeplynx.update_modified_at()
