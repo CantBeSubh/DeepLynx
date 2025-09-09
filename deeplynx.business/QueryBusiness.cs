@@ -160,11 +160,8 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt,
                 Description = r.Description
             })
@@ -237,8 +234,7 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(original_id, '') || ' ' ||
                 coalesce(data_source_name, '') || ' ' ||
                 coalesce(project_name, '') || ' ' ||
-                coalesce(created_by, '') || ' ' ||
-                coalesce(modified_by, '') || ' ' ||
+               coalesce(last_updated_by, '') || ' ' ||
                 coalesce(properties::text, '') || ' ' ||
                 coalesce(tags::text, '')
             ) @@ to_tsquery('english', @query);
@@ -266,11 +262,8 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 Description = r.Description, 
                 LastUpdatedAt = r.LastUpdatedAt
             });

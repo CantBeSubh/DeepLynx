@@ -8,6 +8,7 @@ namespace deeplynx.models
         public long ProjectId { get; set; }
         public long? DataSourceId { get; set; }
         public string Properties { get; set; }
-        public string CreatedBy { get; set; }
+        public DateTime LastUpdatedAt { get; set; }
+        public string? LastUpdatedBy { get; set; }
     }
 }

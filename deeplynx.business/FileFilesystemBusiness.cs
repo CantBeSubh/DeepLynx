@@ -178,7 +178,7 @@ public class FileFilesystemBusiness : IFileBusiness
         
         File.Delete(filePath);
         
-        var objectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == record.ProjectId && os.Id == record.ObjectStorageId && os.ArchivedAt == null);
+        var objectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(os => os.ProjectId == record.ProjectId && os.Id == record.ObjectStorageId && !os.IsArchived);
 
         if (objectStorage == null)
         {

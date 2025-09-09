@@ -26,7 +26,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         
         if (hideArchived)
         {
-            subscriptions = subscriptions.Where(s => s.ArchivedAt == null).ToList();
+            subscriptions = subscriptions.Where(s => !s.IsArchived).ToList();
         }
 
         return subscriptions.Select(s => new SubscriptionResponseDto
@@ -39,9 +39,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 
@@ -64,7 +64,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         if (subscription == null) throw new KeyNotFoundException($"Subscription with id {subscriptionId} not found");
 
-        if (hideArchived && subscription.ArchivedAt != null)
+        if (hideArchived && subscription.IsArchived)
         {
             throw new KeyNotFoundException($"Subscription with id {subscriptionId} is archived");
         }
@@ -79,9 +79,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = subscription.DataSourceId,
             EntityType = subscription.EntityType,
             EntityId = subscription.EntityId,
-            CreatedAt = subscription.CreatedAt,
-            ModifiedAt = subscription.ModifiedAt,
-            ArchivedAt = subscription.ArchivedAt
+            LastUpdatedAt = subscription.LastUpdatedAt,
+            LastUpdatedBy = subscription.LastUpdatedBy,
+            IsArchived = subscription.IsArchived
         };
     }
 
@@ -121,16 +121,17 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Bulk insert into subscriptions; if there is a conflict, do nothing
         var sql = @"
-            INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, created_at, modified_at)
-            VALUES {0}
-            ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
-            RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, created_at, modified_at, archived_at;
-        ";
+        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, last_updated_at, is_archived)
+        VALUES {0}
+        ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
+        RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
+    ";
+
 
         // Establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
@@ -147,7 +148,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Stringify the params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @now)"));
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
 
         // Put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -167,9 +168,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 
@@ -218,13 +219,15 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             data_source_id = data.data_source_id,
             entity_type = data.entity_type,
             entity_id = data.entity_id,
-            modified_at = @now
+            last_updated_at = @now
         FROM (VALUES {0}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
         WHERE 
             subs.id = data.id 
             AND subs.user_id = @userId 
             AND subs.project_id = @projectId
-        RETURNING subs.id, subs.user_id, subs.project_id, subs.action_id, subs.operation, subs.data_source_id, subs.entity_type, subs.entity_id, subs.created_at, subs.modified_at, subs.archived_at;
+        RETURNING subs.id, subs.user_id, subs.project_id, subs.action_id, subs.operation, 
+            subs.data_source_id, subs.entity_type, subs.entity_id, 
+            subs.last_updated_at, subs.is_archived, subs.last_updated_by;
         ";
 
         // Establish "constant" parameters
@@ -268,9 +271,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 
@@ -329,7 +332,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         // Build the SQL statement
         var sql = @"
         UPDATE deeplynx.subscriptions
-        SET archived_at = @now
+        SET is_archived = true
         WHERE 
             user_id = @userId 
             AND project_id = @projectId 
@@ -371,7 +374,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         // Build the SQL statement
         var sql = @"
     UPDATE deeplynx.subscriptions
-    SET archived_at = NULL
+    SET is_archived = false
     WHERE 
         user_id = @userId 
         AND project_id = @projectId 

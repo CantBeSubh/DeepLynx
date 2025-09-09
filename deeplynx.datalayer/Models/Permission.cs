@@ -35,6 +35,9 @@ public partial class Permission
     
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
+
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
     
     [InverseProperty("Permissions")]
     public ICollection<Role> Roles { get; set; } = new List<Role>();

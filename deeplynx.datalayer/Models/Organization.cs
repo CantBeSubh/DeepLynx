@@ -24,6 +24,9 @@ public partial class Organization
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
 
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
+
     [InverseProperty("Organization")]
     public virtual ICollection<OrganizationUser> OrganizationUsers { get; set; } = new List<OrganizationUser>();
 

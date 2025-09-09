@@ -21,12 +21,12 @@ public partial class User
     
     [Column("password")]
     public string? Password { get; set; }
-    
+    [Required]
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
+
     [Column("is_sysadmin")]
     public bool IsSysAdmin { get; set; } = false;
-    
-    [Column("archived_at", TypeName = "timestamp without time zone")]
-    public DateTime? ArchivedAt { get; set; }
     
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();

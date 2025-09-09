@@ -12,7 +12,7 @@ namespace deeplynx.datalayer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<DateTime>(
-                name: "created_at",
+                name: "last_updated_at",
                 schema: "deeplynx",
                 table: "subscriptions",
                 type: "timestamp without time zone",
@@ -26,7 +26,7 @@ namespace deeplynx.datalayer.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<DateTime>(
-                name: "created_at",
+                name: "last_updated_at",
                 schema: "deeplynx",
                 table: "subscriptions",
                 type: "timestamp without time zone",

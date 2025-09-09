@@ -22,10 +22,7 @@ public class EventResponseDto
 
     [Column("properties")]
     public string Properties { get; set; }
-
-    [Column("created_by")]
-    public string? CreatedBy { get; set; }
-
-    [Column("created_at")]
-    public DateTime CreatedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string? LastUpdatedBy { get; set; }
+    
 }

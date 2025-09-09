@@ -43,7 +43,7 @@ public class EdgeBusiness : IEdgeBusiness
 
         if (hideArchived)
         {
-            edgeQuery = edgeQuery.Where(e => e.ArchivedAt == null);
+            edgeQuery = edgeQuery.Where(e => e.IsArchived == false);
         }
         
         var edges = await edgeQuery.ToListAsync();
@@ -57,11 +57,9 @@ public class EdgeBusiness : IEdgeBusiness
                 RelationshipId = e.RelationshipId,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
-                CreatedAt = e.CreatedAt,
-                CreatedBy = e.CreatedBy,
-                ModifiedAt = e.ModifiedAt,
-                ModifiedBy = e.ModifiedBy,
-                ArchivedAt = e.ArchivedAt,
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                IsArchived = e.IsArchived,
             }).ToList();
     }
 
@@ -92,7 +90,7 @@ public class EdgeBusiness : IEdgeBusiness
             throw new KeyNotFoundException($"Edge with id {edgeId} not found");
         }
 
-        if (hideArchived && edge.ArchivedAt != null)
+        if (hideArchived && edge.IsArchived)
         {
             throw new KeyNotFoundException($"Edge with id {edgeId} is archived");
         }
@@ -105,11 +103,9 @@ public class EdgeBusiness : IEdgeBusiness
             RelationshipId = edge.RelationshipId,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
-            CreatedAt = edge.CreatedAt,
-            CreatedBy = edge.CreatedBy,
-            ModifiedAt = edge.ModifiedAt,
-            ModifiedBy = edge.ModifiedBy,
-            ArchivedAt = edge.ArchivedAt,
+            LastUpdatedAt = edge.LastUpdatedAt,
+            LastUpdatedBy = edge.LastUpdatedBy,
+            IsArchived = edge.IsArchived,
         };
     }
 
@@ -140,8 +136,8 @@ public class EdgeBusiness : IEdgeBusiness
             ProjectId = projectId,
             DataSourceId = dataSourceId,
             RelationshipId = dto.RelationshipId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
         
         _context.Edges.Add(edge);
@@ -156,7 +152,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
         
         return new EdgeResponseDto
@@ -167,8 +163,8 @@ public class EdgeBusiness : IEdgeBusiness
             RelationshipId = edge.RelationshipId,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
-            CreatedAt = edge.CreatedAt,
-            CreatedBy = edge.CreatedBy
+            LastUpdatedAt = edge.LastUpdatedAt,
+            LastUpdatedBy = edge.LastUpdatedBy
         };
     }
     
@@ -189,11 +185,11 @@ public class EdgeBusiness : IEdgeBusiness
         
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
-            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, created_at)
+            INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at,is_archived)
             VALUES {0}
             ON CONFLICT (project_id, origin_id, destination_id) DO UPDATE SET
                 relationship_id = COALESCE(EXCLUDED.relationship_id, edges.relationship_id),
-                modified_at = @now
+                last_updated_at = @now
             RETURNING *;
         ";
         
@@ -215,7 +211,7 @@ public class EdgeBusiness : IEdgeBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", edges.Select((dto, i) =>
-            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now)"));
+            $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, false)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -237,7 +233,7 @@ public class EdgeBusiness : IEdgeBusiness
                     EntityId = newEdge.Id,
                     DataSourceId = newEdge.DataSourceId,
                     Properties = "{}", // TODO: Determine the extent of data edge properties need
-                    CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+                    LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
                 });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -265,7 +261,7 @@ public class EdgeBusiness : IEdgeBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null)
+        if (edge == null || edge.ProjectId != projectId || edge.IsArchived )
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
@@ -273,8 +269,8 @@ public class EdgeBusiness : IEdgeBusiness
         edge.OriginId = dto.OriginId ?? edge.OriginId;
         edge.DestinationId = dto.DestinationId ?? edge.DestinationId;
         edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
-        edge.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        edge.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
+        edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        edge.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
@@ -288,7 +284,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new EdgeResponseDto
@@ -299,10 +295,9 @@ public class EdgeBusiness : IEdgeBusiness
             RelationshipId = edge.RelationshipId,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
-            CreatedAt = edge.CreatedAt,
-            CreatedBy = edge.CreatedBy,
-            ModifiedAt = edge.ModifiedAt,
-            ModifiedBy = edge.ModifiedBy
+            LastUpdatedAt = edge.LastUpdatedAt,
+            LastUpdatedBy = edge.LastUpdatedBy,
+            IsArchived = edge.IsArchived,
         };
     }
 
@@ -351,13 +346,25 @@ public class EdgeBusiness : IEdgeBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is not null) 
+        if (edge == null || edge.ProjectId != projectId || edge.IsArchived) 
             throw new KeyNotFoundException("Edge may have been moved, archived or deleted.");
 
-        edge.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        edge.IsArchived = true;
+        edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Edges.Update(edge);
+       
+        var historicalEdges = await _context.HistoricalEdges
+            .Where(he => he.EdgeId == edge.Id)
+            .ToListAsync();
+    
+        foreach (var historicalEdge in historicalEdges)
+        {
+            historicalEdge.IsArchived = true;
+            historicalEdge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        }
+    
         await _context.SaveChangesAsync();
-        
+      
         // Log Edge soft Delete Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -367,7 +374,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edgeId,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
 
         
@@ -392,10 +399,10 @@ public class EdgeBusiness : IEdgeBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.ArchivedAt is null) 
+        if (edge == null || edge.ProjectId != projectId || !edge.IsArchived) 
             throw new KeyNotFoundException("Edge to unarchive not found or is not archived.");
 
-        edge.ArchivedAt = null;
+        edge.IsArchived = false;
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
         
@@ -461,7 +468,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>Throws error if datasource does not exist</returns>
     private void DoesDataSourceExist(long datasourceId, bool hideArchived = true)
     {
-        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && p.ArchivedAt == null)
+        var datasource = hideArchived ? _context.DataSources.Any(p => p.Id == datasourceId && !p.IsArchived)
                 : _context.DataSources.Any(p => p.Id == datasourceId);
         if (!datasource)
         {

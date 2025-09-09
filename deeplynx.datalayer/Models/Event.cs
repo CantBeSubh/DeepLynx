@@ -32,11 +32,12 @@ namespace deeplynx.datalayer.Models
         [Column("properties", TypeName = "jsonb")]
         public string Properties { get; set; }
         
-        [Column("created_by")]
-        public string? CreatedBy { get; set; }
-
-        [Column("created_at", TypeName = "timestamp without time zone")]
-        public DateTime CreatedAt { get; set; }
+        [Required]
+        [Column("last_updated_at", TypeName = "timestamp without time zone")]
+        public DateTime LastUpdatedAt { get; set; }
+    
+        [Column("last_updated_by")]
+        public string? LastUpdatedBy { get; set; }
 
         [ForeignKey("ProjectId")]
         [InverseProperty("Events")]
