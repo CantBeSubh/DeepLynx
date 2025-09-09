@@ -41,6 +41,7 @@ namespace deeplynx.datalayer.Models
 
         [Column("entity_id")] 
         public long? EntityId { get; set; }
+        
         [Required]
         [Column("last_updated_at", TypeName = "timestamp without time zone")]
         public DateTime LastUpdatedAt { get; set; }

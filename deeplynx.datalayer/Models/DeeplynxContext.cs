@@ -459,6 +459,11 @@ public partial class DeeplynxContext : DbContext
          modelBuilder.Entity<Subscription>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("subscriptions_pkey");
+            
+            entity.Property(e => e.LastUpdatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone") ;
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.User)
                 .WithMany(p => p.Subscriptions)
