@@ -28,9 +28,6 @@ public partial class User
     [Column("is_sysadmin")]
     public bool IsSysAdmin { get; set; } = false;
     
-    [Column("archived_at", TypeName = "timestamp without time zone")]
-    public DateTime? ArchivedAt { get; set; }
-    
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     

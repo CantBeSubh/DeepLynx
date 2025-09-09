@@ -378,7 +378,7 @@ namespace deeplynx.tests
             result.Should().BeTrue();
 
             var subscriptionList = Context.Subscriptions
-                .Where(s => s.ArchivedAt.HasValue)
+                .Where(s => s.IsArchived)
                 .ToList();
             
             subscriptionList.Should().HaveCount(2);
@@ -398,7 +398,7 @@ namespace deeplynx.tests
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
                     EntityId = 1,
-                    ArchivedAt = now
+                    IsArchived = true
                 },
                 new Subscription
                 {
@@ -409,7 +409,7 @@ namespace deeplynx.tests
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
                     EntityId = 1,
-                    ArchivedAt = now
+                    IsArchived = true
                 },
                 new Subscription
                 {
@@ -420,7 +420,7 @@ namespace deeplynx.tests
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
                     EntityId = 1,
-                    ArchivedAt = now
+                    IsArchived = true
                 }
             };
             Context.Subscriptions.AddRange(subscriptions);
@@ -436,7 +436,7 @@ namespace deeplynx.tests
             await result.Should().ThrowAsync<InvalidOperationException>();
             
             var subscriptionList = Context.Subscriptions
-                .Where(s => s.ArchivedAt == null)
+                .Where(s => !s.IsArchived)
                 .ToList();
             
             subscriptionList.Should().HaveCount(2);
@@ -453,8 +453,8 @@ namespace deeplynx.tests
             {
                 Name = "Action1",
                 ProjectId = pid,
-                CreatedBy = "user123",
-                CreatedAt = now
+                LastUpdatedBy = "user123",
+                LastUpdatedAt = now
             };
             Context.Actions.Add(action);
             await Context.SaveChangesAsync();
@@ -464,8 +464,8 @@ namespace deeplynx.tests
             {
                 Name = "DataSource2",
                 ProjectId = pid,
-                CreatedBy = "user123",
-                CreatedAt = now
+                LastUpdatedBy = "user123",
+                LastUpdatedAt = now
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();

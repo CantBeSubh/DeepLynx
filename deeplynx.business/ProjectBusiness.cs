@@ -184,7 +184,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {project.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new ProjectResponseDto
@@ -230,7 +230,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {project.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ProjectResponseDto
@@ -316,7 +316,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

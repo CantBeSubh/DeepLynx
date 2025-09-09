@@ -366,8 +366,8 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         if (!defaultObjectStorage.Default)
         {
             defaultObjectStorage.Default = true;
-            defaultObjectStorage.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            defaultObjectStorage.ModifiedBy = null; // TODO: handled in future by JWT.
+            defaultObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            defaultObjectStorage.LastUpdatedBy = null; // TODO: handled in future by JWT.
 
             await MakePreviousDefaultsFalse(projectId, defaultObjectStorage.Id);
             _context.ObjectStorages.Update(defaultObjectStorage);

@@ -181,7 +181,7 @@ public class RecordBusiness : IRecordBusiness
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
 
         return new RecordResponseDto
@@ -295,7 +295,7 @@ public class RecordBusiness : IRecordBusiness
                       ProjectId = record.ProjectId,
                       Properties = "{}",
                       DataSourceId = record.DataSourceId,
-                      CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+                      LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
                   });
        }
        await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -353,7 +353,7 @@ public class RecordBusiness : IRecordBusiness
             Operation = "update",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            CreatedBy = "" // TODO: add createdBy username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
         
         return new RecordResponseDto
@@ -448,7 +448,7 @@ public class RecordBusiness : IRecordBusiness
             EntityId = record.Id,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

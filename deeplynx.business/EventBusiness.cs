@@ -148,7 +148,7 @@ public class EventBusiness : IEventBusiness
             new NpgsqlParameter($"@p{i}_entity_id", dto.EntityId ?? (object)DBNull.Value),
             new NpgsqlParameter($"@p{i}_properties", NpgsqlTypes.NpgsqlDbType.Jsonb) { Value = dto.Properties },
             new NpgsqlParameter($"@p{i}_data_source_id", dto.DataSourceId ?? (object)DBNull.Value),
-            new NpgsqlParameter($"@p{i}_created_by", dto.CreatedBy),
+            new NpgsqlParameter($"@p{i}_created_by", dto.LastUpdatedBy),
         }));
 
         var valueTuples = string.Join(", ", events.Select((dto, i) =>

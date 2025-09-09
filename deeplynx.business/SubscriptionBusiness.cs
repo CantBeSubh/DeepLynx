@@ -26,7 +26,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         
         if (hideArchived)
         {
-            subscriptions = subscriptions.Where(s => s.ArchivedAt == null).ToList();
+            subscriptions = subscriptions.Where(s => !s.IsArchived).ToList();
         }
 
         return subscriptions.Select(s => new SubscriptionResponseDto
@@ -39,9 +39,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 
@@ -64,7 +64,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         if (subscription == null) throw new KeyNotFoundException($"Subscription with id {subscriptionId} not found");
 
-        if (hideArchived && subscription.ArchivedAt != null)
+        if (hideArchived && subscription.IsArchived)
         {
             throw new KeyNotFoundException($"Subscription with id {subscriptionId} is archived");
         }
@@ -79,9 +79,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = subscription.DataSourceId,
             EntityType = subscription.EntityType,
             EntityId = subscription.EntityId,
-            CreatedAt = subscription.CreatedAt,
-            ModifiedAt = subscription.ModifiedAt,
-            ArchivedAt = subscription.ArchivedAt
+            LastUpdatedAt = subscription.LastUpdatedAt,
+            LastUpdatedBy = subscription.LastUpdatedBy,
+            IsArchived = subscription.IsArchived
         };
     }
 
@@ -167,9 +167,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 
@@ -268,9 +268,9 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             DataSourceId = s.DataSourceId,
             EntityType = s.EntityType,
             EntityId = s.EntityId,
-            CreatedAt = s.CreatedAt,
-            ModifiedAt = s.ModifiedAt,
-            ArchivedAt = s.ArchivedAt
+            LastUpdatedAt = s.LastUpdatedAt,
+            LastUpdatedBy = s.LastUpdatedBy,
+            IsArchived = s.IsArchived
         }).ToList();
     }
 

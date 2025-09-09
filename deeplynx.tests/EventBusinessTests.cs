@@ -302,7 +302,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
             
             var dto2 = new CreateEventRequestDto
@@ -313,7 +313,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
             
             events.AddRange(dto1,  dto2);

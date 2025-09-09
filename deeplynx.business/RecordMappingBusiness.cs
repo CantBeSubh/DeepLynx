@@ -174,7 +174,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             Properties = "{}",
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RecordMappingResponseDto
@@ -233,7 +233,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             Properties = "{}",
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
 
         
@@ -300,7 +300,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             EntityId = mapping.Id,
             DataSourceId = mapping.DataSourceId,
             Properties = "{}",
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return true;

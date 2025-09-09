@@ -193,7 +193,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RelationshipResponseDto
@@ -274,7 +274,7 @@ public class RelationshipBusiness: IRelationshipBusiness
                 EntityId = relationship.Id,
                 ProjectId = relationship.ProjectId,
                 Properties = "{}",
-                CreatedBy = "", // TODO: add username when JWT are implemented
+                LastUpdatedBy = "", // TODO: add username when JWT are implemented
             });
         }
         
@@ -330,7 +330,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RelationshipResponseDto
@@ -420,7 +420,7 @@ public class RelationshipBusiness: IRelationshipBusiness
             EntityId = relationship.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

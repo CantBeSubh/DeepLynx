@@ -147,7 +147,7 @@ public class TagBusiness : ITagBusiness
             EntityId = tag.Id,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
             DataSourceId = null,
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -219,7 +219,7 @@ public class TagBusiness : ITagBusiness
                 EntityId = item.Id,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
                 DataSourceId = null,
-                CreatedBy = "" // TODO: add username when JWT are implemented
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -265,7 +265,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto
@@ -326,7 +326,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

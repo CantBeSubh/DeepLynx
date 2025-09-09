@@ -636,7 +636,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveDataSource_ArchivedDataSourceNotReturnedInGetAll()
         {
-            var initialCount = (await _dataSourceBusiness.GetAllDataSources(pid, true)).Count(); // Changed to true
+            var initialCount = (await _dataSourceBusiness.GetAllDataSources([pid], true)).Count(); // Changed to true
 
             // Act
             await _dataSourceBusiness.ArchiveDataSource(pid, did);

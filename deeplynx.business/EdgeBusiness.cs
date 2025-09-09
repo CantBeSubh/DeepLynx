@@ -152,7 +152,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
         
         return new EdgeResponseDto
@@ -233,7 +233,7 @@ public class EdgeBusiness : IEdgeBusiness
                     EntityId = newEdge.Id,
                     DataSourceId = newEdge.DataSourceId,
                     Properties = "{}", // TODO: Determine the extent of data edge properties need
-                    CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+                    LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
                 });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -284,7 +284,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new EdgeResponseDto
@@ -362,7 +362,7 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edgeId,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            CreatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
 
         

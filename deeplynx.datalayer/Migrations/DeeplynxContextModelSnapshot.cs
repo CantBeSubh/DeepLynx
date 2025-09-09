@@ -157,13 +157,16 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("Config")
                         .HasColumnType("jsonb")
                         .HasColumnName("config");
+
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean")
                         .HasColumnName("is_archived");
 
                     b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("last_updated_at");
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
@@ -268,7 +271,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("Config")
                         .HasColumnType("jsonb")
                         .HasColumnName("config");
-                    
 
                     b.Property<bool>("Default")
                         .HasColumnType("boolean")
@@ -472,7 +474,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-                    
+
                     b.Property<long?>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
@@ -1385,7 +1387,7 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("ActionId")
                         .HasColumnType("bigint")
                         .HasColumnName("action_id");
-                    
+
                     b.Property<long?>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
@@ -1401,7 +1403,7 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean")
                         .HasColumnName("is_archived");
-                    
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("last_updated_at");
@@ -1409,7 +1411,7 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
                         .HasColumnName("last_updated_by");
-                    
+
                     b.Property<string>("Operation")
                         .HasColumnType("text")
                         .HasColumnName("operation");
@@ -1505,13 +1507,13 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
-                    
+
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_archived");
-                    
+
                     b.Property<bool>("IsSysAdmin")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")

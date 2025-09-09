@@ -165,7 +165,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             EntityId = mapping.Id,
             DataSourceId = mapping.DataSourceId,
             Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new EdgeMappingResponseDto
@@ -227,7 +227,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             EntityId = mapping.Id,
             DataSourceId = mapping.DataSourceId,
             Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new EdgeMappingResponseDto
@@ -295,7 +295,7 @@ public class EdgeMappingBusiness : IEdgeMappingBusiness
             EntityId = mapping.Id,
             DataSourceId = mapping.DataSourceId,
             Properties = "{}", // TODO: determine what properties are needed for edgeMapping events
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return true;
