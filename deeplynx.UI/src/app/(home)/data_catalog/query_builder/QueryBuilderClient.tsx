@@ -31,7 +31,7 @@ export type Query = {
 };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "" } });
+const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
 
 export default function QueryBuilderClient({
   initialProjects,
@@ -302,7 +302,7 @@ export default function QueryBuilderClient({
                                 return opt === "<" || opt === ">" || opt === '='; // only show < or >
                               }
                               if (row.query.filter === "ClassName" || row.query.filter === "OriginalId" || row.query.filter === "DataSourceName" || row.query.filter === "Tags") {
-                                return opt !== "<" && opt !== ">" && opt !== 'KEY'; // hide < and >
+                                return opt !== "<" && opt !== ">" && opt !== 'KEY_VALUE'; // hide < and >
                               }
                               return true; // otherwise allow all
                             })
@@ -317,25 +317,52 @@ export default function QueryBuilderClient({
                         {/* Value */}
                         {row.query.filter !== "Time Range" && (
                           (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
-                            <input
-                              type="text"
-                              className="input input-sm input-bordered w-full"
-                              value={
-                                row.query.filter === "Properties"
-                                  ? (row.query.json ?? "")
-                                  : (row.query.value ?? "")
-                              }
-                              onChange={(e) => updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  ...(row.query.filter === "Properties"
-                                    ? { json: e.target.value }
-                                    : { value: e.target.value }),
-                                },
-                              })}
-                              placeholder={t.translations.VALUE}
-                            />
-                          ) : (
+                            (row.query.filter === "Properties") ? (
+                              <div className="grid grid-cols-2 gap-2 w-full">
+                                <input
+                                  type="text"
+                                  className="input input-sm input-bordered w-full"
+                                  value={row.query.jsonKey ?? ""}
+                                  onChange={(e) =>
+                                    updateRow(row.id, {
+                                      query: {
+                                        ...row.query,
+                                        jsonKey: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  placeholder={"Key"}
+                                />
+
+                                <input
+                                  type="text"
+                                  className="input input-sm input-bordered w-full"
+                                  value={row.query.jsonValue ?? ""}
+                                  onChange={(e) =>
+                                    updateRow(row.id, {
+                                      query: {
+                                        ...row.query,
+                                        jsonValue: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  placeholder={"Value"}
+                                />
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                className="input input-sm input-bordered w-full"
+                                value={row.query.value ?? ""}
+                                onChange={(e) => updateRow(row.id, {
+                                  query: {
+                                    ...row.query,
+                                    value: e.target.value
+                                  },
+                                })}
+                                placeholder={t.translations.VALUE}
+                              />
+                            )) : (
                             <select
                               className="select select-sm select-bordered w-full"
                               value={row.query.value}

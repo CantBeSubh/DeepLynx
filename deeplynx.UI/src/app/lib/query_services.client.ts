@@ -15,6 +15,14 @@ export async function queryBuilder(
     queryObj: CustomQueryRequestDto[],
     fullTextSearch: string | null
 ) {
+    //Building json string format from key/value input
+    for (let obj of queryObj) {
+        if (obj.jsonKey && obj.jsonValue) {
+            let json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`
+            obj.json = json;
+            console.log(obj)
+        }
+    }
     const res = await api.post(`/records/QueryBuilder?${fullTextSearch}`, queryObj, {
         headers: { "Content-Type": "application/json" },
     });
@@ -26,7 +34,7 @@ export async function getClassesForProjects(
     projectIds: string[],
 ): Promise<ClassResponseDto[]> {
     const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`//records/GetAllClasses?${query}`);
+    const res = await api.get(`/records/GetAllClasses?${query}`);
     return res.data as ClassResponseDto[];
 }
 
