@@ -24,10 +24,7 @@ export default function HomeDashboard({ initialProjects }: Props) {
   const router = useRouter();
 
   const { data: session, status } = useSession();
-
-  console.log("Session status:", status);
-  console.log("User data:", session?.user);
-
+  const jwt = (session as any)?.tokens?.access_token;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
@@ -151,7 +148,7 @@ export default function HomeDashboard({ initialProjects }: Props) {
             />
             {session?.user && (
               <div className="bg-green-100 p-4 m-4 rounded">
-                Welcome back, {session.user.name}!
+                <p>Welcome back, {session.user.name}!</p>
               </div>
             )}
           </div>

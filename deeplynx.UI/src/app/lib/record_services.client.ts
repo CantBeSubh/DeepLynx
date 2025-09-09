@@ -2,11 +2,12 @@
 "use client";
 
 import axios from "axios";
+import api from "./api";
 
-export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL, // e.g., http://localhost:5095/api
-  withCredentials: true,                    // send browser cookies/session
-});
+// export const api = axios.create({
+//   baseURL: process.env.NEXT_PUBLIC_API_URL, // e.g., http://localhost:5095/api
+//   withCredentials: true,                    // send browser cookies/session
+// });
 
 export async function getAllRecords(projectId: string) {
   try {

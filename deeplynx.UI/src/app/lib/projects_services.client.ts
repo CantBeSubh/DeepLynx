@@ -1,12 +1,12 @@
 // src/app/lib/projects_services.client.ts
 "use client";
 
-import axios from "axios";
+import api from "./api";
 
-export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,
-});
+// export const api = axios.create({
+//   baseURL: process.env.NEXT_PUBLIC_API_URL,
+//   withCredentials: true,
+// });
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
 

@@ -7,10 +7,6 @@ export async function GET(request: NextRequest) {
   const state = url.searchParams.get('state');
   const error = url.searchParams.get('error');
   
-  console.log("DEBUG CALLBACK - Code:", code);
-  console.log("DEBUG CALLBACK - State:", state);
-  console.log("DEBUG CALLBACK - Error:", error);
-  
   return NextResponse.json({
     code: !!code,
     state: !!state,
