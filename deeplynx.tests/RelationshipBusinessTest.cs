@@ -454,7 +454,7 @@ namespace deeplynx.tests
             };
             var updatedResult = await _relationshipBusiness.UpdateRelationship(pid, testRelationship.Id, dto);
 
-            updatedResult.LastUpdatedAt.Should().BeOnOrAfter(DateTime.UtcNow);
+            updatedResult.LastUpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
             updatedResult.Name.Should().Be(dto.Name);
             updatedResult.Description.Should().Be(dto.Description);
             updatedResult.OriginId.Should().Be(destinationClassId);

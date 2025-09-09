@@ -412,8 +412,6 @@ public class RecordBusiness : IRecordBusiness
         if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
-        // set archivedAt timestamp
-        var archivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -438,7 +436,21 @@ public class RecordBusiness : IRecordBusiness
                 throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
-        
+        _context.ChangeTracker.Clear();
+        var historicalRecords = await _context.HistoricalRecords
+            .Where(hr => hr.RecordId == recordId)
+            .ToListAsync();
+    
+        foreach (var historicalRecord in historicalRecords)
+        {
+            historicalRecord.IsArchived = true;
+            historicalRecord.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        }
+    
+        if (historicalRecords.Any())
+        {
+            await _context.SaveChangesAsync();
+        }
         // Log record soft delete event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {

@@ -36,6 +36,11 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            Environment.SetEnvironmentVariable("FILE_STORAGE_METHOD", "filesystem");
+            Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", "./storage/");
+            Environment.SetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING", "azure-example-connection-string");
+            Environment.SetEnvironmentVariable("AWS_S3_CONNECTION_STRING", "aws-example-connection-string");
+
             _eventBusiness = new EventBusiness(Context);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
@@ -396,10 +401,8 @@ namespace deeplynx.tests
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
 
-           
             var unarchivedResult = await _projectBusiness.UnarchiveProject(testProject.Id);
 
-          
             unarchivedResult.Should().BeTrue();
 
             // Force EF to sync with database
@@ -407,7 +410,7 @@ namespace deeplynx.tests
 
             var unarchivedProject = await Context.Projects.FindAsync(testProject.Id);
             unarchivedProject.Should().NotBeNull();
-            unarchivedProject!.IsArchived.Should().BeTrue();
+            unarchivedProject!.IsArchived.Should().BeFalse(); 
         }
 
         [Fact]
@@ -471,9 +474,9 @@ namespace deeplynx.tests
             var result = await _projectBusiness.GetProjectStats(TestProjectId);
 
           
-            result.classes.Should().BeGreaterThan(0);
-            result.records.Should().BeGreaterThan(0);
-            result.datasources.Should().BeGreaterThan(0);
+            result.classes.Should().Be(1);    // 1 test class
+            result.records.Should().Be(1);    // 1 test record  
+            result.datasources.Should().Be(1); //1 datasource
         }
 
         [Fact]
@@ -643,7 +646,9 @@ namespace deeplynx.tests
                 Name = "Test Project",
                 Description = "Test project for unit tests",
                 Abbreviation = "TST",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+                
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -653,7 +658,8 @@ namespace deeplynx.tests
             {
                 Name = "Test Class",
                 ProjectId = TestProjectId,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -663,7 +669,8 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = TestProjectId,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
             };
             Context.DataSources.Add(testDataSource);
             await Context.SaveChangesAsync();
@@ -678,7 +685,8 @@ namespace deeplynx.tests
                 Properties = "{}",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 OriginalId = "test-original-1",
-                Description = "Test record for unit tests"
+                Description = "Test record for unit tests",
+                IsArchived = false
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();

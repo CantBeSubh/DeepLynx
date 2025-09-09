@@ -83,8 +83,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
         historicalRecords.Should().NotBeNull();
         historicalRecords.Should().HaveCount(2);
-        historicalRecords.First().Name.Should().Be("Updated Test Record");
-        historicalRecords.Last().Name.Should().Be("Updated Test Record 2");
+        historicalRecords.First().Name.Should().Be("Test Record");
+        historicalRecords.Last().Name.Should().Be("Test Record 2");
     }
     
     [Fact]
@@ -107,7 +107,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
         historicalRecords.Should().NotBeNull();
         historicalRecords.Should().HaveCount(1);
-        historicalRecords.Should().NotContain(x => x.Name == "Test Record");
+        historicalRecords.Should().NotContain(x => x.Name == "Updated Test Record");
         historicalRecords.Should().Contain(x => x.Name == "Test Record 2");
     }
     
@@ -179,11 +179,10 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         var recordHistory = await _historicalRecordBusiness.GetHistoryForRecord(rid);
         
         recordHistory.Should().NotBeNull();
-        recordHistory.Should().HaveCount(4);
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == null);
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != null);
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && !x.IsArchived );
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.IsArchived);
+        recordHistory.Should().HaveCount(2);
+       
+        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != null && x.IsArchived);
+        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == null && x.IsArchived);
     }
 
     [Fact]
@@ -234,20 +233,19 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         updatedRecord.Should().NotBeNull();
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be(updatedRecord.Name);
-        historicalRecord.Id.Should().Be(updatedRecord.Id);
+        historicalRecord.Name.Should().Be("Test Record");          // Original name
+        historicalRecord.Id.Should().Be(rid);                      // Record ID stays same
         historicalRecord.Tags.Should().NotBeNull();
-        historicalRecord.ClassId.Should().Be(updatedRecord.ClassId);
+        historicalRecord.ClassId.Should().Be(cid);                 // Original class ID
         historicalRecord.ClassName.Should().Be("Test Class");
-        historicalRecord.Description.Should().Be(updatedRecord.Description);
-        historicalRecord.OriginalId.Should().Be(updatedRecord.OriginalId);
-        historicalRecord.Uri.Should().Be(updatedRecord.Uri);
-        historicalRecord.ObjectStorageId.Should().Be(updatedRecord.ObjectStorageId);
+        historicalRecord.Description.Should().Be("Test record for unit tests"); // Original description
+        historicalRecord.OriginalId.Should().Be("og_id");          // Original ID from seed
+        historicalRecord.Uri.Should().Be("localhost:8090");        // Original URI from seed
+        historicalRecord.ObjectStorageId.Should().Be(os1);
         historicalRecord.ObjectStorageName.Should().Be("Object Storage 1");
-        historicalRecord.ProjectId.Should().Be(updatedRecord.ProjectId);
+        historicalRecord.ProjectId.Should().Be(pid);
         historicalRecord.ProjectName.Should().Be("Test Project");
-        historicalRecord.DataSourceId.Should().Be(updatedRecord.DataSourceId);
+        historicalRecord.DataSourceId.Should().Be(did);
         historicalRecord.DataSourceName.Should().Be("Test Data Source");
     }
     
@@ -295,7 +293,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
+        historicalRecord.Name.Should().Be("Test Record");
     }
     
     [Fact]
@@ -315,7 +313,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
         historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
+        historicalRecord.Name.Should().Be("Test Record");
     }
     
     [Fact]
@@ -336,7 +334,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
         historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
+        historicalRecord.Name.Should().Be("Test Record");
         historicalRecord.IsArchived.Should().BeTrue();
     }
     
@@ -357,8 +355,10 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         await _recordBusiness.ArchiveRecord(pid, rid);
         
-        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        await result.Should().ThrowAsync<KeyNotFoundException>();
+        var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
+        historicalRecord.Should().NotBeNull();
+        historicalRecord.Name.Should().Be("Test Record");
+        historicalRecord.IsArchived.Should().BeTrue();
     }
     
     

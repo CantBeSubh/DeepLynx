@@ -121,16 +121,19 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Bulk insert into subscriptions; if there is a conflict, do nothing
         var sql = @"
-            INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, created_at, modified_at)
-            VALUES {0}
-            ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
-            RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, created_at, modified_at, archived_at;
-        ";
+        INSERT INTO deeplynx.subscriptions (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id, last_updated_at, is_archived)
+        VALUES {0}
+        ON CONFLICT (user_id, action_id, operation, project_id, data_source_id, entity_type, entity_id) DO NOTHING
+        RETURNING id, user_id, project_id, action_id, operation, data_source_id, entity_type, entity_id, last_updated_at, last_updated_by, is_archived;
+    ";
+
 
         // Establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
+            new("@false", false)
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
@@ -147,7 +150,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Stringify the params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @now)"));
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @false)"));
 
         // Put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -329,7 +332,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         // Build the SQL statement
         var sql = @"
         UPDATE deeplynx.subscriptions
-        SET archived_at = @now
+        SET is_archived = true
         WHERE 
             user_id = @userId 
             AND project_id = @projectId 
@@ -371,7 +374,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         // Build the SQL statement
         var sql = @"
     UPDATE deeplynx.subscriptions
-    SET archived_at = NULL
+    SET is_archived = false
     WHERE 
         user_id = @userId 
         AND project_id = @projectId 

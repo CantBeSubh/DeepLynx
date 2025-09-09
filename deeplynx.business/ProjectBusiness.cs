@@ -281,7 +281,7 @@ public class ProjectBusiness : IProjectBusiness
         // set archivedAt timestamp
         var archivedAt = DateTime.UtcNow;
 
-        // run archive procedure in a transaction to roll back any errors
+        // run archive procedure in a transaction to roll back any errorsGetProjectStats
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
@@ -372,7 +372,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         //classes”: number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
-            .Where(p => p.IsArchived == null && p.ProjectId == projectId).Count();
+            .Where(p =>  !p.IsArchived  && p.ProjectId == projectId).Count();
         var records = _context.Records
             .Where(p => !p.IsArchived  && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources

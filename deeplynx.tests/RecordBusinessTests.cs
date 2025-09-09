@@ -885,14 +885,14 @@ public class RecordBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
 
         var result = await _recordBusiness.UnarchiveRecord(projectId, archivedRecord.Id);
-        
+    
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
         Assert.True(result);
         var reloaded = await Context.Records.FindAsync(archivedRecord.Id);
         Assert.NotNull(reloaded);
-        Assert.True(reloaded.IsArchived);
+        Assert.False(reloaded.IsArchived); 
     }
 
     [Fact]

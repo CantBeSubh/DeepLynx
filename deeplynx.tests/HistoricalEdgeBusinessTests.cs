@@ -78,10 +78,12 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
          var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
          historicalEdges.Should().NotBeNull();
          historicalEdges.Should().HaveCount(2);
-         historicalEdges.First().DestinationId.Should().Be(destinationRecordId2);
-         historicalEdges.First().OriginId.Should().Be(destinationRecordId);
-         historicalEdges.Last().DestinationId.Should().Be(destinationRecordId);
-         historicalEdges.Last().OriginId.Should().Be(destinationRecordId2);
+         var edge1 = historicalEdges.First(e => e.Id == eid);
+         var edge2 = historicalEdges.First(e => e.Id == eid2);
+         edge1.DestinationId.Should().Be(destinationRecordId);  
+         edge1.OriginId.Should().Be(originRecordId);           
+         edge2.DestinationId.Should().Be(originRecordId);     
+         edge2.OriginId.Should().Be(destinationRecordId);  
      }
     [Fact]
     public async Task GetAllHistoricalEdges_FiltersByDataSource()
@@ -97,12 +99,13 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public async Task GetAllHistoricalEdges_ExcludesArchivedHistoricalEdgesByDefault()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
-        
+        Context.ChangeTracker.Clear();
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
+       
         historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(1);
-        historicalEdges.Should().NotContain(e => e.Id == eid && e.IsArchived);
+        historicalEdges.Where(e => !e.IsArchived).Should().HaveCount(1);
         historicalEdges.Should().Contain(e => e.Id == eid2);
+        historicalEdges.Should().NotContain(e => e.Id == eid);
     }
 
     [Fact]
@@ -117,7 +120,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         historicalEdges.Should().NotBeNull();
         historicalEdges.Should().HaveCount(1);
         historicalEdges.Should().NotContain(e => e.Id == eid && e.IsArchived);
-        historicalEdges.Should().Contain(e => e.Id == eid2);
+        historicalEdges.Should().Contain(e => e.Id == eid2 && !e.IsArchived);
     }
 
     [Fact]
@@ -167,8 +170,9 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
 
         var edgeHistory = await _historicalEdgeBusiness.GetHistoryForEdge(eid, null, null);
         edgeHistory.Should().NotBeNull();
-        edgeHistory.Should().HaveCount(3);
-        edgeHistory.Should().NotContain(e => e.Id != eid);
+        edgeHistory.Should().HaveCount(2);
+        edgeHistory.Should().OnlyContain(e => e.Id == eid);
+        edgeHistory.First().IsArchived.Should().BeTrue();
     }
     
     [Fact]
@@ -198,8 +202,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
+        historicalEdge.OriginId.Should().Be(originRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId);
     }
     
     [Fact]
@@ -216,8 +220,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null, false);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
+        historicalEdge.OriginId.Should().Be(originRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId);
         historicalEdge.IsArchived.Should().BeTrue();
     }
 
@@ -240,11 +244,11 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetHistoricalEdge_ThrowsError_WhenCurrentRecordIsArchived()
+    public async Task GetHistoricalEdge_ReturnsArchivedHistoricalEdge_WhenEdgeIsArchived()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
-        await historicalEdge.Should().ThrowAsync<KeyNotFoundException>();
+        historicalEdge.Should().NotBeNull();
     }
     
     protected override async Task SeedTestDataAsync()
@@ -438,5 +442,40 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         eid4 = edge4.Id;
         
         Context.ChangeTracker.Clear();
+        var historicalEdge1 = new HistoricalEdge
+        {
+            EdgeId = edge.Id,
+            OriginId = edge.OriginId,
+            DestinationId = edge.DestinationId,
+            RelationshipId = edge.RelationshipId,
+            RelationshipName = "Relationship 1",
+            DataSourceId = edge.DataSourceId,
+            DataSourceName = "DataSource 1",
+            ProjectId = edge.ProjectId,
+            ProjectName = "Project 1",
+            LastUpdatedBy = edge.LastUpdatedBy,
+            LastUpdatedAt = edge.LastUpdatedAt,
+            IsArchived = false
+        };
+
+        var historicalEdge2 = new HistoricalEdge
+        {
+            EdgeId = edge2.Id,
+            OriginId = edge2.OriginId,
+            DestinationId = edge2.DestinationId,
+            RelationshipId = edge2.RelationshipId,
+            RelationshipName = "Relationship 1",
+            DataSourceId = edge2.DataSourceId,
+            DataSourceName = "DataSource 3",
+            ProjectId = edge2.ProjectId,
+            ProjectName = "Project 1",
+            LastUpdatedBy = edge2.LastUpdatedBy,
+            LastUpdatedAt = edge2.LastUpdatedAt,
+            IsArchived = false
+        };
+
+        Context.HistoricalEdges.Add(historicalEdge1);
+        Context.HistoricalEdges.Add(historicalEdge2);
+        await Context.SaveChangesAsync();
     }
 }

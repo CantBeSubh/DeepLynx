@@ -327,7 +327,7 @@ namespace deeplynx.tests
                 EntityId = 1,
                 ProjectId = pid,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             });
             results[1].Should().BeEquivalentTo(new
             {
@@ -336,7 +336,7 @@ namespace deeplynx.tests
                 EntityId = 2,
                 ProjectId = pid,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             });
         }
         
