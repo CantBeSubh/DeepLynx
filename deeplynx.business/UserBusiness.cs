@@ -49,8 +49,10 @@ public class UserBusiness : IUserBusiness
 
         return users.Select(p => new UserResponseDto()
         {
+            Id = p.Id,
             Name = p.Name,
-            Email = p.Email
+            Email = p.Email,
+            IsSysAdmin = p.IsSysAdmin
         });
     }
 
@@ -74,8 +76,10 @@ public class UserBusiness : IUserBusiness
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
-            Email = user.Email
+            Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin
         };
     }
 
@@ -112,8 +116,10 @@ public class UserBusiness : IUserBusiness
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin
         };
     }
 
@@ -133,7 +139,7 @@ public class UserBusiness : IUserBusiness
         if (project != null && user != null)
         {
             project.Users.Add(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         return true;
@@ -149,13 +155,15 @@ public class UserBusiness : IUserBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
-        var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+        var project = _context.Projects
+            .Include(p => p.Users)
+            .FirstOrDefault(p => p.Id == projectId);
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
 
         if (project != null && user != null)
         {
             project.Users.Remove(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         return true;
@@ -187,8 +195,10 @@ public class UserBusiness : IUserBusiness
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin,
         };
     }
 
