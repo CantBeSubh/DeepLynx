@@ -64,17 +64,17 @@ namespace deeplynx.datalayer.Migrations
                 LANGUAGE 'plpgsql'
                 AS $BODY$
                 DECLARE
-                    archive_time TIMESTAMP := NOW();
+                    arc_time TIMESTAMP := NOW();
                 BEGIN
-                    UPDATE deeplynx.projects SET is_archived = false, last_updated_at = archive_time WHERE id = arc_project_id;
-                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.projects SET is_archived = false, last_updated_at = arc_time WHERE id = arc_project_id;
+                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
                     UPDATE deeplynx.object_storages SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
                     UPDATE deeplynx.record_mappings SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
                     UPDATE deeplynx.edge_mappings SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.records SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edges SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
                 END;
                 $BODY$;
             ");
@@ -105,14 +105,14 @@ namespace deeplynx.datalayer.Migrations
                 LANGUAGE 'plpgsql'
                 AS $BODY$
                 DECLARE
-                    archive_time TIMESTAMP := NOW();
+                    arc_time TIMESTAMP := NOW();
                 BEGIN
-                    UPDATE deeplynx.projects SET is_archived = false, last_updated_at = archive_time WHERE id = arc_project_id;
-                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.records SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.edges SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = archive_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.projects SET is_archived = false, last_updated_at = arc_time WHERE id = arc_project_id;
+                    UPDATE deeplynx.classes SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.data_sources SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.records SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.edges SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
+                    UPDATE deeplynx.relationships SET is_archived = false, last_updated_at = arc_time WHERE project_id = arc_project_id;
                 END;
                 $BODY$;
             ");

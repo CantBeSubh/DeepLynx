@@ -86,6 +86,8 @@ public class UserBusiness : IUserBusiness
     /// <returns>The new user which was just created.</returns>
     public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
+        // TODO: adjusting is_sysadmin is currently disabled. Enable once route permission protections are in place
+
         var user = new User
         {
             Name = dto.Name,
