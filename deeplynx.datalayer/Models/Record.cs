@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -51,20 +49,16 @@ public partial class Record
     [Column("project_id")]
     public long ProjectId { get; set; }
 
-    [Column("created_by")]
-    public string? CreatedBy { get; set; }
-
-    [Column("created_at", TypeName = "timestamp without time zone")]
-    public DateTime CreatedAt { get; set; }
-
-    [Column("modified_by")]
-    public string? ModifiedBy { get; set; }
-
-    [Column("modified_at", TypeName = "timestamp without time zone")]
-    public DateTime? ModifiedAt { get; set; }
-
-    [Column("archived_at", TypeName = "timestamp without time zone")]
-    public DateTime? ArchivedAt { get; set; }
+    [Required]
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+    
+    [Column("last_updated_by")]
+    public string? LastUpdatedBy { get; set; }
+    
+    [Required]
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
 
     [ForeignKey("ClassId")]
     [InverseProperty("Records")]
@@ -80,7 +74,7 @@ public partial class Record
     
     [ForeignKey("ObjectStorageId")]
     [InverseProperty("Records")]
-    public virtual ObjectStorage ObjectStorage { get; set; } = null!;
+    public virtual ObjectStorage? ObjectStorage { get; set; }
 
     [InverseProperty("Destination")]
     public virtual ICollection<Edge> EdgeDestinations { get; set; } = new List<Edge>();
@@ -91,11 +85,15 @@ public partial class Record
     [ForeignKey("ProjectId")]
     [InverseProperty("Records")]
     public virtual Project Project { get; set; } = null!;
-
+    
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     
     [InverseProperty("Record")]
     public virtual ICollection<HistoricalRecord> HistoricalRecords { get; set; } = new List<HistoricalRecord>();
+    
+    [ForeignKey("RecordId")]
+    [InverseProperty("Records")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
 }

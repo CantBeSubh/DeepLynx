@@ -31,28 +31,28 @@ public static class SeedData
                 Name = "John Smith",
                 Email = "john.smith@company.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword1",
-                ArchivedAt = null
+                IsArchived = false
             },
             new User
             {
                 Name = "Sarah Johnson",
                 Email = "sarah.johnson@company.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword2",
-                ArchivedAt = null
+                IsArchived = false
             },
             new User
             {
                 Name = "Mike Davis",
                 Email = "mike.davis@company.com",
-                Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword3",
-                ArchivedAt = null
+                Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword3", 
+                IsArchived = false
             },
             new User
             {
                 Name = "System Architect",
                 Email = "system.architect@legacy.com",
                 Password = "$2a$10$N9qo8uLOickgx2ZMRZoMye.hashedpassword4",
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) // Archived legacy user
+                IsArchived = true
             }
         };
 
@@ -70,33 +70,27 @@ public static class SeedData
                 Name = "Customer Analytics Platform",
                 Abbreviation = "CAP",
                 Description = "Comprehensive customer data analysis and segmentation platform for marketing insights",
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "sarah.johnson@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             },
             new Project
             {
                 Name = "Supply Chain Optimization",
                 Abbreviation = "SCO",
                 Description = "Real-time supply chain monitoring and optimization system with predictive analytics",
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
-                ModifiedBy = "mike.davis@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
+                 IsArchived = false
             },
             new Project
             {
                 Name = "Legacy System Migration",
                 Abbreviation = "LSM",
                 Description = "Migration of legacy data systems to modern cloud-based infrastructure",
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-2),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
+                 IsArchived = true
             }
         };
 
@@ -116,11 +110,9 @@ public static class SeedData
                 Description = "Customer entity with demographic and behavioral data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440101",
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "sarah.johnson@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), // Most recent was ModifiedAt
+                LastUpdatedBy = "sarah.johnson@company.com", // Most recent modifier
+                IsArchived = false
             },
             new Class
             {
@@ -128,11 +120,10 @@ public static class SeedData
                 Description = "Customer purchase transactions and order history",
                 Uuid = "550e8400-e29b-41d4-a716-446655440102",
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "data.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-12),
-                ArchivedAt = null
+               
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "data.analyst@company.com",
+                IsArchived = false
             },
             new Class
             {
@@ -140,11 +131,9 @@ public static class SeedData
                 Description = "Customer segmentation categories and rules",
                 Uuid = "550e8400-e29b-41d4-a716-446655440103",
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "sarah.johnson@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-8),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "Segment.analyst@company.com",
+                IsArchived = false
             },
             new Class
             {
@@ -152,11 +141,9 @@ public static class SeedData
                 Description = "Product catalog and inventory information",
                 Uuid = "550e8400-e29b-41d4-a716-446655440104",
                 ProjectId = 1,
-                CreatedBy = "product.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
-                ModifiedBy = "inventory.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "Product@company.com",
+                IsArchived = false
             },
 
             // Supply Chain Optimization Classes
@@ -166,11 +153,9 @@ public static class SeedData
                 Description = "Supplier information and performance metrics",
                 Uuid = "550e8400-e29b-41d4-a716-446655440201",
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "supply@company.com",
+                IsArchived = false
             },
             new Class
             {
@@ -178,11 +163,10 @@ public static class SeedData
                 Description = "Product inventory levels and warehouse data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440202",
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "warehouse.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-2),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "warehouse.admin@company.com",
+                IsArchived = false
+               
             },
             new Class
             {
@@ -190,11 +174,10 @@ public static class SeedData
                 Description = "Warehouse facility information and capacity data",
                 Uuid = "550e8400-e29b-41d4-a716-446655440203",
                 ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "facility.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-4),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "facility.admin@company.com",
+                IsArchived = false
+               
             },
             new Class
             {
@@ -202,11 +185,9 @@ public static class SeedData
                 Description = "Shipping and logistics tracking information",
                 Uuid = "550e8400-e29b-41d4-a716-446655440204",
                 ProjectId = 2,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "mike.davis@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-4),
-                ArchivedAt = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "shipping.admin@company.com",
+                IsArchived = false
             },
 
             // Legacy System Migration Classes (Archived)
@@ -216,11 +197,9 @@ public static class SeedData
                 Description = "User accounts from legacy system requiring migration",
                 Uuid = "550e8400-e29b-41d4-a716-446655440301",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "system.architect@company.com",
+                IsArchived = false
             },
             new Class
             {
@@ -228,11 +207,10 @@ public static class SeedData
                 Description = "Historical data records from legacy database",
                 Uuid = "550e8400-e29b-41d4-a716-446655440302",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "data.migration@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-2),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                LastUpdatedBy = "data.migration@legacy.com",
+                IsArchived = false
+              
             }
         };
 
@@ -255,11 +233,9 @@ public static class SeedData
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             },
             new DataSource
             {
@@ -270,11 +246,9 @@ public static class SeedData
                 BaseUri = "https://api.ecommerce.company.com/v2/",
                 Config = @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "api.developer@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedBy= "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                IsArchived = false
             },
 
             // Supply Chain Optimization Data Sources
@@ -287,11 +261,9 @@ public static class SeedData
                 BaseUri = "Server=erp-oracle.company.com;Database=SUPPLY_CHAIN;",
                 Config = @"{""driver"":""oracle"",""host"":""erp-oracle.company.com"",""port"":1521,""service_name"":""SUPPLY_CHAIN""}",
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
-                ModifiedBy = "erp.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
+                IsArchived = false
             },
             new DataSource
             {
@@ -302,11 +274,9 @@ public static class SeedData
                 BaseUri = "mqtt://iot-broker.warehouse.company.com:1883",
                 Config = @"{""protocol"":""MQTT"",""broker_host"":""iot-broker.warehouse.company.com"",""port"":1883,""qos"":2}",
                 ProjectId = 2,
-                CreatedBy = "iot.specialist@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "warehouse.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedBy = "iot.specialist@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                IsArchived = false
             },
 
             // Legacy System Migration Data Sources (Archived)
@@ -319,11 +289,9 @@ public static class SeedData
                 BaseUri = "Server=mainframe.legacy.com;Database=LEGACY_PROD;",
                 Config = @"{""driver"":""db2"",""host"":""mainframe.legacy.com"",""port"":50000,""database"":""LEGACY_PROD""}",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy= "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
+                IsArchived = false
             },
             new DataSource
             {
@@ -334,11 +302,9 @@ public static class SeedData
                 BaseUri = "file://legacy-archive.company.com/data/",
                 Config = @"{""type"":""network_share"",""base_path"":""//legacy-archive.company.com/data/"",""compression"":""gzip""}",
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "data.migration@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                IsArchived = false
             }
         };
 
@@ -355,22 +321,22 @@ public static class SeedData
             // Note: Id is automatically assigned and incremented by the database. These tags will be Id 1-12 in order.
             
             // Customer Analytics Platform Tags
-            new Tag { Name = "Analytics", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30), ArchivedAt = null },
-            new Tag { Name = "Marketing", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
-            new Tag { Name = "Customer Data", ProjectId = 1, CreatedBy = "john.smith@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), ModifiedBy = "data.analyst@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20), ArchivedAt = null },
-            new Tag { Name = "Business Intelligence", ProjectId = 1, CreatedBy = "sarah.johnson@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), ModifiedBy = "sarah.johnson@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), ArchivedAt = null },
+            new Tag { Name = "Analytics", ProjectId = 1, LastUpdatedBy = "john.smith@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),  IsArchived = false },
+            new Tag { Name = "Marketing", ProjectId = 1, LastUpdatedBy = "sarah.johnson@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), IsArchived = false },
+            new Tag { Name = "Customer Data", ProjectId = 1, LastUpdatedBy = "john.smith@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), IsArchived = false },
+            new Tag { Name = "Business Intelligence", ProjectId = 1, LastUpdatedBy = "sarah.johnson@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), IsArchived = false },
 
             // Supply Chain Optimization Tags
-            new Tag { Name = "Logistics", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), ModifiedBy = "supply.manager@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10), ArchivedAt = null },
-            new Tag { Name = "Optimization", ProjectId = 2, CreatedBy = "mike.davis@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
-            new Tag { Name = "Real-time Monitoring", ProjectId = 2, CreatedBy = "supply.manager@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), ModifiedBy = "iot.specialist@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5), ArchivedAt = null },
-            new Tag { Name = "Predictive Analytics", ProjectId = 2, CreatedBy = "data.scientist@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), ModifiedBy = "mike.davis@company.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3), ArchivedAt = null },
-            new Tag { Name = "Inventory Management", ProjectId = 2, CreatedBy = "warehouse.admin@company.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ModifiedBy = null, ModifiedAt = null, ArchivedAt = null },
+            new Tag { Name = "Logistics", ProjectId = 2, LastUpdatedBy = "mike.davis@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), IsArchived = false },
+            new Tag { Name = "Optimization", ProjectId = 2, LastUpdatedBy = "mike.davis@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),  IsArchived = false },
+            new Tag { Name = "Real-time Monitoring", ProjectId = 2, LastUpdatedBy = "supply.manager@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), IsArchived = false },
+            new Tag { Name = "Predictive Analytics", ProjectId = 2, LastUpdatedBy = "data.scientist@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), IsArchived = false },
+            new Tag { Name = "Inventory Management", ProjectId = 2, LastUpdatedBy = "warehouse.admin@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),  IsArchived = false },
 
             // Legacy System Migration Tags (Archived)
-            new Tag { Name = "Migration", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
-            new Tag { Name = "Legacy Systems", ProjectId = 3, CreatedBy = "system.architect@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), ModifiedBy = "data.migration@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) },
-            new Tag { Name = "Data Transformation", ProjectId = 3, CreatedBy = "data.migration@legacy.com", CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), ModifiedBy = "migration.lead@legacy.com", ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-2), ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1) }
+            new Tag { Name = "Migration", ProjectId = 3, LastUpdatedBy = "system.architect@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), IsArchived = true },
+            new Tag { Name = "Legacy Systems", ProjectId = 3, LastUpdatedBy = "system.architect@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), IsArchived = true },
+            new Tag { Name = "Data Transformation", ProjectId = 3, LastUpdatedBy = "data.migration@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), IsArchived = true }
         };
 
         await context.Tags.AddRangeAsync(tags);
@@ -391,11 +357,9 @@ public static class SeedData
                 OriginId = 1, // Customer class
                 DestinationId = 2, // Purchase class
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "sarah.johnson@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-25),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                 IsArchived = false
             },
             new Relationship
             {
@@ -405,11 +369,9 @@ public static class SeedData
                 OriginId = 1, // Customer class
                 DestinationId = 3, // Segment class
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-18),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                 IsArchived = false
             },
             new Relationship
             {
@@ -419,11 +381,9 @@ public static class SeedData
                 OriginId = 2, // Purchase class
                 DestinationId = 4, // Product class
                 ProjectId = 1,
-                CreatedBy = "data.analyst@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
-                ModifiedBy = "john.smith@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
+                LastUpdatedBy = "data.analyst@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
+                 IsArchived = false
             },
 
             // Supply Chain Optimization Relationships
@@ -435,11 +395,9 @@ public static class SeedData
                 OriginId = 5, // Supplier class
                 DestinationId = 6, // Inventory class
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                 IsArchived = false
             },
             new Relationship
             {
@@ -449,11 +407,9 @@ public static class SeedData
                 OriginId = 6, // Inventory class
                 DestinationId = 7, // Warehouse class
                 ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "logistics.coordinator@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-8),
-                ArchivedAt = null
+                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                 IsArchived = false
             },
             new Relationship
             {
@@ -463,11 +419,9 @@ public static class SeedData
                 OriginId = 8, // Shipment class
                 DestinationId = 6, // Inventory class
                 ProjectId = 2,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
-                ModifiedBy = "mike.davis@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
+                 IsArchived = false
             },
 
             // Legacy System Migration Relationships (Archived)
@@ -479,11 +433,9 @@ public static class SeedData
                 OriginId = 9, // LegacyUser class
                 DestinationId = 10, // LegacyData class
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                 IsArchived = true
             }
         };
 
@@ -506,11 +458,9 @@ public static class SeedData
                 DestinationId = 2,
                 DataSourceId = 1,
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "data.engineer@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                 IsArchived = false
             },
             new EdgeMapping
             {
@@ -521,11 +471,9 @@ public static class SeedData
                 DestinationId = 3,
                 DataSourceId = 2,
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                 IsArchived = false
             },
 
             // Supply Chain Optimization Edge Mappings
@@ -538,11 +486,9 @@ public static class SeedData
                 DestinationId = 6,
                 DataSourceId = 3,
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                 IsArchived = false
             },
 
             // Legacy System Migration Edge Mappings (Archived)
@@ -555,11 +501,9 @@ public static class SeedData
                 DataSourceId = 4,
                 DestinationId = 10,
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                 IsArchived = true
             }
         };
 
@@ -580,11 +524,9 @@ public static class SeedData
                 ProjectId = 1,
                 DataSourceId = 1,
                 TagId = 3,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "data.engineer@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                 IsArchived = false
             },
             new RecordMapping
             {
@@ -593,11 +535,9 @@ public static class SeedData
                 ProjectId = 1,
                 DataSourceId = 2,
                 TagId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "data.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                 IsArchived = false
             },
 
             // Supply Chain Optimization Record Mappings
@@ -608,11 +548,9 @@ public static class SeedData
                 ProjectId = 2,
                 DataSourceId = 3,
                 TagId = 5,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                 IsArchived = false
             },
             new RecordMapping
             {
@@ -621,11 +559,9 @@ public static class SeedData
                 ProjectId = 2,
                 DataSourceId = 4,
                 TagId = 9,
-                CreatedBy = "inventory.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "warehouse.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedBy = "inventory.manager@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                 IsArchived = false
             },
 
             // Legacy System Migration Record Mappings (Archived)
@@ -636,11 +572,9 @@ public static class SeedData
                 ProjectId = 3,
                 DataSourceId = 5,
                 TagId = 10,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                 IsArchived = true
             }
         };
 
@@ -663,11 +597,9 @@ public static class SeedData
                 DataSourceId = 1,
                 ProjectId = 1,
                 MappingId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "crm.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-5),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                 IsArchived = false
             },
             new Record
             {
@@ -679,11 +611,9 @@ public static class SeedData
                 DataSourceId = 2,
                 ProjectId = 1,
                 MappingId = 2,
-                CreatedBy = "ecommerce.api@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "order.processor@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-8),
-                ArchivedAt = null
+                LastUpdatedBy = "ecommerce.api@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                 IsArchived = false
             },
             new Record
             {
@@ -694,11 +624,9 @@ public static class SeedData
                 ClassId = 3,
                 DataSourceId = 2,
                 ProjectId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-3),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
+                 IsArchived = false
             },
 
             // Supply Chain Optimization Records
@@ -712,11 +640,9 @@ public static class SeedData
                 DataSourceId = 3,
                 ProjectId = 2,
                 MappingId = 3,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-6),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                 IsArchived = false
             },
             new Record
             {
@@ -727,11 +653,9 @@ public static class SeedData
                 ClassId = 6,
                 DataSourceId = 3,
                 ProjectId = 2,
-                CreatedBy = "inventory.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "warehouse.system@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-1),
-                ArchivedAt = null
+                LastUpdatedBy = "inventory.manager@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                 IsArchived = false
             },
             new Record
             {
@@ -742,11 +666,9 @@ public static class SeedData
                 ClassId = 7,
                 DataSourceId = 4,
                 ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
-                ModifiedBy = "facility.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-4),
-                ArchivedAt = null
+                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
+                 IsArchived = false
             },
             new Record
             {
@@ -757,11 +679,9 @@ public static class SeedData
                 ClassId = 8,
                 DataSourceId = 4,
                 ProjectId = 2,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ModifiedBy = "delivery.tracker@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-7),
-                ArchivedAt = null
+                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
+                 IsArchived = false
             },
 
             // Legacy System Migration Records (Archived)
@@ -774,11 +694,9 @@ public static class SeedData
                 ClassId = 9,
                 DataSourceId = 5,
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                 IsArchived = true
             },
             new Record
             {
@@ -790,11 +708,9 @@ public static class SeedData
                 DataSourceId = 6,
                 ProjectId = 3,
                 MappingId = 5,
-                CreatedBy = "data.migration@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
-                ModifiedBy = "migration.validator@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-3),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "data.migration@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
+                 IsArchived = true
             }
         };
         await context.Records.AddRangeAsync(records);
@@ -814,11 +730,9 @@ public static class SeedData
                 RelationshipId = 1,
                 DataSourceId = 1,
                 ProjectId = 1,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                ModifiedBy = "data.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-30),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
+                 IsArchived = false
             },
             new Edge
             {
@@ -828,11 +742,9 @@ public static class SeedData
                 DataSourceId = 2,
                 ProjectId = 1,
                 MappingId = 1,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "marketing.analyst@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-25),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
+                 IsArchived = false
             },
 
             // Supply Chain Optimization Edges
@@ -843,11 +755,9 @@ public static class SeedData
                 RelationshipId = 4,
                 DataSourceId = 3,
                 ProjectId = 2,
-                CreatedBy = "mike.davis@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                ModifiedBy = "supply.manager@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15),
-                ArchivedAt = null
+                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
+                 IsArchived = false
             },
             new Edge
             {
@@ -856,11 +766,9 @@ public static class SeedData
                 RelationshipId = 5,
                 DataSourceId = 4,
                 ProjectId = 2,
-                CreatedBy = "warehouse.manager@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                ModifiedBy = "logistics.coordinator@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-12),
-                ArchivedAt = null
+                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
+                 IsArchived = false
             },
             new Edge
             {
@@ -870,11 +778,9 @@ public static class SeedData
                 DataSourceId = 4,
                 ProjectId = 2,
                 MappingId = 3,
-                CreatedBy = "logistics.coordinator@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
-                ModifiedBy = "mike.davis@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-10),
-                ArchivedAt = null
+                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
+                 IsArchived = false
             },
 
             // Legacy System Migration Edges (Archived)
@@ -885,11 +791,9 @@ public static class SeedData
                 RelationshipId = 7,
                 DataSourceId = 5,
                 ProjectId = 3,
-                CreatedBy = "system.architect@legacy.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                ModifiedBy = "migration.lead@legacy.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-1)
+                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
+                 IsArchived = true
             }
         };
 

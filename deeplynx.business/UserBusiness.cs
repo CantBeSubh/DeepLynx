@@ -34,7 +34,7 @@ public class UserBusiness : IUserBusiness
         if (projectId == null)
         {
             users = await _context.Users
-                .Where(p => p.ArchivedAt == null)
+                .Where(p => !p.IsArchived)
                 .ToListAsync();
         }
         else
@@ -49,8 +49,10 @@ public class UserBusiness : IUserBusiness
 
         return users.Select(p => new UserResponseDto()
         {
+            Id = p.Id,
             Name = p.Name,
-            Email = p.Email
+            Email = p.Email,
+            IsSysAdmin = p.IsSysAdmin
         });
     }
 
@@ -64,7 +66,7 @@ public class UserBusiness : IUserBusiness
     public async Task<UserResponseDto> GetUser(long userId)
     {
         var user = await _context.Users
-            .Where(p => p.Id == userId && p.ArchivedAt == null)
+            .Where(p => p.Id == userId && !p.IsArchived)
             .FirstOrDefaultAsync();
 
         if (user == null)
@@ -74,8 +76,10 @@ public class UserBusiness : IUserBusiness
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
-            Email = user.Email
+            Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin
         };
     }
 
@@ -86,6 +90,8 @@ public class UserBusiness : IUserBusiness
     /// <returns>The new user which was just created.</returns>
     public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
+        // TODO: adjusting is_sysadmin is currently disabled. Enable once route permission protections are in place
+
         var user = new User
         {
             Name = dto.Name,
@@ -94,21 +100,26 @@ public class UserBusiness : IUserBusiness
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value);
-
-        var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
-
-        if (project != null)
+        if (dto.ProjectId.HasValue)
         {
-            project.Users.Add(user);
-            _context.SaveChanges();
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value);
+
+            var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
+
+            if (project != null)
+            {
+                project.Users.Add(user);
+                _context.SaveChanges();
+            }
         }
+     
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin
         };
     }
 
@@ -128,7 +139,7 @@ public class UserBusiness : IUserBusiness
         if (project != null && user != null)
         {
             project.Users.Add(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         return true;
@@ -144,13 +155,15 @@ public class UserBusiness : IUserBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
 
-        var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
+        var project = _context.Projects
+            .Include(p => p.Users)
+            .FirstOrDefault(p => p.Id == projectId);
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
 
         if (project != null && user != null)
         {
             project.Users.Remove(user);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
         return true;
@@ -168,7 +181,7 @@ public class UserBusiness : IUserBusiness
     public async Task<UserResponseDto> UpdateUser(long userId, UpdateUserRequestDto dto)
     {
         var user = await _context.Users
-            .Where(p => p.Id == userId && p.ArchivedAt == null)
+            .Where(p => p.Id == userId && !p.IsArchived)
             .FirstOrDefaultAsync();
 
         if (user == null)
@@ -182,8 +195,10 @@ public class UserBusiness : IUserBusiness
 
         return new UserResponseDto()
         {
+            Id = user.Id,
             Name = user.Name,
             Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin,
         };
     }
 
@@ -214,13 +229,13 @@ public class UserBusiness : IUserBusiness
     public async Task<bool> ArchiveUser(long userId)
     {
         var user = await _context.Users
-            .Where(p => p.Id == userId && p.ArchivedAt == null)
+            .Where(p => p.Id == userId && !p.IsArchived)
             .FirstOrDefaultAsync();
 
         if (user == null)
             throw new KeyNotFoundException("User not found.");
 
-        user.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        user.IsArchived = true;
 
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
@@ -236,13 +251,13 @@ public class UserBusiness : IUserBusiness
     public async Task<bool> UnarchiveUser(long userId)
     {
         var user = await _context.Users
-            .Where(p => p.Id == userId && p.ArchivedAt != null)
+            .Where(p => p.Id == userId && p.IsArchived)
             .FirstOrDefaultAsync();
 
         if (user == null)
             throw new KeyNotFoundException("Archived user not found.");
 
-        user.ArchivedAt = null;
+        user.IsArchived = false;
 
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
@@ -290,7 +305,7 @@ public class UserBusiness : IUserBusiness
         var records = _context.HistoricalRecords
                 .Where(p => projectIds.Contains(p.ProjectId))
                 .OrderByDescending(p => p.LastUpdatedAt)
-                .Where(r => r.ArchivedAt == null)
+                .Where(r => !r.IsArchived)
                 .ToList();
         
         return records
@@ -310,11 +325,8 @@ public class UserBusiness : IUserBusiness
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
                 Description = r.Description,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt
             });
     }

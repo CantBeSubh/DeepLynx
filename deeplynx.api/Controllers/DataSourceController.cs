@@ -26,17 +26,16 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all data sources
         /// </summary>
-        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
+        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
         public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
-            long projectId,
-            [FromQuery] bool hideArchived = true)
+           [FromBody] long[] projectIds, bool hideArchived = true)
         {
             try
             {
-                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId, hideArchived);
+                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectIds, hideArchived);
                 return Ok(dataSources);
             }
             catch (Exception exc)
@@ -68,6 +67,28 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while retrieving data source {dataSourceId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Get default data source
+        /// </summary>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <returns>The data source associated with the given ID</returns>
+        [HttpGet("GetDefaultDataSource", Name = "api_get_default_data_source")]
+        public async Task<ActionResult<DataSourceResponseDto>> GetDefaultDataSource(
+            long projectId)
+        {
+            try
+            {
+                var dataSource = await _dataSourceBusiness.GetDefaultDataSource(projectId);
+                return Ok(dataSource);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while retrieving default data source for project {projectId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -188,6 +209,30 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while unarchiving data source {dataSourceId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Set default data source
+        /// </summary>
+        /// <param name="dataSourceId">The ID of the data source to update</param>
+        /// <param name="projectId">The ID of the project to which the data source belongs</param>
+        /// <returns>The newly updated data source</returns>
+        [HttpPut("SetDefaultDataSource/{dataSourceId}", Name = "api_set_default_data_source")]
+        public async Task<ActionResult<DataSourceResponseDto>> SetDefaultDataSource(
+            long projectId,
+            long dataSourceId)
+        {
+            try
+            {
+                var dataSource = await _dataSourceBusiness.SetDefaultDataSource(projectId, dataSourceId);
+                return Ok(dataSource);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while setting default data source {dataSourceId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

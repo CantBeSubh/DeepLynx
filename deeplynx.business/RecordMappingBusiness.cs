@@ -48,7 +48,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         // add filter for class or tag if specified
         if (classId.HasValue)
         {
-            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && c.ArchivedAt == null);
+            var rmClass = await _context.Classes.FirstOrDefaultAsync(c => c.Id == classId && !c.IsArchived );
             if (rmClass == null)
             {
                 throw new KeyNotFoundException($"Class with id {classId} not found");
@@ -58,7 +58,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
 
         if (tagId.HasValue)
         {
-            var tag = await _context.Tags.FirstOrDefaultAsync(p => p.Id == tagId && p.ArchivedAt == null);
+            var tag = await _context.Tags.FirstOrDefaultAsync(p => p.Id == tagId && !p.IsArchived);
             if (tag == null)
             {
                 throw new KeyNotFoundException($"Tag with id {tagId} not found");
@@ -68,7 +68,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         
         if (hideArchived)
         {
-            mappingQuery = mappingQuery.Where(m => m.ArchivedAt == null);
+            mappingQuery = mappingQuery.Where(m => !m.IsArchived);
         }
             
         var mappings = await mappingQuery.ToListAsync();
@@ -82,11 +82,9 @@ public class RecordMappingBusiness : IRecordMappingBusiness
                 ProjectId = m.ProjectId,
                 TagId = m.TagId,
                 DataSourceId = m.DataSourceId,
-                CreatedBy = m.CreatedBy,
-                CreatedAt = m.CreatedAt,
-                ModifiedBy = m.ModifiedBy,
-                ModifiedAt = m.ModifiedAt,
-                ArchivedAt = m.ArchivedAt,
+                LastUpdatedBy = m.LastUpdatedBy,
+                LastUpdatedAt = m.LastUpdatedAt,
+                IsArchived = m.IsArchived,
             })
             .ToList();
     }
@@ -116,7 +114,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
         
-        if (hideArchived && mapping.ArchivedAt != null)
+        if (hideArchived && mapping.IsArchived)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} is archived");
         }
@@ -129,11 +127,9 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             TagId = mapping.TagId,
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt,
-            ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt,
-            ArchivedAt = mapping.ArchivedAt,
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            LastUpdatedAt = mapping.LastUpdatedAt,
+            IsArchived = mapping.IsArchived,
         };
     }
 
@@ -162,8 +158,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ClassId = dto.ClassId,
             DataSourceId = dto.DataSourceId,
             TagId = dto.TagId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
         
         _context.RecordMappings.Add(mapping);
@@ -178,7 +174,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             Properties = "{}",
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RecordMappingResponseDto
@@ -189,8 +185,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             DataSourceId = mapping.DataSourceId,
             TagId = mapping.TagId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            LastUpdatedAt = mapping.LastUpdatedAt
         };
     }
 
@@ -212,7 +208,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.IsArchived)
         {
             throw new KeyNotFoundException($"Mapping with id {mappingId} not found");
         }
@@ -222,8 +218,8 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         mapping.ClassId = dto.ClassId ?? mapping.ClassId;
         mapping.DataSourceId = dto.DataSourceId ?? mapping.DataSourceId;
         mapping.TagId = dto.TagId ?? mapping.TagId;
-        mapping.ModifiedBy = null; // TODO: handled in future by JWT.
-        mapping.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        mapping.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        mapping.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
         _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
@@ -237,7 +233,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             Properties = "{}",
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = "", // TODO: add username when JWT are implemented
+            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
 
         
@@ -249,10 +245,9 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             ProjectId = mapping.ProjectId,
             TagId = mapping.TagId,
             DataSourceId = mapping.DataSourceId,
-            CreatedBy = mapping.CreatedBy,
-            CreatedAt = mapping.CreatedAt,
-            ModifiedBy = mapping.ModifiedBy,
-            ModifiedAt = mapping.ModifiedAt
+            LastUpdatedBy = mapping.LastUpdatedBy,
+            LastUpdatedAt = mapping.LastUpdatedAt,
+            IsArchived = mapping.IsArchived,
         };
     }
 
@@ -289,10 +284,10 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is not null)
+        if (mapping == null || mapping.ProjectId != projectId || mapping.IsArchived)
             throw new KeyNotFoundException($"Record Mapping with id {mappingId} not found");
 
-        mapping.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        mapping.IsArchived = true;
         _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
         
@@ -305,7 +300,7 @@ public class RecordMappingBusiness : IRecordMappingBusiness
             EntityId = mapping.Id,
             DataSourceId = mapping.DataSourceId,
             Properties = "{}",
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return true;
@@ -323,10 +318,10 @@ public class RecordMappingBusiness : IRecordMappingBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var mapping = await _context.RecordMappings.FindAsync(mappingId);
 
-        if (mapping == null || mapping.ProjectId != projectId || mapping.ArchivedAt is null)
+        if (mapping == null || mapping.ProjectId != projectId || !mapping.IsArchived)
             throw new KeyNotFoundException($"Record Mapping with id {mappingId} not found or is not archived.");
 
-        mapping.ArchivedAt = null;
+        mapping.IsArchived = false;
         _context.RecordMappings.Update(mapping);
         await _context.SaveChangesAsync();
 

@@ -5,6 +5,53 @@ namespace deeplynx.helpers;
 
 public class ValidationHelper
 {
+    public static bool ValidateTypes(string value, string type)
+    {
+        List<string> AllowedEntityTypes = new List<string>
+        {
+            "class", 
+            "data_source", 
+            "relationship", 
+            "project", 
+            "edge", 
+            "edge_mapping", 
+            "record", 
+            "record_mapping",
+            "metadata", 
+            "user", 
+            "tag"
+        };
+
+        List<string> AllowedOperations = new List<string>
+        {
+            "create",
+            "update",
+            "delete",
+        };
+            
+        if (type == "EntityType")
+        {
+            if (!AllowedEntityTypes.Contains(value))
+            {
+                throw new ArgumentException($"EntityType must be one of {string.Join(", ", AllowedEntityTypes)}");
+            }
+
+            return true;
+        }
+
+        if (type == "Operation")
+        {
+            if (!AllowedOperations.Contains(value))
+            {
+                throw new ArgumentException($"Operation must be one of {string.Join(", ", AllowedOperations)}");
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     public static void ValidateModel<T>(T model)
     {
         var valContext = new ValidationContext(model, null, null);

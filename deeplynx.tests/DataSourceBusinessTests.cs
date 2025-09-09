@@ -45,13 +45,13 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ValidProjectId_ReturnsActiveDataSources()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
+            var result = await _dataSourceBusiness.GetAllDataSources([pid], true);
             var dataSources = result.ToList();
 
             // Assert
             Assert.Equal(2, dataSources.Count);
             Assert.All(dataSources, ds => Assert.Equal(pid, ds.ProjectId));
-            Assert.All(dataSources, ds => Assert.Null(ds.ArchivedAt));
+            Assert.All(dataSources, ds => Assert.False(ds.IsArchived));
             Assert.Contains(dataSources, ds => ds.Id == did);
             Assert.Contains(dataSources, ds => ds.Id == did2);
             Assert.DoesNotContain(dataSources, ds => ds.Id == did3);
@@ -62,7 +62,7 @@ namespace deeplynx.tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _dataSourceBusiness.GetAllDataSources(999, false)); 
+                () => _dataSourceBusiness.GetAllDataSources([999], false)); 
             
             Assert.Contains("Project with id 999 not found", exception.Message);
            
@@ -79,7 +79,7 @@ namespace deeplynx.tests
             Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = newProjectId });
             await Context.SaveChangesAsync();
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
+            var result = await _dataSourceBusiness.GetAllDataSources([pid], true);
             var dataSources = result.ToList();
 
             // Assert
@@ -92,7 +92,7 @@ namespace deeplynx.tests
         public async Task GetAllDataSources_ConfigParsing_ReturnsValidJsonObject()
         {
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var result = await _dataSourceBusiness.GetAllDataSources([pid], false);
             var dataSource = result.First(ds => ds.Id == did);
 
             // Assert
@@ -115,17 +115,15 @@ namespace deeplynx.tests
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = null,
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             };
             await Context.DataSources.AddAsync(dataSourceWithNullConfig);
             await Context.SaveChangesAsync();
 
             // Act
-            var result = await _dataSourceBusiness.GetAllDataSources(pid, false);
+            var result = await _dataSourceBusiness.GetAllDataSources([pid], false);
             var dataSource = result.First(ds => ds.Name == "Null Config Test");
 
             // Assert
@@ -311,11 +309,10 @@ namespace deeplynx.tests
             var result = await _dataSourceBusiness.CreateDataSource(pid, dto);
 
             // Assert
-            Assert.True(result.CreatedAt >= beforeCreate);
-            Assert.True(result.CreatedAt <= DateTime.UtcNow);
+            Assert.True(result.LastUpdatedAt >= beforeCreate);
+            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
             // CreatedBy is null in current implementation (TODO: JWT implementation)
-            Assert.Null(result.CreatedBy);
-            
+            Assert.Null(result.LastUpdatedBy);
             // Ensure that datasource create event was logged
             var eventList = Context.Events.ToList();
             eventList.Count.Should().Be(1);
@@ -364,13 +361,12 @@ namespace deeplynx.tests
             Assert.Equal("UPD_TEST", result.Abbreviation);
             Assert.Equal("MySQL", result.Type);
             Assert.Equal("Server=updated.com;Database=UpdatedDB;", result.BaseUri);
-            Assert.NotNull(result.ModifiedAt);
             Assert.Equal("mysql", result?.Config?["driver"]?.ToString());
 
             // Verify it was actually updated in database
             var updatedDataSource = await Context.DataSources.FindAsync((long)did);
             Assert.Equal("Updated Test Data Source", updatedDataSource?.Name);
-            Assert.NotNull(updatedDataSource?.ModifiedAt);
+            Assert.NotNull(updatedDataSource?.LastUpdatedAt);
             
             // Ensure that datasource update event was logged
             var eventList = Context.Events.ToList();
@@ -396,7 +392,7 @@ namespace deeplynx.tests
                 Type = "SQL Server",
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com"
+                LastUpdatedBy = "john.smith@company.com"
             };
 
             Context.DataSources.Add(dataSource);
@@ -415,14 +411,13 @@ namespace deeplynx.tests
             Assert.Equal(dataSource.Id, result.Id);
             Assert.Equal("Updated Description", result.Description);
             Assert.Equal(dataSource.Name, result.Name);
-            Assert.NotNull(result.ModifiedAt);
 
             // Verify it was actually updated in database
             var updatedDataSource = await Context.DataSources.FindAsync(dataSource.Id);
             Assert.NotNull(updatedDataSource);
             Assert.Equal("Updated Description", updatedDataSource.Description);
             Assert.Equal(dataSource.Name, updatedDataSource.Name);
-            Assert.NotNull(updatedDataSource.ModifiedAt);
+            Assert.NotNull(updatedDataSource.LastUpdatedAt);
             
             // Ensure that datasource update event was logged
             var eventList = Context.Events.ToList();
@@ -583,10 +578,7 @@ namespace deeplynx.tests
             // Verify it was actually archived in database
             var archivedDataSource = await Context.DataSources.FindAsync(did);
             Assert.NotNull(archivedDataSource);
-            Assert.NotNull(archivedDataSource.ArchivedAt);
-            Assert.True(archivedDataSource.ArchivedAt >= beforeArchive);
-            Assert.True(archivedDataSource.ArchivedAt <= DateTime.UtcNow);
-            
+            Assert.True(archivedDataSource.IsArchived);
             // Ensure that data source soft delete event was logged
             var eventList = Context.Events.ToList();
             eventList.Count.Should().Be(1);
@@ -644,12 +636,11 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveDataSource_ArchivedDataSourceNotReturnedInGetAll()
         {
-            // Arrange
-            var initialCount = (await _dataSourceBusiness.GetAllDataSources(pid, false)).Count();
+            var initialCount = (await _dataSourceBusiness.GetAllDataSources([pid], true)).Count(); // Changed to true
 
             // Act
             await _dataSourceBusiness.ArchiveDataSource(pid, did);
-            var finalCount = (await _dataSourceBusiness.GetAllDataSources(pid, true)).Count();
+            var finalCount = (await _dataSourceBusiness.GetAllDataSources([pid], true)).Count();
 
             // Assert
             Assert.Equal(initialCount - 1, finalCount);
@@ -687,11 +678,9 @@ namespace deeplynx.tests
                 Config =
                     @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
                 ProjectId = pid,
-                CreatedBy = "sarah.johnson@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                ModifiedBy = "api.developer@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-20),
-                ArchivedAt = null
+                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), 
+                IsArchived = false
             };
             await Context.AddAsync(newDataSource);
             await Context.SaveChangesAsync();
@@ -825,11 +814,9 @@ namespace deeplynx.tests
                 BaseUri = "http://test.com",
                 Config = config,
                 ProjectId = 1,
-                CreatedBy = "test@example.com",
-                CreatedAt = now,
-                ModifiedBy = "modified@example.com",
-                ModifiedAt = now.AddDays(1),
-                ArchivedAt = null
+                LastUpdatedBy = "test@example.com",
+                LastUpdatedAt = now,
+                IsArchived = false
             };
 
             // Assert
@@ -841,11 +828,8 @@ namespace deeplynx.tests
             Assert.Equal("http://test.com", dto.BaseUri);
             Assert.Equal(config, dto.Config);
             Assert.Equal(1, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.CreatedBy);
-            Assert.Equal(now, dto.CreatedAt);
-            Assert.Equal("modified@example.com", dto.ModifiedBy);
-            Assert.Equal(now.AddDays(1), dto.ModifiedAt);
-            Assert.Null(dto.ArchivedAt);
+            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.False(dto.IsArchived);
         }
         
         #region UnarchiveDataSource Tests
@@ -859,7 +843,7 @@ namespace deeplynx.tests
                 Description = "Previously archived",
                 Type = "Test",
                 ProjectId = pid,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                IsArchived = true
             };
             Context.DataSources.Add(archivedDataSource);
             await Context.SaveChangesAsync();
@@ -872,7 +856,7 @@ namespace deeplynx.tests
             Context.ChangeTracker.Clear();
             var reloaded = await Context.DataSources.FindAsync(archivedId);
             Assert.NotNull(reloaded);
-            Assert.Null(reloaded.ArchivedAt);
+            Assert.False(reloaded.IsArchived);
         }
 
         [Fact]
@@ -926,11 +910,9 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             };
             var dataSource2 = new DataSource
             {
@@ -942,11 +924,9 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = null
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = false
             };
             var dataSource3 = new DataSource
             {
@@ -958,11 +938,9 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                CreatedBy = "john.smith@company.com",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                ModifiedBy = "db.admin@company.com",
-                ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-45),
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                IsArchived = true
             };
             Context.DataSources.Add(dataSource);
             Context.DataSources.Add(dataSource2);

@@ -4,23 +4,13 @@ import { useCallback, useState } from "react";
 import React, { useEffect } from "react";
 import toast from "react-hot-toast";
 
-import TagButton from "@/app/(home)/components/TagButton";
-import {
-  updateRecord,
-  unAttachTagFromRecord,
-  getRecord,
-} from "@/app/lib/record_services.client";
-import { getAllTags } from "@/app/lib/tag_services";
+import TagButton from "@/app/(home)/components/TagButton"
+import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
+import { getTagsForProjects } from "@/app/lib/tag_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
-import { Column, FileViewerTableRow } from "@/app/(home)/types/types";
-import {
-  XMarkIcon,
-  PencilIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  EyeIcon,
-} from "@heroicons/react/24/outline";
+import { Column, FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
+import { XMarkIcon, PencilIcon, CheckCircleIcon, XCircleIcon, EyeIcon } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
@@ -77,13 +67,9 @@ export default function RecordViewClient({
   projectId,
   recordId,
 }: Props) {
-  const [record, setRecord] = useState<FileViewerTableRow | null>(
-    initialRecord
-  );
-  const [tags, setTags] = useState<{ id: string; name: string }[]>([]);
-  const [selectedTags, setSelectedTags] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [record, setRecord] = useState<FileViewerTableRow | null>(initialRecord);
+  const [tags, setTags] = useState<TagResponseDto[]>([]);
+  const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
@@ -149,6 +135,7 @@ export default function RecordViewClient({
             setSelectedTags(tags);
             setSelectedIds(tags.map((tag: { id: string }) => tag.id));
           }
+
         }
       } catch (error) {
         console.error("Error fetching record:", error);
@@ -176,19 +163,23 @@ export default function RecordViewClient({
 
           setHasFetchedRelatedRecords(true);
         }
+
       } catch (error) {
         console.error("Error fetching related records:", error);
       }
     };
     if (record?.className && record?.id) {
-      fetchRelatedRecords();
+      if (record?.className && record?.id) {
+        fetchRelatedRecords();
+      }
     }
   }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
-    const parseRelatedRecords = (
-      relatedRecords: RelatedRecord[] | undefined
-    ) => {
+    console.log("Related records: ");
+    console.log(relatedRecords);
+
+    const parseRelatedRecords = (relatedRecords: RelatedRecord[] | undefined) => {
       if (!relatedRecords) return [];
 
       const relationshipNames: string[] = [];
@@ -196,8 +187,8 @@ export default function RecordViewClient({
       const names: string[] = [];
       const recordIds: number[] = [];
 
-      relatedRecords.forEach((item) => {
-        if ("relationshipName" in item) {
+      relatedRecords.forEach(item => {
+        if ('relationshipName' in item) {
           relationshipNames.push(item.relationshipName);
         } else {
           if (item.recordId == recordId) {
@@ -212,15 +203,17 @@ export default function RecordViewClient({
       const relatedRecordsArray: ParsedRecord[] = [];
       const relationshipIndex = 0;
 
+      console.log('relationshipNames:', relationshipNames);
+      console.log('classNames:', classNames);
+      console.log('names:', names);
+      console.log('recordIds:', recordIds);
+
       relatedRecords.forEach((item, _) => {
-        if (!("relationshipName" in item)) {
+        if (!('relationshipName' in item)) {
           if (item.recordId == recordId) {
             return;
           }
-          const relationship =
-            relationshipNames.length > relationshipIndex
-              ? relationshipNames[relationshipIndex]
-              : "";
+          const relationship = relationshipNames.length > relationshipIndex ? relationshipNames[relationshipIndex] : '';
           relatedRecordsArray.push({
             relationship: relationship,
             id: item.recordId.toString(),
@@ -231,10 +224,7 @@ export default function RecordViewClient({
                 <button
                   className="text-blue-500 cursor-pointer"
                   onClick={async () => {
-                    const selectedRecord = await getRecord(
-                      Number(projectId),
-                      item.recordId
-                    );
+                    const selectedRecord = await getRecord(Number(projectId), item.recordId);
                     setSelectedRecord(selectedRecord);
                     setRecordViewModalOpen(true);
                   }}
@@ -244,12 +234,7 @@ export default function RecordViewClient({
                 <button
                   className="text-red-500 ml-2 cursor-pointer border rounded px-1"
                   onClick={() => {
-                    handleToggleToRemove(
-                      item.recordId.toString(),
-                      item.name,
-                      item.className,
-                      "relatedRecord"
-                    );
+                    handleToggleToRemove(item.recordId.toString(), item.name, item.className, 'relatedRecord');
                   }}
                 >
                   Remove Link
@@ -261,6 +246,7 @@ export default function RecordViewClient({
       });
 
       return relatedRecordsArray;
+      return relatedRecordsArray;
     };
 
     const parsedRecords = parseRelatedRecords(relatedRecords);
@@ -270,7 +256,7 @@ export default function RecordViewClient({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const data = await getAllTags(Number(projectId));
+        const data = await getTagsForProjects(projectId.toString(), [projectId.toString()]);
         setTags(data);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -281,7 +267,7 @@ export default function RecordViewClient({
 
   const handleTagSelectionChange = async (selected: string[]) => {
     if (JSON.stringify(selected) !== JSON.stringify(selectedIds)) {
-      const newTags = tags.filter((tag) => selected.includes(tag.id));
+      const newTags = tags.filter(tag => selected.includes(tag.id.toString()));
       setSelectedTags(newTags);
       setSelectedIds(selected);
 
@@ -308,48 +294,29 @@ export default function RecordViewClient({
         Number(tagId)
       );
     }
-    setSelectedTags((prevTags) =>
-      prevTags.filter((tag) => !tagsToRemove.includes(tag.id))
-    );
-    setSelectedIds((prevIds) =>
-      prevIds.filter((id) => !tagsToRemove.includes(id))
-    );
+    setSelectedTags((prevTags) => prevTags.filter(tag => !tagsToRemove.includes(tag.id.toString())));
+    setSelectedIds((prevIds) => prevIds.filter(id => !tagsToRemove.includes(id)));
     setTagsToRemove([]);
     setIsEditing(false);
+
   };
 
   const handleConfirmUnlink = async () => {
-    if (confirmationType === "tag") {
+    if (confirmationType === 'tag') {
       if (idToRemove) {
         setTagsToRemove((prev) =>
-          prev.includes(idToRemove)
-            ? prev.filter((id) => id !== idToRemove)
-            : [...prev, idToRemove]
+          prev.includes(idToRemove) ? prev.filter(id => id !== idToRemove) : [...prev, idToRemove]
         );
         toast.success(`Tag ${selectedNameToRemove} removed successfully.`);
       }
-    } else if (confirmationType === "relatedRecord") {
+    } else if (confirmationType === 'relatedRecord') {
       if (idToRemove && selectedOriginId && selectedDestinationId) {
         try {
-          if (
-            await getEdge(
-              projectId,
-              null,
-              String(selectedOriginId),
-              String(selectedDestinationId)
-            )
-          ) {
-            await deleteEdge(
-              projectId,
-              null,
-              String(selectedOriginId),
-              String(selectedDestinationId)
-            );
+          console.log("deleting edge")
+          if (await getEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId))) {
+            await deleteEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId));
           }
-          await queryKuzu(
-            projectId,
-            `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
-          );
+          await queryKuzu(projectId, `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`);
           setParsedRelatedRecords((prevRecords) =>
             prevRecords.filter((record) => record.id !== idToRemove)
           );
@@ -451,13 +418,12 @@ export default function RecordViewClient({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value: typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   const tabs = [
@@ -521,17 +487,10 @@ export default function RecordViewClient({
                     }}
                   >
                     {tag.name}
-                    {!tagsToRemove.includes(tag.id) && isEditing && (
+                    {!tagsToRemove.includes(tag.id.toString()) && isEditing && (
                       <XMarkIcon
                         className="w-4 h-4 ml-1 cursor-pointer text-red-600"
-                        onClick={() =>
-                          handleToggleToRemove(
-                            tag.id,
-                            tag.name,
-                            record?.name || "Unknown Record",
-                            "tag"
-                          )
-                        }
+                        onClick={() => handleToggleToRemove(tag.id.toString(), tag.name, record?.name || "Unknown Record", 'tag')}
                       />
                     )}
                   </span>
@@ -548,7 +507,31 @@ export default function RecordViewClient({
               actionButtons={false}
               tableClassName=".table-bordered"
             />
+            <GenericTable
+              columns={relatedRecordsColumns}
+              data={parsedRelatedRecords}
+              title="Related Records:"
+              bordered
+              searchBar={false}
+              enablePagination={false}
+              actionButtons={false}
+              tableClassName=".table-bordered"
+            />
           </div>
+          <ConfirmationModal
+            isOpen={isModalOpen}
+            onClose={() => setModalOpen(false)}
+            onConfirm={handleConfirmUnlink}
+            tagName={selectedNameToRemove}
+            recordName={selectedRecordNameToRemove}
+          />
+          <RecordViewModal
+            isOpen={isRecordViewModalOpen}
+            onClose={() => setRecordViewModalOpen(false)}
+            record={selectedRecord}
+            relatedRecords={parsedRelatedRecords}
+            tags={tags}
+          />
           <ConfirmationModal
             isOpen={isModalOpen}
             onClose={() => setModalOpen(false)}
@@ -582,8 +565,9 @@ export default function RecordViewClient({
       </div>
 
       <div className="divider"></div>
+      <div className="divider"></div>
 
       <Tabs tabs={tabs} className={""}></Tabs>
     </div>
   );
-}
+};

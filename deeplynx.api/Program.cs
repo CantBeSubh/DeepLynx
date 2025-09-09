@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 using deeplynx.datalayer.Models;
+using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
@@ -47,7 +48,9 @@ try
         {
             policy
                 .WithOrigins(
-                    "http://localhost:3000") //Added this to make work in Dev env, might need to change for Prod env.
+                      "http://localhost:3000",
+                      "http://ui:3000",
+                      "https://nexus.dev.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -108,6 +111,9 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+
+    Console.WriteLine("Program cs: " + connectionString);
+
     builder.Services.AddTransient<IKuzuDatabaseManager>(provider => 
     {
         var configuration = provider.GetRequiredService<IConfiguration>();
@@ -118,6 +124,14 @@ try
     builder.Services.AddTransient<IHistoricalRecordBusiness, HistoricalRecordBusiness>();
     builder.Services.AddTransient<IHistoricalEdgeBusiness, HistoricalEdgeBusiness>();
     builder.Services.AddTransient<IEventBusiness, EventBusiness>();
+    builder.Services.AddTransient<ISubscriptionBusiness, SubscriptionBusiness>();
+    builder.Services.AddTransient<FileBusiness>();
+    builder.Services.AddTransient<FileFilesystemBusiness>();
+    builder.Services.AddTransient<FileAzureBusiness>();
+    builder.Services.AddTransient<FileS3Business>();
+    builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
+
+    builder.Services.AddSingleton(CacheBusiness.Instance);
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
@@ -234,10 +248,25 @@ try
                 { 
                     Name = "Event", 
                     Description = "Handles Event fetching by project and user subscriptions." 
+                },
+                new OpenApiTag 
+                { 
+                    Name = "Subscription", 
+                    Description = "Handles operations related to subscription creation, retrieval, and deletion." 
+                },
+                new OpenApiTag
+                {
+                    Name = "File",
+                    Description = "Handles operations related to file management"
                 }
             };
         });
     });
+
+    /* ╔════════════════════════════╗
+       ║      Apply Migrations      ║
+       ╚════════════════════════════╝ */
+    await MigrationRunner.ApplyMigrations(connectionString);
 
     var app = builder.Build();
 
@@ -271,8 +300,7 @@ try
             </div>"));
     }
 
-    app.UseCors("AllowAll"); //Added this to make work in Dev env, might need to change for Prod env.
-    app.UseHttpsRedirection();
+    app.UseCors("AllowAll"); 
     app.UseAuthorization();
     app.MapControllers();
     app.Run();

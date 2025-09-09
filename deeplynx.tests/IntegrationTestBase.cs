@@ -1,5 +1,6 @@
 using deeplynx.datalayer.Models;
 using deeplynx.tests;
+using DotNetEnv;
 using Testcontainers.PostgreSql;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +33,11 @@ public class TestSuiteFixture : IAsyncLifetime
         
         // Apply migrations only once
         await Context.Database.MigrateAsync();
+        
+        // Apply env variables without exposing values in tests
+        var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
+        var envFilePath = Path.Combine(projectRoot, ".env");
+        Env.Load(envFilePath);
     }
     
     //Runs at the end of every test suite
@@ -79,6 +85,7 @@ public class IntegrationTestBase : IAsyncLifetime
     //Runs after every test in the test suite
     public async Task DisposeAsync()
     {
+        Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         await Context.DisposeAsync();
     }
 

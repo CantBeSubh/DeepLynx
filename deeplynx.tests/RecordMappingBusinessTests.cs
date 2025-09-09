@@ -64,7 +64,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
 
         var result = await _recordMappingBusiness.CreateRecordMapping(pid, dto);
         result.Id.Should().BeGreaterThan(0);
-        result.CreatedAt.Should().BeOnOrAfter(now);
+        result.LastUpdatedAt.Should().BeOnOrAfter(now);
         result.ClassId.Should().Be(cid);
         result.TagId.Should().Be(tid);
         result.DataSourceId.Should().Be(did);
@@ -123,7 +123,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
     public async Task CreateRecordMapping_Fails_IfDeletedProjectId()
     {
         var project = await Context.Projects.FindAsync(pid);
-        project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        project.IsArchived = true;
         Context.Projects.Update(project);
         await Context.SaveChangesAsync();
         var dto = new CreateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world"}, ClassId = cid, TagId = tid, DataSourceId = did};
@@ -171,8 +171,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
         };
     
         var recordMapping2 = new RecordMapping
@@ -182,9 +182,9 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            IsArchived = true
         };
         Context.RecordMappings.Add(recordMapping1);
         Context.RecordMappings.Add(recordMapping2);
@@ -204,8 +204,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             ProjectId = pid,
             DataSourceId = did,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -223,8 +223,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -242,9 +242,9 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             ProjectId = pid,
             DataSourceId = did,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            IsArchived = true
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -262,8 +262,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -271,7 +271,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         var dto = new UpdateRecordMappingRequestDto {RecordParams = new JsonObject{["hello"] = "world2"}, ClassId = cid, TagId = tid, DataSourceId = did};
         var updatedResult = await _recordMappingBusiness.UpdateRecordMapping(pid, recordMapping1.Id, dto);
         
-        updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+        updatedResult.LastUpdatedAt.Should().BeOnOrAfter(DateTime.Now);
     }
 
     [Fact]
@@ -285,8 +285,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
         };
 
         Context.RecordMappings.Add(originalMapping);
@@ -304,14 +304,13 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.NotNull(result);
         Assert.Equal(originalMapping.Id, result.Id);
         Assert.Equal("updated_value", result?.RecordParams?["key"]?.ToString());
-        Assert.NotNull(result?.ModifiedAt);
+        Assert.NotNull(result?.LastUpdatedAt);
 
         // Verify it was actually updated in database
         var updatedMapping = await Context.RecordMappings.FindAsync(originalMapping.Id);
         Assert.NotNull(updatedMapping);
         Assert.Contains("updated_value", updatedMapping.RecordParams);
-        Assert.NotNull(updatedMapping.ModifiedAt);
-        
+        Assert.NotNull(updatedMapping.LastUpdatedAt);
         // Ensure that mapping update event was logged
         var eventList = Context.Events.ToList();
         eventList.Count.Should().Be(1);
@@ -349,8 +348,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -360,10 +359,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         
         var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
         Assert.NotNull(archivedRecordMapping);
-        Assert.NotNull(archivedRecordMapping.ArchivedAt);
-        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
-        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow);
-        
+        Assert.True(archivedRecordMapping.IsArchived);
         // Ensure that the mapping soft delete event was logged
         var eventList = Context.Events.ToList();
         eventList.Count.Should().Be(1);
@@ -386,8 +382,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -410,8 +406,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -425,9 +421,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         
         var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
         Assert.NotNull(archivedRecordMapping);
-        Assert.NotNull(archivedRecordMapping.ArchivedAt);
-        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
-        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+        Assert.True(archivedRecordMapping.IsArchived);
     }
     
     [Fact]
@@ -441,8 +435,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -456,9 +450,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         
         var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
         Assert.NotNull(archivedRecordMapping);
-        Assert.NotNull(archivedRecordMapping.ArchivedAt);
-        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
-        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+        Assert.True(archivedRecordMapping.IsArchived);
+       
     }
     
     [Fact]
@@ -472,8 +465,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             TagId = tid,
             DataSourceId = did,
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
         };
         Context.RecordMappings.Add(recordMapping1);
         await Context.SaveChangesAsync();
@@ -487,9 +480,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         
         var archivedRecordMapping = await Context.RecordMappings.FindAsync(recordMapping1.Id);
         Assert.NotNull(archivedRecordMapping);
-        Assert.NotNull(archivedRecordMapping.ArchivedAt);
-        Assert.True(archivedRecordMapping.ArchivedAt >= beforeArchive);
-        Assert.True(archivedRecordMapping.ArchivedAt <= DateTime.UtcNow); 
+        Assert.True(archivedRecordMapping.IsArchived);
     }
     
     #region UnarchiveRecordMapping Tests
@@ -504,8 +495,8 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             ClassId = cid,
             TagId = tid,
             DataSourceId = did,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-1), DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = true
         };
         Context.RecordMappings.Add(archivedMapping);
         await Context.SaveChangesAsync();
@@ -515,7 +506,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.True(result);
         var refreshed = await Context.RecordMappings.FindAsync(archivedMapping.Id);
         Assert.NotNull(refreshed);
-        Assert.Null(refreshed.ArchivedAt);
+        Assert.False(refreshed.IsArchived);
     }
 
     [Fact]
@@ -536,7 +527,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
             ClassId = cid,
             TagId = tid,
             DataSourceId = did,
-            ArchivedAt = null
+            IsArchived = false
         };
         Context.RecordMappings.Add(mapping);
         await Context.SaveChangesAsync();

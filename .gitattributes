@@ -1,0 +1,2 @@
+# based on recommendation for windows users using shell files
+*.sh text eol=lf 

@@ -1,8 +1,11 @@
 using System.Linq.Expressions;
+using System.Runtime.InteropServices.JavaScript;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
+using DuckDB.NET.Native;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -30,14 +33,27 @@ public class QueryBusiness : IQueryBusiness
     /// Build a query
     /// </summary>
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
+    /// <param name="textSearch">Full text search phrase</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> BuildAQuery(CustomQueryRequestDto[] request)
+    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch)
     {
         IQueryable<HistoricalRecord> historicalRecords = _context.HistoricalRecords;
         Expression<Func<HistoricalRecord, bool>> predicate = u => true;
 
         foreach (var query in request)
         {
+            if (query.Operator == "KEY_VALUE")
+            {
+                
+                // var contained = JsonSerializer.Deserialize<JsonElement>(query.Json);
+                Expression<Func<HistoricalRecord, bool>> next =
+                    e => EF.Functions.JsonContains(EF.Property<string>(e, query.Filter),(query.Json!));
+
+                predicate = query.Connector == "OR"
+                    ? Or(predicate, next)
+                    : And(predicate, next);
+            }
+            
             if (query.Operator == "LIKE")
             {
                 Expression<Func<HistoricalRecord, bool>> next =
@@ -78,7 +94,6 @@ public class QueryBusiness : IQueryBusiness
                         : And(predicate, next);
                 }
             }
-            //TODO: Determine if less than, greater than should only be available to the DateTime columns 
             if (query.Operator == ">")
             {
                 DateTime.TryParse(query.Value, out var dateVal);
@@ -102,9 +117,32 @@ public class QueryBusiness : IQueryBusiness
             }
             
         }
+        
+        // If we have a full-text query, start from a composable raw SQL that includes JSONB -> text
+        if (!string.IsNullOrWhiteSpace(textSearch))
+        {
+            // NOTE: This is safe from SQL injection because interpolated values are parameterized.
+            historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
+            SELECT *
+            FROM deeplynx.historical_records
+            WHERE to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(created_by, '') || ' ' ||
+                coalesce(modified_by, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            ) @@ websearch_to_tsquery('english', {textSearch})
+        ");
+        }
 
+        // Compose your dynamic subset on top (EF will AND the WHEREs)
         historicalRecords = historicalRecords.Where(predicate);
-
        
         return historicalRecords
             .Select(r => new HistoricalRecordResponseDto
@@ -122,11 +160,8 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt,
                 Description = r.Description
             })
@@ -199,8 +234,7 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(original_id, '') || ' ' ||
                 coalesce(data_source_name, '') || ' ' ||
                 coalesce(project_name, '') || ' ' ||
-                coalesce(created_by, '') || ' ' ||
-                coalesce(modified_by, '') || ' ' ||
+               coalesce(last_updated_by, '') || ' ' ||
                 coalesce(properties::text, '') || ' ' ||
                 coalesce(tags::text, '')
             ) @@ to_tsquery('english', @query);
@@ -228,11 +262,8 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 Description = r.Description, 
                 LastUpdatedAt = r.LastUpdatedAt
             });

@@ -1,13 +1,12 @@
 // auth.ts (root)
 import NextAuth from "next-auth";
-import Okta from "next-auth/providers/okta"
+import Okta from "next-auth/providers/okta";
 
-export const {
-    handlers,
-    auth,
-    signIn,
-    signOut,
-} = NextAuth({
+
+export const runtime = "nodejs";
+
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: [
         Okta({
             clientId: process.env.AUTH_OKTA_ID!,
@@ -15,9 +14,9 @@ export const {
             issuer: process.env.AUTH_OKTA_ISSUER,
             authorization: {
                 params: {
-                    scope: "openid profile email", // Added email scope
-                    redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_LINK,
-                },
+                    scope: "openid profile email email", // Added email scope
+                    redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_LINK
+                }
             },
         })
     ],

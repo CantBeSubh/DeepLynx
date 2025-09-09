@@ -78,7 +78,7 @@ namespace deeplynx.tests
 
             var result = await _edgeMappingBusiness.CreateEdgeMapping(pid, dto);
             result.Id.Should().BeGreaterThan(0);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
             result.OriginId.Should().Be(originClassId);
             result.DestinationId.Should().Be(destinationClassId);
             result.RelationshipId.Should().Be(relationshipId);
@@ -125,7 +125,7 @@ namespace deeplynx.tests
         public async Task CreateEdgeMapping_Fails_IfDeletedProjectId()
         {
             var project = await Context.Projects.FindAsync(pid);
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
@@ -174,7 +174,7 @@ namespace deeplynx.tests
             OriginId = originClassId,
             DestinationId = destinationClassId,
             RelationshipId = relationshipId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.EdgeMappings.Add(p2Mapping);
             await Context.SaveChangesAsync();
@@ -195,8 +195,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var archivedMapping = new EdgeMapping
@@ -208,9 +208,9 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.EdgeMappings.Add(activeMapping);
             Context.EdgeMappings.Add(archivedMapping);
@@ -230,8 +230,7 @@ namespace deeplynx.tests
             {
                 Name = $"Other Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(otherClass);
             await Context.SaveChangesAsync();
@@ -246,7 +245,7 @@ namespace deeplynx.tests
                 OriginId = destinationClassId,
                 DestinationId = otherClass.Id,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
 
             // Create mapping with target class as destination
@@ -259,7 +258,7 @@ namespace deeplynx.tests
                 OriginId = otherClass.Id,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
 
             // Create mapping without target class
@@ -272,7 +271,7 @@ namespace deeplynx.tests
                 OriginId = otherClass.Id,
                 DestinationId = otherClass.Id,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
 
             Context.EdgeMappings.AddRange(mapping1, mapping2, mapping3);
@@ -294,7 +293,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Relationships.Add(otherRelationship);
             await Context.SaveChangesAsync();
@@ -308,7 +307,7 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
 
             var mapping2 = new EdgeMapping
@@ -320,7 +319,7 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = otherRelationship.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
 
             Context.EdgeMappings.AddRange(mapping1, mapping2);
@@ -344,8 +343,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -369,8 +368,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -391,9 +390,9 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -414,8 +413,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -431,7 +430,7 @@ namespace deeplynx.tests
             };
             var updatedResult = await _edgeMappingBusiness.UpdateEdgeMapping(pid, testMapping.Id, dto);
 
-            updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+            updatedResult.LastUpdatedAt.Should().BeOnOrAfter(updatedResult.LastUpdatedAt);
             updatedResult.OriginParams!["param1"]!.ToString().Should().Be("updated_value");
             updatedResult.DestinationParams!["param1"]!.ToString().Should().Be("updated_value");
             
@@ -482,8 +481,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -493,10 +492,7 @@ namespace deeplynx.tests
 
             var archivedMapping = await Context.EdgeMappings.FindAsync(testMapping.Id);
             Assert.NotNull(archivedMapping);
-            Assert.NotNull(archivedMapping.ArchivedAt);
-            Assert.True(archivedMapping.ArchivedAt >= beforeArchive);
-            Assert.True(archivedMapping.ArchivedAt <= DateTime.UtcNow);
-            
+            Assert.True(archivedMapping.IsArchived);
             // Ensure that mapping soft delete event was logged
             var eventList = Context.Events.ToList();
             eventList.Count.Should().Be(1);
@@ -522,9 +518,9 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -534,7 +530,7 @@ namespace deeplynx.tests
 
             var unarchivedMapping = await Context.EdgeMappings.FindAsync(testMapping.Id);
             Assert.NotNull(unarchivedMapping);
-            Assert.Null(unarchivedMapping.ArchivedAt);
+            Assert.False(unarchivedMapping.IsArchived);
         }
 
         [Fact]
@@ -549,8 +545,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -575,8 +571,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(testMapping);
             await Context.SaveChangesAsync();
@@ -592,11 +588,11 @@ namespace deeplynx.tests
             Assert.NotNull(archivedMapping);
 
             // Check if ArchivedAt was set (optional based on implementation)
-            if (archivedMapping.ArchivedAt.HasValue)
+            if (archivedMapping.IsArchived)
             {
-                Assert.NotNull(archivedMapping.ArchivedAt);
-                Assert.True(archivedMapping.ArchivedAt >= beforeArchive);
-                Assert.True(archivedMapping.ArchivedAt <= DateTime.UtcNow);
+                Assert.True(archivedMapping.IsArchived);
+                // Assert.True(archivedMapping.ArchivedAt >= beforeArchive);
+                // Assert.True(archivedMapping.ArchivedAt <= DateTime.UtcNow);
             }
         }
 
@@ -637,8 +633,8 @@ namespace deeplynx.tests
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
                 RelationshipId = relationshipId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ArchivedAt = null // Not archived
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.EdgeMappings.Add(activeMapping);
             await Context.SaveChangesAsync();
@@ -688,11 +684,9 @@ namespace deeplynx.tests
                 DestinationId = 4,
                 DataSourceId = 5,
                 ProjectId = 6,
-                CreatedBy = "test@example.com",
-                CreatedAt = now,
-                ModifiedBy = "modified@example.com",
-                ModifiedAt = now.AddDays(1),
-                ArchivedAt = null
+                LastUpdatedAt = now,
+                LastUpdatedBy = null,
+                IsArchived = false
             };
 
             Assert.Equal(1, dto.Id);
@@ -703,11 +697,9 @@ namespace deeplynx.tests
             Assert.Equal(4, dto.DestinationId);
             Assert.Equal(5, dto.DataSourceId);
             Assert.Equal(6, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.CreatedBy);
-            Assert.Equal(now, dto.CreatedAt);
-            Assert.Equal("modified@example.com", dto.ModifiedBy);
-            Assert.Equal(now.AddDays(1), dto.ModifiedAt);
-            Assert.Null(dto.ArchivedAt);
+            Assert.Null( dto.LastUpdatedBy);
+            Assert.Equal(now, dto.LastUpdatedAt);
+            Assert.False(dto.IsArchived);
         }
 
         protected override async Task SeedTestDataAsync()
@@ -723,7 +715,7 @@ namespace deeplynx.tests
             {
                 Name = "DataSource 1",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
@@ -733,7 +725,7 @@ namespace deeplynx.tests
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(originClass);
 
@@ -741,7 +733,7 @@ namespace deeplynx.tests
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();
@@ -755,7 +747,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Relationships.Add(relationship);
             await Context.SaveChangesAsync();

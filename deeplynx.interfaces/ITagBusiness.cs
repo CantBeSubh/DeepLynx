@@ -7,7 +7,7 @@ namespace deeplynx.interfaces;
 
 public interface ITagBusiness
 {
-    Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived);
+    Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived);
     Task<TagResponseDto> GetTag(long projectId, long tagId, bool hideArchived);
     Task<TagResponseDto> CreateTag(long projectId, CreateTagRequestDto tagRequestDto);
     Task<List<TagResponseDto>> BulkCreateTags(long projectId, List<CreateTagRequestDto> tags);

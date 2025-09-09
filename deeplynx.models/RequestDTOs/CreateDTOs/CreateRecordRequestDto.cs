@@ -32,8 +32,11 @@ public class CreateRecordRequestDto
     public long? ClassId { get; set; }
     
     [JsonPropertyName("class_name")]
-    public string? ClassName { get; set; }
+    public string? ClassName { get; set; } 
     
     [JsonPropertyName("tags")]
     public List<string>? Tags { get; set; }
+    
+    [JsonPropertyName("sensitivity_labels")]
+    public List<string>? SensitivityLabels { get; set; }
 }

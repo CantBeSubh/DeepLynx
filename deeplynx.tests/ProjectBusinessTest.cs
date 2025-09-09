@@ -36,6 +36,11 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            Environment.SetEnvironmentVariable("FILE_STORAGE_METHOD", "filesystem");
+            Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", "./storage/");
+            Environment.SetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING", "azure-example-connection-string");
+            Environment.SetEnvironmentVariable("AWS_S3_CONNECTION_STRING", "aws-example-connection-string");
+
             _eventBusiness = new EventBusiness(Context);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
@@ -66,16 +71,16 @@ namespace deeplynx.tests
             var result = await _projectBusiness.CreateProject(dto);
             
             result.Id.Should().BeGreaterThan(0);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
             result.Name.Should().Be(dto.Name);
             result.Description.Should().Be(dto.Description);
             result.Abbreviation.Should().Be(dto.Abbreviation);
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = result.Id,
                 Operation = "create",
@@ -87,7 +92,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateProject_Creates_DefaultClasses()
         {
-            var now = DateTime.UtcNow;
             var dto = new CreateProjectRequestDto
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -97,17 +101,17 @@ namespace deeplynx.tests
            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
-
-            var classResult = await _classBusiness.GetAllClasses(project.Id, true);
-            classResult.Count.Should().Be(2);
+            var classResult = await _classBusiness.GetAllClasses([project.Id], true);
+            classResult.Count.Should().Be(3);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");
+            classResult[2].Name.Should().Be("File");
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = project.Id,
                 Operation = "create",
@@ -129,17 +133,17 @@ namespace deeplynx.tests
            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
-
-            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
+            
+            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources([project.Id], true);
             dataSourceResult.Count.Should().Be(1);
             dataSourceResult[0].Name.Should().Be("Default Data Source");
             dataSourceResult[0].Description.Should().Be("This data source was created alongside the project for ease of use.");
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(4);
-            // two classes and a datasource will be logged before project event is logged
-            eventList[3].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(5);
+            // three classes and a datasource will be logged before project event is logged
+            eventList[4].Should().BeEquivalentTo(new
             {
                 ProjectId = project.Id,
                 Operation = "create",
@@ -185,16 +189,17 @@ namespace deeplynx.tests
             var activeProject = new Project
             {
                 Name = $"Active Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
 
             var archivedProject = new Project
             {
                 Name = $"Archived Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
+
             };
 
             Context.Projects.Add(activeProject);
@@ -240,9 +245,10 @@ namespace deeplynx.tests
             var testProject = new Project
             {
                 Name = $"Deleted Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
+
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -262,8 +268,8 @@ namespace deeplynx.tests
                 Name = $"Original Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Original Description",
                 Abbreviation = "ORG",
-                CreatedAt = originalCreatedAt,
-                CreatedBy = null,
+                LastUpdatedAt = originalCreatedAt,
+                LastUpdatedBy = null,
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -280,9 +286,7 @@ namespace deeplynx.tests
 
            
             var updatedResult = await _projectBusiness.UpdateProject(testProject.Id, dto);
-
-          
-            updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+            
             updatedResult.Name.Should().Be(dto.Name);
             updatedResult.Description.Should().Be(dto.Description);
             updatedResult.Abbreviation.Should().Be(dto.Abbreviation);
@@ -327,8 +331,8 @@ namespace deeplynx.tests
             var testProject = new Project
             {
                 Name = $"Project to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -351,8 +355,8 @@ namespace deeplynx.tests
             var testProject = new Project
             {
                 Name = $"Project to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -368,10 +372,9 @@ namespace deeplynx.tests
 
             var archivedProject = await Context.Projects.FindAsync(testProject.Id);
             archivedProject.Should().NotBeNull();
-            archivedProject!.ArchivedAt.Should().NotBeNull();
-            archivedProject.ArchivedAt.Should().BeOnOrAfter(beforeArchive);
-            archivedProject.ArchivedAt.Should().BeOnOrBefore(DateTime.UtcNow);
-            
+            archivedProject!.IsArchived.Should().BeTrue();
+            archivedProject.LastUpdatedAt.Should().BeOnOrAfter(beforeArchive);
+            archivedProject.LastUpdatedAt.Should().BeOnOrBefore(DateTime.UtcNow);
             // Ensure that project soft delete event was logged
             var eventList = Context.Events.ToList();
             eventList.Should().HaveCount(1);
@@ -391,17 +394,15 @@ namespace deeplynx.tests
             var testProject = new Project
             {
                 Name = $"Archived Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
 
-           
             var unarchivedResult = await _projectBusiness.UnarchiveProject(testProject.Id);
 
-          
             unarchivedResult.Should().BeTrue();
 
             // Force EF to sync with database
@@ -409,7 +410,7 @@ namespace deeplynx.tests
 
             var unarchivedProject = await Context.Projects.FindAsync(testProject.Id);
             unarchivedProject.Should().NotBeNull();
-            unarchivedProject!.ArchivedAt.Should().BeNull();
+            unarchivedProject!.IsArchived.Should().BeFalse(); 
         }
 
         [Fact]
@@ -456,8 +457,8 @@ namespace deeplynx.tests
             var activeProject = new Project
             {
                 Name = $"Active Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ArchivedAt = null // Not archived
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Projects.Add(activeProject);
             await Context.SaveChangesAsync();
@@ -473,9 +474,9 @@ namespace deeplynx.tests
             var result = await _projectBusiness.GetProjectStats(TestProjectId);
 
           
-            result.classes.Should().BeGreaterThan(0);
-            result.records.Should().BeGreaterThan(0);
-            result.datasources.Should().BeGreaterThan(0);
+            result.classes.Should().Be(1);    // 1 test class
+            result.records.Should().Be(1);    // 1 test record  
+            result.datasources.Should().Be(1); //1 datasource
         }
 
         [Fact]
@@ -485,7 +486,7 @@ namespace deeplynx.tests
             var secondProject = new Project
             {
                 Name = $"Second Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Projects.Add(secondProject);
             await Context.SaveChangesAsync();
@@ -497,7 +498,7 @@ namespace deeplynx.tests
                 Type = "filesystem",
                 Config = config.ToString(),
                 ProjectId = secondProject.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.ObjectStorages.Add(secondObjectStorage);
             await Context.SaveChangesAsync();
@@ -507,7 +508,7 @@ namespace deeplynx.tests
             {
                 Name = "Second Test Class",
                 ProjectId = secondProject.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(secondClass);
 
@@ -515,7 +516,7 @@ namespace deeplynx.tests
             {
                 Name = "Second Test DataSource",
                 ProjectId = secondProject.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(secondDataSource);
             await Context.SaveChangesAsync();
@@ -528,7 +529,7 @@ namespace deeplynx.tests
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 OriginalId = "multi-original-1",
                 Description = "Multi project test description 1"
             };
@@ -540,7 +541,7 @@ namespace deeplynx.tests
                 DataSourceId = secondDataSource.Id,
                 ClassId = secondClass.Id,
                 Properties = "{}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 OriginalId = "multi-original-2",
                 Description = "Multi project test description 2"
             };
@@ -562,8 +563,7 @@ namespace deeplynx.tests
                 OriginalId = record1.OriginalId,
                 Tags = "[]",
                 Description = record1.Description,
-                CreatedAt = record1.CreatedAt,
-                LastUpdatedAt = record1.CreatedAt
+                LastUpdatedAt = record1.LastUpdatedAt
             };
 
             var historicalRecord2 = new HistoricalRecord
@@ -580,8 +580,7 @@ namespace deeplynx.tests
                 OriginalId = record2.OriginalId,
                 Tags = "[]",
                 Description = record2.Description,
-                CreatedAt = record2.CreatedAt,
-                LastUpdatedAt = record2.CreatedAt
+                LastUpdatedAt = record2.LastUpdatedAt
             };
 
             Context.HistoricalRecords.AddRange(historicalRecord1, historicalRecord2);
@@ -625,11 +624,9 @@ namespace deeplynx.tests
                 Name = "Test Project",
                 Description = "Test Description",
                 Abbreviation = "TST",
-                CreatedBy = "test@example.com",
-                CreatedAt = now,
-                ModifiedBy = "modified@example.com",
-                ModifiedAt = now.AddDays(1),
-                ArchivedAt = null
+                LastUpdatedBy = "test@example.com",
+                LastUpdatedAt = now,
+                IsArchived = false
             };
 
           
@@ -637,11 +634,8 @@ namespace deeplynx.tests
             dto.Name.Should().Be("Test Project");
             dto.Description.Should().Be("Test Description");
             dto.Abbreviation.Should().Be("TST");
-            dto.CreatedBy.Should().Be("test@example.com");
-            dto.CreatedAt.Should().Be(now);
-            dto.ModifiedBy.Should().Be("modified@example.com");
-            dto.ModifiedAt.Should().Be(now.AddDays(1));
-            dto.ArchivedAt.Should().BeNull();
+            dto.LastUpdatedBy.Should().Be("test@example.com");
+            dto.IsArchived.Should().BeFalse();
         }
 
         protected override async Task SeedTestDataAsync()
@@ -652,7 +646,9 @@ namespace deeplynx.tests
                 Name = "Test Project",
                 Description = "Test project for unit tests",
                 Abbreviation = "TST",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+                
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -662,7 +658,8 @@ namespace deeplynx.tests
             {
                 Name = "Test Class",
                 ProjectId = TestProjectId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -672,7 +669,8 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = TestProjectId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
             };
             Context.DataSources.Add(testDataSource);
             await Context.SaveChangesAsync();
@@ -685,9 +683,10 @@ namespace deeplynx.tests
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 OriginalId = "test-original-1",
-                Description = "Test record for unit tests"
+                Description = "Test record for unit tests",
+                IsArchived = false
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();

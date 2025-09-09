@@ -51,7 +51,7 @@ public class ProjectBusiness : IProjectBusiness
 
         if (hideArchived)
         {
-            projects = projects.Where(p => p.ArchivedAt == null).ToList();
+            projects = projects.Where(p => !p.IsArchived).ToList();
         }
 
         return projects
@@ -61,11 +61,9 @@ public class ProjectBusiness : IProjectBusiness
                 Name = p.Name,
                 Description = p.Description,
                 Abbreviation = p.Abbreviation,
-                CreatedBy = p.CreatedBy,
-                CreatedAt = p.CreatedAt,
-                ModifiedBy = p.ModifiedBy,
-                ModifiedAt = p.ModifiedAt,
-                ArchivedAt = p.ArchivedAt,
+                LastUpdatedAt = p.LastUpdatedAt,
+                LastUpdatedBy = p.LastUpdatedBy,
+                IsArchived = p.IsArchived,
             });
     }
 
@@ -87,7 +85,7 @@ public class ProjectBusiness : IProjectBusiness
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
         
-        if (hideArchived && project.ArchivedAt != null)
+        if (hideArchived && project.IsArchived)
         {
             throw new KeyNotFoundException($"Project with id {projectId} is archived");
         }
@@ -98,11 +96,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt,
-            ModifiedBy = project.ModifiedBy,
-            ModifiedAt = project.ModifiedAt,
-            ArchivedAt = project.ArchivedAt,
+            LastUpdatedAt = project.LastUpdatedAt,
+            LastUpdatedBy = project.LastUpdatedBy,
+            IsArchived = project.IsArchived,
         };
     }
 
@@ -119,8 +115,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
 
         _context.Projects.Add(project);
@@ -132,6 +128,7 @@ public class ProjectBusiness : IProjectBusiness
         {
             new CreateClassRequestDto {Name = "Timeseries"},
             new CreateClassRequestDto {Name = "Report"},
+            new CreateClassRequestDto {Name = "File"}
         };
         await _classBusiness.BulkCreateClasses(project.Id, defaultClasses);
         
@@ -149,28 +146,34 @@ public class ProjectBusiness : IProjectBusiness
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
-            config["mountPath"] =  Environment.GetEnvironmentVariable("STORAGE_DIRECTORY");
+            var mountPath =
+                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ?? throw new NullReferenceException($"Storage file path not set");
+            config["mountPath"] =  mountPath;
         }
         else if (defaultObjectStorageMethod == "azure_object")
         {
-            config["azureConnectionString"] = Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING");
+            var azureConnectionString = 
+                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ?? throw new NullReferenceException($"Azure connection string not set");
+            config["azureConnectionString"] = azureConnectionString;
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            config["awsConnectionString"] = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING");
+            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ?? throw new NullReferenceException($"AWS connection string not set");
+            config["awsConnectionString"] = awsConnectionString;
         }
-        
-        if (defaultObjectStorageMethod != null)
+        else
         {
-            var objectStorageRequestDto = new CreateObjectStorageRequestDto
-            {
-                Name = "Instance Default",
-                Config = config
-            };
-            await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+            throw new NullReferenceException($"Unknown object storage method, make sure your environment variables are correctly set");
         }
         
-        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource);
+        var objectStorageRequestDto = new CreateObjectStorageRequestDto
+        {
+            Name = "Instance Default",
+            Config = config
+        };
+        await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+        
+        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
         
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
@@ -181,7 +184,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {project.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return new ProjectResponseDto
@@ -190,8 +193,8 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt
+            LastUpdatedBy = project.LastUpdatedBy,
+            LastUpdatedAt = project.LastUpdatedAt
         };
     }
 
@@ -206,14 +209,14 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null || project.IsArchived)
             throw new KeyNotFoundException("Project not found.");
 
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
         project.Abbreviation = dto.Abbreviation ?? project.Abbreviation;
-        project.ModifiedBy = null; // TODO: handled in future by JWT.
-        project.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        project.LastUpdatedBy = null; // TODO: handled in future by JWT.
+        project.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
@@ -227,7 +230,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {project.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ProjectResponseDto
@@ -236,10 +239,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
-            CreatedBy = project.CreatedBy,
-            CreatedAt = project.CreatedAt,
-            ModifiedBy = project.ModifiedBy,
-            ModifiedAt = project.ModifiedAt
+            LastUpdatedAt = project.LastUpdatedAt,
+            LastUpdatedBy = project.LastUpdatedBy,
+            IsArchived = project.IsArchived,
         };
     }
 
@@ -273,13 +275,13 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is not null)
+        if (project == null || project.IsArchived)
             throw new KeyNotFoundException("Project not found.");
 
         // set archivedAt timestamp
         var archivedAt = DateTime.UtcNow;
 
-        // run archive procedure in a transaction to roll back any errors
+        // run archive procedure in a transaction to roll back any errorsGetProjectStats
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
@@ -314,7 +316,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -331,7 +333,7 @@ public class ProjectBusiness : IProjectBusiness
     {
         var project = await _context.Projects.FindAsync(projectId);
 
-        if (project == null || project.ArchivedAt is null)
+        if (project == null || !project.IsArchived)
             throw new KeyNotFoundException("Project not found or is not archived.");
 
         // run unarchive procedure in a transaction to roll back any errors
@@ -370,11 +372,11 @@ public class ProjectBusiness : IProjectBusiness
     {
         //classes”: number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p =>  !p.IsArchived  && p.ProjectId == projectId).Count();
         var records = _context.Records
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived  && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources
-            .Where(p => p.ArchivedAt == null && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         
         var response = new ProjectStatResponseDto()
             {
@@ -399,7 +401,7 @@ public class ProjectBusiness : IProjectBusiness
 
         if (hideArchived)
         {
-            recordQuery = recordQuery.Where(r => r.ArchivedAt == null);
+            recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
         
         var records = await recordQuery
@@ -420,11 +422,9 @@ public class ProjectBusiness : IProjectBusiness
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 ProjectId = r.ProjectId,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedAt = r.LastUpdatedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 Tags = r.Tags
             });
     }
