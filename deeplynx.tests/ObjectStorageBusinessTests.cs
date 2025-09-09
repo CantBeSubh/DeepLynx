@@ -351,7 +351,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var unarchivedObjectStorage = await Context.ObjectStorages.Where(os => os.Id == archivedOs && os.ProjectId == pid).FirstOrDefaultAsync();
         unarchivedObjectStorage.Should().NotBeNull();
         unarchivedObjectStorage.Id.Should().Be(archivedOs);
-        unarchivedObjectStorage.IsArchived.Should().BeTrue();
+        unarchivedObjectStorage.IsArchived.Should().BeFalse();
     }
     
     [Fact]

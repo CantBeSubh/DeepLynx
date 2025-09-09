@@ -506,7 +506,7 @@ public class RecordMappingBusinessTests : IntegrationTestBase
         Assert.True(result);
         var refreshed = await Context.RecordMappings.FindAsync(archivedMapping.Id);
         Assert.NotNull(refreshed);
-        Assert.True(refreshed.IsArchived);
+        Assert.False(refreshed.IsArchived);
     }
 
     [Fact]

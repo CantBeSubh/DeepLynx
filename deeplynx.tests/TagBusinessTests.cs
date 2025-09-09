@@ -17,6 +17,7 @@ namespace deeplynx.tests
         private readonly Mock<IRecordMappingBusiness> _mockRecordMappingBusiness;
         public long pid;
         public long pid2;
+        public long pid3;
         public long tid;
         public long tid2;
         public long tid3;
@@ -49,18 +50,19 @@ namespace deeplynx.tests
 
             // Assert
             Assert.Equal(2, tags.Count);
-            Assert.All(tags, ds => Assert.Equal(pid, ds.ProjectId));
-            Assert.All(tags, ds => Assert.True(ds.IsArchived));
-            Assert.Contains(tags, ds => ds.Id == tid);
-            Assert.Contains(tags, ds => ds.Id == tid2);
-            Assert.DoesNotContain(tags, ds => ds.Id == tid3);
+            Assert.All(tags, t => Assert.Equal(pid, t.ProjectId));
+            Assert.All(tags, t => Assert.Equal(false, t.IsArchived));
+            Assert.Contains(tags, t => t.Id == tid);
+            Assert.Contains(tags, t => t.Id == tid2);
+            Assert.DoesNotContain(tags, t => t.Id == tid3);
+            Assert.DoesNotContain(tags, t => t.Id == tid4);
         }
 
         [Fact]
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags([pid2], true);
+            var result = await _tagBusiness.GetAllTags([pid3], true);
             var tags = result.ToList();
 
             // Assert
@@ -95,7 +97,7 @@ namespace deeplynx.tests
             Assert.Equal(tid, result.Id);
             Assert.Equal("Analytics", result.Name);
             Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
-            Assert.True( result.IsArchived);
+            Assert.False( result.IsArchived);
             Assert.Equal(pid, result.ProjectId);
         }
 
@@ -280,7 +282,6 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Updated Test Tag", result.Name);
-            Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
             Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
 
             // Verify it was actually updated in database
@@ -616,7 +617,7 @@ namespace deeplynx.tests
               Assert.Equal(1, dto.ProjectId);
               Assert.Equal("Test Suite", dto.LastUpdatedBy);
               Assert.Equal(now, dto.LastUpdatedAt);
-              Assert.True(dto.IsArchived);
+              Assert.False(dto.IsArchived);
           }
           
          #endregion
@@ -645,7 +646,7 @@ namespace deeplynx.tests
              Context.ChangeTracker.Clear();
              var refreshed = await Context.Tags.FindAsync(tagId);
              Assert.NotNull(refreshed);
-             Assert.True(refreshed.IsArchived);
+             Assert.False(refreshed.IsArchived);
          }
 
          [Fact]
@@ -684,12 +685,15 @@ namespace deeplynx.tests
              await base.SeedTestDataAsync();
              var project = new Project { Name = "Project 1" };
              var project2 = new Project { Name = "Project2" };
+             var project3 = new Project { Name = "Project 3" };
              Context.Projects.Add(project);
              Context.Projects.Add(project2);
+             Context.Projects.Add(project3);
         
              await Context.SaveChangesAsync();
              pid = project.Id;
              pid2 = project2.Id;
+             pid3 = project3.Id;
              
              var tag = new Tag
              {
@@ -708,7 +712,7 @@ namespace deeplynx.tests
              {
                  Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                 IsArchived = false
+                 IsArchived = true
              };
              var tag4 = new Tag
              {

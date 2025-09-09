@@ -253,7 +253,8 @@ public class TagBusiness : ITagBusiness
         tag.Name = tagRequestDto.Name ?? tag.Name;
         tag.LastUpdatedBy= null; // TODO: handled in future by JWT.
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
+        
+        _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         
         // Log tag update event
