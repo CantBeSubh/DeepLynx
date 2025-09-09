@@ -20,7 +20,6 @@ export async function queryBuilder(
         if (obj.jsonKey && obj.jsonValue) {
             let json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`
             obj.json = json;
-            console.log(obj)
         }
     }
     const res = await api.post(`/records/QueryBuilder?${fullTextSearch}`, queryObj, {
