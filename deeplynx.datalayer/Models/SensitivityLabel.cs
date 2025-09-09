@@ -32,6 +32,9 @@ public partial class SensitivityLabel
 
     [Column("organization_id")]
     public long? OrganizationId { get; set; }
+
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
     
     [ForeignKey("ProjectId")]
     [InverseProperty("SensitivityLabels")]
