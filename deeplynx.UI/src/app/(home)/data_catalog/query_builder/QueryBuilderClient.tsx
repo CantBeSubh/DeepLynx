@@ -9,9 +9,7 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { getClassesForProjects } from "@/app/lib/class_services client";
-import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
-import { getTagsForProjects } from "@/app/lib/tag_services.client";
+import { getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
 
@@ -95,7 +93,7 @@ export default function QueryBuilderClient({
     async function loadClasses() {
       try {
         setIsLoadingClasses(true);
-        const data = await getClassesForProjects(currentProjectId, selectedProjects);
+        const data = await getClassesForProjects(selectedProjects);
         setClasses(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -115,7 +113,7 @@ export default function QueryBuilderClient({
     async function loadDataSources() {
       try {
         setIsLoadingDataSources(true);
-        const data = await getDataSourcesForProjects(currentProjectId, selectedProjects);
+        const data = await getDataSourcesForProjects(selectedProjects);
         setDataSources(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -134,7 +132,7 @@ export default function QueryBuilderClient({
     async function loadTags() {
       try {
         setIsLoadingTags(true);
-        const data = await getTagsForProjects(currentProjectId, selectedProjects);
+        const data = await getTagsForProjects(selectedProjects);
         setTags(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -248,17 +246,17 @@ export default function QueryBuilderClient({
                             });
 
                             if (value === "ClassName") {
-                              getClassesForProjects(currentProjectId, selectedProjects)
+                              getClassesForProjects(selectedProjects)
                                 .then(setClasses)
                                 .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
                             if (value === "DataSourceName") {
-                              getDataSourcesForProjects(currentProjectId, selectedProjects)
+                              getDataSourcesForProjects(selectedProjects)
                                 .then(setDataSources)
                                 .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
                             if (value === "Tags") {
-                              getTagsForProjects(currentProjectId, selectedProjects)
+                              getTagsForProjects(selectedProjects)
                                 .then(setTags)
                                 .catch((err) => console.error("Failed to fetch tags:", err));
                             }

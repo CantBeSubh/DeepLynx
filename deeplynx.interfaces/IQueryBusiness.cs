@@ -7,5 +7,11 @@ public interface IQueryBusiness
     Task<IEnumerable<HistoricalRecordResponseDto>> Search(string query);
 
     IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request,  string? textSearch);
+    
+    Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds,  bool hideArchived);
+
+    Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived);
+
+    Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived);
 
 }

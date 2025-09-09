@@ -42,7 +42,7 @@ namespace deeplynx.business
         /// <summary>
         /// Retrieves all data sources for a specific project.
         /// </summary>
-        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
         public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)

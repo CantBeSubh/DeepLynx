@@ -2,7 +2,7 @@
 "use client";
 
 import axios from "axios";
-import { CustomQueryRequestDto } from "../(home)/types/types";
+import { ClassResponseDto, CustomQueryRequestDto, DataSourceResponseDto, TagResponseDto } from "../(home)/types/types";
 
 export const api = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -19,4 +19,29 @@ export async function queryBuilder(
         headers: { "Content-Type": "application/json" },
     });
     return res.data;
+}
+
+
+export async function getClassesForProjects(
+    projectIds: string[],
+): Promise<ClassResponseDto[]> {
+    const query = projectIds.map(id => `projectIds=${id}`).join("&");
+    const res = await api.get(`//records/GetAllClasses?${query}`);
+    return res.data as ClassResponseDto[];
+}
+
+export async function getDataSourcesForProjects(
+    projectIds: string[]
+): Promise<DataSourceResponseDto[]> {
+    const query = projectIds.map(id => `projectIds=${id}`).join("&");
+    const res = await api.get(`/records/GetAllDataSources?${query}`);
+    return res.data as DataSourceResponseDto[];
+}
+
+export async function getTagsForProjects(
+    projectIds: string[]
+): Promise<TagResponseDto[]> {
+    const query = projectIds.map(id => `projectIds=${id}`).join("&");
+    const res = await api.get(`/records/GetAllTags?${query}`);
+    return res.data as TagResponseDto[];
 }

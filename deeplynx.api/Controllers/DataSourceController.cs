@@ -26,7 +26,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all data sources
         /// </summary>
-        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]

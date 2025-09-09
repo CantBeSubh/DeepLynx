@@ -47,7 +47,7 @@ public class ClassBusiness : IClassBusiness
     /// <summary>
     /// Retrieves all classes
     /// </summary>
-    /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)

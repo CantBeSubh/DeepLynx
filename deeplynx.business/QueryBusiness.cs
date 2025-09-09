@@ -1,8 +1,10 @@
 using System.Linq.Expressions;
 using System.Runtime.InteropServices.JavaScript;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using DuckDB.NET.Native;
@@ -310,6 +312,112 @@ public class QueryBusiness : IQueryBusiness
         }
 
         return string.Join(" ", result);
+    }
+    
+    public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
+    {
+        foreach (var projectId in projectIds){
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        }
+
+        var classes = await _context.Classes
+            .Where(c => projectIds.Contains(c.ProjectId)).ToListAsync();
+        
+        if (hideArchived)
+        {
+            classes = classes.Where(c => c.ArchivedAt == null).ToList();
+        }
+        
+        return classes 
+            .Select(c => new ClassResponseDto()
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                Uuid = c.Uuid,
+                ProjectId = c.ProjectId,
+                CreatedBy = c.CreatedBy,
+                CreatedAt = c.CreatedAt,
+                ModifiedBy = c.ModifiedBy,
+                ModifiedAt = c.ModifiedAt,
+                ArchivedAt = c.ArchivedAt,
+            }).ToList();
+    }
+    
+    /// <summary>
+    /// Retrieves all data sources for a specific project.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
+    /// <returns>A list of data sources within the given project.</returns>
+    public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
+    {
+        foreach (var projectId in projectIds)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        }
+            
+        var dataSources = await _context.DataSources
+            .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
+
+        if (hideArchived)
+        {
+            dataSources = dataSources.Where(d => d.ArchivedAt == null).ToList();
+        }
+            
+        return dataSources
+            .Select(d => new DataSourceResponseDto()
+            {
+                Id = d.Id,
+                Name = d.Name,
+                Description = d.Description,
+                Default = d.Default,
+                Abbreviation = d.Abbreviation,
+                Type = d.Type,
+                BaseUri = d.BaseUri,
+                // return empty object for config if null
+                Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
+                ProjectId = d.ProjectId,
+                CreatedBy = d.CreatedBy,
+                CreatedAt = d.CreatedAt,
+                ModifiedBy = d.ModifiedBy,
+                ModifiedAt = d.ModifiedAt,
+                ArchivedAt = d.ArchivedAt,
+            }).ToList();
+    }
+    
+    /// <summary>
+    /// Retrieves all tags for a specified project.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
+    /// <returns>A list of tags belonging to the project.</returns>
+    public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
+    {
+        foreach (var projectId in projectIds)
+        {
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        }
+        var tagQuery = _context.Tags
+            .Where(t => projectIds.Contains(t.ProjectId));
+            
+        if (hideArchived)
+        {
+            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+        }
+            
+        return await tagQuery.Select(t => new TagResponseDto()
+            {
+                Id = t.Id,
+                Name = t.Name,
+                ProjectId = t.ProjectId,
+                CreatedBy = t.CreatedBy,
+                CreatedAt = t.CreatedAt,
+                ModifiedBy = t.ModifiedBy,
+                ModifiedAt = t.ModifiedAt,
+                ArchivedAt = t.ArchivedAt,
+            })
+            .ToListAsync();
     }
 
 }
