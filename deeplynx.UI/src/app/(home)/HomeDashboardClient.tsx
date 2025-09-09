@@ -25,6 +25,9 @@ export default function HomeDashboard({ initialProjects }: Props) {
 
   const { data: session, status } = useSession();
 
+  console.log("Session status:", status);
+  console.log("User data:", session?.user);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
@@ -146,11 +149,11 @@ export default function HomeDashboard({ initialProjects }: Props) {
               onSave={handleSave}
               onCustomizeChange={setCanCustomize}
             />
-            <div className="bg-yellow-100 p-4 m-4 rounded">
-              <h3>Debug Session:</h3>
-              <p>Status: {status}</p>
-              <pre>{JSON.stringify(session, null, 2)}</pre>
-            </div>
+            {session?.user && (
+              <div className="bg-green-100 p-4 m-4 rounded">
+                Welcome back, {session.user.name}!
+              </div>
+            )}
           </div>
         </div>
       </div>
