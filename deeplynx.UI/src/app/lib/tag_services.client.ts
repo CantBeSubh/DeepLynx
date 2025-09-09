@@ -6,15 +6,6 @@ export const api = axios.create({
     withCredentials: true
 })
 
-// Duplicate but unsure of format we will go with
-export async function getTagsForProjects(
-    projectId: string, projectIds: string[]
-): Promise<TagResponseDto[]> {
-    const query = projectIds.map(id => `projectIds=${id}`).join("&");
-    const res = await api.get(`/projects/${projectId}/tags/GetAllTags?${query}`);
-    return res.data as TagResponseDto[];
-}
-
 export const getTag = async (projectId: number, tagId: number) => {
     try {
         const res = await api.get(`/projects/${projectId}/tags/GetTag/${tagId}`);
