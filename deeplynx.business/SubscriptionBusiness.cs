@@ -132,8 +132,6 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
         var parameters = new List<NpgsqlParameter>
         {
             new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)),
-            new("@false", false)
         };
 
         // Establish "dynamic" parameters (new for each dto in the list)
@@ -150,7 +148,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Stringify the params and comma separate them
         var valueTuples = string.Join(", ", dtos.Select((dto, i) =>
-            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, @false)"));
+            $"(@p{i}_userId, @p{i}_actionId, @p{i}_operation, @p{i}_projectId, @p{i}_dataSourceId, @p{i}_entityType, @p{i}_entityId, @now, false)"));
 
         // Put everything together and execute the query
         sql = string.Format(sql, valueTuples);
