@@ -221,13 +221,14 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
             data_source_id = data.data_source_id,
             entity_type = data.entity_type,
             entity_id = data.entity_id,
-            modified_at = @now
+           last_updated_at = @now,
+           last_updated_by =data.last_updated_by
         FROM (VALUES {0}) AS data (id, action_id, operation, data_source_id, entity_type, entity_id)
         WHERE 
             subs.id = data.id 
             AND subs.user_id = @userId 
             AND subs.project_id = @projectId
-        RETURNING subs.id, subs.user_id, subs.project_id, subs.action_id, subs.operation, subs.data_source_id, subs.entity_type, subs.entity_id, subs.created_at, subs.modified_at, subs.archived_at;
+        RETURNING subs.id, subs.user_id, subs.project_id, subs.action_id, subs.operation, subs.data_source_id, subs.entity_type, subs.entity_id, subs.last_updated_at, subs.last_updated_by, subs.is_archived;
         ";
 
         // Establish "constant" parameters
