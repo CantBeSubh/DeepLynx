@@ -220,108 +220,75 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
+    public async Task<IEnumerable<FullTextQueryResponseDto>> Search(string userQuery)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
         
-        var query = ParseToQuery(userQuery);
-        
         // full text search query for all text properties of historical records table 
         var sql = @"
-            SELECT r.*
-            FROM deeplynx.records r
-            LEFT JOIN deeplynx.classes       c  ON c.id  = r.class_id
-            LEFT JOIN deeplynx.data_sources  ds ON ds.id = r.data_source_id
-            LEFT JOIN deeplynx.projects      p  ON p.id  = r.project_id
-            LEFT JOIN deeplynx.tags         t   ON t.id = r.tag_id
-            WHERE
-              to_tsvector('english',
-                  coalesce(r.name, '') || ' ' ||
-                  coalesce(r.description, '') || ' ' ||
-                  coalesce(c.name, '') || ' ' ||
-                  coalesce(r.uri, '') || ' ' ||
-                  coalesce(r.original_id, '') || ' ' ||
-                  coalesce(ds.name, '') || ' ' ||
-                  coalesce(p.name, '') || ' ' ||
-                  coalesce(r.created_by::text, '') || ' ' ||
-                  coalesce(r.modified_by::text, '') || ' ' ||
-                  coalesce(r.properties::text, '') || ' ' ||
-                  coalesce(r.tags::text, '')
-              ) @@ to_tsquery('english', @query)
-              AND (@classId       IS NULL OR r.class_id      = @classId)
-              AND (@dataSourceId  IS NULL OR r.data_source_id = @dataSourceId)
-              AND (@projectId     IS NULL OR r.project_id    = @projectId);
-            ";
+        WITH tag_name AS (
+          SELECT rt.record_id,
+                 string_agg(DISTINCT coalesce(t.name,''), ' ') AS tags_text
+          FROM deeplynx.record_tags rt
+          JOIN deeplynx.tags t ON t.id = rt.tag_id
+          GROUP BY rt.record_id
+        )
+        SELECT
+          r.*,
+          c.name  AS ClassName,
+          ds.name AS DataSourceName,
+          p.name  AS ProjectName,
+          tn.tags_text AS Tags,
+          r.original_id AS OriginalId
+        FROM deeplynx.records r
+        LEFT JOIN deeplynx.classes      c  ON c.id  = r.class_id
+        LEFT JOIN deeplynx.data_sources ds ON ds.id = r.data_source_id
+        LEFT JOIN deeplynx.projects     p  ON p.id  = r.project_id
+        LEFT JOIN tag_name              tn ON tn.record_id = r.id
+        WHERE
+          to_tsvector('english',
+              coalesce(r.name, '') || ' ' ||
+              coalesce(r.description, '') || ' ' ||
+              coalesce(c.name, '') || ' ' ||
+              coalesce(r.uri, '') || ' ' ||
+              coalesce(r.original_id, '') || ' ' ||
+              coalesce(ds.name, '') || ' ' ||
+              coalesce(p.name, '') || ' ' ||
+              coalesce(r.created_by, '') || ' ' ||
+              coalesce(r.modified_by, '') || ' ' ||
+              coalesce(r.properties::text, '') || ' ' ||
+              coalesce(tn.tags_text, '')
+          ) @@ to_tsquery('english', @query);
+        ";
 
-        var param = new NpgsqlParameter("query", query);
+        var param = new NpgsqlParameter("query", userQuery);
 
-        var results = await _context.HistoricalRecords
-            .FromSqlRaw(sql, param)
+        var results = await _context.Database
+            .SqlQueryRaw<FullTextQueryResponseDto>(sql, param)
             .ToListAsync();
         
         return results
-            .Select(r => new HistoricalRecordResponseDto()
+            .Select(r => new FullTextQueryResponseDto()
             {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
-                Description = r.Description, 
-                LastUpdatedAt = r.LastUpdatedAt
+                    Uri = r.Uri,
+                    Properties = r.Properties,
+                    OriginalId = r.OriginalId,
+                    Name = r.Name,
+                    ClassName = r.ClassName,
+                    DataSourceName = r.DataSourceName,
+                    ProjectName = r.ProjectName,
+                    Tags = r.Tags,
+                    Description = r.Description
             });
     }
     
-    private string ParseToQuery(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return string.Empty;
-
-        // Operators to translate
-        var operators = new HashSet<string> { "AND", "OR" };
-
-        // Tokenize input by whitespace
-        var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = new List<string>();
-
-        foreach (var token in tokens)
-        {
-            string upper = token.ToUpperInvariant();
-
-            if (operators.Contains(upper))
-            {
-                switch (upper)
-                {
-                    case "AND": result.Add("&"); break;
-                    case "OR": result.Add("|"); break;
-                }
-            }
-            else
-            {
-                // Add :* for partial matching
-                var cleaned = Regex.Replace(token, @"[^\w]", "");
-                if (!string.IsNullOrWhiteSpace(cleaned))
-                    result.Add($"{cleaned}:*");
-            }
-        }
-
-        return string.Join(" ", result);
-    }
-    
+    /// <summary>
+    /// Retrieves all classes for specific projects.
+    /// </summary>
+    /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
+    /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds){
