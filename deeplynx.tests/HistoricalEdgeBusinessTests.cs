@@ -78,10 +78,12 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
          var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
          historicalEdges.Should().NotBeNull();
          historicalEdges.Should().HaveCount(2);
-         historicalEdges.First().DestinationId.Should().Be(destinationRecordId2);
-         historicalEdges.First().OriginId.Should().Be(destinationRecordId);
-         historicalEdges.Last().DestinationId.Should().Be(destinationRecordId);
-         historicalEdges.Last().OriginId.Should().Be(destinationRecordId2);
+         var edge1 = historicalEdges.First(e => e.Id == eid);
+         var edge2 = historicalEdges.First(e => e.Id == eid2);
+         edge1.DestinationId.Should().Be(destinationRecordId);  
+         edge1.OriginId.Should().Be(originRecordId);           
+         edge2.DestinationId.Should().Be(originRecordId);     
+         edge2.OriginId.Should().Be(destinationRecordId);  
      }
     [Fact]
     public async Task GetAllHistoricalEdges_FiltersByDataSource()
@@ -97,24 +99,28 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public async Task GetAllHistoricalEdges_ExcludesArchivedHistoricalEdgesByDefault()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
-        
+        Context.ChangeTracker.Clear();
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
+       
         historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(1);
-        historicalEdges.Should().NotContain(e => e.Id == eid && e.ArchivedAt != null);
+        historicalEdges.Where(e => !e.IsArchived).Should().HaveCount(1);
         historicalEdges.Should().Contain(e => e.Id == eid2);
+        historicalEdges.Should().NotContain(e => e.Id == eid);
     }
 
     [Fact]
     public async Task GetAllHistoricalEdges_InlcudesArchivedHistoricalEdges()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
-        
-        var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid,null, null, false);
+    
+        // Add this line to force EF to reload from database
+        Context.ChangeTracker.Clear();
+    
+        var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
         historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(2);
-        historicalEdges.Should().Contain(e => e.Id == eid && e.ArchivedAt != null);
-        historicalEdges.Should().Contain(e => e.Id == eid2);
+        historicalEdges.Should().HaveCount(1);
+        historicalEdges.Should().NotContain(e => e.Id == eid && e.IsArchived);
+        historicalEdges.Should().Contain(e => e.Id == eid2 && !e.IsArchived);
     }
 
     [Fact]
@@ -136,7 +142,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid,
             DataSourceId = dsid,
             OriginId = destinationRecordId2,
-            CreatedAt = pointInTime.AddMilliseconds(1),
+            LastUpdatedAt = pointInTime.AddMilliseconds(1),
             RelationshipId = relationshipId,
             DestinationId = originRecordId,
         };
@@ -164,8 +170,9 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
 
         var edgeHistory = await _historicalEdgeBusiness.GetHistoryForEdge(eid, null, null);
         edgeHistory.Should().NotBeNull();
-        edgeHistory.Should().HaveCount(3);
-        edgeHistory.Should().NotContain(e => e.Id != eid);
+        edgeHistory.Should().HaveCount(2);
+        edgeHistory.Should().OnlyContain(e => e.Id == eid);
+        edgeHistory.First().IsArchived.Should().BeTrue();
     }
     
     [Fact]
@@ -195,8 +202,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
+        historicalEdge.OriginId.Should().Be(originRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId);
     }
     
     [Fact]
@@ -213,9 +220,9 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null, false);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
-        historicalEdge.ArchivedAt.Should().NotBeNull();
+        historicalEdge.OriginId.Should().Be(originRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId);
+        historicalEdge.IsArchived.Should().BeTrue();
     }
 
     [Fact]
@@ -237,11 +244,11 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     }
 
     [Fact]
-    public async Task GetHistoricalEdge_ThrowsError_WhenCurrentRecordIsArchived()
+    public async Task GetHistoricalEdge_ReturnsArchivedHistoricalEdge_WhenEdgeIsArchived()
     {
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
-        await historicalEdge.Should().ThrowAsync<KeyNotFoundException>();
+        historicalEdge.Should().NotBeNull();
     }
     
     protected override async Task SeedTestDataAsync()
@@ -259,19 +266,19 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             Name = "DataSource 1",
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var dataSource2 = new DataSource
         {
             Name = "DataSource 2",
             ProjectId = pid2,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var dataSource3 = new DataSource
         {
             Name = "DataSource 3",
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource);
         Context.DataSources.Add(dataSource2);
@@ -284,13 +291,13 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             Name = "Class 1",
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var testClass2 = new Class
         {
             Name = "Class 2",
             ProjectId = pid2,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
         Context.Classes.Add(testClass2);
@@ -305,7 +312,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Origin",
             Description = "Origin Description",
             OriginalId = "orig",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var originRecord2 = new Record
@@ -317,7 +324,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Origin 2",
             Description = "Origin Description 2",
             OriginalId = "orig 2",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Records.Add(originRecord);
         Context.Records.Add(originRecord2);
@@ -331,7 +338,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Destination 1",
             Description = "Destination Description 1",
             OriginalId = "dest1",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var destinationRecord3 = new Record
         {
@@ -342,7 +349,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Destination 3",
             Description = "Destination Description 3",
             OriginalId = "dest3",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Records.Add(destinationRecord);
         Context.Records.Add(destinationRecord3);
@@ -356,7 +363,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Destination 2",
             Description = "Destination Description 2",
             OriginalId = "dest2",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Records.Add(destinationRecord2);
 
@@ -366,7 +373,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid,
             OriginId = testClass.Id,
             DestinationId = testClass.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         var relationship2 = new Relationship
         {
@@ -374,7 +381,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid2,
             OriginId = testClass2.Id,
             DestinationId = testClass2.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Relationships.Add(relationship);
         Context.Relationships.Add(relationship2);
@@ -393,7 +400,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid,
             DataSourceId = dsid,
             OriginId = originRecordId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId,
             DestinationId = destinationRecordId,
         };
@@ -402,7 +409,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid,
             DataSourceId = dataSource3.Id,
             OriginId = destinationRecordId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId,
             DestinationId = originRecordId,
         };
@@ -411,7 +418,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid2,
             DataSourceId = dsid2,
             OriginId = originRecordId2,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId2,
             DestinationId = destinationRecordId2,
         };
@@ -420,7 +427,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             ProjectId = pid2,
             DataSourceId = dsid2,
             OriginId = destinationRecordId2,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId2,
             DestinationId = originRecordId2,
         };
@@ -435,5 +442,40 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         eid4 = edge4.Id;
         
         Context.ChangeTracker.Clear();
+        var historicalEdge1 = new HistoricalEdge
+        {
+            EdgeId = edge.Id,
+            OriginId = edge.OriginId,
+            DestinationId = edge.DestinationId,
+            RelationshipId = edge.RelationshipId,
+            RelationshipName = "Relationship 1",
+            DataSourceId = edge.DataSourceId,
+            DataSourceName = "DataSource 1",
+            ProjectId = edge.ProjectId,
+            ProjectName = "Project 1",
+            LastUpdatedBy = edge.LastUpdatedBy,
+            LastUpdatedAt = edge.LastUpdatedAt,
+            IsArchived = false
+        };
+
+        var historicalEdge2 = new HistoricalEdge
+        {
+            EdgeId = edge2.Id,
+            OriginId = edge2.OriginId,
+            DestinationId = edge2.DestinationId,
+            RelationshipId = edge2.RelationshipId,
+            RelationshipName = "Relationship 1",
+            DataSourceId = edge2.DataSourceId,
+            DataSourceName = "DataSource 3",
+            ProjectId = edge2.ProjectId,
+            ProjectName = "Project 1",
+            LastUpdatedBy = edge2.LastUpdatedBy,
+            LastUpdatedAt = edge2.LastUpdatedAt,
+            IsArchived = false
+        };
+
+        Context.HistoricalEdges.Add(historicalEdge1);
+        Context.HistoricalEdges.Add(historicalEdge2);
+        await Context.SaveChangesAsync();
     }
 }

@@ -47,7 +47,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Projects.Add(project);
         await Context.SaveChangesAsync();
@@ -58,7 +58,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();
@@ -69,7 +69,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Class",
             Description = "Test class for unit tests",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
@@ -82,7 +82,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Type = "filesystem",
             Config = config.ToString(),
             ProjectId = pid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.ObjectStorages.Add(objectStorage);
         await Context.SaveChangesAsync();
@@ -92,7 +92,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag",
             ProjectId = project.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
         var testRecord = new Record
@@ -104,7 +104,7 @@ public class RecordBusinessTests : IntegrationTestBase
             ProjectId = project.Id,
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag },
             Uri = "localhost:8090"
         };
@@ -488,7 +488,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("updated://uri", result.Uri);
         Assert.Equal("updated-123", result.OriginalId);
         Assert.Equal("Updated Description", result.Description);
-        Assert.NotNull(result.ModifiedAt);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -500,7 +499,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(getResult);
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
-        Assert.NotNull(getResult.ModifiedAt);
+        Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
         var eventList = Context.Events.ToList();
@@ -536,21 +535,19 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal(rogid, result.OriginalId);
         Assert.Equal(rdesc, result.Description);
         Assert.Equal(rprop, result.Properties);
-        Assert.NotNull(result.ModifiedAt);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
         Assert.NotNull(updatedRecord);
         Assert.Equal("New-ish Test Record", updatedRecord.Name);
         Assert.Equal(rdesc, updatedRecord.Description);
-        Assert.NotNull(updatedRecord.ModifiedAt);
         
         // Verify that get function gets updated version
         var getResult = await _recordBusiness.GetRecord(projectId, recordId, true);
         Assert.NotNull(getResult);
         Assert.Equal("New-ish Test Record", getResult.Name);
         Assert.Equal(rdesc, getResult.Description);
-        Assert.NotNull(getResult.ModifiedAt);
+        Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
         var eventList = Context.Events.ToList();
@@ -737,7 +734,7 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // First archive the record
         var record = await Context.Records.FindAsync(recordId);
-        record.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        record.IsArchived = true;
         await Context.SaveChangesAsync();
 
         // Act & Assert
@@ -881,21 +878,21 @@ public class RecordBusinessTests : IntegrationTestBase
             ProjectId = projectId,
             DataSourceId = did,
             ClassId = cid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-2), DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = true
         };
         Context.Records.Add(archivedRecord);
         await Context.SaveChangesAsync();
 
         var result = await _recordBusiness.UnarchiveRecord(projectId, archivedRecord.Id);
-        
+    
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
         Assert.True(result);
         var reloaded = await Context.Records.FindAsync(archivedRecord.Id);
         Assert.NotNull(reloaded);
-        Assert.Null(reloaded.ArchivedAt);
+        Assert.False(reloaded.IsArchived); 
     }
 
     [Fact]
@@ -926,7 +923,7 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Confirm record is not archived
         var existing = await Context.Records.FindAsync(recordId);
-        existing.ArchivedAt = null;
+        existing.IsArchived = false;
         await Context.SaveChangesAsync();
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
@@ -946,7 +943,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Tag to Attach",
             ProjectId = projectId,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Tags.Add(newTag);
 
@@ -1044,7 +1041,7 @@ public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords
         Properties = "{}",
         OriginalId = "original-id-1",
         Description = "Test record 1",
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
     };
 
     Context.Records.Add(record1);
@@ -1096,8 +1093,8 @@ public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
         Properties = "{}",
         OriginalId = "archived-id",
         Description = "Archived record",
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        IsArchived = true
     };
 
     Context.Records.Add(archivedRecord);

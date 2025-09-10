@@ -236,7 +236,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
 
             var result = await _eventBusiness.CreateEvent(dto);
@@ -248,8 +248,8 @@ namespace deeplynx.tests
             result.EntityId.Should().Be(dto.EntityId);
             result.DataSourceId.Should().Be(dto.DataSourceId);
             result.Properties.Should().Be(dto.Properties);
-            result.CreatedBy.Should().Be(dto.CreatedBy);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedBy.Should().Be(dto.LastUpdatedBy);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
         }
         
         [Fact]
@@ -263,7 +263,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
             
             var result = () => _eventBusiness.CreateEvent(dto);
@@ -281,7 +281,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
 
             var result = () => _eventBusiness.CreateEvent(dto);
@@ -302,7 +302,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
             
             var dto2 = new CreateEventRequestDto
@@ -313,7 +313,7 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 DataSourceId = null,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             };
             
             events.AddRange(dto1,  dto2);
@@ -327,7 +327,7 @@ namespace deeplynx.tests
                 EntityId = 1,
                 ProjectId = pid,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             });
             results[1].Should().BeEquivalentTo(new
             {
@@ -336,7 +336,7 @@ namespace deeplynx.tests
                 EntityId = 2,
                 ProjectId = pid,
                 Properties = "{}",
-                CreatedBy = "user123"
+                LastUpdatedBy = "user123"
             });
         }
         
@@ -368,8 +368,8 @@ namespace deeplynx.tests
             {
                 Name = "Action1",
                 ProjectId = pid,
-                CreatedBy = "user123",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedBy = "user123",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Actions.Add(action);
             await Context.SaveChangesAsync();
@@ -381,15 +381,15 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
-                    CreatedBy = "user123",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedBy = "user123",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
                 new DataSource
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
-                    CreatedBy = "user123",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedBy = "user123",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }
             };
             
@@ -409,8 +409,8 @@ namespace deeplynx.tests
                     EntityId = 1,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user1",
-                    CreatedAt = now
+                    LastUpdatedBy = "user1",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -420,8 +420,8 @@ namespace deeplynx.tests
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user2",
-                    CreatedAt = now
+                    LastUpdatedBy = "user2",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -431,8 +431,8 @@ namespace deeplynx.tests
                     EntityId = 3,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user2",
-                    CreatedAt = now
+                    LastUpdatedBy = "user2",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -442,8 +442,8 @@ namespace deeplynx.tests
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user2",
-                    CreatedAt = now
+                    LastUpdatedBy = "user1",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -453,8 +453,8 @@ namespace deeplynx.tests
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user2",
-                    CreatedAt = now
+                    LastUpdatedBy = "user1",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -464,8 +464,8 @@ namespace deeplynx.tests
                     EntityId = 5,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user2",
-                    CreatedAt = now
+                    LastUpdatedBy = "user2",
+                    LastUpdatedAt = now
                 },
                 // Events with 2nd Project
                 new Event
@@ -476,8 +476,8 @@ namespace deeplynx.tests
                     EntityId = 3,
                     DataSourceId = null,
                     Properties = "{}",
-                    CreatedBy = "user3",
-                    CreatedAt = now
+                    LastUpdatedBy = "user3",
+                    LastUpdatedAt = now
                 },
                 new Event
                 {
@@ -487,8 +487,8 @@ namespace deeplynx.tests
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    CreatedBy = "user4",
-                    CreatedAt = now
+                    LastUpdatedBy = "user4",
+                    LastUpdatedAt = now
                 }
             };
 
