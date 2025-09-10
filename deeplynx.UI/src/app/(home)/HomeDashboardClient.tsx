@@ -1,4 +1,4 @@
-// app/(home)/ProjectsClient.tsx  — Client Component
+// app/(home)/HomeDashboardClient.tsx  — Client Component
 "use client";
 
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
@@ -24,7 +24,6 @@ export default function HomeDashboard({ initialProjects }: Props) {
   const router = useRouter();
 
   const { data: session, status } = useSession();
-  const jwt = (session as any)?.tokens?.access_token;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);

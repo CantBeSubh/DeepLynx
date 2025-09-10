@@ -25,13 +25,13 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setIsMenuCollapsed(isCollapsed);
   };
 
-  const formatUserName = (fullName?: string) => {
+  const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";
 
-    const parts = fullName.split(" ");
-    const firstName = parts[0];
-    const lastName = parts[parts.length - 1];
-    return `${firstName}, ${lastName}`;
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const lastName = parts[parts.length - 1] ?? "";
+    return [firstName, lastName].filter(Boolean).join(", ");
   };
 
   return (
@@ -65,13 +65,13 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <li>
               <div className="flex">
                 <AvatarCell
-                  image={session?.user?.image!}
-                  name={session?.user?.name!}
+                  image={session?.user?.image ?? undefined}
+                  name={session?.user?.name ?? ""}
                   size={20}
                 />
                 <div className="text-black flex-1 min-w-0">
                   <h1 className="font-bold text-lg">
-                    {formatUserName(session?.user?.name!)}
+                    {formatUserName(session?.user?.name ?? null)}
                   </h1>
                   <p>{session?.user?.email}</p>
                 </div>

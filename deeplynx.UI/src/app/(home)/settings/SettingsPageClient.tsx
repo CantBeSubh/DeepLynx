@@ -10,14 +10,14 @@ const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]
   const { data: session } = useSession();
 
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
+  const image = session?.user?.image ?? undefined;
+
   return (
     <div className="p-20">
       <div className="flex items-center">
-        <AvatarCell
-          image={session?.user?.image!}
-          name={session?.user?.name!}
-          size={20}
-        />
+        <AvatarCell image={image} name={name} size={20} />
         <h1 className="ml-3 text-2xl font-bold text-info-content">
           {session?.user?.name}
         </h1>
@@ -37,13 +37,13 @@ const SettingsPageClient = () => {
               <span className="mr-5 font-bold text-black">
                 {t.translations.NAME ?? "Name"}:
               </span>{" "}
-              {session?.user?.name!}
+              {name}
             </p>
             <p className="text-base-content">
               <span className="mr-5 font-bold text-black">
                 {t.translations.EMAIL ?? "Email"}:
               </span>{" "}
-              {session?.user?.email ?? "—"}
+              {email ?? "—"}
             </p>
             <p className="text-base-content">
               <span className="mr-5 font-bold text-black">

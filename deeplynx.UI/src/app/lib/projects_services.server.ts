@@ -28,17 +28,28 @@ export type ProjectStatsDTO = Record<string, unknown>; // refine as you define y
 //   return (await res.json()) as T;
 // }
 
+type WithTokens = { tokens?: { access_token?: unknown } };
+
+function hasTokens(x: unknown): x is WithTokens {
+  return typeof x === "object" && x !== null && "tokens" in x;
+}
+
 /** Get user JWT from server session */
 async function getUserJWT(): Promise<string> {
   const session = await auth();
-  const userJWT = (session as any)?.tokens?.access_token;
-  
-  if (!userJWT) {
+
+  const token =
+    hasTokens(session) && typeof session.tokens?.access_token === "string"
+      ? session.tokens.access_token
+      : null;
+
+  if (!token) {
     throw new Error("User not authenticated - no JWT available");
   }
-  
-  return userJWT;
+
+  return token;
 }
+
 
 /** Headers with user JWT */
 async function userAuthHeaders(): Promise<HeadersInit> {
