@@ -33,26 +33,36 @@ export type ProjectDTO = {
 export type ProjectStatsDTO = Record<string, unknown>;
 
 /** ----- Session helpers ----- */
-type WithTokens = { tokens?: { access_token?: unknown }; accessToken?: unknown };
+/** ----- Session helpers ----- */
+type SessionShapeA = { tokens?: { access_token?: unknown } };
+type SessionShapeB = { accessToken?: unknown };
+type MaybeSession = SessionShapeA & SessionShapeB;
 
-function hasTokens(x: unknown): x is WithTokens {
-  return typeof x === "object" && x !== null;
+/** Safely pull an access token from unknown session shapes */
+function extractAccessToken(x: unknown): string | null {
+  if (typeof x !== "object" || x === null) return null;
+
+  // tokens.access_token path
+  const maybeTokens = (x as SessionShapeA).tokens;
+  if (typeof maybeTokens === "object" && maybeTokens !== null) {
+    const at = (maybeTokens as { access_token?: unknown }).access_token;
+    if (typeof at === "string") return at;
+  }
+
+  // accessToken path
+  const at2 = (x as SessionShapeB).accessToken;
+  if (typeof at2 === "string") return at2;
+
+  return null;
 }
 
 /** Get a JWT: prefer user token; fall back to service token for SSR */
 async function getBearer(): Promise<string | null> {
-  const session = await auth().catch(() => null);
-  // Support both session.tokens.access_token and session.accessToken shapes
-  const userToken =
-    hasTokens(session) &&
-    (typeof (session as any)?.tokens?.access_token === "string"
-      ? (session as any).tokens.access_token
-      : typeof (session as any)?.accessToken === "string"
-      ? (session as any).accessToken
-      : null);
-
-  return (userToken as string | null) || (SERVICE_TOKEN || null);
+  const session: unknown = await auth().catch(() => null);
+  const userToken = extractAccessToken(session);
+  return userToken ?? (SERVICE_TOKEN || null);
 }
+
 
 async function authHeaders(): Promise<HeadersInit> {
   const token = await getBearer();
