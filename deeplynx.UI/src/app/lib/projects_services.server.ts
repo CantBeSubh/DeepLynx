@@ -4,20 +4,22 @@ import "server-only";
 import { auth } from "../../../auth";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 
-/** ----- Strict env handling ----- */
-function requiredEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`[ENV] ${name} is not set`);
-  if (name === "BACKEND_BASE_URL") {
-    if (!/^https?:\/\//.test(v)) {
-      throw new Error(`[ENV] ${name} must start with http(s):// (got "${v}")`);
-    }
-    return v.replace(/\/+$/, ""); // strip trailing slash
+/** ----- Strict env handling (lazy) ----- */
+let _BASE: string | null = null;
+
+function getBase(): string {
+  if (_BASE) return _BASE;
+
+  const v = process.env.BACKEND_BASE_URL;
+  if (!v) throw new Error("[ENV] BACKEND_BASE_URL is not set");
+  if (!/^https?:\/\//.test(v)) {
+    throw new Error(`[ENV] BACKEND_BASE_URL must start with http(s):// (got "${v}")`);
   }
-  return v;
+  _BASE = v.replace(/\/+$/, ""); // strip trailing slash
+  return _BASE;
 }
 
-const BASE = requiredEnv("BACKEND_BASE_URL");
+
 // Optional: use a machine/service token in SSR when the user token isn't available
 const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
 
@@ -32,7 +34,6 @@ export type ProjectDTO = {
 
 export type ProjectStatsDTO = Record<string, unknown>;
 
-/** ----- Session helpers ----- */
 /** ----- Session helpers ----- */
 type SessionShapeA = { tokens?: { access_token?: unknown } };
 type SessionShapeB = { accessToken?: unknown };
@@ -75,7 +76,7 @@ async function authHeaders(): Promise<HeadersInit> {
 
 /** Small fetch wrapper with detailed error logging */
 async function apiFetch(path: string, init: RequestInit = {}) {
-  const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const url = `${getBase()}${path.startsWith("/") ? "" : "/"}${path}`;
   const headers = {
     ...(await authHeaders()),
     ...(init.headers || {}),
@@ -89,7 +90,6 @@ async function apiFetch(path: string, init: RequestInit = {}) {
 
   if (!res.ok) {
     const body = await res.text().catch(() => "<no response body>");
-    // This will show next to the digest in server logs
     console.error("[API ERROR]", {
       method: init.method || "GET",
       url,
@@ -102,6 +102,7 @@ async function apiFetch(path: string, init: RequestInit = {}) {
   }
   return res;
 }
+
 
 async function asJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
