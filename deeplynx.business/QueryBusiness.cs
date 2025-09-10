@@ -229,22 +229,30 @@ public class QueryBusiness : IQueryBusiness
         
         // full text search query for all text properties of historical records table 
         var sql = @"
-            SELECT *
-            FROM deeplynx.historical_records
-            WHERE to_tsvector('english',
-                coalesce(name, '') || ' ' ||
-                coalesce(description, '') || ' ' ||
-                coalesce(class_name, '') || ' ' ||
-                coalesce(uri, '') || ' ' ||
-                coalesce(original_id, '') || ' ' ||
-                coalesce(data_source_name, '') || ' ' ||
-                coalesce(project_name, '') || ' ' ||
-                coalesce(created_by, '') || ' ' ||
-                coalesce(modified_by, '') || ' ' ||
-                coalesce(properties::text, '') || ' ' ||
-                coalesce(tags::text, '')
-            ) @@ to_tsquery('english', @query);
-        ";
+            SELECT r.*
+            FROM deeplynx.records r
+            LEFT JOIN deeplynx.classes       c  ON c.id  = r.class_id
+            LEFT JOIN deeplynx.data_sources  ds ON ds.id = r.data_source_id
+            LEFT JOIN deeplynx.projects      p  ON p.id  = r.project_id
+            LEFT JOIN deeplynx.tags         t   ON t.id = r.tag_id
+            WHERE
+              to_tsvector('english',
+                  coalesce(r.name, '') || ' ' ||
+                  coalesce(r.description, '') || ' ' ||
+                  coalesce(c.name, '') || ' ' ||
+                  coalesce(r.uri, '') || ' ' ||
+                  coalesce(r.original_id, '') || ' ' ||
+                  coalesce(ds.name, '') || ' ' ||
+                  coalesce(p.name, '') || ' ' ||
+                  coalesce(r.created_by::text, '') || ' ' ||
+                  coalesce(r.modified_by::text, '') || ' ' ||
+                  coalesce(r.properties::text, '') || ' ' ||
+                  coalesce(r.tags::text, '')
+              ) @@ to_tsquery('english', @query)
+              AND (@classId       IS NULL OR r.class_id      = @classId)
+              AND (@dataSourceId  IS NULL OR r.data_source_id = @dataSourceId)
+              AND (@projectId     IS NULL OR r.project_id    = @projectId);
+            ";
 
         var param = new NpgsqlParameter("query", query);
 
