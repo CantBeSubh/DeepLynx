@@ -1,9 +1,25 @@
 // src/app/lib/projects_services.server.ts
+
 import "server-only";
 import { auth } from "../../../auth";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 
-const BASE = process.env.BACKEND_BASE_URL || "BASE URL IS NOT DEFINED";
+/** ----- Strict env handling ----- */
+function requiredEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`[ENV] ${name} is not set`);
+  if (name === "BACKEND_BASE_URL") {
+    if (!/^https?:\/\//.test(v)) {
+      throw new Error(`[ENV] ${name} must start with http(s):// (got "${v}")`);
+    }
+    return v.replace(/\/+$/, ""); // strip trailing slash
+  }
+  return v;
+}
+
+const BASE = requiredEnv("BACKEND_BASE_URL");
+// Optional: use a machine/service token in SSR when the user token isn't available
+const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
 
 /** ----- Types ----- */
 export type ProjectDTO = {
@@ -14,66 +30,77 @@ export type ProjectDTO = {
   createdAt?: string | null;
 };
 
-export type ProjectStatsDTO = Record<string, unknown>; // refine as you define your stats
+export type ProjectStatsDTO = Record<string, unknown>;
 
-// /** Always return a HeadersInit (avoid union types) */
-// function authHeaders(): HeadersInit {
-//   const h: Record<string, string> = {};
-//   if (SERVICE_TOKEN) h.Authorization = `Bearer ${SERVICE_TOKEN}`;
-//   return h;
-// }
-
-// async function asJson<T>(res: Response): Promise<T> {
-//   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
-//   return (await res.json()) as T;
-// }
-
-type WithTokens = { tokens?: { access_token?: unknown } };
+/** ----- Session helpers ----- */
+type WithTokens = { tokens?: { access_token?: unknown }; accessToken?: unknown };
 
 function hasTokens(x: unknown): x is WithTokens {
-  return typeof x === "object" && x !== null && "tokens" in x;
+  return typeof x === "object" && x !== null;
 }
 
-/** Get user JWT from server session */
-async function getUserJWT(): Promise<string> {
-  const session = await auth();
+/** Get a JWT: prefer user token; fall back to service token for SSR */
+async function getBearer(): Promise<string | null> {
+  const session = await auth().catch(() => null);
+  // Support both session.tokens.access_token and session.accessToken shapes
+  const userToken =
+    hasTokens(session) &&
+    (typeof (session as any)?.tokens?.access_token === "string"
+      ? (session as any).tokens.access_token
+      : typeof (session as any)?.accessToken === "string"
+      ? (session as any).accessToken
+      : null);
 
-  const token =
-    hasTokens(session) && typeof session.tokens?.access_token === "string"
-      ? session.tokens.access_token
-      : null;
-
-  if (!token) {
-    throw new Error("User not authenticated - no JWT available");
-  }
-
-  return token;
+  return (userToken as string | null) || (SERVICE_TOKEN || null);
 }
 
-
-/** Headers with user JWT */
-async function userAuthHeaders(): Promise<HeadersInit> {
-  const jwt = await getUserJWT();
+async function authHeaders(): Promise<HeadersInit> {
+  const token = await getBearer();
   return {
-    Authorization: `Bearer ${jwt}`,
-    "Content-Type": "application/json"
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
 
+/** Small fetch wrapper with detailed error logging */
+async function apiFetch(path: string, init: RequestInit = {}) {
+  const url = `${BASE}${path.startsWith("/") ? "" : "/"}${path}`;
+  const headers = {
+    ...(await authHeaders()),
+    ...(init.headers || {}),
+  };
+
+  const res = await fetch(url, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "<no response body>");
+    // This will show next to the digest in server logs
+    console.error("[API ERROR]", {
+      method: init.method || "GET",
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      respHeaders: Object.fromEntries(res.headers.entries()),
+      body: body.slice(0, 2000),
+    });
+    throw new Error(`API ${init.method || "GET"} ${path} -> ${res.status}`);
+  }
+  return res;
+}
+
 async function asJson<T>(res: Response): Promise<T> {
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   return (await res.json()) as T;
 }
 
-
-/** ===== Server-safe calls (no cookies; safe for prerender/SSR) ===== */
+/** ===== Server-safe calls ===== */
 
 export async function getAllProjectsServer(): Promise<ProjectDTO[]> {
-  
-  const res = await fetch(`${BASE}/projects/GetAllProjects`, {
-    headers: await userAuthHeaders(),
-    cache: "no-store", // or: next: { revalidate: 300 } for ISR
-  });
+  const res = await apiFetch("/projects/GetAllProjects");
   return asJson<ProjectDTO[]>(res);
 }
 
@@ -84,31 +111,21 @@ export async function getAllRecordsForMultipleProjectsServer(
   const query =
     projectIds.map((id) => `projects=${encodeURIComponent(id)}`).join("&") +
     `&hideArchived=${hideArchived}`;
-
-  const res = await fetch(`${BASE}/projects/MultiProjectRecords?${query}`, {
-    headers: await userAuthHeaders(),
-    cache: "no-store",
-  });
+  const res = await apiFetch(`/projects/MultiProjectRecords?${query}`);
   return asJson<FileViewerTableRow[]>(res);
 }
 
 export async function getProjectServer(
   projectId: string | number
 ): Promise<ProjectDTO> {
-  const res = await fetch(`${BASE}/projects/GetProject/${projectId}`, {
-    headers: await userAuthHeaders(),
-    cache: "no-store",
-  });
+  const res = await apiFetch(`/projects/GetProject/${projectId}`);
   return asJson<ProjectDTO>(res);
 }
 
 export async function getProjectStatsServer(
   projectId: string | number
 ): Promise<ProjectStatsDTO> {
-  const res = await fetch(`${BASE}/projects/ProjectStats/${projectId}`, {
-    headers: await userAuthHeaders(),
-    cache: "no-store",
-  });
+  const res = await apiFetch(`/projects/ProjectStats/${projectId}`);
   return asJson<ProjectStatsDTO>(res);
 }
 
@@ -117,11 +134,9 @@ export async function createProjectServer(data: {
   abbreviation: string | null;
   description: string | null;
 }): Promise<ProjectDTO> {
-  const res = await fetch(`${BASE}/projects/CreateProject`, {
+  const res = await apiFetch("/projects/CreateProject", {
     method: "POST",
-    headers: await userAuthHeaders(),
     body: JSON.stringify(data),
-    cache: "no-store",
   });
   return asJson<ProjectDTO>(res);
 }
