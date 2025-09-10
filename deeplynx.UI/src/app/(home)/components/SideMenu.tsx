@@ -142,7 +142,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         <ul className="flex-grow">
           <li>
             <Link
-              href="/project/#"
+              href="/project"
               onClick={(e) =>
                 handleItemClick(`/project/${project?.projectId}`, e)
               }
@@ -206,7 +206,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li>
             <li className="mt-2">
               <Link
-                href="/contact"
+                href="#"
                 onClick={(e) => handleItemClick("/contact", e)}
                 className={getItemClass("/contact")}
               >
@@ -218,7 +218,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li>
             <li className="mt-2">
               <Link
-                href="/fileBug"
+                href="#"
                 onClick={(e) => handleItemClick("/fileBug", e)}
                 className={getItemClass("/fileBug")}
               >
