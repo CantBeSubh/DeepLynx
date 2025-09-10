@@ -68,9 +68,9 @@ namespace deeplynx.tests
                 Name = project.Name,
                 Description = project.Description,
                 Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
 
             _mockCacheService.Setup(s => s.Set(key, value, It.IsAny<TimeSpan?>())).Returns(Task.FromResult(true));
@@ -96,9 +96,9 @@ namespace deeplynx.tests
                 Name = project.Name,
                 Description = project.Description,
                 Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
             await _cacheBusiness.Set(key, value, (TimeSpan?)null);
 
@@ -128,9 +128,9 @@ namespace deeplynx.tests
                 Name = project.Name,
                 Description = project.Description,
                 Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
             await _cacheBusiness.Set(key1, value, (TimeSpan?)null);
             await _cacheBusiness.Set(key2, value, (TimeSpan?)null);
@@ -169,9 +169,9 @@ namespace deeplynx.tests
                 Name = project.Name,
                 Description = project.Description,
                 Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
         
             _mockCacheService.Setup(s => s.Set(key, value, It.IsAny<TimeSpan?>())).Returns(Task.FromResult(true));
@@ -196,10 +196,10 @@ namespace deeplynx.tests
                 Id = project.Id,
                 Name = project.Name,
                 Description = project.Description,
-                Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                Abbreviation = project.Abbreviation, 
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
             await _cacheBusiness.Set(key, value, (TimeSpan?)null);
         
@@ -229,9 +229,9 @@ namespace deeplynx.tests
                 Name = project.Name,
                 Description = project.Description,
                 Abbreviation = project.Abbreviation,
-                CreatedBy = project.CreatedBy,
-                CreatedAt = project.CreatedAt,
-                ModifiedBy = project.ModifiedBy
+                LastUpdatedAt = project.LastUpdatedAt,
+                LastUpdatedBy = project.LastUpdatedBy,
+                IsArchived = project.IsArchived
             }).ToList();
             await _cacheBusiness.Set(key1, value, (TimeSpan?)null);
             await _cacheBusiness.Set(key2, value, (TimeSpan?)null);
@@ -266,14 +266,14 @@ namespace deeplynx.tests
                     Name = "Test Project #1",
                     Description = "Test project #1 for unit tests",
                     Abbreviation = "TST",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }, 
                 new Project
                 {
                     Name = "Test Project #2",
                     Description = "Test project #2 for unit tests",
                     Abbreviation = "TST",
-                    CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }, 
             };
             
@@ -286,7 +286,7 @@ namespace deeplynx.tests
             {
                 Name = "Test Class",
                 ProjectId = TestProject1Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -296,7 +296,7 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = TestProject1Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(testDataSource);
             await Context.SaveChangesAsync();
@@ -310,7 +310,7 @@ namespace deeplynx.tests
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 OriginalId = "test-original-1",
                 Description = "Test record for unit tests"
             };

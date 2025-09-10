@@ -10,7 +10,10 @@ public class SubscriptionResponseDto
     public long? DataSourceId {get; set;}
     public string? EntityType {get; set;}
     public long? EntityId {get; set;}
-    public DateTime CreatedAt { get; set; }
-    public DateTime? ModifiedAt { get; set; }
-    public DateTime? ArchivedAt { get; set; }
+   
+    public DateTime? LastUpdatedAt { get; set; }
+    
+    public string? LastUpdatedBy { get; set; }
+  
+    public bool IsArchived { get; set; } = false;
 }

@@ -72,7 +72,7 @@ namespace deeplynx.tests
 
             var result = await _relationshipBusiness.CreateRelationship(pid, dto);
             result.Id.Should().BeGreaterThan(0);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
             result.Name.Should().Be(dto.Name);
             result.Description.Should().Be(dto.Description);
             result.OriginId.Should().Be(originClassId);
@@ -175,7 +175,7 @@ namespace deeplynx.tests
             var result = await _relationshipBusiness.BulkCreateRelationships(pid, relationshipDtos);
             result.Should().HaveCount(2);
             result.Should().OnlyContain(r => r.Id > 0);
-            result.Should().OnlyContain(r => r.CreatedAt >= now);
+            result.Should().OnlyContain(r => r.LastUpdatedAt >= now);
             result.First().Name.Should().Be("Bulk Relationship 1");
             result.Last().Name.Should().Be("Bulk Relationship 2");
             
@@ -244,7 +244,7 @@ namespace deeplynx.tests
         public async Task CreateRelationship_Fails_IfDeletedProjectId()
         {
             var project = await Context.Projects.FindAsync(pid);
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
 
@@ -321,7 +321,7 @@ namespace deeplynx.tests
                 ProjectId = p2.Id,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Relationships.Add(p2Relationship);
             await Context.SaveChangesAsync();
@@ -339,8 +339,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var archivedRelationship = new Relationship
@@ -349,9 +349,9 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Relationships.Add(activeRelationship);
             Context.Relationships.Add(archivedRelationship);
@@ -374,8 +374,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -396,8 +396,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -415,9 +415,9 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -436,8 +436,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -454,7 +454,7 @@ namespace deeplynx.tests
             };
             var updatedResult = await _relationshipBusiness.UpdateRelationship(pid, testRelationship.Id, dto);
 
-            updatedResult.ModifiedAt.Should().BeOnOrAfter(updatedResult.CreatedAt);
+            updatedResult.LastUpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
             updatedResult.Name.Should().Be(dto.Name);
             updatedResult.Description.Should().Be(dto.Description);
             updatedResult.OriginId.Should().Be(destinationClassId);
@@ -483,8 +483,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.Relationships.Add(originalRelationship);
@@ -503,14 +503,13 @@ namespace deeplynx.tests
             Assert.Equal(originalRelationship.Id, result.Id);
             Assert.Equal("Updated Description", result.Description);
             Assert.Equal(originalRelationship.Name, result.Name);
-            Assert.NotNull(result.ModifiedAt);
 
             // Verify it was actually updated in database
             var updatedRelationship = await Context.Relationships.FindAsync(originalRelationship.Id);
             Assert.NotNull(updatedRelationship);
             Assert.Equal("Updated Description", updatedRelationship.Description);
             Assert.Equal(originalRelationship.Name, updatedRelationship.Name);
-            Assert.NotNull(updatedRelationship.ModifiedAt);
+            Assert.NotNull(updatedRelationship.LastUpdatedAt);
             
             // Ensure that relationship update event was logged
             var eventList = Context.Events.ToList();
@@ -552,8 +551,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -571,13 +570,14 @@ namespace deeplynx.tests
             var beforeArchive = DateTime.UtcNow;
 
             var testRelationship = new Relationship
+                
             {
                 Name = $"Relationship to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -591,10 +591,7 @@ namespace deeplynx.tests
 
             var archivedRelationship = await Context.Relationships.FindAsync(testRelationship.Id);
             Assert.NotNull(archivedRelationship);
-            Assert.NotNull(archivedRelationship.ArchivedAt);
-            Assert.True(archivedRelationship.ArchivedAt >= beforeArchive);
-            Assert.True(archivedRelationship.ArchivedAt <= DateTime.UtcNow);
-            
+            Assert.True(archivedRelationship.IsArchived);
             // Ensure that relationship delete event was logged
             var eventList = Context.Events.ToList();
             eventList.Count.Should().Be(1);
@@ -616,9 +613,9 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -632,7 +629,7 @@ namespace deeplynx.tests
 
             var unarchivedRelationship = await Context.Relationships.FindAsync(testRelationship.Id);
             Assert.NotNull(unarchivedRelationship);
-            Assert.Null(unarchivedRelationship.ArchivedAt);
+            Assert.False(unarchivedRelationship.IsArchived);
         }
 
         [Fact]
@@ -645,8 +642,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
@@ -662,11 +659,9 @@ namespace deeplynx.tests
             Assert.NotNull(archivedRelationship);
 
             // Check if ArchivedAt was set (optional based on implementation)
-            if (archivedRelationship.ArchivedAt.HasValue)
+            if (archivedRelationship.IsArchived)
             {
-                Assert.NotNull(archivedRelationship.ArchivedAt);
-                Assert.True(archivedRelationship.ArchivedAt >= beforeArchive);
-                Assert.True(archivedRelationship.ArchivedAt <= DateTime.UtcNow);
+                Assert.True(archivedRelationship.IsArchived);
             }
         }
 
@@ -711,8 +706,8 @@ namespace deeplynx.tests
                 ProjectId = pid,
                 OriginId = originClassId,
                 DestinationId = destinationClassId,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ArchivedAt = null // Not archived
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null // Not archived
             };
             Context.Relationships.Add(activeRelationship);
             await Context.SaveChangesAsync();
@@ -754,11 +749,9 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Uuid = "test-uuid",
                 ProjectId = 3,
-                CreatedBy = "test@example.com",
-                CreatedAt = now,
-                ModifiedBy = "modified@example.com",
-                ModifiedAt = now.AddDays(1),
-                ArchivedAt = null,
+                LastUpdatedBy = "test@example.com",
+                LastUpdatedAt = now,
+                IsArchived = false,
                 OriginId = 1,
                 DestinationId = 2,
               
@@ -769,11 +762,9 @@ namespace deeplynx.tests
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("test-uuid", dto.Uuid);
             Assert.Equal(3, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.CreatedBy);
-            Assert.Equal(now, dto.CreatedAt);
-            Assert.Equal("modified@example.com", dto.ModifiedBy);
-            Assert.Equal(now.AddDays(1), dto.ModifiedAt);
-            Assert.Null(dto.ArchivedAt);
+            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.Equal(now, dto.LastUpdatedAt);
+            Assert.False(dto.IsArchived);
             Assert.Equal(1, dto.OriginId);
             Assert.Equal(2, dto.DestinationId);
         }
@@ -789,7 +780,7 @@ public async Task GetRelationshipsByName_ValidRelationshipNames_ReturnsMatchingR
         ProjectId = pid,
         OriginId = originClassId,
         DestinationId = destinationClassId,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
     };
 
     Context.Relationships.Add(testRelationship);
@@ -837,8 +828,8 @@ public async Task GetRelationshipsByName_ExcludesArchivedRelationships()
         ProjectId = pid,
         OriginId = originClassId,
         DestinationId = destinationClassId,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        IsArchived = true
     };
 
     Context.Relationships.Add(archivedRelationship);
@@ -879,7 +870,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "DataSource 1",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
@@ -889,7 +880,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(originClass);
 
@@ -897,7 +888,7 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();

@@ -59,7 +59,7 @@ public class ClassBusiness : IClassBusiness
         
         if (hideArchived)
         {
-            classes = classes.Where(c => c.ArchivedAt == null).ToList();
+            classes = classes.Where(c => !c.IsArchived).ToList();
         }
         
         return classes 
@@ -70,11 +70,10 @@ public class ClassBusiness : IClassBusiness
                 Description = c.Description,
                 Uuid = c.Uuid,
                 ProjectId = c.ProjectId,
-                CreatedBy = c.CreatedBy,
-                CreatedAt = c.CreatedAt,
-                ModifiedBy = c.ModifiedBy,
-                ModifiedAt = c.ModifiedAt,
-                ArchivedAt = c.ArchivedAt,
+                LastUpdatedAt = c.LastUpdatedAt,
+                LastUpdatedBy = c.LastUpdatedBy,
+                IsArchived = c.IsArchived,
+
             }).ToList();
     }
 
@@ -97,7 +96,7 @@ public class ClassBusiness : IClassBusiness
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
         
-        if (hideArchived && newClass.ArchivedAt != null)
+        if (hideArchived &&  newClass.IsArchived)
         {
             throw new KeyNotFoundException($"Class with id {classId} is archived");
         }
@@ -109,11 +108,10 @@ public class ClassBusiness : IClassBusiness
             Description = newClass.Description,
             Uuid = newClass.Uuid,
             ProjectId = newClass.ProjectId,
-            CreatedBy = newClass.CreatedBy,
-            CreatedAt = newClass.CreatedAt,
-            ModifiedBy = newClass.ModifiedBy,
-            ModifiedAt = newClass.ModifiedAt,
-            ArchivedAt = newClass.ArchivedAt
+            LastUpdatedAt = newClass.LastUpdatedAt,
+            LastUpdatedBy = newClass.LastUpdatedBy,
+            IsArchived = newClass.IsArchived
+
         };
     }
 
@@ -136,10 +134,10 @@ public class ClassBusiness : IClassBusiness
             Name = dto.Name,
             Description = dto.Description,
             Uuid = dto.Uuid,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            CreatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
-            ModifiedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+            IsArchived = false
+
 
         };
 
@@ -155,7 +153,7 @@ public class ClassBusiness : IClassBusiness
             EntityId = newClass.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {newClass.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ClassResponseDto
@@ -165,10 +163,10 @@ public class ClassBusiness : IClassBusiness
             Description = newClass.Description,
             Uuid = newClass.Uuid,
             ProjectId = newClass.ProjectId,
-            CreatedBy = newClass.CreatedBy,
-            CreatedAt = newClass.CreatedAt,
-            ModifiedBy = newClass.ModifiedBy,
-            ModifiedAt = newClass.ModifiedAt
+            LastUpdatedAt = newClass.LastUpdatedAt,
+            LastUpdatedBy = newClass.LastUpdatedBy,
+            IsArchived = newClass.IsArchived
+
         };
     }
     
@@ -185,13 +183,13 @@ public class ClassBusiness : IClassBusiness
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
-            INSERT INTO deeplynx.classes (project_id, name, description, uuid, created_at)
+            INSERT INTO deeplynx.classes (project_id, name, description, uuid, last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, classes.description),
                 uuid = COALESCE(EXCLUDED.uuid, classes.uuid),
-                modified_at = @now
-            RETURNING *;
+                last_updated_at = @now
+           RETURNING id, project_id, name, description, uuid, last_updated_at, last_updated_by, is_archived;
         ";
 
         // establish "constant" parameters
@@ -211,7 +209,7 @@ public class ClassBusiness : IClassBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", classes.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now)"));
+            $"(@projectId, @p{i}_name, @p{i}_desc, @p{i}_uuid, @now, false, NULL)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -233,7 +231,7 @@ public class ClassBusiness : IClassBusiness
                 EntityId = item.Id,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                CreatedBy = "" // TODO: add username when JWT are implemented
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -253,7 +251,7 @@ public class ClassBusiness : IClassBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var updatedClass = await _context.Classes.FindAsync(classId);
-        if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.ArchivedAt is not null)
+        if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.IsArchived)
         {
             throw new KeyNotFoundException($"Class with id {classId} not found");
         }
@@ -262,8 +260,8 @@ public class ClassBusiness : IClassBusiness
         updatedClass.Name = dto.Name ?? updatedClass.Name;
         updatedClass.Description = dto.Description ?? updatedClass.Description;
         updatedClass.Uuid = dto.Uuid ?? updatedClass.Uuid;
-        updatedClass.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        updatedClass.ModifiedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
+        updatedClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        updatedClass.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
 
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
@@ -277,7 +275,7 @@ public class ClassBusiness : IClassBusiness
             EntityId = updatedClass.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ClassResponseDto
@@ -287,8 +285,9 @@ public class ClassBusiness : IClassBusiness
             Description = updatedClass.Description,
             Uuid = updatedClass.Uuid,
             ProjectId = updatedClass.ProjectId,
-            ModifiedBy = updatedClass.ModifiedBy,
-            ModifiedAt = updatedClass.ModifiedAt,
+            LastUpdatedAt = updatedClass.LastUpdatedAt,
+            LastUpdatedBy = updatedClass.LastUpdatedBy,
+            IsArchived = updatedClass.IsArchived
         };
     }
 
@@ -327,53 +326,49 @@ public class ClassBusiness : IClassBusiness
     {
         Console.WriteLine("Archive ProjectID: " + projectId);
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        // using dbClass since "class" is a reserved word
-        var dbClass = await _context.Classes.FindAsync(classId);
 
-        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is not null)
+        var dbClass = await _context.Classes.FindAsync(classId);
+        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.IsArchived)
             throw new KeyNotFoundException("Class not found.");
 
-        // set archivedAt timestamp
-        var archivedAt = DateTime.UtcNow;
+        // Ensure we can pass to a Postgres INTEGER param safely
+        if (classId < int.MinValue || classId > int.MaxValue)
+            throw new ArgumentOutOfRangeException(nameof(classId), "classId exceeds INTEGER range required by stored procedure.");
 
-        // run archive procedure in a transaction to roll back any errors
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        int arcClassId = (int)classId;
+
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
         {
-            try
-            {
-                // run the archive class procedure, which archives this class
-                // and all child objects with class_id as a foreign key
-                var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", classId, archivedAt);
+            // Call your one-parameter procedure (integer). Let the DB set timestamps and archive dependents.
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"CALL deeplynx.archive_class({arcClassId})");
 
-                if (archived == 0) // if 0 records were updated, assume a failure
-                {
-                    throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents.");
-                }
-
-                await transaction.CommitAsync();
-            }
-            catch (Exception exc)
+            // Refresh tracked entity to reflect DB-side changes
+            await _context.Entry(dbClass).ReloadAsync();
+            
+            await tx.CommitAsync();
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
-            }
+                ProjectId = projectId,
+                Operation = "delete",
+                EntityType = "class",
+                EntityId = dbClass.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dbClass.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+
+            return true;
         }
-        // log event with class soft delete details
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        catch (Exception exc)
         {
-            ProjectId = projectId,
-            Operation = "delete",
-            EntityType = "class",
-            EntityId = dbClass.Id,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {dbClass.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
-        });
-
-        return true;
+            await tx.RollbackAsync();
+            throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
+        }
     }
-    
+        
+        
     /// <summary>
     /// Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>
@@ -388,7 +383,7 @@ public class ClassBusiness : IClassBusiness
         // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
-        if (dbClass == null || dbClass.ProjectId != projectId || dbClass.ArchivedAt is null)
+        if (dbClass == null || dbClass.ProjectId != projectId || !dbClass.IsArchived)
             throw new KeyNotFoundException("Class not found or is not archived.");
 
         // run unarchive procedure in a transaction to roll back any errors
@@ -396,6 +391,8 @@ public class ClassBusiness : IClassBusiness
         {
             try
             {
+                dbClass.IsArchived = false;
+                dbClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 // run the unarchive class procedure, which unarchives this class
                 // and all child objects with class_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
@@ -472,7 +469,7 @@ public class ClassBusiness : IClassBusiness
         // Query for existing classes (excluding archived)
         var existingClasses = await _context.Classes
             .Where(c => c.ProjectId == projectId 
-                        && c.ArchivedAt == null 
+                        && !c.IsArchived
                         && cleanClassNames.Contains(c.Name))
             .ToListAsync();
     
@@ -492,11 +489,9 @@ public class ClassBusiness : IClassBusiness
             Description = c.Description,
             Uuid = c.Uuid,
             ProjectId = c.ProjectId,
-            CreatedBy = c.CreatedBy,
-            CreatedAt = c.CreatedAt,
-            ModifiedBy = c.ModifiedBy,
-            ModifiedAt = c.ModifiedAt,
-            ArchivedAt = c.ArchivedAt
+            LastUpdatedAt = c.LastUpdatedAt,
+            LastUpdatedBy = c.LastUpdatedBy,
+            IsArchived = c.IsArchived
         }).ToList();
     }
 }

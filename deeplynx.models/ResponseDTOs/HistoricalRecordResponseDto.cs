@@ -16,13 +16,10 @@ public class HistoricalRecordResponseDto
     
     public long? ObjectStorageId { get; set; }
     public string? ObjectStorageName { get; set; }
-    public long? ProjectId { get; set; }
-    public string? ProjectName { get; set; }
-    public string? Tags { get; set; } = null!;
-    public string? CreatedBy { get; set; }
-    public DateTime? CreatedAt { get; set; }
-    public string? ModifiedBy { get; set; }
-    public DateTime? ModifiedAt { get; set; }
-    public DateTime? ArchivedAt { get; set; }
-    public DateTime? LastUpdatedAt { get; set; }
+    public long ProjectId { get; set; }
+    public string ProjectName { get; set; }
+    public string Tags { get; set; } = null!;
+    public DateTime LastUpdatedAt { get; set; }
+    public string? LastUpdatedBy { get; set; }
+    public bool IsArchived { get; set; } = false;
 }

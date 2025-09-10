@@ -162,11 +162,8 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
-                CreatedBy = r.CreatedBy,
-                CreatedAt = r.CreatedAt,
-                ModifiedBy = r.ModifiedBy,
-                ModifiedAt = r.ModifiedAt,
-                ArchivedAt = r.ArchivedAt,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt,
                 Description = r.Description
             })

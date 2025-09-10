@@ -276,14 +276,14 @@ public class TimeseriesBusiness(
                     ["query"] = request.Query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
-                if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+                if (record == null || record.ProjectId != projectId || record.IsArchived)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
                 }
 
                 record.Properties = properties.ToString();
                 record.Uri = "object://" + fileName;
-                record.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
@@ -296,7 +296,7 @@ public class TimeseriesBusiness(
                     ["query"] = request.Query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
-                if (record == null || record.ProjectId != projectId || record.ArchivedAt != null)
+                if (record == null || record.ProjectId != projectId || record.IsArchived)
                 {
                     throw new KeyNotFoundException($"Record with id {recordResponse.Id} not found");
                 }

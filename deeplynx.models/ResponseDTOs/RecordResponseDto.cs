@@ -31,16 +31,14 @@ public class RecordResponseDto
     public long DataSourceId { get; set; }
     [Column("project_id")]
     public long ProjectId { get; set; }
-    [Column("created_by")]
-    public string? CreatedBy { get; set; }
-    [Column("created_at")]
-    public DateTime CreatedAt { get; set; }
-    [Column("modified_by")]
-    public string? ModifiedBy { get; set; }
-    [Column("modified_at")]
-    public DateTime? ModifiedAt { get; set; }
-    [Column("archived_at")]
-    public DateTime? ArchivedAt { get; set; }
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+    
+    [Column("last_updated_by")]
+    public string? LastUpdatedBy { get; set; }
+    
+    [Column("is_archived")]
+    public bool IsArchived { get; set; } = false;
     
     [NotMapped]
     public ICollection<RecordTagDto> Tags { get; set; }

@@ -62,7 +62,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
         // result in inaccurate "most recent" results if an edge has been archived
         if (hideArchived && edges.Count > 0)
         {
-            edges = edges.Where(e => e.ArchivedAt == null).ToList();
+            edges = edges.Where(e => !e.IsArchived).ToList();
         }
 
         return edges
@@ -76,12 +76,9 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
                 MappingId = e.MappingId,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
-                CreatedBy = e.CreatedBy,
-                CreatedAt = e.CreatedAt,
-                ModifiedBy = e.ModifiedBy,
-                ModifiedAt = e.ModifiedAt,
-                ArchivedAt = e.ArchivedAt,
-                LastUpdatedAt = e.LastUpdatedAt
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                IsArchived = e.IsArchived,
             });
     }
 
@@ -114,11 +111,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
                 MappingId = e.MappingId,
                 DataSourceId = e.DataSourceId,
                 ProjectId = e.ProjectId,
-                CreatedBy = e.CreatedBy,
-                CreatedAt = e.CreatedAt,
-                ModifiedBy = e.ModifiedBy,
-                ModifiedAt = e.ModifiedAt,
-                ArchivedAt = e.ArchivedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                IsArchived = e.IsArchived,
                 LastUpdatedAt = e.LastUpdatedAt
             })
             .ToListAsync();
@@ -168,7 +162,7 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             throw new KeyNotFoundException($"Edge with id {foundEdgeId} not found at point in time {pointInTime}.");
         }
         
-        if (hideArchived && edge.ArchivedAt != null)
+        if (hideArchived && edge.IsArchived)
         {
             throw new KeyNotFoundException($"Edge with id {foundEdgeId} not found or archived.");
         }
@@ -183,11 +177,8 @@ public class HistoricalEdgeBusiness : IHistoricalEdgeBusiness
             MappingId = edge.MappingId,
             DataSourceId = edge.DataSourceId,
             ProjectId = edge.ProjectId,
-            CreatedBy = edge.CreatedBy,
-            CreatedAt = edge.CreatedAt,
-            ModifiedBy = edge.ModifiedBy,
-            ModifiedAt = edge.ModifiedAt,
-            ArchivedAt = edge.ArchivedAt,
+            LastUpdatedBy = edge.LastUpdatedBy,
+            IsArchived = edge.IsArchived,
             LastUpdatedAt = edge.LastUpdatedAt,
         };
     }

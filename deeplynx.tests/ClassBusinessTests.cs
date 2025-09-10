@@ -65,7 +65,7 @@ namespace deeplynx.tests
 
             var result = await _classBusiness.CreateClass(pid, dto);
             result.Id.Should().BeGreaterThan(0);
-            result.CreatedAt.Should().BeOnOrAfter(now);
+            result.LastUpdatedAt.Should().BeOnOrAfter(now);
             result.Name.Should().Be(dto.Name);
             result.Description.Should().Be(dto.Description);
             result.ProjectId.Should().Be(pid);
@@ -166,7 +166,7 @@ namespace deeplynx.tests
         public async Task CreateClass_Fails_IfDeletedProjectId()
         {
             var project = await Context.Projects.FindAsync(pid);
-            project.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
@@ -219,17 +219,18 @@ namespace deeplynx.tests
             {
                 Name = $"Active Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+
             };
 
             var archivedClass = new Class
             {
                 Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+
             };
             Context.Classes.Add(activeClass);
             Context.Classes.Add(archivedClass);
@@ -246,8 +247,8 @@ namespace deeplynx.tests
                 Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -263,8 +264,7 @@ namespace deeplynx.tests
             {
                 Name = $"Test Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -280,9 +280,9 @@ namespace deeplynx.tests
             {
                 Name = $"Deleted Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -299,8 +299,7 @@ namespace deeplynx.tests
                 Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Original Description",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -311,7 +310,7 @@ namespace deeplynx.tests
             var dto = new UpdateClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
             
-            Assert.NotEqual(updatedResult.ModifiedAt, updatedResult.CreatedAt);
+            Assert.NotNull(updatedResult.LastUpdatedAt);
             Assert.Equal("Updated Description", updatedResult.Description);
             
             // ensure that an event was logged for the update
@@ -334,8 +333,7 @@ namespace deeplynx.tests
                 Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Original Description",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -355,21 +353,22 @@ namespace deeplynx.tests
             Assert.NotNull(updatedResult);
             Assert.Equal("Updated Description", updatedResult.Description);
             Assert.Equal(testClass.Name, updatedResult.Name);
-            Assert.NotNull(updatedResult.ModifiedAt);
+            Assert.NotNull(updatedResult.LastUpdatedAt);
 
             // Verify class was actually updated in database
             var updatedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(updatedClass);
             Assert.Equal("Updated Description", updatedClass.Description);
             Assert.Equal(testClass.Name, updatedClass.Name);
-            Assert.NotNull(updatedClass.ModifiedAt);
+            Assert.NotNull(updatedClass.LastUpdatedAt);
 
             // Verify that get function gets updated version
             var getResult = await _classBusiness.GetClass(pid, testClass.Id, true);
             Assert.NotNull(getResult);
             Assert.Equal("Updated Description", getResult.Description);
             Assert.Equal(testClass.Name, getResult.Name);
-            Assert.NotNull(getResult.ModifiedAt);
+            Assert.NotNull(getResult.LastUpdatedAt);
+
             
             // Ensure that Update Event was logged
             var eventList = Context.Events.ToList();
@@ -405,8 +404,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class to Archive {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -420,10 +418,8 @@ namespace deeplynx.tests
 
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(archivedClass);
-            Assert.NotNull(archivedClass.ArchivedAt);
-            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
-            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
-            
+            Assert.True(archivedClass.IsArchived);
+            Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
             // Ensure that class soft delete event was logged
             var eventList = Context.Events.ToList();
             eventList.Count.Should().Be(1);
@@ -434,6 +430,7 @@ namespace deeplynx.tests
                 EntityType = "class",
                 EntityId = archivedClass.Id,
             });
+
         }
 
         [Fact]
@@ -450,8 +447,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -475,8 +471,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class in Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -489,9 +484,9 @@ namespace deeplynx.tests
 
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(archivedClass);
-            Assert.NotNull(archivedClass.ArchivedAt);
-            Assert.True(archivedClass.ArchivedAt >= beforeArchive);
-            Assert.True(archivedClass.ArchivedAt <= DateTime.UtcNow);
+            Assert.True(archivedClass.IsArchived);
+            Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
+
         }
         
         [Fact]
@@ -501,8 +496,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class to Force Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -524,8 +518,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -536,8 +529,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where testClass is Destination and orig is null
@@ -547,8 +540,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where orig and dest are null
@@ -558,8 +551,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             Context.Relationships.Add(relationship1);
@@ -588,8 +581,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class with Relationships {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -599,8 +591,7 @@ namespace deeplynx.tests
             {
                 Name = $"Other Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(otherClass);
             await Context.SaveChangesAsync();
@@ -612,8 +603,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = otherClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             // Create relationship where testClass is Destination
@@ -623,8 +614,8 @@ namespace deeplynx.tests
                 OriginId = otherClass.Id,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where testClass is Origin and dest is null
@@ -634,8 +625,8 @@ namespace deeplynx.tests
                 OriginId = testClass.Id,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             // Create relationship where testClass is Destination and orig is null
@@ -645,8 +636,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = testClass.Id,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             
             // Create relationship where orig and dest are null
@@ -656,8 +647,8 @@ namespace deeplynx.tests
                 OriginId = null,
                 DestinationId = null,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.Relationships.Add(relationship1);
@@ -689,8 +680,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class with Records {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -703,8 +693,8 @@ namespace deeplynx.tests
                 OriginalId = "og1",
                 Description = "Test Description 1",
                 Properties = "{\"test\": \"value1\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var record2 = new Record
@@ -716,8 +706,8 @@ namespace deeplynx.tests
                 OriginalId = "og2",
                 Description = "Test Description 2",
                 Properties = "{\"test\": \"value2\"}",
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.Records.AddRange(record1, record2);
@@ -744,8 +734,7 @@ namespace deeplynx.tests
             {
                 Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -756,8 +745,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             var mapping2 = new RecordMapping
@@ -766,8 +755,8 @@ namespace deeplynx.tests
                 ClassId = testClass.Id,
                 DataSourceId = did,
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
 
             Context.RecordMappings.Add(mapping1);
@@ -795,9 +784,9 @@ namespace deeplynx.tests
             {
                 Name = $"Archived Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 ProjectId = pid,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -809,7 +798,7 @@ namespace deeplynx.tests
             Context.ChangeTracker.Clear();
             
             var updated = await Context.Classes.FindAsync(testClass.Id);
-            Assert.Null(updated?.ArchivedAt);
+            Assert.False(updated?.IsArchived);
         }
 
         [Fact]
@@ -830,7 +819,7 @@ namespace deeplynx.tests
             {
                 Name = "Class from other project",
                 ProjectId = otherProject.Id,
-                ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                IsArchived = false
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -846,7 +835,7 @@ namespace deeplynx.tests
             {
                 Name = "Active Class",
                 ProjectId = pid,
-                ArchivedAt = null
+                IsArchived = false
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -866,7 +855,7 @@ public async Task GetClassesByName_ValidClassNames_ReturnsMatchingClasses()
     {
         Name = "TestValidationClass",
         ProjectId = pid,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
     };
 
     Context.Classes.Add(testClass);
@@ -912,8 +901,8 @@ public async Task GetClassesByName_ExcludesArchivedClasses()
     {
         Name = "ArchivedClass",
         ProjectId = pid,
-        CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        IsArchived = true
     };
 
     Context.Classes.Add(archivedClass);
@@ -952,8 +941,8 @@ public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
             {
                 Name = "Test Datasource",
                 ProjectId = project.Id,
-                CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                CreatedBy = null
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();

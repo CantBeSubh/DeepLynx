@@ -64,8 +64,8 @@ public class EventBusiness : IEventBusiness
                 EntityId = e.EntityId,
                 EntityType = e.EntityType,
                 Properties = e.Properties,
-                CreatedBy = e.CreatedBy,
-                CreatedAt = e.CreatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                LastUpdatedAt = e.LastUpdatedAt,
             }).ToList();
     }
     
@@ -87,8 +87,8 @@ public class EventBusiness : IEventBusiness
             EntityType = dto.EntityType,
             ProjectId = dto.ProjectId,
             Properties = dto.Properties,
-            CreatedBy = dto.CreatedBy,
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = dto.LastUpdatedBy,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             DataSourceId = dto.DataSourceId,
             EntityId = dto.EntityId,
         };
@@ -105,8 +105,8 @@ public class EventBusiness : IEventBusiness
             EntityId = newEvent.EntityId,
             DataSourceId = newEvent.DataSourceId,
             Properties = newEvent.Properties,
-            CreatedBy = newEvent.CreatedBy,
-            CreatedAt = newEvent.CreatedAt,
+            LastUpdatedBy = newEvent.LastUpdatedBy,
+            LastUpdatedAt = newEvent.LastUpdatedAt,
         };
     }
 
@@ -125,42 +125,33 @@ public class EventBusiness : IEventBusiness
             ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         }
-
-        // Bulk Insert into Events
-        var sql = @"
-            INSERT INTO deeplynx.events (project_id, operation, entity_type, entity_id, properties, data_source_id, created_by, created_at)
-            VALUES {0}
-            RETURNING *;
-        ";
-
-        var parameters = new List<NpgsqlParameter>
+        var eventEntities = events.Select(dto => new Event
         {
-            new NpgsqlParameter("@projectId", projectId),
-            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
-        };
+            ProjectId = projectId,
+            Operation = dto.Operation,
+            EntityType = dto.EntityType,
+            EntityId = dto.EntityId,
+            Properties = dto.Properties,
+            DataSourceId = dto.DataSourceId,
+            LastUpdatedBy = dto.LastUpdatedBy,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        }).ToList();
 
-        var utcNow = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Events.AddRange(eventEntities);
+        await _context.SaveChangesAsync();
 
-        parameters.AddRange(events.SelectMany((dto, i) => new[]
+        return eventEntities.Select(e => new EventResponseDto
         {
-            new NpgsqlParameter($"@p{i}_operation", dto.Operation),
-            new NpgsqlParameter($"@p{i}_entity_type", dto.EntityType),
-            new NpgsqlParameter($"@p{i}_entity_id", dto.EntityId ?? (object)DBNull.Value),
-            new NpgsqlParameter($"@p{i}_properties", NpgsqlTypes.NpgsqlDbType.Jsonb) { Value = dto.Properties },
-            new NpgsqlParameter($"@p{i}_data_source_id", dto.DataSourceId ?? (object)DBNull.Value),
-            new NpgsqlParameter($"@p{i}_created_by", dto.CreatedBy),
-        }));
-
-        var valueTuples = string.Join(", ", events.Select((dto, i) =>
-            $"(@projectId, @p{i}_operation, @p{i}_entity_type, @p{i}_entity_id, @p{i}_properties, @p{i}_data_source_id, @p{i}_created_by, @now)"));
-
-        sql = string.Format(sql, valueTuples);
-
-        // Execute the SQL command and map results to EventResponseDto
-        var result = await _context.Database
-            .SqlQueryRaw<EventResponseDto>(sql, parameters.ToArray())
-            .ToListAsync();
-
-        return result;
+            Id = e.Id,
+            ProjectId = e.ProjectId,
+            Operation = e.Operation,
+            EntityType = e.EntityType,
+            EntityId = e.EntityId,
+            Properties = e.Properties,
+            DataSourceId = e.DataSourceId,
+            LastUpdatedBy = e.LastUpdatedBy,
+            LastUpdatedAt = e.LastUpdatedAt
+        }).ToList();
+        
     }
 }

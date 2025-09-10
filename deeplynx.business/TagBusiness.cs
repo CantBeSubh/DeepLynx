@@ -43,7 +43,7 @@ public class TagBusiness : ITagBusiness
             
         if (hideArchived)
         {
-            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+            tagQuery = tagQuery.Where(t => !t.IsArchived);
         }
             
         return await tagQuery.Select(t => new TagResponseDto()
@@ -51,11 +51,8 @@ public class TagBusiness : ITagBusiness
                 Id = t.Id,
                 Name = t.Name,
                 ProjectId = t.ProjectId,
-                CreatedBy = t.CreatedBy,
-                CreatedAt = t.CreatedAt,
-                ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt,
-                ArchivedAt = t.ArchivedAt,
+                LastUpdatedBy = t.LastUpdatedBy,
+                LastUpdatedAt = t.LastUpdatedAt,
             })
             .ToListAsync();
     }
@@ -80,7 +77,7 @@ public class TagBusiness : ITagBusiness
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
         
-        if (hideArchived && tag.ArchivedAt != null)
+        if (hideArchived && tag.IsArchived)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} is archived");
         }
@@ -90,11 +87,9 @@ public class TagBusiness : ITagBusiness
             Id = tag.Id,
             Name = tag.Name,
             ProjectId = tag.ProjectId,
-            CreatedBy = tag.CreatedBy,
-            CreatedAt = tag.CreatedAt,
-            ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt,
-            ArchivedAt = tag.ArchivedAt,
+            LastUpdatedBy = tag.LastUpdatedBy,
+            LastUpdatedAt = tag.LastUpdatedAt,
+            IsArchived = tag.IsArchived,
         };
     }
 
@@ -134,8 +129,8 @@ public class TagBusiness : ITagBusiness
         {
             Name = dto.Name,
             ProjectId = projectId,
-            CreatedBy = null, // TODO: handled in future by JWT.
-            CreatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedBy = null, // TODO: handled in future by JWT.
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
 
         _context.Tags.Add(tag);
@@ -150,7 +145,7 @@ public class TagBusiness : ITagBusiness
             EntityId = tag.Id,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
             DataSourceId = null,
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -158,8 +153,8 @@ public class TagBusiness : ITagBusiness
             Id = tag.Id,
             Name = tag.Name,
             ProjectId = tag.ProjectId,
-            CreatedBy = tag.CreatedBy,
-            CreatedAt = tag.CreatedAt
+            LastUpdatedBy = tag.LastUpdatedBy,
+            LastUpdatedAt = tag.LastUpdatedAt
         };
     }
 
@@ -178,10 +173,10 @@ public class TagBusiness : ITagBusiness
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
-            INSERT INTO deeplynx.tags (project_id, name, created_at)
+            INSERT INTO deeplynx.tags (project_id, name, last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, name) DO UPDATE SET
-                modified_at = @now
+                last_updated_at = @now
             RETURNING *;
         ";
 
@@ -200,7 +195,7 @@ public class TagBusiness : ITagBusiness
         
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", tags.Select((dto, i) =>
-            $"(@projectId, @p{i}_name, @now)"));
+            $"(@projectId, @p{i}_name, @now, false, NUll)"));
         
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
@@ -222,7 +217,7 @@ public class TagBusiness : ITagBusiness
                 EntityId = item.Id,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
                 DataSourceId = null,
-                CreatedBy = "" // TODO: add username when JWT are implemented
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -242,7 +237,7 @@ public class TagBusiness : ITagBusiness
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var tag = await _context.Tags.FindAsync(tagId);
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
         {
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
         }
@@ -254,9 +249,10 @@ public class TagBusiness : ITagBusiness
         }
 
         tag.Name = tagRequestDto.Name ?? tag.Name;
-        tag.ModifiedBy = null; // TODO: handled in future by JWT.
-        tag.ModifiedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-
+        tag.LastUpdatedBy= null; // TODO: handled in future by JWT.
+        tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        
+        _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         
         // Log tag update event
@@ -268,7 +264,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto
@@ -276,10 +272,9 @@ public class TagBusiness : ITagBusiness
             Id = tag.Id,
             Name = tag.Name,
             ProjectId = tag.ProjectId,
-            CreatedBy = tag.CreatedBy,
-            CreatedAt = tag.CreatedAt,
-            ModifiedBy = tag.ModifiedBy,
-            ModifiedAt = tag.ModifiedAt
+            LastUpdatedBy = tag.LastUpdatedBy,
+            LastUpdatedAt = tag.LastUpdatedAt,
+            IsArchived = tag.IsArchived,
         };
     }
     
@@ -313,10 +308,11 @@ public class TagBusiness : ITagBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var tag = await _context.Tags.FindAsync(tagId);
 
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is not null)
+        if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found");
 
-        tag.ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        tag.IsArchived = true;
+        tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         
@@ -329,7 +325,7 @@ public class TagBusiness : ITagBusiness
             ProjectId = tag.ProjectId,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            CreatedBy = "" // TODO: add username when JWT are implemented
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -347,10 +343,11 @@ public class TagBusiness : ITagBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         var tag = await _context.Tags.FindAsync(tagId);
 
-        if (tag == null || tag.ProjectId != projectId || tag.ArchivedAt is null)
+        if (tag == null || tag.ProjectId != projectId || !tag.IsArchived)
             throw new KeyNotFoundException($"Tag with id {tagId} not found or is not archived.");
 
-        tag.ArchivedAt = null;
+        tag.IsArchived = false;
+        tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
         return true;
@@ -384,7 +381,7 @@ public class TagBusiness : ITagBusiness
         // Query for existing tags (excluding archived)
         var existingTags = await _context.Tags
             .Where(t => t.ProjectId == projectId 
-                        && t.ArchivedAt == null 
+                        && !t.IsArchived
                         && cleanTagNames.Contains(t.Name))
             .ToListAsync();
     
@@ -402,11 +399,9 @@ public class TagBusiness : ITagBusiness
             Id = t.Id,
             Name = t.Name,
             ProjectId = t.ProjectId,
-            CreatedBy = t.CreatedBy,
-            CreatedAt = t.CreatedAt,
-            ModifiedBy = t.ModifiedBy,
-            ModifiedAt = t.ModifiedAt,
-            ArchivedAt = t.ArchivedAt
+            LastUpdatedBy = t.LastUpdatedBy,
+            LastUpdatedAt = t.LastUpdatedAt,
+            IsArchived = t.IsArchived,
         }).ToList();
     }
 }

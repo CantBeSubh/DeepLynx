@@ -64,7 +64,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             Type = "filesystem",
             ProjectId = pid,
             Config = os4Config.ToString(),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            IsArchived = true
         };
         
         Context.ObjectStorages.Add(objectStorage5);
@@ -73,7 +73,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(pid, true);
         objectStorages.Should().HaveCount(2);
         objectStorages.Should().NotContain(os => os.Id == objectStorage5.Id);
-        objectStorages.Should().OnlyContain(os => os.ArchivedAt == null);
+        objectStorages.Should().OnlyContain(os => !os.IsArchived);
     }
     
     [Fact]
@@ -81,7 +81,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     {
         var objectStorages = await _objectStorageBusiness.GetAllObjectStorages(pid, false);
         objectStorages.Should().HaveCount(3);
-        objectStorages.Should().Contain(os => os.Id == archivedOs && os.ArchivedAt != null);
+        objectStorages.Should().Contain(os => os.Id == archivedOs && os.IsArchived);
         objectStorages.Should().OnlyContain(os => os.ProjectId == pid);
     }
 
@@ -112,7 +112,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             Type = "filesystem",
             ProjectId = pid,
             Config = os5Config.ToString(),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            IsArchived = true
         };
         
         Context.ObjectStorages.Add(objectStorage5);
@@ -121,7 +121,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var objectStorage = await _objectStorageBusiness.GetObjectStorage(pid, objectStorage5.Id, false);
         objectStorage.Should().NotBeNull();
         objectStorage.Id.Should().Be(objectStorage5.Id);
-        objectStorage.ArchivedAt.Should().NotBeNull();
+        objectStorage.IsArchived.Should().BeTrue();
     }
     
     [Fact]
@@ -135,7 +135,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             Type = "filesystem",
             ProjectId = pid,
             Config = os5Config.ToString(),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            IsArchived = true
         };
         
         Context.ObjectStorages.Add(objectStorage5);
@@ -171,7 +171,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             Type = "filesystem",
             ProjectId = pid2,
             Config = os4Config.ToString(),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            IsArchived = true
         };
         Context.ObjectStorages.Add(archivedDefaultObjectStorage);
         await Context.SaveChangesAsync();
@@ -317,7 +317,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var archivedObjectStorage = await Context.ObjectStorages.Where(os => os.Id == os2 && os.ProjectId == pid).FirstOrDefaultAsync();
         archivedObjectStorage.Should().NotBeNull();
         archivedObjectStorage.Id.Should().Be(os2);
-        archivedObjectStorage.ArchivedAt.Should().NotBeNull();
+        archivedObjectStorage.IsArchived.Should().BeTrue();
     }
     
     [Fact]
@@ -351,7 +351,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         var unarchivedObjectStorage = await Context.ObjectStorages.Where(os => os.Id == archivedOs && os.ProjectId == pid).FirstOrDefaultAsync();
         unarchivedObjectStorage.Should().NotBeNull();
         unarchivedObjectStorage.Id.Should().Be(archivedOs);
-        unarchivedObjectStorage.ArchivedAt.Should().BeNull();
+        unarchivedObjectStorage.IsArchived.Should().BeFalse();
     }
     
     [Fact]
@@ -400,7 +400,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         
         var archivedObjectStorages = await Context.ObjectStorages.Where(os => os.ProjectId == pid).ToListAsync();
         archivedObjectStorages.Should().NotBeNull();
-        archivedObjectStorages.Should().OnlyContain(os => os.ArchivedAt != null);
+        archivedObjectStorages.Should().OnlyContain(os => os.IsArchived);
     }
 
     protected override async Task SeedTestDataAsync()
@@ -463,7 +463,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
             Type = "filesystem",
             ProjectId = pid,
             Config = os5Config.ToString(),
-            ArchivedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            IsArchived = true
         };
         
         Context.ObjectStorages.Add(objectStorage);

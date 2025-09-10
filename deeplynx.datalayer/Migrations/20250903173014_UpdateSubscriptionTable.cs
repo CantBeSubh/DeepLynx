@@ -10,16 +10,6 @@ namespace deeplynx.datalayer.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "created_by",
-                schema: "deeplynx",
-                table: "subscriptions");
-
-            migrationBuilder.DropColumn(
-                name: "modified_by",
-                schema: "deeplynx",
-                table: "subscriptions");
-
             migrationBuilder.AlterColumn<long>(
                 name: "user_id",
                 schema: "deeplynx",
@@ -55,20 +45,6 @@ namespace deeplynx.datalayer.Migrations
                 nullable: true,
                 oldClrType: typeof(long),
                 oldType: "bigint");
-
-            migrationBuilder.AddColumn<string>(
-                name: "created_by",
-                schema: "deeplynx",
-                table: "subscriptions",
-                type: "text",
-                nullable: true);
-
-            migrationBuilder.AddColumn<string>(
-                name: "modified_by",
-                schema: "deeplynx",
-                table: "subscriptions",
-                type: "text",
-                nullable: true);
         }
     }
 }
