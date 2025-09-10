@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: [
         Okta({
-            clientId: process.env.AUTH_OKTA_ID!,
-            clientSecret: process.env.AUTH_OKTA_SECRET!,
-            issuer: process.env.AUTH_OKTA_ISSUER,
+            clientId: process.env.OKTA_CLIENT_ID!,
+            clientSecret: process.env.OKTA_CLIENT_SECRET!,
+            issuer: process.env.OKTA_ISSUER,
             authorization: {
                 params: {
                     scope: "openid profile email email", // Added email scope
@@ -57,5 +57,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return session;
         },
     },
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.NEXTAUTH_SECRET,
 });
