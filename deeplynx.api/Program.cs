@@ -6,11 +6,22 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using Log = Serilog.Log;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 2L * 1024 * 1024 * 1024;
+});
+
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024;
+});
 
 var connectionString = ConnectionStringsProvider.GetPostgresConnectionString(builder.Configuration);
 
