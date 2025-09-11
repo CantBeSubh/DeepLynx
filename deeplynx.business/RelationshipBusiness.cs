@@ -384,38 +384,16 @@ public class RelationshipBusiness: IRelationshipBusiness
         if (relationship == null || relationship.ProjectId != projectId || relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found");
 
-        // set archivedAt timestamp
-        var archivedAt = DateTime.UtcNow;
+        relationship.IsArchived = true;
+        relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Relationships.Update(relationship);
+        await _context.SaveChangesAsync();
         
-        // run archive procedure in a transaction to roll back any errors
-        using (var transaction = await _context.Database.BeginTransactionAsync())
-        {
-            try
-            {
-                // run the archive relationship procedure, which archives this relationship
-                // and all child objects with relationship_id as a foreign key
-                var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_relationship({0}::INTEGER)", relationshipId);
-
-                if (archived == 0) // if 0 records were updated, assume a failure
-                {
-                    throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents.");
-                }
-
-                await transaction.CommitAsync();
-            }
-            catch (Exception exc)
-            {
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive relationship {relationshipId} or its downstream dependents: {exc}");
-            }
-        }
-        
-        // Log relationship soft delete event
+        // Log relationship archive event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             ProjectId = projectId,
-            Operation = "delete",
+            Operation = "archive",
             EntityType = "relationship",
             EntityId = relationship.Id,
             DataSourceId = null,
@@ -441,31 +419,26 @@ public class RelationshipBusiness: IRelationshipBusiness
         if (relationship == null || relationship.ProjectId != projectId || !relationship.IsArchived)
             throw new KeyNotFoundException($"Relationship with id {relationshipId} not found or is not archived.");
         
-        // run unarchive procedure in a transaction to roll back any errors
-        using (var transaction = await _context.Database.BeginTransactionAsync())
+        relationship.IsArchived = false;
+        relationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        _context.Relationships.Update(relationship);
+        await _context.SaveChangesAsync();
+        
+        // Log relationship unarchive event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            try
-            {
-                // run the unarchive relationship procedure, which unarchives this relationship
-                // and all child objects with relationship_id as a foreign key
-                var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_relationship({0}::INTEGER)", relationshipId);
-
-                if (unarchived == 0) // if 0 records were updated, assume a failure
-                {
-                    throw new DependencyDeletionException($"unable to unarchive relationship {relationshipId} or its downstream dependents.");
-                }
-
-                await transaction.CommitAsync();
-                return true;
-            }
-            catch (Exception exc)
-            {
-                await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to unarchive relationship {relationshipId} or its downstream dependents: {exc}");
-            }
-        }
+            ProjectId = projectId,
+            Operation = "unarchive",
+            EntityType = "relationship",
+            EntityId = relationship.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {relationship.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
+
     /// <summary>
     /// Validates that all provided relationship names exist in the database for the specified project.
     /// Used by MetadataBusiness to enforce ontologyMutable settings.
@@ -489,9 +462,9 @@ public class RelationshipBusiness: IRelationshipBusiness
 
         if (!cleanRelationshipNames.Any())
             throw new ArgumentException("No valid relationship names provided", nameof(relationshipNames));
-    
+
         var existingRelationships = await _context.Relationships
-            .Where(r => r.ProjectId == projectId 
+            .Where(r => r.ProjectId == projectId
                         && r.IsArchived == false
                         && cleanRelationshipNames.Contains(r.Name))
             .Include(r => r.Origin)

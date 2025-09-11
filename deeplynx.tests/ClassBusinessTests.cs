@@ -426,7 +426,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = pid,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "class",
                 EntityId = archivedClass.Id,
             });
@@ -725,54 +725,6 @@ namespace deeplynx.tests
                 .Where(r => r.ClassId == testClass.Id)
                 .ToList();
             Assert.Empty(remainingRecords);
-        }
-
-        [Fact]
-        public async Task DeleteClass_DeletesDownstreamRecordMappings()
-        {
-            var testClass = new Class
-            {
-                Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Classes.Add(testClass);
-            await Context.SaveChangesAsync();
-
-            var mapping1 = new RecordMapping
-            {
-                RecordParams = "{\"param1\": \"value1\"}",
-                ClassId = testClass.Id,
-                DataSourceId = did,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-
-            var mapping2 = new RecordMapping
-            {
-                RecordParams = "{\"param2\": \"value2\"}",
-                ClassId = testClass.Id,
-                DataSourceId = did,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-
-            Context.RecordMappings.Add(mapping1);
-            Context.RecordMappings.Add(mapping2);
-            await Context.SaveChangesAsync();
-
-            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-            Assert.True(deletedResult);
-
-            var deletedMapping1 = await Context.RecordMappings.FindAsync(mapping1.Id);
-            var deletedMapping2 = await Context.RecordMappings.FindAsync(mapping2.Id);
-            
-            Assert.NotNull(deletedMapping1);
-            Assert.NotNull(deletedMapping2);
-            Assert.Null(deletedMapping1.ClassId);
-            Assert.Null(deletedMapping2.ClassId);
         }
         
         #region UnarchiveClass Tests

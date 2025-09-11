@@ -598,7 +598,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = testRelationship.ProjectId,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "relationship",
                 EntityId = archivedRelationship.Id,
             });

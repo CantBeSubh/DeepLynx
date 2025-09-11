@@ -383,7 +383,7 @@ namespace deeplynx.tests
                 ProjectId = testProject.Id,
                 EntityType = "project",
                 EntityId = testProject.Id,
-                Operation = "delete"
+                Operation = "archive"
             });
         }
 

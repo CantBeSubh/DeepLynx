@@ -27,6 +27,8 @@ public class ValidationHelper
             "create",
             "update",
             "delete",
+            "archive",
+            "unarchive"
         };
             
         if (type == "EntityType")
