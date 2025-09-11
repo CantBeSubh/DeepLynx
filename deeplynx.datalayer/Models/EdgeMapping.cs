@@ -1,15 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
 [Table("edge_mappings", Schema = "deeplynx")]
+[Index("DataSourceId", Name = "idx_edge_mappings_data_source_id")]
 [Index("DestinationId", Name = "idx_edge_mappings_destination_id")]
 [Index("Id", Name = "idx_edge_mappings_id")]
 [Index("OriginId", Name = "idx_edge_mappings_origin_id")]
 [Index("ProjectId", Name = "idx_edge_mappings_project_id")]
-[Index("DataSourceId", Name = "idx_edge_mappings_data_source_id")]
 [Index("RelationshipId", Name = "idx_edge_mappings_relationship_id")]
 public partial class EdgeMapping
 {
@@ -31,24 +33,22 @@ public partial class EdgeMapping
 
     [Column("destination_id")]
     public long DestinationId { get; set; }
-    
-    [Column("data_source_id")]
-    public long DataSourceId { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
 
-    [Required]
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
-    
+
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
-    
-    [Required]
+
+    [Column("data_source_id")]
+    public long DataSourceId { get; set; }
+
     [Column("is_archived")]
-    public bool IsArchived { get; set; } = false;
-    
+    public bool IsArchived { get; set; }
+
     [ForeignKey("DataSourceId")]
     [InverseProperty("EdgeMappings")]
     public virtual DataSource DataSource { get; set; } = null!;
@@ -56,6 +56,9 @@ public partial class EdgeMapping
     [ForeignKey("DestinationId")]
     [InverseProperty("EdgeMappingDestinations")]
     public virtual Class Destination { get; set; } = null!;
+
+    [InverseProperty("Mapping")]
+    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [ForeignKey("OriginId")]
     [InverseProperty("EdgeMappingOrigins")]
@@ -68,7 +71,4 @@ public partial class EdgeMapping
     [ForeignKey("RelationshipId")]
     [InverseProperty("EdgeMappings")]
     public virtual Relationship Relationship { get; set; } = null!;
-    
-    [InverseProperty("EdgeMapping")]
-    public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 }

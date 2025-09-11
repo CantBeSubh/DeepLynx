@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,26 +23,24 @@ public partial class RecordMapping
 
     [Column("class_id")]
     public long? ClassId { get; set; }
-    
-    [Column("data_source_id")]
-    public long DataSourceId { get; set; }
 
-    [Required]
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
-    
+
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
-    
-    [Required]
-    [Column("is_archived")]
-    public bool IsArchived { get; set; } = false;
 
     [Column("project_id")]
     public long ProjectId { get; set; }
 
     [Column("tag_id")]
     public long? TagId { get; set; }
+
+    [Column("data_source_id")]
+    public long DataSourceId { get; set; }
+
+    [Column("is_archived")]
+    public bool IsArchived { get; set; }
 
     [ForeignKey("ClassId")]
     [InverseProperty("RecordMappings")]
@@ -53,10 +53,10 @@ public partial class RecordMapping
     [ForeignKey("ProjectId")]
     [InverseProperty("RecordMappings")]
     public virtual Project Project { get; set; } = null!;
-    
-    [InverseProperty("RecordMappings")]
-    public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-    
+
     [InverseProperty("RecordMapping")]
+    public virtual ICollection<RecordMappingTag> RecordMappingTags { get; set; } = new List<RecordMappingTag>();
+
+    [InverseProperty("Mapping")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
 }
