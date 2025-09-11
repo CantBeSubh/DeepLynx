@@ -38,9 +38,6 @@ public partial class HistoricalRecord
     [Column("class_name")]
     public string? ClassName { get; set; }
 
-    [Column("mapping_id")]
-    public long? MappingId { get; set; }
-
     [Column("data_source_id")]
     public long DataSourceId { get; set; }
 

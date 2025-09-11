@@ -21,9 +21,7 @@ namespace deeplynx.tests
         private EventBusiness _eventBusiness = null!;
         private Mock<IEdgeBusiness> _mockEdgeBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
 
@@ -44,16 +42,14 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
-            _mockEdgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             
             _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
-                Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
+                Context, _mockRecordBusiness.Object, 
+                _mockRelationshipBusiness.Object, _eventBusiness);
             _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
         }
         

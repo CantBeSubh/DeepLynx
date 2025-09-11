@@ -13,18 +13,15 @@ public class RelationshipBusiness: IRelationshipBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
     private readonly IEdgeBusiness _edgeBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RelationshipBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the relationship operations.</param>
-    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects.</param>
     /// <param name="edgeBusiness">Passed in context of edge objects.</param>
-    public RelationshipBusiness(DeeplynxContext context, IEdgeMappingBusiness edgeMappingBusiness, IEdgeBusiness edgeBusiness, IEventBusiness eventBusiness)
+    public RelationshipBusiness(DeeplynxContext context, IEdgeBusiness edgeBusiness, IEventBusiness eventBusiness)
     {
-        _edgeMappingBusiness = edgeMappingBusiness;
         _edgeBusiness = edgeBusiness;
         _context = context;
         _eventBusiness = eventBusiness;

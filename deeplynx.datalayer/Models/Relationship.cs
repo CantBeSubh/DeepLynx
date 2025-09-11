@@ -52,9 +52,6 @@ public partial class Relationship
     public virtual Class? Destination { get; set; }
 
     [InverseProperty("Relationship")]
-    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
-
-    [InverseProperty("Relationship")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [ForeignKey("OriginId")]

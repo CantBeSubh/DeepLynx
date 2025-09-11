@@ -23,8 +23,6 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<Edge> Edges { get; set; }
 
-    public virtual DbSet<EdgeMapping> EdgeMappings { get; set; }
-
     public virtual DbSet<Event> Events { get; set; }
 
     public virtual DbSet<Group> Groups { get; set; }
@@ -48,10 +46,6 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<ProjectMember> ProjectMembers { get; set; }
 
     public virtual DbSet<Record> Records { get; set; }
-
-    public virtual DbSet<RecordMapping> RecordMappings { get; set; }
-
-    public virtual DbSet<RecordMappingTag> RecordMappingTags { get; set; }
 
     public virtual DbSet<Relationship> Relationships { get; set; }
 
@@ -115,10 +109,6 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasOne(d => d.Destination).WithMany(p => p.EdgeDestinations).HasConstraintName("edges_destination_id_fkey");
 
-            entity.HasOne(d => d.Mapping).WithMany(p => p.Edges)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("edges_mapping_id_fkey");
-
             entity.HasOne(d => d.Origin).WithMany(p => p.EdgeOrigins).HasConstraintName("edges_origin_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Edges).HasConstraintName("edges_project_id_fkey");
@@ -126,26 +116,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Relationship).WithMany(p => p.Edges)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("edges_relationship_id_fkey");
-        });
-
-        modelBuilder.Entity<EdgeMapping>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("edge_mappings_pkey");
-
-            entity.Property(e => e.Id).UseIdentityAlwaysColumn();
-            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(e => e.IsArchived).HasDefaultValue(false);
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_data_source_id_fkey");
-
-            entity.HasOne(d => d.Destination).WithMany(p => p.EdgeMappingDestinations).HasConstraintName("edge_mappings_destination_id_fkey");
-
-            entity.HasOne(d => d.Origin).WithMany(p => p.EdgeMappingOrigins).HasConstraintName("edge_mappings_origin_id_fkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_project_id_fkey");
-
-            entity.HasOne(d => d.Relationship).WithMany(p => p.EdgeMappings).HasConstraintName("edge_mappings_relationship_id_fkey");
         });
 
         modelBuilder.Entity<Event>(entity =>
@@ -312,10 +282,6 @@ public partial class DeeplynxContext : DbContext
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Records).HasConstraintName("records_data_source_id_fkey");
 
-            entity.HasOne(d => d.Mapping).WithMany(p => p.Records)
-                .OnDelete(DeleteBehavior.Restrict)
-                .HasConstraintName("records_mapping_id_fkey");
-
             entity.HasOne(d => d.ObjectStorage).WithMany(p => p.Records).HasConstraintName("records_object_storage_id_fkey");
 
             entity.HasOne(d => d.Project).WithMany(p => p.Records).HasConstraintName("records_project_id_fkey");
@@ -357,33 +323,6 @@ public partial class DeeplynxContext : DbContext
                         j.IndexerProperty<long>("RecordId").HasColumnName("record_id");
                         j.IndexerProperty<long>("TagId").HasColumnName("tag_id");
                     });
-        });
-
-        modelBuilder.Entity<RecordMapping>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("record_mappings_pkey");
-
-            entity.Property(e => e.Id).UseIdentityAlwaysColumn();
-            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.Property(e => e.IsArchived).HasDefaultValue(false);
-
-            entity.HasOne(d => d.Class).WithMany(p => p.RecordMappings)
-                .OnDelete(DeleteBehavior.Cascade)
-                .HasConstraintName("record_mappings_class_id_fkey");
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.RecordMappings).HasConstraintName("record_mapping_data_source_id_fkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.RecordMappings).HasConstraintName("record_mappings_project_id_fkey");
-        });
-
-        modelBuilder.Entity<RecordMappingTag>(entity =>
-        {
-            entity.HasKey(e => new { e.RecordMappingId, e.TagId }).HasName("record_mapping_tags_pkey");
-
-            entity.HasOne(d => d.RecordMapping).WithMany(p => p.RecordMappingTags).HasConstraintName("record_mapping_tags_record_mapping_id_fkey");
-
-            entity.HasOne(d => d.Tag).WithMany(p => p.RecordMappingTags).HasConstraintName("record_mapping_tags_tag_id_fkey");
         });
 
         modelBuilder.Entity<Relationship>(entity =>

@@ -34,9 +34,6 @@ public partial class HistoricalEdge
     [Column("relationship_name")]
     public string? RelationshipName { get; set; }
 
-    [Column("mapping_id")]
-    public long? MappingId { get; set; }
-
     [Column("data_source_id")]
     public long DataSourceId { get; set; }
 

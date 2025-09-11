@@ -14,11 +14,10 @@ public class UserBusiness : IUserBusiness
     /// <summary>
     /// Initializes a new instance of the <see cref="UserBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context used for the record mapping operations.</param>
+    /// <param name="context">The database context used for the user operations.</param>
     public UserBusiness(DeeplynxContext context)
     {
         _context = context;
-
     }
 
     /// <summary>
@@ -319,7 +318,6 @@ public class UserBusiness : IUserBusiness
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,

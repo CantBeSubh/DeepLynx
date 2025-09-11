@@ -49,9 +49,6 @@ public partial class DataSource
     public bool IsArchived { get; set; }
 
     [InverseProperty("DataSource")]
-    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
-
-    [InverseProperty("DataSource")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [InverseProperty("DataSource")]
@@ -60,9 +57,6 @@ public partial class DataSource
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]
     public virtual Project Project { get; set; } = null!;
-
-    [InverseProperty("DataSource")]
-    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

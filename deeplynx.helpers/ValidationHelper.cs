@@ -13,10 +13,8 @@ public class ValidationHelper
             "data_source", 
             "relationship", 
             "project", 
-            "edge", 
-            "edge_mapping", 
-            "record", 
-            "record_mapping",
+            "edge",
+            "record",
             "metadata", 
             "user", 
             "tag"

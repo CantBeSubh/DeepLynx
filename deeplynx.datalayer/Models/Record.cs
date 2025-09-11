@@ -11,7 +11,6 @@ namespace deeplynx.datalayer.Models;
 [Index("ClassId", Name = "idx_records_class_id")]
 [Index("DataSourceId", Name = "idx_records_data_source_id")]
 [Index("Id", Name = "idx_records_id")]
-[Index("MappingId", Name = "idx_records_mapping_id")]
 [Index("Name", Name = "idx_records_name")]
 [Index("OriginalId", Name = "idx_records_original_id")]
 [Index("ProjectId", Name = "idx_records_project_id")]
@@ -49,9 +48,6 @@ public partial class Record
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
 
-    [Column("mapping_id")]
-    public long? MappingId { get; set; }
-
     [Column("description")]
     public string Description { get; set; } = null!;
 
@@ -77,10 +73,6 @@ public partial class Record
 
     [InverseProperty("Record")]
     public virtual ICollection<HistoricalRecord> HistoricalRecords { get; set; } = new List<HistoricalRecord>();
-
-    [ForeignKey("MappingId")]
-    [InverseProperty("Records")]
-    public virtual RecordMapping? Mapping { get; set; }
 
     [ForeignKey("ObjectStorageId")]
     [InverseProperty("Records")]

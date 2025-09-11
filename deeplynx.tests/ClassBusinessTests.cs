@@ -19,9 +19,7 @@ namespace deeplynx.tests
         private ProjectBusiness _projectBusiness = null!;
         private EventBusiness _eventBusiness = null!;
         private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
@@ -34,9 +32,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _recordBusiness = new Mock<IRecordBusiness>();
-            _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
@@ -44,8 +40,8 @@ namespace deeplynx.tests
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
             _classBusiness = new ClassBusiness(
-                Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
-                _recordMappingBusiness.Object, _relationshipBusiness.Object, _eventBusiness);
+                Context, _recordBusiness.Object, 
+                _relationshipBusiness.Object, _eventBusiness);
             
             _projectBusiness = new ProjectBusiness(
                 Context, _mockLogger.Object, _classBusiness, 

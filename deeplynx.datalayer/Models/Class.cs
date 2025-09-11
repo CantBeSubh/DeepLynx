@@ -39,18 +39,9 @@ public partial class Class
     [Column("is_archived")]
     public bool IsArchived { get; set; }
 
-    [InverseProperty("Destination")]
-    public virtual ICollection<EdgeMapping> EdgeMappingDestinations { get; set; } = new List<EdgeMapping>();
-
-    [InverseProperty("Origin")]
-    public virtual ICollection<EdgeMapping> EdgeMappingOrigins { get; set; } = new List<EdgeMapping>();
-
     [ForeignKey("ProjectId")]
     [InverseProperty("Classes")]
     public virtual Project Project { get; set; } = null!;
-
-    [InverseProperty("Class")]
-    public virtual ICollection<RecordMapping> RecordMappings { get; set; } = new List<RecordMapping>();
 
     [InverseProperty("Class")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

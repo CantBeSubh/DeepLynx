@@ -23,7 +23,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context used for the record mapping operations.</param>
+    /// <param name="context">The database context used for the project operations.</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>

@@ -36,9 +36,6 @@ public partial class Tag
     [InverseProperty("Tags")]
     public virtual Project Project { get; set; } = null!;
 
-    [InverseProperty("Tag")]
-    public virtual ICollection<RecordMappingTag> RecordMappingTags { get; set; } = new List<RecordMappingTag>();
-
     [ForeignKey("TagId")]
     [InverseProperty("Tags")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();

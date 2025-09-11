@@ -12,9 +12,7 @@ namespace deeplynx.business;
 public class ClassBusiness : IClassBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
     private readonly IRecordBusiness _recordBusiness;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly IEventBusiness _eventBusiness;
 
@@ -22,24 +20,18 @@ public class ClassBusiness : IClassBusiness
     /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
-    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects</param>
     /// <param name="recordBusiness">Passed in context of record objects</param>
-    /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
     /// <param name="relationshipBusiness">Passed in context of relationship objects</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public ClassBusiness(
         DeeplynxContext context,
-        IEdgeMappingBusiness edgeMappingBusiness,
         IRecordBusiness recordBusiness,
-        IRecordMappingBusiness recordMappingBusiness,
         IRelationshipBusiness relationshipBusiness,
         IEventBusiness eventBusiness
     )
     {
         _context = context;
-        _edgeMappingBusiness = edgeMappingBusiness;
         _recordBusiness = recordBusiness;
-        _recordMappingBusiness = recordMappingBusiness;
         _relationshipBusiness = relationshipBusiness;
         _eventBusiness = eventBusiness;
     }

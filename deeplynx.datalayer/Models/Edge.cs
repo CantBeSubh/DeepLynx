@@ -10,7 +10,6 @@ namespace deeplynx.datalayer.Models;
 [Index("DataSourceId", Name = "idx_edges_data_source_id")]
 [Index("DestinationId", Name = "idx_edges_destination_id")]
 [Index("Id", Name = "idx_edges_id")]
-[Index("MappingId", Name = "idx_edges_mapping_id")]
 [Index("OriginId", Name = "idx_edges_origin_id")]
 [Index("ProjectId", Name = "idx_edges_project_id")]
 [Index("RelationshipId", Name = "idx_edges_relationship_id")]
@@ -42,9 +41,6 @@ public partial class Edge
     [Column("id")]
     public long Id { get; set; }
 
-    [Column("mapping_id")]
-    public long? MappingId { get; set; }
-
     [Column("is_archived")]
     public bool IsArchived { get; set; }
 
@@ -58,10 +54,6 @@ public partial class Edge
 
     [InverseProperty("Edge")]
     public virtual ICollection<HistoricalEdge> HistoricalEdges { get; set; } = new List<HistoricalEdge>();
-
-    [ForeignKey("MappingId")]
-    [InverseProperty("Edges")]
-    public virtual EdgeMapping? Mapping { get; set; }
 
     [ForeignKey("OriginId")]
     [InverseProperty("EdgeOrigins")]
