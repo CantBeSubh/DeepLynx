@@ -297,7 +297,7 @@ public class QueryBusiness : IQueryBusiness
         
         if (hideArchived)
         {
-            classes = classes.Where(c => c.ArchivedAt == null).ToList();
+            classes = classes.Where(c => !c.IsArchived).ToList();
         }
         
         return classes 
@@ -308,11 +308,10 @@ public class QueryBusiness : IQueryBusiness
                 Description = c.Description,
                 Uuid = c.Uuid,
                 ProjectId = c.ProjectId,
-                CreatedBy = c.CreatedBy,
-                CreatedAt = c.CreatedAt,
-                ModifiedBy = c.ModifiedBy,
-                ModifiedAt = c.ModifiedAt,
-                ArchivedAt = c.ArchivedAt,
+                LastUpdatedAt = c.LastUpdatedAt,
+                LastUpdatedBy = c.LastUpdatedBy,
+                IsArchived = c.IsArchived,
+
             }).ToList();
     }
     
@@ -334,7 +333,7 @@ public class QueryBusiness : IQueryBusiness
 
         if (hideArchived)
         {
-            dataSources = dataSources.Where(d => d.ArchivedAt == null).ToList();
+            dataSources = dataSources.Where(d =>  !d.IsArchived).ToList();
         }
             
         return dataSources
@@ -350,11 +349,10 @@ public class QueryBusiness : IQueryBusiness
                 // return empty object for config if null
                 Config = JsonNode.Parse(d.Config ?? "{}") as JsonObject,
                 ProjectId = d.ProjectId,
-                CreatedBy = d.CreatedBy,
-                CreatedAt = d.CreatedAt,
-                ModifiedBy = d.ModifiedBy,
-                ModifiedAt = d.ModifiedAt,
-                ArchivedAt = d.ArchivedAt,
+                LastUpdatedAt = d.LastUpdatedAt,
+                LastUpdatedBy = d.LastUpdatedBy,
+                IsArchived = d.IsArchived,
+
             }).ToList();
     }
     
@@ -375,7 +373,7 @@ public class QueryBusiness : IQueryBusiness
             
         if (hideArchived)
         {
-            tagQuery = tagQuery.Where(t => t.ArchivedAt == null);
+            tagQuery = tagQuery.Where(t => !t.IsArchived);
         }
             
         return await tagQuery.Select(t => new TagResponseDto()
@@ -383,11 +381,8 @@ public class QueryBusiness : IQueryBusiness
                 Id = t.Id,
                 Name = t.Name,
                 ProjectId = t.ProjectId,
-                CreatedBy = t.CreatedBy,
-                CreatedAt = t.CreatedAt,
-                ModifiedBy = t.ModifiedBy,
-                ModifiedAt = t.ModifiedAt,
-                ArchivedAt = t.ArchivedAt,
+                LastUpdatedBy = t.LastUpdatedBy,
+                LastUpdatedAt = t.LastUpdatedAt,
             })
             .ToListAsync();
     }
