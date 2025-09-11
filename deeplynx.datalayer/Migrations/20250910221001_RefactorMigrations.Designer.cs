@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250909182320_AuditColumnDefaults")]
-    partial class AuditColumnDefaults
+    [Migration("20250910221001_RefactorMigrations")]
+    partial class RefactorMigrations
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
