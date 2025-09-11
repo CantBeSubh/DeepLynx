@@ -220,7 +220,7 @@ namespace deeplynx.datalayer.Migrations
                 defaultValue: false);
 
             migrationBuilder.AddColumn<bool>(
-                name: "is_sysadmin",
+                name: "is_sys_admin",
                 schema: "deeplynx",
                 table: "users",
                 type: "boolean",
@@ -1992,7 +1992,7 @@ namespace deeplynx.datalayer.Migrations
                 table: "users");
 
             migrationBuilder.DropColumn(
-                name: "is_sysadmin",
+                name: "is_sys_admin",
                 schema: "deeplynx",
                 table: "users");
 

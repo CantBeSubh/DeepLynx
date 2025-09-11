@@ -1557,7 +1557,7 @@ namespace deeplynx.datalayer.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
-                        .HasColumnName("is_sysadmin");
+                        .HasColumnName("is_sys_admin");
 
                     b.Property<string>("Name")
                         .IsRequired()

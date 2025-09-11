@@ -25,7 +25,7 @@ public partial class User
     [Column("is_archived")]
     public bool IsArchived { get; set; } = false;
 
-    [Column("is_sysadmin")]
+    [Column("is_sys_admin")]
     public bool IsSysAdmin { get; set; } = false;
     
     [InverseProperty("Users")]
