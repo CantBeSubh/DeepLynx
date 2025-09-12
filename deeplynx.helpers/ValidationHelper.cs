@@ -9,6 +9,10 @@ public class ValidationHelper
     {
         List<string> AllowedEntityTypes = new List<string>
         {
+            "organization",
+            "group",
+            "role",
+            "sensitivity_label",
             "class", 
             "data_source", 
             "relationship", 

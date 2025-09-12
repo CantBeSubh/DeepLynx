@@ -13,13 +13,10 @@ public interface IUserBusiness
     Task<UserResponseDto> UpdateUser(long userId, UpdateUserRequestDto dto);
     Task<bool> DeleteUser(long userId);
     Task<bool> ArchiveUser(long userId);
-    
     Task<bool>  AddUserToProject(long userId, long projectId);
     Task<bool>  RemoveUserFromProject(long userId, long projectId);
-    
     Task<DataOverviewDto> GetUserOverview(long userId);
     Task<bool> UnarchiveUser(long userId);
-    
     Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
         long[] projectId);
 }

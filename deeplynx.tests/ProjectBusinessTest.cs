@@ -203,8 +203,8 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
            
-            var listWithArchived = await _projectBusiness.GetAllProjects(false);
-            var listWithoutArchived = await _projectBusiness.GetAllProjects(true);
+            var listWithArchived = await _projectBusiness.GetAllProjects(null, false);
+            var listWithoutArchived = await _projectBusiness.GetAllProjects(null, true);
 
           
             listWithArchived.Should().Contain(p => p.Id == archivedProject.Id);

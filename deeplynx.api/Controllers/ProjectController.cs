@@ -33,7 +33,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var projects = await _projectBusiness.GetAllProjects(hideArchived);
+                var projects = await _projectBusiness.GetAllProjects(null, hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)

@@ -27,8 +27,10 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
+    /// <param name="logger">Used for uniformity in logging</param>
+    /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
-        DeeplynxContext context, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, 
+        DeeplynxContext context, ILogger<ProjectBusiness> logger, IClassBusiness classBusiness, 
         IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
@@ -42,17 +44,27 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Retrieves all projects
     /// </summary>
+    /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
-    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool hideArchived)
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(
+        long? organizationId,
+        bool hideArchived = true)
     {
-        var projects = await _context.Projects.ToListAsync();
+        var projectQuery = _context.Projects.AsQueryable();
 
         if (hideArchived)
         {
-            projects = projects.Where(p => !p.IsArchived).ToList();
+            projectQuery = projectQuery.Where(p => !p.IsArchived);
         }
+
+        if (organizationId.HasValue)
+        {
+            projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
+        }
+
+        var projects = await projectQuery.ToListAsync();
 
         return projects
             .Select(p => new ProjectResponseDto()
@@ -74,7 +86,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>The given project to return</returns>
     /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
-    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived)
+    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived = true)
     {
         var project = await _context.Projects
             .Where(p => p.Id == projectId)
@@ -115,6 +127,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
+            OrganizationId = dto.OrganizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
@@ -139,7 +152,10 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
+        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
         
+        // TODO: project config should determine whether to do this (true by default)
+        // create default object storage upon project creation
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
         
@@ -173,11 +189,10 @@ public class ProjectBusiness : IProjectBusiness
         };
         await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
         
-        var dataSource = await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
-        
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
+            OrganizationId = project.OrganizationId,
             ProjectId = project.Id,
             Operation = "create",
             EntityType = "project",
@@ -192,6 +207,7 @@ public class ProjectBusiness : IProjectBusiness
             Id = project.Id,
             Name = project.Name,
             Description = project.Description,
+            OrganizationId = project.OrganizationId,
             Abbreviation = project.Abbreviation,
             LastUpdatedBy = project.LastUpdatedBy,
             LastUpdatedAt = project.LastUpdatedAt
@@ -445,6 +461,18 @@ public class ProjectBusiness : IProjectBusiness
                 IsArchived = r.IsArchived,
                 Tags = r.Tags
             });
+    }
+    public async Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId, long? groupId)
+    {
+        return true;
+    }
+    public async Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId, long? groupId)
+    {
+        return true;
+    }
+    public async Task<bool> RemoveMemberFromProject(long projectId, long? userId, long? groupId)
+    {
+        return true;
     }
     
 }

@@ -15,7 +15,10 @@ public class EventResponseDto
     public long? EntityId { get; set; }
 
     [Column("project_id")]
-    public long ProjectId { get; set; }
+    public long? ProjectId { get; set; }
+
+    [Column("organization_id")]
+    public long? OrganizationId { get; set; }
 
     [Column("data_source_id")]
     public long? DataSourceId { get; set; }

@@ -76,7 +76,8 @@ public class EventBusiness : IEventBusiness
     /// <returns>The new Event which was just created.</returns>
     public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, false);
+        // TODO: since project may be absent, determine if this check is still needed here
+        // await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, false);
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
