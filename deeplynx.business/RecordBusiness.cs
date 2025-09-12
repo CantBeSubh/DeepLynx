@@ -420,17 +420,17 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
-                // run the archive project procedure, which archives this project
-                // and all child objects with project_id as a foreign key
+                // run the archive record procedure, which archives this record
+                // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    recordId, lastUpdatedAt
                 );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException(
-                        $"unable to archive project {projectId} or its downstream dependents.");
+                        $"unable to archive record {recordId} or its downstream dependents.");
                 }
                 
                 await transaction.CommitAsync();
@@ -439,7 +439,7 @@ public class RecordBusiness : IRecordBusiness
             {
                 await transaction.RollbackAsync();
                 throw new DependencyDeletionException(
-                    $"unable to archive project {projectId} or its downstream dependents: {exc}");
+                    $"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
 
@@ -481,17 +481,17 @@ public class RecordBusiness : IRecordBusiness
         {
             try
             {
-                // run the unarchive project procedure, which unarchives this project
-                // and all child objects with project_id as a foreign key
+                // run the unarchive record procedure, which unarchives this record
+                // and all child objects with record_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
-                    projectId, lastUpdatedAt
+                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    recordId, lastUpdatedAt
                 );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException(
-                        $"unable to unarchive project {projectId} or its downstream dependents.");
+                        $"unable to unarchive record {recordId} or its downstream dependents.");
                 }
                 
                 await transaction.CommitAsync();
@@ -500,7 +500,7 @@ public class RecordBusiness : IRecordBusiness
             {
                 await transaction.RollbackAsync();
                 throw new DependencyDeletionException(
-                    $"unable to unarchive project {projectId} or its downstream dependents: {exc}");
+                    $"unable to unarchive record {recordId} or its downstream dependents: {exc}");
             }
         }
 

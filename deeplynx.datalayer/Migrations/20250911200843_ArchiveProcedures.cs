@@ -38,13 +38,6 @@ namespace deeplynx.datalayer.Migrations
                     UPDATE deeplynx.tags 
                         SET is_archived = TRUE, last_updated_at = arc_time 
                         WHERE project_id = arc_project_id;
-                    -- set is_archived = true for all versions of historical records/edges tied to this record
-                    UPDATE deeplynx.historical_records
-                        SET is_archived = TRUE
-                        WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.historical_edges
-                        SET is_archived = TRUE
-                        WHERE project_id = arc_project_id;
                 END;
                 $$;
             ");
@@ -76,13 +69,6 @@ namespace deeplynx.datalayer.Migrations
                         WHERE project_id = arc_project_id;
                     UPDATE deeplynx.tags 
                         SET is_archived = FALSE, last_updated_at = arc_time 
-                        WHERE project_id = arc_project_id;
-                    -- set is_archived = FALSE for all versions of historical records/edges tied to this record
-                    UPDATE deeplynx.historical_records
-                        SET is_archived = FALSE
-                        WHERE project_id = arc_project_id;
-                    UPDATE deeplynx.historical_edges
-                        SET is_archived = FALSE
                         WHERE project_id = arc_project_id;
                 END;
                 $$;
@@ -126,13 +112,6 @@ namespace deeplynx.datalayer.Migrations
                     UPDATE deeplynx.edges 
                         SET is_archived = TRUE, last_updated_at = arc_time 
                         WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
-                    -- set is_archived = true for all versions of historical records/edges tied to this record
-                    UPDATE deeplynx.historical_records
-                        SET is_archived = TRUE
-                        WHERE record_id = arc_record_id;
-                    UPDATE deeplynx.historical_edges
-                        SET is_archived = TRUE
-                        WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
                 END;
                 $$;
             ");
@@ -146,13 +125,6 @@ namespace deeplynx.datalayer.Migrations
                         WHERE id = arc_record_id;
                     UPDATE deeplynx.edges 
                         SET is_archived = FALSE, last_updated_at = arc_time 
-                        WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
-                    -- set is_archived = FALSE for all versions of historical records/edges tied to this record
-                    UPDATE deeplynx.historical_records
-                        SET is_archived = FALSE
-                        WHERE record_id = arc_record_id;
-                    UPDATE deeplynx.historical_edges
-                        SET is_archived = FALSE
                         WHERE origin_id = arc_record_id OR destination_id = arc_record_id;
                 END;
                 $$;
