@@ -1,0 +1,27 @@
+{
+  "name": "nexusdocs",
+  "version": "1.0.0",
+  "description": "Nexus Documentation",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "next --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "pagefind": "^1.4.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "next": "^15.5.3",
+    "nextra": "^4.4.0",
+    "nextra-theme-docs": "^4.4.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}
