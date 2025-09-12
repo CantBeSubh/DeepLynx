@@ -26,7 +26,7 @@ To do this, add this in your test after a procedure is called:
 ```
 Context.ChangeTracker.Clear();
 ```
-Use the cascade delete tests in Record Mapping as a reference.
+Use the cascade delete tests in Project as a reference.
 
 #### Test Fixture
 * Make sure to include the testing fixture in your unit test suite. This makes sure that only one container is spun up 

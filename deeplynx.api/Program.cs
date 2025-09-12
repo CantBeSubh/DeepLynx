@@ -117,8 +117,6 @@ try
     builder.Services.AddTransient<IEdgeBusiness, EdgeBusiness>();
     builder.Services.AddTransient<IDataSourceBusiness, DataSourceBusiness>();
     builder.Services.AddTransient<IRelationshipBusiness, RelationshipBusiness>();
-    builder.Services.AddTransient<IRecordMappingBusiness, RecordMappingBusiness>();
-    builder.Services.AddTransient<IEdgeMappingBusiness, EdgeMappingBusiness>();
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
@@ -176,12 +174,6 @@ try
                 },
                 new OpenApiTag
                 {
-                    Name = "EdgeMapping",
-                    Description =
-                        "Manages mappings of edges to entities, allowing for creation, updating, retrieval, and deletion."
-                },
-                new OpenApiTag
-                {
                     Name = "Query",
                     Description = "Facilitates data filtering operations for efficient data retrieval and management."
                 },
@@ -224,12 +216,6 @@ try
                     Name = "Record",
                     Description =
                         "Manages all operations related to record creation, retrieval, updating, deletion, and tagging."
-                },
-                new OpenApiTag
-                {
-                    Name = "RecordMapping",
-                    Description =
-                        "Facilitates the mapping of records to other entities, including creation, updating, retrieval, and deletion."
                 },
                 new OpenApiTag
                 {
