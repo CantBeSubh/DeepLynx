@@ -14,18 +14,15 @@ public class TagBusiness : ITagBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TagBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
-    /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
-    public TagBusiness(DeeplynxContext context, IRecordMappingBusiness recordMappingBusiness,  IEventBusiness eventBusiness)
+    public TagBusiness(DeeplynxContext context, IEventBusiness eventBusiness)
     {
         _context = context;
         _eventBusiness = eventBusiness;
-        _recordMappingBusiness = recordMappingBusiness;
     }
     
     /// <summary>

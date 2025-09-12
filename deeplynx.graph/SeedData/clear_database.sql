@@ -5,8 +5,6 @@ ALTER SEQUENCE deeplynx.tags_id_seq RESTART WITH 1;
 ALTER SEQUENCE deeplynx.classes_id_seq RESTART WITH 1;
 ALTER SEQUENCE deeplynx.data_sources_id_seq RESTART WITH 1;
 ALTER SEQUENCE deeplynx.relationships_id_seq RESTART WITH 1;
-ALTER SEQUENCE deeplynx.record_mappings_id_seq RESTART WITH 1;
-ALTER SEQUENCE deeplynx.edge_mappings_id_seq RESTART WITH 1;
 ALTER SEQUENCE deeplynx.records_id_seq RESTART WITH 1;
 ALTER SEQUENCE deeplynx.edges_id_seq RESTART WITH 1;
 
@@ -14,7 +12,6 @@ DELETE FROM deeplynx.projects;
 DELETE FROM deeplynx.historical_edges;
 DELETE FROM deeplynx.historical_records;
 DELETE FROM deeplynx.record_tags;
-DELETE FROM deeplynx.edge_mappings;
 DELETE FROM deeplynx.relationships;
 DELETE FROM deeplynx.data_sources;
 DELETE FROM deeplynx.tags;

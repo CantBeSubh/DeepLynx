@@ -28,19 +28,6 @@ VALUES ('test',
         (SELECT id FROM classes WHERE name = 'test' LIMIT 1),
         (SELECT id FROM projects WHERE name = 'test' LIMIT 1));
 
--- Insert into record_mappings with subquery for project_id
-INSERT INTO record_mappings (record_params, project_id, data_source_id)
-VALUES ('{}', (SELECT id FROM projects WHERE name = 'test' LIMIT 1), (SELECT id FROM data_sources WHERE name = 'test' LIMIT 1));
-
--- Insert into edge_mappings with subquery for relationship_id, origin_id, destination_id, and project_id
-INSERT INTO edge_mappings (origin_params, destination_params, relationship_id, origin_id, destination_id, project_id, data_source_id)
-VALUES ('{}', '{}',
-        (SELECT id FROM relationships WHERE name = 'test' LIMIT 1),
-        (SELECT id FROM classes WHERE name = 'test' LIMIT 1),
-        (SELECT id FROM classes WHERE name = 'test' LIMIT 1),
-        (SELECT id FROM projects WHERE name = 'test' LIMIT 1),
-		(SELECT id FROM data_sources WHERE name = 'test' LIMIT 1));
-
 -- Insert into records with subquery for project_id, data_source_id, and class_id
 INSERT INTO records (name, description, original_id, properties, project_id, object_storage_id, data_source_id, class_id)
 VALUES ('test', 'test', 'test', '{"test": true}',

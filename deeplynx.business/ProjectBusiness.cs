@@ -23,7 +23,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context used for the record mapping operations.</param>
+    /// <param name="context">The database context used for the project operations.</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
@@ -278,10 +278,10 @@ public class ProjectBusiness : IProjectBusiness
         if (project == null || project.IsArchived)
             throw new KeyNotFoundException("Project not found.");
 
-        // set archivedAt timestamp
-        var archivedAt = DateTime.UtcNow;
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
 
-        // run archive procedure in a transaction to roll back any errorsGetProjectStats
+        // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
@@ -289,8 +289,9 @@ public class ProjectBusiness : IProjectBusiness
                 // run the archive project procedure, which archives this project
                 // and all child objects with project_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)", projectId,
-                    archivedAt);
+                    "CALL deeplynx.archive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    projectId, lastUpdatedAt
+                );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
@@ -311,7 +312,7 @@ public class ProjectBusiness : IProjectBusiness
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             ProjectId = projectId,
-            Operation = "delete",
+            Operation = "archive",
             EntityType = "project",
             EntityId = project.Id,
             DataSourceId = null,
@@ -336,6 +337,9 @@ public class ProjectBusiness : IProjectBusiness
         if (project == null || !project.IsArchived)
             throw new KeyNotFoundException("Project not found or is not archived.");
 
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
+
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
@@ -344,16 +348,17 @@ public class ProjectBusiness : IProjectBusiness
                 // run the unarchive project procedure, which unarchives this project
                 // and all child objects with project_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_project({0}::INTEGER)", projectId);
+                    "CALL deeplynx.unarchive_project({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    projectId, lastUpdatedAt
+                );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
                 {
                     throw new DependencyDeletionException(
                         $"unable to unarchive project {projectId} or its downstream dependents.");
                 }
-
+                
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
@@ -362,6 +367,19 @@ public class ProjectBusiness : IProjectBusiness
                     $"unable to unarchive project {projectId} or its downstream dependents: {exc}");
             }
         }
+
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "unarchive",
+            EntityType = "project",
+            EntityId = project.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { project.Name }),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
 
     /// <summary>

@@ -352,18 +352,6 @@ public class EdgeBusiness : IEdgeBusiness
         edge.IsArchived = true;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Edges.Update(edge);
-       
-        var historicalEdges = await _context.HistoricalEdges
-            .Where(he => he.EdgeId == edge.Id)
-            .ToListAsync();
-    
-        foreach (var historicalEdge in historicalEdges)
-        {
-            historicalEdge.IsArchived = true;
-            historicalEdge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        }
-    
-        await _context.SaveChangesAsync();
       
         // Log Edge soft Delete Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
@@ -376,7 +364,6 @@ public class EdgeBusiness : IEdgeBusiness
             Properties = "{}", // TODO: Determine the extent of data edge properties need
             LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
-
         
         return edge.Id;
     }

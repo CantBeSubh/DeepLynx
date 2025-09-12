@@ -12,8 +12,6 @@ public class EdgeResponseDto
     public long DestinationId { get; set; }
     [Column("relationship_id")]
     public long? RelationshipId { get; set; }
-    [Column("mapping_id")]
-    public long? MappingId { get; set; }
     [Column("data_source_id")]
     public long DataSourceId { get; set; }
     [Column("project_id")]
