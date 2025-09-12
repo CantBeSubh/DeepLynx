@@ -1,3 +1,5 @@
+// src/app/(home)/components/LayoutShell.tsx
+
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -12,7 +14,7 @@ import { useRouter } from "next/navigation";
 import React from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
@@ -23,6 +25,17 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({
+        callbackUrl: "/login/signin",
+        redirect: true,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const formatUserName = (fullName?: string | null): string => {
@@ -84,7 +97,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Link>
             </li>
             <li>
-              <button className="text-black">
+              <button className="text-black" onClick={handleLogout}>
                 <ArrowRightStartOnRectangleIcon className="size-6" />
                 {t.translations.LOGOUT}
               </button>

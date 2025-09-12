@@ -4,7 +4,6 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useSession } from "next-auth/react";
 import AvatarCell from "../components/Avatar";
 import ThemeToggle from "../components/ThemeToggle";
-import { peopleData } from "../dummy_data/data";
 
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]

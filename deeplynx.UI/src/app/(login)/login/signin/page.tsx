@@ -7,12 +7,52 @@ import { useLanguage } from "@/app/contexts/Language";
 import "@/app/globals.css";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession, signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function Signin() {
   const [isChecked, setChecked] = useState(true);
-
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const { t } = useLanguage();
+
+  useEffect(() => {
+    // If user is already authenticated, redirect to home
+    if (status === "authenticated") {
+      router.push("/");
+    }
+  }, [status, router]);
+
+  // Show loading while checking authentication status
+  if (status === "loading") {
+    return (
+      <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)]">
+        <div className="flex flex-col items-center sm:items-start mb-0">
+          <Image
+            src="/assets/lynx-white.svg"
+            alt="DeepLynx logo"
+            width={265.8}
+            height={113.9}
+            priority
+          />
+        </div>
+        <div className="text-center text-white">
+          <div className="loading loading-spinner loading-lg"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If authenticated, don't render login form (redirect will happen)
+  if (status === "authenticated") {
+    return null;
+  }
+
+  const handleOktaSignIn = () => {
+    signIn("okta", { callbackUrl: "/" });
+  };
 
   return (
     <div className="flex flex-col items-center justify-center login min-h-screen gap-4 sm:p-22 font-[family-name:var(--font-roboto-sans)] ">
@@ -56,14 +96,12 @@ export default function Signin() {
                 {t.translations.OR}
               </div>
 
-              <Link
-                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl"
-                href="/api/auth/signin"
+              <button
+                onClick={handleOktaSignIn}
+                className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl hover:bg-gray-600 transition-colors"
               >
-                <button className="">
-                  {t.translations.PIV_CAC_CARD_SIGN_IN}
-                </button>
-              </Link>
+                {t.translations.PIV_CAC_CARD_SIGN_IN}
+              </button>
             </div>
           </div>
         </div>
