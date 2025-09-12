@@ -412,6 +412,8 @@ public class RecordBusiness : IRecordBusiness
         if (record == null || record.ProjectId != projectId || record.IsArchived)
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
 
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -421,41 +423,31 @@ public class RecordBusiness : IRecordBusiness
                 // run the archive record procedure, which archives this record
                 // and all child objects with record_id as a foreign key
                 var archived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.archive_record({0}::INTEGER)", recordId);
+                    "CALL deeplynx.archive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    recordId, lastUpdatedAt
+                );
 
                 if (archived == 0) // if 0 records were updated, assume a failure
                 {
-                    throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents.");
+                    throw new DependencyDeletionException(
+                        $"unable to archive record {recordId} or its downstream dependents.");
                 }
-
+                
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
             {
                 await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
+                throw new DependencyDeletionException(
+                    $"unable to archive record {recordId} or its downstream dependents: {exc}");
             }
         }
-        _context.ChangeTracker.Clear();
-        var historicalRecords = await _context.HistoricalRecords
-            .Where(hr => hr.RecordId == recordId)
-            .ToListAsync();
-    
-        foreach (var historicalRecord in historicalRecords)
-        {
-            historicalRecord.IsArchived = true;
-            historicalRecord.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        }
-    
-        if (historicalRecords.Any())
-        {
-            await _context.SaveChangesAsync();
-        }
+
         // Log record soft delete event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             ProjectId = projectId,
-            Operation = "delete",
+            Operation = "archive",
             EntityType = "record",
             EntityId = record.Id,
             DataSourceId = record.DataSourceId,
@@ -479,7 +471,10 @@ public class RecordBusiness : IRecordBusiness
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || !record.IsArchived)
-            throw new KeyNotFoundException($"Record with id {recordId} not found or is not archived.");
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
 
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
@@ -489,22 +484,39 @@ public class RecordBusiness : IRecordBusiness
                 // run the unarchive record procedure, which unarchives this record
                 // and all child objects with record_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_record({0}::INTEGER)", recordId);
+                    "CALL deeplynx.unarchive_record({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    recordId, lastUpdatedAt
+                );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
                 {
-                    throw new DependencyDeletionException($"unable to unarchive record {recordId} or its downstream dependents.");
+                    throw new DependencyDeletionException(
+                        $"unable to unarchive record {recordId} or its downstream dependents.");
                 }
-
+                
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
                 await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to archive record {recordId} or its downstream dependents: {exc}");
+                throw new DependencyDeletionException(
+                    $"unable to unarchive record {recordId} or its downstream dependents: {exc}");
             }
         }
+
+        // Log record soft delete event
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "unarchive",
+            EntityType = "record",
+            EntityId = record.Id,
+            DataSourceId = record.DataSourceId,
+            Properties = JsonSerializer.Serialize(new {record.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
 
 

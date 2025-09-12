@@ -13,10 +13,8 @@ public class ValidationHelper
             "data_source", 
             "relationship", 
             "project", 
-            "edge", 
-            "edge_mapping", 
-            "record", 
-            "record_mapping",
+            "edge",
+            "record",
             "metadata", 
             "user", 
             "tag"
@@ -27,6 +25,8 @@ public class ValidationHelper
             "create",
             "update",
             "delete",
+            "archive",
+            "unarchive"
         };
             
         if (type == "EntityType")

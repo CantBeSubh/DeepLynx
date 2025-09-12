@@ -1,3 +1,5 @@
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
@@ -25,20 +27,20 @@ public partial class Organization
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("is_archived")]
-    public bool IsArchived { get; set; } = false;
-
-    [InverseProperty("Organization")]
-    public virtual ICollection<OrganizationUser> OrganizationUsers { get; set; } = new List<OrganizationUser>();
+    public bool IsArchived { get; set; }
 
     [InverseProperty("Organization")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 
     [InverseProperty("Organization")]
+    public virtual ICollection<OrganizationUser> OrganizationUsers { get; set; } = new List<OrganizationUser>();
+
+    [InverseProperty("Organization")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 
     [InverseProperty("Organization")]
-    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
-    
-    [InverseProperty("Organization")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    [InverseProperty("Organization")]
+    public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
 }

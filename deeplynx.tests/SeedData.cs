@@ -15,8 +15,6 @@ public static class SeedData
         await SeedDataSources(context);
         await SeedTags(context);
         await SeedRelationships(context);
-        await SeedEdgeMappings(context);
-        await SeedRecordMappings(context);
         await SeedRecords(context);
         await SeedEdges(context);
     }
@@ -442,145 +440,6 @@ public static class SeedData
         await context.Relationships.AddRangeAsync(relationships);
         await context.SaveChangesAsync();
     }
-
-    // Edge Mappings
-    public static async Task SeedEdgeMappings(DeeplynxContext context)
-    {
-        var edgeMappings = new List<EdgeMapping>
-        {
-            // Customer Analytics Platform Edge Mappings
-            new EdgeMapping
-            {
-                OriginParams = @"{""class_name"":""Customer"",""primary_key"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name FROM customers WHERE status = 'active'"",""data_source_table"":""customers""}",
-                DestinationParams = @"{""class_name"":""Purchase"",""primary_key"":""purchase_id"",""foreign_key"":""customer_id"",""extraction_query"":""SELECT purchase_id, customer_id, purchase_date, total_amount FROM purchases"",""data_source_table"":""purchases""}",
-                RelationshipId = 1,
-                OriginId = 1,
-                DestinationId = 2,
-                DataSourceId = 1,
-                ProjectId = 1,
-                LastUpdatedBy = "john.smith@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                 IsArchived = false
-            },
-            new EdgeMapping
-            {
-                OriginParams = @"{""class_name"":""Customer"",""primary_key"":""customer_id"",""segmentation_rules"":{""premium"":""total_lifetime_value > 5000"",""regular"":""total_lifetime_value BETWEEN 1000 AND 5000""}}",
-                DestinationParams = @"{""class_name"":""Segment"",""primary_key"":""segment_id"",""assignment_logic"":""rule_based"",""dynamic_assignment"":true}",
-                RelationshipId = 2,
-                OriginId = 1,
-                DestinationId = 3,
-                DataSourceId = 2,
-                ProjectId = 1,
-                LastUpdatedBy = "sarah.johnson@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                 IsArchived = false
-            },
-
-            // Supply Chain Optimization Edge Mappings
-            new EdgeMapping
-            {
-                OriginParams = @"{""class_name"":""Supplier"",""primary_key"":""supplier_id"",""performance_metrics"":[""on_time_delivery_rate"",""quality_score"",""cost_competitiveness""]}",
-                DestinationParams = @"{""class_name"":""Inventory"",""primary_key"":""inventory_id"",""foreign_key"":""supplier_id"",""supply_chain_tracking"":{""lead_time_calculation"":""DATEDIFF(day, order_date, delivery_date)""}}",
-                RelationshipId = 4,
-                OriginId = 5,
-                DestinationId = 6,
-                DataSourceId = 3,
-                ProjectId = 2,
-                LastUpdatedBy = "mike.davis@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                 IsArchived = false
-            },
-
-            // Legacy System Migration Edge Mappings (Archived)
-            new EdgeMapping
-            {
-                OriginParams = @"{""class_name"":""LegacyUser"",""primary_key"":""legacy_user_id"",""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""date_format_conversion"":""YYYYMMDD_to_ISO8601""}}",
-                DestinationParams = @"{""class_name"":""LegacyData"",""primary_key"":""legacy_data_id"",""foreign_key"":""owner_user_id"",""migration_priority"":{""critical_data_first"":true}}",
-                RelationshipId = 7,
-                OriginId = 9,
-                DataSourceId = 4,
-                DestinationId = 10,
-                ProjectId = 3,
-                LastUpdatedBy = "system.architect@legacy.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                 IsArchived = true
-            }
-        };
-
-        await context.EdgeMappings.AddRangeAsync(edgeMappings);
-        await context.SaveChangesAsync();
-    }
-
-    // Record Mappings
-    public static async Task SeedRecordMappings(DeeplynxContext context)
-    {
-        var recordMappings = new List<RecordMapping>
-        {
-            // Customer Analytics Platform Record Mappings
-            new RecordMapping
-            {
-                RecordParams = @"{""record_extraction"":{""source_table"":""customers"",""primary_key_field"":""customer_id"",""extraction_query"":""SELECT customer_id, email, first_name, last_name, status FROM customers WHERE status = 'active'""},""field_mappings"":{""customer_id"":""customer_id"",""email"":""email"",""first_name"":""first_name"",""last_name"":""last_name""}}",
-                ClassId = 1,
-                ProjectId = 1,
-                DataSourceId = 1,
-                TagId = 3,
-                LastUpdatedBy = "john.smith@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                 IsArchived = false
-            },
-            new RecordMapping
-            {
-                RecordParams = @"{""record_extraction"":{""source_table"":""purchases"",""primary_key_field"":""purchase_id"",""extraction_query"":""SELECT purchase_id, customer_id, order_number, purchase_date, total_amount FROM purchases""},""aggregation_rules"":{""customer_metrics"":{""total_purchases"":""COUNT(*) GROUP BY customer_id"",""avg_order_value"":""AVG(total_amount) GROUP BY customer_id""}}}",
-                ClassId = 2,
-                ProjectId = 1,
-                DataSourceId = 2,
-                TagId = 1,
-                LastUpdatedBy = "sarah.johnson@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
-                 IsArchived = false
-            },
-
-            // Supply Chain Optimization Record Mappings
-            new RecordMapping
-            {
-                RecordParams = @"{""record_extraction"":{""source_table"":""suppliers"",""primary_key_field"":""supplier_id"",""extraction_query"":""SELECT supplier_id, company_name, performance_rating FROM suppliers WHERE status = 'active'""},""performance_calculations"":{""overall_score"":""(performance_rating + quality_score + on_time_delivery_rate * 5) / 3""}}",
-                ClassId = 5,
-                ProjectId = 2,
-                DataSourceId = 3,
-                TagId = 5,
-                LastUpdatedBy = "mike.davis@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
-                 IsArchived = false
-            },
-            new RecordMapping
-            {
-                RecordParams = @"{""record_extraction"":{""source_table"":""inventory"",""primary_key_field"":""inventory_id"",""extraction_query"":""SELECT inventory_id, product_code, current_quantity, reorder_level FROM inventory""},""inventory_calculations"":{""stock_status"":""CASE WHEN current_quantity <= reorder_level THEN 'reorder_needed' ELSE 'normal' END""}}",
-                ClassId = 6,
-                ProjectId = 2,
-                DataSourceId = 4,
-                TagId = 9,
-                LastUpdatedBy = "inventory.manager@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
-                 IsArchived = false
-            },
-
-            // Legacy System Migration Record Mappings (Archived)
-            new RecordMapping
-            {
-                RecordParams = @"{""record_extraction"":{""source_table"":""LEGACY.USERS"",""primary_key_field"":""USR_ID"",""extraction_query"":""SELECT USR_ID, USR_NAME, USR_DEPT FROM LEGACY.USERS WHERE STATUS = 'A'""},""transformation_rules"":{""character_encoding"":""EBCDIC_to_UTF8"",""field_name_mapping"":{""USR_ID"":""legacy_user_id"",""USR_NAME"":""user_name""}}}",
-                ClassId = 9,
-                ProjectId = 3,
-                DataSourceId = 5,
-                TagId = 10,
-                LastUpdatedBy = "system.architect@legacy.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
-                 IsArchived = true
-            }
-        };
-
-        await context.RecordMappings.AddRangeAsync(recordMappings);
-        await context.SaveChangesAsync();
-    }
     
     // Records
     public static async Task SeedRecords(DeeplynxContext context)
@@ -596,7 +455,6 @@ public static class SeedData
                 ClassId = 1,
                 DataSourceId = 1,
                 ProjectId = 1,
-                MappingId = 1,
                 LastUpdatedBy = "john.smith@company.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
                  IsArchived = false
@@ -610,7 +468,6 @@ public static class SeedData
                 ClassId = 2,
                 DataSourceId = 2,
                 ProjectId = 1,
-                MappingId = 2,
                 LastUpdatedBy = "ecommerce.api@company.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                  IsArchived = false
@@ -639,7 +496,6 @@ public static class SeedData
                 ClassId = 5,
                 DataSourceId = 3,
                 ProjectId = 2,
-                MappingId = 3,
                 LastUpdatedBy = "mike.davis@company.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
                  IsArchived = false
@@ -707,7 +563,6 @@ public static class SeedData
                 ClassId = 10,
                 DataSourceId = 6,
                 ProjectId = 3,
-                MappingId = 5,
                 LastUpdatedBy = "data.migration@legacy.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
                  IsArchived = true
@@ -741,7 +596,6 @@ public static class SeedData
                 RelationshipId = 2,
                 DataSourceId = 2,
                 ProjectId = 1,
-                MappingId = 1,
                 LastUpdatedBy = "sarah.johnson@company.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                  IsArchived = false
@@ -777,7 +631,6 @@ public static class SeedData
                 RelationshipId = 6,
                 DataSourceId = 4,
                 ProjectId = 2,
-                MappingId = 3,
                 LastUpdatedBy = "logistics.coordinator@company.com",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
                  IsArchived = false
