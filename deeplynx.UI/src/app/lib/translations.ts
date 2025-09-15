@@ -152,7 +152,8 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Email Notifications",
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
-            LAST_VIEWED: "Last Viewed"
+            LAST_VIEWED: "Last Viewed",
+            API_KEYPAIRS: "API Keypairs"
         }
     },
     es: {
@@ -307,7 +308,8 @@ export const translations = {
             FILTER: "Filtro",
             OPERATOR: "Operador",
             VALUE: "Valor",
-            DELETE_ALL_FILTERS: "Eliminar todos los filtros"
+            DELETE_ALL_FILTERS: "Eliminar todos los filtros",
+            API_KEYPAIRS: "API Keypairs"
         }
     }
 }

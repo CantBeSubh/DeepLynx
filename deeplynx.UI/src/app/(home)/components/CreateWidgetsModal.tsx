@@ -18,7 +18,7 @@ const CreateWidget = ({ isOpen, onClose }: translationsProps) => {
           <div className="modal-box max-w-lg">
             {" "}
             {/* Box for modal content with max width */}
-            <h3 className="font-bold text-lg mb-4 text-neutral">
+            <h3 className="font-bold text-lg mb-4 text-base-content">
               {t.translations.CREATE_NEW_WIDGET} {/* Header for the modal */}
             </h3>
             {/* Form for creating a new widget */}
