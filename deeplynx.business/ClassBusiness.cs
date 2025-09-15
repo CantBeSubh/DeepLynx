@@ -12,9 +12,7 @@ namespace deeplynx.business;
 public class ClassBusiness : IClassBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly IEdgeMappingBusiness _edgeMappingBusiness;
     private readonly IRecordBusiness _recordBusiness;
-    private readonly IRecordMappingBusiness _recordMappingBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly IEventBusiness _eventBusiness;
 
@@ -22,24 +20,18 @@ public class ClassBusiness : IClassBusiness
     /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
-    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects</param>
     /// <param name="recordBusiness">Passed in context of record objects</param>
-    /// <param name="recordMappingBusiness">Passed in context of record mapping objects</param>
     /// <param name="relationshipBusiness">Passed in context of relationship objects</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public ClassBusiness(
         DeeplynxContext context,
-        IEdgeMappingBusiness edgeMappingBusiness,
         IRecordBusiness recordBusiness,
-        IRecordMappingBusiness recordMappingBusiness,
         IRelationshipBusiness relationshipBusiness,
         IEventBusiness eventBusiness
     )
     {
         _context = context;
-        _edgeMappingBusiness = edgeMappingBusiness;
         _recordBusiness = recordBusiness;
-        _recordMappingBusiness = recordMappingBusiness;
         _relationshipBusiness = relationshipBusiness;
         _eventBusiness = eventBusiness;
     }
@@ -313,7 +305,7 @@ public class ClassBusiness : IClassBusiness
         
         return true;
     }
-    
+
     /// <summary>
     /// Archive (soft delete) a class by id. This also archives downstream dependents.
     /// </summary>
@@ -324,48 +316,55 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
-        Console.WriteLine("Archive ProjectID: " + projectId);
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-
         var dbClass = await _context.Classes.FindAsync(classId);
+
         if (dbClass == null || dbClass.ProjectId != projectId || dbClass.IsArchived)
-            throw new KeyNotFoundException("Class not found.");
-
-        // Ensure we can pass to a Postgres INTEGER param safely
-        if (classId < int.MinValue || classId > int.MaxValue)
-            throw new ArgumentOutOfRangeException(nameof(classId), "classId exceeds INTEGER range required by stored procedure.");
-
-        int arcClassId = (int)classId;
-
-        await using var tx = await _context.Database.BeginTransactionAsync();
-        try
-        {
-            // Call your one-parameter procedure (integer). Let the DB set timestamps and archive dependents.
-            await _context.Database.ExecuteSqlInterpolatedAsync(
-                $"CALL deeplynx.archive_class({arcClassId})");
-
-            // Refresh tracked entity to reflect DB-side changes
-            await _context.Entry(dbClass).ReloadAsync();
+            throw new KeyNotFoundException($"Class with id {classId} not found");
             
-            await tx.CommitAsync();
-            await _eventBusiness.CreateEvent(new CreateEventRequestDto
-            {
-                ProjectId = projectId,
-                Operation = "delete",
-                EntityType = "class",
-                EntityId = dbClass.Id,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new {dbClass.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
-            });
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
 
-            return true;
-        }
-        catch (Exception exc)
+        // run archive procedure in a transaction to roll back any errors
+        using (var transaction = await _context.Database.BeginTransactionAsync())
         {
-            await tx.RollbackAsync();
-            throw new DependencyDeletionException($"unable to archive class {classId} or its downstream dependents: {exc}");
+            try
+            {
+                // run the archive class procedure, which archives this class
+                // and all child objects with class_id as a foreign key
+                var archived = await _context.Database.ExecuteSqlRawAsync(
+                    "CALL deeplynx.archive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    classId, lastUpdatedAt
+                );
+
+                if (archived == 0) // if 0 records were updated, assume a failure
+                {
+                    throw new DependencyDeletionException(
+                        $"unable to archive class {classId} or its downstream dependents.");
+                }
+                
+                await transaction.CommitAsync();
+            }
+            catch (Exception exc)
+            {
+                await transaction.RollbackAsync();
+                throw new DependencyDeletionException(
+                    $"unable to archive class {classId} or its downstream dependents: {exc}");
+            }
         }
+
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "archive",
+            EntityType = "class",
+            EntityId = dbClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
         
         
@@ -380,38 +379,54 @@ public class ClassBusiness : IClassBusiness
     public async Task<bool> UnarchiveClass(long projectId, long classId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        // using dbClass since "class" is a reserved word
         var dbClass = await _context.Classes.FindAsync(classId);
 
         if (dbClass == null || dbClass.ProjectId != projectId || !dbClass.IsArchived)
-            throw new KeyNotFoundException("Class not found or is not archived.");
+            throw new KeyNotFoundException($"Class with id {classId} not found");
+            
+        // set lastUpdatedAt timestamp
+        var lastUpdatedAt = DateTime.UtcNow;
 
         // run unarchive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
             try
             {
-                dbClass.IsArchived = false;
-                dbClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
                 // run the unarchive class procedure, which unarchives this class
                 // and all child objects with class_id as a foreign key
                 var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                    "CALL deeplynx.unarchive_class({0}::INTEGER)", classId);
+                    "CALL deeplynx.unarchive_class({0}::INTEGER, {1}::TIMESTAMP WITHOUT TIME ZONE)",
+                    classId, lastUpdatedAt
+                );
 
                 if (unarchived == 0) // if 0 records were updated, assume a failure
                 {
-                    throw new DependencyDeletionException($"unable to unarchive class {classId} or its downstream dependents.");
+                    throw new DependencyDeletionException(
+                        $"unable to unarchive class {classId} or its downstream dependents.");
                 }
-
+                
                 await transaction.CommitAsync();
-                return true;
             }
             catch (Exception exc)
             {
                 await transaction.RollbackAsync();
-                throw new DependencyDeletionException($"unable to unarchive class {classId} or its downstream dependents: {exc}");
+                throw new DependencyDeletionException(
+                    $"unable to unarchive class {classId} or its downstream dependents: {exc}");
             }
         }
+
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "unarchive",
+            EntityType = "class",
+            EntityId = dbClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
+        
+        return true;
     }
 
     /// <summary>

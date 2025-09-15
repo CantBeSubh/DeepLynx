@@ -585,7 +585,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = pid,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "data_source",
                 EntityId = did,
             });
@@ -652,7 +652,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = pid,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "data_source",
                 EntityId = did,
             });

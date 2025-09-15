@@ -7,7 +7,6 @@ public class HistoricalEdgeResponseDto
     public long DestinationId { get; set; }
     public long? RelationshipId { get; set; }
     public string? RelationshipName { get; set; }
-    public long? MappingId { get; set; }
     public long DataSourceId { get; set; }
     public string DataSourceName { get; set; }
     public long ProjectId { get; set; }

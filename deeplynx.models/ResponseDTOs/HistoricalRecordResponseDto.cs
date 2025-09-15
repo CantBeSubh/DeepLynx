@@ -10,9 +10,8 @@ public class HistoricalRecordResponseDto
     public string? Description { get; set; }
     public long? ClassId { get; set; }
     public string? ClassName { get; set; }
-    public long? MappingId { get; set; }
-    public long? DataSourceId { get; set; }
-    public string? DataSourceName { get; set; }
+    public long DataSourceId { get; set; }
+    public string DataSourceName { get; set; }
     
     public long? ObjectStorageId { get; set; }
     public string? ObjectStorageName { get; set; }

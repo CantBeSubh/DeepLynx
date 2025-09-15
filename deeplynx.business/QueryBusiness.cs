@@ -158,7 +158,6 @@ public class QueryBusiness : IQueryBusiness
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
@@ -268,6 +267,38 @@ public class QueryBusiness : IQueryBusiness
         return results
             .Select(r => new FullTextQueryResponseDto()
             {
+                Id = r.RecordId,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                ClassName = r.ClassName,
+                DataSourceId = r.DataSourceId,
+                DataSourceName = r.DataSourceName,
+                ProjectId = r.ProjectId,
+                ProjectName = r.ProjectName,
+                Tags = r.Tags,
+                LastUpdatedBy = r.LastUpdatedBy,
+                IsArchived = r.IsArchived,
+                Description = r.Description, 
+                LastUpdatedAt = r.LastUpdatedAt
+            });
+    }
+    
+    private string ParseToQuery(string input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+            return string.Empty;
+
+        // Operators to translate
+        var operators = new HashSet<string> { "AND", "OR" };
+
+        // Tokenize input by whitespace
+        var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        var result = new List<string>();
+
+        foreach (var token in tokens)
                     Uri = r.Uri,
                     Properties = r.Properties,
                     OriginalId = r.OriginalId,

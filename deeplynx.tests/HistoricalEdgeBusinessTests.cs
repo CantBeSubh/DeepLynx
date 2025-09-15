@@ -80,10 +80,10 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
          historicalEdges.Should().HaveCount(2);
          var edge1 = historicalEdges.First(e => e.Id == eid);
          var edge2 = historicalEdges.First(e => e.Id == eid2);
-         edge1.DestinationId.Should().Be(destinationRecordId);  
-         edge1.OriginId.Should().Be(originRecordId);           
-         edge2.DestinationId.Should().Be(originRecordId);     
-         edge2.OriginId.Should().Be(destinationRecordId);  
+         edge1.DestinationId.Should().Be(destinationRecordId2);  
+         edge1.OriginId.Should().Be(destinationRecordId);           
+         edge2.DestinationId.Should().Be(destinationRecordId);     
+         edge2.OriginId.Should().Be(destinationRecordId2);  
      }
     [Fact]
     public async Task GetAllHistoricalEdges_FiltersByDataSource()
@@ -170,7 +170,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
 
         var edgeHistory = await _historicalEdgeBusiness.GetHistoryForEdge(eid, null, null);
         edgeHistory.Should().NotBeNull();
-        edgeHistory.Should().HaveCount(2);
+        edgeHistory.Should().HaveCount(4);
         edgeHistory.Should().OnlyContain(e => e.Id == eid);
         edgeHistory.First().IsArchived.Should().BeTrue();
     }
@@ -202,8 +202,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(originRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId);
+        historicalEdge.OriginId.Should().Be(destinationRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
     }
     
     [Fact]
@@ -220,8 +220,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null, false);
         historicalEdge.Should().NotBeNull();
         historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(originRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId);
+        historicalEdge.OriginId.Should().Be(destinationRecordId);
+        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
         historicalEdge.IsArchived.Should().BeTrue();
     }
 

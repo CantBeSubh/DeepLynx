@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250902222805_AddRolesAndPermissions")]
-    partial class AddRolesAndPermissions
+    [Migration("20250911210553_RemoveMappings")]
+    partial class RemoveMappings
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -63,29 +63,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "RecordId" }, "idx_record_labels_record_id");
 
                     b.ToTable("record_labels", "deeplynx");
-                });
-
-            modelBuilder.Entity("RecordMappingTag", b =>
-                {
-                    b.Property<long>("RecordMappingId")
-                        .HasColumnType("bigint");
-
-                    b.Property<long>("TagId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("tag_id");
-
-                    b.Property<long>("RecordId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("record_mapping_id");
-
-                    b.HasKey("RecordMappingId", "TagId")
-                        .HasName("record_mapping_tags_pkey");
-
-                    b.HasIndex(new[] { "RecordMappingId" }, "idx_record_mapping_tags_record_mapping_id");
-
-                    b.HasIndex(new[] { "TagId" }, "idx_record_mapping_tags_tag_id");
-
-                    b.ToTable("record_mapping_tags", "deeplynx");
                 });
 
             modelBuilder.Entity("RecordTag", b =>
@@ -157,31 +134,25 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<string>("Config")
                         .HasColumnType("jsonb")
                         .HasColumnName("config");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
+                    b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
+                        .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -209,33 +180,27 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -274,16 +239,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-                    NpgsqlPropertyBuilderExtensions.HasIdentityOptions(b.Property<long>("Id"), 1L, null, null, null, null, null);
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Abbreviation")
                         .HasColumnType("text")
                         .HasColumnName("abbreviation");
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
 
                     b.Property<string>("BaseUri")
                         .HasColumnType("text")
@@ -293,27 +253,29 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("config");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                    b.Property<bool>("Default")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -345,21 +307,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
@@ -369,26 +317,28 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
-                    b.Property<long?>("MappingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("mapping_id");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<DateTime?>("ModifiedAt")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<long>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
 
                     b.Property<long>("ProjectId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasDefaultValue(0L)
                         .HasColumnName("project_id");
 
                     b.Property<long?>("RelationshipId")
@@ -404,8 +354,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_edges_id");
 
-                    b.HasIndex(new[] { "MappingId" }, "idx_edges_mapping_id");
-
                     b.HasIndex(new[] { "OriginId" }, "idx_edges_origin_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_edges_project_id");
@@ -418,85 +366,6 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("edges", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeMapping", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<long>("DataSourceId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("data_source_id");
-
-                    b.Property<long>("DestinationId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("destination_id");
-
-                    b.Property<string>("DestinationParams")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("destination_params");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("modified_by");
-
-                    b.Property<long>("OriginId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("origin_id");
-
-                    b.Property<string>("OriginParams")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("origin_params");
-
-                    b.Property<long>("ProjectId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("project_id");
-
-                    b.Property<long>("RelationshipId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("relationship_id");
-
-                    b.HasKey("Id")
-                        .HasName("edge_mappings_pkey");
-
-                    b.HasIndex(new[] { "DataSourceId" }, "idx_edge_mappings_data_source_id");
-
-                    b.HasIndex(new[] { "DestinationId" }, "idx_edge_mappings_destination_id");
-
-                    b.HasIndex(new[] { "Id" }, "idx_edge_mappings_id");
-
-                    b.HasIndex(new[] { "OriginId" }, "idx_edge_mappings_origin_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_edge_mappings_project_id");
-
-                    b.HasIndex(new[] { "RelationshipId" }, "idx_edge_mappings_relationship_id");
-
-                    b.ToTable("edge_mappings", "deeplynx");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
                 {
                     b.Property<long>("Id")
@@ -505,16 +374,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
 
                     b.Property<long?>("DataSourceId")
                         .HasColumnType("bigint")
@@ -528,6 +387,16 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("entity_type");
+
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text")
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Operation")
                         .IsRequired()
@@ -546,7 +415,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("events_pkey");
 
-                    b.HasIndex("DataSourceId");
+                    b.HasIndex(new[] { "DataSourceId" }, "IX_events_data_source_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_events_id");
 
@@ -567,6 +436,12 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
                     b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -604,21 +479,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
@@ -626,8 +487,10 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Property<string>("DataSourceName")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("text")
-                        .HasColumnName("data_source_name");
+                        .HasColumnName("data_source_name")
+                        .HasDefaultValueSql("''::text");
 
                     b.Property<long>("DestinationId")
                         .HasColumnType("bigint")
@@ -637,36 +500,36 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("edge_id");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("last_updated_at");
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<long?>("MappingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("mapping_id");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<long>("OriginId")
                         .HasColumnType("bigint")
                         .HasColumnName("origin_id");
 
                     b.Property<long>("ProjectId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("bigint")
-                        .HasDefaultValue(0L)
                         .HasColumnName("project_id");
 
                     b.Property<string>("ProjectName")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("text")
-                        .HasColumnName("project_name");
+                        .HasColumnName("project_name")
+                        .HasDefaultValueSql("''::text");
 
                     b.Property<long?>("RelationshipId")
                         .HasColumnType("bigint")
@@ -701,11 +564,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<long?>("ClassId")
                         .HasColumnType("bigint")
@@ -714,16 +573,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("ClassName")
                         .HasColumnType("text")
                         .HasColumnName("class_name");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
 
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
@@ -738,21 +587,21 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("last_updated_at");
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<long?>("MappingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("mapping_id");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .HasColumnType("text")
@@ -814,6 +663,35 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("historical_records", "deeplynx");
                 });
 
+            modelBuilder.Entity("deeplynx.datalayer.Models.Log", b =>
+                {
+                    b.Property<string>("Exception")
+                        .HasColumnType("text")
+                        .HasColumnName("exception");
+
+                    b.Property<int?>("Level")
+                        .HasColumnType("integer")
+                        .HasColumnName("level");
+
+                    b.Property<string>("LogEvent")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("log_event");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
+                    b.Property<string>("MessageTemplate")
+                        .HasColumnType("text")
+                        .HasColumnName("message_template");
+
+                    b.Property<DateTime?>("Timestamp")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("timestamp");
+
+                    b.ToTable("logs", "deeplynx");
+                });
+
             modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
                 {
                     b.Property<long>("Id")
@@ -823,36 +701,30 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
                     b.Property<string>("Config")
                         .IsRequired()
                         .HasColumnType("jsonb")
                         .HasColumnName("config");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
                     b.Property<bool>("Default")
                         .HasColumnType("boolean")
                         .HasColumnName("default");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -871,7 +743,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("object_storage_pkey");
 
-                    b.HasIndex("ProjectId");
+                    b.HasIndex(new[] { "ProjectId" }, "IX_object_storages_project_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_object_storage_id");
 
@@ -890,6 +762,12 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
                     b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
@@ -965,6 +843,12 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("domain");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<long?>("LabelId")
                         .HasColumnType("bigint")
                         .HasColumnName("label_id");
@@ -987,6 +871,10 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("permission_pkey");
 
+                    b.HasIndex(new[] { "Action" }, "idx_permissions_action");
+
+                    b.HasIndex(new[] { "Domain" }, "idx_permissions_domain");
+
                     b.HasIndex(new[] { "Id" }, "idx_permissions_id");
 
                     b.HasIndex(new[] { "LabelId" }, "idx_permissions_label_id");
@@ -1001,44 +889,38 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Abbreviation")
                         .HasColumnType("text")
                         .HasColumnName("abbreviation");
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<string>("ConfigJson")
+                    b.Property<string>("Config")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasColumnType("jsonb")
                         .HasColumnName("config")
-                        .HasDefaultValueSql("'{\"edgeRecordsMutable\":false,\"ontologyMutable\":false,\"tagsMutable\":false}'::jsonb");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                        .HasDefaultValueSql("'{\"tagsMutable\": false, \"ontologyMutable\": false, \"edgeRecordsMutable\": false}'::jsonb");
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1110,25 +992,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<long?>("ClassId")
                         .HasColumnType("bigint")
                         .HasColumnName("class_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
 
                     b.Property<long>("DataSourceId")
                         .HasColumnType("bigint")
@@ -1139,17 +1007,21 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<long?>("MappingId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("mapping_id");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<DateTime?>("ModifiedAt")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1181,15 +1053,13 @@ namespace deeplynx.datalayer.Migrations
                     b.HasKey("Id")
                         .HasName("records_pkey");
 
-                    b.HasIndex("ObjectStorageId");
+                    b.HasIndex(new[] { "ObjectStorageId" }, "IX_records_object_storage_id");
 
                     b.HasIndex(new[] { "ClassId" }, "idx_records_class_id");
 
                     b.HasIndex(new[] { "DataSourceId" }, "idx_records_data_source_id");
 
                     b.HasIndex(new[] { "Id" }, "idx_records_id");
-
-                    b.HasIndex(new[] { "MappingId" }, "idx_records_mapping_id");
 
                     b.HasIndex(new[] { "Name" }, "idx_records_name");
 
@@ -1207,76 +1077,6 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("records", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.RecordMapping", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<long?>("ClassId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("class_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<long>("DataSourceId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("data_source_id");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("modified_by");
-
-                    b.Property<long>("ProjectId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(0L)
-                        .HasColumnName("project_id");
-
-                    b.Property<string>("RecordParams")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("record_params");
-
-                    b.Property<long?>("TagId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("tag_id");
-
-                    b.HasKey("Id")
-                        .HasName("record_mappings_pkey");
-
-                    b.HasIndex(new[] { "ClassId" }, "idx_record_mappings_class_id");
-
-                    b.HasIndex(new[] { "DataSourceId" }, "idx_record_mappings_data_source_id");
-
-                    b.HasIndex(new[] { "Id" }, "idx_record_mappings_id");
-
-                    b.HasIndex(new[] { "ProjectId" }, "idx_record_mappings_project_id");
-
-                    b.HasIndex(new[] { "TagId" }, "idx_record_mappings_tag_id");
-
-                    b.ToTable("record_mappings", "deeplynx");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.Relationship", b =>
                 {
                     b.Property<long>("Id")
@@ -1284,21 +1084,7 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Description")
                         .HasColumnType("text")
@@ -1308,13 +1094,21 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("destination_id");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1367,6 +1161,12 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -1382,7 +1182,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("ProjectId")
+                    b.Property<long?>("OrganizationId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("organization_id");
+
+                    b.Property<long?>("ProjectId")
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
@@ -1390,6 +1194,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasName("roles_pkey");
 
                     b.HasIndex(new[] { "Id" }, "idx_roles_id");
+
+                    b.HasIndex(new[] { "OrganizationId" }, "idx_roles_organization_id");
 
                     b.HasIndex(new[] { "ProjectId" }, "idx_roles_project_id");
 
@@ -1409,6 +1215,12 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
@@ -1424,9 +1236,13 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<long>("OrganizationId")
+                    b.Property<long?>("OrganizationId")
                         .HasColumnType("bigint")
                         .HasColumnName("organization_id");
+
+                    b.Property<long?>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
 
                     b.HasKey("Id")
                         .HasName("sensitivity_labels_pkey");
@@ -1436,6 +1252,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "Name" }, "idx_sensitivity_labels_name");
 
                     b.HasIndex(new[] { "OrganizationId" }, "idx_sensitivity_labels_organization_id");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_sensitivity_labels_project_id");
 
                     b.ToTable("sensitivity_labels", "deeplynx");
                 });
@@ -1453,20 +1271,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("action_id");
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("created_by");
-
                     b.Property<long?>("DataSourceId")
                         .HasColumnType("bigint")
                         .HasColumnName("data_source_id");
@@ -1479,13 +1283,21 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("entity_type");
 
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<string>("ModifiedBy")
+                    b.Property<DateTime>("LastUpdatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("last_updated_at")
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Operation")
                         .HasColumnType("text")
@@ -1495,16 +1307,16 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("project_id");
 
-                    b.Property<long?>("UserId")
+                    b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
 
                     b.HasKey("Id")
                         .HasName("subscriptions_pkey");
 
-                    b.HasIndex("ActionId");
+                    b.HasIndex(new[] { "ActionId" }, "IX_subscriptions_action_id");
 
-                    b.HasIndex("DataSourceId");
+                    b.HasIndex(new[] { "DataSourceId" }, "IX_subscriptions_data_source_id");
 
                     b.HasIndex(new[] { "EntityType" }, "idx_subscriptions_entity_type");
 
@@ -1513,6 +1325,9 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "idx_subscriptions_project_id");
 
                     b.HasIndex(new[] { "UserId" }, "idx_subscriptions_user_id");
+
+                    b.HasIndex(new[] { "UserId", "ActionId", "Operation", "ProjectId", "DataSourceId", "EntityType", "EntityId" }, "idx_unique_subscription")
+                        .IsUnique();
 
                     b.ToTable("subscriptions", "deeplynx");
                 });
@@ -1524,29 +1339,23 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("LastUpdatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp without time zone")
-                        .HasColumnName("created_at")
+                        .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("CreatedBy")
+                    b.Property<string>("LastUpdatedBy")
                         .HasColumnType("text")
-                        .HasColumnName("created_by");
-
-                    b.Property<DateTime?>("ModifiedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("modified_at");
-
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("text")
-                        .HasColumnName("modified_by");
+                        .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1579,22 +1388,24 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("id");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<DateTime?>("ArchivedAt")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("archived_at");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("email");
 
+                    b.Property<bool>("IsArchived")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_archived");
+
                     b.Property<bool>("IsSysAdmin")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
-                        .HasColumnName("is_sysadmin");
+                        .HasColumnName("is_sys_admin");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -1647,23 +1458,6 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("record_labels_record_id_fkey");
-                });
-
-            modelBuilder.Entity("RecordMappingTag", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.RecordMapping", null)
-                        .WithMany()
-                        .HasForeignKey("RecordMappingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("record_mapping_tags_record_mapping_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("record_mapping_tags_tag_id_fkey");
                 });
 
             modelBuilder.Entity("RecordTag", b =>
@@ -1769,11 +1563,6 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasConstraintName("edges_destination_id_fkey");
 
-                    b.HasOne("deeplynx.datalayer.Models.EdgeMapping", "EdgeMapping")
-                        .WithMany("Edges")
-                        .HasForeignKey("MappingId")
-                        .HasConstraintName("edges_mapping_id_fkey");
-
                     b.HasOne("deeplynx.datalayer.Models.Record", "Origin")
                         .WithMany("EdgeOrigins")
                         .HasForeignKey("OriginId")
@@ -1791,57 +1580,8 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Relationship", "Relationship")
                         .WithMany("Edges")
                         .HasForeignKey("RelationshipId")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("edges_relationship_id_fkey");
-
-                    b.Navigation("DataSource");
-
-                    b.Navigation("Destination");
-
-                    b.Navigation("EdgeMapping");
-
-                    b.Navigation("Origin");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("Relationship");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeMapping", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany("EdgeMappings")
-                        .HasForeignKey("DataSourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("edge_mappings_data_source_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Class", "Destination")
-                        .WithMany("EdgeMappingDestinations")
-                        .HasForeignKey("DestinationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("edge_mappings_destination_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
-                        .WithMany("EdgeMappingOrigins")
-                        .HasForeignKey("OriginId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("edge_mappings_origin_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("EdgeMappings")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("edge_mappings_project_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Relationship", "Relationship")
-                        .WithMany("EdgeMappings")
-                        .HasForeignKey("RelationshipId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("edge_mappings_relationship_id_fkey");
 
                     b.Navigation("DataSource");
 
@@ -1945,13 +1685,13 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Permission", b =>
                 {
-                    b.HasOne("deeplynx.datalayer.Models.SensitivityLabel", "SensitivityLabel")
+                    b.HasOne("deeplynx.datalayer.Models.SensitivityLabel", "Label")
                         .WithMany("Permissions")
                         .HasForeignKey("LabelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("permissions_label_id_fkey");
 
-                    b.Navigation("SensitivityLabel");
+                    b.Navigation("Label");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
@@ -2007,6 +1747,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Class", "Class")
                         .WithMany("Records")
                         .HasForeignKey("ClassId")
+                        .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("records_class_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
@@ -2015,11 +1756,6 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("records_data_source_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.RecordMapping", "RecordMapping")
-                        .WithMany("Records")
-                        .HasForeignKey("MappingId")
-                        .HasConstraintName("records_mapping_id_fkey");
 
                     b.HasOne("deeplynx.datalayer.Models.ObjectStorage", "ObjectStorage")
                         .WithMany("Records")
@@ -2038,36 +1774,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("DataSource");
 
                     b.Navigation("ObjectStorage");
-
-                    b.Navigation("Project");
-
-                    b.Navigation("RecordMapping");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.RecordMapping", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.Class", "Class")
-                        .WithMany("RecordMappings")
-                        .HasForeignKey("ClassId")
-                        .HasConstraintName("record_mappings_class_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany("RecordMappings")
-                        .HasForeignKey("DataSourceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("record_mapping_data_source_id_fkey");
-
-                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany("RecordMappings")
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("record_mappings_project_id_fkey");
-
-                    b.Navigation("Class");
-
-                    b.Navigation("DataSource");
 
                     b.Navigation("Project");
                 });
@@ -2102,12 +1808,19 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
+                        .WithMany("Roles")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("roles_organization_id_fkey");
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Roles")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("roles_project_id_fkey");
+
+                    b.Navigation("Organization");
 
                     b.Navigation("Project");
                 });
@@ -2118,10 +1831,17 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("SensitivityLabels")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("sensitivity_labels_organization_id_fkey");
+                        .HasConstraintName("sensitivity_label_organization_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
+                        .WithMany("SensitivityLabels")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("sensitivity_label_project_id_fkey");
 
                     b.Navigation("Organization");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Subscription", b =>
@@ -2150,6 +1870,7 @@ namespace deeplynx.datalayer.Migrations
                         .WithMany("Subscriptions")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("subscriptions_user_id_fkey");
 
                     b.Navigation("Action");
@@ -2180,12 +1901,6 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
                 {
-                    b.Navigation("EdgeMappingDestinations");
-
-                    b.Navigation("EdgeMappingOrigins");
-
-                    b.Navigation("RecordMappings");
-
                     b.Navigation("Records");
 
                     b.Navigation("RelationshipDestinations");
@@ -2195,13 +1910,9 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.DataSource", b =>
                 {
-                    b.Navigation("EdgeMappings");
-
                     b.Navigation("Edges");
 
                     b.Navigation("Events");
-
-                    b.Navigation("RecordMappings");
 
                     b.Navigation("Records");
 
@@ -2211,11 +1922,6 @@ namespace deeplynx.datalayer.Migrations
             modelBuilder.Entity("deeplynx.datalayer.Models.Edge", b =>
                 {
                     b.Navigation("HistoricalEdges");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.EdgeMapping", b =>
-                {
-                    b.Navigation("Edges");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Group", b =>
@@ -2236,6 +1942,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Projects");
 
+                    b.Navigation("Roles");
+
                     b.Navigation("SensitivityLabels");
                 });
 
@@ -2247,8 +1955,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("DataSources");
 
-                    b.Navigation("EdgeMappings");
-
                     b.Navigation("Edges");
 
                     b.Navigation("Events");
@@ -2257,13 +1963,13 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("ProjectMembers");
 
-                    b.Navigation("RecordMappings");
-
                     b.Navigation("Records");
 
                     b.Navigation("Relationships");
 
                     b.Navigation("Roles");
+
+                    b.Navigation("SensitivityLabels");
 
                     b.Navigation("Subscriptions");
 
@@ -2279,15 +1985,8 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("HistoricalRecords");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.RecordMapping", b =>
-                {
-                    b.Navigation("Records");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.Relationship", b =>
                 {
-                    b.Navigation("EdgeMappings");
-
                     b.Navigation("Edges");
                 });
 

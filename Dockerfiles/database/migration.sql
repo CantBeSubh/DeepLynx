@@ -3894,7 +3894,7 @@ END $EF$;
 DO $EF$
 BEGIN
     IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20250902222805_AddRolesAndPermissions') THEN
-    ALTER TABLE deeplynx.users ADD is_sysadmin boolean NOT NULL DEFAULT FALSE;
+    ALTER TABLE deeplynx.users ADD is_sys_admin boolean NOT NULL DEFAULT FALSE;
     END IF;
 END $EF$;
 

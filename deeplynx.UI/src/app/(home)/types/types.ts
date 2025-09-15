@@ -21,7 +21,6 @@ export type FileViewerTableRow = {
   originalId?: string;
   classId?: number;
   className?: string;
-  mappingId?: string | null;
   dataSourceId?: number;
   dataSourceName?: string;
   projectId?: number;
@@ -157,7 +156,6 @@ export type HistoricalRecordResponseDto = {
   Description?: string;
   ClassId?: number;
   ClassName?: string;
-  MappingId?: number;
   DataSourceId?: number;
   DataSourceName?: string;
   ObjectStorageId?: number;

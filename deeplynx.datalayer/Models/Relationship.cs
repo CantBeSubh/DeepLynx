@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,11 +9,11 @@ namespace deeplynx.datalayer.Models;
 [Table("relationships", Schema = "deeplynx")]
 [Index("DestinationId", Name = "idx_relationships_destination_id")]
 [Index("Id", Name = "idx_relationships_id")]
+[Index("Name", Name = "idx_relationships_name")]
 [Index("OriginId", Name = "idx_relationships_origin_id")]
 [Index("ProjectId", Name = "idx_relationships_project_id")]
 [Index("Uuid", Name = "idx_relationships_uuid")]
-[Index("Name", Name = "idx_relationships_name")]
-[Index(nameof(ProjectId), nameof(Name), IsUnique = true, Name = "unique_relationship_name")]
+[Index("ProjectId", "Name", Name = "unique_relationship_name", IsUnique = true)]
 public partial class Relationship
 {
     [Key]
@@ -36,30 +38,25 @@ public partial class Relationship
     [Column("project_id")]
     public long ProjectId { get; set; }
 
-    [Required]
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
-    
+
     [Column("last_updated_by")]
     public string? LastUpdatedBy { get; set; }
-    
-    [Required]
+
     [Column("is_archived")]
-    public bool IsArchived { get; set; } = false;
+    public bool IsArchived { get; set; }
 
     [ForeignKey("DestinationId")]
     [InverseProperty("RelationshipDestinations")]
-    public virtual Class Destination { get; set; } = null!;
-
-    [InverseProperty("Relationship")]
-    public virtual ICollection<EdgeMapping> EdgeMappings { get; set; } = new List<EdgeMapping>();
+    public virtual Class? Destination { get; set; }
 
     [InverseProperty("Relationship")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [ForeignKey("OriginId")]
     [InverseProperty("RelationshipOrigins")]
-    public virtual Class Origin { get; set; } = null!;
+    public virtual Class? Origin { get; set; }
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Relationships")]
