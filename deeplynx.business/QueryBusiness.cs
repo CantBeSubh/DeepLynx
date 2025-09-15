@@ -216,100 +216,78 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<FullTextQueryResponseDto>> Search(string userQuery)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
         
         // full text search query for all text properties of historical records table 
         var sql = @"
-        WITH tag_name AS (
-          SELECT rt.record_id,
-                 string_agg(DISTINCT coalesce(t.name,''), ' ') AS tags_text
-          FROM deeplynx.record_tags rt
-          JOIN deeplynx.tags t ON t.id = rt.tag_id
-          GROUP BY rt.record_id
-        )
-        SELECT
-          r.*,
-          c.name  AS ClassName,
-          ds.name AS DataSourceName,
-          p.name  AS ProjectName,
-          tn.tags_text AS Tags,
-          r.original_id AS OriginalId
-        FROM deeplynx.records r
-        LEFT JOIN deeplynx.classes      c  ON c.id  = r.class_id
-        LEFT JOIN deeplynx.data_sources ds ON ds.id = r.data_source_id
-        LEFT JOIN deeplynx.projects     p  ON p.id  = r.project_id
-        LEFT JOIN tag_name              tn ON tn.record_id = r.id
-        WHERE
-          to_tsvector('english',
-              coalesce(r.name, '') || ' ' ||
-              coalesce(r.description, '') || ' ' ||
-              coalesce(c.name, '') || ' ' ||
-              coalesce(r.uri, '') || ' ' ||
-              coalesce(r.original_id, '') || ' ' ||
-              coalesce(ds.name, '') || ' ' ||
-              coalesce(p.name, '') || ' ' ||
-              coalesce(r.created_by, '') || ' ' ||
-              coalesce(r.modified_by, '') || ' ' ||
-              coalesce(r.properties::text, '') || ' ' ||
-              coalesce(tn.tags_text, '')
-          ) @@ to_tsquery('english', @query);
+        WITH ranked AS (
+                    SELECT hr.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY hr.record_id
+                               ORDER BY hr.last_updated_at ASC
+                           ) AS rn,
+                    hr.class_id as ClassId,
+                    hr.class_name as ClassName,
+                    hr.original_id as OriginalId,
+                    hr.data_source_name as DataSourceName,
+                    hr.data_source_id as DataSourceId,
+                    hr.project_name as ProjectName,
+                    hr.project_id as ProjectId,
+                    hr.last_updated_at as LastUpdatedAt,
+                    hr.last_updated_by as LastUpdatedBy,
+                    hr.object_storage_name as ObjectStorageName,
+                    hr.object_storage_id as ObjectStorageId,
+                    hr.is_archived as IsArchived
+                    FROM deeplynx.historical_records hr
+                    WHERE hr.is_archived = false
+                    AND to_tsvector('english',
+                            coalesce(name, '') || ' ' ||
+                            coalesce(description, '') || ' ' ||
+                            coalesce(class_name, '') || ' ' ||
+                            coalesce(uri, '') || ' ' ||
+                            coalesce(original_id, '') || ' ' ||
+                            coalesce(data_source_name, '') || ' ' ||
+                            coalesce(project_name, '') || ' ' ||
+                            coalesce(properties::text, '') || ' ' ||
+                            coalesce(tags::text, '')
+                        )@@ websearch_to_tsquery('english', @query)
+                )
+                SELECT *
+                FROM ranked
+                WHERE rn = 1;
         ";
 
         var param = new NpgsqlParameter("query", userQuery);
 
         var results = await _context.Database
-            .SqlQueryRaw<FullTextQueryResponseDto>(sql, param)
+            .SqlQueryRaw<HistoricalRecordResponseDto>(sql, param)
             .ToListAsync();
         
         return results
-            .Select(r => new FullTextQueryResponseDto()
+            .Select(r => new HistoricalRecordResponseDto()
             {
-                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
                 Name = r.Name,
+                Description = r.Description,
                 ClassId = r.ClassId,
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
+                ObjectStorageId = r.ObjectStorageId,
+                ObjectStorageName = r.ObjectStorageName,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
                 LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                Description = r.Description, 
                 LastUpdatedAt = r.LastUpdatedAt
             });
     }
     
-    private string ParseToQuery(string input)
-    {
-        if (string.IsNullOrWhiteSpace(input))
-            return string.Empty;
-
-        // Operators to translate
-        var operators = new HashSet<string> { "AND", "OR" };
-
-        // Tokenize input by whitespace
-        var tokens = input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        var result = new List<string>();
-
-        foreach (var token in tokens)
-                    Uri = r.Uri,
-                    Properties = r.Properties,
-                    OriginalId = r.OriginalId,
-                    Name = r.Name,
-                    ClassName = r.ClassName,
-                    DataSourceName = r.DataSourceName,
-                    ProjectName = r.ProjectName,
-                    Tags = r.Tags,
-                    Description = r.Description
-            });
-    }
     
     /// <summary>
     /// Retrieves all classes for specific projects.

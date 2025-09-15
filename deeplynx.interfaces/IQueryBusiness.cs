@@ -4,7 +4,7 @@ namespace deeplynx.interfaces;
 
 public interface IQueryBusiness
 {
-    Task<IEnumerable<FullTextQueryResponseDto>> Search(string query);
+    Task<IEnumerable<HistoricalRecordResponseDto>> Search(string query);
 
     IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request,  string? textSearch);
     
