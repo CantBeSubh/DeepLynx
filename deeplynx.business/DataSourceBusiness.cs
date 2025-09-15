@@ -319,49 +319,25 @@ namespace deeplynx.business
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found");
-            // set archivedAt timestamp
-            var archivedAt = DateTime.UtcNow;
             
-            using (var transaction = await _context.Database.BeginTransactionAsync())
+            dataSource.IsArchived = true;
+            dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.DataSources.Update(dataSource);
+            await _context.SaveChangesAsync();
+            
+            // Log dataSource archive event
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                try
-                {
-                    // run the archive data source procedure, which archives this datasource
-                    // and all child objects with data_source_id as a foreign key
-                    var archived = await _context.Database.ExecuteSqlRawAsync(
-                        "CALL deeplynx.archive_data_source({0}::INTEGER)", dataSourceId);
-
-                    if (archived == 0) // if 0 records were updated, assume a failure
-                    {
-                        throw new DependencyDeletionException(
-                            $"unable to archive data source {dataSourceId} or its downstream dependents.");
-                    }
-
-                    await _context.Entry(dataSource).ReloadAsync();
-
-                    
-                    // log event with datasource soft delete details
-                    await _eventBusiness.CreateEvent(new CreateEventRequestDto
-                    {
-                        ProjectId = projectId,
-                        Operation = "delete",
-                        EntityType = "data_source",
-                        EntityId = dataSource.Id,
-                        DataSourceId = null,
-                        Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                        LastUpdatedBy = "" // TODO: add username when JWT are implemented
-                    });
-                    
-                    await transaction.CommitAsync();
-                    return true;
-                }
-                catch (Exception exc)
-                {
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        $"unable to archive data source {dataSourceId} or its downstream dependents: {exc}");
-                }
-            }
+                ProjectId = projectId,
+                Operation = "archive",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+            
+            return true;
         }
         
         /// <summary>
@@ -379,31 +355,24 @@ namespace deeplynx.business
             if (dataSource == null || dataSource.ProjectId != projectId || !dataSource.IsArchived)
                 throw new KeyNotFoundException($"Data Source with id {dataSourceId} not found or is not archived.");
             
-            using (var transaction = await _context.Database.BeginTransactionAsync())
+            dataSource.IsArchived = false;
+            dataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            _context.DataSources.Update(dataSource);
+            await _context.SaveChangesAsync();
+            
+            // Log dataSource unarchive event
+            await _eventBusiness.CreateEvent(new CreateEventRequestDto
             {
-                try
-                {
-                    // run the unarchive data source procedure, which unarchives this datasource
-                    // and all child objects with data_source_id as a foreign key
-                    var unarchived = await _context.Database.ExecuteSqlRawAsync(
-                        "CALL deeplynx.unarchive_data_source({0}::INTEGER)", dataSourceId);
-
-                    if (unarchived == 0) // if 0 records were updated, assume a failure
-                    {
-                        throw new DependencyDeletionException(
-                            $"unable to unarchive data source {dataSourceId} or its downstream dependents.");
-                    }
-                    await _context.Entry(dataSource).ReloadAsync();
-                    await transaction.CommitAsync();
-                    return true;
-                }
-                catch (Exception exc)
-                {
-                    await transaction.RollbackAsync();
-                    throw new DependencyDeletionException(
-                        $"unable to unarchive data source {dataSourceId} or its downstream dependents: {exc}");
-                }
-            }
+                ProjectId = projectId,
+                Operation = "unarchive",
+                EntityType = "data_source",
+                EntityId = dataSource.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {dataSource.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+            
+            return true;
         }
         
         /// <summary>

@@ -19,9 +19,7 @@ namespace deeplynx.tests
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;
         private EventBusiness _eventBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
@@ -36,9 +34,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _mockEdgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             _eventBusiness = new EventBusiness(Context);
@@ -47,8 +43,8 @@ namespace deeplynx.tests
             _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(Context, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
-                Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _mockRelationshipBusiness.Object, _eventBusiness);
+                Context, _mockRecordBusiness.Object, 
+                _mockRelationshipBusiness.Object, _eventBusiness);
             
             _projectBusiness = new ProjectBusiness(
                 Context, _mockLogger.Object,_classBusiness, _dataSourceBusiness, 
@@ -710,7 +706,6 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
         OriginId = 2,
         DestinationId = 3,
         RelationshipId = 4,
-        MappingId = 5,
         DataSourceId = 6,
         ProjectId = 7,
         LastUpdatedBy = "test@example.com",
@@ -722,7 +717,6 @@ public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
     Assert.Equal(2, dto.OriginId);
     Assert.Equal(3, dto.DestinationId);
     Assert.Equal(4, dto.RelationshipId);
-    Assert.Equal(5, dto.MappingId);
     Assert.Equal(6, dto.DataSourceId);
     Assert.Equal(7, dto.ProjectId);
     Assert.Equal(now, dto.LastUpdatedAt);

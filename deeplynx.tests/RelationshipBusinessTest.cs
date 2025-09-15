@@ -17,10 +17,8 @@ namespace deeplynx.tests
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _mockEdgeMappingBusiness = null!;
         private Mock<IEdgeBusiness> _mockEdgeBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _mockRecordMappingBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private EventBusiness _eventBusiness = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
@@ -34,23 +32,21 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _mockEdgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             _eventBusiness = new EventBusiness(Context);
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>(); // Add this line
 
             _relationshipBusiness = new RelationshipBusiness(
-                Context, _mockEdgeMappingBusiness.Object, _mockEdgeBusiness.Object, _eventBusiness);
+                Context, _mockEdgeBusiness.Object, _eventBusiness);
     
             _dataSourceBusiness = new DataSourceBusiness(
                 Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
     
             _classBusiness = new ClassBusiness(
-                Context, _mockEdgeMappingBusiness.Object, _mockRecordBusiness.Object, 
-                _mockRecordMappingBusiness.Object, _relationshipBusiness, _eventBusiness);
+                Context, _mockRecordBusiness.Object, 
+                _relationshipBusiness, _eventBusiness);
     
             _projectBusiness = new ProjectBusiness(
                 Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, 
@@ -598,7 +594,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = testRelationship.ProjectId,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "relationship",
                 EntityId = archivedRelationship.Id,
             });

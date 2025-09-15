@@ -19,9 +19,7 @@ namespace deeplynx.tests
         private ProjectBusiness _projectBusiness = null!;
         private EventBusiness _eventBusiness = null!;
         private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
-        private Mock<IEdgeMappingBusiness> _edgeMappingBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
-        private Mock<IRecordMappingBusiness> _recordMappingBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
@@ -34,9 +32,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _edgeMappingBusiness = new Mock<IEdgeMappingBusiness>();
             _recordBusiness = new Mock<IRecordBusiness>();
-            _recordMappingBusiness = new Mock<IRecordMappingBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
@@ -44,8 +40,8 @@ namespace deeplynx.tests
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
 
             _classBusiness = new ClassBusiness(
-                Context, _edgeMappingBusiness.Object, _recordBusiness.Object, 
-                _recordMappingBusiness.Object, _relationshipBusiness.Object, _eventBusiness);
+                Context, _recordBusiness.Object, 
+                _relationshipBusiness.Object, _eventBusiness);
             
             _projectBusiness = new ProjectBusiness(
                 Context, _mockLogger.Object, _classBusiness, 
@@ -426,7 +422,7 @@ namespace deeplynx.tests
             eventList[0].Should().BeEquivalentTo(new
             {
                 ProjectId = pid,
-                Operation = "delete",
+                Operation = "archive",
                 EntityType = "class",
                 EntityId = archivedClass.Id,
             });
@@ -725,54 +721,6 @@ namespace deeplynx.tests
                 .Where(r => r.ClassId == testClass.Id)
                 .ToList();
             Assert.Empty(remainingRecords);
-        }
-
-        [Fact]
-        public async Task DeleteClass_DeletesDownstreamRecordMappings()
-        {
-            var testClass = new Class
-            {
-                Name = $"Class with Mappings {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Classes.Add(testClass);
-            await Context.SaveChangesAsync();
-
-            var mapping1 = new RecordMapping
-            {
-                RecordParams = "{\"param1\": \"value1\"}",
-                ClassId = testClass.Id,
-                DataSourceId = did,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-
-            var mapping2 = new RecordMapping
-            {
-                RecordParams = "{\"param2\": \"value2\"}",
-                ClassId = testClass.Id,
-                DataSourceId = did,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-
-            Context.RecordMappings.Add(mapping1);
-            Context.RecordMappings.Add(mapping2);
-            await Context.SaveChangesAsync();
-
-            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-            Assert.True(deletedResult);
-
-            var deletedMapping1 = await Context.RecordMappings.FindAsync(mapping1.Id);
-            var deletedMapping2 = await Context.RecordMappings.FindAsync(mapping2.Id);
-            
-            Assert.NotNull(deletedMapping1);
-            Assert.NotNull(deletedMapping2);
-            Assert.Null(deletedMapping1.ClassId);
-            Assert.Null(deletedMapping2.ClassId);
         }
         
         #region UnarchiveClass Tests

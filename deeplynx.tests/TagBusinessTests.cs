@@ -14,7 +14,6 @@ namespace deeplynx.tests
         private DeeplynxContext _context;
         private EventBusiness _eventBusiness;
         private TagBusiness _tagBusiness;
-        private readonly Mock<IRecordMappingBusiness> _mockRecordMappingBusiness;
         public long pid;
         public long pid2;
         public long pid3;
@@ -25,7 +24,6 @@ namespace deeplynx.tests
 
         public TagBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
-            _mockRecordMappingBusiness = new Mock<IRecordMappingBusiness>();
         }
 
         public override async Task InitializeAsync()
@@ -34,8 +32,7 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context);
 
             _tagBusiness = new TagBusiness( 
-                Context, 
-                _mockRecordMappingBusiness.Object,
+                Context,
                 _eventBusiness);
         }
 

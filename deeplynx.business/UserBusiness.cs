@@ -1,4 +1,3 @@
-using deeplynx.datalayer.Migrations;
 using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
@@ -15,11 +14,10 @@ public class UserBusiness : IUserBusiness
     /// <summary>
     /// Initializes a new instance of the <see cref="UserBusiness"/> class.
     /// </summary>
-    /// <param name="context">The database context used for the record mapping operations.</param>
+    /// <param name="context">The database context used for the user operations.</param>
     public UserBusiness(DeeplynxContext context)
     {
         _context = context;
-
     }
 
     /// <summary>
@@ -90,7 +88,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>The new user which was just created.</returns>
     public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
-        // TODO: adjusting is_sysadmin is currently disabled. Enable once route permission protections are in place
+        // TODO: adjusting is_sys_admin is currently disabled. Enable once route permission protections are in place
 
         var user = new User
         {
@@ -320,7 +318,6 @@ public class UserBusiness : IUserBusiness
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
-                MappingId = r.MappingId,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,

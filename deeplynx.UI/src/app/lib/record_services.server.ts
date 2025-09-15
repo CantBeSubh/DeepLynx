@@ -25,7 +25,6 @@ export type RecordRow = {
   originalId?: string;
   classId?: number;
   className?: string;
-  mappingId?: string | null;
   dataSourceId?: number;
   dataSourceName?: string;
   projectId?: number;

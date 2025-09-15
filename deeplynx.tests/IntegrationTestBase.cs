@@ -106,10 +106,6 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Users.RemoveRange(users);
         var edges = await Context.Edges.ToListAsync();
         Context.Edges.RemoveRange(edges);
-        var edgeMappings =  await Context.EdgeMappings.ToListAsync();
-        Context.EdgeMappings.RemoveRange(edgeMappings);
-        var recordMappings =  await Context.RecordMappings.ToListAsync();
-        Context.RecordMappings.RemoveRange(recordMappings);
         var relationships = await Context.Relationships.ToListAsync();
         Context.Relationships.RemoveRange(relationships);
         var tags = await Context.Tags.ToListAsync();
