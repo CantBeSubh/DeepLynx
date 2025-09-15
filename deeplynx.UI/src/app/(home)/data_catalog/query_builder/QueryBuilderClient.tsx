@@ -38,7 +38,7 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Time Range", value: "LastUpdatedAt" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
   queriedRecords
@@ -298,7 +298,7 @@ export default function QueryBuilderClient({
                               if (row.query.filter === "Properties") {
                                 return opt === "KEY_VALUE";
                               }
-                              if (row.query.filter === "Time Range") {
+                              if (row.query.filter === "LastUpdatedAt") {
                                 return opt === "<" || opt === ">" || opt === '='; // only show < or >
                               }
                               if (row.query.filter === "ClassName" || row.query.filter === "OriginalId" || row.query.filter === "DataSourceName" || row.query.filter === "Tags") {
@@ -315,7 +315,7 @@ export default function QueryBuilderClient({
 
                         {/* Text input for Property Field; select for others (except Time Range) */}
                         {/* Value */}
-                        {row.query.filter !== "Time Range" && (
+                        {row.query.filter !== "LastUpdatedAt" && (
                           (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
                             (row.query.filter === "Properties") ? (
                               <div className="grid grid-cols-2 gap-2 w-full">
@@ -428,7 +428,7 @@ export default function QueryBuilderClient({
                         )}
 
                         {/* Time Range*/}
-                        {row.query.filter === "Time Range" ? (
+                        {row.query.filter === "LastUpdatedAt" ? (
                           <DatePicker
                             row={row}
                             onChange={(dateTime: string) =>
