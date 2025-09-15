@@ -169,24 +169,24 @@ public class QueryBusiness : IQueryBusiness
         return historicalRecords
             .Select(r => new HistoricalRecordResponseDto
             {
-                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
                 Name = r.Name,
+                Description = r.Description,
                 ClassId = r.ClassId,
                 ClassName = r.ClassName,
                 DataSourceId = r.DataSourceId,
                 DataSourceName = r.DataSourceName,
+                ObjectStorageId = r.ObjectStorageId,
+                ObjectStorageName = r.ObjectStorageName,
                 ProjectId = r.ProjectId,
                 ProjectName = r.ProjectName,
                 Tags = r.Tags,
                 LastUpdatedBy = r.LastUpdatedBy,
-                IsArchived = r.IsArchived,
-                LastUpdatedAt = r.LastUpdatedAt,
-                Description = r.Description
-            })
-            .ToList();
+                LastUpdatedAt = r.LastUpdatedAt
+            }).ToList()
+            ;
     }
     
      // Combines two lambda expressions (x => condition1, x => condition2)

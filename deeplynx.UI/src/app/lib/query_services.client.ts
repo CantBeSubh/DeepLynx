@@ -22,7 +22,10 @@ export async function queryBuilder(
             obj.json = json;
         }
     }
-    const res = await api.post(`/records/QueryBuilder?${fullTextSearch}`, queryObj, {
+
+    const query = (`textSearch=${fullTextSearch}`);
+    console.log(query)
+    const res = await api.post(`/records/QueryBuilder?${query}`, queryObj, {
         headers: { "Content-Type": "application/json" },
     });
     return res.data;
