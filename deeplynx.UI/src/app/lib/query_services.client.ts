@@ -16,9 +16,9 @@ export async function queryBuilder(
     fullTextSearch: string | null
 ) {
     //Building json string format from key/value input
-    for (let obj of queryObj) {
+    for (const obj of queryObj) {
         if (obj.jsonKey && obj.jsonValue) {
-            let json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`
+            const json = `{"${obj.jsonKey}": "${obj.jsonValue}"}`
             obj.json = json;
         }
     }
