@@ -163,7 +163,6 @@ public class QueryBusiness : IQueryBusiness
         ");
         }
 
-        // Compose your dynamic subset on top (EF will AND the WHEREs)
         historicalRecords = historicalRecords.Where(predicate);
        
         return historicalRecords

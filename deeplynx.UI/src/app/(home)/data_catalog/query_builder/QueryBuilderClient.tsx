@@ -13,7 +13,6 @@ import { getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } 
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
 
-
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
