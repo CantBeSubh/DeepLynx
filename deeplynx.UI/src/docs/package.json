@@ -4,7 +4,7 @@
   "description": "Nexus Documentation",
   "main": "src/index.js",
   "scripts": {
-    "dev": "next --turbopack",
+    "dev": "next --port 3001 --turbopack",
     "build": "next build",
     "start": "next start",
     "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind"
