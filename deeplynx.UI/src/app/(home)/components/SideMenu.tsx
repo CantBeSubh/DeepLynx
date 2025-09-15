@@ -196,8 +196,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
-                href="#"
-                onClick={(e) => handleItemClick("/help", e)}
+                href={`${process.env.NEXT_PUBLIC_DOCS_PATH}`}
+                //onClick={(e) => handleItemClick("/help", e)}
                 className={getItemClass("/help")}
               >
                 <QuestionMarkCircleIcon className="size-6" />
