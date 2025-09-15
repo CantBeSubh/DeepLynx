@@ -82,18 +82,21 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
   ];
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
+    <div className="card bg-base-200/30 border border-base-300/50 shadow-sm">
       <div className="card-body">
-        <span className="flex justify-between">
-          <h2 className="card-title">Saved Searches</h2>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="card-title text-base-content">Saved Searches</h2>
           <Link
-            className="btn btn-secondary text-white"
+            className="btn btn-secondary btn-sm"
             href="/savedsearchesplaceholder"
           >
             {t.translations.VISIT}
           </Link>
-        </span>
-        <Tabs tabs={tabData} className="tabs tabs-border" />
+        </div>
+
+        {/* Tabs */}
+        <Tabs tabs={tabData} className="tabs tabs-boxed bg-base-100" />
       </div>
     </div>
   );

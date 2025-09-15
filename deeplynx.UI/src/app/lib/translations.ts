@@ -153,7 +153,8 @@ export const translations = {
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
             LAST_VIEWED: "Last Viewed",
-            API_KEYPAIRS: "API Keypairs"
+            API_KEYPAIRS: "API Keypairs",
+            NO_RECENT_RECORDS: "No recent records found"
         }
     },
     es: {
@@ -309,7 +310,8 @@ export const translations = {
             OPERATOR: "Operador",
             VALUE: "Valor",
             DELETE_ALL_FILTERS: "Eliminar todos los filtros",
-            API_KEYPAIRS: "API Keypairs"
+            API_KEYPAIRS: "",
+            NO_RECENT_RECORDS: ""
         }
     }
 }

@@ -68,63 +68,89 @@ const RecentRecordsCard = ({
 
   return (
     <div className="bg-base-100 rounded-xl p-4">
-      <h2 className="text-lg text-black mb-4t">
+      {/* Header */}
+      <h2 className="text-lg font-semibold text-base-content mb-2">
         {t.translations.RECENTLY_ADDED_RECORDS}
       </h2>
-      <div className="divider m-0 mt-2"></div>
-      <ul className="list mt-0">
+      <div className="divider m-0"></div>
+
+      {/* Records List */}
+      <ul className="space-y-1">
         {paginatedRecords.map((record, index) => (
           <li
             key={index}
-            className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 pl-0 rounded-sm"
+            className="border-b border-base-300/30 cursor-pointer hover:bg-base-200/40 p-3 -mx-1 rounded-lg transition-colors"
             onClick={() =>
               router.push(
                 `/record?recordId=${record.id}&projectId=${record.projectId}`
               )
             }
           >
-            <div className="text-accent-content mb-1">{record.name}</div>
-            <div className="text-sm text-base-300 space-x-2 flex flex-wrap">
-              <span>
-                {t.translations.CLASS}
-                <span className="badge badge-sm text-xs">
+            {/* Record Name */}
+            <div className="font-medium text-base-content mb-2">
+              {record.name}
+            </div>
+
+            {/* Record Metadata */}
+            <div className="text-sm text-base-content/60 flex flex-wrap gap-x-4 gap-y-1">
+              <span className="flex items-center gap-1">
+                <span>{t.translations.CLASS}:</span>
+                <span className="badge badge-sm badge-primary">
                   {record.className}
                 </span>
               </span>
-              <span className="ml-4">
-                {t.translations.LAST_EDIT}
+
+              <span>
+                <span className="text-base-content/50">
+                  {t.translations.LAST_EDIT}:
+                </span>{" "}
                 {formatDate(record.lastUpdatedAt ?? record.createdAt)}
               </span>
-              <span className="ml-4">
-                {t.translations.PROJECT} {record.projectName}
+
+              <span>
+                <span className="text-base-content/50">
+                  {t.translations.PROJECT}:
+                </span>{" "}
+                {record.projectName}
               </span>
-              <span className="ml-4">
-                {t.translations.DATA_SOURCE} {record.dataSourceName}
+
+              <span>
+                <span className="text-base-content/50">
+                  {t.translations.DATA_SOURCE}:
+                </span>{" "}
+                {record.dataSourceName}
               </span>
             </div>
           </li>
         ))}
       </ul>
 
+      {/* Empty State */}
+      {paginatedRecords.length === 0 && (
+        <div className="text-center py-8 text-base-content/60">
+          {t.translations.NO_RECENT_RECORDS || "No recent records found"}
+        </div>
+      )}
+
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end items-center gap-2 mt-4 pt-4 border-t border-base-300/30">
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((prev) => prev - 1)}
           >
-            <ChevronLeftIcon className="size-6" />
+            <ChevronLeftIcon className="w-5 h-5 text-base-content/70" />
           </button>
-          <span className="px-2 text-sm">
+          <span className="px-3 text-sm text-base-content/80 font-medium">
             {t.translations.PAGE} {currentPage} {t.translations.OF} {totalPages}
           </span>
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((prev) => prev + 1)}
           >
-            <ChevronRightIcon className="size-6" />
+            <ChevronRightIcon className="w-5 h-5 text-base-content/70" />
           </button>
         </div>
       )}
