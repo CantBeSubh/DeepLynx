@@ -125,21 +125,41 @@ public class QueryBusiness : IQueryBusiness
         {
             // NOTE: This is safe from SQL injection because interpolated values are parameterized.
             historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
-            SELECT *
-            FROM deeplynx.historical_records
-            WHERE to_tsvector('english',
-                coalesce(name, '') || ' ' ||
-                coalesce(description, '') || ' ' ||
-                coalesce(class_name, '') || ' ' ||
-                coalesce(uri, '') || ' ' ||
-                coalesce(original_id, '') || ' ' ||
-                coalesce(data_source_name, '') || ' ' ||
-                coalesce(project_name, '') || ' ' ||
-                coalesce(created_by, '') || ' ' ||
-                coalesce(modified_by, '') || ' ' ||
-                coalesce(properties::text, '') || ' ' ||
-                coalesce(tags::text, '')
-            ) @@ websearch_to_tsquery('english', {textSearch})
+            WITH ranked AS (
+                    SELECT hr.*,
+                           ROW_NUMBER() OVER (
+                               PARTITION BY hr.record_id
+                               ORDER BY hr.last_updated_at ASC
+                           ) AS rn,
+                    hr.class_id as ClassId,
+                    hr.class_name as ClassName,
+                    hr.original_id as OriginalId,
+                    hr.data_source_name as DataSourceName,
+                    hr.data_source_id as DataSourceId,
+                    hr.project_name as ProjectName,
+                    hr.project_id as ProjectId,
+                    hr.last_updated_at as LastUpdatedAt,
+                    hr.last_updated_by as LastUpdatedBy,
+                    hr.object_storage_name as ObjectStorageName,
+                    hr.object_storage_id as ObjectStorageId,
+                    hr.is_archived as IsArchived
+                    FROM deeplynx.historical_records hr
+                    WHERE hr.is_archived = false
+                    AND to_tsvector('english',
+                            coalesce(name, '') || ' ' ||
+                            coalesce(description, '') || ' ' ||
+                            coalesce(class_name, '') || ' ' ||
+                            coalesce(uri, '') || ' ' ||
+                            coalesce(original_id, '') || ' ' ||
+                            coalesce(data_source_name, '') || ' ' ||
+                            coalesce(project_name, '') || ' ' ||
+                            coalesce(properties::text, '') || ' ' ||
+                            coalesce(tags::text, '')
+                        )@@ websearch_to_tsquery('english',{textSearch})
+                )
+                SELECT *
+                FROM ranked
+                WHERE rn = 1
         ");
         }
 
@@ -221,7 +241,6 @@ public class QueryBusiness : IQueryBusiness
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
         
-        // full text search query for all text properties of historical records table 
         var sql = @"
         WITH ranked AS (
                     SELECT hr.*,
@@ -257,8 +276,7 @@ public class QueryBusiness : IQueryBusiness
                 )
                 SELECT *
                 FROM ranked
-                WHERE rn = 1;
-        ";
+                WHERE rn = 1;";
 
         var param = new NpgsqlParameter("query", userQuery);
 
