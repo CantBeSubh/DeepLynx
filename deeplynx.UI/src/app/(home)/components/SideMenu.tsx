@@ -19,6 +19,11 @@ import {
   PresentationChartLineIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
+  UsersIcon,
+  UserGroupIcon,
+  ShieldCheckIcon,
+  UserPlusIcon,
+  WrenchScrewdriverIcon
 } from "@heroicons/react/24/outline";
 
 // Define the props for the SideMenu component
@@ -36,6 +41,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   // State variables for selected item and menu collapse state
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isProjectSettingsExpanded, setIsProjectSettingsExpanded] = useState<boolean>(false);
+  const [isMemberManagementExpanded, setIsMemberManagementExpanded] = useState<boolean>(false);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -63,6 +70,22 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     setIsCollapsed(newState);
     onToggle(newState);
   };
+
+  // Function to toggle sub-folder visibility for Project Settings
+  const toggleProjectSettings = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsProjectSettingsExpanded(!isProjectSettingsExpanded);
+    // setSelectedItem("/project_settings");
+    // router.push("/project_settings");
+  };
+
+  // Function to toggle member mangement sub-folders
+  const toggleMemberManagement = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    setIsMemberManagementExpanded(!isMemberManagementExpanded);
+    // setSelectedItem("/member_management");
+    // router.push("/member_management");
+};
 
   // Function to handle item click events
   const handleItemClick = (
@@ -135,6 +158,60 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
+          <li className="mt-2">
+            <div className="flex items-center">
+              <Link
+                href={"/upload_center"}
+                onClick={toggleMemberManagement}
+                className={getItemClass("/upload_center")}
+              >
+                <AdjustmentsHorizontalIcon className="size-6" />
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
+                )}
+              </Link>
+            </div>
+            {isMemberManagementExpanded && (
+              <ul className="pl-8">
+                <li className="mt-2">
+                  <Link
+                    href="/project_settings/members/users"
+                    onClick={(e) => handleItemClick("/project_settings/members/users", e)}
+                    className={getItemClass("/project_settings/members/users")}
+                  >
+                    <UserPlusIcon className="size-6" />
+                    {!isCollapsed && (
+                      <p className="ml-2">{t.translations.USERS}</p>
+                    )}
+                  </Link>
+                </li>
+                <li className="mt-2">
+                  <Link
+                    href="/project_settings/members/groups"
+                    onClick={(e) => handleItemClick("/project_settings/members/groups", e)}
+                    className={getItemClass("/project_settings/members/groups")}
+                  >
+                    <UsersIcon className="size-6" />
+                    {!isCollapsed && (
+                      <p className="ml-2">{t.translations.GROUPS}</p>
+                    )}
+                  </Link>
+                </li>
+                <li className="mt-2">
+                  <Link
+                    href="/project_settings/members/organizations"
+                    onClick={(e) => handleItemClick("/project_settings/members/organizations", e)}
+                    className={getItemClass("/project_settings/members/organizations")}
+                  >
+                    <UserGroupIcon className="size-6" />
+                    {!isCollapsed && (
+                      <p className="ml-2">{t.translations.ORGANIZATIONS}</p>
+                    )}
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </li>
         </ul>
 
         <div className="divider" />
@@ -180,12 +257,46 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
           <li className="mt-2">
-            <Link href={""} className={getItemClass("/project_settings")}>
-              <AdjustmentsHorizontalIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
-              )}
-            </Link>
+            <div className="flex items-center">
+              <Link
+                href="/project_settings"
+                onClick={toggleProjectSettings}
+                className={getItemClass("/project_settings")}
+              >
+                <AdjustmentsHorizontalIcon className="size-6" />
+                {!isCollapsed && (
+                  <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
+                )}
+              </Link>
+            </div>
+            {isProjectSettingsExpanded && (
+              <ul className="pl-8">
+                <li className="mt-2">
+                  <Link
+                    href="/project_settings/members"
+                    onClick={(e) => handleItemClick("/project_settings/members", e)}
+                    className={getItemClass("/project_settings/members")}
+                  >
+                    <UsersIcon className="size-6" />
+                    {!isCollapsed && (
+                      <p className="ml-2">{t.translations.MEMBERS}</p>
+                    )}
+                  </Link>
+                </li>
+                <li className="mt-2">
+                  <Link
+                    href="/project_settings/roles"
+                    onClick={(e) => handleItemClick("/project_settings/roles", e)}
+                    className={getItemClass("/project_settings/roles")}
+                  >
+                    <ShieldCheckIcon className="size-6" />
+                    {!isCollapsed && (
+                      <p className="ml-2">{t.translations.ROLES}</p>
+                    )}
+                  </Link>
+                </li>
+              </ul>
+            )}
           </li>
         </ul>
 
