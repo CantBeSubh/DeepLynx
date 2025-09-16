@@ -11,19 +11,7 @@ import ProjectSettings from "../components/ProjectSettings";
 import {
   AdjustmentsHorizontalIcon,
   ArrowUpTrayIcon,
-  BookmarkSquareIcon,
-  BugAntIcon,
-  ChatBubbleLeftRightIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  FolderIcon,
-  PresentationChartLineIcon,
-  QuestionMarkCircleIcon,
-  RectangleGroupIcon,
-  UsersIcon,
-  UserGroupIcon,
-  ShieldCheckIcon,
-  UserPlusIcon
+  BookmarkSquareIcon
 } from "@heroicons/react/24/outline";
 
 const ProjectSettingsClient = () => {

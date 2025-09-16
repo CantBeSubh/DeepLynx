@@ -107,7 +107,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
         <span className="flex justify-between">
-          <h2 className="card-title">Project Settings</h2>
+          <h2 className="card-title">Autumn's Project Settings</h2>
           <Link
             className="btn btn-secondary text-white"
             href="/savedsearchesplaceholder"
