@@ -42,21 +42,22 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
             
             _classBusiness = new ClassBusiness(
-                Context, _mockRecordBusiness.Object, 
+                Context, _cacheBusiness, _mockRecordBusiness.Object, 
                 _mockRelationshipBusiness.Object, _eventBusiness);
                 
             _relationshipBusiness = new RelationshipBusiness(
-                Context, _mockEdgeBusiness.Object, _eventBusiness);
+                Context, _cacheBusiness, _mockEdgeBusiness.Object, _eventBusiness);
             
-            _tagBusiness = new TagBusiness(Context, _eventBusiness);
-            _recordBusiness = new RecordBusiness(Context, _eventBusiness);
-            _edgeBusiness = new EdgeBusiness(Context, _eventBusiness);
+            _tagBusiness = new TagBusiness(Context, _cacheBusiness, _eventBusiness);
+            _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
+            _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
             
             _metadataBusiness = new MetadataBusiness(
                 Context,
+                _cacheBusiness,
                 _classBusiness,
                 _relationshipBusiness,
                 _tagBusiness,
