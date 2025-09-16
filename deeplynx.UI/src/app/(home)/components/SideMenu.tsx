@@ -22,8 +22,7 @@ import {
   UsersIcon,
   UserGroupIcon,
   ShieldCheckIcon,
-  UserPlusIcon,
-  WrenchScrewdriverIcon
+  UserPlusIcon
 } from "@heroicons/react/24/outline";
 
 // Define the props for the SideMenu component
