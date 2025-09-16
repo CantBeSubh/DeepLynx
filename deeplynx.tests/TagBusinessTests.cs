@@ -59,7 +59,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags(pid2, true);
+            var result = await _tagBusiness.GetAllTags(pid3, true);
             var tags = result.ToList();
 
             // Assert

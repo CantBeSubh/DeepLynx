@@ -316,7 +316,8 @@ namespace deeplynx.tests
                 LastUpdatedBy = "user123"
             };
             
-            events.AddRange(dto1,  dto2);
+            events.Add(dto1);
+            events.Add(dto2);
 
             var results = await _eventBusiness.BulkCreateEvents(pid, events);
             results.Should().NotBeNull();
