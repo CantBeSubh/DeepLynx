@@ -6,9 +6,9 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 using deeplynx.interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace deeplynx.business;
-
-public class RedisCacheBusiness : ICacheBusiness
+namespace deeplynx.business
+{
+    public class RedisCacheBusiness : ICacheBusiness
     {
         private readonly ConnectionMultiplexer _redis;
         private readonly IDatabase _db;
@@ -95,9 +95,10 @@ public class RedisCacheBusiness : ICacheBusiness
         /// </summary>
         /// <param name="key">The Key name of the data to be cached</param>
         /// <returns>bool based on delete success</returns>
-        public Task<bool> DeleteAsync(string key)
+        public async Task<bool> DeleteAsync(string key)
         {
-            throw new NotImplementedException();
+            bool removed = await _db.KeyDeleteAsync(key);
+            return removed;
         }
 
         /// <summary>
@@ -116,3 +117,4 @@ public class RedisCacheBusiness : ICacheBusiness
             return true;
         }
     }
+}

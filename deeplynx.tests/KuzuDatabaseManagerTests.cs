@@ -34,7 +34,7 @@ namespace deeplynx.tests {
 
             _container = new PostgreSqlBuilder().WithImage("postgres:15-alpine").Build();
 
-            ConnectionString = _fixture.ConnectionString;
+            ConnectionString = _fixture.PostgresConnectionString;
 
             var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
@@ -113,7 +113,7 @@ namespace deeplynx.tests {
 
         private async Task<bool> ExecuteSqlFromFileAsync(string filePath)
         {
-            ConnectionString = _fixture.ConnectionString;
+            ConnectionString = _fixture.PostgresConnectionString;
 
             string sql;
             try
