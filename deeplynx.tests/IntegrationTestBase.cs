@@ -14,7 +14,6 @@ public class TestSuiteFixture : IAsyncLifetime
     public string PostgresConnectionString { get; private set; }
     public string RedisConnectionString { get; private set; }
     public DeeplynxContext Context { get; private set; }
-    public CacheBusiness _cacheBusiness;
 
     public TestSuiteFixture()
     {
@@ -32,10 +31,10 @@ public class TestSuiteFixture : IAsyncLifetime
     {
         await _postgresContainer.StartAsync();
         await _redisContainer.StartAsync();
-
-        // Allows the integration test base to access the connection string to instantiate a new context
-        PostgresConnectionString = _postgresContainer.GetConnectionString();
+        
         RedisConnectionString = _redisContainer.GetConnectionString();
+        
+        PostgresConnectionString = _postgresContainer.GetConnectionString();
 
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(PostgresConnectionString)
@@ -50,8 +49,6 @@ public class TestSuiteFixture : IAsyncLifetime
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
         Env.Load(envFilePath);
-        
-        _cacheBusiness = CacheBusiness.Instance;
     }
     
     // Runs at the end of every test suite
