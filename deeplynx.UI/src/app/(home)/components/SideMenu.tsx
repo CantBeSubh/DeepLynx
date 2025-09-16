@@ -74,8 +74,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const toggleProjectSettings = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     setIsProjectSettingsExpanded(!isProjectSettingsExpanded);
-    // setSelectedItem("/project_settings");
-    // router.push("/project_settings");
+    setSelectedItem("/project_settings");
+    router.push("/project_settings");
   };
 
   // Function to toggle member mangement sub-folders
