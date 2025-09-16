@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:app\" \"npm run dev:docs\"",
     "dev:app": "next dev --port 3000 --turbopack",
-    "dev:docs": "npm --prefix src/docs run dev",
+    "dev:docs": "npm --prefix ../deeplynx.docs run dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

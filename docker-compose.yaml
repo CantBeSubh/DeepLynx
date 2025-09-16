@@ -20,7 +20,7 @@ services:
   docs:
     build:
       context: ./
-      dockerfile: Dockerfiles/ui/docs/Docs.Dockerfile.local
+      dockerfile: Dockerfiles/docs/Dockerfile.local
     environment:
       NODE_ENV: production
     ports:
