@@ -37,197 +37,199 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch)
+public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch = null)
+{
+    if (request == null)
     {
-        IQueryable<HistoricalRecord> historicalRecords = _context.HistoricalRecords;
-        Expression<Func<HistoricalRecord, bool>> predicate = u => true;
+        throw new Exception("Custom query request dto cannot be null");
+    }
 
+    // Build the WHERE conditions for your custom queries
+    var whereConditions = new List<string>();
+    var sqlParameters = new List<object>();
+    var parameterIndex = 1; 
+
+    if (request?.Length > 0)
+    {
         foreach (var query in request)
         {
+            string condition = "";
+            
             if (query.Operator == "KEY_VALUE")
             {
-                
-                // var contained = JsonSerializer.Deserialize<JsonElement>(query.Json);
-                Expression<Func<HistoricalRecord, bool>> next =
-                    e => EF.Functions.JsonContains(EF.Property<string>(e, query.Filter),(query.Json!));
-
-                predicate = query.Connector == "OR"
-                    ? Or(predicate, next)
-                    : And(predicate, next);
+                condition = $"({query.Filter}::jsonb @> ${parameterIndex}::jsonb)";
+                sqlParameters.Add(query.Json);
+                parameterIndex++;
             }
-            
-            if (query.Operator == "LIKE")
+            else if (query.Operator == "LIKE")
             {
-                Expression<Func<HistoricalRecord, bool>> next =
-                    u => EF.Property<string>(u, query.Filter).Contains(query.Value);
-
-                predicate = query.Connector == "OR"
-                    ? Or(predicate, next)
-                    : And(predicate, next);
+                condition = $"hr.{query.Filter} ILIKE ${parameterIndex}";
+                sqlParameters.Add($"%{query.Value}%");
+                parameterIndex++;
             }
-
-            if (query.Operator == "=")
+            else if (query.Operator == "=")
             {
                 if (int.TryParse(query.Value, out var intVal))
                 {
-                    Expression<Func<HistoricalRecord, bool>> next =
-                        u => EF.Property<int>(u, query.Filter) == intVal;
-
-                    predicate = query.Connector == "OR"
-                        ? Or(predicate, next)
-                        : And(predicate, next);
+                    condition = $"hr.{query.Filter} = ${parameterIndex}";
+                    sqlParameters.Add(intVal);
+                    parameterIndex++;
                 }
                 else if (DateTime.TryParse(query.Value, out var dateVal))
                 {
-                    Expression<Func<HistoricalRecord, bool>> next =
-                        u => EF.Property<DateTime>(u, query.Filter) == dateVal;
-
-                    predicate = query.Connector == "OR"
-                        ? Or(predicate, next)
-                        : And(predicate, next);
+                    condition = $"hr.{query.Filter} = ${parameterIndex}";
+                    sqlParameters.Add(dateVal);
+                    parameterIndex++;
                 }
                 else
                 {
-                    Expression<Func<HistoricalRecord, bool>> next =
-                        u => EF.Property<string>(u, query.Filter) == query.Value;
-
-                    predicate = query.Connector == "OR"
-                        ? Or(predicate, next)
-                        : And(predicate, next);
+                    condition = $"hr.{query.Filter} = ${parameterIndex}";
+                    sqlParameters.Add(query.Value);
+                    parameterIndex++;
                 }
             }
-            if (query.Operator == ">")
+            else if (query.Operator == ">")
             {
-                DateTime.TryParse(query.Value, out var dateVal);
-                Expression<Func<HistoricalRecord, bool>> next =
-                    u => EF.Property<DateTime>(u, query.Filter) > dateVal;
-
-                predicate = query.Connector == "OR"
-                    ? Or(predicate, next)
-                    : And(predicate, next);
+                if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    condition = $"hr.{query.Filter} > ${parameterIndex}";
+                    sqlParameters.Add(dateVal);
+                    parameterIndex++;
+                }
             }
-            
-            if (query.Operator == "<")
+            else if (query.Operator == "<")
             {
-                DateTime.TryParse(query.Value, out var dateVal);
-                Expression<Func<HistoricalRecord, bool>> next =
-                    u => EF.Property<DateTime>(u, query.Filter) < dateVal;
-
-                predicate = query.Connector == "OR"
-                    ? Or(predicate, next)
-                    : And(predicate, next);
+                if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    condition = $"hr.{query.Filter} < ${parameterIndex}";
+                    sqlParameters.Add(dateVal);
+                    parameterIndex++;
+                }
             }
-            
+
+            if (!string.IsNullOrEmpty(condition))
+            {
+                if (whereConditions.Count > 0)
+                {
+                    var connector = query.Connector?.ToUpper() == "OR" ? " OR " : " AND ";
+                    whereConditions.Add(connector + condition);
+                }
+                else
+                {
+                    whereConditions.Add(condition);
+                }
+            }
         }
+    }
+
+    var additionalWhere = whereConditions.Count > 0 ? 
+        " AND (" + string.Join("", whereConditions) + ")" : "";
+
+    var baseSql = $@"
+        SELECT DISTINCT ON (hr.record_id)
+            hr.*,
+            hr.class_id as ClassId,
+            hr.class_name as ClassName,
+            hr.original_id as OriginalId,
+            hr.data_source_name as DataSourceName,
+            hr.data_source_id as DataSourceId,
+            hr.project_name as ProjectName,
+            hr.project_id as ProjectId,
+            hr.last_updated_at as LastUpdatedAt,
+            hr.last_updated_by as LastUpdatedBy,
+            hr.object_storage_name as ObjectStorageName,
+            hr.object_storage_id as ObjectStorageId,
+            hr.record_id as RecordId,
+            hr.is_archived as IsArchived
+        FROM deeplynx.historical_records hr
+        WHERE hr.is_archived = false
+        {additionalWhere}";
+
+    IQueryable<HistoricalRecord> historicalRecords;
+
+    if (!string.IsNullOrWhiteSpace(textSearch))
+    {
+        var textSearchSql = baseSql + $@"
+            AND to_tsvector('english',
+                    coalesce(name, '') || ' ' ||
+                    coalesce(description, '') || ' ' ||
+                    coalesce(class_name, '') || ' ' ||
+                    coalesce(uri, '') || ' ' ||
+                    coalesce(original_id, '') || ' ' ||
+                    coalesce(data_source_name, '') || ' ' ||
+                    coalesce(project_name, '') || ' ' ||
+                    coalesce(properties::text, '') || ' ' ||
+                    coalesce(tags::text, '')
+                )@@ websearch_to_tsquery('english', ${parameterIndex})
+            ORDER BY hr.record_id, hr.last_updated_at DESC";
+            
+        sqlParameters.Add(textSearch);
+        historicalRecords = _context.HistoricalRecords.FromSqlRaw(textSearchSql, sqlParameters.ToArray());
+    }
+    else
+    {
+        var finalSql = baseSql + " ORDER BY hr.record_id, hr.last_updated_at DESC";
         
-        // If we have a full-text query, start from a composable raw SQL that includes JSONB -> text
-        if (!string.IsNullOrWhiteSpace(textSearch))
+        if (sqlParameters.Count > 0)
         {
-            // NOTE: This is safe from SQL injection because interpolated values are parameterized.
-            historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
-            WITH ranked AS (
-                    SELECT hr.*,
-                           ROW_NUMBER() OVER (
-                               PARTITION BY hr.record_id
-                               ORDER BY hr.last_updated_at ASC
-                           ) AS rn,
-                    hr.class_id as ClassId,
-                    hr.class_name as ClassName,
-                    hr.original_id as OriginalId,
-                    hr.data_source_name as DataSourceName,
-                    hr.data_source_id as DataSourceId,
-                    hr.project_name as ProjectName,
-                    hr.project_id as ProjectId,
-                    hr.last_updated_at as LastUpdatedAt,
-                    hr.last_updated_by as LastUpdatedBy,
-                    hr.object_storage_name as ObjectStorageName,
-                    hr.object_storage_id as ObjectStorageId,
-                    hr.is_archived as IsArchived
+          
+            if (sqlParameters.Count == 1)
+            {
+                var param1 = sqlParameters[0];
+                historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
+                    SELECT DISTINCT ON (hr.record_id)
+                        hr.*,
+                        hr.class_id as ClassId,
+                        hr.class_name as ClassName,
+                        hr.original_id as OriginalId,
+                        hr.data_source_name as DataSourceName,
+                        hr.data_source_id as DataSourceId,
+                        hr.project_name as ProjectName,
+                        hr.project_id as ProjectId,
+                        hr.last_updated_at as LastUpdatedAt,
+                        hr.last_updated_by as LastUpdatedBy,
+                        hr.object_storage_name as ObjectStorageName,
+                        hr.object_storage_id as ObjectStorageId,
+                        hr.record_id as RecordId,
+                        hr.is_archived as IsArchived
                     FROM deeplynx.historical_records hr
                     WHERE hr.is_archived = false
-                    AND to_tsvector('english',
-                            coalesce(name, '') || ' ' ||
-                            coalesce(description, '') || ' ' ||
-                            coalesce(class_name, '') || ' ' ||
-                            coalesce(uri, '') || ' ' ||
-                            coalesce(original_id, '') || ' ' ||
-                            coalesce(data_source_name, '') || ' ' ||
-                            coalesce(project_name, '') || ' ' ||
-                            coalesce(properties::text, '') || ' ' ||
-                            coalesce(tags::text, '')
-                        )@@ websearch_to_tsquery('english',{textSearch})
-                )
-                SELECT *
-                FROM ranked
-                WHERE rn = 1
-        ");
-        }
-
-        historicalRecords = historicalRecords.Where(predicate);
-       
-        return historicalRecords
-            .Select(r => new HistoricalRecordResponseDto
+                     AND (hr.original_id = {param1}) ORDER BY hr.record_id, hr.last_updated_at DESC");
+            }
+            else
             {
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                Description = r.Description,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                ObjectStorageId = r.ObjectStorageId,
-                ObjectStorageName = r.ObjectStorageName,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                LastUpdatedBy = r.LastUpdatedBy,
-                LastUpdatedAt = r.LastUpdatedAt
-            }).ToList()
-            ;
-    }
-    
-     // Combines two lambda expressions (x => condition1, x => condition2)
-    // into a single lambda (x => condition1 AND condition2).
-    private static Expression<Func<T, bool>> And<T>(
-        Expression<Func<T, bool>> left,
-        Expression<Func<T, bool>> right)
-    {
-        var param = left.Parameters[0];
-        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
-        var body = Expression.AndAlso(left.Body, rightBodyWithLeftParam);
-        return Expression.Lambda<Func<T, bool>>(body, param);
-    }
-
-    // Same as And<T>, but combines with OR instead of AND.
-    private static Expression<Func<T, bool>> Or<T>(
-        Expression<Func<T, bool>> left,
-        Expression<Func<T, bool>> right)
-    {
-        var param = left.Parameters[0];
-        var rightBodyWithLeftParam = new Replace(right.Parameters[0], param).Visit(right.Body)!;
-        var body = Expression.OrElse(left.Body, rightBodyWithLeftParam);
-        return Expression.Lambda<Func<T, bool>>(body, param);
-    }
-
-    // Walks the expression tree and swaps one ParameterExpression for another.
-    class Replace : ExpressionVisitor
-    {
-        private readonly ParameterExpression from; // the old parameter we want to replace
-        private readonly ParameterExpression to;   // the new parameter we want to use
-
-        public Replace(ParameterExpression from, ParameterExpression to)
-        {
-            this.from = from;
-            this.to = to;
+                historicalRecords = _context.HistoricalRecords.FromSqlRaw(finalSql, sqlParameters.ToArray());
+            }
         }
-
-        // Whenever the visitor encounters a parameter node,
-        // if it's the old one ("from"), replace it with "to".
-        protected override Expression VisitParameter(ParameterExpression node)
-            => node == from ? to : node;
+        else
+        {
+            historicalRecords = _context.HistoricalRecords.FromSqlRaw(finalSql);
+        }
     }
+
+    return historicalRecords
+        .Select(r => new HistoricalRecordResponseDto
+        {
+            Id = r.RecordId,
+            Uri = r.Uri,
+            Properties = r.Properties,
+            OriginalId = r.OriginalId,
+            Name = r.Name,
+            Description = r.Description,
+            ClassId = r.ClassId,
+            ClassName = r.ClassName,
+            DataSourceId = r.DataSourceId,
+            DataSourceName = r.DataSourceName,
+            ObjectStorageId = r.ObjectStorageId,
+            ObjectStorageName = r.ObjectStorageName,
+            ProjectId = r.ProjectId,
+            ProjectName = r.ProjectName,
+            Tags = r.Tags,
+            LastUpdatedBy = r.LastUpdatedBy,
+            LastUpdatedAt = r.LastUpdatedAt
+        }).ToList();
+}
+    
     
     
     /// <summary>
@@ -241,41 +243,35 @@ public class QueryBusiness : IQueryBusiness
             throw new Exception("Search query is required.");
         
         var sql = @"
-        WITH ranked AS (
-                    SELECT hr.*,
-                           ROW_NUMBER() OVER (
-                               PARTITION BY hr.record_id
-                               ORDER BY hr.last_updated_at ASC
-                           ) AS rn,
-                    hr.class_id as ClassId,
-                    hr.class_name as ClassName,
-                    hr.original_id as OriginalId,
-                    hr.data_source_name as DataSourceName,
-                    hr.data_source_id as DataSourceId,
-                    hr.project_name as ProjectName,
-                    hr.project_id as ProjectId,
-                    hr.last_updated_at as LastUpdatedAt,
-                    hr.last_updated_by as LastUpdatedBy,
-                    hr.object_storage_name as ObjectStorageName,
-                    hr.object_storage_id as ObjectStorageId,
-                    hr.is_archived as IsArchived
-                    FROM deeplynx.historical_records hr
-                    WHERE hr.is_archived = false
-                    AND to_tsvector('english',
-                            coalesce(name, '') || ' ' ||
-                            coalesce(description, '') || ' ' ||
-                            coalesce(class_name, '') || ' ' ||
-                            coalesce(uri, '') || ' ' ||
-                            coalesce(original_id, '') || ' ' ||
-                            coalesce(data_source_name, '') || ' ' ||
-                            coalesce(project_name, '') || ' ' ||
-                            coalesce(properties::text, '') || ' ' ||
-                            coalesce(tags::text, '')
-                        )@@ websearch_to_tsquery('english', @query)
-                )
-                SELECT *
-                FROM ranked
-                WHERE rn = 1;";
+            SELECT DISTINCT ON (hr.record_id)
+            hr.*,
+            hr.class_id as ClassId,
+            hr.class_name as ClassName,
+            hr.original_id as OriginalId,
+            hr.data_source_name as DataSourceName,
+            hr.data_source_id as DataSourceId,
+            hr.project_name as ProjectName,
+            hr.project_id as ProjectId,
+            hr.last_updated_at as LastUpdatedAt,
+            hr.last_updated_by as LastUpdatedBy,
+            hr.object_storage_name as ObjectStorageName,
+            hr.object_storage_id as ObjectStorageId,
+            hr.record_id as RecordId,
+            hr.is_archived as IsArchived
+        FROM deeplynx.historical_records hr
+        WHERE hr.is_archived = false
+        AND to_tsvector('english',
+                coalesce(name, '') || ' ' ||
+                coalesce(description, '') || ' ' ||
+                coalesce(class_name, '') || ' ' ||
+                coalesce(uri, '') || ' ' ||
+                coalesce(original_id, '') || ' ' ||
+                coalesce(data_source_name, '') || ' ' ||
+                coalesce(project_name, '') || ' ' ||
+                coalesce(properties::text, '') || ' ' ||
+                coalesce(tags::text, '')
+            )@@ websearch_to_tsquery('english',@query)
+        ORDER BY hr.record_id, hr.last_updated_at DESC;";
 
         var param = new NpgsqlParameter("query", userQuery);
 
