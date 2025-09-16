@@ -1,0 +1,34 @@
+---
+title: Folder Structure
+---
+
+# Contributing to this Documentation
+
+These documentation pages were built using [Nextra](https://nextra.site/), a Next.js-based static site generator specializing in documentation made by the creators of Next.js. 
+
+## Understanding Documentation Structure
+
+> [!TIP]
+>
+> This is the minimum required to get started with nextra for nexus. For full details including markup syntax, see their documentation to make boxes such as this. 
+
+This documentation includes two main directories: `app` and `content`. 
+
+### `app` Directory
+
+The `app` directory contains configuration and routing logic for the documentation `content` directory. It includes `[[...mdxPath]]`, which is responsible for dynamically routing the content MDX files.
+
+> [!NOTE]
+>
+> You shouldn't have to alter `app` too much. This structure is just good to understand for the content directory.
+
+### `content` Directory
+
+The `content` directory contains the actual documentation files, organized in a way that makes it simple.  This is where you wil create, update, and delete documentation. 
+
+Each `subdirectory`, or `subfolder`, represents a documentation section, denoted on the sidebar, e.g. `Users`, `Developers`, `Documentation`, `About` are all folders. Each Markdown or MDX file in a subdirectory then represents a page in your documentation site. `How it works` is different than its named folder which we'll see in the next section.
+
+> [!TIP]
+>
+> The terms `folder` and `directory` may be used interchangeably. 
+

@@ -1,0 +1,45 @@
+---
+title: Organization
+---
+
+# The Final Content Organization
+
+A special file is used to esnure the desired final order of documentation.
+
+## _meta.ts
+
+Every subdirectory in `content` as well as the main directory itself will include a `_meta.ts` file to maintain documentation section order.
+
+> [!IMPORTANT]
+>
+> The content level `_meta.ts` found in `src/content` is the top level organizer, responsible for altering the main sidebar order. 
+
+You may alter the order, give documentation sections titles different from their directory name, [and much more](https://nextra.site/docs/file-conventions/meta-file).
+
+```js copy filename="src/content/_meta.ts"
+export default {
+  overview: {
+    title: "How it works"
+  },
+  users: '',
+  developers: '',
+  documentation: '',
+  about: '',
+  contact: {
+    title: 'Contact us',
+    type: 'page',
+    href: 'https://example.com/contact'
+  }
+}
+```
+> [!TIP]
+>
+> If no order is given, the app will default to alphabetical order. 
+
+> [!NOTE]
+>
+> *contact* alters the navbar contact section. These are additional features provided by nextra. 
+
+### Subdirectory `_meta.ts` files
+
+Finally, every documentation section itself may be organized in various ways depending on how you would like the user to flow through. Be sure to add a `_meta.ts` in any subdirectory you'd like to change the order in which alters the order of the pages of a drop-down docs section, while the main `src/content/_meta.ts` alters the sidebar itself.

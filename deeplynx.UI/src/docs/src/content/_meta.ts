@@ -4,6 +4,7 @@ export default {
   },
   users: '',
   developers: '',
+  documentation: '',
   about: '',
   contact: {
     title: 'Contact us',
