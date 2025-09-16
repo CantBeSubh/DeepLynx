@@ -1,5 +1,6 @@
 using deeplynx.models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.interfaces
 {
@@ -15,6 +16,8 @@ namespace deeplynx.interfaces
             TimeseriesUploadCompleteRequestDto request);
 
         Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath);
+
+        Task<FileStreamResult> DownloadTimeseriesFile(long projectId, long dataSourceId, string tableName, string fileType);
 
         Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long datasourceId);
 

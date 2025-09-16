@@ -9,6 +9,7 @@ using deeplynx.models;
 using DuckDB.NET.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -604,5 +605,56 @@ public class TimeseriesBusiness(
         await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
+    }
+
+    /// <summary>
+    /// Dowloads a timeseries table as a csv or parquet file
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="dataSourceId"></param>
+    /// <param name="tableName"></param>
+    /// <param name="fileType"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    /// <exception cref="FileNotFoundException"></exception>
+    public async Task<FileStreamResult> DownloadTimeseriesFile(long projectId, long dataSourceId, string tableName, string fileType)
+    {
+        if (fileType != "csv" && fileType != "parquet")
+        {
+            throw new Exception("Only .csv and .parquet files are supported");
+        }
+        
+        var baseTableName = Path.GetFileNameWithoutExtension(tableName);
+        var fileName = baseTableName + "." + fileType;
+        var filePath = Path.Combine(_duckDbBasePath, fileName);
+        await using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
+        await using var command = duckDbConnection.CreateCommand();
+        if (fileType == "csv")
+        {
+            command.CommandText = $"COPY \"{tableName}\" TO '{filePath}' (HEADER, DELIMITER ',');";
+        } 
+        else if (fileType == "parquet")
+        {
+            command.CommandText = $"COPY \"{tableName}\" TO '{filePath}' (FORMAT parquet);";
+        }
+        await command.ExecuteReaderAsync();
+        var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var provider = new FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(filePath, out var contentType))
+        {
+            contentType = "application/octet-stream"; // Default fallback
+        }
+        
+        File.Delete(filePath);
+        
+        if (File.Exists(filePath))
+        {
+            throw new FileNotFoundException("The file was not cleaned up", filePath);
+        }
+        
+        return new FileStreamResult(stream, contentType)
+        {
+            FileDownloadName = fileName
+        };
     }
 }
