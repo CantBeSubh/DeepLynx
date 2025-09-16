@@ -15,16 +15,20 @@ public class ClassBusiness : IClassBusiness
     private readonly IRecordBusiness _recordBusiness;
     private readonly IRelationshipBusiness _relationshipBusiness;
     private readonly IEventBusiness _eventBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ClassBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
+    /// <param name="cacheBusiness">Used to access cache operations</param>
+    /// <param name="edgeMappingBusiness">Passed in context of edge mapping objects</param>
     /// <param name="recordBusiness">Passed in context of record objects</param>
     /// <param name="relationshipBusiness">Passed in context of relationship objects</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
     public ClassBusiness(
         DeeplynxContext context,
+        ICacheBusiness? cacheBusiness,
         IRecordBusiness recordBusiness,
         IRelationshipBusiness relationshipBusiness,
         IEventBusiness eventBusiness
@@ -34,6 +38,7 @@ public class ClassBusiness : IClassBusiness
         _recordBusiness = recordBusiness;
         _relationshipBusiness = relationshipBusiness;
         _eventBusiness = eventBusiness;
+        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
@@ -46,7 +51,7 @@ public class ClassBusiness : IClassBusiness
     {
         foreach (var projectId in projectIds)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         }
 
         var classes = await _context.Classes
@@ -84,7 +89,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or is archived</exception>
     public async Task<ClassResponseDto> GetClass(long projectId, long classId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness, hideArchived);
         var newClass = await _context.Classes
             .FirstOrDefaultAsync(c => c.ProjectId == projectId && c.Id == classId);
         if (newClass == null)
@@ -121,7 +126,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
 
         var newClass = new Class
@@ -175,7 +180,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classes)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness);
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -245,7 +250,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="KeyNotFoundException">Returned if class not found or if ids missing</exception>
     public async Task<ClassResponseDto> UpdateClass(long projectId, long classId, UpdateClassRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var updatedClass = await _context.Classes.FindAsync(classId);
         if (updatedClass == null || updatedClass.ProjectId != projectId || updatedClass.IsArchived)
         {
@@ -320,7 +325,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if archival fails.</exception>
     public async Task<bool> ArchiveClass(long projectId, long classId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dbClass = await _context.Classes.FindAsync(classId);
 
         if (dbClass == null || dbClass.ProjectId != projectId || dbClass.IsArchived)
@@ -382,7 +387,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="DependencyDeletionException">Thrown if unarchive action fails.</exception>
     public async Task<bool> UnarchiveClass(long projectId, long classId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var dbClass = await _context.Classes.FindAsync(classId);
 
         if (dbClass == null || dbClass.ProjectId != projectId || !dbClass.IsArchived)
@@ -442,7 +447,7 @@ public class ClassBusiness : IClassBusiness
     /// <returns>Class DTO of the found or created class</returns>
     public async Task<ClassResponseDto> GetClassInfo(long projectId, string className)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var projectClass = await _context.Classes.FirstOrDefaultAsync(c => c.Name == className && c.ProjectId == projectId);
 
         if (projectClass != null)
@@ -475,7 +480,7 @@ public class ClassBusiness : IClassBusiness
         if (classNames == null || !classNames.Any())
             throw new ArgumentException("Class names list cannot be null or empty", nameof(classNames));
 
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness);
     
         var cleanClassNames = classNames
             .Where(name => !string.IsNullOrWhiteSpace(name))

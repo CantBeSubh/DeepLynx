@@ -13,6 +13,7 @@ namespace deeplynx.business;
 public class FileBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly ICacheBusiness _cacheBusiness;
     private readonly IFileBusinessFactory _factory;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
@@ -21,6 +22,7 @@ public class FileBusiness
 
     public FileBusiness(
         DeeplynxContext context, 
+        ICacheBusiness cacheBusiness,
         IFileBusinessFactory factory, 
         IObjectStorageBusiness objectStorageBusiness,
         IDataSourceBusiness dataSourceBusiness,
@@ -28,6 +30,7 @@ public class FileBusiness
         IRecordBusiness recordBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
         _factory = factory;
         _objectStorageBusiness = objectStorageBusiness;
         _dataSourceBusiness = dataSourceBusiness;
@@ -49,7 +52,7 @@ public class FileBusiness
         IFormFile file)
     {
         long realDataSourceId;
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (file == null || file.Length == 0)
         {
             throw new ArgumentException("File is required and cannot be empty.");
@@ -127,7 +130,7 @@ public class FileBusiness
     /// <param name="file">file to update to</param>
     public async Task<RecordResponseDto> UpdateFile(long projectId, long recordId, IFormFile file)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (file == null || file.Length == 0)
         {
@@ -165,7 +168,7 @@ public class FileBusiness
     /// <param name="recordId">Id of record that contains the info of the file to download</param>
     public async Task<FileStreamResult> DownloadFile(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (record.ObjectStorageId == null)
         {
@@ -183,7 +186,7 @@ public class FileBusiness
     /// <param name="recordId">Id of record that contains the info of the file to delete</param>
     public async Task<bool> DeleteFile(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _recordBusiness.GetRecord(projectId, recordId, true);
         if (record == null)
         {

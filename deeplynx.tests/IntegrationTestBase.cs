@@ -1,3 +1,4 @@
+using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.tests;
 using DotNetEnv;
@@ -10,6 +11,8 @@ public class TestSuiteFixture : IAsyncLifetime
     private readonly PostgreSqlContainer _container;
     public string ConnectionString { get; private set; }
     public DeeplynxContext Context { get; private set; }
+
+    public CacheBusiness _cacheBusiness;
 
     public TestSuiteFixture()
     {
@@ -38,6 +41,8 @@ public class TestSuiteFixture : IAsyncLifetime
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
         Env.Load(envFilePath);
+        
+        _cacheBusiness = CacheBusiness.Instance;
     }
     
     //Runs at the end of every test suite
@@ -66,13 +71,14 @@ public class IntegrationTestBase : IAsyncLifetime
 {
     protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
-
+    protected CacheBusiness _cacheBusiness;
     protected IntegrationTestBase(TestSuiteFixture fixture)
     {
         _fixture = fixture;
         Context = new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(_fixture.ConnectionString)
             .Options);
+        _cacheBusiness = CacheBusiness.Instance;
     }
 
     //Runs before every test in the test suite
@@ -87,6 +93,7 @@ public class IntegrationTestBase : IAsyncLifetime
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         await Context.DisposeAsync();
+        await _cacheBusiness.FlushAsync();
     }
 
     /// <summary>
@@ -119,8 +126,8 @@ public class IntegrationTestBase : IAsyncLifetime
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
         await Context.SaveChangesAsync();
+        await _cacheBusiness.FlushAsync();
     }
-    
     
     protected virtual async Task SeedTestDataAsync()
     {

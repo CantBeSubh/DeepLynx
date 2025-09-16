@@ -12,16 +12,20 @@ public class EdgeBusiness : IEdgeBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EdgeBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the edge operations.</param>
+    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="historicalEdgeBusiness">Passed in context of historical edge objects.</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public EdgeBusiness(DeeplynxContext context,  IEventBusiness eventBusiness)
+    public EdgeBusiness(
+        DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
 
@@ -37,7 +41,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? dataSourceId,
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
 
@@ -81,7 +85,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? destinationId, 
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         
         var edge = await FindEdge(edgeId, originId, destinationId);
         
@@ -121,7 +125,7 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         CreateEdgeRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context,dataSourceId);
 
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
@@ -180,7 +184,7 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         List<CreateEdgeRequestDto> edges)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
@@ -258,7 +262,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.IsArchived )
@@ -316,7 +320,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId) 
@@ -343,7 +347,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || edge.IsArchived) 
@@ -383,7 +387,7 @@ public class EdgeBusiness : IEdgeBusiness
         long? originId, 
         long? destinationId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
         if (edge == null || edge.ProjectId != projectId || !edge.IsArchived) 
