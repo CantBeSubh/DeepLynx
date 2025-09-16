@@ -29,10 +29,11 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
 
             _tagBusiness = new TagBusiness( 
                 Context,
+                _cacheBusiness,
                 _eventBusiness);
         }
 

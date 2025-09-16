@@ -1,8 +1,10 @@
 using System.Text.Json;
 using StackExchange.Redis;
 using System.Text.Json.Serialization;
+using deeplynx.datalayer.Models;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using deeplynx.interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
 
@@ -31,7 +33,7 @@ public class RedisCacheBusiness : ICacheBusiness
         /// </summary>
         /// <param name="key">The key of cached data</param>
         /// <returns>The matching Cached data </returns>
-        public async Task<T> Get<T>(string key)
+        public async Task<T> GetAsync<T>(string key)
         {
             var value = await _db.StringGetAsync(key);
             if (value.IsNullOrEmpty)
@@ -49,7 +51,7 @@ public class RedisCacheBusiness : ICacheBusiness
         /// <param name="value">The value of the data to be cached</param>
         /// <param name="ttl">Time To Live(ttl)- The duration of time the data will be cached</param>
         /// <returns>bool based on set success</returns>
-        public async Task<bool> Set(string key, object value, TimeSpan? ttl = null)
+        public async Task<bool> SetAsync(string key, object value, TimeSpan? ttl = null)
         {
             var json = JsonSerializer.Serialize(value, _jsonOptions);
             bool result;
@@ -72,7 +74,7 @@ public class RedisCacheBusiness : ICacheBusiness
         /// <param name="value">The value of the data to be cached</param>
         /// <param name="ttl">Time To Live(ttl)- The duration of time the data will be cached</param>
         /// <returns>bool based on set success</returns>
-        public async Task<bool> Set(string key, object value, int? ttl = null)
+        public async Task<bool> SetAsync(string key, object value, int? ttl = null)
         {
             var json = JsonSerializer.Serialize(value, _jsonOptions);
             bool result;
@@ -93,16 +95,16 @@ public class RedisCacheBusiness : ICacheBusiness
         /// </summary>
         /// <param name="key">The Key name of the data to be cached</param>
         /// <returns>bool based on delete success</returns>
-        public async Task<bool> Delete(string key)
+        public Task<bool> DeleteAsync(string key)
         {
-            return await _db.KeyDeleteAsync(key);
+            throw new NotImplementedException();
         }
 
         /// <summary>
         /// Operation to flush all existing data
         /// </summary>
         /// <returns>bool based on flush success</returns>
-        public async Task<bool> Flush()
+        public async Task<bool> FlushAsync()
         {
             var endpoints = _redis.GetEndPoints();
             foreach (var endpoint in endpoints)
