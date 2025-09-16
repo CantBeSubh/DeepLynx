@@ -33,6 +33,7 @@ jobs:
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+          DOCS_URL: ${{ vars.DOCS_URL }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -51,6 +52,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
+            --build-arg DOCS_URL=${{ vars.DOCS_URL }} \
             .
           
           az acr build --registry $ACR_REGISTRY \
@@ -66,6 +68,11 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
+            .
+
+          az acr build --registry $ACR_REGISTRY \
+            --image $ACR_PATH:deeplynxv3-docs-$GITHUB_RUN_NUMBER \
+            --file Dockerfiles/docs/Dockerfile.public \
             .
 
   kubernetes:
@@ -128,6 +135,7 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}
           DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}
+          DOCS_URL: ${{ vars.DOCS_URL }}
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
           envsubst < development.yaml > manifest.yaml
