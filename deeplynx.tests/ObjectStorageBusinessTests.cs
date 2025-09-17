@@ -30,13 +30,14 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _objectStorageBusiness = new ObjectStorageBusiness(Context);
-        _eventBusiness = new EventBusiness(Context);
+        _objectStorageBusiness = new ObjectStorageBusiness(Context, _cacheBusiness);
+        _eventBusiness = new EventBusiness(Context,  _cacheBusiness);
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _mockClassBusiness = new Mock<IClassBusiness>();
         _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();
         _projectBusiness = new ProjectBusiness(
-            Context,  
+            Context,
+            _cacheBusiness,
             _mockLogger.Object,
             _mockClassBusiness.Object, 
             _mockDataSourceBusiness.Object, 

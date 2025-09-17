@@ -4,12 +4,15 @@ using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
-using Serilog;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Newtonsoft.Json;
+using JsonSerializer = System.Text.Json.JsonSerializer;
+
 namespace deeplynx.business;
 using DotNetEnv;
+using System.Linq;
 
 public class ProjectBusiness : IProjectBusiness
 {
@@ -19,18 +22,22 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IClassBusiness _classBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
+    private readonly string ProjectsCacheKey = "projects";
+    private readonly TimeSpan cacheTTL = TimeSpan.FromHours(1);
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the project operations.</param>
+    /// <param name="cacheBusiness">Used to cache project data</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
     /// <param name="logger">Used for uniformity in logging</param>
     /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
-        DeeplynxContext context, ILogger<ProjectBusiness> logger, IClassBusiness classBusiness, 
+        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, 
         IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
@@ -39,6 +46,7 @@ public class ProjectBusiness : IProjectBusiness
         _dataSourceBusiness = dataSourceBusiness;
         _objectStorageBusiness = objectStorageBusiness;
         _eventBusiness = eventBusiness;
+        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
@@ -88,30 +96,36 @@ public class ProjectBusiness : IProjectBusiness
     /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
     public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived = true)
     {
-        var project = await _context.Projects
-            .Where(p => p.Id == projectId)
-            .FirstOrDefaultAsync();
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+    
+        // If no projects are cached update the Cache
+        if (cachedProjectList == null || !cachedProjectList.Any())
+        {
+            await RefreshProjectsCache();
+            cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+        
+            if (cachedProjectList == null)
+            {
+                cachedProjectList = new List<ProjectResponseDto>();
+            }
+        }
+        
+        var cachedProject = cachedProjectList.FirstOrDefault(p => p.Id == projectId);
 
-        if (project == null)
+        if (hideArchived && cachedProject != null)
+        {
+            if (cachedProject.IsArchived)
+            {
+                cachedProject = null;
+            }
+        }
+        
+        if (cachedProject == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
         }
-        
-        if (hideArchived && project.IsArchived)
-        {
-            throw new KeyNotFoundException($"Project with id {projectId} is archived");
-        }
 
-        return new ProjectResponseDto
-        {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description,
-            Abbreviation = project.Abbreviation,
-            LastUpdatedAt = project.LastUpdatedAt,
-            LastUpdatedBy = project.LastUpdatedBy,
-            IsArchived = project.IsArchived,
-        };
+        return cachedProject;
     }
 
     /// <summary>
@@ -129,22 +143,23 @@ public class ProjectBusiness : IProjectBusiness
             Abbreviation = dto.Abbreviation,
             OrganizationId = dto.OrganizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
+            OrganizationId = dto.OrganizationId,
         };
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
-        
+
         // TODO: project config should determine whether to do this (true by default)
         // create built-in classes for Timeseries and Report
         var defaultClasses = new List<CreateClassRequestDto>
         {
-            new CreateClassRequestDto {Name = "Timeseries"},
-            new CreateClassRequestDto {Name = "Report"},
-            new CreateClassRequestDto {Name = "File"}
+            new CreateClassRequestDto { Name = "Timeseries" },
+            new CreateClassRequestDto { Name = "Report" },
+            new CreateClassRequestDto { Name = "File" }
         };
         await _classBusiness.BulkCreateClasses(project.Id, defaultClasses);
-        
+
         // TODO: project config should determine whether to do this (true by default)
         // create default data source upon project creation
         var defaultDataSource = new CreateDataSourceRequestDto()
@@ -158,30 +173,34 @@ public class ProjectBusiness : IProjectBusiness
         // create default object storage upon project creation
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
-        
+
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
             var mountPath =
-                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ?? throw new NullReferenceException($"Storage file path not set");
-            config["mountPath"] =  mountPath;
+                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ??
+                throw new NullReferenceException($"Storage file path not set");
+            config["mountPath"] = mountPath;
         }
         else if (defaultObjectStorageMethod == "azure_object")
         {
-            var azureConnectionString = 
-                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ?? throw new NullReferenceException($"Azure connection string not set");
+            var azureConnectionString =
+                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ??
+                throw new NullReferenceException($"Azure connection string not set");
             config["azureConnectionString"] = azureConnectionString;
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ?? throw new NullReferenceException($"AWS connection string not set");
+            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
+                                      throw new NullReferenceException($"AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;
         }
         else
         {
-            throw new NullReferenceException($"Unknown object storage method, make sure your environment variables are correctly set");
+            throw new NullReferenceException(
+                $"Unknown object storage method, make sure your environment variables are correctly set");
         }
-        
+
         var objectStorageRequestDto = new CreateObjectStorageRequestDto
         {
             Name = "Instance Default",
@@ -198,11 +217,11 @@ public class ProjectBusiness : IProjectBusiness
             EntityType = "project",
             EntityId = project.Id,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {project.Name}),
+            Properties = JsonSerializer.Serialize(new { project.Name }),
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
-        
-        return new ProjectResponseDto
+
+        var projectResponseDto = new ProjectResponseDto
         {
             Id = project.Id,
             Name = project.Name,
@@ -210,8 +229,25 @@ public class ProjectBusiness : IProjectBusiness
             OrganizationId = project.OrganizationId,
             Abbreviation = project.Abbreviation,
             LastUpdatedBy = project.LastUpdatedBy,
-            LastUpdatedAt = project.LastUpdatedAt
+            LastUpdatedAt = project.LastUpdatedAt,
+            OrganizationId = project.OrganizationId
         };
+
+        // Update the Project Cache List
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+        
+        // If project cache list is empty- refresh it to match the database and return
+        if (cachedProjectList == null)
+        {
+            await RefreshProjectsCache();
+            return projectResponseDto;
+        }
+        
+        // if cache exists- add the new project to the project list and set the cache
+        cachedProjectList.Add(projectResponseDto);
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+
+        return projectResponseDto;
     }
 
     /// <summary>
@@ -226,7 +262,9 @@ public class ProjectBusiness : IProjectBusiness
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.IsArchived)
+        { 
             throw new KeyNotFoundException("Project not found.");
+        }
 
         project.Name = dto.Name ?? project.Name;
         project.Description = dto.Description ?? project.Description;
@@ -236,7 +274,7 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
-        
+    
         // Log update Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -249,16 +287,39 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
-        return new ProjectResponseDto
+        var updatedProject = new ProjectResponseDto
         {
             Id = project.Id,
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
+            IsArchived = project.IsArchived,
             LastUpdatedAt = project.LastUpdatedAt,
             LastUpdatedBy = project.LastUpdatedBy,
-            IsArchived = project.IsArchived,
+            OrganizationId = project.OrganizationId
         };
+
+        // Update the Project Cache List
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+        // If cache list is empty, refresh it to match the database and return
+        if (cachedProjectList == null)
+        {
+            await RefreshProjectsCache();
+            return updatedProject;
+        }
+
+        // If cache exists, update the project in the list
+        var projectIndex = cachedProjectList.FindIndex(p => p.Id == updatedProject.Id);
+        if (projectIndex != -1)
+        {
+            cachedProjectList[projectIndex] = updatedProject;
+        }
+
+        // Set the updated list back to the cache
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+
+        return updatedProject;
     }
 
     /// <summary>
@@ -276,7 +337,25 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
+        
+        // Update the Project Cache List
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
 
+        // If cache list is empty, refresh it to match the database and return
+        if (cachedProjectList == null)
+        {
+            await RefreshProjectsCache();
+            return true;
+        }
+        
+        var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectId);
+        if (projectIndex != -1)
+        {
+            cachedProjectList.RemoveAt(projectIndex);
+        }
+        
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+        
         return true;
     }
 
@@ -335,6 +414,37 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
+
+        var projectResponse = new ProjectResponseDto
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Abbreviation = project.Abbreviation,
+            LastUpdatedAt = project.LastUpdatedAt,
+            LastUpdatedBy = project.LastUpdatedBy,
+            IsArchived = project.IsArchived,
+        };
+        
+        // Update the Project Cache List
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+        // If cache list is empty, refresh it to match the database and return
+        if (cachedProjectList == null)
+        {
+            await RefreshProjectsCache();
+            return true;
+        }
+
+        // If cache exists, update the project in the list
+        var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
+        if (projectIndex != -1)
+        {
+            cachedProjectList[projectIndex] = projectResponse;
+        }
+
+        // Set the updated list back to the cache
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
         
         return true;
     }
@@ -375,6 +485,39 @@ public class ProjectBusiness : IProjectBusiness
                 }
                 
                 await transaction.CommitAsync();
+                
+                var projectResponse = new ProjectResponseDto
+                {
+                    Id = project.Id,
+                    Name = project.Name,
+                    Description = project.Description,
+                    Abbreviation = project.Abbreviation,
+                    LastUpdatedAt = project.LastUpdatedAt,
+                    LastUpdatedBy = project.LastUpdatedBy,
+                    IsArchived = project.IsArchived,
+                };
+                
+                // Update the Project Cache List
+                var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+                // If cache list is empty, refresh it to match the database and return
+                if (cachedProjectList == null)
+                {
+                    await RefreshProjectsCache();
+                    return true;
+                }
+
+                // If cache exists, update the project in the list
+                var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectResponse.Id);
+                if (projectIndex != -1)
+                {
+                    cachedProjectList[projectIndex] = projectResponse;
+                }
+
+                // Set the updated list back to the cache
+                await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+                
+                return true;
             }
             catch (Exception exc)
             {
@@ -404,7 +547,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <returns>A list of project stats</returns>
     public async Task<ProjectStatResponseDto> GetProjectStats(long projectId)
     {
-        //classes”: number, “dataRecords”: number, “connections”: number 
+        //classes": number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
             .Where(p =>  !p.IsArchived  && p.ProjectId == projectId).Count();
         var records = _context.Records
@@ -462,17 +605,78 @@ public class ProjectBusiness : IProjectBusiness
                 Tags = r.Tags
             });
     }
+
     public async Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId, long? groupId)
     {
         return true;
     }
+
     public async Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId, long? groupId)
     {
         return true;
     }
+    
     public async Task<bool> RemoveMemberFromProject(long projectId, long? userId, long? groupId)
     {
         return true;
+    }
+    
+    private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+    
+    private async Task<bool> RefreshProjectsCache()
+    {
+        var dbProjects = await _context.Projects.ToListAsync();
+        var projectResponseDtoList = MapProjectsToResponseDto(dbProjects);
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, projectResponseDtoList, cacheTTL);
+        return true;
+    }
+    
+    private List<ProjectResponseDto> MapProjectsToResponseDto(List<Project> projects)
+    {
+        return projects.Select(p => new ProjectResponseDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Abbreviation = p.Abbreviation,
+            LastUpdatedBy = p.LastUpdatedBy,
+            LastUpdatedAt = p.LastUpdatedAt,
+            IsArchived = p.IsArchived,
+            OrganizationId =  p.OrganizationId
+        }).ToList();
+    }
+    
+    private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
+    
+    private async Task<bool> RefreshProjectsCache()
+    {
+        var dbProjects = await _context.Projects.ToListAsync();
+        var projectResponseDtoList = MapProjectsToResponseDto(dbProjects);
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, projectResponseDtoList, cacheTTL);
+        return true;
+    }
+    
+    private List<ProjectResponseDto> MapProjectsToResponseDto(List<Project> projects)
+    {
+        return projects.Select(p => new ProjectResponseDto
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Abbreviation = p.Abbreviation,
+            LastUpdatedBy = p.LastUpdatedBy,
+            LastUpdatedAt = p.LastUpdatedAt,
+            IsArchived = p.IsArchived,
+            OrganizationId =  p.OrganizationId
+        }).ToList();
     }
     
 }

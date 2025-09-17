@@ -9,6 +9,7 @@ using deeplynx.graph;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using StackExchange.Redis;
 using Log = Serilog.Log;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -109,6 +110,33 @@ try
         options => options.UseNpgsql(connectionString),
         ServiceLifetime.Transient
     );
+    
+    
+    // Register Cache Service as a singleton
+    var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
+    if (cacheProviderType == "redis")
+    {
+        var redisConnectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING");
+        if (!string.IsNullOrEmpty(redisConnectionString))
+        {
+            builder.Services.AddSingleton(provider =>
+            {
+                var options = ConfigurationOptions.Parse(redisConnectionString);
+                options.AllowAdmin = true;
+                return ConnectionMultiplexer.Connect(options);
+            });
+            builder.Services.AddSingleton<ICacheBusiness, RedisCacheBusiness>();
+        }
+        else
+        {
+            throw new Exception("Redis connection string not found in environment variables.");
+        }
+    }
+    else
+    {
+        // Default to memory cache if CACHE_PROVIDER_TYPE is not set or is not "redis"
+        builder.Services.AddSingleton<ICacheBusiness, MemoryCacheBusiness>();
+    }
 
     builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();
     builder.Services.AddTransient<IObjectStorageBusiness, ObjectStorageBusiness>();
@@ -139,8 +167,6 @@ try
     builder.Services.AddTransient<FileAzureBusiness>();
     builder.Services.AddTransient<FileS3Business>();
     builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
-
-    builder.Services.AddSingleton(CacheBusiness.Instance);
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 

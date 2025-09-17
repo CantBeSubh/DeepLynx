@@ -142,7 +142,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         <ul className="flex-grow">
           <li>
             <Link
-              href="/project/#"
+              href={`/project/${project?.projectId}`}
+              prefetch={false}
               onClick={(e) =>
                 handleItemClick(`/project/${project?.projectId}`, e)
               }
@@ -197,7 +198,12 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <li className="mt-2">
               <Link
                 href="#"
-                onClick={(e) => handleItemClick("/help", e)}
+                prefetch={false}
+                onClick={(e) => {
+                  e.preventDefault();
+                  // open modal / external
+                }}
+                // onClick={(e) => handleItemClick("/help", e)}
                 className={getItemClass("/help")}
               >
                 <QuestionMarkCircleIcon className="size-6" />
@@ -206,8 +212,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li>
             <li className="mt-2">
               <Link
-                href="/contact"
-                onClick={(e) => handleItemClick("/contact", e)}
+                href="#"
+                prefetch={false}
+                onClick={(e) => {
+                  e.preventDefault();
+                  // open modal / external
+                }}
+                // onClick={(e) => handleItemClick("/contact", e)}
                 className={getItemClass("/contact")}
               >
                 <ChatBubbleLeftRightIcon className="size-6" />
@@ -218,8 +229,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li>
             <li className="mt-2">
               <Link
-                href="/fileBug"
-                onClick={(e) => handleItemClick("/fileBug", e)}
+                href="#"
+                prefetch={false}
+                onClick={(e) => {
+                  e.preventDefault();
+                  // open modal / external
+                }}
+                // onClick={(e) => handleItemClick("/fileBug", e)}
                 className={getItemClass("/fileBug")}
               >
                 <BugAntIcon className="size-6" />

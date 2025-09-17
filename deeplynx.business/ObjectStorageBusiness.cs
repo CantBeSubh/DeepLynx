@@ -11,9 +11,11 @@ namespace deeplynx.business;
 public class ObjectStorageBusiness: IObjectStorageBusiness
 {
     private readonly DeeplynxContext _context;
-    public ObjectStorageBusiness(DeeplynxContext context)
+    private readonly ICacheBusiness _cacheBusiness;
+    public ObjectStorageBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
     }
     
     /// <summary>
@@ -23,7 +25,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived ObjectStorages from the result </param>
     public async Task<List<ObjectStorageResponseDto>> GetAllObjectStorages(long projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         var objectStoragesQuery = _context.ObjectStorages.Where(os => os.ProjectId == projectId);
 
@@ -58,7 +60,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<ObjectStorageResponseDto> GetObjectStorage(long projectId, long objectStorageId, 
         bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var objectStorage =
             await _context.ObjectStorages
                 .Where(os => os.ProjectId == projectId && os.Id == objectStorageId)
@@ -94,7 +96,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the object storage is not found or archived</exception>
     public async Task<ObjectStorageResponseDto> GetDefaultObjectStorage(long projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var objectStorage = await _context.ObjectStorages
                 .Where(os => os.ProjectId == projectId && os.Default == true)
                 .FirstOrDefaultAsync();
@@ -134,7 +136,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
         CreateObjectStorageRequestDto dto,
         bool makeDefault = false)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
 
         var objectStorageWithSameName = 
@@ -201,7 +203,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     public async Task<ObjectStorageResponseDto> UpdateObjectStorage(long projectId, long objectStorageId,
         UpdateObjectStorageRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
         var updatedObjectStorage = 
             await _context.ObjectStorages
@@ -246,7 +248,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> DeleteObjectStorage(long projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         var objectStorage = 
             await _context.ObjectStorages
@@ -276,7 +278,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> ArchiveObjectStorage(long projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         var objectStorage =
             await _context.ObjectStorages
@@ -313,7 +315,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <exception cref="KeyNotFoundException"></exception>
     public async Task<bool> UnarchiveObjectStorage(long projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         var objectStorage = 
             await _context.ObjectStorages
@@ -346,7 +348,7 @@ public class ObjectStorageBusiness: IObjectStorageBusiness
     /// <exception cref="Exception"></exception>
     public async Task<ObjectStorageResponseDto> SetDefaultObjectStorage(long projectId, long objectStorageId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         var defaultObjectStorage = 
             await _context.ObjectStorages

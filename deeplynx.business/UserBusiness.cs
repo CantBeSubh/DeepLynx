@@ -10,14 +10,17 @@ namespace deeplynx.business;
 public class UserBusiness : IUserBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the user operations.</param>
-    public UserBusiness(DeeplynxContext context)
+    /// <param name="cacheBusiness">Used to access cache operations</param>
+    public UserBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
@@ -37,7 +40,7 @@ public class UserBusiness : IUserBusiness
         }
         else
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
 
             users = await _context.Users
                 .Where(u => u.Projects.Any(p => p.Id == projectId))
@@ -100,7 +103,7 @@ public class UserBusiness : IUserBusiness
         await _context.SaveChangesAsync();
         if (dto.ProjectId.HasValue)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value, _cacheBusiness);
 
             var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
 
@@ -129,7 +132,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>True if successful</returns>
     public async Task<bool> AddUserToProject(long userId, long projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
@@ -151,7 +154,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>True if successful</returns>
     public async Task<bool> RemoveUserFromProject(long userId, long projectId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         var project = _context.Projects
             .Include(p => p.Users)

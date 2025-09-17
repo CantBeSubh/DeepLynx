@@ -1,9 +1,4 @@
-import axios from 'axios';
-
-export const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: true
-});
+import api from './api';
 
 export const deleteEdge = async (projectId: number, edgeId: string | null, originId: string, destinationId: string) => {
     try {

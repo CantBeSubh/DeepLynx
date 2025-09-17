@@ -1,10 +1,5 @@
-import axios from 'axios';
 import { TagResponseDto } from '../(home)/types/types';
-
-export const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL,
-    withCredentials: true
-})
+import api from './api';
 
 // Duplicate but unsure of format we will go with
 export async function getTagsForProjects(

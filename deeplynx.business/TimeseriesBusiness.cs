@@ -16,18 +16,19 @@ namespace deeplynx.business;
 
 public class TimeseriesBusiness(
     DeeplynxContext context,
+    ICacheBusiness cacheBusiness,
     IRecordBusiness recordBusiness,
     IClassBusiness classBusiness,
     ILogger<TimeseriesBusiness> logger,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
+    private readonly ICacheBusiness _cacheBusiness = cacheBusiness;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
     
     private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
-
     private static class Status
     {
         public static string Failed { get; } = "failed";
@@ -96,7 +97,7 @@ public class TimeseriesBusiness(
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
     public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         if (file == null || file.Length == 0)
         {
@@ -147,7 +148,7 @@ public class TimeseriesBusiness(
     /// <returns>The upload ID (guid format) for file chunks to go to the right directory</returns>
     public async Task<string> StartUpload(long projectId, long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var uploadId = Guid.NewGuid().ToString();
@@ -170,7 +171,7 @@ public class TimeseriesBusiness(
     public async Task<string> UploadChunk(long projectId, long dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         if (chunk == null || chunk.Length == 0)
         {
@@ -194,7 +195,7 @@ public class TimeseriesBusiness(
     public async Task<RecordResponseDto> CompleteUpload(long projectId, long dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var folderPath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "uploads", request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
@@ -255,7 +256,7 @@ public class TimeseriesBusiness(
     /// <exception cref="Exception">Thrown if the report cannot be written</exception>
     private async Task RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
@@ -368,7 +369,7 @@ public class TimeseriesBusiness(
     /// <exception cref="InvalidOperationException"></exception>
     private async Task DataTableToCsv(DataTable dataTable, long projectId, long dataSourceId, string fileName)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         StringBuilder sbData = new();
 
@@ -452,7 +453,7 @@ public class TimeseriesBusiness(
     /// <returns>All data for given table</returns>
     public async Task<RecordResponseDto> GetAllTableRecords(long projectId, long dataSourceId, string tableName)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
@@ -504,7 +505,7 @@ public class TimeseriesBusiness(
     /// <returns>Data</returns>
     public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
@@ -565,7 +566,7 @@ public class TimeseriesBusiness(
     /// <returns></returns>
     public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         var resultTable = new DataTable();
         using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);

@@ -16,15 +16,18 @@ public class RecordBusiness : IRecordBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="RecordBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context used for the record operations.</param>
+    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
-    public RecordBusiness(DeeplynxContext context,  IEventBusiness eventBusiness)
+    public RecordBusiness(DeeplynxContext context,  ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
     
@@ -38,7 +41,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<List<RecordResponseDto>> GetAllRecords(
         long projectId, long? dataSourceId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var recordQuery = _context.Records
             .Where(r => r.ProjectId == projectId);
 
@@ -90,7 +93,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         
         var record = await _context.Records
             .Where(r => r.ProjectId == projectId && r.Id == recordId)
@@ -141,7 +144,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Returned if the metadata is too deeply nested</exception>
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
-       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
        ValidationHelper.ValidateModel(dto);
         
@@ -221,7 +224,7 @@ public class RecordBusiness : IRecordBusiness
         long dataSourceId, 
         List<CreateRecordRequestDto> records)
     {
-       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
 
        if (records.Count == 0)
@@ -318,7 +321,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if record to be updated is not found</exception>
     public async Task<RecordResponseDto> UpdateRecord(long projectId, long recordId, UpdateRecordRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record= await _context.Records.FindAsync(recordId);
         if (record == null || record.ProjectId != projectId || record.IsArchived)
         {
@@ -390,7 +393,7 @@ public class RecordBusiness : IRecordBusiness
     /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<bool> DeleteRecord(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId)
@@ -411,7 +414,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to archive was not found.</exception>
     public async Task<bool> ArchiveRecord(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || record.IsArchived)
@@ -472,7 +475,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Returned if the record to unarchive was not found.</exception>
     public async Task<bool> UnarchiveRecord(long projectId, long recordId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var record = await _context.Records.FindAsync(recordId);
         
         if (record == null || record.ProjectId != projectId || !record.IsArchived)
@@ -536,7 +539,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="Exception">Thrown if the tag is already attached to the record</exception>
     public async Task<bool> AttachTag(long projectId, long recordId, long tagId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
@@ -569,7 +572,7 @@ public class RecordBusiness : IRecordBusiness
     /// <exception cref="KeyNotFoundException">Thrown if the record or tag are not found</exception>
     public async Task<bool> UnattachTag(long projectId, long recordId, long tagId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // include tags in record return and find record
         var recordQueryable = _context.Records.Include(r => r.Tags);
@@ -676,7 +679,7 @@ public class RecordBusiness : IRecordBusiness
         if (originalIds == null || !originalIds.Any())
             throw new ArgumentException("Original IDs list cannot be null or empty", nameof(originalIds));
 
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Remove duplicates and filter out null/empty values
         var cleanOriginalIds = originalIds
