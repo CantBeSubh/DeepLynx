@@ -14,7 +14,6 @@ const MemberManagementClient = () => {
   return (
     <div className="p-20">
       <div className="flex items-center">
-        <AvatarCell image={jason?.image} name={jason?.name} size={20} />
       </div>
     </div>
   );
