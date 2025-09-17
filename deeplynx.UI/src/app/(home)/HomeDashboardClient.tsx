@@ -145,11 +145,6 @@ export default function HomeDashboard({ initialProjects }: Props) {
               onSave={handleSave}
               onCustomizeChange={setCanCustomize}
             />
-            {session?.user && (
-              <div className="bg-green-100 p-4 m-4 rounded">
-                <p>Welcome back, {session.user.name}!</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
