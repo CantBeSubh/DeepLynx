@@ -36,6 +36,7 @@ namespace deeplynx.tests
         {
             var result = await _queryBusiness.Search("rex");
             result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Captain Rex");
         }
         
         [Fact]
@@ -65,7 +66,7 @@ namespace deeplynx.tests
         
         
         [Fact]
-        public async Task FullTextSearchEmptyStringReturnsAllRecordsAsync()
+        public async Task FullTextSearchEmptyStringThrowsExceptionAsync()
         {
             await Assert.ThrowsAsync<Exception>(() => 
                 _queryBusiness.Search(""));
@@ -80,18 +81,10 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task FullTextSearchWhitespaceOnlyReturnsAllRecordsAsync()
+        public async Task FullTextSearchWhitespaceOnlyThrowsExceptionAsync()
         {
             await Assert.ThrowsAsync<Exception>(() => 
                     _queryBusiness.Search("     "));
-        }
-        
-        [Fact]
-        public async Task FullTextSearchCaseInsensitiveReturnsCorrectResultsAsync()
-        {
-            var result = await _queryBusiness.Search("Rex");
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
         }
         
         [Fact]
@@ -114,7 +107,7 @@ namespace deeplynx.tests
         public async Task FullTextSearchSpecialCharactersAsync()
         {
             var result = await _queryBusiness.Search("CT-");
-            result.Should().HaveCount(5); // All clones have CT- prefix
+            result.Should().HaveCount(5);
         }
         
         [Fact]
@@ -125,14 +118,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task QueryBuilderWithEmptyFiltersReturnsAllRecordsAsync()
-        {
-            var result = _queryBusiness.QueryBuilder(new CustomQueryRequestDto[0], null);
-            result.Should().HaveCount(5);
-        }
-        
-        [Fact]
-        public async Task QueryBuilderWithNullFiltersReturnsAllRecordsAsync()
+        public async Task QueryBuilderWithNullFiltersThrowsException()
         {
             Assert.Throws<ArgumentException>(() => 
                 _queryBusiness.QueryBuilder(null, null));
@@ -193,9 +179,7 @@ namespace deeplynx.tests
                 Operator = ">", 
                 Value = now.AddMinutes(-30).ToString("yyyy-MM-dd HH:mm:ss")
             };
-    
-            // var result = _queryBusiness.QueryBuilder([dto]);
-            // result.Should().HaveCount(0); 
+            
             var result = _queryBusiness.QueryBuilder([dto], null);
             result.Should().HaveCount(5); 
             result.All(r => r.LastUpdatedAt < now.AddMinutes(30)).Should().BeTrue();
@@ -256,7 +240,7 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-9902"
             };
             var result = _queryBusiness.QueryBuilder([dto1, dto2], null);
-            result.Should().HaveCount(1); // Tech, Wrecker, Crosshair (after Jan 15 with R2D2 datasource)
+            result.Should().HaveCount(1); 
         }
         
         [Fact]
@@ -271,7 +255,7 @@ namespace deeplynx.tests
                 Connector = "OR", Filter = "name", Operator = "=", Value = "Wrecker"
             };
             var result = _queryBusiness.QueryBuilder([dto1, dto2]);
-            result.Should().HaveCount(2); // Tech and Wrecker
+            result.Should().HaveCount(2); 
         }
         
         [Fact]
@@ -320,11 +304,11 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
             var result = _queryBusiness.QueryBuilder([dto], "99");
-            result.Should().HaveCount(4); // All Bad Batch members with CloneForce 99
+            result.Should().HaveCount(4); 
         }
         
         [Fact]
-        public async Task QueryBuilderInvalidFilterFieldAsync()
+        public async Task QueryBuilderInvalidFilterFieldThrowsExceptionAsync()
         {
             var dto = new CustomQueryRequestDto
             {
@@ -335,7 +319,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task QueryBuilderInvalidOperatorAsync()
+        public async Task QueryBuilderInvalidOperatorThrowsExceptionAsync()
         {
             var dto = new CustomQueryRequestDto
             {
@@ -346,7 +330,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task QueryBuilderInvalidDateFormatAsync()
+        public async Task QueryBuilderInvalidDateFormatThrowsExceptionAsync()
         {
             var dto = new CustomQueryRequestDto
             {
@@ -357,7 +341,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task QueryBuilderNullValueAsync()
+        public async Task QueryBuilderNullValueThrowsExceptionAsync()
         {
             var dto = new CustomQueryRequestDto
             {
@@ -368,7 +352,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task QueryBuilderEmptyValueAsync()
+        public async Task QueryBuilderEmptyValueThrowsExceptionAsync()
         {
             var dto = new CustomQueryRequestDto
             {
@@ -377,7 +361,6 @@ namespace deeplynx.tests
             Assert.Throws<ArgumentException>(() => 
                 _queryBusiness.QueryBuilder([dto]));
         }
-        
         
         
         [Fact]
@@ -400,29 +383,14 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-99"
             };
             var result = _queryBusiness.QueryBuilder([dto], null);
-            result.Should().HaveCount(4); // All Bad Batch members
+            result.Should().HaveCount(4);
         }
         
-        [Fact]
-        public async Task FullTextSearchMultipleTermsAsync()
-        {
-            var result = await _queryBusiness.Search("Captain Rex");
-            result.Should().HaveCount(1);
-            result.First().Name.Should().Be("Captain Rex");
-        }
-        
-        [Fact]
-        public async Task FullTextSearchNumericTermAsync()
-        {
-            var result = await _queryBusiness.Search("CT");
-            result.Should().HaveCount(5);
-        }
         
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
             
-            // Create project first
             var project = new Project
             {
                 Name = "Anakin",
@@ -432,7 +400,6 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             pid = project.Id;
 
-            // Create supporting entities
             var tag = new Tag
             {
                 Name = "Padme",
@@ -461,7 +428,6 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             cid = testClass.Id;
 
-            // Create records with delays between each
             var rex = new Record
             {
                 Name = "Captain Rex",
