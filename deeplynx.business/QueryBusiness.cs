@@ -65,17 +65,15 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
         WHERE hr.is_archived = false";
 
     var parameters = new List<NpgsqlParameter>();
-    
-    // Build WHERE conditions by iterating through each DTO
+    var conditions = new List<string>();
+
+    // Build individual conditions
     if (request?.Length > 0)
     {
-        var andConditions = new List<string>();
-        var orConditions = new List<string>();
-
         for (int i = 0; i < request.Length; i++)
         {
             var query = request[i];
-            Console.WriteLine($"Processing: Filter={query.Filter}, Operator={query.Operator}, Value={query.Value}");
+            Console.WriteLine($"Processing item {i}: Filter={query.Filter}, Operator={query.Operator}, Value={query.Value}, Connector={query.Connector}");
             
             string condition = "";
             string paramName = $"param{i}";
@@ -135,53 +133,34 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
                 }
             }
 
-            // Add condition to appropriate group
             if (!string.IsNullOrEmpty(condition))
             {
-                // First condition defaults to AND if no connector specified
-                var connector = i == 0 ? "AND" : (query.Connector?.ToUpper() ?? "AND");
-                
-                if (connector == "OR")
-                {
-                    orConditions.Add(condition);
-                }
-                else
-                {
-                    andConditions.Add(condition);
-                }
-                
-                Console.WriteLine($"Added {connector} condition: {condition}");
+                conditions.Add(condition);
+                Console.WriteLine($"Built condition {i}: {condition}");
             }
         }
+    }
 
-        // Build the final WHERE clause with proper precedence
-        var finalConditions = new List<string>();
+    // Now combine conditions with proper connectors
+    if (conditions.Any())
+    {
+        sql += " AND (";
         
-        // Add all AND conditions
-        if (andConditions.Any())
+        for (int i = 0; i < conditions.Count; i++)
         {
-            finalConditions.AddRange(andConditions);
-        }
-        
-        // Group all OR conditions together
-        if (orConditions.Any())
-        {
-            if (orConditions.Count == 1)
+            // Add connector before condition (except for first one)
+            if (i > 0)
             {
-                finalConditions.Add(orConditions[0]);
+                var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
+                sql += connector;
+                Console.WriteLine($"Adding connector '{connector}' before condition {i}");
             }
-            else
-            {
-                var orGroup = "(" + string.Join(" OR ", orConditions) + ")";
-                finalConditions.Add(orGroup);
-            }
+            
+            sql += conditions[i];
         }
         
-        // Combine everything with AND
-        if (finalConditions.Any())
-        {
-            sql += " AND " + string.Join(" AND ", finalConditions);
-        }
+        sql += ")";
+        Console.WriteLine($"Combined conditions: {sql.Substring(sql.IndexOf(" AND ("))}");
     }
 
     // Add text search if provided
@@ -209,7 +188,13 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
     // Add ORDER BY
     sql += " ORDER BY hr.record_id, hr.last_updated_at DESC";
 
-    Console.WriteLine($"Final SQL: {sql}");
+    Console.WriteLine($"=== FINAL SQL ===");
+    Console.WriteLine(sql);
+    Console.WriteLine($"=== PARAMETERS ===");
+    foreach (var param in parameters)
+    {
+        Console.WriteLine($"{param.ParameterName} = {param.Value}");
+    }
 
     // Execute the query with parameters
     var historicalRecords = _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
