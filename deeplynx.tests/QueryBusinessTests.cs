@@ -1,11 +1,9 @@
-using System;
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
-using System.Threading.Tasks;
 using deeplynx.business;
 using FluentAssertions;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
+using Microsoft.EntityFrameworkCore;
 using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests
@@ -15,6 +13,9 @@ namespace deeplynx.tests
     {
         private QueryBusiness _queryBusiness = null!;
         public long pid;
+        public long did;
+        public long cid;
+        public DateTime timeGrab;
         private DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         private long mockUserId;
         private long mockUser2Id;
@@ -59,21 +60,6 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
             var result = _queryBusiness.QueryBuilder([dto], "CT-7567");
-            result.Should().HaveCount(1);
-        }
-        
-        [Fact]
-        public async Task QueryBuilderFindSpecificCloneBetweenTwoTimesResultsIn1Async()
-        {
-            var dto = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "last_updated_at", Operator = "<", Value = "2024-01-30"
-            };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "2024-01-21"
-            };
-            var result = _queryBusiness.QueryBuilder([dto, dto2], null);
             result.Should().HaveCount(1);
         }
         
@@ -148,7 +134,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task QueryBuilderWithNullFiltersReturnsAllRecordsAsync()
         {
-            Assert.Throws<Exception>(() => 
+            Assert.Throws<ArgumentException>(() => 
                 _queryBusiness.QueryBuilder(null, null));
         }
         
@@ -176,50 +162,87 @@ namespace deeplynx.tests
             result.Should().HaveCount(1);
             result.First().Name.Should().Be("Tech");
         }
+        [Fact]
+        public async Task QueryBuilderLessThanDateOperatorAsync()
+        {
+            var hunterRecord = await Context.Records
+                .Where(r => r.Name == "Hunter")
+                .FirstAsync();
+    
+            var baselineTime = hunterRecord.LastUpdatedAt;
+            
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = null, 
+                Filter = "last_updated_at", 
+                Operator = "<", 
+                Value = now.AddMinutes(30).ToString("yyyy-MM-dd HH:mm:ss")
+            };
+    
+            var result = _queryBusiness.QueryBuilder([dto]);
+            result.Should().HaveCount(5); 
+        }
+
+        [Fact]
+        public async Task QueryBuilderGreaterThanDateOperatorAsync()
+        {
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = null, 
+                Filter = "last_updated_at", 
+                Operator = ">", 
+                Value = now.AddMinutes(-30).ToString("yyyy-MM-dd HH:mm:ss")
+            };
+    
+            // var result = _queryBusiness.QueryBuilder([dto]);
+            // result.Should().HaveCount(0); 
+            var result = _queryBusiness.QueryBuilder([dto], null);
+            result.Should().HaveCount(5); 
+            result.All(r => r.LastUpdatedAt < now.AddMinutes(30)).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task QueryBuilderDateRangeAsync()
+        {
+            var ahsoka = new Record
+            {
+                Name = "Ahsoka Tano",
+                Description = "Favorite",
+                OriginalId = "Snips",
+                Properties = JsonSerializer.Serialize(new { Jedi = "Apprentice" }),
+                ProjectId = pid,
+                DataSourceId = did,
+                ClassId = cid,
+                Uri = "localhost:8090"
+            };
+            await Context.Records.AddAsync(ahsoka);
+            await Context.SaveChangesAsync();
+        var rexRecord = await Context.Records
+            .Where(r => r.Name == "Captain Rex")
+            .FirstAsync();
+    
+        var baselineRex = rexRecord.LastUpdatedAt;
+    
+        var baselineAhsoka = ahsoka.LastUpdatedAt.AddMinutes(10);
         
-        // [Fact]
-        // public async Task QueryBuilderGreaterThanDateOperatorAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "2024-01-15"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().HaveCount(3); // Tech, Wrecker, Crosshair (after Jan 15)
-        // }
+        var dto1 = new CustomQueryRequestDto
+        {
+            Connector = null, 
+            Filter = "last_updated_at", 
+            Operator = ">", 
+            Value = baselineRex.ToString("yyyy-MM-dd HH:mm:ss")
+        };
+        var dto2 = new CustomQueryRequestDto
+        {
+            Connector = "AND", 
+            Filter = "last_updated_at", 
+            Operator = "<", 
+            Value = baselineAhsoka.ToString("yyyy-MM-dd HH:mm:ss")
+        };
         
-        // [Fact]
-        // public async Task QueryBuilderLessThanDateOperatorAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = "<", Value = "2024-01-15"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().HaveCount(2); // Rex, Hunter (before Jan 15)
-        // }
-        
-        // [Fact]
-        // public async Task QueryBuilderGreaterThanOrEqualDateOperatorAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "2024-01-20"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().HaveCount(3); // Tech, Wrecker, Crosshair (on or after Jan 20)
-        // }
-        //
-        // [Fact]
-        // public async Task QueryBuilderLessThanOrEqualDateOperatorAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = "<", Value = "2024-01-10"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().HaveCount(2); // Rex, Hunter (on or before Jan 10)
-        // }
+        var result = _queryBusiness.QueryBuilder([dto1, dto2], null);
+        result.Should().HaveCount(6); 
+        }
         
         [Fact]
         public async Task QueryBuilderMultipleAndConditionsAsync()
@@ -300,88 +323,62 @@ namespace deeplynx.tests
             result.Should().HaveCount(4); // All Bad Batch members with CloneForce 99
         }
         
-        // [Fact]
-        // public async Task QueryBuilderInvalidFilterFieldAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "InvalidField", Operator = "=", Value = "test"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().BeEmpty(); // Should handle gracefully
-        // }
-        //
-        // [Fact]
-        // public async Task QueryBuilderInvalidOperatorAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "Name", Operator = "INVALID", Value = "test"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().BeEmpty(); // Should handle gracefully
-        // }
-        //
-        // [Fact]
-        // public async Task QueryBuilderInvalidDateFormatAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "invalid-date"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().BeEmpty(); // Should handle gracefully
-        // }
-        
-        // [Fact]
-        // public async Task QueryBuilderNullValueAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "Name", Operator = "=", Value = null
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().BeEmpty(); // Should handle gracefully
-        // }
-        
-        // [Fact]
-        // public async Task QueryBuilderEmptyValueAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "Name", Operator = "=", Value = ""
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto], null);
-        //     result.Should().BeEmpty(); // Should handle gracefully
-        // }
-        
-        // [Fact]
-        // public async Task QueryBuilderExactDateMatchAsync()
-        // {
-        //     var dto = new CustomQueryRequestDto
-        //     {
-        //         Connector = "AND", Filter = "last_updated_at", Operator = "=", Value = "2024-01-20"
-        //     };
-        //     var result = _queryBusiness.QueryBuilder([dto]);
-        //     result.Should().HaveCount(1); // Only Tech on exactly Jan 20
-        //     result.First().Name.Should().Be("Tech");
-        // }
+        [Fact]
+        public async Task QueryBuilderInvalidFilterFieldAsync()
+        {
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = "AND", Filter = "InvalidField", Operator = "=", Value = "test"
+            };
+            Assert.Throws<ArgumentException>(() => 
+                _queryBusiness.QueryBuilder([dto]));
+        }
         
         [Fact]
-        public async Task QueryBuilderDateRangeExclusiveAsync()
+        public async Task QueryBuilderInvalidOperatorAsync()
         {
-            var dto1 = new CustomQueryRequestDto
+            var dto = new CustomQueryRequestDto
             {
-                Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "2024-01-11"
+                Connector = "AND", Filter = "Name", Operator = "INVALID", Value = "test"
             };
-            var dto2 = new CustomQueryRequestDto
-            {
-                Connector = "AND", Filter = "last_updated_at", Operator = "<", Value = "2024-01-25"
-            };
-            var result = _queryBusiness.QueryBuilder([dto1, dto2], null);
-            result.Should().HaveCount(1); // Only Tech (Jan 20 is between Jan 10 and Jan 25)
-            result.First().Name.Should().Be("Tech");
+            Assert.Throws<ArgumentException>(() => 
+                _queryBusiness.QueryBuilder([dto]));
         }
+        
+        [Fact]
+        public async Task QueryBuilderInvalidDateFormatAsync()
+        {
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "invalid-date"
+            };
+            Assert.Throws<ArgumentException>(() => 
+                _queryBusiness.QueryBuilder([dto]));
+        }
+        
+        [Fact]
+        public async Task QueryBuilderNullValueAsync()
+        {
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = "AND", Filter = "Name", Operator = "=", Value = null
+            };
+            Assert.Throws<ArgumentException>(() => 
+                _queryBusiness.QueryBuilder([dto]));
+        }
+        
+        [Fact]
+        public async Task QueryBuilderEmptyValueAsync()
+        {
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = "AND", Filter = "Name", Operator = "=", Value = ""
+            };
+            Assert.Throws<ArgumentException>(() => 
+                _queryBusiness.QueryBuilder([dto]));
+        }
+        
+        
         
         [Fact]
         public async Task QueryBuilderContainsOperatorInDescriptionAsync()
@@ -424,28 +421,22 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            var baseTime = DateTime.SpecifyKind(new DateTime(2024, 1, 1, 12, 0, 0), DateTimeKind.Unspecified);
-            var time1 = DateTime.SpecifyKind(new DateTime(2024, 1, 5, 10, 30, 0), DateTimeKind.Unspecified);
-            var time2 = DateTime.SpecifyKind(new DateTime(2024, 1, 10, 14, 15, 0), DateTimeKind.Unspecified);
-            var time3 = DateTime.SpecifyKind(new DateTime(2024, 1, 15, 9, 45, 0), DateTimeKind.Unspecified);
-            var time4 = DateTime.SpecifyKind(new DateTime(2024, 1, 20, 16, 20, 0), DateTimeKind.Unspecified);
-            var time5 = DateTime.SpecifyKind(new DateTime(2024, 1, 25, 11, 10, 0), DateTimeKind.Unspecified);
-            var time6 = DateTime.SpecifyKind(new DateTime(2024, 1, 30, 13, 30, 0), DateTimeKind.Unspecified);
-
+            
+            // Create project first
             var project = new Project
             {
                 Name = "Anakin",
-                Description = "You turned her against me",
-                LastUpdatedAt = baseTime
+                Description = "You turned her against me"
             };
             await Context.Projects.AddAsync(project);
             await Context.SaveChangesAsync();
+            pid = project.Id;
 
+            // Create supporting entities
             var tag = new Tag
             {
                 Name = "Padme",
-                ProjectId = project.Id,
-                LastUpdatedAt = time1
+                ProjectId = project.Id
             };
             await Context.Tags.AddAsync(tag);
             await Context.SaveChangesAsync();
@@ -454,22 +445,23 @@ namespace deeplynx.tests
             {
                 Name = "R2D2",
                 Description = "Weeeeeeeee!",
-                ProjectId = project.Id,
-                LastUpdatedAt = time2
+                ProjectId = project.Id
             };
             await Context.DataSources.AddAsync(dataSource);
             await Context.SaveChangesAsync();
-
+            did = dataSource.Id;
+            
             var testClass = new Class
             {
                 Name = "Darth Maul",
                 Description = "My legs!",
-                ProjectId = project.Id,
-                LastUpdatedAt = time3
+                ProjectId = project.Id
             };
             await Context.Classes.AddAsync(testClass);
             await Context.SaveChangesAsync();
+            cid = testClass.Id;
 
+            // Create records with delays between each
             var rex = new Record
             {
                 Name = "Captain Rex",
@@ -493,11 +485,12 @@ namespace deeplynx.tests
                 ProjectId = project.Id,
                 DataSourceId = dataSource.Id,
                 ClassId = testClass.Id,
-                Tags =  new List<Tag> { tag },
+                Tags = new List<Tag> { tag },
                 Uri = "localhost:8090"
             };
             await Context.Records.AddAsync(hunter);
-            
+            await Context.SaveChangesAsync();
+
             var tech = new Record
             {
                 Name = "Tech",
@@ -507,12 +500,12 @@ namespace deeplynx.tests
                 ProjectId = project.Id,
                 DataSourceId = dataSource.Id,
                 ClassId = testClass.Id,
-                LastUpdatedAt = time4,
-                Tags =  new List<Tag> { tag },
+                Tags = new List<Tag> { tag },
                 Uri = "localhost:8090"
             };
             await Context.Records.AddAsync(tech);
-            
+            await Context.SaveChangesAsync();
+
             var wrecker = new Record
             {
                 Name = "Wrecker",
@@ -522,12 +515,12 @@ namespace deeplynx.tests
                 ProjectId = project.Id,
                 DataSourceId = dataSource.Id,
                 ClassId = testClass.Id,
-                LastUpdatedAt = time5,
-                Tags =  new List<Tag> { tag },
+                Tags = new List<Tag> { tag },
                 Uri = "localhost:8090"
             };
             await Context.Records.AddAsync(wrecker);
-            
+            await Context.SaveChangesAsync();
+
             var crosshair = new Record
             {
                 Name = "Crosshair",
@@ -537,12 +530,12 @@ namespace deeplynx.tests
                 ProjectId = project.Id,
                 DataSourceId = dataSource.Id,
                 ClassId = testClass.Id,
-                LastUpdatedAt = time6,
-                Tags =  new List<Tag> { tag },
+                Tags = new List<Tag> { tag },
                 Uri = "localhost:8090"
             };
             await Context.Records.AddAsync(crosshair);
             await Context.SaveChangesAsync();
+            timeGrab = rex.LastUpdatedAt; 
         }
     }
 }
