@@ -2,15 +2,16 @@
 "use client";
 
 import axios from "axios";
+import api from "./api";
 
 /**
  * ENV (public)
  * NEXT_PUBLIC_API_URL: http://localhost:5095/api
  */
-export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  withCredentials: true,
-});
+// export const api = axios.create({
+//   baseURL: process.env.NEXT_PUBLIC_API_URL,
+//   withCredentials: true,
+// });
 
 /** ---- Browser calls (with session cookies) ---- */
 

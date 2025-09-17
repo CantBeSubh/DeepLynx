@@ -1,22 +1,24 @@
 "use client";
 
-import React from "react";
-import { peopleData } from "../dummy_data/data";
-import AvatarCell from "../components/Avatar";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
+import { useSession } from "next-auth/react";
+import AvatarCell from "../components/Avatar";
 import ThemeToggle from "../components/ThemeToggle";
 
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]
-  const jason = peopleData.find((p) => p.name === "Jason");
+  const { data: session } = useSession();
+
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
+  const image = session?.user?.image ?? undefined;
 
   return (
     <div className="p-20">
       <div className="flex items-center">
-        <AvatarCell image={jason?.image} name={jason?.name} size={20} />
+        <AvatarCell image={image} name={name} size={20} />
         <h1 className="ml-3 text-2xl font-bold text-info-content">
-          Jason Kuipers
+          {session?.user?.name}
         </h1>
       </div>
 
@@ -34,19 +36,19 @@ const SettingsPageClient = () => {
               <span className="mr-5 font-bold text-black">
                 {t.translations.NAME ?? "Name"}:
               </span>{" "}
-              {jason?.name}
+              {name}
             </p>
             <p className="text-base-content">
               <span className="mr-5 font-bold text-black">
                 {t.translations.EMAIL ?? "Email"}:
               </span>{" "}
-              {jason?.email ?? "—"}
+              {email ?? "—"}
             </p>
             <p className="text-base-content">
               <span className="mr-5 font-bold text-black">
                 {t.translations.PROFILE_PICTURE ?? "Profile Picture"}:
-              </span>{" "}
-              {jason?.image}
+              </span>
+              {session?.user?.image}
             </p>
           </div>
         </div>
@@ -64,11 +66,10 @@ const SettingsPageClient = () => {
             <ThemeToggle />
           </p>
           <p>
-            {" "}
             <span className="font-bold text-black">
               {t.translations.EMAIL_NOTIFICATIONS}
             </span>{" "}
-            <input type="checkbox" defaultChecked className="toggle ml-5" />{" "}
+            <input type="checkbox" defaultChecked className="toggle ml-5" />
           </p>
           <p className="flex items-center gap-5">
             <span className="font-bold text-base-content text-black">
@@ -85,7 +86,6 @@ const SettingsPageClient = () => {
           </p>
         </div>
         <div className="my-20">
-          {" "}
           <span>API Keypairs</span> <div className="divider"></div>{" "}
         </div>
       </div>

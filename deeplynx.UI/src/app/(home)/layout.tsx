@@ -1,4 +1,4 @@
-// app/(home)/layout.tsx
+// src/app/(home)/layout.tsx
 import React, { Suspense } from "react";
 import LayoutShell from "../(home)/components/LayoutShell";
 
