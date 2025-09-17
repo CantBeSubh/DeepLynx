@@ -44,88 +44,8 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
         throw new Exception("Custom query request dto cannot be null");
     }
 
-    // Build the WHERE conditions for your custom queries
-    var whereConditions = new List<string>();
-    var sqlParameters = new List<object>();
-    var parameterIndex = 1; 
-
-    if (request?.Length > 0)
-    {
-        foreach (var query in request)
-        {
-            string condition = "";
-            
-            if (query.Operator == "KEY_VALUE")
-            {
-                condition = $"({query.Filter}::jsonb @> ${parameterIndex}::jsonb)";
-                sqlParameters.Add(query.Json);
-                parameterIndex++;
-            }
-            else if (query.Operator == "LIKE")
-            {
-                condition = $"hr.{query.Filter} ILIKE ${parameterIndex}";
-                sqlParameters.Add($"%{query.Value}%");
-                parameterIndex++;
-            }
-            else if (query.Operator == "=")
-            {
-                if (int.TryParse(query.Value, out var intVal))
-                {
-                    condition = $"hr.{query.Filter} = ${parameterIndex}";
-                    sqlParameters.Add(intVal);
-                    parameterIndex++;
-                }
-                else if (DateTime.TryParse(query.Value, out var dateVal))
-                {
-                    condition = $"hr.{query.Filter} = ${parameterIndex}";
-                    sqlParameters.Add(dateVal);
-                    parameterIndex++;
-                }
-                else
-                {
-                    condition = $"hr.{query.Filter} = ${parameterIndex}";
-                    sqlParameters.Add(query.Value);
-                    parameterIndex++;
-                }
-            }
-            else if (query.Operator == ">")
-            {
-                if (DateTime.TryParse(query.Value, out var dateVal))
-                {
-                    condition = $"hr.{query.Filter} > ${parameterIndex}";
-                    sqlParameters.Add(dateVal);
-                    parameterIndex++;
-                }
-            }
-            else if (query.Operator == "<")
-            {
-                if (DateTime.TryParse(query.Value, out var dateVal))
-                {
-                    condition = $"hr.{query.Filter} < ${parameterIndex}";
-                    sqlParameters.Add(dateVal);
-                    parameterIndex++;
-                }
-            }
-
-            if (!string.IsNullOrEmpty(condition))
-            {
-                if (whereConditions.Count > 0)
-                {
-                    var connector = query.Connector?.ToUpper() == "OR" ? " OR " : " AND ";
-                    whereConditions.Add(connector + condition);
-                }
-                else
-                {
-                    whereConditions.Add(condition);
-                }
-            }
-        }
-    }
-
-    var additionalWhere = whereConditions.Count > 0 ? 
-        " AND (" + string.Join("", whereConditions) + ")" : "";
-
-    var baseSql = $@"
+    // Start with base SQL
+    var sql = @"
         SELECT DISTINCT ON (hr.record_id)
             hr.*,
             hr.class_id as ClassId,
@@ -142,14 +62,135 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
             hr.record_id as RecordId,
             hr.is_archived as IsArchived
         FROM deeplynx.historical_records hr
-        WHERE hr.is_archived = false
-        {additionalWhere}";
+        WHERE hr.is_archived = false";
 
-    IQueryable<HistoricalRecord> historicalRecords;
+    var parameters = new List<NpgsqlParameter>();
+    
+    // Build WHERE conditions by iterating through each DTO
+    if (request?.Length > 0)
+    {
+        var andConditions = new List<string>();
+        var orConditions = new List<string>();
 
+        for (int i = 0; i < request.Length; i++)
+        {
+            var query = request[i];
+            Console.WriteLine($"Processing: Filter={query.Filter}, Operator={query.Operator}, Value={query.Value}");
+            
+            string condition = "";
+            string paramName = $"param{i}";
+
+            // Build the individual condition
+            if (query.Operator == "KEY_VALUE")
+            {
+                condition = $"({query.Filter}::jsonb @> @{paramName}::jsonb)";
+                parameters.Add(new NpgsqlParameter(paramName, query.Json));
+            }
+            else if (query.Operator == "LIKE")
+            {
+                condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
+            }
+            else if (query.Operator == "=")
+            {
+                condition = $"hr.{query.Filter} = @{paramName}";
+                
+                if (int.TryParse(query.Value, out var intVal))
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, intVal));
+                }
+                else if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                }
+                else
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                }
+            }
+            else if (query.Operator == ">")
+            {
+                condition = $"hr.{query.Filter} > @{paramName}";
+                
+                if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                }
+                else
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                }
+            }
+            else if (query.Operator == "<")
+            {
+                condition = $"hr.{query.Filter} < @{paramName}";
+                
+                if (DateTime.TryParse(query.Value, out var dateVal))
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                }
+                else
+                {
+                    parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                }
+            }
+
+            // Add condition to appropriate group
+            if (!string.IsNullOrEmpty(condition))
+            {
+                // First condition defaults to AND if no connector specified
+                var connector = i == 0 ? "AND" : (query.Connector?.ToUpper() ?? "AND");
+                
+                if (connector == "OR")
+                {
+                    orConditions.Add(condition);
+                }
+                else
+                {
+                    andConditions.Add(condition);
+                }
+                
+                Console.WriteLine($"Added {connector} condition: {condition}");
+            }
+        }
+
+        // Build the final WHERE clause with proper precedence
+        var finalConditions = new List<string>();
+        
+        // Add all AND conditions
+        if (andConditions.Any())
+        {
+            finalConditions.AddRange(andConditions);
+        }
+        
+        // Group all OR conditions together
+        if (orConditions.Any())
+        {
+            if (orConditions.Count == 1)
+            {
+                finalConditions.Add(orConditions[0]);
+            }
+            else
+            {
+                var orGroup = "(" + string.Join(" OR ", orConditions) + ")";
+                finalConditions.Add(orGroup);
+            }
+        }
+        
+        // Combine everything with AND
+        if (finalConditions.Any())
+        {
+            sql += " AND " + string.Join(" AND ", finalConditions);
+        }
+    }
+
+    // Add text search if provided
     if (!string.IsNullOrWhiteSpace(textSearch))
     {
-        var textSearchSql = baseSql + $@"
+        var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
+        parameters.Add(textSearchParam);
+        
+        var textSearchCondition = @"
             AND to_tsvector('english',
                     coalesce(name, '') || ' ' ||
                     coalesce(description, '') || ' ' ||
@@ -160,52 +201,18 @@ public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestD
                     coalesce(project_name, '') || ' ' ||
                     coalesce(properties::text, '') || ' ' ||
                     coalesce(tags::text, '')
-                )@@ websearch_to_tsquery('english', ${parameterIndex})
-            ORDER BY hr.record_id, hr.last_updated_at DESC";
-            
-        sqlParameters.Add(textSearch);
-        historicalRecords = _context.HistoricalRecords.FromSqlRaw(textSearchSql, sqlParameters.ToArray());
-    }
-    else
-    {
-        var finalSql = baseSql + " ORDER BY hr.record_id, hr.last_updated_at DESC";
+                )@@ websearch_to_tsquery('english', @textSearch)";
         
-        if (sqlParameters.Count > 0)
-        {
-          
-            if (sqlParameters.Count == 1)
-            {
-                var param1 = sqlParameters[0];
-                historicalRecords = _context.HistoricalRecords.FromSqlInterpolated($@"
-                    SELECT DISTINCT ON (hr.record_id)
-                        hr.*,
-                        hr.class_id as ClassId,
-                        hr.class_name as ClassName,
-                        hr.original_id as OriginalId,
-                        hr.data_source_name as DataSourceName,
-                        hr.data_source_id as DataSourceId,
-                        hr.project_name as ProjectName,
-                        hr.project_id as ProjectId,
-                        hr.last_updated_at as LastUpdatedAt,
-                        hr.last_updated_by as LastUpdatedBy,
-                        hr.object_storage_name as ObjectStorageName,
-                        hr.object_storage_id as ObjectStorageId,
-                        hr.record_id as RecordId,
-                        hr.is_archived as IsArchived
-                    FROM deeplynx.historical_records hr
-                    WHERE hr.is_archived = false
-                     AND (hr.original_id = {param1}) ORDER BY hr.record_id, hr.last_updated_at DESC");
-            }
-            else
-            {
-                historicalRecords = _context.HistoricalRecords.FromSqlRaw(finalSql, sqlParameters.ToArray());
-            }
-        }
-        else
-        {
-            historicalRecords = _context.HistoricalRecords.FromSqlRaw(finalSql);
-        }
+        sql += textSearchCondition;
     }
+
+    // Add ORDER BY
+    sql += " ORDER BY hr.record_id, hr.last_updated_at DESC";
+
+    Console.WriteLine($"Final SQL: {sql}");
+
+    // Execute the query with parameters
+    var historicalRecords = _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
 
     return historicalRecords
         .Select(r => new HistoricalRecordResponseDto
