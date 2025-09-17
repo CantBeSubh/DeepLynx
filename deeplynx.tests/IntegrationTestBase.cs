@@ -3,33 +3,41 @@ using deeplynx.datalayer.Models;
 using deeplynx.tests;
 using DotNetEnv;
 using Testcontainers.PostgreSql;
+using Testcontainers.Redis;
 using Microsoft.EntityFrameworkCore;
 
-// fixture to allow setting up and breaking down what is needed for each test suite
+// Fixture to allow setting up and breaking down what is needed for each test suite
 public class TestSuiteFixture : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _container;
-    public string ConnectionString { get; private set; }
+    private readonly PostgreSqlContainer _postgresContainer;
+    private readonly RedisContainer _redisContainer;
+    public string PostgresConnectionString { get; private set; }
+    public string RedisConnectionString { get; private set; }
     public DeeplynxContext Context { get; private set; }
-
-    public CacheBusiness _cacheBusiness;
 
     public TestSuiteFixture()
     {
-        _container = new PostgreSqlBuilder()
+        _postgresContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15-alpine")
+            .Build();
+
+        _redisContainer = new RedisBuilder()
+            .WithImage("redis:7-alpine")
             .Build();
     }
     
-    //Runs at the beginning of every test suite
+    // Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
-        await _container.StartAsync();
+        await _postgresContainer.StartAsync();
+        await _redisContainer.StartAsync();
         
-        // Allows the integration test base to access the connection string to instantiate a new context
-        ConnectionString = _container.GetConnectionString();
+        RedisConnectionString = _redisContainer.GetConnectionString();
+        
+        PostgresConnectionString = _postgresContainer.GetConnectionString();
+
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
-            .UseNpgsql(ConnectionString)
+            .UseNpgsql(PostgresConnectionString)
             .Options;
 
         Context = new DeeplynxContext(options);
@@ -41,18 +49,16 @@ public class TestSuiteFixture : IAsyncLifetime
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
         Env.Load(envFilePath);
-        
-        _cacheBusiness = CacheBusiness.Instance;
     }
     
-    //Runs at the end of every test suite
+    // Runs at the end of every test suite
     public async Task DisposeAsync()
     {
         await Context.DisposeAsync();
-        await _container.DisposeAsync();
+        await _postgresContainer.DisposeAsync();
+        await _redisContainer.DisposeAsync();
     }
 }
-
 
 // Defines a test collection named "Test Suite Collection".
 // This collection uses the TestSuiteFixture class for setup and teardown.
@@ -63,7 +69,6 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
     // to be the place to apply [CollectionDefinition] and ICollectionFixture<> interfaces.
 }
 
-
 // Indicates that this test class is part of the "Test Suite Collection".
 // The TestSuiteFixture setup and teardown code will be applied to this class.
 [Collection("Test Suite Collection")]
@@ -72,23 +77,23 @@ public class IntegrationTestBase : IAsyncLifetime
     protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
     protected CacheBusiness _cacheBusiness;
+
     protected IntegrationTestBase(TestSuiteFixture fixture)
     {
         _fixture = fixture;
         Context = new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
-            .UseNpgsql(_fixture.ConnectionString)
+            .UseNpgsql(_fixture.PostgresConnectionString)
             .Options);
         _cacheBusiness = CacheBusiness.Instance;
     }
 
-    //Runs before every test in the test suite
+    // Runs before every test in the test suite
     public virtual async Task InitializeAsync()
     {
         await SeedTestDataAsync();
-        // await SeedData.SeedDatabase(Context);
     }
 
-    //Runs after every test in the test suite
+    // Runs after every test in the test suite
     public async Task DisposeAsync()
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);

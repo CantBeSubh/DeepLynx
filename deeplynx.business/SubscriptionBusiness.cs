@@ -396,9 +396,6 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
         // Execute the query
         var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
 
-        // Log the number of affected rows
-        Console.WriteLine($"Number of subscriptions unarchived: {result}");
-
         // Check if the number of affected rows matches the number of IDs provided
         if (result != subscriptionIds.Count)
         {
