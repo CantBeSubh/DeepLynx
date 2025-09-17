@@ -37,7 +37,7 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "Properties" }],
+  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
   queriedRecords
