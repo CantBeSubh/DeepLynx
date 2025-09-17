@@ -82,8 +82,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const toggleMemberManagement = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     setIsMemberManagementExpanded(!isMemberManagementExpanded);
-    // setSelectedItem("/member_management");
-    // router.push("/member_management");
+    setSelectedItem("/member_management");
+    router.push("/member_management");
 };
 
   // Function to handle item click events

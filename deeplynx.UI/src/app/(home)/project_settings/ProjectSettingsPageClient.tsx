@@ -15,7 +15,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 const ProjectSettingsClient = () => {
-  const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]
+  const { t } = useLanguage(); // <-- t comes from translations[lang]
   const jason = peopleData.find((p) => p.name === "Jason");
 
     return (
