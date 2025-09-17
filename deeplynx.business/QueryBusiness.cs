@@ -37,222 +37,205 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch = null)
-{
-    if (request == null)
+    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch = null)
     {
-        throw new ArgumentException("Custom query request dto cannot be null");
-    }
-
-    try
-    {
-        // Start with base SQL
-        var sql = @"
-            SELECT DISTINCT ON (hr.record_id)
-                hr.*,
-                hr.class_id as ClassId,
-                hr.class_name as ClassName,
-                hr.original_id as OriginalId,
-                hr.data_source_name as DataSourceName,
-                hr.data_source_id as DataSourceId,
-                hr.project_name as ProjectName,
-                hr.project_id as ProjectId,
-                hr.last_updated_at as LastUpdatedAt,
-                hr.last_updated_by as LastUpdatedBy,
-                hr.object_storage_name as ObjectStorageName,
-                hr.object_storage_id as ObjectStorageId,
-                hr.record_id as RecordId,
-                hr.is_archived as IsArchived
-            FROM deeplynx.historical_records hr
-            WHERE hr.is_archived = false";
-
-        var parameters = new List<NpgsqlParameter>();
-        var conditions = new List<string>();
-
-        // Build individual conditions
-        if (request?.Length > 0)
+        if (request == null)
         {
-            for (int i = 0; i < request.Length; i++)
+            throw new ArgumentException("Custom query request dto cannot be null");
+        }
+
+        try
+        {
+            var sql = @"
+                SELECT DISTINCT ON (hr.record_id)
+                    hr.*,
+                    hr.class_id as ClassId,
+                    hr.class_name as ClassName,
+                    hr.original_id as OriginalId,
+                    hr.data_source_name as DataSourceName,
+                    hr.data_source_id as DataSourceId,
+                    hr.project_name as ProjectName,
+                    hr.project_id as ProjectId,
+                    hr.last_updated_at as LastUpdatedAt,
+                    hr.last_updated_by as LastUpdatedBy,
+                    hr.object_storage_name as ObjectStorageName,
+                    hr.object_storage_id as ObjectStorageId,
+                    hr.record_id as RecordId,
+                    hr.is_archived as IsArchived
+                FROM deeplynx.historical_records hr
+                WHERE hr.is_archived = false";
+
+            var parameters = new List<NpgsqlParameter>();
+            var conditions = new List<string>();
+
+            // Build individual conditions
+            if (request?.Length > 0)
             {
-                var query = request[i];
-                if (String.IsNullOrWhiteSpace(query.Value))
+                for (int i = 0; i < request.Length; i++)
                 {
-                    throw new ArgumentException("Value cannot be null or empty.");
-                }
-                Console.WriteLine($"Processing item {i}: Filter={query.Filter}, Operator={query.Operator}, Value={query.Value}, Connector={query.Connector}");
-                
-                string condition = "";
-                string paramName = $"param{i}";
-
-                // Build the individual condition
-                if (query.Operator == "KEY_VALUE")
-                {
-                    condition = $"({query.Filter}::jsonb @> @{paramName}::jsonb)";
-                    parameters.Add(new NpgsqlParameter(paramName, query.Json));
-                }
-                else if (query.Operator == "LIKE")
-                {
-                    condition = $"hr.{query.Filter} ILIKE @{paramName}";
-                    parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
-                }
-                else if (query.Operator == "=")
-                {
-                    condition = $"hr.{query.Filter} = @{paramName}";
-                    
-                    if (int.TryParse(query.Value, out var intVal))
+                    var query = request[i];
+                    if (String.IsNullOrWhiteSpace(query.Value))
                     {
-                        parameters.Add(new NpgsqlParameter(paramName, intVal));
+                        throw new ArgumentException("Value cannot be null or empty.");
                     }
-                    else if (DateTime.TryParse(query.Value, out var dateVal))
+                    string condition = "";
+                    string paramName = $"param{i}";
+
+                    // Build the individual condition
+                    if (query.Operator == "KEY_VALUE")
                     {
-                        parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        condition = $"({query.Filter}::jsonb @> @{paramName}::jsonb)";
+                        parameters.Add(new NpgsqlParameter(paramName, query.Json));
+                    }
+                    else if (query.Operator == "LIKE")
+                    {
+                        condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
+                    }
+                    else if (query.Operator == "=")
+                    {
+                        condition = $"hr.{query.Filter} = @{paramName}";
+                        
+                        if (int.TryParse(query.Value, out var intVal))
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, intVal));
+                        }
+                        else if (DateTime.TryParse(query.Value, out var dateVal))
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        }
+                        else
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                        }
+                    }
+                    else if (query.Operator == ">")
+                    {
+                        condition = $"hr.{query.Filter} > @{paramName}";
+                        
+                        if (DateTime.TryParse(query.Value, out var dateVal))
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        }
+                        else
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                        }
+                    }
+                    else if (query.Operator == "<")
+                    {
+                        condition = $"hr.{query.Filter} < @{paramName}";
+                        
+                        if (DateTime.TryParse(query.Value, out var dateVal))
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        }
+                        else
+                        {
+                            parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                        }
                     }
                     else
                     {
-                        parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                    }
-                }
-                else if (query.Operator == ">")
-                {
-                    condition = $"hr.{query.Filter} > @{paramName}";
-                    
-                    if (DateTime.TryParse(query.Value, out var dateVal))
-                    {
-                        parameters.Add(new NpgsqlParameter(paramName, dateVal));
-                    }
-                    else
-                    {
-                        parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                    }
-                }
-                else if (query.Operator == "<")
-                {
-                    condition = $"hr.{query.Filter} < @{paramName}";
-                    
-                    if (DateTime.TryParse(query.Value, out var dateVal))
-                    {
-                        parameters.Add(new NpgsqlParameter(paramName, dateVal));
-                    }
-                    else
-                    {
-                        parameters.Add(new NpgsqlParameter(paramName, query.Value));
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException($"Invalid operator in query.");
+                        throw new ArgumentException($"Invalid operator in query.");
 
-                }
+                    }
 
-                if (!string.IsNullOrEmpty(condition))
-                {
-                    conditions.Add(condition);
-                    Console.WriteLine($"Built condition {i}: {condition}");
+                    if (!string.IsNullOrEmpty(condition))
+                    {
+                        conditions.Add(condition);
+                    }
                 }
             }
-        }
 
-        // Now combine conditions with proper connectors
-        if (conditions.Any())
-        {
-            sql += " AND (";
-            
-            for (int i = 0; i < conditions.Count; i++)
+            if (conditions.Any())
             {
-                // Add connector before condition (except for first one)
-                if (i > 0)
+                sql += " AND (";
+                
+                for (int i = 0; i < conditions.Count; i++)
                 {
-                    var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
-                    sql += connector;
-                    Console.WriteLine($"Adding connector '{connector}' before condition {i}");
+                    if (i > 0)
+                    {
+                        var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
+                        sql += connector;
+                    }
+                    
+                    sql += conditions[i];
                 }
                 
-                sql += conditions[i];
+                sql += ")";
             }
-            
-            sql += ")";
-            Console.WriteLine($"Combined conditions: {sql.Substring(sql.IndexOf(" AND ("))}");
-        }
 
-        // Add text search if provided
-        if (!string.IsNullOrWhiteSpace(textSearch))
-        {
-            var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
-            parameters.Add(textSearchParam);
-            
-            var textSearchCondition = @"
-                AND to_tsvector('english',
-                        coalesce(name, '') || ' ' ||
-                        coalesce(description, '') || ' ' ||
-                        coalesce(class_name, '') || ' ' ||
-                        coalesce(uri, '') || ' ' ||
-                        coalesce(original_id, '') || ' ' ||
-                        coalesce(data_source_name, '') || ' ' ||
-                        coalesce(project_name, '') || ' ' ||
-                        coalesce(properties::text, '') || ' ' ||
-                        coalesce(tags::text, '')
-                    )@@ websearch_to_tsquery('english', @textSearch)";
-            
-            sql += textSearchCondition;
-        }
-
-        // Add ORDER BY
-        sql += " ORDER BY hr.record_id, hr.last_updated_at DESC";
-
-        Console.WriteLine($"=== FINAL SQL ===");
-        Console.WriteLine(sql);
-        Console.WriteLine($"=== PARAMETERS ===");
-        foreach (var param in parameters)
-        {
-            Console.WriteLine($"{param.ParameterName} = {param.Value}");
-        }
-
-        // Execute the query with parameters
-        var historicalRecords = _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
-
-        return historicalRecords
-            .Select(r => new HistoricalRecordResponseDto
+            if (!string.IsNullOrWhiteSpace(textSearch))
             {
-                Id = r.RecordId,
-                Uri = r.Uri,
-                Properties = r.Properties,
-                OriginalId = r.OriginalId,
-                Name = r.Name,
-                Description = r.Description,
-                ClassId = r.ClassId,
-                ClassName = r.ClassName,
-                DataSourceId = r.DataSourceId,
-                DataSourceName = r.DataSourceName,
-                ObjectStorageId = r.ObjectStorageId,
-                ObjectStorageName = r.ObjectStorageName,
-                ProjectId = r.ProjectId,
-                ProjectName = r.ProjectName,
-                Tags = r.Tags,
-                LastUpdatedBy = r.LastUpdatedBy,
-                LastUpdatedAt = r.LastUpdatedAt
-            }).ToList();
-    }
-    catch (PostgresException ex) when (ex.SqlState == "42703") // undefined_column
-    {
-        throw new ArgumentException($"Invalid column name in query. Please check your filter fields against the historical_records table structure.", ex);
-    }
-    catch (PostgresException ex) when (ex.SqlState == "42601") // syntax_error
-    {
-        throw new ArgumentException($"Invalid query syntax. Please check your operators and values.", ex);
-    }
-    catch (PostgresException ex) when (ex.SqlState == "22P02") // invalid_text_representation
-    {
-        throw new ArgumentException($"Invalid data type in query. Please check that your values match the expected column data types.", ex);
-    }
-    catch (System.Text.Json.JsonException ex)
-    {
-        throw new ArgumentException($"Invalid JSON format in KEY_VALUE operation: {ex.Message}", ex);
-    }
-    catch (Exception ex)
-    {
-        throw new ArgumentException($"Error executing query: {ex.Message}", ex);
-    }
-}    
+                var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
+                parameters.Add(textSearchParam);
+                
+                var textSearchCondition = @"
+                    AND to_tsvector('english',
+                            coalesce(name, '') || ' ' ||
+                            coalesce(description, '') || ' ' ||
+                            coalesce(class_name, '') || ' ' ||
+                            coalesce(uri, '') || ' ' ||
+                            coalesce(original_id, '') || ' ' ||
+                            coalesce(data_source_name, '') || ' ' ||
+                            coalesce(project_name, '') || ' ' ||
+                            coalesce(properties::text, '') || ' ' ||
+                            coalesce(tags::text, '')
+                        )@@ websearch_to_tsquery('english', @textSearch)";
+                
+                sql += textSearchCondition;
+            }
+
+            // Add ORDER BY
+            sql += " ORDER BY hr.record_id, hr.last_updated_at DESC";
+
+            // Execute the query with parameters
+            var historicalRecords = _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
+
+            return historicalRecords
+                .Select(r => new HistoricalRecordResponseDto
+                {
+                    Id = r.RecordId,
+                    Uri = r.Uri,
+                    Properties = r.Properties,
+                    OriginalId = r.OriginalId,
+                    Name = r.Name,
+                    Description = r.Description,
+                    ClassId = r.ClassId,
+                    ClassName = r.ClassName,
+                    DataSourceId = r.DataSourceId,
+                    DataSourceName = r.DataSourceName,
+                    ObjectStorageId = r.ObjectStorageId,
+                    ObjectStorageName = r.ObjectStorageName,
+                    ProjectId = r.ProjectId,
+                    ProjectName = r.ProjectName,
+                    Tags = r.Tags,
+                    LastUpdatedBy = r.LastUpdatedBy,
+                    LastUpdatedAt = r.LastUpdatedAt
+                }).ToList();
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42703") // undefined_column
+        {
+            throw new ArgumentException($"Invalid column name in query. Please check your filter fields against the historical_records table structure.", ex);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "42601") // syntax_error
+        {
+            throw new ArgumentException($"Invalid query syntax. Please check your operators and values.", ex);
+        }
+        catch (PostgresException ex) when (ex.SqlState == "22P02") 
+        {
+            throw new ArgumentException($"Invalid data type in query. Please check that your values match the expected column data types.", ex);
+        }
+        catch (JsonException ex)
+        {
+            throw new ArgumentException($"Invalid JSON format in KEY_VALUE operation: {ex.Message}", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new ArgumentException($"Error executing query: {ex.Message}", ex);
+        }
+    }    
     
     
     /// <summary>
