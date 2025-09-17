@@ -1,10 +1,12 @@
+using deeplynx.datalayer.Models;
+
 namespace deeplynx.interfaces;
 
 public interface ICacheBusiness
 {
-    Task<T> Get<T>(string key);
-    Task<bool> Set(string key, object value, TimeSpan? ttl = null);
-    Task<bool> Set(string key, object value, int? ttl = null);
-    Task<bool> Delete(string key);
-    Task<bool> Flush();
+    Task<T> GetAsync<T>(string key);
+    Task<bool> SetAsync(string key, object value, TimeSpan? ttl = null);
+    Task<bool> SetAsync(string key, object value, int? ttl = null);
+    Task<bool> DeleteAsync(string key);
+    Task<bool> FlushAsync();
 }

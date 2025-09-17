@@ -10,13 +10,38 @@ using Newtonsoft.Json;
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly ICacheBusiness _cacheBusiness;
+    private static readonly List<string> AllowedEntityTypes = new List<string>
+    {
+        "class", 
+        "data_source", 
+        "relationship", 
+        "project", 
+        "edge", 
+        "edge_mapping", 
+        "record", 
+        "record_mapping",
+        "metadata", 
+        "user", 
+        "tag"
+    };
+
+    private static readonly List<string> AllowedOperations = new List<string>
+    {
+        "create",
+        "update",
+        "delete",
+    };
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
-    public EventBusiness(DeeplynxContext context)
+    /// <param name="cacheBusiness">Used to access cache operations</param>
+    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
@@ -76,7 +101,7 @@ public class EventBusiness : IEventBusiness
     /// <returns>The new Event which was just created.</returns>
     public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, false);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, _cacheBusiness, false);
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
@@ -118,7 +143,7 @@ public class EventBusiness : IEventBusiness
     /// <returns>The list of new Events which were created.</returns>
     public async Task<List<EventResponseDto>> BulkCreateEvents(long projectId, List<CreateEventRequestDto> events)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, false);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, false);
 
         foreach (var dto in events)
         {

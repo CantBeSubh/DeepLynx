@@ -25,15 +25,15 @@ namespace deeplynx.tests
         {
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
         }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-
             _dataSourceBusiness = new DataSourceBusiness(
                 Context,
+                _cacheBusiness,
                 _mockEdgeBusiness.Object,
                 _mockRecordBusiness.Object,
                 _eventBusiness);
