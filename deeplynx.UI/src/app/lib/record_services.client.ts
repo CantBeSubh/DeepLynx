@@ -1,12 +1,7 @@
 // src/app/lib/record_services.client.ts
 "use client";
 
-import axios from "axios";
-
-export const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL, // e.g., http://localhost:5095/api
-  withCredentials: true,                    // send browser cookies/session
-});
+import api from "./api";
 
 export async function getAllRecords(projectId: string) {
   try {

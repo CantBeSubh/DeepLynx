@@ -1,7 +1,8 @@
-// app/layout.tsx (Server Component)
+// src/app/layout.tsx (Server Component)
 import "./globals.css";
 import "react-loading-skeleton/dist/skeleton.css";
 import { LanguageProvider } from "./contexts/Language";
+import { SessionProvider } from "next-auth/react";
 
 export default function RootLayout({
   children,
@@ -47,7 +48,9 @@ export default function RootLayout({
 
       {/* Use DaisyUI tokens so colors switch with the theme */}
       <body className="min-h-screen bg-base-100 text-base-content">
-        <LanguageProvider>{children}</LanguageProvider>
+        <SessionProvider>
+          <LanguageProvider>{children}</LanguageProvider>
+        </SessionProvider>
       </body>
     </html>
   );

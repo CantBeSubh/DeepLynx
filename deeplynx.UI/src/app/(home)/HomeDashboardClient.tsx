@@ -1,4 +1,4 @@
-// app/(home)/ProjectsClient.tsx  — Client Component
+// app/(home)/HomeDashboardClient.tsx  — Client Component
 "use client";
 
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
@@ -15,12 +15,15 @@ import { getAllProjects } from "../lib/projects_services.client"; // optional (f
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 
+import { useSession } from "next-auth/react";
+
 type Props = { initialProjects: ProjectsList[] };
 
 export default function HomeDashboard({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
 
+  const { data: session, status } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
@@ -142,6 +145,11 @@ export default function HomeDashboard({ initialProjects }: Props) {
               onSave={handleSave}
               onCustomizeChange={setCanCustomize}
             />
+            {session?.user && (
+              <div className="bg-green-100 p-4 m-4 rounded">
+                <p>Welcome back, {session.user.name}!</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
