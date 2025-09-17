@@ -37,7 +37,7 @@ export default function QueryBuilderClient({
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Time Range", value: "LastUpdatedAt" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "Properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
   queriedRecords
@@ -244,17 +244,17 @@ export default function QueryBuilderClient({
                               },
                             });
 
-                            if (value === "ClassName") {
+                            if (value === "class_name") {
                               getClassesForProjects(selectedProjects)
                                 .then(setClasses)
                                 .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
-                            if (value === "DataSourceName") {
+                            if (value === "data_source_name") {
                               getDataSourcesForProjects(selectedProjects)
                                 .then(setDataSources)
                                 .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
-                            if (value === "Tags") {
+                            if (value === "tags") {
                               getTagsForProjects(selectedProjects)
                                 .then(setTags)
                                 .catch((err) => console.error("Failed to fetch tags:", err));
@@ -294,13 +294,13 @@ export default function QueryBuilderClient({
                           {operators
                             // filter logic
                             .filter((opt) => {
-                              if (row.query.filter === "Properties") {
+                              if (row.query.filter === "properties") {
                                 return opt === "KEY_VALUE";
                               }
-                              if (row.query.filter === "LastUpdatedAt") {
+                              if (row.query.filter === "last_updated_at") {
                                 return opt === "<" || opt === ">" || opt === '='; // only show < or >
                               }
-                              if (row.query.filter === "ClassName" || row.query.filter === "OriginalId" || row.query.filter === "DataSourceName" || row.query.filter === "Tags") {
+                              if (row.query.filter === "class_name" || row.query.filter === "original_id" || row.query.filter === "data_source_name" || row.query.filter === "tags") {
                                 return opt !== "<" && opt !== ">" && opt !== 'KEY_VALUE'; // hide < and >
                               }
                               return true; // otherwise allow all
@@ -314,9 +314,9 @@ export default function QueryBuilderClient({
 
                         {/* Text input for Property Field; select for others (except Time Range) */}
                         {/* Value */}
-                        {row.query.filter !== "LastUpdatedAt" && (
-                          (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
-                            (row.query.filter === "Properties") ? (
+                        {row.query.filter !== "last_updated_at" && (
+                          (row.query.filter === "properties" || row.query.filter === "original_id") ? (
+                            (row.query.filter === "properties") ? (
                               <div className="grid grid-cols-2 gap-2 w-full">
                                 <input
                                   type="text"
@@ -372,14 +372,14 @@ export default function QueryBuilderClient({
                                 },
                               })}
                               disabled={
-                                (row.query.filter === "ClassName" && isLoadingClasses) ||
-                                (row.query.filter === "DataSourceName" && isLoadingDataSources) ||
-                                (row.query.filter === "Tags" && isLoadingTags)
+                                (row.query.filter === "class_name" && isLoadingClasses) ||
+                                (row.query.filter === "data_source_name" && isLoadingDataSources) ||
+                                (row.query.filter === "tags" && isLoadingTags)
                               }
                             >
                               <option value="" disabled>{t.translations.VALUE}</option>
 
-                              {row.query.filter === "ClassName" ? (
+                              {row.query.filter === "class_name" ? (
                                 classes.length ? (
                                   classes.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -391,7 +391,7 @@ export default function QueryBuilderClient({
                                     {isLoadingClasses ? "Loading classes..." : "No classes found"}
                                   </option>
                                 )
-                              ) : row.query.filter === "DataSourceName" ? (
+                              ) : row.query.filter === "data_source_name" ? (
                                 datasources.length ? (
                                   datasources.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -403,7 +403,7 @@ export default function QueryBuilderClient({
                                     {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
                                   </option>
                                 )
-                              ) : row.query.filter === "Tags" ? (
+                              ) : row.query.filter === "tags" ? (
                                 tags.length ? (
                                   tags.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -427,7 +427,7 @@ export default function QueryBuilderClient({
                         )}
 
                         {/* Time Range*/}
-                        {row.query.filter === "LastUpdatedAt" ? (
+                        {row.query.filter === "last_udpated_at" ? (
                           <DatePicker
                             row={row}
                             onChange={(dateTime: string) =>
