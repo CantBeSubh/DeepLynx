@@ -1,15 +1,13 @@
-using System.Linq.Expressions;
-using System.Runtime.InteropServices.JavaScript;
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
-using DuckDB.NET.Native;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using deeplynx.business;
 
 namespace deeplynx.business;
 
@@ -19,18 +17,18 @@ namespace deeplynx.business;
 public class QueryBusiness : IQueryBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly CacheBusiness _cache;
+    private readonly ICacheBusiness _cache;
 
     /// <summary>
     /// Filter record request
     /// </summary>
     /// <param name="context">The database context to be used for filter operations.</param>
     public QueryBusiness(
-        DeeplynxContext context, CacheBusiness cache
+        DeeplynxContext context, ICacheBusiness? cacheBusiness
     )
     {
         _context = context;
-        _cache = cache;
+        _cache = cacheBusiness;
     }
     
     /// <summary>
