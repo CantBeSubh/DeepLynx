@@ -15,9 +15,6 @@ const MemberManagementClient = () => {
     <div className="p-20">
       <div className="flex items-center">
         <AvatarCell image={jason?.image} name={jason?.name} size={20} />
-        <h1 className="ml-3 text-2xl font-bold text-info-content">
-          Jason Kuipers
-        </h1>
       </div>
     </div>
   );
