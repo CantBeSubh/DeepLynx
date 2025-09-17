@@ -12,6 +12,7 @@ namespace deeplynx.tests
     public class QueryBusinessTests : IntegrationTestBase
     {
         private QueryBusiness _queryBusiness = null!;
+        private CacheBusiness _cacheBusiness = null!;
         public long pid;
         public long did;
         public long cid;
@@ -28,7 +29,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _queryBusiness = new QueryBusiness(Context);
+            _queryBusiness = new QueryBusiness(Context, _cacheBusiness);
         }
 
         [Fact]

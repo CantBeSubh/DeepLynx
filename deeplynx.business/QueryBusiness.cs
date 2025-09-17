@@ -19,16 +19,18 @@ namespace deeplynx.business;
 public class QueryBusiness : IQueryBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly CacheBusiness _cache;
 
     /// <summary>
     /// Filter record request
     /// </summary>
     /// <param name="context">The database context to be used for filter operations.</param>
     public QueryBusiness(
-        DeeplynxContext context
+        DeeplynxContext context, CacheBusiness cache
     )
     {
         _context = context;
+        _cache = cache;
     }
     
     /// <summary>
@@ -317,7 +319,7 @@ public class QueryBusiness : IQueryBusiness
     public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds){
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
         }
 
         var classes = await _context.Classes
@@ -353,7 +355,7 @@ public class QueryBusiness : IQueryBusiness
     {
         foreach (var projectId in projectIds)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
         }
             
         var dataSources = await _context.DataSources
@@ -394,7 +396,7 @@ public class QueryBusiness : IQueryBusiness
     {
         foreach (var projectId in projectIds)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
         }
         var tagQuery = _context.Tags
             .Where(t => projectIds.Contains(t.ProjectId));

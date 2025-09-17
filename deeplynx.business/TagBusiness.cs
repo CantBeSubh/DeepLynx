@@ -35,12 +35,10 @@ public class TagBusiness : ITagBusiness
     /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
-        foreach (var projectId in projectIds)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        }
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+        
         var tagQuery = _context.Tags
             .Where(t => t.ProjectId == projectId);
             
