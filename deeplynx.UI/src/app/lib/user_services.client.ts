@@ -1,7 +1,6 @@
 // src/app/lib/user_services.client.ts
 "use client";
 
-import axios from "axios";
 import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
