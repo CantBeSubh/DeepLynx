@@ -254,27 +254,30 @@ public class TimeseriesBusiness(
     /// <param name="fileName">The name of the file to be written</param>
     /// <exception cref="KeyNotFoundException">Thrown when the record cannot be found</exception>
     /// <exception cref="Exception">Thrown if the report cannot be written</exception>
-    private async Task RunBackgroundJob(RecordResponseDto recordResponse, TimeseriesQueryRequestDto request, DataTable resultTable, long projectId, long dataSourceId, string fileName)
+    private async Task RunBackgroundJob(RecordResponseDto recordResponse, string query, long projectId, long dataSourceId, string fileName, string filePath)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
         // todo: Write csv to object storage
-        await Task.Run(async () =>
+        Task.Run(async () =>
         {
             // creates a background scope to create its own context so that the background task doesn't
             // have to rely on other contexts that may be destroyed or closed.
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+            using var connection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
 
             try
             {
-                await DataTableToCsv(resultTable, projectId, dataSourceId, fileName);
+                var command = connection.CreateCommand();
+                command.CommandText = $"COPY ({query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+                await command.ExecuteNonQueryAsync();
+                Console.WriteLine("CREATED CSV");
+                
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Completed,
-                    ["query"] = request.Query
+                    ["query"] = query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
                 if (record == null || record.ProjectId != projectId || record.IsArchived)
@@ -294,7 +297,7 @@ public class TimeseriesBusiness(
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Failed,
-                    ["query"] = request.Query
+                    ["query"] = query
                 };
                 var record = await backgroundContext.Records.FindAsync(recordResponse.Id);
                 if (record == null || record.ProjectId != projectId || record.IsArchived)
@@ -456,31 +459,31 @@ public class TimeseriesBusiness(
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // var resultTable = new DataTable();
-        using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
+        // using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
 
-        using var command = duckDBConnection.CreateCommand();
-        
-        var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
-
+        // using var command = duckDBConnection.CreateCommand();
+        //
+        // var queryId = Guid.NewGuid().ToString();
+        // var fileName = queryId + "_record.csv";
+        //
         var request = new TimeseriesQueryRequestDto
         {
             Query = $"SELECT * FROM '{tableName}'"
         };
         
-        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
-        
-        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
-        
-        await command.ExecuteNonQueryAsync();
+        //
+        // command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+        //
+        // await command.ExecuteNonQueryAsync();
 
         // command.CommandText = request.Query;
         // using var reader = await command.ExecuteReaderAsync();
         //
         // resultTable.Load(reader);
-
-        // var queryId = Guid.NewGuid().ToString();
-        // var fileName = queryId + "_record.csv";
+        //
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new CreateRecordRequestDto
@@ -494,14 +497,13 @@ public class TimeseriesBusiness(
             Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
-            ClassName = reportClass.Name,
-            Uri = "object://" + fileName
+            ClassName = reportClass.Name
         };
-
+        
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
-
+        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, filePath);
+        Console.WriteLine("CREATING RECORD");
         return recordResponse;
     }
 
@@ -518,8 +520,8 @@ public class TimeseriesBusiness(
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // var resultTable = new DataTable();
-        using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
-        using var command = duckDBConnection.CreateCommand();
+        // using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
+        // using var command = duckDBConnection.CreateCommand();
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
 
@@ -532,17 +534,17 @@ public class TimeseriesBusiness(
                 SELECT *, ROW_NUMBER() OVER() AS row_num
                 FROM '{tableName}'
             ) AS numbered_table
-            WHERE row_num % $rowNum = 0
+            WHERE row_num % {rowNumber} = 0
 
             """
         };
         
         var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
         
-        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
-        command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
+        // command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+        // command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
         
-        await command.ExecuteNonQueryAsync();
+        // await command.ExecuteNonQueryAsync();
         // using var reader = await command.ExecuteReaderAsync();
         // resultTable.Load(reader);
 
@@ -566,7 +568,7 @@ public class TimeseriesBusiness(
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, filePath);
 
         return recordResponse;
     }
@@ -658,7 +660,7 @@ public class TimeseriesBusiness(
         {
             command.CommandText = $"COPY \"{tableName}\" TO '{filePath}' (FORMAT parquet);";
         }
-        await command.ExecuteReaderAsync();
+        await command.ExecuteNonQueryAsync();
         var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         var provider = new FileExtensionContentTypeProvider();
         if (!provider.TryGetContentType(filePath, out var contentType))
