@@ -427,7 +427,7 @@ export default function QueryBuilderClient({
                         )}
 
                         {/* Time Range*/}
-                        {row.query.filter === "last_udpated_at" ? (
+                        {row.query.filter === "last_updated_at" ? (
                           <DatePicker
                             row={row}
                             onChange={(dateTime: string) =>
