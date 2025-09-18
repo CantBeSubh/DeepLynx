@@ -1,5 +1,5 @@
 import React from "react";
-import MemberManagementClient from "./MemberManagementPageClient";
+import MemberManagementClient from "./MemberManagementClient";
 
 const MemberManagementPage = () => {
   return <MemberManagementClient />;

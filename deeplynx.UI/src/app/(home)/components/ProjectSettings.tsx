@@ -8,33 +8,25 @@ import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
 import GenericTable from "./GenericTable";
 import Tabs from "./Tabs";
-
+import { PlusIcon } from "@heroicons/react/24/outline";
+import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
 interface ProjectSettingsProps {
   className?: string;
 }
 
 const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
+  const [addMemberModal, setAddMemberModal] = useState(false);
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
       data: "name",
     },
     {
-      header: "Filters",
-      cell: (row) =>
-        row.filters.map((filter, index) => (
-          <span key={index} className="badge badge-info mr-2 mt-2">
-            {filter}
-          </span>
-        )),
+      header: "Email",
       sortable: false,
-    },
-    {
-      header: "Saved",
-      data: "createdAt",
-      sortable: false,
-    },
+    }
   ];
 
   const popular_table_columns: Column<PopularTable>[] = [
@@ -59,7 +51,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
 
   const tabData = [
     {
-      label: "General",
+      label: "Members",
       content: (
         <GenericTable
           columns={my_search_table_columns}
@@ -70,7 +62,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       ),
     },
     {
-      label: "Users",
+      label: "Roles",
       content: (
         <GenericTable
           columns={my_search_table_columns}
@@ -107,17 +99,28 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   return (
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
-        <span className="flex justify-between">
+        <div className="flex justify-between items-start">
             <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
-          <Link
-            className="btn btn-secondary text-white"
-            href="/savedsearchesplaceholder"
-          >
-            {t.translations.VISIT}
-          </Link>
-        </span>
+            <div className="flex space-x-4">
+                <button
+                    onClick={() => setAddMemberModal(true)}
+                    className="btn btn-secondary text-white"
+                >
+                    <PlusIcon className="size-6" />
+                    {t.translations.MEMBER}
+                </button>
+                <div className="flex flex-col">
+                    <LargeSearchBar />
+                </div>
+            </div>
+        </div>
         <Tabs tabs={tabData} className="tabs tabs-border" />
       </div>
+
+      <AddMember
+        isOpen={addMemberModal}
+        onClose={() => setAddMemberModal(false)}
+      />
     </div>
   );
 };

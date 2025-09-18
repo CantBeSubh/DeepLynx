@@ -79,6 +79,12 @@ export type MySearchsTable = {
   sortable?: boolean;
 }
 
+export type ProjectMembersTable = {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export type TeamMember = {
   id: number;
   name: string;

@@ -25,27 +25,9 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
             <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
-                placeholder="Name"
+                placeholder="Email"
                 className="input input-primary w-full"
               />
-              <input
-                placeholder="Role"
-                className="input input-primary w-full"
-              />
-              <div className="bg-base-200 p-4 rounded-xl">
-                {" "}
-                {/* Container for file upload */}
-                <label className="form-control">
-                  <span className="label-text text-neutral">
-                    {t.translations.UPLOAD_PNG_FILE}{" "}
-                    {/* Label for file upload */}
-                  </span>
-                  <input
-                    type="file" // File input for uploading .owl files
-                    className="file-input file-input-primary text-neutral w-full" // File input styling
-                  />
-                </label>
-              </div>
             </form>
             {/* Modal Action Buttons */}
             <div className="modal-action">

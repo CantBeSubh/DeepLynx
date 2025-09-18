@@ -1,6 +1,6 @@
 import React from "react";
 import { FileViewerTableRow } from "../types/types";
-import ProjectSettingsClient from "./ProjectSettingsPageClient";
+import ProjectSettingsClient from "./ProjectSettingsClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 
 type ProjectDTO = { id: number | string; name: string };
@@ -28,7 +28,6 @@ export default async function Page({
 
   return (
     <ProjectSettingsClient
-    //   initialProjects={initialProjects}
     />
   );
 }
