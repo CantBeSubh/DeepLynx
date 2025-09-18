@@ -16,6 +16,7 @@ import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 
 import { useSession } from "next-auth/react";
+import AddRecordModal from "./components/AddRecordModal";
 
 type Props = { initialProjects: ProjectsList[] };
 
@@ -24,7 +25,8 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const router = useRouter();
 
   const { data: session, status } = useSession();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
   const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,12 +116,15 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
               </h3>
 
               <div className="flex gap-2">
-                <button className="btn btn-outline btn-secondary flex items-center gap-1">
+                <button
+                  onClick={() => setIsRecordModalOpen(true)}
+                  className="btn btn-outline btn-secondary flex items-center gap-1"
+                >
                   <PlusIcon className="size-6" />
                   <span>{t.translations.RECORD}</span>
                 </button>
                 <button
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => setIsProjectModalOpen(true)}
                   className="btn btn-secondary text-primary-content flex items-center gap-1"
                 >
                   <PlusIcon className="size-6" />
@@ -157,9 +162,14 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       </div>
 
       {/* Modals */}
+      <AddRecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        initialProjects={projects}
+      />
       <CreateProject
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isProjectModalOpen}
+        onClose={() => setIsProjectModalOpen(false)}
         onProjectCreated={refreshProjects}
       />
       <CreateWidget
