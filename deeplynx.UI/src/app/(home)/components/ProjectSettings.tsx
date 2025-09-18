@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import Link from "next/link";
 import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
@@ -107,7 +108,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
         <span className="flex justify-between">
-          <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
+            <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
           <Link
             className="btn btn-secondary text-white"
             href="/savedsearchesplaceholder"
