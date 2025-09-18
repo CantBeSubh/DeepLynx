@@ -82,7 +82,7 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
   ];
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
+    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card m-2">
       <div className="card-body">
         <span className="flex justify-between">
           <h2 className="card-title">Saved Searches</h2>

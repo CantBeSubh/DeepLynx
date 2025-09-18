@@ -86,9 +86,9 @@ export default function ProjectDetailClient({
               />
             </div>
 
-            <div className="card card-border">
+            <div className="card card-border m-2">
               <div className="card-body">
-                <div className="flex justify-between px-4">
+                <div className="flex justify-between">
                   <h1 className="text-xl font-semibold">
                     {t.translations.DATA_CATALOG_OVERVIEW}
                   </h1>
