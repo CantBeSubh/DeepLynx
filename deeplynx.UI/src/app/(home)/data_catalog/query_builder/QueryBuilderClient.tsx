@@ -434,7 +434,7 @@ export default function QueryBuilderClient({
                               updateRow(row.id, {
                                 query: {
                                   ...row.query,
-                                  connector: dateTime,
+                                  value: dateTime,
                                 },
                               }) // store datetime in row.value
                             }

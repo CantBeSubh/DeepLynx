@@ -74,7 +74,7 @@ public class QueryBusiness : IQueryBusiness
                 for (int i = 0; i < request.Length; i++)
                 {
                     var query = request[i];
-                    if (String.IsNullOrWhiteSpace(query.Value))
+                    if (String.IsNullOrWhiteSpace(query.Value) && (query.Operator != "KEY_VALUE"))
                     {
                         throw new ArgumentException("Value cannot be null or empty.");
                     }
