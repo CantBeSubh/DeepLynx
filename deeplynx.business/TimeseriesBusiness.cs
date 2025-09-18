@@ -455,23 +455,32 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var resultTable = new DataTable();
+        // var resultTable = new DataTable();
         using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
 
         using var command = duckDBConnection.CreateCommand();
+        
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
 
         var request = new TimeseriesQueryRequestDto
         {
-            Query = $"SELECT * FROM '{tableName}';"
+            Query = $"SELECT * FROM '{tableName}'"
         };
+        
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
+        
+        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+        
+        await command.ExecuteNonQueryAsync();
 
-        command.CommandText = request.Query;
-        using var reader = await command.ExecuteReaderAsync();
+        // command.CommandText = request.Query;
+        // using var reader = await command.ExecuteReaderAsync();
+        //
+        // resultTable.Load(reader);
 
-        resultTable.Load(reader);
-
-        var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
+        // var queryId = Guid.NewGuid().ToString();
+        // var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new CreateRecordRequestDto
@@ -485,12 +494,13 @@ public class TimeseriesBusiness(
             Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
-            ClassName = reportClass.Name
+            ClassName = reportClass.Name,
+            Uri = "object://" + fileName
         };
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
     }
@@ -507,9 +517,11 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var resultTable = new DataTable();
+        // var resultTable = new DataTable();
         using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
         using var command = duckDBConnection.CreateCommand();
+        var queryId = Guid.NewGuid().ToString();
+        var fileName = queryId + "_record.csv";
 
         var request = new TimeseriesQueryRequestDto
         {
@@ -520,38 +532,41 @@ public class TimeseriesBusiness(
                 SELECT *, ROW_NUMBER() OVER() AS row_num
                 FROM '{tableName}'
             ) AS numbered_table
-            WHERE row_num % $rowNum = 0;
+            WHERE row_num % $rowNum = 0
 
             """
         };
-
-        command.CommandText = request.Query;
+        
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
+        
+        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
         command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
+        
+        await command.ExecuteNonQueryAsync();
+        // using var reader = await command.ExecuteReaderAsync();
+        // resultTable.Load(reader);
 
-        using var reader = await command.ExecuteReaderAsync();
-        resultTable.Load(reader);
-
-        var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
+        // var queryId = Guid.NewGuid().ToString();
+        // var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
-                ["status"] = Status.InProgress,
                 ["query"] = request.Query
             },
             Name = fileName,
             Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
-            ClassName = reportClass.Name
+            ClassName = reportClass.Name,
+            Uri = "object://" + fileName,
         };
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
+        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
         return recordResponse;
     }
@@ -568,43 +583,45 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var resultTable = new DataTable();
+        // var resultTable = new DataTable();
         using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
-        command.CommandText = request.Query;
-
-        using var reader = await command.ExecuteReaderAsync();
-
-        if (!reader.HasRows)
-        {
-            throw new NoResultsException("Empty query results, no report needed");
-        }
-
-        resultTable.Load(reader);
         var queryId = Guid.NewGuid().ToString();
         var fileName = queryId + "_record.csv";
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
+        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+        
+        await command.ExecuteNonQueryAsync();
+        // using var reader = await command.ExecuteReaderAsync();
+        //
+        // if (!reader.HasRows)
+        // {
+        //     throw new NoResultsException("Empty query results, no report needed");
+        // }
+
+        // resultTable.Load(reader);
+        // var queryId = Guid.NewGuid().ToString();
+        // var fileName = queryId + "_record.csv";
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new CreateRecordRequestDto
         {
             Properties = new JsonObject
             {
-                ["status"] = Status.InProgress,
                 ["query"] = request.Query
             },
             Name = fileName,
             Description = $"Timeseries result report for {fileName}",
             OriginalId = queryId,
             ClassId = reportClass.Id,
-            ClassName = reportClass.Name
+            ClassName = reportClass.Name,
+            Uri = "object://" + fileName,
         };
 
-        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
 
-        await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
-
-        return recordResponse;
+        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
     }
 
     /// <summary>
@@ -626,9 +643,13 @@ public class TimeseriesBusiness(
         
         var baseTableName = Path.GetFileNameWithoutExtension(tableName);
         var fileName = baseTableName + "." + fileType;
+        
+        //Todo: determine file path
         var filePath = Path.Combine(_duckDbBasePath, fileName);
+        
         await using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
         await using var command = duckDbConnection.CreateCommand();
+        
         if (fileType == "csv")
         {
             command.CommandText = $"COPY \"{tableName}\" TO '{filePath}' (HEADER, DELIMITER ',');";
