@@ -279,24 +279,22 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <exception cref="KeyNotFoundException">Returned if user or org does not exist</exception>
     public async Task<bool> AddUserToOrganization(long organizationId, long userId, bool isAdmin = false)
     {
-        // TODO: determine if user account discovery/creation is required
-
-        var organization = _context.Organizations.FirstOrDefault(o => o.Id == organizationId);
-        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-
-        if (organization == null || organization.IsArchived)
-            throw new KeyNotFoundException($"Organization with id {organizationId} not found");
-
-        if (user == null || user.IsArchived)
-            throw new KeyNotFoundException($"User with id {userId} not found");
-
-        // check if the user already exists in the organization
+        // check if the user is already in the organization
         var existingOrgUser = await _context.OrganizationUsers
             .FirstOrDefaultAsync(ou => ou.OrganizationId == organizationId && ou.UserId == userId);
-
         if (existingOrgUser != null)
             return false; // org user already exists
-
+        
+        // TODO: determine if user account discovery/creation is required
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null || user.IsArchived)
+            throw new KeyNotFoundException($"User with id {userId} not found");
+        
+        var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.Id == organizationId);
+        if (organization == null || organization.IsArchived)
+            throw new KeyNotFoundException($"Organization with id {organizationId} not found");
+        
+        // add user to org and assign admin privileges
         var orgUser = new OrganizationUser
         {
             OrganizationId = organizationId,
@@ -329,7 +327,6 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         // set is admin and save to DB
         existingOrgUser.IsOrgAdmin = isAdmin;
-
         _context.OrganizationUsers.Update(existingOrgUser);
         await _context.SaveChangesAsync();
 

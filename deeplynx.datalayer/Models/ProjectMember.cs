@@ -23,7 +23,7 @@ public partial class ProjectMember
     public long ProjectId { get; set; }
 
     [Column("role_id")]
-    public long RoleId { get; set; }
+    public long? RoleId { get; set; }
 
     [Column("group_id")]
     public long? GroupId { get; set; }

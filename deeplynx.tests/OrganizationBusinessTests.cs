@@ -37,7 +37,7 @@ namespace deeplynx.tests
             await base.InitializeAsync();
 
             // used in multiple contexts
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
             
             // project business and dependencies
             _mockLoggerProject = new Mock<ILogger<ProjectBusiness>>();
@@ -45,12 +45,11 @@ namespace deeplynx.tests
             _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _projectBusiness = new ProjectBusiness(
-                Context, _mockLoggerProject.Object,  _mockClassBusiness.Object, 
-                _mockDataSourceBusiness.Object, _mockObjectStorageBusiness.Object,
-                _eventBusiness);
+                Context, _cacheBusiness, _mockLoggerProject.Object, _mockClassBusiness.Object, 
+                _mockDataSourceBusiness.Object, _mockObjectStorageBusiness.Object, _eventBusiness);
             
             // user business
-            _userBusiness = new UserBusiness(Context);
+            _userBusiness = new UserBusiness(Context, _cacheBusiness);
             
             // org business and dependencies
             _mockLoggerOrg = new Mock<ILogger<OrganizationBusiness>>();

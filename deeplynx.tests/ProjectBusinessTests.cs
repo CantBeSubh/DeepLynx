@@ -604,6 +604,180 @@ namespace deeplynx.tests
             dto.IsArchived.Should().BeFalse();
         }
 
+        [Fact]
+        public void AddMemberToProject_CanAddUserToProject_WithoutRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_CanAddGroupToProject_WithoutRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_CanAddUserToProject_WithRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_CanAddGroupToProject_WithRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfBothUserAndGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfNeitherUserNorGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfRoleNotSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfUserDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfGroupDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfRoleDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfProjectDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void AddMemberToProject_Fails_IfProjectMemberExists()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_CanUpdateUserRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_CanUpdateGroupRole()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfBothUserAndGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfNeitherUserNorGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfUserDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfGroupDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfRoleDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfProjectDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void UpdateProjectMemberRole_Fails_IfProjectMemberNotExists()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_CanRemoveUser()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_CanRemoveGroup()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfBothUserAndGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfNeitherUserNorGroupAreSet()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfUserDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfGroupDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfProjectDoesNotExist()
+        {
+            
+        }
+        
+        [Fact]
+        public void RemoveMemberFromProject_Fails_IfProjectMemberNotExists()
+        {
+            
+        }
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
