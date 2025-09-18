@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import Link from "next/link";
 import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
@@ -8,11 +9,11 @@ import AvatarCell from "./Avatar";
 import GenericTable from "./GenericTable";
 import Tabs from "./Tabs";
 
-interface SavedSearchProps {
+interface ProjectSettingsProps {
   className?: string;
 }
 
-const SavedSearches = ({ className }: SavedSearchProps) => {
+const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
@@ -58,7 +59,7 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
 
   const tabData = [
     {
-      label: "Recent",
+      label: "General",
       content: (
         <GenericTable
           columns={my_search_table_columns}
@@ -69,7 +70,29 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
       ),
     },
     {
-      label: "Favorites",
+      label: "Users",
+      content: (
+        <GenericTable
+          columns={my_search_table_columns}
+          data={mySavedSearches}
+          enablePagination
+          rowsPerPage={5}
+        />
+      ),
+    },
+    {
+      label: "Data Source",
+      content: (
+        <GenericTable
+          columns={my_search_table_columns}
+          data={mySavedSearches}
+          enablePagination
+          rowsPerPage={5}
+        />
+      ),
+    },
+    {
+      label: "Object Storage",
       content: (
         <GenericTable
           columns={my_search_table_columns}
@@ -82,10 +105,10 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
   ];
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card m-2">
+    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
         <span className="flex justify-between">
-          <h2 className="card-title">Saved Searches</h2>
+            <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
           <Link
             className="btn btn-secondary text-white"
             href="/savedsearchesplaceholder"
@@ -99,4 +122,4 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
   );
 };
 
-export default SavedSearches;
+export default ProjectSettings;

@@ -1,5 +1,5 @@
 // app/(home)/page.tsx
-import HomeDashboard from "./HomeDashboardClient";
+import HomeDashboardClient from "./HomeDashboardClient";
 import {
   getAllProjectsServer,
   type ProjectDTO, // make sure this includes optional fields below
@@ -30,7 +30,7 @@ export default async function Page() {
 
   return (
     <AuthGuard>
-      <HomeDashboard initialProjects={projects} />;
+      <HomeDashboardClient initialProjects={projects} />;
     </AuthGuard>
   );
 }

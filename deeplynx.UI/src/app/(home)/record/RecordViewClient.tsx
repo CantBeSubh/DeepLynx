@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 import TagButton from "@/app/(home)/components/TagButton"
 import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
-import { getTagsForProjects } from "@/app/lib/tag_services.client";
+import { getTagsForProjects } from "@/app/lib/query_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { Column, FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
@@ -256,7 +256,7 @@ export default function RecordViewClient({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const data = await getTagsForProjects(projectId.toString(), [projectId.toString()]);
+        const data = await getTagsForProjects([projectId.toString()]);
         setTags(data);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -445,7 +445,7 @@ export default function RecordViewClient({
           <div className="flex-grow">
             <div className="card bg-base-100 shadow-md p-2 relative mb-20">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold mb-4">Tags:</h2>
+                <h2 className="text-xl font-bold mb-4 p-4">Tags:</h2>
                 <div className="flex items-center">
                   <TagButton
                     tags={tags}
@@ -507,16 +507,6 @@ export default function RecordViewClient({
               actionButtons={false}
               tableClassName=".table-bordered"
             />
-            <GenericTable
-              columns={relatedRecordsColumns}
-              data={parsedRelatedRecords}
-              title="Related Records:"
-              bordered
-              searchBar={false}
-              enablePagination={false}
-              actionButtons={false}
-              tableClassName=".table-bordered"
-            />
           </div>
           <ConfirmationModal
             isOpen={isModalOpen}
@@ -556,18 +546,16 @@ export default function RecordViewClient({
 
   return (
     <div>
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-info-content">
             {record?.name}
           </h1>
         </div>
       </div>
-
-      <div className="divider"></div>
-      <div className="divider"></div>
-
-      <Tabs tabs={tabs} className={""}></Tabs>
+      <div className="p-10">
+        <Tabs tabs={tabs} className={""}></Tabs>
+      </div>
     </div>
   );
 };

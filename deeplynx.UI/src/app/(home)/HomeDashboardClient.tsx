@@ -4,7 +4,7 @@
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
-import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
+import { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Link from "next/link"; // prefer Link over useRouter().push
@@ -19,7 +19,7 @@ import { useSession } from "next-auth/react";
 
 type Props = { initialProjects: ProjectsList[] };
 
-export default function HomeDashboard({ initialProjects }: Props) {
+export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -99,54 +99,61 @@ export default function HomeDashboard({ initialProjects }: Props) {
       </div>
 
       {/* Main Content */}
-      <div className="mr-6 py-6">
-        <div className="flex">
-          <div
-            className={`w-full md:w-3/5 px-4 ${
-              canCustomize ? "grayed-out" : ""
-            }`}
-          >
-            <div className="card card-border p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-info-content text-lg font-semibold">
-                  {t.translations.YOUR_PROJECTS}
-                </h3>
+      <div className="p-6">
+        <div
+          //This is commented out till we get digets
+          // className={`w-full md:w-3/5 px-4 ${
+          //   canCustomize ? "grayed-out" : ""
+          // }`}
+          className="w-4/5 mx-auto"
+        >
+          <div className="card card-border p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-info-content text-lg font-semibold">
+                {t.translations.YOUR_PROJECTS}
+              </h3>
 
-                <div className="flex gap-2">
-                  <button className="btn btn-outline btn-secondary flex items-center gap-1">
-                    <PlusIcon className="size-6" />
-                    <span>{t.translations.RECORD}</span>
-                  </button>
-                  <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="btn btn-secondary text-primary-content flex items-center gap-1"
-                  >
-                    <PlusIcon className="size-6" />
-                    <span>{t.translations.PROJECT}</span>
-                  </button>
-                </div>
+              <div className="flex gap-2">
+                <button className="btn btn-outline btn-secondary flex items-center gap-1">
+                  <PlusIcon className="size-6" />
+                  <span>{t.translations.RECORD}</span>
+                </button>
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="btn btn-secondary text-primary-content flex items-center gap-1"
+                >
+                  <PlusIcon className="size-6" />
+                  <span>{t.translations.PROJECT}</span>
+                </button>
               </div>
-
-              <ExpandableTable
-                data={filteredProjects}
-                columns={columns}
-                // If your table needs an "Explore" button, use Link inside column renderers
-                renderExpandedContent={(project, onClose) => (
-                  <ExpandedProjectCard project={project} onClose={onClose} />
-                )}
-                onExplore={onExplore}
-              />
             </div>
-          </div>
 
-          <div className="w-full md:w-2/5 px-4">
+            <ExpandableTable
+              data={filteredProjects}
+              columns={columns}
+              // If your table needs an "Explore" button, use Link inside column renderers
+              renderExpandedContent={(project, onClose) => (
+                <ExpandedProjectCard project={project} onClose={onClose} />
+              )}
+              onExplore={onExplore}
+            />
+          </div>
+        </div>
+
+        {/* 
+          This will be added later ...
+        <div className="w-full md:w-2/5 px-4">
             <WidgetCard
               widgets={homeWidgets}
               onSave={handleSave}
               onCustomizeChange={setCanCustomize}
             />
-          </div>
-        </div>
+            {session?.user && (
+              <div className="bg-green-100 p-4 m-4 rounded">
+                <p>Welcome back, {session.user.name}!</p>
+              </div>
+            )}
+          </div> */}
       </div>
 
       {/* Modals */}

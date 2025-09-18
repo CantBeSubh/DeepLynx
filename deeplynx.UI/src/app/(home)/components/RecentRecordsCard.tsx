@@ -67,8 +67,8 @@ const RecentRecordsCard = ({
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4">
-      <h2 className="text-lg text-black mb-4t">
+    <div className="bg-base-100 rounded-xl">
+      <h2 className="text-lg text-black mb-4t pl-2">
         {t.translations.RECENTLY_ADDED_RECORDS}
       </h2>
       <div className="divider m-0 mt-2"></div>
@@ -76,7 +76,7 @@ const RecentRecordsCard = ({
         {paginatedRecords.map((record, index) => (
           <li
             key={index}
-            className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 pl-0 rounded-sm"
+            className="border-b border-base-content cursor-pointer hover:bg-base-200/30 p-2 rounded-sm"
             onClick={() =>
               router.push(
                 `/record?recordId=${record.id}&projectId=${record.projectId}`

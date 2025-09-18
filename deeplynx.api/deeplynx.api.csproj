@@ -45,11 +45,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Folder Include="reports\" />
-        <Folder Include="uploads\" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Include="wwwroot\images\lynx-white.png" />
     </ItemGroup>
 
