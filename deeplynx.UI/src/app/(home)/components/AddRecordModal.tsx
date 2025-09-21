@@ -2,13 +2,18 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { createRecord } from "@/app/lib/record_services.client";
+import {
+  createRecord,
+  type CreateRecordPayload,
+} from "@/app/lib/record_services.client";
+
 import type { ProjectsList } from "@/app/(home)/types/types";
 import {
   getAllDataSources,
   type DataSourceDTO,
 } from "@/app/lib/data_source_services.client";
 import toast from "react-hot-toast";
+import { isAxiosError } from "axios";
 
 type JsonValue = Record<string, unknown> | Record<string, unknown>[];
 
@@ -114,11 +119,11 @@ const AddRecordModal: React.FC<Props> = ({
       ? parseCommaList(labelsText)
       : undefined;
 
-    const payload: any = {
+    const payload: CreateRecordPayload = {
       name,
       description,
       original_id: abbreviation,
-      class_id: classId,
+      class_id: classId, // optional in service type
       properties: props,
     };
 
@@ -158,9 +163,26 @@ const AddRecordModal: React.FC<Props> = ({
         setSelectedDataSourceId(undefined);
         const list = await getAllDataSources(selectedProjectId);
         if (!cancelled) setDataSources(list ?? []);
-      } catch (err: any) {
-        if (!cancelled)
-          setDsError(err?.response?.data ?? "Failed to load data sources");
+      } catch (err: unknown) {
+        const fallback = "Failed to load data sources";
+        let message = fallback;
+
+        if (isAxiosError(err)) {
+          const data = err.response?.data as unknown;
+
+          if (typeof data === "string") {
+            message = data;
+          } else if (
+            data &&
+            typeof data === "object" &&
+            "message" in data &&
+            typeof (data as { message?: string }).message === "string"
+          ) {
+            message = (data as { message?: string }).message!;
+          }
+        }
+
+        if (!cancelled) setDsError(message);
       } finally {
         if (!cancelled) setDsLoading(false);
       }
