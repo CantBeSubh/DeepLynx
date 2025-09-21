@@ -1,7 +1,10 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business; using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models; using FluentAssertions;
 using Action = deeplynx.datalayer.Models.Action;
+using Moq;
+
 
 namespace deeplynx.tests
 {
@@ -11,18 +14,19 @@ namespace deeplynx.tests
         private SubscriptionBusiness _subscriptionBusiness = null!;
         public long mockActionId;
         public long mockDataSourceId;
+  
         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         public long pid;
         public long uid;
-
         public SubscriptionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _subscriptionBusiness = new SubscriptionBusiness(Context);
+            _subscriptionBusiness = new SubscriptionBusiness(Context, _cacheBusiness);
         }
-        
+
         # region GetTests
+  
         [Fact]
         public async Task GetAllSubscriptions_Success_ReturnsSubscriptions()
         {
@@ -38,7 +42,6 @@ namespace deeplynx.tests
             };
             Context.Subscriptions.Add(subscription);
             await Context.SaveChangesAsync();
-
             var result = await _subscriptionBusiness.GetAllSubscriptions(uid, pid, false);
             result.Should().HaveCount(1);
             result.First().Should().BeEquivalentTo(new
@@ -52,7 +55,6 @@ namespace deeplynx.tests
                 EntityId = 1
             });
         }
-
         [Fact]
         public async Task GetSubscription_Success_ReturnsSubscription()
         {
@@ -68,7 +70,6 @@ namespace deeplynx.tests
             };
             Context.Subscriptions.Add(subscription);
             await Context.SaveChangesAsync();
-
             var result = await _subscriptionBusiness.GetSubscription(uid, pid, subscription.Id, false);
             result.Should().BeEquivalentTo(new
             {
@@ -82,7 +83,6 @@ namespace deeplynx.tests
         }
         
         #endregion
-
         #region CreateTests
         [Fact]
         public async Task BulkCreateSubscriptions_Success_CreatesSubscriptions()
@@ -110,7 +110,6 @@ namespace deeplynx.tests
                     EntityId = 3,
                 },
             };
-
             var result = await _subscriptionBusiness.BulkCreateSubscriptions(uid, pid, dtos);
             result.Should().HaveCount(2);
             result.First().Should().BeEquivalentTo(new
@@ -172,7 +171,6 @@ namespace deeplynx.tests
                     EntityId = 1,
                 }
             };
-
             var result = () => _subscriptionBusiness.BulkCreateSubscriptions(uid, pid, dtos);
             result.Should().ThrowAsync<ValidationException>();
             
@@ -204,7 +202,6 @@ namespace deeplynx.tests
         }
         
         #endregion
-
         #region UpdateTests
         [Fact]
         public async Task BulkUpdateSubscriptions_Success_UpdatesSubscriptions()
@@ -244,7 +241,6 @@ namespace deeplynx.tests
             };
             Context.Subscriptions.AddRange(subscriptions);
             await Context.SaveChangesAsync();
-
             var dtos = new List<UpdateSubscriptionRequestDto>
             {
                 new()
@@ -266,7 +262,6 @@ namespace deeplynx.tests
                     EntityId = 2
                 }
             };
-
             await _subscriptionBusiness.BulkUpdateSubscriptions(uid, pid, dtos);
             
             var subscriptionList = Context.Subscriptions
@@ -277,7 +272,6 @@ namespace deeplynx.tests
         }
         
         #endregion
-
         [Fact]
         public async Task BulkDeleteSubscriptions_Success_DeletesSubscriptions()
         {
@@ -316,7 +310,6 @@ namespace deeplynx.tests
             };
             Context.Subscriptions.AddRange(subscriptions);
             await Context.SaveChangesAsync();
-
             // Delete 2/3 Subscriptions to ensure deletion is done selectively by ID
             var result = () => _subscriptionBusiness.BulkDeleteSubscriptions(uid, pid, new List<long>
             {
@@ -324,14 +317,12 @@ namespace deeplynx.tests
                 subscriptions[1].Id, 
                 5 // include a non-existing subscriptionID
             });
-
             // Ensure Exception about non-maching ID
             await result.Should().ThrowAsync<InvalidOperationException>();
             
             var subscriptionList = Context.Subscriptions.ToList();
             subscriptionList.Should().HaveCount(1);
         }
-
         [Fact]
         public async Task BulkArchiveSubscriptions_Success_ArchivesSubscriptions()
         {
@@ -376,14 +367,12 @@ namespace deeplynx.tests
                 await _subscriptionBusiness.BulkArchiveSubscriptions(uid, pid,
                     new List<long> { subscriptions[0].Id, subscriptions[1].Id });
             result.Should().BeTrue();
-
             var subscriptionList = Context.Subscriptions
                 .Where(s => s.IsArchived)
                 .ToList();
             
             subscriptionList.Should().HaveCount(2);
         }
-
         [Fact]
         public async Task BulkUnarchiveSubscriptions_Success_UnarchivesSpecificSubscriptions()
         {
@@ -448,7 +437,6 @@ namespace deeplynx.tests
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
-
             var action = new Action
             {
                 Name = "Action1",
@@ -459,7 +447,6 @@ namespace deeplynx.tests
             Context.Actions.Add(action);
             await Context.SaveChangesAsync();
             mockActionId = action.Id;
-
             var dataSource = new DataSource
             {
                 Name = "DataSource2",
@@ -470,7 +457,6 @@ namespace deeplynx.tests
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             mockDataSourceId = dataSource.Id;
-
             var user = new User { Name = "test_user", Email = "Fake@gmail.com" };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();

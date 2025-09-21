@@ -24,8 +24,9 @@ namespace deeplynx.tests
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
-
-        public long TestProjectId;
+        
+        public long TestProject1Id;
+        public long ArchivedProject2Id;
         public long TestClassId;
         public long TestDataSourceId;
 
@@ -38,19 +39,29 @@ namespace deeplynx.tests
             Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", "./storage/");
             Environment.SetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING", "azure-example-connection-string");
             Environment.SetEnvironmentVariable("AWS_S3_CONNECTION_STRING", "aws-example-connection-string");
-
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
-            
-            _dataSourceBusiness = new DataSourceBusiness(Context, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
+
+            _dataSourceBusiness = new DataSourceBusiness(Context, _cacheBusiness, _mockEdgeBusiness.Object, _mockRecordBusiness.Object, _eventBusiness);
             _classBusiness = new ClassBusiness(
-                Context, _mockRecordBusiness.Object, 
+                Context, _cacheBusiness, _mockRecordBusiness.Object, 
                 _mockRelationshipBusiness.Object, _eventBusiness);
-            _projectBusiness = new ProjectBusiness(Context, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
+            _projectBusiness = new ProjectBusiness(Context, _cacheBusiness, _mockLogger.Object, _classBusiness, _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
+        }
+        
+        [Fact]
+        public async Task GetAllProjects_ExcludesSoftDeleted()
+        {
+            var listWithArchived = await _projectBusiness.GetAllProjects(false);
+            var listWithoutArchived = await _projectBusiness.GetAllProjects(true);
+
+            // Assert
+            listWithArchived.Should().Contain(p => p.Id == ArchivedProject2Id);
+            listWithoutArchived.Should().NotContain(p => p.Id == ArchivedProject2Id);
         }
         
         [Fact]
@@ -63,7 +74,7 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Abbreviation = "TST"
             };
-           
+            
             var result = await _projectBusiness.CreateProject(dto);
             
             result.Id.Should().BeGreaterThan(0);
@@ -94,10 +105,10 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Abbreviation = "TST"
             };
-           
+            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
-            var classResult = await _classBusiness.GetAllClasses([project.Id], true);
+            var classResult = await _classBusiness.GetAllClasses(project.Id, true);
             classResult.Count.Should().Be(3);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");
@@ -126,11 +137,11 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Abbreviation = "TST"
             };
-           
+            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
             
-            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources([project.Id], true);
+            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
             dataSourceResult.Count.Should().Be(1);
             dataSourceResult[0].Name.Should().Be("Default Data Source");
             dataSourceResult[0].Description.Should().Be("This data source was created alongside the project for ease of use.");
@@ -147,11 +158,10 @@ namespace deeplynx.tests
                 EntityId = project.Id,
             });
         }
-
+        
         [Fact]
         public async Task CreateProject_Fails_IfNoName()
         {
-           
             var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
 
            
@@ -166,7 +176,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateProject_Fails_IfEmptyName()
         {
-            
             var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description" };
 
            
@@ -177,87 +186,39 @@ namespace deeplynx.tests
             var eventList = Context.Events.ToList();
             eventList.Should().HaveCount(0);
         }
-
-        [Fact]
-        public async Task GetAllProjects_ExcludesSoftDeleted()
-        {
-            
-            var activeProject = new Project
-            {
-                Name = $"Active Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null,
-            };
-
-            var archivedProject = new Project
-            {
-                Name = $"Archived Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null,
-                IsArchived = true
-
-            };
-
-            Context.Projects.Add(activeProject);
-            Context.Projects.Add(archivedProject);
-            await Context.SaveChangesAsync();
-
-           
-            var listWithArchived = await _projectBusiness.GetAllProjects(false);
-            var listWithoutArchived = await _projectBusiness.GetAllProjects(true);
-
-          
-            listWithArchived.Should().Contain(p => p.Id == archivedProject.Id);
-            listWithoutArchived.Should().NotContain(p => p.Id == archivedProject.Id);
-        }
-
+        
         [Fact]
         public async Task GetProject_Success_WhenExists()
         {
-           
-            var result = await _projectBusiness.GetProject(TestProjectId, true);
-
-          
-            result.Should().NotBeNull();
-            result.Id.Should().Be(TestProjectId);
+            var result = await _projectBusiness.GetProject(TestProject1Id, true);
+        
+            // Assert
+            result.Id.Should().Be(TestProject1Id);
             result.Name.Should().Be("Test Project");
+            result.Description.Should().Be("Test project for unit tests");
         }
-
+        
         [Fact]
         public async Task GetProject_Fails_IfNotFound()
         {
-            
             const long nonExistentId = 999999;
 
            
             var result = () => _projectBusiness.GetProject(nonExistentId, true);
             await result.Should().ThrowAsync<KeyNotFoundException>();
         }
-
+        
         [Fact]
         public async Task GetProject_Fails_IfDeletedProject()
         {
-            
-            var testProject = new Project
-            {
-                Name = $"Deleted Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null,
-                IsArchived = true
+            Func<Task> act = async () => { await _projectBusiness.GetProject(ArchivedProject2Id, true); };
 
-            };
-            Context.Projects.Add(testProject);
-            await Context.SaveChangesAsync();
-
-           
-            var result = () => _projectBusiness.GetProject(testProject.Id, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await act.Should().ThrowAsync<KeyNotFoundException>();
         }
 
         [Fact]
         public async Task UpdateProject_Success_ReturnsModifiedAt()
         {
-            
             var originalCreatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddMinutes(-5), DateTimeKind.Unspecified);
             var testProject = new Project
             {
@@ -279,8 +240,7 @@ namespace deeplynx.tests
                 Description = "Updated Description",
                 Abbreviation = "UPD"
             };
-
-           
+            
             var updatedResult = await _projectBusiness.UpdateProject(testProject.Id, dto);
             
             updatedResult.Name.Should().Be(dto.Name);
@@ -302,7 +262,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateProject_Fails_IfNotFound()
         {
-            
             var dto = new UpdateProjectRequestDto
             {
                 Name = "Updated Project",
@@ -323,7 +282,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task DeleteProject_Success_WhenExists()
         {
-            
             var testProject = new Project
             {
                 Name = $"Project to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -346,7 +304,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveProject_Success_WhenExists()
         {
-            
             var beforeArchive = DateTime.UtcNow;
             var testProject = new Project
             {
@@ -386,7 +343,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveProject_Success_WhenArchived()
         {
-            
             var testProject = new Project
             {
                 Name = $"Archived Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -412,7 +368,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveProject_Fails_IfNotFound()
         {
-            
             const long nonExistentId = 999999;
 
            
@@ -427,7 +382,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task DeleteProject_Fails_IfNotFound()
         {
-            
             const long nonExistentId = 999999;
 
            
@@ -438,7 +392,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveProject_Fails_IfNotFound()
         {
-            
             const long nonExistentId = 999999;
 
            
@@ -449,7 +402,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveProject_Fails_IfNotArchived()
         {
-            
             var activeProject = new Project
             {
                 Name = $"Active Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -467,7 +419,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProjectStats_Success_ReturnsCorrectCounts()
         {
-            var result = await _projectBusiness.GetProjectStats(TestProjectId);
+            var result = await _projectBusiness.GetProjectStats(TestProject1Id);
 
           
             result.classes.Should().Be(1);    // 1 test class
@@ -478,7 +430,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetMultiProjectRecords_Success_ReturnsRecordsFromMultipleProjects()
         {
-            
             var secondProject = new Project
             {
                 Name = $"Second Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -521,7 +472,7 @@ namespace deeplynx.tests
             var record1 = new Record
             {
                 Name = "Multi Project Record 1",
-                ProjectId = TestProjectId,
+                ProjectId = TestProject1Id,
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
@@ -550,7 +501,7 @@ namespace deeplynx.tests
             {
                 RecordId = record1.Id,
                 Name = record1.Name,
-                ProjectId = TestProjectId,
+                ProjectId = TestProject1Id,
                 ObjectStorageName = secondProject.Name,
                 ProjectName = "Test Project",
                 Properties = record1.Properties,
@@ -583,17 +534,16 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
            
-            var projectIds = new long[] { TestProjectId, secondProject.Id };
+            var projectIds = new long[] { TestProject1Id, secondProject.Id };
             var result = await _projectBusiness.GetMultiProjectRecords(projectIds, true);
 
-            result.Should().Contain(r => r.ProjectId == TestProjectId);
+            result.Should().Contain(r => r.ProjectId == TestProject1Id);
             result.Should().Contain(r => r.ProjectId == secondProject.Id);
         }
 
         [Fact]
         public void ProjectRequestDto_AllProperties_CanBeSetAndRetrieved()
         {
-          
             var dto = new CreateProjectRequestDto
             {
                 Name = "Test Project",
@@ -622,7 +572,8 @@ namespace deeplynx.tests
                 Abbreviation = "TST",
                 LastUpdatedBy = "test@example.com",
                 LastUpdatedAt = now,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = null
             };
 
           
@@ -633,27 +584,37 @@ namespace deeplynx.tests
             dto.LastUpdatedBy.Should().Be("test@example.com");
             dto.IsArchived.Should().BeFalse();
         }
-
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            var testProject = new Project
+            var testProjects = new List<Project>
             {
-                Name = "Test Project",
-                Description = "Test project for unit tests",
-                Abbreviation = "TST",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
-                
+                new Project {
+                    Name = "Test Project",
+                    Description = "Test project for unit tests",
+                    Abbreviation = "TST",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    IsArchived = false 
+                },
+                new Project
+                {
+                    Name = $"Archived Project",
+                    Description = "Archived project for unit tests",
+                    Abbreviation = "TST",
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    IsArchived = true
+                }
             };
-            Context.Projects.Add(testProject);
+            Context.Projects.AddRange(testProjects);
             await Context.SaveChangesAsync();
-            TestProjectId = testProject.Id;
+            TestProject1Id = testProjects[0].Id;
+            ArchivedProject2Id = testProjects[1].Id;
 
             var testClass = new Class
             {
                 Name = "Test Class",
-                ProjectId = TestProjectId,
+                ProjectId = TestProject1Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = false
             };
@@ -664,7 +625,7 @@ namespace deeplynx.tests
             var testDataSource = new DataSource
             {
                 Name = "Test DataSource",
-                ProjectId = TestProjectId,
+                ProjectId = TestProject1Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = false
             };
@@ -675,7 +636,7 @@ namespace deeplynx.tests
             var testRecord = new Record
             {
                 Name = "Test Record",
-                ProjectId = TestProjectId,
+                ProjectId = TestProject1Id,
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",

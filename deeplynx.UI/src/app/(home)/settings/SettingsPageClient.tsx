@@ -1,23 +1,25 @@
 "use client";
 
-import React from "react";
-import { peopleData } from "../dummy_data/data";
-import AvatarCell from "../components/Avatar";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
+import { useSession } from "next-auth/react";
+import AvatarCell from "../components/Avatar";
 import ThemeToggle from "../components/ThemeToggle";
 
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage();
-  const jason = peopleData.find((p) => p.name === "Jason");
+  const { data: session } = useSession();
+
+  const name = session?.user?.name ?? "";
+  const email = session?.user?.email ?? "";
+  const image = session?.user?.image ?? undefined;
 
   return (
     <div className="min-h-screen bg-base-100 p-8 lg:p-20">
       {/* User Header Section */}
       <div className="flex items-center mb-8">
-        <AvatarCell image={jason?.image} name={jason?.name} size={20} />
+        <AvatarCell image={image} name={name} size={20} />
         <h1 className="ml-3 text-2xl font-bold text-base-content">
-          Jason Kuipers
+          {session?.user?.name}
         </h1>
       </div>
 

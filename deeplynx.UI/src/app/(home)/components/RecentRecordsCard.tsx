@@ -67,9 +67,9 @@ const RecentRecordsCard = ({
   };
 
   return (
-    <div className="bg-base-100 rounded-xl p-4">
+    <div className="bg-base-100 rounded-xl">
       {/* Header */}
-      <h2 className="text-lg font-semibold text-base-content mb-2">
+      <h2 className="text-lg font-semibold text-base-content mb-2 pl-2">
         {t.translations.RECENTLY_ADDED_RECORDS}
       </h2>
       <div className="divider m-0"></div>

@@ -1,3 +1,5 @@
+// src/app/(home)/components/LayoutShell.tsx
+
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -11,15 +13,38 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
 import SideMenu from "./SideMenu";
+import AvatarCell from "./Avatar";
+import { useSession, signOut } from "next-auth/react";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
+  const { data: session } = useSession();
   // Handle menu togle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({
+        callbackUrl: "/login/signin",
+        redirect: true,
+      });
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  const formatUserName = (fullName?: string | null): string => {
+    if (!fullName) return "";
+
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const lastName = parts[parts.length - 1] ?? "";
+    return [firstName, lastName].filter(Boolean).join(", ");
   };
 
   return (
@@ -48,10 +73,22 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           <ul
             tabIndex={0}
-            className="menu dropdown-content bg-base-100 rounded-box z-1 w-52 p-2 shadow-sm"
+            className="menu dropdown-content bg-base-100 rounded-box z-1 w-auto min-w-52 max-w-[90vw] p-2 shadow-sm"
           >
             <li>
-              <a className="text-black">Item 1</a>
+              <div className="flex">
+                <AvatarCell
+                  image={session?.user?.image ?? undefined}
+                  name={session?.user?.name ?? ""}
+                  size={20}
+                />
+                <div className="text-black flex-1 min-w-0">
+                  <h1 className="font-bold text-lg">
+                    {formatUserName(session?.user?.name ?? null)}
+                  </h1>
+                  <p>{session?.user?.email}</p>
+                </div>
+              </div>
             </li>
             <li className="mt-2">
               <Link href="/settings" className="text-black">
@@ -60,7 +97,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Link>
             </li>
             <li>
-              <button className="text-black">
+              <button className="text-black" onClick={handleLogout}>
                 <ArrowRightStartOnRectangleIcon className="size-6" />
                 {t.translations.LOGOUT}
               </button>

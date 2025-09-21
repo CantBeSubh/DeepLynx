@@ -14,18 +14,21 @@ public class MetadataBusiness : IMetadataBusiness
     private readonly ITagBusiness _tagBusiness;
     private readonly IRecordBusiness _recordBusiness;
     private readonly IEdgeBusiness _edgeBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MetadataBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for CRUD operations.</param>
+    /// <param name="cacheBusiness">Used to access cache operations</param>
     /// <param name="classBusiness">The class context to be used during metadata parsing.</param>
     /// <param name="relationshipBusiness">The relationship context to be used during metadata parsing.</param>
     /// <param name="tagBusiness">The tag context to be used during metadata parsing.</param>
     /// <param name="recordBusiness">The record context to be used during metadata parsing.</param>
     /// <param name="edgeBusiness">The edge context to be used during metadata parsing.</param>
     public MetadataBusiness(
-        DeeplynxContext context, 
+        DeeplynxContext context,
+        ICacheBusiness cacheBusiness,
         IClassBusiness classBusiness,
         IRelationshipBusiness relationshipBusiness,
         ITagBusiness tagBusiness,
@@ -34,6 +37,7 @@ public class MetadataBusiness : IMetadataBusiness
         )
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
         _classBusiness = classBusiness;
         _relationshipBusiness = relationshipBusiness;
         _tagBusiness = tagBusiness;
@@ -52,7 +56,7 @@ public class MetadataBusiness : IMetadataBusiness
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         
         if (metadataRequestDto == null)

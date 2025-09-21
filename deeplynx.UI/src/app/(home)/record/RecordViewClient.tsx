@@ -11,7 +11,7 @@ import {
   unAttachTagFromRecord,
   getRecord,
 } from "@/app/lib/record_services.client";
-import { getTagsForProjects } from "@/app/lib/tag_services.client";
+import { getTagsForProjects } from "@/app/lib/query_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import {
@@ -279,9 +279,7 @@ export default function RecordViewClient({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const data = await getTagsForProjects(projectId.toString(), [
-          projectId.toString(),
-        ]);
+        const data = await getTagsForProjects([projectId.toString()]);
         setTags(data);
       } catch (error) {
         console.error("Error fetching tags:", error);
@@ -492,7 +490,7 @@ export default function RecordViewClient({
           <div className="flex-grow">
             <div className="card bg-base-200 shadow-md p-4 relative mb-20">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold mb-4 text-base-content">
+                <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
                   Tags:
                 </h2>
                 <div className="flex items-center">
@@ -577,7 +575,7 @@ export default function RecordViewClient({
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-base-content">
             {record?.name}
