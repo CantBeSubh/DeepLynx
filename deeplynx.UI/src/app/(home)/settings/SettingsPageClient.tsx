@@ -1,3 +1,5 @@
+// src/app/(home)/settings/SettingsPageClient.tsx
+
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -43,25 +45,21 @@ const SettingsPageClient = () => {
                 <span className="font-semibold text-base-content min-w-[140px]">
                   {t.translations.NAME ?? "Name"}:
                 </span>
-                <span className="text-base-content/80">{jason?.name}</span>
+                <span className="text-base-content/80">{name}</span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="font-semibold text-base-content min-w-[140px]">
                   {t.translations.EMAIL ?? "Email"}:
                 </span>
-                <span className="text-base-content/80">
-                  {jason?.email ?? "—"}
-                </span>
+                <span className="text-base-content/80">{email ?? "—"}</span>
               </div>
 
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <span className="font-semibold text-base-content min-w-[140px]">
                   {t.translations.PROFILE_PICTURE ?? "Profile Picture"}:
                 </span>
-                <span className="text-base-content/80 truncate">
-                  {jason?.image}
-                </span>
+                <span className="text-base-content/80 truncate">{image}</span>
               </div>
             </div>
           </div>

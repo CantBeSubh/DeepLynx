@@ -90,26 +90,12 @@ const CreateProject = ({
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-              <input
-                type="text"
-                placeholder={t.translations.ABBREVIATION}
-                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                value={abbreviation}
-                onChange={(e) => setAbbreviation(e.target.value)}
-              />
               <textarea
                 placeholder={t.translations.DESCRIPTION} // Placeholder for project description
                 className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              {/* Help Text */}
-              <p className="text-xs text-base-content/60">
-                {t.translations.NEED_HELP}{" "}
-                <a href="#" className="link link-primary hover:link-hover">
-                  {t.translations.WIKI}
-                </a>
-              </p>
 
               {/* Modal Actions */}
               <div className="modal-action mt-6">
@@ -126,11 +112,6 @@ const CreateProject = ({
               </div>
             </form>
           </div>
-
-          {/* Modal Backdrop (click to close) */}
-          <form method="dialog" className="modal-backdrop">
-            <button onClick={onClose}>close</button>
-          </form>
         </dialog>
       )}
     </>
