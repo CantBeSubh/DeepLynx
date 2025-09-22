@@ -160,6 +160,8 @@ export const translations = {
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
             LAST_VIEWED: "Last Viewed",
+            API_KEYPAIRS: "API Keypairs",
+            NO_RECENT_RECORDS: "No recent records found",
             ORIGINAL_ID: "Original ID",
             PROPERTIES_EXAMPLE: `Properties.\nExample:\n  { "key1": "value1" },\n OR \n { "key2": { "subKey2": "subValue2" } } \n(single JSON object only)`,
             ADD_A_RECORD: "Add a record",
@@ -177,7 +179,8 @@ export const translations = {
             SELECT_A_DATA_SOURCE: "Select a data source...",
             SAVING: "Saving...",
             NO_RECORDS: "No records match your search criteria",
-            SEARCH_RECORDS: "Search Records"
+            SEARCH_RECORDS: "Search Records",
+            SEARCH: "Search"
         }
     },
     es: {
@@ -330,6 +333,8 @@ export const translations = {
             OPERATOR: "Operador",
             VALUE: "Valor",
             DELETE_ALL_FILTERS: "Eliminar todos los filtros",
+            API_KEYPAIRS: "",
+            NO_RECENT_RECORDS: "",
             UNLINK_TAG: "Desvincular etiqueta",
             ARE_YOU_SURE: "¿Estás seguro de que quieres desvincular?",
             FROM: "de",
@@ -367,7 +372,8 @@ export const translations = {
             SELECT_A_DATA_SOURCE: "Selecciona una fuente de datos...",
             SAVING: "Guardando...",
             NO_RECORDS: "No hay registros que coincidan con tus criterios de búsqueda",
-            SEARCH_RECORDS: "Buscar registros"
+            SEARCH_RECORDS: "Buscar registros",
+            SEARCH: "Buscar",
         }
     }
 }

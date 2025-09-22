@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,18 +20,18 @@ type Props = {
   projectId: string;
 };
 
-export default function ProjectDetailClient(
-    {
-      projects,
-      initialProject,
-      projectId,
-    }: Props
-) {
+export default function ProjectDetailClient({
+  projects,
+  initialProject,
+  projectId,
+}: Props) {
   const { t } = useLanguage();
   const router = useRouter();
 
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
-  const [selectedProjectId, setSelectedProjectId] = useState(initialProject ? initialProject.id : null);
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    initialProject ? initialProject.id : null
+  );
   const [canCustomize, setCanCustomize] = useState(false);
 
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
@@ -42,103 +42,111 @@ export default function ProjectDetailClient(
 
   // Sync project session from initial server data
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
-    useEffect(() => {
-        if (!selectedProjectId) return;
-        const selectedProject = projects.find(proj => proj.id === selectedProjectId);
-        if (selectedProject) {
-            setProject(selectedProject);
-            setProjectSession({
-                projectId: selectedProject.id!,
-                projectName: selectedProject.name,
-            });
-        }
-    }, [selectedProjectId, projects, setProjectSession]);
-  
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    const selectedProject = projects.find(
+      (proj) => proj.id === selectedProjectId
+    );
+    if (selectedProject) {
+      setProject(selectedProject);
+      setProjectSession({
+        projectId: selectedProject.id!,
+        projectName: selectedProject.name,
+      });
+    }
+  }, [selectedProjectId, projects, setProjectSession]);
+
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-        `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
-        JSON.stringify(newWidgets)
+      `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
+      JSON.stringify(newWidgets)
     );
   };
 
-  const handleSearchEnter = (searchTerm : string) => {
-      const query = new URLSearchParams({
-          fromProject: selectedProjectId ? selectedProjectId : "",
-          search: searchTerm,
-      }).toString();
-      router.push(`/data_catalog?${query}`);
+  const handleSearchEnter = (searchTerm: string) => {
+    const query = new URLSearchParams({
+      fromProject: selectedProjectId ? selectedProjectId : "",
+      search: searchTerm,
+    }).toString();
+    router.push(`/data_catalog?${query}`);
   };
-  
+
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
   if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
 
   return (
-      <div>
-        <main>
-          <div className="text-info-content bg-base-200/40 py-3 p-12">
-            <h1 className="text-2xl">{project.name}</h1>
-            <p className="mt-2 text-base-content">{project.description}</p>
-            <p>
-              <strong>{t.translations.CREATED} </strong>
-              {project.createdAt &&
-                  format(new Date(project.createdAt), "MM/dd/yyyy")}
-            </p>
-            <ProjectDropdownSingleSelect
-                projects={projects}
-                onSelectionChange={setSelectedProjectId}
-                defaultSelectedId={initialProject?.id || ""}
-            />
+    <div className="min-h-screen bg-base-100">
+      {/* Project Header */}
+      <div className="bg-base-200/50 border-b border-base-300/30 py-4 px-6 lg:px-12">
+        <h1 className="text-2xl font-bold text-base-content">{project.name}</h1>
+        <p className="mt-2 text-base-content/70">{project.description}</p>
+        <p className="mt-2 text-sm text-base-content/60">
+          <span className="font-semibold">{t.translations.CREATED}: </span>
+          {project.createdAt &&
+            format(new Date(project.createdAt), "MM/dd/yyyy")}
+        </p>
+        <ProjectDropdownSingleSelect
+          projects={projects}
+          onSelectionChange={setSelectedProjectId}
+          defaultSelectedId={initialProject?.id || ""}
+        />
+      </div>
+
+      {/* Main Content */}
+      <div className="flex flex-col lg:flex-row gap-6 px-4 lg:px-6 mt-6">
+        {/* Left Column */}
+        <div
+          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${
+            canCustomize ? "opacity-50 pointer-events-none" : ""
+          }`}
+        >
+          {/* Search Bar */}
+          <div className="mb-6">
+            <LargeSearchBar className="w-full" onEnter={handleSearchEnter} />
           </div>
 
-          <div className="flex w-full mt-6">
-            {/* left column */}
-            <div
-                className={`w-full md:w-3/5 pr-4 ${
-                    canCustomize ? "grayed-out" : ""
-                }`}
-            >
-              <div className="flex flex-col">
-                <LargeSearchBar
-                    className="mb-4 px-4"
-                    onEnter={handleSearchEnter}
-                />
+          {/* Data Catalog Card */}
+          <div className="card bg-base-200/30 border border-base-300/50 shadow-sm mb-6">
+            <div className="card-body">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-base-content">
+                  {t.translations.DATA_CATALOG_OVERVIEW}
+                </h2>
+                <Link
+                  className="btn btn-secondary btn-sm"
+                  href={{
+                    pathname: "/data_catalog",
+                    query: {
+                      fromProject: selectedProjectId ? selectedProjectId : "",
+                    },
+                  }}
+                >
+                  Visit
+                </Link>
               </div>
 
-              <div className="card card-border m-2">
-                <div className="card-body">
-                  <div className="flex justify-between">
-                    <h1 className="text-xl font-semibold">
-                      {t.translations.DATA_CATALOG_OVERVIEW}
-                    </h1>
-                    <Link
-                        className="btn btn-secondary"
-                        href={{
-                          pathname: "/data_catalog",
-                          query: { fromProject: selectedProjectId ? selectedProjectId : "" },
-                        }}
-                    >
-                      Visit
-                    </Link>
-                  </div>
-
-                  <RecentRecordsCard selectedProjects={[selectedProjectId ? selectedProjectId : ""]} />
-                </div>
-              </div>
-
-              <SavedSearches />
-            </div>
-
-            {/* right column */}
-            <div className="w-full md:w-2/5 px-4">
-              <WidgetCard
-                  widgets={projectWidgets}
-                  onSave={handleSave}
-                  onCustomizeChange={setCanCustomize}
+              <RecentRecordsCard
+                selectedProjects={[selectedProjectId ? selectedProjectId : ""]}
               />
             </div>
           </div>
-        </main>
+
+          {/* Saved Searches */}
+          {/* <SavedSearches /> */}
+        </div>
+
+        {/* Right Column */}
+        <aside className="lg:w-2/5">
+          <div className="sticky top-6">
+            <WidgetCard
+              widgets={projectWidgets}
+              onSave={handleSave}
+              onCustomizeChange={setCanCustomize}
+            />
+          </div>
+        </aside>
       </div>
+    </div>
   );
 }

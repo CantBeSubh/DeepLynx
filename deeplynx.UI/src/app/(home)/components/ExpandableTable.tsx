@@ -26,7 +26,6 @@ export function ExpandableTable<T>({
 }: translationsProps<T>) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
   const { t } = useLanguage();
 
   const toggleRow = (index: number) => {
@@ -48,12 +47,14 @@ export function ExpandableTable<T>({
 
   return (
     <div>
-      <table className="table w-full border-separate p-2 border-spacing-y-2 shadow">
+      <table className="table w-full border-separate p-2 border-spacing-y-2">
         {expandedIndex === null && (
           <thead>
             <tr>
               {columns.map((col, i) => (
-                <th key={i}>{col.header}</th>
+                <th key={i} className="text-base-content font-semibold">
+                  {col.header}
+                </th>
               ))}
               <th></th>
             </tr>
@@ -62,27 +63,29 @@ export function ExpandableTable<T>({
 
         <tbody>
           {paginatedRecords.map((row, index) => {
-            const globalIndex = startIndex + index; // because paginatedRecords index is local
+            const globalIndex = startIndex + index;
             return (
               <React.Fragment key={globalIndex}>
                 {expandedIndex === globalIndex ? (
                   <tr>
                     <td colSpan={columns.length + 2} className="p-0">
                       <div className="overflow-hidden transition-all duration-500 ease-in-out max-h-[1000px] opacity-100">
-                        <div className="card bg-base-200/40 p-6 rounded-box shadow">
+                        <div className="card bg-base-200 border border-base-300/30 p-6 rounded-box shadow-lg">
                           {renderExpandedContent(row, closeExpanded)}
                         </div>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  <tr className="bg-base-200/20 hover:bg-base-200/40 rounded-lg overflow-hidden">
+                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors rounded-lg overflow-hidden">
                     {columns.map((col, i) => (
-                      <td key={i}>{col.data(row)}</td>
+                      <td key={i} className="text-base-content">
+                        {col.data(row)}
+                      </td>
                     ))}
                     <td>
                       <button
-                        className="btn btn-sm btn-outline btn-secondary hover:text-primary-content mr-3"
+                        className="btn btn-sm btn-outline btn-secondary hover:btn-secondary mr-3"
                         onClick={() => onExplore(row)}
                       >
                         {t.translations.EXPLORE}
@@ -92,8 +95,9 @@ export function ExpandableTable<T>({
                       <button
                         onClick={() => toggleRow(globalIndex)}
                         aria-label="Expand row"
+                        className="p-1 rounded-lg hover:bg-base-300/50 transition-colors"
                       >
-                        <ChevronDownIcon className="size-6" />
+                        <ChevronDownIcon className="size-6 text-base-content/60 hover:text-base-content transition-colors" />
                       </button>
                     </td>
                   </tr>
@@ -106,23 +110,23 @@ export function ExpandableTable<T>({
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-end gap-2 mt-4">
+        <div className="flex justify-end items-center gap-2 mt-4">
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((prev) => prev - 1)}
           >
-            <ChevronLeftIcon className="size-6" />
+            <ChevronLeftIcon className="size-5 text-base-content/70" />
           </button>
-          <span className="px-2 text-sm">
+          <span className="px-3 text-sm text-base-content/80 font-medium">
             {t.translations.PAGE} {currentPage} {t.translations.OF} {totalPages}
           </span>
           <button
-            className="btn btn-sm btn-ghost"
+            className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((prev) => prev + 1)}
           >
-            <ChevronRightIcon className="size-6" />
+            <ChevronRightIcon className="size-5 text-base-content/70" />
           </button>
         </div>
       )}

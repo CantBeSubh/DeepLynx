@@ -18,20 +18,14 @@ export default function AuthGuard({
   const router = useRouter();
 
   useEffect(() => {
-    console.log("🔐 AuthGuard - Status:", status);
-    console.log("🔐 AuthGuard - Session:", session ? "EXISTS" : "NULL");
-
     // If loading, don't do anything yet
     if (status === "loading") return;
 
     // If not authenticated, redirect to login
     if (status === "unauthenticated" || !session) {
-      console.log("🚫 AuthGuard - Redirecting to login");
       router.push(redirectTo);
       return;
     }
-
-    console.log("✅ AuthGuard - User is authenticated, allowing access");
   }, [status, session, router, redirectTo]);
 
   // Show loading while checking authentication
