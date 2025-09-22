@@ -26,7 +26,7 @@ namespace deeplynx.helpers
                 // Try to get the cached list of projects
                 var projectResponseList = await cacheBusiness.GetAsync<List<ProjectResponseDto>>("projects");
 
-                if (projectResponseList == null || projectResponseList.Count == 0)
+                if (projectResponseList == null || projectResponseList.Find(p => p.Id == projectId) == null)
                 {
                     // Cache is empty, so populate it
                     var projectList = await context.Projects.ToListAsync();
@@ -42,7 +42,7 @@ namespace deeplynx.helpers
                         LastUpdatedBy = p.LastUpdatedBy,
                         OrganizationId = p.OrganizationId
                     }).ToList();
-
+                    
                     // Store the list in the cache
                     await cacheBusiness.SetAsync("projects", projectResponseList, TimeSpan.FromHours(1));
                 }
