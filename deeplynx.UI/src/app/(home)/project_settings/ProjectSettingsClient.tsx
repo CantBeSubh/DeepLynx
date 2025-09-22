@@ -4,7 +4,7 @@ import React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { peopleData } from "../dummy_data/data";
 import { useLanguage } from "@/app/contexts/Language";
-import ProjectSettings from "../components/ProjectSettings";
+import ProjectSettings from "../components/ProjectSettingsTable/ProjectSettings";
 
 import {
   AdjustmentsHorizontalIcon,

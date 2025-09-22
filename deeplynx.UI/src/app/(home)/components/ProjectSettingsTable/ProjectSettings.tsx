@@ -3,14 +3,20 @@
 import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import Link from "next/link";
-import { myRecentSearches, mySavedSearches } from "../dummy_data/data";
-import { Column, MySearchsTable, PopularTable } from "../types/types";
-import AvatarCell from "./Avatar";
-import GenericTable from "./GenericTable";
-import Tabs from "./Tabs";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { myRecentSearches, mySavedSearches } from "../../dummy_data/data";
+import { Column, MySearchsTable, PopularTable } from "../../types/types";
+import AvatarCell from "../Avatar";
+import GenericTable from "../GenericTable";
+import Tabs from "../Tabs";
+import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
+import MembersTable from '././ProjectTables/MembersTable';
+import RolesTable from '././ProjectTables/RolesTable';
+import DataSourceTable from '././ProjectTables/DataSourceTable';
+import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
+
+
 interface ProjectSettingsProps {
   className?: string;
 }
@@ -25,6 +31,27 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     },
     {
       header: "Email",
+      sortable: false,
+    },
+    {
+      header: "",
+      cell: () => (
+        <div className="flex justify-end">
+          <button className="btn">
+            {" "}
+            {t.translations.ROLE}
+          </button>
+        </div>
+      ),
+      sortable: false,
+    },
+    {
+      header: "",
+      cell: () => (
+        <div className="flex justify-end">
+          <TrashIcon className="size-6 red-icon"/>
+        </div>
+      ),
       sortable: false,
     }
   ];
@@ -53,44 +80,32 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     {
       label: "Members",
       content: (
-        <GenericTable
-          columns={my_search_table_columns}
+        <MembersTable
           data={myRecentSearches}
-          enablePagination
-          rowsPerPage={5}
         />
       ),
     },
     {
       label: "Roles",
       content: (
-        <GenericTable
-          columns={my_search_table_columns}
+        <RolesTable
           data={mySavedSearches}
-          enablePagination
-          rowsPerPage={5}
         />
       ),
     },
     {
       label: "Data Source",
       content: (
-        <GenericTable
-          columns={my_search_table_columns}
+        <DataSourceTable
           data={mySavedSearches}
-          enablePagination
-          rowsPerPage={5}
         />
       ),
     },
     {
       label: "Object Storage",
       content: (
-        <GenericTable
-          columns={my_search_table_columns}
+        <ObjectStorageTable
           data={mySavedSearches}
-          enablePagination
-          rowsPerPage={5}
         />
       ),
     },

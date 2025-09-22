@@ -21,7 +21,7 @@ const AddMember = ({ isOpen, onClose }: AddMemberModalProps) => {
             <h3 className="font-bold text-lg mb-4 text-neutral">
               {t.translations.ADD_NEW_MEMBER} {/* Header for the modal */}
             </h3>
-            {/* Form for creating a new widget */}
+            {/* Form for adding a new member */}
             <form method="dialog" className="flex flex-col gap-4">
               <input
                 type="text"
