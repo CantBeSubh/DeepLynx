@@ -26,10 +26,6 @@ export type FileViewerTableRow = {
   projectId?: number;
   projectName?: string;
   tags: string;
-  createdBy?: string | null;
-  createdAt?: string | null;
-  modifiedBy?: string | null;
-  modifiedAt?: string | null;
   archivedAt?: string | null;
   lastUpdatedAt?: string;
   description?: string;
