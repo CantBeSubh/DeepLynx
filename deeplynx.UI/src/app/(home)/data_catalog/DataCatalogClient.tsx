@@ -38,7 +38,7 @@ export default function DataCatalogClient({
   const { t } = useLanguage();
 
   // Project session (client provider)
-  const { hasLoaded } = useProjectSession();
+  const { hasLoaded, setProject: setProjectSession} = useProjectSession();
 
   // Local state
   const [projects] = useState(initialProjects);
@@ -140,6 +140,22 @@ export default function DataCatalogClient({
     },
     [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
   );
+
+  // Update project session when selectedProjects change
+    useEffect(() => {
+      if (!hasLoaded) return;
+      if (selectedProjects.length > 0) {
+        const selectedProject = projects.find(
+            (project) => project.id === selectedProjects[0]
+        );
+        if (selectedProject) {
+          setProjectSession({
+            projectId: selectedProject.id,
+            projectName: selectedProject.name,
+          });
+        }
+      }
+    }, [selectedProjects, hasLoaded, projects, setProjectSession]);
 
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {

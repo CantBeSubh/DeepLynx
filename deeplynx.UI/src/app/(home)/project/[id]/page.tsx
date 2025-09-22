@@ -6,7 +6,7 @@ import {
   type ProjectDTO,
 } from "@/app/lib/projects_services.server";
 import type { ProjectsList } from "@/app/(home)/types/types";
-
+import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 function toProjectsList(p: ProjectDTO): ProjectsList {
   return {
     id: String(p.id), // <- normalize to string
@@ -25,12 +25,13 @@ export default async function ProjectPage({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const dto = await getProjectServer(id);
-  if (!dto) return notFound();
-
-  const project: ProjectsList = toProjectsList(dto);
+  const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
+  const initialProjects = projectDTOs.map(p => toProjectsList(p));
+  const initialProject = initialProjects.find(p => p.id == id);
+  
+  if (initialProject == undefined) return notFound();
 
   await new Promise((r) => setTimeout(r, 1200));
 
-  return <ProjectDetailClient initialProject={project} projectId={id} />;
+  return <ProjectDetailClient projects={initialProjects} initialProject={initialProject} projectId={id} />;
 }
