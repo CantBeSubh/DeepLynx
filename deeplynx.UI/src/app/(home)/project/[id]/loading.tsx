@@ -123,7 +123,9 @@ const LoadingProjectDetail = () => {
             {/* Widget card */}
             <div className="card card-border mt-4">
               <div className="card-body">
-                <h2 className="card-title">{t.translations.DATA_OVERVIEW}</h2>
+                <h2 className="card-title">
+                  {t.translations.PROJECT_OVERVIEW}
+                </h2>
                 <div className="stats shadow">
                   <div className="stat">
                     <div className="stat-title text-secondary">
