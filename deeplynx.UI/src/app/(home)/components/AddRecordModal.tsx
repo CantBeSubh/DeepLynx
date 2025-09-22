@@ -247,7 +247,7 @@ const AddRecordModal: React.FC<Props> = ({
     return () => {
       cancelled = true;
     };
-  }, [selectedProjectId]);
+  }, [selectedProjectId, t.translations]);
 
   return (
     <dialog className={`modal ${isOpen ? "modal-open" : ""}`}>
