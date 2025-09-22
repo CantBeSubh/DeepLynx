@@ -134,25 +134,25 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task ArchiveProject_Succeeds_IfNotArchived()
+        public async Task ArchiveOrganization_Succeeds_IfNotArchived()
         {
             
         }
         
         [Fact]
-        public async Task ArchiveProject_Fails_IfArchived()
+        public async Task ArchiveOrganization_Fails_IfArchived()
         {
             
         }
         
         [Fact]
-        public async Task UnarchiveProject_Succeeds_IfArchived()
+        public async Task UnarchiveOrganization_Succeeds_IfArchived()
         {
             
         }
         
         [Fact]
-        public async Task UnarchiveProject_Fails_IfNotArchived()
+        public async Task UnarchiveOrganization_Fails_IfNotArchived()
         {
             
         }
@@ -164,7 +164,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task DeleteOrganization_Fails_IfNotFOund()
+        public async Task DeleteOrganization_Fails_IfNotFound()
         {
             
         }

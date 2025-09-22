@@ -2,13 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using deeplynx.models;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.helpers;
-using Serilog;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using DotNetEnv;
 
 namespace deeplynx.business;
 
@@ -200,6 +196,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         // TODO: determine if this needs to be a cascade archive instead
         organization.IsArchived = true;
         organization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        organization.LastUpdatedBy = null; // TODO: add user when JWTs are implemented
         _context.Organizations.Update(organization);
         await _context.SaveChangesAsync();
 
