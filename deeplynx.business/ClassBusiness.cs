@@ -44,26 +44,21 @@ public class ClassBusiness : IClassBusiness
     /// <summary>
     /// Retrieves all classes
     /// </summary>
-    /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
+    /// <param name="projectId">The ID of the project to which the class belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of classes</returns>
-    public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
+    public async Task<List<ClassResponseDto>> GetAllClasses(long projectId, bool hideArchived)
     {
-        foreach (var projectId in projectIds)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        }
-
-        var classes = await _context.Classes
-            .Where(c => projectIds.Contains(c.ProjectId))
-            .ToListAsync();
-
+       await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+       var classes = await _context.Classes
+            .Where(c => c.ProjectId == projectId).ToListAsync();
+        
         if (hideArchived)
         {
             classes = classes.Where(c => !c.IsArchived).ToList();
         }
-
-        return classes
+        
+        return classes 
             .Select(c => new ClassResponseDto()
             {
                 Id = c.Id,

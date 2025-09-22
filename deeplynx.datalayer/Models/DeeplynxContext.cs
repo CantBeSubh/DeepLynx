@@ -31,8 +31,6 @@ public partial class DeeplynxContext : DbContext
 
     public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
 
-    public virtual DbSet<Log> Logs { get; set; }
-
     public virtual DbSet<ObjectStorage> ObjectStorages { get; set; }
 
     public virtual DbSet<Organization> Organizations { get; set; }

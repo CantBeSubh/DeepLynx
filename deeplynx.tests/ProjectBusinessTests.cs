@@ -101,7 +101,7 @@ namespace deeplynx.tests
            
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
-            var classResult = await _classBusiness.GetAllClasses([project.Id], true);
+            var classResult = await _classBusiness.GetAllClasses(project.Id, true);
             classResult.Count.Should().Be(3);
             classResult[0].Name.Should().Be("Timeseries");
             classResult[1].Name.Should().Be("Report");
@@ -134,7 +134,7 @@ namespace deeplynx.tests
             var project = await _projectBusiness.CreateProject(dto);
             project.Name.Should().Be(dto.Name);
             
-            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources([project.Id], true);
+            var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
             dataSourceResult.Count.Should().Be(1);
             dataSourceResult[0].Name.Should().Be("Default Data Source");
             dataSourceResult[0].Description.Should().Be("This data source was created alongside the project for ease of use.");
