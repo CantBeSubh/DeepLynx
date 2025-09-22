@@ -160,6 +160,7 @@ export default function QueryBuilderClient({
 
   };
 
+
   return (
     <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
@@ -504,11 +505,11 @@ export default function QueryBuilderClient({
           </div>
         </div>
       </div>
-      {records &&
-        <ListView
-          data={records}
-        />
-      }
+      {records && records?.length > 0 ? (
+        <ListView data={records} />
+      ) : (records &&
+        <div className="p-10">{t.translations.NO_RECORDS}</div>
+      )}
     </div>
   );
 }
