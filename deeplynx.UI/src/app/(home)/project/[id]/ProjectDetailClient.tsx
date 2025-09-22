@@ -15,14 +15,14 @@ import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 
 type Props = {
-  initialProjects: ProjectsList[];
+  projects: ProjectsList[];
   initialProject: ProjectsList | null;
   projectId: string;
 };
 
 export default function ProjectDetailClient(
     {
-      initialProjects,
+      projects,
       initialProject,
       projectId,
     }: Props
@@ -40,12 +40,6 @@ export default function ProjectDetailClient(
     "TeamMembers",
   ]);
 
-  initialProjects.forEach((project) => {
-      console.log("initial project ", project);
-  })
-  
-  const [projects] = useState(initialProjects);
-
   // Sync project session from initial server data
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
     useEffect(() => {
@@ -58,14 +52,22 @@ export default function ProjectDetailClient(
                 projectName: selectedProject.name,
             });
         }
-    }, [selectedProjectId]);
+    }, [selectedProjectId, projects, setProjectSession]);
   
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-        `projectWidgets-${projectId}`,
+        `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
         JSON.stringify(newWidgets)
     );
+  };
+
+  const handleSearchEnter = (searchTerm : string) => {
+      const query = new URLSearchParams({
+          fromProject: selectedProjectId ? selectedProjectId : "",
+          search: searchTerm,
+      }).toString();
+      router.push(`/data_catalog?${query}`);
   };
   
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
@@ -99,13 +101,7 @@ export default function ProjectDetailClient(
               <div className="flex flex-col">
                 <LargeSearchBar
                     className="mb-4 px-4"
-                    onEnter={(searchTerm) => {
-                      const query = new URLSearchParams({
-                        fromProject: projectId,
-                        search: searchTerm,
-                      }).toString();
-                      router.push(`/data_catalog?${query}`);
-                    }}
+                    onEnter={handleSearchEnter}
                 />
               </div>
 
@@ -119,14 +115,14 @@ export default function ProjectDetailClient(
                         className="btn btn-secondary"
                         href={{
                           pathname: "/data_catalog",
-                          query: { fromProject: projectId },
+                          query: { fromProject: selectedProjectId ? selectedProjectId : "" },
                         }}
                     >
                       Visit
                     </Link>
                   </div>
 
-                  <RecentRecordsCard selectedProjects={[projectId]} />
+                  <RecentRecordsCard selectedProjects={[selectedProjectId ? selectedProjectId : ""]} />
                 </div>
               </div>
 

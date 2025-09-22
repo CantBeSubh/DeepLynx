@@ -35,7 +35,7 @@ const ProjectDropdownSingleSelect: React.FC<ProjectDropdownSingleSelectProps> = 
         if (onSelectionChange) {
             onSelectionChange(selectedId);
         }
-    }, [selectedId, projects.length, onSelectionChange, defaultSelectedId]);
+    }, [selectedId, projects.length, onSelectionChange]);
 
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {

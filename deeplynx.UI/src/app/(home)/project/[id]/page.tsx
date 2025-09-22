@@ -33,5 +33,5 @@ export default async function ProjectPage({ params }: Props) {
 
   await new Promise((r) => setTimeout(r, 1200));
 
-  return <ProjectDetailClient initialProjects={initialProjects} initialProject={initialProject} projectId={id} />;
+  return <ProjectDetailClient projects={initialProjects} initialProject={initialProject} projectId={id} />;
 }
