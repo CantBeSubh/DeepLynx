@@ -159,7 +159,8 @@ export const translations = {
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
             LAST_VIEWED: "Last Viewed",
-            NO_RECORDS: "No records match your search criteria"
+            NO_RECORDS: "No records match your search criteria",
+            SEARCH_RECORDS: "Search Records"
         }
     },
     es: {
