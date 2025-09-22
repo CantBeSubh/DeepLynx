@@ -57,14 +57,6 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           height={20}
           width={150}
           className="rounded cursor-pointer"
-          style={{
-            WebkitMaskImage:
-              "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
-            maskImage:
-              "linear-gradient(to right, transparent, black 5%, black 95%, transparent)",
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-          }}
           onClick={() => router.push("/")}
         />
         <div className="dropdown dropdown-end">
