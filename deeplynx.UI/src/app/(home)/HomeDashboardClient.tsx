@@ -64,7 +64,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       data: (row: ProjectsList) => (
         <Link
           href={`/project/${row.id}`}
-          className="font-bold text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+          className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
         >
           {row.name}
         </Link>
@@ -144,7 +144,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
             <ExpandableTable
               data={filteredProjects}
               columns={columns}
-              // If your table needs an "Explore" button, use Link inside column renderers
               renderExpandedContent={(project, onClose) => (
                 <ExpandedProjectCard project={project} onClose={onClose} />
               )}

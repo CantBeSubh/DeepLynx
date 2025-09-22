@@ -178,6 +178,7 @@ export const translations = {
             FAILED_TO_LOAD_DATA_SOURCE: "Failed to load data sources",
             SELECT_A_DATA_SOURCE: "Select a data source...",
             SAVING: "Saving...",
+            SEARCH: "Search",
         }
     },
     es: {
@@ -368,6 +369,7 @@ export const translations = {
             FAILED_TO_LOAD_DATA_SOURCE: "No se pudo cargar las fuentes de datos",
             SELECT_A_DATA_SOURCE: "Selecciona una fuente de datos...",
             SAVING: "Guardando...",
+            SEARCH: "Buscar",
             }
     }
 }

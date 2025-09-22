@@ -26,7 +26,6 @@ export function ExpandableTable<T>({
 }: translationsProps<T>) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const locale = "en"; //We could use cookies, context, or router.locale to change language in the future
   const { t } = useLanguage();
 
   const toggleRow = (index: number) => {

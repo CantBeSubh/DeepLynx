@@ -131,7 +131,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
               className="bg-base-200 rounded-lg p-3 border border-base-300/30"
             >
               <div className="flex items-center gap-3">
-                <Icon className="size-8 text-primary/70" />
+                <Icon className="size-8 text-secondary" />
                 <div>
                   <div className="text-xs text-base-content/60 font-medium">
                     {title}

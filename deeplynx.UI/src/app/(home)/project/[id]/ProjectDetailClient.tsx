@@ -133,7 +133,7 @@ export default function ProjectDetailClient({
           </div>
 
           {/* Saved Searches */}
-          <SavedSearches />
+          {/* <SavedSearches /> */}
         </div>
 
         {/* Right Column */}
