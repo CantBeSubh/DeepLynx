@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import Link from "next/link";
-import { myRecentSearches, mySavedSearches } from "../../dummy_data/data";
+import { myRecentSearches, mySavedSearches, projectMembers } from "../../dummy_data/data";
 import { Column, MySearchsTable, PopularTable } from "../../types/types";
 import AvatarCell from "../Avatar";
 import GenericTable from "../GenericTable";
 import Tabs from "../Tabs";
 import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
-import AddMember from "@/app/(home)/components/WidgetCards/WidgetCardModals/AddMemberModal";
+import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
 import DataSourceTable from '././ProjectTables/DataSourceTable';
@@ -24,37 +24,38 @@ interface ProjectSettingsProps {
 const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
   const [addMemberModal, setAddMemberModal] = useState(false);
-  const my_search_table_columns: Column<MySearchsTable>[] = [
-    {
-      header: "Name",
-      data: "name",
-    },
-    {
-      header: "Email",
-      sortable: false,
-    },
-    {
-      header: "",
-      cell: () => (
-        <div className="flex justify-end">
-          <button className="btn">
-            {" "}
-            {t.translations.ROLE}
-          </button>
-        </div>
-      ),
-      sortable: false,
-    },
-    {
-      header: "",
-      cell: () => (
-        <div className="flex justify-end">
-          <TrashIcon className="size-6 red-icon"/>
-        </div>
-      ),
-      sortable: false,
-    }
-  ];
+  const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
+  // const my_search_table_columns: Column<MySearchsTable>[] = [
+  //   {
+  //     header: "Name",
+  //     data: "name",
+  //   },
+  //   {
+  //     header: "Email",
+  //     sortable: false,
+  //   },
+  //   {
+  //     header: "",
+  //     cell: () => (
+  //       <div className="flex justify-end">
+  //         <button className="btn">
+  //           {" "}
+  //           {t.translations.ROLE}
+  //         </button>
+  //       </div>
+  //     ),
+  //     sortable: false,
+  //   },
+  //   {
+  //     header: "",
+  //     cell: () => (
+  //       <div className="flex justify-end">
+  //         <TrashIcon className="size-6 red-icon"/>
+  //       </div>
+  //     ),
+  //     sortable: false,
+  //   }
+  // ];
 
   const popular_table_columns: Column<PopularTable>[] = [
     {
@@ -81,7 +82,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       label: "Members",
       content: (
         <MembersTable
-          data={myRecentSearches}
+          data={projectMembers}
         />
       ),
     },
@@ -118,7 +119,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
             <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
             <div className="flex space-x-4">
                 <button
-                    onClick={() => setAddMemberModal(true)}
+                    onClick={() => setAddProjectMemberModal(true)}
                     className="btn btn-secondary text-white"
                 >
                     <PlusIcon className="size-6" />
@@ -132,9 +133,9 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
         <Tabs tabs={tabData} className="tabs tabs-border" />
       </div>
 
-      <AddMember
-        isOpen={addMemberModal}
-        onClose={() => setAddMemberModal(false)}
+      <AddProjectMember
+        isOpen={addProjectMemberModal}
+        onClose={() => setAddProjectMemberModal(false)}
       />
     </div>
   );

@@ -1,3 +1,5 @@
+import { ReactNode } from 'react';
+
 export type DataSourceTableRow = {
   name: string;
   country: string;

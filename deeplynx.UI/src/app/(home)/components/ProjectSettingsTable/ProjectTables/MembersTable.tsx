@@ -1,27 +1,90 @@
-import React, { FC } from 'react';
+import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
-import { Column, MySearchsTable } from '../../../types/types';
+import { useLanguage } from "@/app/contexts/Language";
+import { Column, ProjectMembersTable } from '../../../types/types';
+import RoleSwap from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/RoleSwap";
 import { TrashIcon } from '@heroicons/react/24/outline';
 
 interface MembersTableProps {
-  data: MySearchsTable[];
+  data: ProjectMembersTable[];
 }
 
+// const MembersTable: FC<MembersTableProps> = ({ data }) => {
+//     const { t } = useLanguage();
+
+//     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(data.length).fill(false));
+//     const [selectAll, setSelectAll] = useState(false);
+
+//     const handleSelectAll = () => {
+//         const newSelection = !selectAll;
+//         setSelectAll(newSelection);
+//         setSelectedMembers(new Array(data.length).fill(newSelection));
+//     };
+
+//     const handleCheckboxChange = (index: number) => {
+//         const newSelection = [...selectedMembers];
+//         newSelection[index] = !newSelection[index];
+//         setSelectedMembers(newSelection);
+//         setSelectAll(newSelection.every(Boolean));
+//     };
+
 const MembersTable: FC<MembersTableProps> = ({ data }) => {
-  const columns: Column<MySearchsTable>[] = [
+  const { t } = useLanguage();
+  const [addRoleSwap, setAddRoleSwap] = useState(false);
+
+  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(data.length).fill(false));
+  const [selectAll, setSelectAll] = useState(false);
+
+  const handleSelectAll = () => {
+    const newSelection = !selectAll;
+    setSelectAll(newSelection);
+    setSelectedMembers(new Array(data.length).fill(newSelection));
+  };
+
+  const handleCheckboxChange = (index: number) => {
+    const newSelection = [...selectedMembers];
+    newSelection[index] = !newSelection[index];
+
+    setSelectAll(newSelection.every(Boolean));
+  };
+
+    const columns: Column<ProjectMembersTable>[] = [
+    {
+      header: (
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={selectAll}
+          onChange={handleSelectAll}
+        />
+      ),
+      cell: (row: ProjectMembersTable, index: number) => (
+            <input
+            type="checkbox"
+            className="checkbox"
+            checked={selectedMembers[index]}
+            onChange={() => handleCheckboxChange(index)}
+            />
+      ),
+      sortable: false,
+    },
     {
       header: "Name",
       data: "name",
     },
     {
       header: "Email",
+      data: "email",
       sortable: false,
     },
     {
       header: "",
       cell: () => (
         <div className="flex justify-end">
-          <button className="btn">Role</button>
+          <button className="btn"
+            onClick={() => setAddRoleSwap(true)}>
+            {t.translations.ROLE}
+        </button>
         </div>
       ),
       sortable: false,
@@ -38,12 +101,19 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
   ];
 
   return (
-    <GenericTable
-        columns={columns}
-        data={data}
-        enablePagination
-        rowsPerPage={5}
-    />
+    <div>
+        <GenericTable
+            columns={columns}
+            data={data}
+            enablePagination
+            rowsPerPage={5}
+        />
+
+        <RoleSwap
+            isOpen={addRoleSwap}
+            onClose={() => setAddRoleSwap(false)}
+        />
+    </div>
   );
 };
 
