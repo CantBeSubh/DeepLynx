@@ -1,3 +1,4 @@
+// src/app/(home)/components/AddRecordModal.tsx
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -6,7 +7,6 @@ import {
   createRecord,
   type CreateRecordPayload,
 } from "@/app/lib/record_services.client";
-
 import type { ProjectsList } from "@/app/(home)/types/types";
 import {
   getAllDataSources,
@@ -15,7 +15,7 @@ import {
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 
-type JsonValue = Record<string, unknown> | Record<string, unknown>[];
+type JsonValue = Record<string, unknown>;
 
 type Props = {
   isOpen: boolean;
@@ -45,6 +45,7 @@ const AddRecordModal: React.FC<Props> = ({
   >();
   const [dsLoading, setDsLoading] = useState(false);
   const [dsError, setDsError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Required fields
   const [name, setName] = useState("");
@@ -55,7 +56,7 @@ const AddRecordModal: React.FC<Props> = ({
 
   // Optional fields
   const [objectStorageId, setObjectStorageId] = useState<string>("");
-  const [classId, setClassId] = useState<number>();
+  const [classId, setClassId] = useState<number | undefined>();
   const [uri, setUri] = useState<string>("");
   const [classNameOpt, setClassNameOpt] = useState<string>("");
   const [tagsText, setTagsText] = useState<string>("");
@@ -71,35 +72,86 @@ const AddRecordModal: React.FC<Props> = ({
     setPropertiesText(val);
     try {
       const parsed = JSON.parse(val);
-      if (parsed && typeof parsed === "object") {
-        setPropertiesError(null);
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        setPropertiesError(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
       } else {
-        setPropertiesError("Must be a JSON object or array.");
+        setPropertiesError(null);
       }
     } catch {
-      setPropertiesError("Invalid JSON.");
+      setPropertiesError(t.translations.INVALID_JASON);
     }
+  };
+
+  const resetForm = () => {
+    // selections
+    setSelectedProjectId(undefined);
+    setDataSources([]);
+    setSelectedDataSourceId(undefined);
+    setDsError(null);
+
+    // required
+    setName("");
+    setDescription("");
+    setAbbreviation("");
+    setPropertiesText("");
+    setPropertiesError(null);
+
+    // optional
+    setObjectStorageId("");
+    setClassId(undefined);
+    setUri("");
+    setClassNameOpt("");
+    setTagsText("");
+    setLabelsText("");
+
+    setIsSubmitting(false);
+  };
+
+  const handleClose = () => {
+    resetForm();
+    onClose();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
 
     if (selectedProjectId === undefined) {
-      toast.error("Please select a project.");
+      toast.error(t.translations.PLEASE_SELECT_A_PROJECT);
+      setIsSubmitting(false);
       return;
     }
     if (selectedDataSourceId === undefined) {
-      toast.error("Please select a data source.");
+      toast.error(t.translations.PLEASE_SELECT_A_DATA_SOURCE);
+      setIsSubmitting(false);
       return;
     }
 
     let props: JsonValue;
     try {
       const parsed = JSON.parse(propertiesText);
-      if (!parsed || typeof parsed !== "object") throw new Error();
-      props = parsed as JsonValue;
-    } catch {
-      setPropertiesError("Invalid JSON.");
+
+      // If user pasted an array with one object, be helpful and take the first one.
+      if (Array.isArray(parsed)) {
+        if (
+          parsed.length === 1 &&
+          typeof parsed[0] === "object" &&
+          parsed[0] !== null
+        ) {
+          props = parsed[0] as JsonValue;
+        } else {
+          throw new Error(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
+        }
+      } else if (parsed && typeof parsed === "object") {
+        props = parsed as JsonValue;
+      } else {
+        throw new Error(t.translations.MUST_BE_SINGLE_JSON_OBJECT);
+      }
+      setPropertiesError(null);
+    } catch (err) {
+      setPropertiesError(err instanceof Error ? err.message : "Invalid JSON.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -111,6 +163,7 @@ const AddRecordModal: React.FC<Props> = ({
         Number.isNaN(objectStorageIdNum))
     ) {
       toast.error("object_storage_id must be an integer if provided.");
+      setIsSubmitting(false);
       return;
     }
 
@@ -123,8 +176,8 @@ const AddRecordModal: React.FC<Props> = ({
       name,
       description,
       original_id: abbreviation,
-      class_id: classId, // optional in service type
-      properties: props,
+      properties: props, // now guaranteed to be a single object
+      class_id: classId,
     };
 
     if (objectStorageIdNum !== undefined)
@@ -139,11 +192,14 @@ const AddRecordModal: React.FC<Props> = ({
       await createRecord(selectedProjectId, payload, {
         dataSourceId: selectedDataSourceId,
       });
-      toast.success("Record created successfully!");
+      toast.success(t.translations.RECORD_CREATED_SECCESSFULLY);
+      resetForm();
       onClose();
     } catch (error) {
       console.error("Error creating record:", error);
-      toast.error("Failed to create record.");
+      toast.error(t.translations.FAILED_TO_CREATE_RECORD);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -164,7 +220,7 @@ const AddRecordModal: React.FC<Props> = ({
         const list = await getAllDataSources(selectedProjectId);
         if (!cancelled) setDataSources(list ?? []);
       } catch (err: unknown) {
-        const fallback = "Failed to load data sources";
+        const fallback = t.translations.FAILED_TO_LOAD_DATA_SOURCE;
         let message = fallback;
 
         if (isAxiosError(err)) {
@@ -250,7 +306,9 @@ const AddRecordModal: React.FC<Props> = ({
                 required
               >
                 <option value="" disabled>
-                  {dsLoading ? "Loading..." : "Select a data source..."}
+                  {dsLoading
+                    ? t.translations.LOADING
+                    : t.translations.SELECT_A_DATA_SOURCE}
                 </option>
                 {dataSources.map((ds) => (
                   <option key={ds.id} value={String(ds.id)}>
@@ -322,7 +380,11 @@ const AddRecordModal: React.FC<Props> = ({
                 className="input input-bordered w-full"
                 placeholder="class_id"
                 value={classId ?? ""}
-                onChange={(e) => setClassId(Number(e.target.value))}
+                onChange={(e) =>
+                  setClassId(
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
               />
 
               <input
@@ -360,11 +422,15 @@ const AddRecordModal: React.FC<Props> = ({
           </div>
 
           <div className="modal-action">
-            <button type="button" className="btn" onClick={onClose}>
+            <button type="button" className="btn" onClick={handleClose}>
               {t.translations.CANCEL}
             </button>
-            <button type="submit" className="btn btn-primary">
-              {t.translations.SAVE}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t.translations.SAVING : t.translations.SAVE}
             </button>
           </div>
         </form>
