@@ -56,8 +56,6 @@ export default function QueryBuilderClient({
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
   const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
-
-
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
   const [rows, setRows] = useState<Query[]>([emptyRow()]);
@@ -147,13 +145,18 @@ export default function QueryBuilderClient({
     }
   }, [hasLoaded, currentProjectId, selectedProjects]);
 
+  const hasValidQueries = (): boolean => {
+    const queryDtos = rows.map(r => r.query);
+    return queryDtos.some(query => {
+      return (query.filter !== "") || (query.operator !== "") || (query.value !== "") || (query.jsonKey !== "") || (query.jsonValue !== "");
+    });
+  };
+
+
   const handleSubmit = async () => {
     try {
       const queryDtos = rows.map(r => r.query);
-      const hasValidQueries = queryDtos.some(query => {
-        if ((query.filter != "") || (query.operator != "") || (query.value != "")) return true;
-      });
-      if (hasValidQueries) {
+      if (hasValidQueries()) {
         const data = await queryBuilder(queryDtos, searchTerm);
         if (data) {
           setQueriedRecords(data);
@@ -511,7 +514,7 @@ export default function QueryBuilderClient({
           </div>
           {/* Submit search */}
           <div className="grid justify-items-start p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!records?.length && !searchTerm}>{t.translations.SEARCH_RECORDS}
+            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!searchTerm && !hasValidQueries()}>{t.translations.SEARCH_RECORDS}
             </button>
           </div>
         </div>
