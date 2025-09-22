@@ -279,7 +279,7 @@ public class RoleBusiness : IRoleBusiness
         
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        role.LastUpdatedBy = null; // TODO: add username when JWTs are implimented
+        role.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
         
