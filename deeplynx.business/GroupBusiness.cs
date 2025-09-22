@@ -63,7 +63,7 @@ public class GroupBusiness : IGroupBusiness
     public async Task<GroupResponseDto> GetGroup(long groupId, bool hideArchived = true)
     {
         var group = await _context.Groups
-            .Where(g => g.OrganizationId == groupId)
+            .Where(g => g.Id == groupId)
             .FirstOrDefaultAsync();
         
         if (group == null)
@@ -139,7 +139,7 @@ public class GroupBusiness : IGroupBusiness
     {
         var group = await _context.Groups.FindAsync(groupId);
         if (group == null || group.IsArchived)
-            throw new KeyNotFoundException($"Group with id {groupId} does not exist");
+            throw new KeyNotFoundException($"Group with id {groupId} not found");
         
         group.Name = dto.Name ?? group.Name;
         group.Description = dto.Description ?? group.Description;

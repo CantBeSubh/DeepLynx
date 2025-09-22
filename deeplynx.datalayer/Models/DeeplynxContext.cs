@@ -242,7 +242,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Organization).WithMany(p => p.Projects)
-                .OnDelete(DeleteBehavior.Cascade)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("projects_organization_id_fkey");
         });
 
