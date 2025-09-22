@@ -366,6 +366,8 @@ export const translations = {
             FAILED_TO_LOAD_DATA_SOURCE: "No se pudo cargar las fuentes de datos",
             SELECT_A_DATA_SOURCE: "Selecciona una fuente de datos...",
             SAVING: "Guardando...",
+            NO_RECORDS: "No hay registros que coincidan con tus criterios de búsqueda",
+            SEARCH_RECORDS: "Buscar registros"
         }
     }
 }
