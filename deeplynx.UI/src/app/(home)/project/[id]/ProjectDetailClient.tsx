@@ -1,4 +1,3 @@
-// app/(home)/project/[id]/ProjectDetailClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -13,13 +12,16 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { format } from "date-fns";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
+import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 
 type Props = {
+  projects: ProjectsList[];
   initialProject: ProjectsList | null;
   projectId: string;
 };
 
 export default function ProjectDetailClient({
+  projects,
   initialProject,
   projectId,
 }: Props) {
@@ -27,6 +29,9 @@ export default function ProjectDetailClient({
   const router = useRouter();
 
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    initialProject ? initialProject.id : null
+  );
   const [canCustomize, setCanCustomize] = useState(false);
 
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
@@ -38,16 +43,33 @@ export default function ProjectDetailClient({
   // Sync project session from initial server data
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
   useEffect(() => {
-    if (!hasLoaded || !project) return;
-    setProjectSession({ projectId: project.id!, projectName: project.name });
-  }, [hasLoaded, project, setProjectSession]);
+    if (!selectedProjectId) return;
+    const selectedProject = projects.find(
+      (proj) => proj.id === selectedProjectId
+    );
+    if (selectedProject) {
+      setProject(selectedProject);
+      setProjectSession({
+        projectId: selectedProject.id!,
+        projectName: selectedProject.name,
+      });
+    }
+  }, [selectedProjectId, projects, setProjectSession]);
 
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-      `projectWidgets-${projectId}`,
+      `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
       JSON.stringify(newWidgets)
     );
+  };
+
+  const handleSearchEnter = (searchTerm: string) => {
+    const query = new URLSearchParams({
+      fromProject: selectedProjectId ? selectedProjectId : "",
+      search: searchTerm,
+    }).toString();
+    router.push(`/data_catalog?${query}`);
   };
 
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
@@ -64,6 +86,11 @@ export default function ProjectDetailClient({
           {project.createdAt &&
             format(new Date(project.createdAt), "MM/dd/yyyy")}
         </p>
+        <ProjectDropdownSingleSelect
+          projects={projects}
+          onSelectionChange={setSelectedProjectId}
+          defaultSelectedId={initialProject?.id || ""}
+        />
       </div>
 
       {/* Main Content */}
@@ -76,16 +103,7 @@ export default function ProjectDetailClient({
         >
           {/* Search Bar */}
           <div className="mb-6">
-            <LargeSearchBar
-              className="w-full"
-              onEnter={(searchTerm) => {
-                const query = new URLSearchParams({
-                  fromProject: projectId,
-                  search: searchTerm,
-                }).toString();
-                router.push(`/data_catalog?${query}`);
-              }}
-            />
+            <LargeSearchBar className="w-full" onEnter={handleSearchEnter} />
           </div>
 
           {/* Data Catalog Card */}
@@ -99,14 +117,18 @@ export default function ProjectDetailClient({
                   className="btn btn-secondary btn-sm"
                   href={{
                     pathname: "/data_catalog",
-                    query: { fromProject: projectId },
+                    query: {
+                      fromProject: selectedProjectId ? selectedProjectId : "",
+                    },
                   }}
                 >
                   Visit
                 </Link>
               </div>
 
-              <RecentRecordsCard selectedProjects={[projectId]} />
+              <RecentRecordsCard
+                selectedProjects={[selectedProjectId ? selectedProjectId : ""]}
+              />
             </div>
           </div>
 
