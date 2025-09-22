@@ -19,12 +19,14 @@ public class TimeseriesBusiness(
     DeeplynxContext context,
     IRecordBusiness recordBusiness,
     IClassBusiness classBusiness,
+    FileFilesystemBusiness filesystemBusiness,
     ILogger<TimeseriesBusiness> logger,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
     private readonly DeeplynxContext _context = context;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
+    private readonly FileFilesystemBusiness _filesystemBusiness = filesystemBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
     
     private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
@@ -254,7 +256,7 @@ public class TimeseriesBusiness(
     /// <param name="fileName">The name of the file to be written</param>
     /// <exception cref="KeyNotFoundException">Thrown when the record cannot be found</exception>
     /// <exception cref="Exception">Thrown if the report cannot be written</exception>
-    private async Task RunBackgroundJob(RecordResponseDto recordResponse, string query, long projectId, long dataSourceId, string fileName, string filePath)
+    private async Task RunBackgroundJob(RecordResponseDto recordResponse, string query, long projectId, long dataSourceId, string fileName, string fileType)
     {
         // Runs in the background and lets the request finish
         // https://stackoverflow.com/questions/62222712/what-is-the-simplest-way-to-run-a-single-background-task-from-a-controller-in-n
@@ -269,10 +271,18 @@ public class TimeseriesBusiness(
 
             try
             {
+                var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
                 var command = connection.CreateCommand();
-                command.CommandText = $"COPY ({query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+                if (fileType == "csv")
+                {
+                    command.CommandText = $"COPY ({query}) TO '{filePath}' (HEADER, DELIMITER ',');";
+                }
+                else if (fileType == "parquet")
+                {
+                    command.CommandText = $"COPY ({query}) TO '{filePath}' (FORMAT parquet);";
+                }
+                
                 await command.ExecuteNonQueryAsync();
-                Console.WriteLine("CREATED CSV");
                 
                 var properties = new JsonObject
                 {
@@ -286,7 +296,7 @@ public class TimeseriesBusiness(
                 }
 
                 record.Properties = properties.ToString();
-                record.Uri = "object://" + fileName;
+                record.Uri = filePath;
                 record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
 
                 backgroundContext.Records.Update(record);
@@ -454,8 +464,9 @@ public class TimeseriesBusiness(
     /// <param name="dataSourceId"></param>
     /// <param name="tableName"></param>
     /// <returns>All data for given table</returns>
-    public async Task<RecordResponseDto> GetAllTableRecords(long projectId, long dataSourceId, string tableName)
+    public async Task<RecordResponseDto> GetAllTableRecords(long projectId, long dataSourceId, string tableName, string fileType)
     {
+        
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         // var resultTable = new DataTable();
@@ -481,9 +492,22 @@ public class TimeseriesBusiness(
         //
         // resultTable.Load(reader);
         //
+        
         var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
-        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
+        string fileName;
+        
+        if (fileType == "csv")
+        { 
+            fileName = queryId + "_record.csv";
+        }
+        else if (fileType == "parquet")
+        {
+            fileName = queryId + "_parquet.csv";
+        }
+        else
+        {
+            throw new NotSupportedException($"file type {fileType} not supported");
+        }
 
         var reportClass = await _classBusiness.GetClassInfo(projectId, "Report");
         var recordRequest = new CreateRecordRequestDto
@@ -502,7 +526,7 @@ public class TimeseriesBusiness(
         
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, filePath);
+        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
         Console.WriteLine("CREATING RECORD");
         return recordResponse;
     }
@@ -515,7 +539,7 @@ public class TimeseriesBusiness(
     /// <param name="projectId"></param>
     /// <param name="dataSourceId"></param>
     /// <returns>Data</returns>
-    public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName)
+    public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
@@ -523,7 +547,20 @@ public class TimeseriesBusiness(
         // using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
         // using var command = duckDBConnection.CreateCommand();
         var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
+        string fileName;
+        
+        if (fileType == "csv")
+        { 
+            fileName = queryId + "_record.csv";
+        }
+        else if (fileType == "parquet")
+        {
+            fileName = queryId + "_parquet.csv";
+        }
+        else
+        {
+            throw new NotSupportedException($"file type {fileType} not supported");
+        }
 
         var request = new TimeseriesQueryRequestDto
         {
@@ -538,8 +575,6 @@ public class TimeseriesBusiness(
 
             """
         };
-        
-        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
         
         // command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
         // command.Parameters.Add(new DuckDBParameter("rowNum", long.Parse(rowNumber)));
@@ -568,7 +603,7 @@ public class TimeseriesBusiness(
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
 
-        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, filePath);
+        RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
 
         return recordResponse;
     }
@@ -581,20 +616,26 @@ public class TimeseriesBusiness(
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The data source ID</param>
     /// <returns></returns>
-    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId)
+    public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        // var resultTable = new DataTable();
-        using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
-
-        await using var command = duckDbConnection.CreateCommand();
-        var queryId = Guid.NewGuid().ToString();
-        var fileName = queryId + "_record.csv";
-        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
-        command.CommandText = $"COPY ({request.Query}) TO '{filePath}' (HEADER, DELIMITER ',');";
         
-        await command.ExecuteNonQueryAsync();
+        var queryId = Guid.NewGuid().ToString();
+        string fileName;
+        
+        if (fileType == "csv")
+        { 
+            fileName = queryId + "_record.csv";
+        }
+        else if (fileType == "parquet")
+        {
+            fileName = queryId + "_parquet.csv";
+        }
+        else
+        {
+            throw new NotSupportedException($"file type {fileType} not supported");
+        }
         // using var reader = await command.ExecuteReaderAsync();
         //
         // if (!reader.HasRows)
@@ -620,10 +661,11 @@ public class TimeseriesBusiness(
             ClassName = reportClass.Name,
             Uri = "object://" + fileName,
         };
+        var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        
+        await RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
 
-        // await RunBackgroundJob(recordResponse, request, resultTable, projectId, dataSourceId, fileName);
-
-        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        return recordResponse;
     }
 
     /// <summary>
@@ -647,7 +689,7 @@ public class TimeseriesBusiness(
         var fileName = baseTableName + "." + fileType;
         
         //Todo: determine file path
-        var filePath = Path.Combine(_duckDbBasePath, fileName);
+        var filePath = Path.Combine(_duckDbBasePath, "project-" + projectId.ToString(), "datasource-" + dataSourceId.ToString(), "reports", fileName);
         
         await using var duckDbConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
         await using var command = duckDbConnection.CreateCommand();
@@ -667,17 +709,11 @@ public class TimeseriesBusiness(
         {
             contentType = "application/octet-stream"; // Default fallback
         }
-        
-        File.Delete(filePath);
-        
-        if (File.Exists(filePath))
-        {
-            throw new FileNotFoundException("The file was not cleaned up", filePath);
-        }
-        
         return new FileStreamResult(stream, contentType)
         {
             FileDownloadName = fileName
         };
+        // var record = await _recordBusiness.GetRecord(projectId, recordId, true);
+        // return await _filesystemBusiness.DownloadFile(record);
     }
 }

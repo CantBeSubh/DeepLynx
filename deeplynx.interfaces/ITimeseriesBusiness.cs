@@ -19,10 +19,10 @@ namespace deeplynx.interfaces
 
         Task<FileStreamResult> DownloadTimeseriesFile(long projectId, long dataSourceId, string tableName, string fileType);
 
-        Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long datasourceId);
+        Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long datasourceId, string fileType);
 
-        Task<RecordResponseDto> InterpolateRows(long projectId, long datasourceId, string rowNumber, string tableName);
+        Task<RecordResponseDto> InterpolateRows(long projectId, long datasourceId, string rowNumber, string tableName, string fileType);
 
-        Task<RecordResponseDto> GetAllTableRecords(long projectId, long datasourceId, string tableName);
+        Task<RecordResponseDto> GetAllTableRecords(long projectId, long datasourceId, string tableName, string fileType);
     }
 }
