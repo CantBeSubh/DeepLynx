@@ -83,9 +83,25 @@ namespace deeplynx.tests
             result.Description.Should().Be(dto.Description);
             result.Abbreviation.Should().Be(dto.Abbreviation);
             
+            // try creating an additional project to confirm
+            var dto2 = new CreateProjectRequestDto
+            {
+                Name = $"Test Project2 {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Abbreviation = "TST"
+            };
+            
+            var newResult = await _projectBusiness.CreateProject(dto2);
+            
+            newResult.Id.Should().BeGreaterThan(0);
+            newResult.LastUpdatedAt.Should().BeOnOrAfter(now);
+            newResult.Name.Should().Be(dto2.Name);
+            newResult.Description.Should().Be(dto2.Description);
+            newResult.Abbreviation.Should().Be(dto2.Abbreviation);
+            
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(5);
+            eventList.Should().HaveCount(10);
             // three classes and a datasource will be logged before project event is logged
             eventList[4].Should().BeEquivalentTo(new
             {
