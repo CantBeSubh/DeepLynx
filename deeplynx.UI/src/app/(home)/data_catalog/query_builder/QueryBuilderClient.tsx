@@ -510,8 +510,8 @@ export default function QueryBuilderClient({
 
           </div>
           {/* Submit search */}
-          <div className="grid justify-items-end p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm">Search Records
+          <div className="grid justify-items-start p-4">
+            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!records?.length && !searchTerm}>Search Records
             </button>
           </div>
         </div>
