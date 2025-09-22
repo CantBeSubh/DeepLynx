@@ -1,7 +1,7 @@
 // src/app/lib/query_services.client.ts
 "use client";
 
-import { ClassResponseDto, CustomQueryRequestDto, DataSourceResponseDto, TagResponseDto } from "../(home)/types/types";
+import { ClassResponseDto, CustomQueryRequestDto, DataSourceResponseDto, FileViewerTableRow, TagResponseDto } from "../(home)/types/types";
 import api from "./api";
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
@@ -24,6 +24,14 @@ export async function queryBuilder(
     });
     return res.data;
 }
+
+export async function fullTextSearch(
+    userQuery: string,
+): Promise<FileViewerTableRow[]> {
+    const res = await api.get(`/records/Filter?userQuery=${userQuery}`);
+    return res.data as FileViewerTableRow[];
+}
+
 
 
 export async function getClassesForProjects(

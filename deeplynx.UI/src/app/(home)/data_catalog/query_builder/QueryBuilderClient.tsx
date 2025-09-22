@@ -9,7 +9,7 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
+import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
 
@@ -150,9 +150,19 @@ export default function QueryBuilderClient({
   const handleSubmit = async () => {
     try {
       const queryDtos = rows.map(r => r.query);
-      const data = await queryBuilder(queryDtos, searchTerm);
-      if (data) {
-        setQueriedRecords(data);
+      const hasValidQueries = queryDtos.some(query => {
+        if ((query.filter != "") || (query.operator != "") || (query.value != "")) return true;
+      });
+      if (hasValidQueries) {
+        const data = await queryBuilder(queryDtos, searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
+      } else {
+        const data = await fullTextSearch(searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
       }
     } catch (error) {
       console.error("Failed to send query")
@@ -221,6 +231,7 @@ export default function QueryBuilderClient({
                               },
                             })
                           }
+                          disabled={idx === 0 && !searchTerm.trim()} // Disable for first row when no search term
                         >
                           <option value="" disabled>
                             {t.translations.CONNECTOR}
