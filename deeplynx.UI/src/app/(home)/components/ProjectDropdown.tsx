@@ -69,7 +69,6 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
 
       if (newSelection.length === 0) newSelection = ["ALL"];
     }
-    newSelection.forEach(s => console.log("Selection: " + s));
     setSelectedIds(newSelection);
   };
 
