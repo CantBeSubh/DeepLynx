@@ -26,12 +26,16 @@ export default async function ProjectPage({ params }: Props) {
   if (!id) return notFound();
 
   const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projectDTOs.map(p => toProjectsList(p));
-  const initialProject = initialProjects.find(p => p.id == id);
-  
+  const initialProjects = projectDTOs.map((p) => toProjectsList(p));
+  const initialProject = initialProjects.find((p) => p.id == id);
+
   if (initialProject == undefined) return notFound();
 
-  await new Promise((r) => setTimeout(r, 1200));
-
-  return <ProjectDetailClient projects={initialProjects} initialProject={initialProject} projectId={id} />;
+  return (
+    <ProjectDetailClient
+      projects={initialProjects}
+      initialProject={initialProject}
+      projectId={id}
+    />
+  );
 }

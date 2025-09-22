@@ -7,11 +7,11 @@ import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import Link from "next/link"; // prefer Link over useRouter().push
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "../contexts/Language";
-import { getAllProjects } from "../lib/projects_services.client"; // optional (for refresh)
+import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 
@@ -62,18 +62,25 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     {
       header: t.translations.PROJECT_NAME,
       data: (row: ProjectsList) => (
-        <Link href={`/project/${row.id}`} className="font-bold underline">
+        <Link
+          href={`/project/${row.id}`}
+          className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
+        >
           {row.name}
         </Link>
       ),
     },
     {
       header: t.translations.DESCRIPTION,
-      data: (row: ProjectsList) => row.description,
+      data: (row: ProjectsList) => (
+        <span className="text-base-content/80">{row.description || "—"}</span>
+      ),
     },
     {
       header: t.translations.LAST_VIEWED,
-      data: (row: ProjectsList) => row.lastViewed,
+      data: (row: ProjectsList) => (
+        <span className="text-base-content/60 text-sm">{row.lastViewed}</span>
+      ),
     },
   ];
 
@@ -87,18 +94,19 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   };
 
   return (
-    <div className="bg-base-100">
-      {/* Header */}
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
-        <h1 className="text-2xl font-bold text-info-content">
-          {t.translations.WELECOME}
-        </h1>
-        <SearchInput
-          placeholder="Search Projects"
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="mr-6"
-        />
-      </div>
+    <div className="min-h-screen bg-base-100">
+      {/* Header Section */}
+      <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
+        <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
+          <h1 className="text-2xl font-bold text-base-content">
+            {t.translations.WELECOME}
+          </h1>
+          <SearchInput
+            placeholder="Search Projects"
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </header>
 
       {/* Main Content */}
       <div className="p-6">
@@ -115,19 +123,19 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 {t.translations.YOUR_PROJECTS}
               </h3>
 
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setIsRecordModalOpen(true)}
-                  className="btn btn-outline btn-secondary flex items-center gap-1"
+                  className="btn btn-outline btn-secondary btn-sm flex-1 sm:flex-initial"
                 >
-                  <PlusIcon className="size-6" />
+                  <PlusIcon className="size-5" />
                   <span>{t.translations.RECORD}</span>
                 </button>
                 <button
                   onClick={() => setIsProjectModalOpen(true)}
-                  className="btn btn-secondary text-primary-content flex items-center gap-1"
+                  className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
                 >
-                  <PlusIcon className="size-6" />
+                  <PlusIcon className="size-5" />
                   <span>{t.translations.PROJECT}</span>
                 </button>
               </div>
@@ -136,7 +144,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
             <ExpandableTable
               data={filteredProjects}
               columns={columns}
-              // If your table needs an "Explore" button, use Link inside column renderers
               renderExpandedContent={(project, onClose) => (
                 <ExpandedProjectCard project={project} onClose={onClose} />
               )}

@@ -12,6 +12,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
+import { getAllUsers } from "@/app/lib/user_services.client";
+import AvatarCell from "./Avatar";
 
 interface Props {
   project: ProjectsList;
@@ -27,6 +29,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     records: number;
     connections: number;
   } | null>(null);
+  const [users, setUsers] = useState<{ name: string }[]>([]);
 
   useEffect(() => {
     if (!project.id) return;
@@ -46,46 +49,66 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchStats();
   }, [project.id]);
 
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const data = await getAllUsers(Number(project?.id));
+        setUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
+    };
+
+    fetchAllUsers();
+  }, [project]);
+
   return (
     <div>
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold">{project.name}</h2>
-          <p className="text-sm text-base-content">{project.description}</p>
-          <p className="text-sm text-base-300 mt-1 mb-2">
+      {/* Header Section */}
+      <div className="flex justify-between items-start mb-4">
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-base-content">
+            {project.name}
+          </h2>
+          <p className="text-sm text-base-content/70 mt-1">
+            {project.description}
+          </p>
+          <p className="text-xs text-base-content/50 mt-2">
             {t.translations.LAST_EDIT} {project.lastViewed}
           </p>
         </div>
-        <button onClick={onClose} aria-label="Close details">
-          <XMarkIcon className="size-6" />
+        <button
+          onClick={onClose}
+          aria-label="Close details"
+          className="p-1 rounded-lg hover:bg-base-300/30 transition-colors"
+        >
+          <XMarkIcon className="size-6 text-base-content/60 hover:text-base-content" />
         </button>
       </div>
 
-      <div className="space-x-2">
-        <p className="text-base-300 mb-2">{t.translations.TEAM_MEMBERS}</p>
-        {peopleData
-          .slice(0, Math.floor(Math.random() * 6) + 2)
-          .map((person) => (
-            <div key={person.id} className="avatar inline-block">
-              <div className="w-10 h-10 relative overflow-hidden rounded-full">
-                <Image
-                  src={person.image}
-                  alt={person.name}
-                  fill
-                  className="object-cover"
-                />
+      {/* Team Members Section */}
+      <div className="mb-6">
+        <p className="text-sm font-medium text-base-content/80 mb-3">
+          {t.translations.TEAM_MEMBERS}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {users.map((person, index) => (
+            <div key={index} className="avatar">
+              <div className="w-10 h-10 relative overflow-hidden rounded-full ring-2 ring-base-300/30">
+                <AvatarCell name={person.name} />
               </div>
             </div>
           ))}
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats Section */}
       {!stats ? (
-        <div className="text-center text-base-content">
+        <div className="text-center py-8 text-base-content/60">
           {t.translations.NO_STATS}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-3 gap-4 mb-6">
           {[
             {
               title: "Classes",
@@ -94,33 +117,39 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             },
             {
               title: "Records",
-              // title: "Data Records",
               value: stats?.records,
               Icon: CircleStackIcon,
             },
             {
               title: "Data Sources",
-              // title: "Connections",
               value: stats?.connections,
               Icon: ArrowsRightLeftIcon,
             },
-          ].map(({ title, value, Icon: Icon }, idx) => (
-            <div key={idx} className="stat flex items-center">
-              <div>
+          ].map(({ title, value, Icon }, idx) => (
+            <div
+              key={idx}
+              className="bg-base-200 rounded-lg p-3 border border-base-300/30"
+            >
+              <div className="flex items-center gap-3">
                 <Icon className="size-8 text-secondary" />
-              </div>
-              <div>
-                <div className="stat-title text-secondary">{title}</div>
-                <div className="stat-value text-secondary">{value}</div>
+                <div>
+                  <div className="text-xs text-base-content/60 font-medium">
+                    {title}
+                  </div>
+                  <div className="text-lg font-bold text-base-content">
+                    {value}
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      <div className="flex justify-end">
+      {/* Action Button */}
+      <div className="flex justify-end pt-2 border-base-300/20">
         <button
-          className="btn btn-secondary text-primary-content mt-4"
+          className="btn btn-secondary btn-sm"
           onClick={() => router.push(`/project/${project.id}`)}
         >
           {t.translations.EXPLORE}

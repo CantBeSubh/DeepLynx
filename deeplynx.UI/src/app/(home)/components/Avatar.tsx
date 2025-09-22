@@ -6,14 +6,14 @@ interface AvatarCellProps {
   name?: string;
   image?: string;
   showName?: boolean;
-  size?: number; // Tailwind spacing unit (e.g. 10 = w-10 h-10)
+  size?: number;
 }
 
 const AvatarCell: React.FC<AvatarCellProps> = ({
   name,
   image,
   showName,
-  size = 10, // default
+  size = 10,
 }) => {
   const [imgError, setImgError] = useState(false);
 
@@ -32,26 +32,27 @@ const AvatarCell: React.FC<AvatarCellProps> = ({
 
   const fallbackInitials = getInitials(name);
 
-  // Tailwind classes built dynamically
   const sizeClass = `w-${size} h-${size}`;
   const textSizeClass = size >= 12 ? "text-xl" : "text-lg";
 
   return (
     <div className="flex items-center space-x-3">
-      {imgError || !image ? (
-        <div
-          className={`${sizeClass} rounded-full bg-secondary text-primary-content flex items-center justify-center font-bold ${textSizeClass}`}
-        >
-          {fallbackInitials}
-        </div>
-      ) : (
-        <div className="avatar">
-          <div className={`${sizeClass} rounded-full`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt={name} onError={() => setImgError(true)} />
+      <div title={name || ""}>
+        {imgError || !image ? (
+          <div
+            className={`${sizeClass} rounded-full bg-secondary text-primary-content flex items-center justify-center font-bold ${textSizeClass}`}
+          >
+            {fallbackInitials}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="avatar">
+            <div className={`${sizeClass} rounded-full`}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={image} alt={name} onError={() => setImgError(true)} />
+            </div>
+          </div>
+        )}
+      </div>
       {showName && <p>{name}</p>}
     </div>
   );
