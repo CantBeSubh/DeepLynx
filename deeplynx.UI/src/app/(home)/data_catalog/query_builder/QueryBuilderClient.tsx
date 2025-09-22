@@ -475,25 +475,25 @@ export default function QueryBuilderClient({
               </div>
             </div>
             {/* Other search controls */}
-            <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
-              <div className="p-6 text-sm">Other Search Controls and Options</div>
+            {/* <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
+              <div className="p-6 text-sm">Other Search Controls and Options</div> */}
 
-              {/* Saved searches */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Saved searches */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to saved searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <PlusCircleIcon className="w-4 h-4" />
                 </button>
-              </div>
+              </div> */}
 
-              {/* Favorites */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Favorites */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to favorites searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <StarIcon className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </div> */}
 
 
           </div>
