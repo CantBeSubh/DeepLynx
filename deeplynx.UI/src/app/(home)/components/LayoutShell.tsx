@@ -20,7 +20,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
-  // Handle menu togle
+  // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
   const handleMenuToggle = (isCollapsed: boolean) => {
@@ -50,7 +50,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-primary text-white flex justify-between items-center px-6 py-1 z-50 fixed w-full shadow-xl">
+      <header className="bg-primary text-primary-content flex justify-between items-center px-6 py-1 z-50 fixed w-full shadow-xl">
         <Image
           src="/images/lynx-white.png"
           alt="Logo"
@@ -65,31 +65,39 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           <ul
             tabIndex={0}
-            className="menu dropdown-content bg-base-100 rounded-box z-1 w-auto min-w-52 max-w-[90vw] p-2 shadow-sm"
+            className="menu dropdown-content bg-base-100 text-base-content rounded-box z-[100] w-auto min-w-52 max-w-[90vw] p-2 shadow-xl border border-base-300"
           >
             <li>
-              <div className="flex">
+              <div className="flex hover:bg-base-300">
                 <AvatarCell
                   image={session?.user?.image ?? undefined}
                   name={session?.user?.name ?? ""}
                   size={20}
                 />
-                <div className="text-black flex-1 min-w-0">
-                  <h1 className="font-bold text-lg">
+                <div className="flex-1 min-w-0">
+                  <h1 className="font-bold text-lg text-base-content">
                     {formatUserName(session?.user?.name ?? null)}
                   </h1>
-                  <p>{session?.user?.email}</p>
+                  <p className="text-base-content/70 text-sm">
+                    {session?.user?.email}
+                  </p>
                 </div>
               </div>
             </li>
             <li className="mt-2">
-              <Link href="/settings" className="text-black">
+              <Link
+                href="/settings"
+                className="text-base-content hover:bg-base-300"
+              >
                 <Cog6ToothIcon className="size-6" />
                 {t.translations.SETTINGS}
               </Link>
             </li>
             <li>
-              <button className="text-black" onClick={handleLogout}>
+              <button
+                className="text-base-content hover:bg-base-300"
+                onClick={handleLogout}
+              >
                 <ArrowRightStartOnRectangleIcon className="size-6" />
                 {t.translations.LOGOUT}
               </button>
@@ -103,7 +111,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18  ${
+          className={`transition-all duration-300 w-full mt-18 ${
             isMenuCollapsed ? "ml-20" : "ml-64"
           }`}
         >

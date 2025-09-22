@@ -1,4 +1,4 @@
-// src/app/
+// src/app/(home)/record/RecordViewClient.tsx
 
 "use client";
 
@@ -34,6 +34,7 @@ import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
 import RelatedRecordsCard, {
   CardColumn,
 } from "./components/RelatedRecordsCard";
+import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
@@ -85,6 +86,7 @@ export default function RecordViewClient({
   projectId,
   recordId,
 }: Props) {
+  const { t } = useLanguage();
   const [record, setRecord] = useState<FileViewerTableRow | null>(
     initialRecord
   );
@@ -357,10 +359,10 @@ export default function RecordViewClient({
               String(selectedDestinationId)
             );
           }
-          await queryKuzu(
-            projectId,
-            `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
-          );
+          // await queryKuzu(
+          //   projectId,
+          //   `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
+          // );
           setParsedRelatedRecords((prevRecords) =>
             prevRecords.filter((record) => record.id !== idToRemove)
           );
@@ -488,10 +490,10 @@ export default function RecordViewClient({
             />
           </div>
           <div className="flex-grow">
-            <div className="card bg-base-200 shadow-md p-4 relative mb-20">
+            <div className="card bg-base-100 shadow-md p-4 relative mb-20">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
-                  Tags:
+                  {t.translations.TAGS}
                 </h2>
                 <div className="flex items-center">
                   <TagButton
@@ -546,10 +548,10 @@ export default function RecordViewClient({
                 ))}
               </span>
             </div>
-            <RelatedRecordsCard
+            {/* <RelatedRecordsCard
               columns={relatedRecordsColumn}
               rows={parsedRelatedRecords}
-            />
+            /> */}
           </div>
           <ConfirmationModal
             isOpen={isModalOpen}
@@ -568,13 +570,13 @@ export default function RecordViewClient({
         </div>
       ),
     },
-    { label: "Timeseries Viewer", content: "" },
-    { label: "Graph Viewer", content: "" },
-    { label: "Record History", content: "" },
+    // { label: "Timeseries Viewer", content: "" },
+    // { label: "Graph Viewer", content: "" },
+    // { label: "Record History", content: "" },
   ];
 
   return (
-    <div className="p-6">
+    <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-base-content">
@@ -585,7 +587,7 @@ export default function RecordViewClient({
 
       <div className="divider"></div>
 
-      <Tabs tabs={tabs} className={""}></Tabs>
+      <Tabs tabs={tabs} className={"ml-4"}></Tabs>
     </div>
   );
 }

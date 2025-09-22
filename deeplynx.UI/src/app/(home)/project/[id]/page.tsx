@@ -30,7 +30,5 @@ export default async function ProjectPage({ params }: Props) {
 
   const project: ProjectsList = toProjectsList(dto);
 
-  await new Promise((r) => setTimeout(r, 1200));
-
   return <ProjectDetailClient initialProject={project} projectId={id} />;
 }

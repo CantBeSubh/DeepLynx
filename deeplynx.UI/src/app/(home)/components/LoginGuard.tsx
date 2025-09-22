@@ -18,20 +18,14 @@ export default function LoginGuard({
   const router = useRouter();
 
   useEffect(() => {
-    console.log("🔓 LoginGuard - Status:", status);
-    console.log("🔓 LoginGuard - Session:", session ? "EXISTS" : "NULL");
-
     // If loading, don't do anything yet
     if (status === "loading") return;
 
     // If authenticated, redirect away from login page
     if (status === "authenticated" && session) {
-      console.log("✅ LoginGuard - User is authenticated, redirecting to home");
       router.push(redirectTo);
       return;
     }
-
-    console.log("🔓 LoginGuard - User not authenticated, showing login page");
   }, [status, session, router, redirectTo]);
 
   // Show loading while checking authentication

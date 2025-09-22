@@ -12,6 +12,8 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
+import { getAllUsers } from "@/app/lib/user_services.client";
+import AvatarCell from "./Avatar";
 
 interface Props {
   project: ProjectsList;
@@ -27,6 +29,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     records: number;
     connections: number;
   } | null>(null);
+  const [users, setUsers] = useState<{ name: string }[]>([]);
 
   useEffect(() => {
     if (!project.id) return;
@@ -45,6 +48,19 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     };
     fetchStats();
   }, [project.id]);
+
+  useEffect(() => {
+    const fetchAllUsers = async () => {
+      try {
+        const data = await getAllUsers(Number(project?.id));
+        setUsers(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      }
+    };
+
+    fetchAllUsers();
+  }, [project]);
 
   return (
     <div>
@@ -76,20 +92,13 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           {t.translations.TEAM_MEMBERS}
         </p>
         <div className="flex flex-wrap gap-2">
-          {peopleData
-            .slice(0, Math.floor(Math.random() * 6) + 2)
-            .map((person) => (
-              <div key={person.id} className="avatar">
-                <div className="w-10 h-10 relative overflow-hidden rounded-full ring-2 ring-base-300/30">
-                  <Image
-                    src={person.image}
-                    alt={person.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+          {users.map((person, index) => (
+            <div key={index} className="avatar">
+              <div className="w-10 h-10 relative overflow-hidden rounded-full ring-2 ring-base-300/30">
+                <AvatarCell name={person.name} />
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -138,7 +147,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
       )}
 
       {/* Action Button */}
-      <div className="flex justify-end pt-2 border-t border-base-300/20">
+      <div className="flex justify-end pt-2 border-base-300/20">
         <button
           className="btn btn-secondary btn-sm"
           onClick={() => router.push(`/project/${project.id}`)}

@@ -67,7 +67,7 @@ const RecentRecordsCard = ({
   };
 
   return (
-    <div className="bg-base-100 rounded-xl">
+    <div className="bg-base-200/10 rounded-xl">
       {/* Header */}
       <h2 className="text-lg font-semibold text-base-content mb-2 pl-2">
         {t.translations.RECENTLY_ADDED_RECORDS}
@@ -134,7 +134,7 @@ const RecentRecordsCard = ({
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-end items-center gap-2 mt-4 pt-4 border-t border-base-300/30">
+        <div className="flex justify-end items-center gap-2 mt-4 pt-4 border-base-300/30">
           <button
             className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === 1}
