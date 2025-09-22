@@ -27,6 +27,7 @@ export default function UploadCenterClient({
   const [targetFileId, setTargetFileId] = useState("");
   const [destination, setDestination] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const showRightPanel = selectedFiles.length > 0;
 
   const needsTarget = uploadType === "version" || uploadType === "properties";
   const availableFiles = useMemo(
@@ -66,19 +67,28 @@ export default function UploadCenterClient({
   return (
     <div>
       <div className="flex items-center bg-base-200/40 py-2 pl-12">
-        <h1 className="text-2xl font-bold text-info-content">
+        <h1 className="text-2xl font-bold text-base-content">
           {t.translations.UPLOAD_CENTER}
         </h1>
       </div>
 
-      <div className="flex lg:flex-grow justify-between gap-8 p-10 lg:p-20">
+      {/* <div className="flex lg:flex-grow justify-between gap-8 p-10 lg:p-20"> */}
+      <div
+        className={`flex gap-8 p-10 lg:p-20 ${
+          showRightPanel ? "justify-between" : "justify-center"
+        }`}
+      >
         {/* LEFT */}
-        <div className="w-full lg:w-3/5">
+        <div
+          className={`w-full lg:w-3/5 ${
+            showRightPanel ? "" : "max-w-5xl mx-auto"
+          }`}
+        >
           <h2>{t.translations.START_UPLOAD_BY_CHOOSING_TYPE}</h2>
           <div className="p-4 space-y-4">
             <fieldset>
               <label className="label cursor-pointer justify-start gap-3">
-                <span className="label-text text-sm">
+                <span className="label-text text-xs">
                   {t.translations.UPLOAD_MULTIPLE_FILES}
                 </span>
                 <input
@@ -98,15 +108,15 @@ export default function UploadCenterClient({
                   aria-describedby="multi-files-hint"
                 />
               </label>
-              {!isMultiAllowed && (
+              {/* {!isMultiAllowed && (
                 <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
                   {t.translations.MULTI_FILES_ONLY_AVAILABLE}.
                 </p>
-              )}
+              )} */}
             </fieldset>
 
             <fieldset>
-              <label className="label">
+              <label className="label text-base-content font-bold">
                 {t.translations.UPLOADING}
                 <select
                   value={uploadType}
@@ -146,7 +156,7 @@ export default function UploadCenterClient({
             </fieldset>
 
             <fieldset>
-              <label className="label">
+              <label className="label text-base-content font-bold">
                 {t.translations.TO_DESTINATION}
                 <select
                   value={destination}
@@ -186,8 +196,23 @@ export default function UploadCenterClient({
           </div>
         </div>
 
-        {/* RIGHT */}
-        <div className="lg:w-2/5">
+        {/* RIGHT — render only when needed */}
+        {showRightPanel && (
+          <div className="lg:w-2/5">
+            {/* Keep these so the functionality “when something is uploaded” appears */}
+            <FileDetailsCard
+              needsTarget={needsTarget}
+              selectedTarget={selectedTarget}
+            />
+            <SelectedFilesCard
+              files={selectedFiles}
+              onRemoveAt={removeAt}
+              onClear={clearAll}
+              onUpload={handleUpload}
+            />
+          </div>
+        )}
+        {/* <div className="lg:w-2/5">
           {selectedFiles.length === 0 &&
             (uploadType === "" || uploadType === "new") && (
               <RecentUploadsCard
@@ -207,7 +232,7 @@ export default function UploadCenterClient({
             onClear={clearAll}
             onUpload={handleUpload}
           />
-        </div>
+        </div> */}
       </div>
 
       {showMultiFileWarning && (
