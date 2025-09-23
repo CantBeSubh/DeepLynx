@@ -9,25 +9,6 @@ interface MembersTableProps {
   data: ProjectMembersTable[];
 }
 
-// const MembersTable: FC<MembersTableProps> = ({ data }) => {
-//     const { t } = useLanguage();
-
-//     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(data.length).fill(false));
-//     const [selectAll, setSelectAll] = useState(false);
-
-//     const handleSelectAll = () => {
-//         const newSelection = !selectAll;
-//         setSelectAll(newSelection);
-//         setSelectedMembers(new Array(data.length).fill(newSelection));
-//     };
-
-//     const handleCheckboxChange = (index: number) => {
-//         const newSelection = [...selectedMembers];
-//         newSelection[index] = !newSelection[index];
-//         setSelectedMembers(newSelection);
-//         setSelectAll(newSelection.every(Boolean));
-//     };
-
 const MembersTable: FC<MembersTableProps> = ({ data }) => {
   const { t } = useLanguage();
   const [addRoleSwap, setAddRoleSwap] = useState(false);
@@ -44,8 +25,13 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
   const handleCheckboxChange = (index: number) => {
     const newSelection = [...selectedMembers];
     newSelection[index] = !newSelection[index];
+    setSelectedMembers(newSelection);
 
-    setSelectAll(newSelection.every(Boolean));
+    if (newSelection.every(Boolean)) {
+      setSelectAll(true);
+    } else {
+      setSelectAll(false);
+    }
   };
 
     const columns: Column<ProjectMembersTable>[] = [
@@ -78,9 +64,16 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
       sortable: false,
     },
     {
-      header: "",
+      header: (
+        <div className="flex">
+          <button className="btn"
+            onClick={() => setAddRoleSwap(true)}>
+            {t.translations.ROLE}
+        </button>
+        </div>
+      ),
       cell: () => (
-        <div className="flex justify-end">
+        <div className="flex">
           <button className="btn"
             onClick={() => setAddRoleSwap(true)}>
             {t.translations.ROLE}
@@ -90,10 +83,16 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
       sortable: false,
     },
     {
-      header: "",
-      cell: () => (
-        <div className="flex justify-end">
+      header: (
+        <div className="flex">
           <TrashIcon className="size-6 text-red-500" />
+        </div>
+      ),
+      cell: () => (
+        <div className="flex">
+            <button className="">
+                <TrashIcon className="size-6 text-red-500" />
+            </button>
         </div>
       ),
       sortable: false,
@@ -106,7 +105,7 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
             columns={columns}
             data={data}
             enablePagination
-            rowsPerPage={5}
+            // rowsPerPage={5}
         />
 
         <RoleSwap

@@ -323,7 +323,7 @@ const GenericTable = <T extends object>({
                     } text-info-content`}
                   >
                     {column.cell
-                      ? column.cell(row)
+                      ? column.cell(row, rowIndex)
                       : (row[column.data as keyof T] as React.ReactNode)}
                   </td>
                 ))}

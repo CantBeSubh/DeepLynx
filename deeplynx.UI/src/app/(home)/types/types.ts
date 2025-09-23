@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 
 export type DataSourceTableRow = {
   name: string;
@@ -51,10 +51,10 @@ export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
   accessor?: string;
-  header?: string;
+  header?: string | ReactNode;
   data?: keyof T;
   sortable?: boolean;
-  cell?: (row: T) => React.ReactNode
+  cell?: (row: T, index: number) => React.ReactNode
 };
 
 export type ProjectsList = {
