@@ -1,3 +1,5 @@
+// src/app/(home)/components/NewFileUploadCard.tsx
+
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";

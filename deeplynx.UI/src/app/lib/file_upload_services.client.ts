@@ -1,0 +1,69 @@
+// src/app/lib/file_upload_services.client.ts
+
+import api from "./api";
+
+export type UploadedFileDTO = {
+  id: number | null;
+  name: string;
+  description?: string | null;
+  uri?: string | null;
+  properties?: unknown;
+  objectStorageId?: number | null;
+  originalId?: string | null;
+  classId?: number | null;
+  dataSourceId?: number | null;
+  projectId?: number | null;
+  lastUpdatedAt?: string;
+  lastUpdatedBy?: string | null;
+  isArchived?: boolean;
+  tags?: { id: number | null; name: string }[];
+};
+
+type UploadFileArgs = {
+  projectId: number | string;
+  dataSourceId: number | string;
+  objectStorageId: number | string;
+  file: File;
+
+  // optional metadata
+  name?: string;
+  description?: string;
+  properties?: unknown;
+  tags?: string[];
+  originalId?: string;
+  classId?: number | string;
+};
+
+export async function uploadFile({
+  projectId,
+  dataSourceId,
+  objectStorageId,
+  file,
+}: UploadFileArgs) {
+  if (!projectId || !dataSourceId || !objectStorageId || !file) {
+    throw new Error("projectId, dataSourceId, objectStorageId, and file are required");
+  }
+
+  const form = new FormData();
+  form.append("file", file);
+
+  const { data } = await api.post<UploadedFileDTO>(
+    `/projects/${projectId}/files/UploadFile`,
+    form,
+    {
+      params: {
+        dataSourceId: Number(dataSourceId),
+        objectStorageId: Number(objectStorageId),
+      },
+    }
+  );
+
+  return data;
+}
+
+export async function uploadFilesBatch(
+  args: Omit<UploadFileArgs, "file"> & { files: File[] }
+) {
+  const { files, ...rest } = args;
+  return Promise.allSettled(files.map((file) => uploadFile({ ...rest, file })));
+}
