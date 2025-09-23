@@ -110,7 +110,8 @@ public class RoleBusiness : IRoleBusiness
     /// <param name="organizationId">ID of the organization to which the role belongs</param>
     /// <returns>The newly created role</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
-    public async Task<RoleResponseDto> CreateRole(CreateRoleRequestDto dto, long? projectId, long? organizationId)
+    public async Task<RoleResponseDto> CreateRole(
+        CreateRoleRequestDto dto, long? projectId, long? organizationId)
     {
         // ensure one and only one of projectID or organizationID is supplied
         if (!projectId.HasValue && !organizationId.HasValue)
@@ -325,6 +326,132 @@ public class RoleBusiness : IRoleBusiness
             LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
+        return true;
+    }
+    
+    /// <summary>
+    /// List all permissions for a given role
+    /// </summary>
+    /// <param name="roleId">ID of the role across which to search permissions</param>
+    /// <param name="hideArchived">Flag indicating whether to search on archived permissions</param>
+    /// <returns>A list of permissions</returns>
+    /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
+    public async Task<IEnumerable<PermissionResponseDto>> GetPermissionsByRole(long roleId)
+    {
+        // check if role exists
+        var role = await _context.Roles
+            .Include(r => r.Permissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        return role.Permissions.Select(p => new PermissionResponseDto()
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Description = p.Description,
+            Action = p.Action,
+            Resource = p.Resource,
+            LastUpdatedAt = p.LastUpdatedAt,
+            LastUpdatedBy = p.LastUpdatedBy,
+            IsArchived = p.IsArchived,
+            LabelId = p.LabelId,
+            ProjectId = p.ProjectId,
+            OrganizationId = p.OrganizationId,
+            IsHardcoded = p.IsHardcoded
+        });
+    }
+    
+    /// <summary>
+    /// Add a permission to a role
+    /// </summary>
+    /// <param name="roleId">ID of the role to add permission to</param>
+    /// <param name="permissionId">ID of the permission to add</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if role or permission not found</exception>
+    /// <exception cref="InvalidOperationException">Returned if permission already exists for role</exception>
+    public async Task<bool> AddPermissionToRole(long roleId, long permissionId)
+    {
+        // check if role exists
+        var role = await _context.Roles
+            .Include(r => r.Permissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // check if permission exists
+        var permission = await _context.Permissions.FindAsync(permissionId);
+        if (permission == null || permission.IsArchived)
+            throw new KeyNotFoundException($"Permission with id {permissionId} not found");
+        
+        // check if permission is already assigned to the role
+        if (role.Permissions.Any(p => p.Id == permission.Id))
+            throw new ArgumentException($"Permission with id {permissionId} already exists as part of role {roleId}");
+        
+        role.Permissions.Add(permission);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Remove a permission from a role
+    /// </summary>
+    /// <param name="roleId">ID of the role to remove permission from</param>
+    /// <param name="permissionId">ID of the permission to remove</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if role not found or permission not assigned to role</exception>
+    public async Task<bool> RemovePermissionFromRole(long roleId, long permissionId)
+    {
+        // check if role exists
+        var role = await _context.Roles
+            .Include(r => r.Permissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // check if permission exists on role
+        var permission = role.Permissions.FirstOrDefault(p => p.Id == permissionId);
+        if (permission == null || permission.IsArchived)
+            throw new KeyNotFoundException($"Permission with id {permissionId} is not assigned to role {roleId}");
+        
+        role.Permissions.Remove(permission);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// Set all permissions for a role (replaces existing permissions)
+    /// </summary>
+    /// <param name="roleId">ID of the role to update permissions for</param>
+    /// <param name="permissionIds">Array of permission IDs to assign to the role</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if role not found or any permission ID is invalid</exception>
+    public async Task<bool> SetPermissionsForRole(long roleId, long[] permissionIds)
+    {
+        // check if role exists
+        var role = await _context.Roles
+            .Include(r => r.Permissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // validate that all permissions IDs exist
+        var permissions = await _context.Permissions
+            .Where(p => permissionIds.Contains(p.Id))
+            .ToListAsync();
+
+        if (permissions.Count != permissionIds.Length)
+        {
+            var missingIds = permissionIds.Except(permissions.Select(p => p.Id).ToList());
+            throw new KeyNotFoundException($"Permissions not found: {string.Join(", ", missingIds)}");
+        }
+        
+        // clear existing permissions and add new ones
+        role.Permissions.Clear();
+        foreach (var permission in permissions)
+            role.Permissions.Add(permission);
+        
+        await _context.SaveChangesAsync();
         return true;
     }
 }

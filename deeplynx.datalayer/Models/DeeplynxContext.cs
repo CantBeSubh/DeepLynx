@@ -229,6 +229,14 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Label).WithMany(p => p.Permissions)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("permissions_label_id_fkey");
+            
+            entity.HasOne(d => d.Project).WithMany(p => p.Permissions)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("permissions_project_id_fkey");
+            
+            entity.HasOne(d => d.Organization).WithMany(p => p.Permissions)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("permissions_organization_id_fkey");
         });
 
         modelBuilder.Entity<Project>(entity =>

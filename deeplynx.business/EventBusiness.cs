@@ -11,27 +11,6 @@ public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
-    private static readonly List<string> AllowedEntityTypes = new List<string>
-    {
-        "class", 
-        "data_source", 
-        "relationship", 
-        "project", 
-        "edge", 
-        "edge_mapping", 
-        "record", 
-        "record_mapping",
-        "metadata", 
-        "user", 
-        "tag"
-    };
-
-    private static readonly List<string> AllowedOperations = new List<string>
-    {
-        "create",
-        "update",
-        "delete",
-    };
     
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.

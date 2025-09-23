@@ -5,34 +5,35 @@ namespace deeplynx.helpers;
 
 public class ValidationHelper
 {
+    public static readonly List<string> AllowedEntityTypes = new List<string>
+    {
+        "organization",
+        "group",
+        "role",
+        "sensitivity_label",
+        "class",
+        "data_source",
+        "relationship",
+        "project",
+        "edge",
+        "record",
+        "metadata",
+        "user",
+        "tag",
+        "permission"
+    };
+
+    public static readonly List<string> AllowedOperations = new List<string>
+    {
+        "create",
+        "update",
+        "delete",
+        "archive",
+        "unarchive"
+    };
+
     public static bool ValidateTypes(string value, string type)
     {
-        List<string> AllowedEntityTypes = new List<string>
-        {
-            "organization",
-            "group",
-            "role",
-            "sensitivity_label",
-            "class", 
-            "data_source", 
-            "relationship", 
-            "project", 
-            "edge",
-            "record",
-            "metadata", 
-            "user", 
-            "tag"
-        };
-
-        List<string> AllowedOperations = new List<string>
-        {
-            "create",
-            "update",
-            "delete",
-            "archive",
-            "unarchive"
-        };
-            
         if (type == "EntityType")
         {
             if (!AllowedEntityTypes.Contains(value))

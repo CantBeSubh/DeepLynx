@@ -13,241 +13,230 @@ using System.Text.Json.Nodes;
 namespace deeplynx.tests
 {
     [Collection("Test Suite Collection")]
-    public class RoleBusinessTests : IntegrationTestBase
+    public class PermissionBusinessTests : IntegrationTestBase
     {
         private EventBusiness _eventBusiness;
-        private RoleBusiness _roleBusiness;
+        private PermissionBusiness _permissionBusiness;
 
         public long oid;    // organization ID
         public long pid;    // project ID
         public long rid;    // role ID
         
-        public RoleBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
+        public PermissionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
             _eventBusiness = new EventBusiness(Context, _cacheBusiness);
-            _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
+            _permissionBusiness = new PermissionBusiness(Context, _eventBusiness, _cacheBusiness);
         }
         
         [Fact]
-        public async Task CreateRole_Succeeds_WithProjectSupplied()
+        public async Task GetAllPermissions_IncludesHardcoded_WhenNoFilters()
         {
             
         }
         
         [Fact]
-        public async Task CreateRole_Succeeds_WithOrganizationSupplied()
+        public async Task GetAllPermissions_FiltersOnLabelId()
+        {
+            
+        }
+        
+        [Fact]
+        public async Task GetAllPermissions_FiltersOnProjectId()
+        {
+            
+        }
+        
+        [Fact]
+        public async Task GetAllPermissions_FiltersOnOrganizationId()
+        {
+            
+        }
+        
+        [Fact]
+        public async Task GetAllPermissions_IncludesHardcoded_WhenMultipleFilters()
+        {
+            
+        }
+        
+        [Fact]
+        public async Task GetAllPermissions_ExcludesArchived()
+        {
+            
+        }
+        
+        [Fact]
+        public async Task GetAllPermissions_WithHideArchivedFalse_IncludesArchived()
         {
             
         }
 
         [Fact]
-        public async Task CreateRole_Success_CreatesEvent()
+        public async Task GetPermission_Succeeds_WhenExists()
         {
             
         }
         
         [Fact]
-        public async Task CreateRole_Fails_IfNoName()
+        public async Task GetPermission_Fails_IfNotFound()
         {
             
         }
         
         [Fact]
-        public async Task CreateRole_Fails_IfEmptyName()
+        public async Task GetPermission_Fails_IfArchivedPermission()
         {
             
         }
         
         [Fact]
-        public async Task CreateRole_Fails_IfBothProjectAndOrgAreSet()
+        public async Task CreatePermission_Succeeds_WithProjectSupplied()
         {
             
         }
         
         [Fact]
-        public async Task CreateRole_Fails_IfNeitherProjectNorOrgAreSet()
+        public async Task CreatePermission_Succeeds_WithOrganizationSupplied()
         {
             
         }
 
         [Fact]
-        public async Task GetAllRoles_ExcludesArchived()
-        {
-            
-        }
-
-        [Fact]
-        public async Task GetRole_Succeeds_WhenExists()
+        public async Task CreatePermission_Success_CreatesEvent()
         {
             
         }
         
         [Fact]
-        public async Task GetRole_Fails_IfNotFound()
+        public async Task CreatePermission_Fails_IfBothProjectAndOrgAreSet()
         {
             
         }
         
         [Fact]
-        public async Task GetRole_Fails_IfDeletedRole()
+        public async Task CreatePermission_Fails_IfNeitherProjectNorOrgAreSet()
         {
             
         }
         
         [Fact]
-        public async Task UpdateRole_Success_ReturnsRole()
+        public async Task CreatePermission_Fails_IfNoName()
         {
             
         }
         
         [Fact]
-        public async Task UpdateRole_Success_CreatesEvent()
+        public async Task CreatePermission_Fails_IfNoAction()
         {
             
         }
         
         [Fact]
-        public async Task UpdateRole_Fails_IfNotFound()
+        public async Task CreatePermission_Fails_IfNoLabelId()
         {
             
         }
         
         [Fact]
-        public async Task ArchiveRole_Succeeds_IfNotArchived()
-        {
-            
-        }
-
-        [Fact] public async Task ArchiveRole_RemovesRole_FromProjectMembers()
+        public async Task CreatePermission_DoesNot_SetResource()
         {
             
         }
         
         [Fact]
-        public async Task ArchiveRole_Fails_IfArchived()
+        public async Task CreatePermission_DoesNot_SetIsHardcoded()
         {
             
         }
         
         [Fact]
-        public async Task UnarchiveRole_Succeeds_IfArchived()
+        public async Task UpdatePermission_Success_ReturnsPermission()
         {
             
         }
         
         [Fact]
-        public async Task UnarchiveRole_Fails_IfNotArchived()
+        public async Task UpdatePermission_Success_CreatesEvent()
         {
             
         }
         
         [Fact]
-        public async Task DeleteRole_Succeeds_WhenExists()
+        public async Task UpdatePermission_Fails_IfNotFound()
         {
             
         }
         
         [Fact]
-        public async Task DeleteRole_Fails_IfNotFound()
+        public async Task UpdatePermission_DoesNot_SetResource()
         {
             
         }
         
         [Fact]
-        public async Task GetPermissionsByRole_Lists_AllPermissionsForRole()
+        public async Task UpdatePermission_DoesNot_SetIsHardcoded()
         {
             
         }
         
         [Fact]
-        public async Task GetPermissionsByRole_DoesNotList_PermissionsNotForRole()
+        public async Task UpdatePermission_Fails_IfHardcoded()
         {
             
         }
         
         [Fact]
-        public async Task GetPermissionsByRole_Fails_IfRoleNotFound()
+        public async Task ArchivePermission_Succeeds_IfNotArchived()
         {
             
         }
         
         [Fact]
-        public async Task GetPermissionsByRole_ReturnsEmpty_IfNoPermissionsForRole()
+        public async Task ArchivePermission_Fails_IfArchived()
         {
             
         }
         
         [Fact]
-        public async Task AddPermissionToRole_AddsPermissionToRole()
+        public async Task ArchivePermission_Fails_IfHardcoded()
         {
             
         }
         
         [Fact]
-        public async Task AddPermissionToRole_Fails_IfRoleNotFound()
+        public async Task UnarchivePermission_Succeeds_IfArchived()
         {
             
         }
         
         [Fact]
-        public async Task AddPermissionToRole_Fails_IfPermissionNotFound()
+        public async Task UnarchivePermission_Fails_IfNotArchived()
         {
             
         }
         
         [Fact]
-        public async Task AddPermissionToRole_Fails_IfPermissionExistsForRole()
+        public async Task UnarchivePermission_Fails_IfHardcoded()
         {
             
         }
         
         [Fact]
-        public async Task RemovePermissionFromRole_RemovesPermissionFromRole()
+        public async Task DeletePermission_Succeeds_WhenExists()
         {
             
         }
         
         [Fact]
-        public async Task RemovePermissionFromRole_Fails_IfRoleNotFound()
+        public async Task DeletePermission_Fails_IfNotFound()
         {
             
         }
         
         [Fact]
-        public async Task RemovePermissionFromRole_Fails_IfPermissionNotExistsForRole()
-        {
-            
-        }
-        
-        [Fact]
-        public async Task SetPermissionsForRole_SetsPermissionsForEmptyRole()
-        {
-            
-        }
-        
-        [Fact]
-        public async Task SetPermissionsForRole_ResetsPermissionsIfAnyExist()
-        {
-            
-        }
-        
-        [Fact]
-        public async Task SetPermissionsForRole_SetsPermissionsBlank_IfNoneSupplied()
-        {
-            
-        }
-        
-        [Fact]
-        public async Task SetPermissionsForRole_Fails_IfRoleNotFound()
-        {
-            
-        }
-        
-        [Fact]
-        public async Task SetPermissionsForRole_Fails_IfAnyPermissionNotFound()
+        public async Task DeletePermission_Fails_IfHardcoded()
         {
             
         }
