@@ -35,8 +35,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _historicalRecordBusiness = new HistoricalRecordBusiness(Context);
-        _eventBusiness = new EventBusiness(Context);
-        _recordBusiness = new RecordBusiness(Context, _eventBusiness);
+        _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+        _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
     }
 
     [Fact]

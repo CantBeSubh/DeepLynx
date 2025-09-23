@@ -65,7 +65,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
     } else {
       newSelection = selectedIds.includes(id)
         ? selectedIds.filter((sid) => sid !== id)
-        : [...selectedIds.filter((sid) => sid !== "ALL"), id];
+        : [id, ...selectedIds.filter((sid) => sid !== "ALL")];
 
       if (newSelection.length === 0) newSelection = ["ALL"];
     }

@@ -1,8 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using deeplynx.business;
 using FluentAssertions;
 using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models;
+using Moq;
 
 namespace deeplynx.tests
 {
@@ -24,7 +27,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
         }
 
         [Fact]
@@ -316,7 +319,8 @@ namespace deeplynx.tests
                 LastUpdatedBy = "user123"
             };
             
-            events.AddRange(dto1,  dto2);
+            events.Add(dto1);
+            events.Add(dto2);
 
             var results = await _eventBusiness.BulkCreateEvents(pid, events);
             results.Should().NotBeNull();

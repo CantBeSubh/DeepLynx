@@ -14,31 +14,33 @@ public class TagBusiness : ITagBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly ICacheBusiness _cacheBusiness;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TagBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for tag operations.</param>
-    public TagBusiness(DeeplynxContext context, IEventBusiness eventBusiness)
+    /// <param name="cacheBusiness">Used to access cache operations</param>
+    /// <param name="eventBusiness">Used to access event operations</param>
+    public TagBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
         _eventBusiness = eventBusiness;
     }
     
     /// <summary>
     /// Retrieves all tags for a specified project.
     /// </summary>
-    /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
+    /// <param name="projectId">The ID of the project whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
     /// <returns>A list of tags belonging to the project.</returns>
-    public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
+    public async Task<List<TagResponseDto>> GetAllTags(long projectId, bool hideArchived)
     {
-        foreach (var projectId in projectIds)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
-        }
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+        
         var tagQuery = _context.Tags
-            .Where(t => projectIds.Contains(t.ProjectId));
+            .Where(t => t.ProjectId == projectId);
             
         if (hideArchived)
         {
@@ -66,7 +68,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Returned if tag not found or is archived</exception>
     public async Task<TagResponseDto> GetTag(long projectId, long tagId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var tag = await _context.Tags
             .Where(t => t.ProjectId == projectId && t.Id == tagId)
             .FirstOrDefaultAsync();
@@ -101,7 +103,7 @@ public class TagBusiness : ITagBusiness
     /// <returns>The created tag response DTO with saved details.</returns>
     public async Task<TagResponseDto> CreateTag(long projectId, CreateTagRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         if (dto == null)
             throw new ArgumentNullException(nameof(dto));
         
@@ -168,7 +170,7 @@ public class TagBusiness : ITagBusiness
         long projectId, 
         List<CreateTagRequestDto> tags)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -234,7 +236,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<TagResponseDto> UpdateTag(long projectId, long tagId, UpdateTagRequestDto tagRequestDto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
         {
@@ -285,7 +287,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> DeleteTag(long projectId, long tagId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
         if (tag == null || tag.ProjectId != projectId)
             throw new KeyNotFoundException($"Tag with id {tagId} not found.");
@@ -304,7 +306,7 @@ public class TagBusiness : ITagBusiness
     /// <exception cref="KeyNotFoundException">Thrown when the tag is not found.</exception>
     public async Task<bool> ArchiveTag(long projectId, long tagId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
 
         if (tag == null || tag.ProjectId != projectId || tag.IsArchived)
@@ -339,7 +341,7 @@ public class TagBusiness : ITagBusiness
     public async Task<bool> UnarchiveTag(long projectId
         , long tagId)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         var tag = await _context.Tags.FindAsync(tagId);
 
         if (tag == null || tag.ProjectId != projectId || !tag.IsArchived)
@@ -366,7 +368,7 @@ public class TagBusiness : ITagBusiness
         if (tagNames == null || !tagNames.Any())
             throw new ArgumentException("Tag names list cannot be null or empty", nameof(tagNames));
 
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Remove duplicates and filter out null/empty values
         var cleanTagNames = tagNames

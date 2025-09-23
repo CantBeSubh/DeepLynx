@@ -90,40 +90,38 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
 
   return (
     <div>
-      <div className="flex justify-between items-center justify-end mb-4">
+      {/* Action Buttons Bar */}
+      <div className="flex justify-end items-center mb-4 gap-2">
         {!canCustomize && (
           <button
             onClick={() => setCanCustomize(true)}
-            className="btn btn-outline btn-secondary flex items-center mr-2"
+            className="btn btn-sm btn-outline btn-secondary"
           >
-            <Cog6ToothIcon className="h-6 w-6" />
-            {t.translations.CUSTOMIZE}
+            <Cog6ToothIcon className="h-5 w-5" />
+            <span>{t.translations.CUSTOMIZE}</span>
           </button>
         )}
         {canCustomize && (
           <>
             <button
               onClick={handleCancel}
-              className="btn flex items-center mr-2 btn-outline btn-secondary"
+              className="btn btn-sm btn-outline btn-neutral"
             >
-              <XMarkIcon className="size-6" />
-              {t.translations.CANCEL}
+              <XMarkIcon className="h-5 w-5" />
+              <span>{t.translations.CANCEL}</span>
             </button>
-            <button
-              onClick={handleSave}
-              className="btn flex items-center mr-2 btn-secondary"
-            >
-              <DocumentCheckIcon className="h-6 w-6" />
-              {t.translations.SAVE}
+            <button onClick={handleSave} className="btn btn-sm btn-primary">
+              <DocumentCheckIcon className="h-5 w-5" />
+              <span>{t.translations.SAVE}</span>
             </button>
           </>
         )}
         <button
           onClick={() => setWidgetModal(true)}
-          className="btn btn-secondary text-primary-content flex items-center"
+          className="btn btn-sm btn-secondary"
         >
-          <PlusIcon className="h-6 w-6" />
-          {t.translations.WIDGET}
+          <PlusIcon className="h-5 w-5" />
+          <span>{t.translations.WIDGET}</span>
         </button>
       </div>
 
@@ -137,9 +135,20 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
           <Reorder.Item
             key={widget}
             value={widget}
-            className={`card card-border bg-base-100 w-auto ${
-              canCustomize ? "cursor-grab" : "cursor-default"
-            }`}
+            className={`
+              card 
+              bg-base-200/30 
+              border 
+              border-base-300/50 
+              shadow-sm 
+              hover:shadow-md 
+              transition-all
+              ${
+                canCustomize
+                  ? "cursor-grab active:cursor-grabbing hover:bg-base-200/50"
+                  : "cursor-default"
+              }
+            `}
             style={{ pointerEvents: canCustomize ? "auto" : "none" }}
           >
             {renderWidgets(widget)}

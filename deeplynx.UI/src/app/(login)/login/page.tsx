@@ -1,3 +1,5 @@
+// src/app/(login)/login/page.tsx
+
 "use client";
 import ArrowButton from "@/app/(home)/components/ArrowButton";
 import { links, LinkT } from "@/app/(home)/links";

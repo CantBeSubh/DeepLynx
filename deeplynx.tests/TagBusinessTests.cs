@@ -29,10 +29,11 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _eventBusiness = new EventBusiness(Context);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
 
             _tagBusiness = new TagBusiness( 
                 Context,
+                _cacheBusiness,
                 _eventBusiness);
         }
 
@@ -42,7 +43,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ValidProjectId_ReturnsActiveTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags([pid], true);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert
@@ -59,7 +60,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_ProjectWithNoTags_ReturnsEmptyList()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags([pid3], true);
+            var result = await _tagBusiness.GetAllTags(pid3, true);
             var tags = result.ToList();
 
             // Assert
@@ -70,7 +71,7 @@ namespace deeplynx.tests
         public async Task GetAllTags_DifferentProject_ReturnsCorrectTags()
         {
             // Act
-            var result = await _tagBusiness.GetAllTags([pid], true);
+            var result = await _tagBusiness.GetAllTags(pid, true);
             var tags = result.ToList();
 
             // Assert
@@ -519,11 +520,11 @@ namespace deeplynx.tests
          public async Task ArchiveTag_ArchivedTagNotReturnedInGetAll()
          {
              // Arrange
-             var initialCount = (await _tagBusiness.GetAllTags([pid], true)).Count();
+             var initialCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Act
              await _tagBusiness.ArchiveTag(pid, tid);
-             var finalCount = (await _tagBusiness.GetAllTags([pid], true)).Count();
+             var finalCount = (await _tagBusiness.GetAllTags(pid, true)).Count();
 
              // Assert
              Assert.Equal(initialCount - 1, finalCount);

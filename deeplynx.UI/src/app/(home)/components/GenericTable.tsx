@@ -26,8 +26,8 @@ type GenericTableProps<T extends object> = {
   bordered?: boolean;
   searchBar?: boolean;
   actionButtons?: boolean;
-  rowClassName?: string | ((row: T, index: number) => string); // Allows certain rows get styled based on conditions ex: rowClassName={(row) => (row.status === "error" ? "bg-red-100" : "")}
-  tableClassName?: string; // This is for table styling such as grid style
+  rowClassName?: string | ((row: T, index: number) => string);
+  tableClassName?: string;
   gridView?: boolean;
 };
 
@@ -38,11 +38,11 @@ const GenericTable = <T extends object>({
   filterPlaceholder,
   isAnyRowSelected,
   deleteSelectedRows,
-  rowsPerPage = 10, // Default value for rowsPerPage
-  enablePagination = false, // Default value for enablePagination
-  bordered = false, // Default value for bordered
-  searchBar = false, // Default value for searchBar
-  actionButtons = false, // Default value for actionButtons
+  rowsPerPage = 10,
+  enablePagination = false,
+  bordered = false,
+  searchBar = false,
+  actionButtons = false,
   rowClassName,
   tableClassName,
   gridView = false,
@@ -218,10 +218,12 @@ const GenericTable = <T extends object>({
   return (
     <div
       className={`overflow-x-auto ${
-        bordered ? "rounded-box border border-neutral-content" : ""
-      } p-2`}
+        bordered ? "rounded-box border border-base-300" : ""
+      } p-4`}
     >
-      {title && <h2 className="text-xl font-bold">{title}</h2>}
+      {title && (
+        <h2 className="text-xl font-bold text-base-content">{title}</h2>
+      )}
       <div className="my-4 flex justify-between items-center">
         {searchBar && (
           <SearchInput
@@ -231,15 +233,20 @@ const GenericTable = <T extends object>({
         )}
         {actionButtons && (
           <div className="p-2">
-            <button className="mr-2 text-secondary">
+            <button className="mr-2 text-primary hover:text-primary-focus transition-colors">
               <FolderIcon className="size-6" />
             </button>
-            <button className="mr-2 text-secondary">
+            <button className="mr-2 text-primary hover:text-primary-focus transition-colors">
               <PresentationChartLineIcon className="size-6" />
             </button>
             <button
               onClick={deleteSelectedRows}
-              className={!isAnyRowSelected ? "text-base-100" : "text-accent"}
+              className={`transition-colors ${
+                !isAnyRowSelected
+                  ? "text-base-300 cursor-not-allowed"
+                  : "text-error hover:text-error-focus cursor-pointer"
+              }`}
+              disabled={!isAnyRowSelected}
             >
               <TrashIcon className="size-6" />
             </button>
@@ -252,16 +259,18 @@ const GenericTable = <T extends object>({
         }`}
       >
         <thead>
-          <tr className="text-info-content">
+          <tr className="text-base-content bg-base-300">
             {columns.map((column, index) => (
               <th
                 key={index}
                 className={`${
-                  gridView ? "border border-base-200 bg-info/30" : ""
+                  gridView ? "border border-base-300 bg-base-200" : ""
                 } ${
-                  column.sortable !== false ? "cursor-pointer select-none" : ""
+                  column.sortable !== false
+                    ? "cursor-pointer select-none hover:bg-base-300 transition-colors"
+                    : ""
                 } ${
-                  column.data === "id" ? "sticky left-0 z-10 bg-info-80" : ""
+                  column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
                 }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
@@ -290,7 +299,7 @@ const GenericTable = <T extends object>({
             ))}
           </tr>
         </thead>
-        <tbody className="text-info-content">
+        <tbody>
           {currentData.map((row, rowIndex) => {
             const isPrivate = row["visibility" as keyof T] === "Private";
             const rowId = row["id" as keyof T];
@@ -301,26 +310,24 @@ const GenericTable = <T extends object>({
             return (
               <tr
                 key={rowIndex}
-                className={`text-info-content ${
+                className={`${
                   typeof rowClassName === "function"
                     ? rowClassName(row, rowIndex)
                     : rowClassName || ""
                 } ${
                   isPrivate
-                    ? "printer-events-none opacity-60"
-                    : "hover:bg-base-200 bg-base-100"
+                    ? "opacity-60 cursor-not-allowed"
+                    : "hover:bg-base-200 transition-colors"
                 }`}
               >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className={`${
+                    className={`text-base-content ${
                       column.data === "id"
-                        ? "sticky left-0 z-10 bg-info-80"
+                        ? "sticky left-0 z-10 bg-base-100"
                         : ""
-                    } ${
-                      gridView ? "border border-base-200" : ""
-                    } text-info-content`}
+                    } ${gridView ? "border border-base-300" : ""}`}
                   >
                     {column.cell
                       ? column.cell(row)
@@ -332,7 +339,7 @@ const GenericTable = <T extends object>({
                     className="text-right pr-4"
                     title="Private - request access"
                   >
-                    <LockClosedIcon className="size-6" />
+                    <LockClosedIcon className="size-6 text-warning" />
                   </td>
                 )}
               </tr>

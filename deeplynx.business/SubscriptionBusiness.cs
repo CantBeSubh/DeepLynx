@@ -2,11 +2,15 @@ using deeplynx.datalayer.Models; using deeplynx.helpers; using deeplynx.interfac
 
 namespace deeplynx.business;
 
-public class SubscriptionBusiness : ISubscriptionBusiness { private readonly DeeplynxContext _context;
-
-    public SubscriptionBusiness(DeeplynxContext context)
+public class SubscriptionBusiness : ISubscriptionBusiness { 
+    
+    private readonly DeeplynxContext _context;
+    private readonly ICacheBusiness _cacheBusiness;
+        
+    public SubscriptionBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
     {
         _context = context;
+        _cacheBusiness = cacheBusiness;
     }
 
     /// <summary>
@@ -18,7 +22,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     /// <returns>A list of subscriptions</returns>
     public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long userId, long projectId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
 
         var subscriptions = await _context.Subscriptions
             .Where(s => s.UserId == userId && s.ProjectId == projectId)
@@ -56,7 +60,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     /// <exception cref="KeyNotFoundException">Returned if subscription is not found or is archived</exception>
     public async Task<SubscriptionResponseDto> GetSubscription(long userId, long projectId, long subscriptionId, bool hideArchived)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
 
         var subscription = await _context.Subscriptions
             .Where(s => s.UserId == userId && s.ProjectId == projectId && s.Id == subscriptionId)
@@ -94,7 +98,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     public async Task<List<SubscriptionResponseDto>> BulkCreateSubscriptions(long userId, long projectId,
         List<CreateSubscriptionRequestDto> dtos)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         foreach (var dto in dtos)
         {
             ValidationHelper.ValidateModel(dto);
@@ -185,7 +189,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     long projectId,
     List<UpdateSubscriptionRequestDto> dtos)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         foreach (var dto in dtos)
         {
             ValidationHelper.ValidateModel(dto);
@@ -287,7 +291,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     /// <returns>A list of created subscriptions</returns>
     public async Task<bool> BulkDeleteSubscriptions(long userId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Build the SQL statement
         var sql = @"
@@ -327,7 +331,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     /// <returns>A list of created subscriptions</returns>
     public async Task<bool> BulkArchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Build the SQL statement
         var sql = @"
@@ -369,7 +373,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
     /// <returns>A list of created subscriptions</returns>
     public async Task<bool> BulkUnarchiveSubscriptions(long userId, long projectId, List<long> subscriptionIds)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
 
         // Build the SQL statement
         var sql = @"
@@ -391,9 +395,6 @@ public class SubscriptionBusiness : ISubscriptionBusiness { private readonly Dee
 
         // Execute the query
         var result = await _context.Database.ExecuteSqlRawAsync(sql, parameters.ToArray());
-
-        // Log the number of affected rows
-        Console.WriteLine($"Number of subscriptions unarchived: {result}");
 
         // Check if the number of affected rows matches the number of IDs provided
         if (result != subscriptionIds.Count)

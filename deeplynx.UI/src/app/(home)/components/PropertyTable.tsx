@@ -44,27 +44,29 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
   return (
     <div className={`${className}`}>
       <div className="card bg-base-100 shadow-md p-2">
-        {title && <h2 className="text-xl font-bold mb-4">{title}</h2>}
+        {title && (
+          <h2 className="text-xl font-bold mb-4 text-base-content">{title}</h2>
+        )}
         <div className="card-body p-4">
-          <div className="border border-base-200 rounded-lg overflow-hidden bg-white">
+          <div className="border border-base-300 rounded-lg overflow-hidden bg-base-100">
             {rows.map((row, index) => (
               <div
                 key={index}
                 className={`grid grid-cols-12 ${
                   index !== rows.length - 1 ? "border-b" : ""
-                } border-base-200`}
+                } border-base-300`}
               >
-                <div className="col-span-4 p-3 font-medium text-info-content text-sm bg-base-50 border-r border-base-200">
+                <div className="col-span-4 p-3 font-medium text-base-content text-sm bg-base-200 border-r border-base-300">
                   {row.label}
                 </div>
-                <div className="col-span-7 p-3 text-sm break-words">
+                <div className="col-span-7 p-3 text-sm text-base-content break-words">
                   {editingIdex === index ? (
                     <input
                       type="text"
                       value={editValue}
                       onChange={(e) => setEditValue(e.target.value)}
                       className="input input-sm input-bordered w-full"
-                    ></input>
+                    />
                   ) : (
                     <div className="break-words">{row.value}</div>
                   )}
@@ -72,7 +74,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                 <div className="col-span-1 p-3 flex justify-center items-center">
                   {row.editable && editingIdex !== index && (
                     <PencilIcon
-                      className="text-secondary size-6 cursor-pointer"
+                      className="text-primary hover:text-primary-focus size-6 cursor-pointer transition-colors"
                       onClick={() => handleEdit(index, String(row.value))}
                     />
                   )}
@@ -80,13 +82,13 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
                     <>
                       <button className="">
                         <CheckCircleIcon
-                          className="text-success size-6 cursor-pointer"
+                          className="text-success hover:text-success-content size-6 cursor-pointer transition-colors"
                           onClick={() => handleSave(row)}
                         />
                       </button>
                       <button>
                         <XCircleIcon
-                          className="text-error size-6 cursor-pointer"
+                          className="text-error hover:text-error-content size-6 cursor-pointer transition-colors"
                           onClick={handleCancel}
                         />
                       </button>

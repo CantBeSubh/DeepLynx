@@ -13,7 +13,8 @@ namespace deeplynx.business
     public class DataSourceBusiness : IDataSourceBusiness
     {
         private readonly DeeplynxContext _context;
-
+        private readonly ICacheBusiness _cacheBusiness;
+    
         // dependants used to trigger downstream soft deletes
         private readonly IEdgeBusiness _edgeBusiness;
         private readonly IRecordBusiness _recordBusiness;
@@ -23,11 +24,13 @@ namespace deeplynx.business
         /// Initializes a new instance of the <see cref="DataSourceBusiness"/> class.
         /// </summary>
         /// <param name="context">The database context used for the data source operations.</param>
+        /// <param name="cacheBusiness">Used to access cache operations</param>
         /// <param name="edgeBusiness">Passed in context for downstream edge objects.</param>
         /// <param name="recordBusiness">Passed in context for downstream record objects.</param>
         /// <param name="eventBusiness">Used for logging events during create, update, and delete Operations.</param>
         public DataSourceBusiness(
             DeeplynxContext context,
+            ICacheBusiness cacheBusiness,
             IEdgeBusiness edgeBusiness,
             IRecordBusiness recordBusiness,
             IEventBusiness eventBusiness
@@ -37,23 +40,21 @@ namespace deeplynx.business
             _edgeBusiness = edgeBusiness;
             _recordBusiness = recordBusiness;
             _eventBusiness = eventBusiness;
+            _cacheBusiness = cacheBusiness;
         }
 
         /// <summary>
         /// Retrieves all data sources for a specific project.
         /// </summary>
-        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
         /// <returns>A list of data sources within the given project.</returns>
-        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
+        public async Task<List<DataSourceResponseDto>> GetAllDataSources(long projectId, bool hideArchived)
         {
-            foreach (var projectId in projectIds)
-            {
-                await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
-            }
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
             
             var dataSources = await _context.DataSources
-                .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
+                .Where(d => d.ProjectId == projectId).ToListAsync();
 
             if (hideArchived)
             {
@@ -90,7 +91,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
         public async Task<DataSourceResponseDto> GetDataSource(long projectId, long datasourceId, bool hideArchived)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, hideArchived);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
             var dataSource = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.Id == datasourceId)
                 .FirstOrDefaultAsync();
@@ -131,7 +132,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if the data source is not found or is archived</exception>
         public async Task<DataSourceResponseDto> GetDefaultDataSource(long projectId)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources
                 .Where(d => d.ProjectId == projectId && d.Default == true && !d.IsArchived)
                 .FirstOrDefaultAsync();
@@ -167,7 +168,7 @@ namespace deeplynx.business
         /// <returns>The created data source.</returns>
         public async Task<DataSourceResponseDto> CreateDataSource(long projectId, CreateDataSourceRequestDto dto, bool makeDefault = false)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             if (dto == null)
                 throw new ArgumentNullException(nameof(dto));
 
@@ -235,7 +236,7 @@ namespace deeplynx.business
             long dataSourceId,
             UpdateDataSourceRequestDto dto)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
@@ -293,7 +294,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Returned if data source not found or if ids missing</exception>
         public async Task<bool> DeleteDataSource(long projectId, long dataSourceId)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId)
@@ -314,7 +315,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
         public async Task<bool> ArchiveDataSource(long projectId, long dataSourceId)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
@@ -349,7 +350,7 @@ namespace deeplynx.business
         /// <exception cref="KeyNotFoundException">Thrown if data source is not found</exception>
         public async Task<bool> UnarchiveDataSource(long projectId, long dataSourceId)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || !dataSource.IsArchived)
@@ -386,7 +387,7 @@ namespace deeplynx.business
             long projectId,
             long dataSourceId)
         {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId);
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             var dataSource = await _context.DataSources.FindAsync(dataSourceId);
 
             if (dataSource == null || dataSource.ProjectId != projectId || dataSource.IsArchived)
