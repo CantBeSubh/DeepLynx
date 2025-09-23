@@ -21,7 +21,6 @@ public class TimeseriesBusiness(
     ICacheBusiness cacheBusiness,
     IRecordBusiness recordBusiness,
     IClassBusiness classBusiness,
-    FileFilesystemBusiness filesystemBusiness,
     ILogger<TimeseriesBusiness> logger,
     [FromServices] IServiceScopeFactory serviceScopeFactory) : ITimeseriesBusiness
 {
@@ -29,7 +28,6 @@ public class TimeseriesBusiness(
     private readonly ICacheBusiness _cacheBusiness = cacheBusiness;
     private readonly IRecordBusiness _recordBusiness = recordBusiness;
     private readonly IClassBusiness _classBusiness = classBusiness;
-    private readonly FileFilesystemBusiness _filesystemBusiness = filesystemBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
     
     private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
@@ -292,8 +290,6 @@ public class TimeseriesBusiness(
                 
                 await command.ExecuteNonQueryAsync();
                 
-                Console.WriteLine("MADE THE FILE");
-                
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Completed,
@@ -473,7 +469,6 @@ public class TimeseriesBusiness(
         
         // meant to run in background so don't await!
         RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
-        Console.WriteLine("MADE THE RECORD");
         return recordResponse;
     }
 
