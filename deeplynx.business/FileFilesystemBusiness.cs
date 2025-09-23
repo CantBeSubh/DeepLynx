@@ -128,6 +128,10 @@ public class FileFilesystemBusiness : IFileBusiness
     public async Task<FileStreamResult> DownloadFile(RecordResponseDto record)
     {
         var filePath = record.Uri;
+        if (filePath == null)
+        {
+            throw new ArgumentNullException("File path/uri is not specified in the record.");
+        }
         var fileName = record.Name;
         
         if (string.IsNullOrWhiteSpace(filePath))

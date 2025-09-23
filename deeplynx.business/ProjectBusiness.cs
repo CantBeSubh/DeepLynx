@@ -221,8 +221,18 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
-        await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
 
+        var timeseriesObjectStorageMethod = new CreateObjectStorageRequestDto
+        {
+            Name = "Timeseries Default",
+            Config = new JsonObject
+            {
+                ["mountPath"] = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb"
+            }
+
+        };
+        await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
+        await _objectStorageBusiness.CreateObjectStorage(project.Id, timeseriesObjectStorageMethod);
         await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
 
         // Log create Project event
