@@ -31,11 +31,11 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
         /// <returns></returns>
         [HttpPost("Query", Name = "api_query_timeseries")]
-        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId, [FromBody] TimeseriesQueryRequestDto request)
+        public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId,[FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
             {
-                var reportRecordResponse = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId);
+                var reportRecordResponse = await _timeseriesBusiness.QueryTimeseries(request, projectId, dataSourceId, fileType);
                 return Ok(reportRecordResponse);
             }
             catch (NoResultsException nrException)
@@ -178,11 +178,11 @@ namespace deeplynx.api.Controllers
         /// <param name="rowNumber"></param>
         /// <returns></returns>
         [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
-        public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber)
+        public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.InterpolateRows(projectId, dataSourceId, rowNumber, tableName);
+                var timeseriesUploadRecord = await _timeseriesBusiness.InterpolateRows(projectId, dataSourceId, rowNumber, tableName, fileType);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
@@ -201,11 +201,11 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId"></param>
         /// <returns></returns>
         [HttpGet("GetAll", Name = "api_get_all_timeseries_records")]
-        public async Task<IActionResult> GetAllTableRecords(long projectId, long dataSourceId, [FromQuery] string tableName)
+        public async Task<IActionResult> GetAllTableRecords(long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(projectId, dataSourceId, tableName);
+                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(projectId, dataSourceId, tableName, fileType);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
