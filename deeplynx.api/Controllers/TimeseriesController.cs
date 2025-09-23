@@ -29,6 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="request"> The request containing an sql query string</param>
         /// <param name="projectId">ID of project that timeseries data is associated with</param>
         /// <param name="dataSourceId">ID of data source that timeseries data is associated with</param>
+        /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpPost("Query", Name = "api_query_timeseries")]
         public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId,[FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
@@ -176,6 +177,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId"></param>
         /// <param name="tableName"></param>
         /// <param name="rowNumber"></param>
+        /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
         public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
@@ -194,46 +196,24 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get all timeseries table rows
+        /// Exports table to file
         /// </summary>
         /// <param name="tableName"></param>
         /// <param name="projectId"></param>
         /// <param name="dataSourceId"></param>
+        /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
-        [HttpGet("GetAll", Name = "api_get_all_timeseries_records")]
-        public async Task<IActionResult> GetAllTableRecords(long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
+        [HttpGet("Export", Name = "api_export_timeseries_table")]
+        public async Task<IActionResult> ExportTimeseriesTable(long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
         {
             try
             {
-                var timeseriesUploadRecord = await _timeseriesBusiness.GetAllTableRecords(projectId, dataSourceId, tableName, fileType);
+                var timeseriesUploadRecord = await _timeseriesBusiness.ExportTimeseriesTable(projectId, dataSourceId, tableName, fileType);
                 return Ok(new { TimeseriesUploadRecord = timeseriesUploadRecord });
             }
             catch (Exception e)
             {
                 var message = $"An error occurred while querying a timeseries table {tableName}: {e}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-        
-        /// <summary>
-        /// Download timeseries file
-        /// </summary>
-        /// <param name="tableName"></param>
-        /// <param name="projectId"></param>
-        /// <param name="dataSourceId"></param>
-        /// <returns></returns>
-        [HttpGet("Download", Name = "api_download_timeseries_file")]
-        public async Task<IActionResult> DownloadTimeseriesFile(long projectId, long dataSourceId, [FromQuery] string fileType, [FromQuery] string tableName)
-        {
-            try
-            {
-                var timeseriesFile = await _timeseriesBusiness.DownloadTimeseriesFile(projectId, dataSourceId, tableName, fileType);
-                return timeseriesFile;
-            }
-            catch (Exception e)
-            {
-                var message = $"An error occurred while downloading a timeseries file {tableName}: {e}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
