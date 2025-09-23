@@ -9,6 +9,6 @@ export default {
   contact: {
     title: 'Contact us',
     type: 'page',
-    href: 'https://example.com/contact'
+    href: 'https://github.com/idaholab/Deep-Lynx'
   }
 }
