@@ -24,7 +24,7 @@ services:
     environment:
       NODE_ENV: production
     ports:
-      - "3001:3000"
+      - "3001:3001"
     networks:
       - nexus-network
     depends_on:
