@@ -1127,6 +1127,7 @@ export const projectMembers = [
     id: 1,
     name: "Autumn Combs",
     email: "Autumn.combs@inl.gov",
+    role: "Admin",
     filters: ["Nexus"],
     createdAt: "8-15-2018"
   },
@@ -1134,6 +1135,7 @@ export const projectMembers = [
     id: 2,
     name: "Natalie Hergesheimer",
     email: "Natalie.hergesheimer@inl.gov",
+    role: "Admin",
     filters: ["Alexandria"],
     createdAt: "5-10-2020"
   },
@@ -1141,6 +1143,7 @@ export const projectMembers = [
     id: 3,
     name: "Isaac Huffman",
     email: "Isaac.huffman@inl.gov",
+    role: "User",
     filters: ["SMARTUSA"],
     createdAt: "4-22-2019"
   },
@@ -1148,6 +1151,7 @@ export const projectMembers = [
     id: 4,
     name: "Jaren Brownlee",
     email: "Jaren.brownlee@inl.gov",
+    role: "Admin",
     filters: ["Nexus"],
     createdAt: "3-18-2021"
   },
@@ -1155,6 +1159,7 @@ export const projectMembers = [
     id: 5,
     name: "Jeren Browning",
     email: "Jeren.browning@inl.gov",
+    role: "User",
     filters: ["Alexandria"],
     createdAt: "11-30-2021"
   },
@@ -1162,6 +1167,7 @@ export const projectMembers = [
     id: 6,
     name: "Jen Rogers",
     email: "Jen.rogers@inl.gov",
+    role: "User",
     filters: ["Alexandria"],
     createdAt: "7-12-2022"
   },
@@ -1169,6 +1175,7 @@ export const projectMembers = [
     id: 7,
     name: "Keaton Flake",
     email: "Keaton.flake@inl.gov",
+    role: "User",
     filters: ["Nexus"],
     createdAt: "2-14-2023"
   },
@@ -1176,6 +1183,7 @@ export const projectMembers = [
     id: 8,
     name: "Ross Kunz",
     email: "Ross.kunz@inl.gov",
+    role: "Admin",
     filters: ["SMARTUSA"],
     createdAt: "9-5-2023"
   },
@@ -1183,13 +1191,15 @@ export const projectMembers = [
     id: 9,
     name: "Victor Walker",
     email: "Victor.walker@inl.gov",
+    role: "Admin",
     filters: ["Alexandria"],
     createdAt: "6-20-2020"
   },
   {
     id: 10,
-    name: "Mike Harding",
-    email: "Mike.harding@inl.gov",
+    name: "Nexus Developers",
+    email: "",
+    role: "Users",
     filters: ["Nexus"],
     createdAt: "1-15-2022"
   }

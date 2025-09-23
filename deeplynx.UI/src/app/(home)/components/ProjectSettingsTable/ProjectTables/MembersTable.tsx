@@ -9,12 +9,12 @@ interface MembersTableProps {
   data: ProjectMembersTable[];
 }
 
-const MembersTable: FC<MembersTableProps> = ({ data }) => {
+const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
   const { t } = useLanguage();
-  const [addRoleSwap, setAddRoleSwap] = useState(false);
-
-  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(data.length).fill(false));
-  const [selectAll, setSelectAll] = useState(false);
+  const [data, setData] = useState<ProjectMembersTable[]>(initialData);
+  const [addRoleSwap, setAddRoleSwap] = useState<boolean>(false);
+  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
+  const [selectAll, setSelectAll] = useState<boolean>(false);
 
   const handleSelectAll = () => {
     const newSelection = !selectAll;
@@ -32,6 +32,24 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
     } else {
       setSelectAll(false);
     }
+  };
+
+  const handleDelete = (index: number) => {
+    const newData = data.filter((_, i) => i !== index);
+    setData(newData);
+    setSelectedMembers(new Array(newData.length).fill(false));
+    setSelectAll(false);
+  };
+
+  const handleDeleteSelected = () => {
+    const newData = data.filter((_, index) => !selectedMembers[index]);
+    setData(newData);
+    setSelectedMembers(new Array(newData.length).fill(false));
+    setSelectAll(false);
+  };
+
+  const multipleSelected = () => {
+    return selectedMembers.filter(selected => selected).length > 1;
   };
 
     const columns: Column<ProjectMembersTable>[] = [
@@ -66,18 +84,20 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
     {
       header: (
         <div className="flex">
-          <button className="btn"
-            onClick={() => setAddRoleSwap(true)}>
-            {t.translations.ROLE}
-        </button>
+            {multipleSelected() && (
+                <button className="btn" onClick={() => setAddRoleSwap(true)}>
+                    {t.translations.ROLES}
+                </button>
+            )}
         </div>
       ),
-      cell: () => (
+      cell: (row: ProjectMembersTable) => (
         <div className="flex">
-          <button className="btn"
-            onClick={() => setAddRoleSwap(true)}>
-            {t.translations.ROLE}
-        </button>
+            <button className="btn"
+                onClick={() => setAddRoleSwap(true)}>
+                {row.role}
+                {/* {t.translations.ROLE} */}
+            </button>
         </div>
       ),
       sortable: false,
@@ -85,14 +105,18 @@ const MembersTable: FC<MembersTableProps> = ({ data }) => {
     {
       header: (
         <div className="flex">
-          <TrashIcon className="size-6 text-red-500" />
+          {multipleSelected() && (
+            <button onClick={handleDeleteSelected}>
+              <TrashIcon className="size-6 text-red-500" />
+            </button>
+          )}
         </div>
       ),
-      cell: () => (
+      cell: (row: ProjectMembersTable, index: number) => (
         <div className="flex">
-            <button className="">
-                <TrashIcon className="size-6 text-red-500" />
-            </button>
+          <button onClick={() => handleDelete(index)}>
+            <TrashIcon className="size-6 text-red-500" />
+          </button>
         </div>
       ),
       sortable: false,

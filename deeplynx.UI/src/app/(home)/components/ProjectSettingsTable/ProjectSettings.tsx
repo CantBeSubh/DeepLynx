@@ -2,19 +2,15 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import Link from "next/link";
-import { myRecentSearches, mySavedSearches, projectMembers } from "../../dummy_data/data";
-import { Column, MySearchsTable, PopularTable } from "../../types/types";
-import AvatarCell from "../Avatar";
-import GenericTable from "../GenericTable";
+import { mySavedSearches, projectMembers } from "../../dummy_data/data";
 import Tabs from "../Tabs";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
 import DataSourceTable from '././ProjectTables/DataSourceTable';
 import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
+import MemberSearchBar from './MemberSearchBar';
+import { PlusIcon } from "@heroicons/react/24/outline";
 
 
 interface ProjectSettingsProps {
@@ -23,59 +19,7 @@ interface ProjectSettingsProps {
 
 const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
-  const [addMemberModal, setAddMemberModal] = useState(false);
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
-  // const my_search_table_columns: Column<MySearchsTable>[] = [
-  //   {
-  //     header: "Name",
-  //     data: "name",
-  //   },
-  //   {
-  //     header: "Email",
-  //     sortable: false,
-  //   },
-  //   {
-  //     header: "",
-  //     cell: () => (
-  //       <div className="flex justify-end">
-  //         <button className="btn">
-  //           {" "}
-  //           {t.translations.ROLE}
-  //         </button>
-  //       </div>
-  //     ),
-  //     sortable: false,
-  //   },
-  //   {
-  //     header: "",
-  //     cell: () => (
-  //       <div className="flex justify-end">
-  //         <TrashIcon className="size-6 red-icon"/>
-  //       </div>
-  //     ),
-  //     sortable: false,
-  //   }
-  // ];
-
-  const popular_table_columns: Column<PopularTable>[] = [
-    {
-      header: "Created by",
-      cell: (row) => (
-        <div className="flex gap-4 items-center">
-          <AvatarCell name={row.name} image={row.image} />
-          {row.name}
-        </div>
-      ),
-    },
-    {
-      header: "Search Nickname",
-      data: "nickname",
-    },
-    {
-      header: "Visibility",
-      data: "visibility",
-    },
-  ];
 
   const tabData = [
     {
@@ -126,7 +70,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
                     {t.translations.MEMBER}
                 </button>
                 <div className="flex flex-col">
-                    <LargeSearchBar />
+                    <MemberSearchBar />
                 </div>
             </div>
         </div>

@@ -20,7 +20,7 @@ const RoleSwap = ({ isOpen, onClose }: RoleSwapProps) => {
             <form method="dialog" className="flex flex-col gap-4">
                 <input
                 type="text"
-                placeholder="Email or Group"
+                placeholder="Select Role"
                 className="input input-primary w-full"
                 />
             </form>

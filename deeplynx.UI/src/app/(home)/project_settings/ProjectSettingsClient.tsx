@@ -1,20 +1,11 @@
 "use client";
 
 import React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { peopleData } from "../dummy_data/data";
 import { useLanguage } from "@/app/contexts/Language";
 import ProjectSettings from "../components/ProjectSettingsTable/ProjectSettings";
 
-import {
-  AdjustmentsHorizontalIcon,
-  ArrowUpTrayIcon,
-  BookmarkSquareIcon
-} from "@heroicons/react/24/outline";
-
 const ProjectSettingsClient = () => {
   const { t } = useLanguage();
-  const jason = peopleData.find((p) => p.name === "Jason");
 
     return (
         <div>
