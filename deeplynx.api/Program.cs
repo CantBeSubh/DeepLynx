@@ -62,7 +62,11 @@ try
                 .WithOrigins(
                       "http://localhost:3000",
                       "http://ui:3000",
-                      "https://nexus.dev.inl.gov")
+                      "https://deeplynx.dev.inl.gov",
+                      "https://deeplynx.acc.inl.gov",
+                      "https://deeplynx.scan.inl.gov",
+                      "https://deeplynx.test.inl.gov",
+                      "https://deeplynx.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
