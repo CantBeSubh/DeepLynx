@@ -11,7 +11,4 @@ const withNextra = nextra({
 export default withNextra({
   // ... Add regular Next.js options here
   reactStrictMode: true,
-  experimental: {
-    appDir: true,
-  },
 })

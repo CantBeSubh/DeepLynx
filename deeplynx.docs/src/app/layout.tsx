@@ -58,9 +58,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       // Suggested by `next-themes` package https://github.com/pacocoursey/next-themes#with-app
       suppressHydrationWarning
     >
-      <Head
-      // ... Your additional head options
-      >
+      <Head >
+        <link rel="icon" href="/cropped-lynx-white.png" type="image/png" />
         {/* Your additional tags should be passed as `children` of `<Head>` element */}
       </Head>
       <body>
