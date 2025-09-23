@@ -660,35 +660,6 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("historical_records", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.Log", b =>
-                {
-                    b.Property<string>("Exception")
-                        .HasColumnType("text")
-                        .HasColumnName("exception");
-
-                    b.Property<int?>("Level")
-                        .HasColumnType("integer")
-                        .HasColumnName("level");
-
-                    b.Property<string>("LogEvent")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("log_event");
-
-                    b.Property<string>("Message")
-                        .HasColumnType("text")
-                        .HasColumnName("message");
-
-                    b.Property<string>("MessageTemplate")
-                        .HasColumnType("text")
-                        .HasColumnName("message_template");
-
-                    b.Property<DateTime?>("Timestamp")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("timestamp");
-
-                    b.ToTable("logs", "deeplynx");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
                 {
                     b.Property<long>("Id")

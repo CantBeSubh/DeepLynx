@@ -26,10 +26,6 @@ export type FileViewerTableRow = {
   projectId?: number;
   projectName?: string;
   tags: string;
-  createdBy?: string | null;
-  createdAt?: string | null;
-  modifiedBy?: string | null;
-  modifiedAt?: string | null;
   archivedAt?: string | null;
   lastUpdatedAt?: string;
   description?: string;
@@ -130,11 +126,13 @@ export type TagResponseDto = {
 };
 
 export type CustomQueryRequestDto = {
-  connector: string | null;
+  connector?: string | null;
   filter: string;
   operator: string;
   value: string;
   json?: string;
+  jsonKey?: string;
+  jsonValue?: string;
 };
 
 export type CustomQueryRequestDtoJson = {

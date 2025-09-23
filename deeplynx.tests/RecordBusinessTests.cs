@@ -34,8 +34,8 @@ public class RecordBusinessTests : IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _eventBusiness =  new EventBusiness(Context);
-        _recordBusiness = new RecordBusiness(Context, _eventBusiness);
+        _eventBusiness =  new EventBusiness(Context, _cacheBusiness);
+        _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
     }
 
     protected override async Task SeedTestDataAsync()

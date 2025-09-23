@@ -4,7 +4,7 @@ public class HistoricalRecordResponseDto
 {
     public long? Id { get; set; }
     public string? Uri { get; set; }
-    public string Properties { get; set; } = null!;
+    public string? Properties { get; set; } = null!;
     public string? OriginalId { get; set; }
     public string? Name { get; set; }
     public string? Description { get; set; }
@@ -17,7 +17,7 @@ public class HistoricalRecordResponseDto
     public string? ObjectStorageName { get; set; }
     public long ProjectId { get; set; }
     public string ProjectName { get; set; }
-    public string Tags { get; set; } = null!;
+    public string? Tags { get; set; } = null!;
     public DateTime LastUpdatedAt { get; set; }
     public string? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; } = false;

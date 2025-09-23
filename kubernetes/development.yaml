@@ -315,7 +315,7 @@ metadata:
         }
 spec:
   rules:
-    - host: nexus.dev.inl.gov
+    - host: deeplynx.dev.inl.gov
       http:
         paths:
           - path: /

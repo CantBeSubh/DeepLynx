@@ -122,8 +122,8 @@ export default function DataCatalogClient({
         selectedNums.length === projects.length
           ? results
           : results.filter((r: FileViewerTableRow) =>
-              selectedNums.includes(Number(r.projectId))
-            );
+            selectedNums.includes(Number(r.projectId))
+          );
 
       setTableData(scoped);
       setActiveFilters((prev) => [...prev, newFilter]);
@@ -242,17 +242,15 @@ export default function DataCatalogClient({
           <div className="text-info-content px-4 text-lg">All Records</div>
           <div className="flex gap-1 pr-10">
             <button
-              className={`btn btn-sm ${
-                viewMode === "list" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("list")}
             >
               <QueueListIcon className="h-7 w-7" />
             </button>
             <button
-              className={`btn btn-sm ${
-                viewMode === "table" ? "btn-primary" : "btn-ghost"
-              }`}
+              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"
+                }`}
               onClick={() => setViewMode("table")}
             >
               <TableCellsIcon className="h-7 w-7" />
@@ -296,7 +294,7 @@ export default function DataCatalogClient({
             },
             {
               header: t.translations.LAST_EDIT,
-              cell: (row) => row.modifiedAt ?? row.createdAt,
+              cell: (row) => row.lastUpdatedAt,
             },
           ]}
           data={tableData}
