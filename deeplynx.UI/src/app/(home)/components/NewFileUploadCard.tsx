@@ -83,7 +83,7 @@ export default function NewFileUploadCard({
                 onChange={(e) => setIsTimeSeries(e.target.checked)}
               />
               <label className="flex items-center gap-2 flex-1">
-                <span className="label-text ml-4">{t.translations.NAME}</span>
+                <span className="label-text ml-4">{t.translations.ALIAS}</span>
                 <input
                   type="text"
                   className="input input-sm w-full"
@@ -96,7 +96,7 @@ export default function NewFileUploadCard({
           </div>
 
           {/* Row 2: Description textarea */}
-          <div className="grid grid-cols-[auto,1fr] items-start gap-4">
+          {/* <div className="grid grid-cols-[auto,1fr] items-start gap-4">
             <div className="flex">
               <span className="label-text mr-2">
                 {t.translations.DESCRIPTION}
@@ -107,9 +107,9 @@ export default function NewFileUploadCard({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               ></textarea>
-            </div>
-            {/* Row 3: Update Existing */}
-            {showUpdate && (
+            </div> */}
+          {/* Row 3: Update Existing */}
+          {/* {showUpdate && (
               <fieldset>
                 <label className="label">
                   {t.translations.UPDATE_EXISTING}
@@ -132,7 +132,7 @@ export default function NewFileUploadCard({
                 </label>
               </fieldset>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

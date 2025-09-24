@@ -25,34 +25,18 @@ namespace deeplynx.api.Controllers
         /// <param name="dataSourceId">Id of data source to which the file belongs</param>
         /// <param name="objectStorageId">Id of object storage method</param>
         /// <param name="file">File to upload</param>
-        /// <param name="name">Custom name for the file</param>
-        /// <param name="description">Description for the file</param>
-        /// <param name="properties">Additional properties as JSON string</param>
-        /// <param name="tags">Tags as JSON string</param>
-        /// <param name="originalId">Original ID if updating</param>
-        /// <param name="classId">Class ID if applicable</param>
         /// <returns></returns>
         [HttpPost("UploadFile", Name = "api_upload_file")]
         public async Task<ActionResult<RecordResponseDto>> UploadFile(
             long projectId,
             [FromQuery] long? dataSourceId,
             [FromQuery] long? objectStorageId,
-            IFormFile file,
-            [FromForm] string? name = null,
-            [FromForm] string? description = null,
-            [FromForm] string? properties = null,
-            [FromForm] string? tags = null,
-            [FromForm] string? originalId = null,
-            [FromForm] long? classId = null)
+            IFormFile file)
         {
             try
             {
-                // Log the received metadata for debugging
-                _logger.LogInformation("Received file upload with metadata - Name: {Name}, Description: {Description}",
-                    name ?? "null", description ?? "null");
-
                 var fileUploadInfo = await _fileBusiness
-                    .UploadFile(projectId, dataSourceId, objectStorageId, file, description);
+                    .UploadFile(projectId, dataSourceId, objectStorageId, file);
                 return Ok(fileUploadInfo);
             }
             catch (Exception e)
@@ -110,6 +94,8 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+
+
 
         /// <summary>
         /// Delete file

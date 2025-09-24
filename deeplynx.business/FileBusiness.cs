@@ -49,8 +49,7 @@ public class FileBusiness
         long projectId,
         long? dataSourceId,
         long? objectStorageId,
-        IFormFile file,
-        string? description = null)
+        IFormFile file)
     {
         long realDataSourceId;
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
@@ -112,7 +111,7 @@ public class FileBusiness
             },
             Name = file.FileName,
             ObjectStorageId = objectStorage.Id,
-            Description = !string.IsNullOrEmpty(description) ? description : file.FileName,
+            Description = file.FileName,
             OriginalId = guid.ToString(),
             Uri = uri,
             ClassId = fileClass.Id,

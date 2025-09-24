@@ -403,8 +403,8 @@ export default function UploadCenterClient({
                     {t.translations.CHOOSE_A_DESTINATION}
                   </option>
                   <option value="nexus">{t.translations.NEXUS_DEFAULT}</option>
-                  <option value="remote-db">{t.translations.REMOTE_DB}</option>
-                  <option value="onsite-db">{t.translations.ONSITE_DB}</option>
+                  {/* <option value="remote-db">{t.translations.REMOTE_DB}</option>
+                  <option value="onsite-db">{t.translations.ONSITE_DB}</option> */}
                 </select>
               </label>
             </fieldset>
