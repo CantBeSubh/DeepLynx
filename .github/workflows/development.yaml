@@ -128,13 +128,13 @@ jobs:
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}
           DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}
-          SMTP_SERVER: ${{vars.SMTP_SERVER}}
-          SMTP_PORT: ${{vars.SMTP_PORT}}
-          SMTP_ENABLE_SSL: ${{vars.SMTP_ENABLE_SSL}}
-          FROM_EMAIL: ${{vars.FROM_EMAIL}}
-          FROM_NAME: ${{vars.FROM_NAME}}
-          INVITE_URL: ${{vars.INVITE_URL}}
-          SUPPORT_EMAIL: ${{vars.SUPPORT_EMAIL}}
+          SMTP_SERVER: ${{ vars.SMTP_SERVER }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_ENABLE_SSL: ${{ vars.SMTP_ENABLE_SSL }}
+          FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+          FROM_NAME: ${{ vars.FROM_NAME }}
+          INVITE_URL: ${{ vars.INVITE_URL }}
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
