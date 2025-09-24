@@ -5,7 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/sensitivity-labels")]
+    [Route("api/labels")]
     public class SensitivityLabelController : ControllerBase
     {
         private readonly ISensitivityLabelBusiness _sensitivityLabelBusiness;

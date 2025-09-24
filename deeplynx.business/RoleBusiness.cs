@@ -42,13 +42,13 @@ public class RoleBusiness : IRoleBusiness
         if (projectId.HasValue)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-            roleQuery = roleQuery.Where(r => r.ProjectId == projectId.Value);
+            roleQuery = roleQuery.Where(r => r.ProjectId == projectId);
         }
         
         if (organizationId.HasValue)
         {
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value, hideArchived);
-            roleQuery = roleQuery.Where(r => r.OrganizationId == organizationId.Value);
+            roleQuery = roleQuery.Where(r => r.OrganizationId == organizationId);
         }
 
         if (hideArchived)
@@ -111,7 +111,7 @@ public class RoleBusiness : IRoleBusiness
     /// <returns>The newly created role</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<RoleResponseDto> CreateRole(
-        CreateRoleRequestDto dto, long? projectId, long? organizationId)
+        CreateRoleRequestDto dto, long? projectId = null, long? organizationId = null)
     {
         // ensure one and only one of projectID or organizationID is supplied
         if (!projectId.HasValue && !organizationId.HasValue)
@@ -131,8 +131,8 @@ public class RoleBusiness : IRoleBusiness
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
-            ProjectId = projectId.Value,
-            OrganizationId = organizationId.Value,
+            ProjectId = projectId,
+            OrganizationId = organizationId,
         };
         
         _context.Roles.Add(role);
@@ -141,8 +141,8 @@ public class RoleBusiness : IRoleBusiness
         // Log create Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organizationId.Value,
-            ProjectId = projectId.Value,
+            OrganizationId = organizationId,
+            ProjectId = projectId,
             Operation = "create",
             EntityType = "role",
             EntityId = role.Id,

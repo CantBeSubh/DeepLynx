@@ -49,9 +49,9 @@ public class PermissionBusiness : IPermissionBusiness
     {
         var permissionQuery = _context.Permissions.Where(p =>
             p.IsHardcoded || (!p.IsHardcoded &&         // ensure hardcoded perms are returned regardless of filters
-                (!labelId.HasValue || p.LabelId == labelId.Value) &&                        // check for label filter
-                (!projectId.HasValue || p.ProjectId == projectId.Value) &&                  // check for project filter
-                (!organizationId.HasValue || p.OrganizationId == organizationId.Value)));   // check for org filter
+                (!labelId.HasValue || p.LabelId == labelId) &&                        // check for label filter
+                (!projectId.HasValue || p.ProjectId == projectId) &&                  // check for project filter
+                (!organizationId.HasValue || p.OrganizationId == organizationId)));   // check for org filter
         
         if (hideArchived)
             permissionQuery = permissionQuery.Where(p => !p.IsArchived);
@@ -146,8 +146,8 @@ public class PermissionBusiness : IPermissionBusiness
             IsHardcoded = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
-            ProjectId = projectId.Value,
-            OrganizationId = organizationId.Value,
+            ProjectId = projectId,
+            OrganizationId = organizationId,
         };
         
         _context.Permissions.Add(permission);

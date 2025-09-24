@@ -9,6 +9,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 using System.Text.Json.Nodes;
+using System.ComponentModel.DataAnnotations;
+using deeplynx.business;
+using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
+using deeplynx.models;
+using FluentAssertions;
+using Moq;
+
 
 namespace deeplynx.tests
 {
@@ -30,6 +38,8 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context, _cacheBusiness);
             _groupBusiness = new GroupBusiness(Context, _eventBusiness);
         }
+        
+        #region CreateGroup Tests
         
         [Fact]
         public async Task CreateGroup_Success_ReturnsGroup()
@@ -54,6 +64,8 @@ namespace deeplynx.tests
         {
             
         }
+        
+        #endregion
 
         [Fact]
         public async Task GetAllGroups_ExcludesArchived()

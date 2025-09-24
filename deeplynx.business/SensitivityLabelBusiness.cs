@@ -41,13 +41,13 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         if (projectId.HasValue)
         {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
-            labelQuery = labelQuery.Where(x => x.ProjectId == projectId.Value);
+            labelQuery = labelQuery.Where(x => x.ProjectId == projectId);
         }
 
         if (organizationId.HasValue)
         {
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value, hideArchived);
-            labelQuery = labelQuery.Where(x => x.OrganizationId == organizationId.Value);
+            labelQuery = labelQuery.Where(x => x.OrganizationId == organizationId);
         }
         
         if (hideArchived)
@@ -125,8 +125,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
-            ProjectId = projectId.Value,
-            OrganizationId = organizationId.Value,
+            ProjectId = projectId,
+            OrganizationId = organizationId,
         };
         
         _context.SensitivityLabels.Add(label);
@@ -135,8 +135,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
         // Log create SensitivityLabel event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
-            OrganizationId = organizationId.Value,
-            ProjectId = projectId.Value,
+            OrganizationId = organizationId,
+            ProjectId = projectId,
             Operation = "create",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
