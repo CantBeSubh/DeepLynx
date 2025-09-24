@@ -9,7 +9,7 @@ export type DataSourceDTO = {
   description?: string | null;
   is_archived?: boolean;
   lastUpdatedAt?: string | null;
-  type?: string | null; // adjust to your API if it exposes a type/kind
+  type?: string | null; 
 };
 
 /**
