@@ -3,10 +3,12 @@
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
-import NewFileUploadCard from "../components/NewFileUploadCard";
+import NewFileUploadCard, {
+  FileMetadata,
+} from "../components/NewFileUploadCard";
 import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
@@ -51,6 +53,16 @@ export default function UploadCenterClient({
   const [projectId, setProjectId] = useState<string>("");
   const [dataSourceId, setDataSourceId] = useState<string>("");
   const [objectStorageId, setObjectstorageId] = useState<string>("");
+  const [filesMetadata, setFilesMetadata] = useState<
+    Record<number, FileMetadata>
+  >({});
+
+  const handleMetadataChange = useCallback(
+    (fileIndex: number, metadata: FileMetadata) => {
+      setFilesMetadata((prev) => ({ ...prev, [fileIndex]: metadata }));
+    },
+    []
+  );
 
   const needsTarget = uploadType === "version" || uploadType === "properties";
   const availableFiles = useMemo(
@@ -66,7 +78,7 @@ export default function UploadCenterClient({
     [availableFiles, targetFileId]
   );
 
-  const [dropKey, setDropKey] = useState(0); // force-remount DropUpload to clear its <input type="file" />
+  const [dropKey, setDropKey] = useState(0);
 
   const resetForm = (opts?: { keepProject?: boolean }) => {
     const keepProject = opts?.keepProject ?? true;
@@ -76,6 +88,7 @@ export default function UploadCenterClient({
     setDestination("");
     setTargetFileId("");
     setMulti(false);
+    setFilesMetadata({});
 
     if (!keepProject) {
       setProjectId("");
@@ -85,7 +98,6 @@ export default function UploadCenterClient({
     setDataSourceId("");
     setObjectstorageId("");
 
-    // bump key so DropUpload clears its native file input
     setDropKey((k) => k + 1);
   };
 
@@ -119,20 +131,34 @@ export default function UploadCenterClient({
 
     try {
       if (selectedFiles.length === 1) {
+        // Single file upload
+        const file = selectedFiles[0];
+        const metadata = filesMetadata[0];
+
         await uploadFile({
           projectId,
           dataSourceId,
           objectStorageId,
-          file: selectedFiles[0],
+          file,
+          name: metadata?.name || file.name,
+          description: metadata?.description || "",
         });
         toast.success("File uploaded!");
       } else {
-        const results = await uploadFilesBatch({
-          projectId,
-          dataSourceId,
-          objectStorageId,
-          files: selectedFiles,
+        const uploadPromises = selectedFiles.map(async (file, index) => {
+          const metadata = filesMetadata[index];
+
+          return uploadFile({
+            projectId,
+            dataSourceId,
+            objectStorageId,
+            file,
+            name: metadata?.name || file.name,
+            description: metadata?.description || "",
+          });
         });
+
+        const results = await Promise.allSettled(uploadPromises);
         const ok = results.filter((r) => r.status === "fulfilled").length;
         const fail = results.length - ok;
         toast.success(
@@ -140,7 +166,7 @@ export default function UploadCenterClient({
         );
       }
 
-      // 👉 reset everything (but keep project by default)
+      // Reset everything (but keep project by default)
       resetForm({ keepProject: true });
     } catch (e: any) {
       const msg =
@@ -216,7 +242,6 @@ export default function UploadCenterClient({
     })();
   }, [projectId]);
 
-  // Use this so DropUpload never gets multiple=true unless allowed
   const effectiveMultiple = isMultiAllowed ? multi : false;
 
   return (
@@ -342,12 +367,12 @@ export default function UploadCenterClient({
                     {t.translations.CHOOSE_A_TYPE}
                   </option>
                   <option value="new">{t.translations.NEW_FILE}</option>
-                  <option value="version" disabled={multi}>
+                  {/* <option value="version" disabled={multi}>
                     {t.translations.NEW_VERSION_OF}
                   </option>
                   <option value="properties" disabled={multi}>
                     {t.translations.PROPERTIES_FOR}
-                  </option>
+                  </option> */}
                 </select>
                 {needsTarget && (
                   <select
@@ -407,6 +432,8 @@ export default function UploadCenterClient({
                   key={index}
                   defaultName={file.name}
                   uploadType={uploadType}
+                  fileIndex={index}
+                  onMetadataChange={handleMetadataChange}
                 />
               ))}
           </div>

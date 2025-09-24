@@ -7,29 +7,61 @@ import { useEffect, useState } from "react";
 
 type UploadType = "new" | "version" | "properties" | "";
 
+export type FileMetadata = {
+  name: string;
+  description: string;
+  isTimeSeries: boolean;
+  updateAction?: "merge" | "overwrite";
+};
+
+interface NewFileUploadCardProps {
+  defaultName?: string;
+  uploadType: UploadType;
+  fileIndex: number;
+  onMetadataChange: (fileIndex: number, metadata: FileMetadata) => void;
+}
+
 export default function NewFileUploadCard({
   defaultName = "",
   uploadType,
-}: {
-  defaultName?: string;
-  uploadType: UploadType;
-}) {
+  fileIndex,
+  onMetadataChange,
+}: NewFileUploadCardProps) {
   const { t } = useLanguage();
   const [updateAction, setUpdateAction] = useState<"" | "merge" | "overwrite">(
     ""
   );
-  // Helper: strip last extension
+  const [description, setDescription] = useState("");
+  const [isTimeSeries, setIsTimeSeries] = useState(false);
   const fileBaseName = (filename: string) => filename.replace(/\.[^/.]+$/, "");
-
-  // Initialize with stripped defaultName
   const [name, setName] = useState(fileBaseName(defaultName));
-
   const showUpdate = uploadType === "version" || uploadType === "properties";
 
   useEffect(() => {
     if (!showUpdate && updateAction) setUpdateAction("");
     setName(fileBaseName(defaultName));
   }, [defaultName, showUpdate, updateAction]);
+
+  useEffect(() => {
+    const metadata: FileMetadata = {
+      name,
+      description,
+      isTimeSeries,
+      ...(showUpdate &&
+        updateAction && {
+          updateAction: updateAction as "merge" | "overwrite",
+        }),
+    };
+    onMetadataChange(fileIndex, metadata);
+  }, [
+    name,
+    description,
+    isTimeSeries,
+    updateAction,
+    showUpdate,
+    fileIndex,
+    onMetadataChange,
+  ]);
 
   return (
     <div>
@@ -44,7 +76,12 @@ export default function NewFileUploadCard({
               <span className="label-text mr-2">
                 {t.translations.TIMESERIES}
               </span>
-              <input type="checkbox" className="toggle toggle-secondary" />
+              <input
+                type="checkbox"
+                className="toggle toggle-secondary"
+                checked={isTimeSeries}
+                onChange={(e) => setIsTimeSeries(e.target.checked)}
+              />
               <label className="flex items-center gap-2 flex-1">
                 <span className="label-text ml-4">{t.translations.NAME}</span>
                 <input
@@ -67,6 +104,8 @@ export default function NewFileUploadCard({
               <textarea
                 className="textarea textarea-bordered w-full"
                 placeholder="Example: This file contains ..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               ></textarea>
             </div>
             {/* Row 3: Update Existing */}
