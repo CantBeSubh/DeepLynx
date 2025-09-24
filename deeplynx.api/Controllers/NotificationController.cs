@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Identity;
 
 namespace deeplynx.api.Controllers
 {
@@ -32,12 +33,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Send email
         /// </summary>
-        [HttpGet("SendEmail", Name = "api_send_email")]
-        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> SendEmail()
+        [HttpPost("SendEmail", Name = "api_send_email")]
+        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> SendEmail([FromQuery] string email, string name)
         {
             try
             {
-                var message = await _notificationBusiness.SendEmail("natalie.hergesheimer@inl.gov", "deeplynx", "Natalie");
+                var message = await _notificationBusiness.SendEmail(email, name);
                 return Ok(message);
             }
             catch (Exception exc)

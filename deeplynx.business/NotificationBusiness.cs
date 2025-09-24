@@ -35,7 +35,7 @@ public class NotificationBusiness : INotificationBusiness
     /// <param name="subject">Email subject</param>
     /// <param name="body">Email body content</param>
     /// <returns>True if email was sent successfully, false otherwise</returns>
-    public async Task<bool> SendEmail(string toEmail, string subject, string name)
+    public async Task<bool> SendEmail(string toEmail, string name)
     {
        try 
        {
@@ -50,6 +50,9 @@ public class NotificationBusiness : INotificationBusiness
 
         var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL") 
             ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
+        
+        var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL") 
+                        ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
         
         var emailPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") 
             ?? throw new InvalidOperationException("EMAIL_PASSWORD environment variable is not set");
@@ -77,6 +80,7 @@ public class NotificationBusiness : INotificationBusiness
         templateContent = templateContent.Replace("{{name}}", name);
         templateContent = templateContent.Replace("{{email}}", toEmail);
         templateContent = templateContent.Replace("{{url}}", url);
+        templateContent = templateContent.Replace("{{support}}", support);
         
        
 
@@ -84,7 +88,7 @@ public class NotificationBusiness : INotificationBusiness
         using var mailMessage = new MailMessage();
         mailMessage.From = new MailAddress(fromEmail, fromName);
         mailMessage.To.Add(toEmail);
-        mailMessage.Subject = subject;
+        mailMessage.Subject = "DeepLynx Nexus Notification";
         mailMessage.Body = templateContent;
         mailMessage.IsBodyHtml = true;
 
