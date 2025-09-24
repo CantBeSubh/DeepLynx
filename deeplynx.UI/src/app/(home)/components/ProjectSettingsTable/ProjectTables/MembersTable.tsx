@@ -86,7 +86,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
         <div className="flex">
             {multipleSelected() && (
                 <button className="btn" onClick={() => setAddRoleSwap(true)}>
-                    {t.translations.ROLES}
+                    {t.translations.ROLE}
                 </button>
             )}
         </div>

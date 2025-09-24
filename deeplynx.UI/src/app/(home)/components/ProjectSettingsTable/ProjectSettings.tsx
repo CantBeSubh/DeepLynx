@@ -12,7 +12,6 @@ import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
 import MemberSearchBar from './MemberSearchBar';
 import { PlusIcon } from "@heroicons/react/24/outline";
 
-
 interface ProjectSettingsProps {
   className?: string;
 }
@@ -20,6 +19,7 @@ interface ProjectSettingsProps {
 const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
+  const [activeTab, setActiveTab] = useState("Members");
 
   const tabData = [
     {
@@ -56,25 +56,33 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     },
   ];
 
+  const handleTabChange = (label: string) => {
+    setActiveTab(label);
+  };
+
   return (
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
         <div className="flex justify-between items-start">
-            <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
-            <div className="flex space-x-4">
-                <button
-                    onClick={() => setAddProjectMemberModal(true)}
-                    className="btn btn-secondary text-white"
-                >
-                    <PlusIcon className="size-6" />
-                    {t.translations.MEMBER}
-                </button>
-                <div className="flex flex-col">
-                    <MemberSearchBar />
-                </div>
+          <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
+          <div className="flex space-x-4">
+            <button
+              onClick={() => setAddProjectMemberModal(true)}
+              className="btn btn-secondary text-white"
+            >
+              <PlusIcon className="size-6" />
+              {activeTab === "Members" ? t.translations.MEMBER : t.translations.ROLE}
+            </button>
+            <div className="flex flex-col">
+              <MemberSearchBar />
             </div>
+          </div>
         </div>
-        <Tabs tabs={tabData} className="tabs tabs-border" />
+        <Tabs
+          tabs={tabData}
+          className="tabs tabs-border"
+          onTabChange={handleTabChange}
+        />
       </div>
 
       <AddProjectMember

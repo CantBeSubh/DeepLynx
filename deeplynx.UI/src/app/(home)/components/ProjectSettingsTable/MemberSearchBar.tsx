@@ -23,8 +23,8 @@ interface MemberSearchBarProps {
 }
 
 const MemberSearchBar: React.FC<MemberSearchBarProps> = ({
-  placeholder = "Search...", // Default placeholder text
-  className = "", // Default className
+  placeholder = "Search...",
+  className = "",
   onChange,
   onEnter,
   value,

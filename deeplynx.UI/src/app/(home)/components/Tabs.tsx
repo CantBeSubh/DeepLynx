@@ -10,12 +10,20 @@ interface Tab {
 interface TabsProps {
   tabs: Tab[];
   className?: string;
+  onTabChange?: (label: string) => void;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, className = "", onTabChange }) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
-  return (
+  const handleTabClick = (index: number, label: string) => {
+    setActiveIndex(index);
+    if (onTabChange) {
+      onTabChange(label);
+    }
+  };
+
+return (
     <div className={className}>
       {/* Tabs header */}
       <div className="tabs tabs-border border-b border-base-200">
@@ -25,7 +33,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
             className={`tab tab-bordered ${
               activeIndex === index ? "tab-active text-secondary " : ""
             }`}
-            onClick={() => setActiveIndex(index)}
+            onClick={() => handleTabClick(index, tab.label)}
           >
             {tab.label}
           </a>

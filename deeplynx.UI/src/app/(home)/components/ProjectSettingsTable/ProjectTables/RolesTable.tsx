@@ -33,7 +33,7 @@ const RolesTable: FC<RolesTableProps> = ({ data }) => {
         columns={columns}
         data={data}
         enablePagination
-        rowsPerPage={5}
+        // rowsPerPage={5}
     />
   );
 };

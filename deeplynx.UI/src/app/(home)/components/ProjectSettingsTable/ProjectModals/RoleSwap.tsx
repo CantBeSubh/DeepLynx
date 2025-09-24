@@ -18,11 +18,17 @@ const RoleSwap = ({ isOpen, onClose }: RoleSwapProps) => {
             </h3>
             {/* Form for adding a new member and selecting their role*/}
             <form method="dialog" className="flex flex-col gap-4">
-                <input
-                type="text"
-                placeholder="Select Role"
-                className="input input-primary w-full"
-                />
+                <select defaultValue="Select a role" className="w-full select select-primary text-neutral">
+                    <option disabled={true} className="w-full select select-bordered">
+                        {t.translations.SELECT_A_ROLE}
+                    </option>
+                    <option className="text-neutral option-primary">
+                        {t.translations.ADMIN}
+                    </option>
+                    <option className="text-neutral option-primary">
+                        {t.translations.USER}
+                    </option>
+                </select>
             </form>
             {/* Modal Action Buttons */}
             <div className="modal-action">
