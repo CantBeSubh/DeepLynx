@@ -152,6 +152,7 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+    builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -285,6 +286,11 @@ try
                 {
                     Name = "File",
                     Description = "Handles operations related to file management"
+                }, 
+                new OpenApiTag
+                {
+                    Name = "Notification",
+                    Description = "Handles notification operations."
                 }
             };
         });

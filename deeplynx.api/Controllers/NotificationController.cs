@@ -1,0 +1,53 @@
+using Microsoft.AspNetCore.Mvc;
+using deeplynx.interfaces;
+using deeplynx.models;
+
+namespace deeplynx.api.Controllers
+{
+    
+    /// <summary>
+    /// Controller for managing classes.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints to create, update, delete, and retrieve class information.
+    /// </remarks>
+
+    [ApiController]
+    [Route("api/notification")]
+    public class NotificationController : ControllerBase
+    {
+        private readonly INotificationBusiness _notificationBusiness;
+        private readonly ILogger<ClassController> _logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClassController"/> class
+        /// </summary>
+        /// <param name="notificationBusiness">The business logic interface for handling class operations.</param>
+        /// <param name="logger">Error/Info logging interface for database log table.</param>
+        public NotificationController(INotificationBusiness notificationBusiness, ILogger<ClassController> logger)
+        {
+            _notificationBusiness = notificationBusiness;
+            _logger = logger;
+        }
+        /// <summary>
+        /// Send email
+        /// </summary>
+        [HttpGet("SendEmail", Name = "api_send_email")]
+        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> SendEmail()
+        {
+            try
+            {
+                var message = await _notificationBusiness.SendEmail("natalie.hergesheimer@inl.gov", "deeplynx", "deeplynx notification");
+                return Ok(message);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while sending email: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+
+        }
+       
+    }
+}
