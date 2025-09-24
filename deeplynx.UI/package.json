@@ -22,6 +22,7 @@
     "date-fns": "^4.1.0",
     "framer-motion": "^12.19.1",
     "i": "^0.3.7",
+    "jsonwebtoken": "^9.0.2",
     "motion": "^12.18.1",
     "next": "^15.2.4",
     "next-auth": "^5.0.0-beta.28",
@@ -40,6 +41,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

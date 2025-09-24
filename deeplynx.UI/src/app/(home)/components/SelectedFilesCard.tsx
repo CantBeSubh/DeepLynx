@@ -1,3 +1,5 @@
+// src/app/(home)/components/SelectedFilesCard.tsx
+
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 
@@ -6,6 +8,7 @@ type Props = {
   onRemoveAt: (idx: number) => void;
   onClear: () => void;
   onUpload: () => void;
+  canUpload: boolean;
 };
 
 export default function SelectedFilesCard({
@@ -13,6 +16,7 @@ export default function SelectedFilesCard({
   onRemoveAt,
   onClear,
   onUpload,
+  canUpload,
 }: Props) {
   const { t } = useLanguage();
   if (files.length === 0) return null;
@@ -45,7 +49,11 @@ export default function SelectedFilesCard({
               <button className="btn btn-ghost btn-sm" onClick={onClear}>
                 {t.translations.CLEAR_ALL}
               </button>
-              <button className="btn btn-secondary btn-sm" onClick={onUpload}>
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={onUpload}
+                disabled={!canUpload}
+              >
                 {t.translations.UPLOAD}
               </button>
             </div>
