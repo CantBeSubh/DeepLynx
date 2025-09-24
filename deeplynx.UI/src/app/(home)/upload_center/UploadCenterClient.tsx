@@ -378,6 +378,7 @@ export default function UploadCenterClient({
                   className="select select-info select-sm mt-2"
                   required
                 >
+                  {/* TODO: We need to pull the destiantions via API */}
                   <option value="" disabled>
                     {t.translations.CHOOSE_A_DESTINATION}
                   </option>
