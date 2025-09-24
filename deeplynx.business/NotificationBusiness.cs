@@ -1,13 +1,9 @@
 using System.Net;
 using System.Net.Mail;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
-using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
-using deeplynx.helpers;
-using Npgsql;
-using System.Text.Json;
+using Microsoft.Extensions.Logging;
+
 
 namespace deeplynx.business;
 
@@ -16,15 +12,18 @@ namespace deeplynx.business;
 public class NotificationBusiness : INotificationBusiness
 {
     private readonly DeeplynxContext _context;
+    private readonly ILogger<NotificationBusiness> _logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
+    /// /// <param name="logger">Logging</param>
     public NotificationBusiness(
-        DeeplynxContext context
+        DeeplynxContext context, ILogger<NotificationBusiness> logger
     )
     {
+        _logger = logger;
         _context = context;
     }
 
@@ -32,8 +31,7 @@ public class NotificationBusiness : INotificationBusiness
     /// Sends an email notification
     /// </summary>
     /// <param name="toEmail">Recipient email address</param>
-    /// <param name="subject">Email subject</param>
-    /// <param name="body">Email body content</param>
+    /// <param name="name">Recipient name</param>
     /// <returns>True if email was sent successfully, false otherwise</returns>
     public async Task<bool> SendEmail(string toEmail, string name)
     {
@@ -101,50 +99,18 @@ public class NotificationBusiness : INotificationBusiness
         // Send the email
         await smtpClient.SendMailAsync(mailMessage);
         
-        // _logger.LogInformation("Email sent successfully to {ToEmail} with subject: {Subject}", toEmail, subject);
         return true;
        }
        catch (SmtpException smtpEx)
        {
-            // _logger.LogError(smtpEx, "SMTP error occurred while sending email to {ToEmail}: {ErrorMessage}", toEmail, smtpEx.Message);
-            return false;
+           _logger.LogError(smtpEx, "SMTP error occurred while sending email to {ToEmail}: {ErrorMessage}", toEmail, smtpEx.Message);
+           return false;
        }
        catch (Exception ex)
        {
-            // _logger.LogError(ex, "Unexpected error occurred while sending email to {ToEmail}: {ErrorMessage}", toEmail, ex.Message);
-            return false;
+           _logger.LogError(ex, "Unexpected error occurred while sending email to {ToEmail}: {ErrorMessage}", toEmail, ex.Message);
+           return false;
        }
-    }
-  
-    private async Task<string> ReadAndProcessTemplate(string templatePath, Dictionary<string, string> replacements)
-    {
-        try
-        {
-            if (!File.Exists(templatePath))
-            {
-                // _logger.LogWarning("Email template file not found: {TemplatePath}", templatePath);
-                return string.Empty;
-            }
-
-            string templateContent = await File.ReadAllTextAsync(templatePath);
-        
-            if (replacements != null && replacements.Any())
-            {
-                foreach (var replacement in replacements)
-                {
-                    // Support both {{key}} and {key} placeholder formats
-                    templateContent = templateContent.Replace($"{{{{{replacement.Key}}}}}", replacement.Value);
-                    templateContent = templateContent.Replace($"{{{replacement.Key}}}", replacement.Value);
-                }
-            }
-
-            return templateContent;
-        }
-        catch (Exception ex)
-        {
-            // _logger.LogError(ex, "Error reading or processing email template: {TemplatePath}", templatePath);
-            return string.Empty;
-        }
     }
     
 }
