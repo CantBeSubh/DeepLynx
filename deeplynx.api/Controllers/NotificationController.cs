@@ -34,7 +34,7 @@ namespace deeplynx.api.Controllers
         /// Send email
         /// </summary>
         [HttpPost("SendEmail", Name = "api_send_email")]
-        public async Task<ActionResult<IEnumerable<ClassResponseDto>>> SendEmail([FromQuery] string email, string name)
+        public async Task<IActionResult> SendEmail([FromQuery] string email, string name)
         {
             try
             {
