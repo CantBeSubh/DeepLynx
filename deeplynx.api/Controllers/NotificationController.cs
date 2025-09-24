@@ -7,12 +7,8 @@ namespace deeplynx.api.Controllers
 {
     
     /// <summary>
-    /// Controller for managing classes.
+    /// Controller for managing notifications.
     /// </summary>
-    /// <remarks>
-    /// This controller provides endpoints to create, update, delete, and retrieve class information.
-    /// </remarks>
-
     [ApiController]
     [Route("api/notification")]
     public class NotificationController : ControllerBase
@@ -21,7 +17,7 @@ namespace deeplynx.api.Controllers
         private readonly ILogger<ClassController> _logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClassController"/> class
+        /// Initializes a new instance of the <see cref="NotificationController"/> class
         /// </summary>
         /// <param name="notificationBusiness">The business logic interface for handling class operations.</param>
         /// <param name="logger">Error/Info logging interface for database log table.</param>
