@@ -395,7 +395,7 @@ spec:
             pathType: Prefix
             backend:
               service:  
-                name: deeplynxv3-docs
+                name: deeplynxv3-docs-service
                 port:  
                   number: 80 
 
