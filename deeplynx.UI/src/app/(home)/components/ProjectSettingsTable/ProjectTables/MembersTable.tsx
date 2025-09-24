@@ -79,7 +79,6 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
     {
       header: "Email",
       data: "email",
-      sortable: false,
     },
     {
       header: (

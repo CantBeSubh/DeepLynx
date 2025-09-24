@@ -88,6 +88,11 @@ export type ProjectMembersTable = {
   role: string;
 }
 
+export type MyRolesTable = {
+  role: string;
+  description: string;
+}
+
 export type TeamMember = {
   id: number;
   name: string;

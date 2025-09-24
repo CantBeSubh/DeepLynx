@@ -1205,6 +1205,17 @@ export const projectMembers = [
   }
 ];
 
+export const defaultRoles = [
+  {
+    role: "Admin",
+    description: "Administrator with full access to all project resources and settings."
+  },
+  {
+    role: "User",
+    description: "Standard user with limited access to project resources."
+  }
+];
+
 export const dropDownProjects = [
   "Aurora Initiative",
   "Quantum Quest",

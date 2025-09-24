@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { mySavedSearches, projectMembers } from "../../dummy_data/data";
+import { mySavedSearches, projectMembers, defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
@@ -34,7 +34,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       label: "Roles",
       content: (
         <RolesTable
-          data={mySavedSearches}
+          data={defaultRoles}
         />
       ),
     },

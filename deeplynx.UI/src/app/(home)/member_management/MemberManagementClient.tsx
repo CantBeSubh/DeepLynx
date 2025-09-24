@@ -2,10 +2,7 @@
 
 import React from "react";
 import { peopleData } from "../dummy_data/data";
-import AvatarCell from "../components/Avatar";
-import { MoonIcon, SunIcon } from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
-import ThemeToggle from "../components/ThemeToggle";
 
 const MemberManagementClient = () => {
   const { lang, setLang, t } = useLanguage(); // <-- t comes from translations[lang]
