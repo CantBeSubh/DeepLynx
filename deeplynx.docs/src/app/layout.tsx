@@ -9,7 +9,7 @@ import { ReactNode } from 'react'
   // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/jmetadata
 //}
  
-const banner = <Banner storageKey="some-key">Welcome to the release of Nexus Docs 1.0 🎉</Banner>
+const banner = <Banner storageKey="banner-key">Welcome to the release of Nexus Docs 1.0 🎉</Banner>
 const navbar = (
   <Navbar
     logo={
@@ -46,7 +46,7 @@ const navbar = (
   />
 )
 
-const footer = <Footer>MIT {new Date().getFullYear()} © Idaho National Laboratory.</Footer>
+const footer = <Footer>{new Date().getFullYear()} © Idaho National Laboratory.</Footer>
  
 export default async function RootLayout({ children }: { children: ReactNode }) { 
   return (
