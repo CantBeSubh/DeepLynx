@@ -37,7 +37,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var message = await _notificationBusiness.SendEmail("natalie.hergesheimer@inl.gov", "deeplynx", "deeplynx notification");
+                var message = await _notificationBusiness.SendEmail("natalie.hergesheimer@inl.gov", "deeplynx", "Natalie");
                 return Ok(message);
             }
             catch (Exception exc)
