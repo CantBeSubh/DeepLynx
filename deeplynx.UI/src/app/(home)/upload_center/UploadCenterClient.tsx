@@ -168,14 +168,9 @@ export default function UploadCenterClient({
 
       // Reset everything (but keep project by default)
       resetForm({ keepProject: true });
-    } catch (e: any) {
-      const msg =
-        e?.response?.data ??
-        e?.response?.statusText ??
-        e?.message ??
-        "Upload failed. See console for details.";
-      toast.error(String(msg));
-      console.error(e);
+    } catch (error) {
+      toast.error("Upload failed. See console for details.");
+      console.error(error);
     }
   };
 

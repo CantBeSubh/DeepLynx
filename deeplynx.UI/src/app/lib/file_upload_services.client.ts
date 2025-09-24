@@ -78,12 +78,6 @@ export async function uploadFile({
     form.append("classId", String(classId));
   }
 
-  // Log all FormData entries for debugging
-  console.log("FormData contents:");
-  for (let [key, value] of form.entries()) {
-    console.log(`${key}:`, value);
-  }
-
   const { data } = await api.post<UploadedFileDTO>(
     `/projects/${projectId}/files/UploadFile`,
     form,
