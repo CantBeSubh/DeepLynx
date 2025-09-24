@@ -9,7 +9,7 @@ import { ReactNode } from 'react'
   // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/jmetadata
 //}
  
-const banner = <Banner storageKey="banner-key">Welcome to the release of Nexus Docs 1.0 🎉</Banner>
+const banner = <Banner storageKey="banner-key0">Welcome to the release of Nexus Docs 1.0 🎉</Banner>
 const navbar = (
   <Navbar
     logo={
@@ -34,7 +34,7 @@ const navbar = (
     </svg>
     }
 
-    chatLink="https://github.com/idaholab/Deep-Lynx"
+    chatLink="https://x.com/INL"
     chatIcon={
       <svg width="24" height="24" viewBox="0 0 248 204">
         <path
