@@ -52,8 +52,7 @@ public class NotificationBusiness : INotificationBusiness
         var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL") 
                         ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
         
-        var emailPassword = Environment.GetEnvironmentVariable("EMAIL_PASSWORD") 
-            ?? throw new InvalidOperationException("EMAIL_PASSWORD environment variable is not set");
+        var emailPassword = "";
         
         var fromName = Environment.GetEnvironmentVariable("FROM_NAME") ?? "DeepLynx Nexus Notification";
         
