@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250923201223_UpdatePermissions")]
-    partial class UpdatePermissions
+    [Migration("20250923210735_UpdateRbacTables")]
+    partial class UpdateRbacTables
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -12,7 +12,7 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20250923201825_HardcodedPermissions")]
+    [Migration("20250923211011_HardcodedPermissions")]
     partial class HardcodedPermissions
     {
         /// <inheritdoc />
