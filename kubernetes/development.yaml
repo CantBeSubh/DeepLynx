@@ -89,6 +89,8 @@ spec:
               value: ${DUCKDB_BASE_PATH}
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
+            - name: NEXT_PUBLIC_DOCS_PATH
+              value: "docs.deeplynx.dev.inl.gov"
             # Runtime environment variables from secrets (sensitive)
             - name: OKTA_CLIENT_SECRET
               valueFrom:
