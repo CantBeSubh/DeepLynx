@@ -313,7 +313,7 @@ public class OrganizationBusiness : IOrganizationBusiness
     /// <param name="isAdmin">Admin status to set user to within the org</param>
     /// <returns>True if permissions were updated successfully</returns>
     /// <exception cref="KeyNotFoundException">Returned if user doesn't already exist in org</exception>
-    public async Task<bool> UpdateOrganizationAdminStatus(long organizationId, long userId, bool isAdmin = false)
+    public async Task<bool> SetOrganizationAdminStatus(long organizationId, long userId, bool isAdmin = false)
     {
         // check if the user exists in the organization
         var existingOrgUser = await _context.OrganizationUsers

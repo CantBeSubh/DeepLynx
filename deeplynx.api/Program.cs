@@ -167,6 +167,11 @@ try
     builder.Services.AddTransient<FileAzureBusiness>();
     builder.Services.AddTransient<FileS3Business>();
     builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
+    builder.Services.AddTransient<IOrganizationBusiness, OrganizationBusiness>();
+    builder.Services.AddTransient<IGroupBusiness, GroupBusiness>();
+    builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
+    builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
+    builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
@@ -281,6 +286,31 @@ try
                 {
                     Name = "File",
                     Description = "Handles operations related to file management"
+                },
+                new OpenApiTag
+                {
+                    Name = "SensitivityLabel",
+                    Description = "Handles operations related to Sensitivity Label management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Group",
+                    Description = "Handles operations related to Group management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Organization",
+                    Description = "Handles operations related to Organization management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Role",
+                    Description = "Handles operations related to Role management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Permission",
+                    Description = "Handles operations related to Permission management"
                 }
             };
         });

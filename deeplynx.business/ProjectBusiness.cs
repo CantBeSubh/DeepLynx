@@ -608,7 +608,7 @@ public class ProjectBusiness : IProjectBusiness
     /// Add a user or a group to a project
     /// </summary>
     /// <param name="projectId">Project to which to add member</param>
-    /// <param name="roleId">Role which member will be added under</param>
+    /// <param name="roleId">(optional) Role which member will be added under</param>
     /// <param name="userId">(optional) ID of user to be added</param>
     /// <param name="groupId">(optional) ID of group to be added</param>
     /// <returns>True if user or group successfully added to project</returns>

@@ -125,52 +125,6 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Adds user to project
-    /// </summary>
-    /// <param name="userId">Id of user to be added</param>
-    /// /// <param name="projectId">Id of project to add user to</param>
-    /// <returns>True if successful</returns>
-    public async Task<bool> AddUserToProject(long userId, long projectId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
-        var project = _context.Projects.FirstOrDefault(p => p.Id == projectId);
-        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-
-        if (project != null && user != null)
-        {
-            project.Users.Add(user);
-            await _context.SaveChangesAsync();
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Removes user from project
-    /// </summary>
-    /// <param name="userId">Id of user to be removed</param>
-    /// /// <param name="projectId">Id of project to remove user from</param>
-    /// <returns>True if successful</returns>
-    public async Task<bool> RemoveUserFromProject(long userId, long projectId)
-    {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
-        var project = _context.Projects
-            .Include(p => p.Users)
-            .FirstOrDefault(p => p.Id == projectId);
-        var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-
-        if (project != null && user != null)
-        {
-            project.Users.Remove(user);
-            await _context.SaveChangesAsync();
-        }
-
-        return true;
-    }
-
-    /// <summary>
     /// Updates an existing user by ID
     /// </summary>
     /// <param name="userId">The ID of the user to update</param>

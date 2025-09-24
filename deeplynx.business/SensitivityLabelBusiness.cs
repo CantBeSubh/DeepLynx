@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace deeplynx.business;
 
-public class SensitivityLabelBusiness
+public class SensitivityLabelBusiness : ISensitivityLabelBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
