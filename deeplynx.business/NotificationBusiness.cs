@@ -63,7 +63,9 @@ public class NotificationBusiness : INotificationBusiness
         bool.TryParse(enableSslStr, out bool enableSsl);
         
         
-        string templateFile = Path.Combine(Directory.GetCurrentDirectory(), "..", "deeplynx.business", "EmailTemplates", "InviteTemplate.html");
+        string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
+        string templateFile = Path.Combine(projectRoot, "InviteTemplate.html");
+
 
         if (!File.Exists(templateFile))
         {
