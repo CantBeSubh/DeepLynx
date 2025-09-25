@@ -83,7 +83,7 @@ public class TimeseriesBusiness(
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
-
+        
         command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
         var executeNonQuery = await command.ExecuteNonQueryAsync();
     }
@@ -343,10 +343,10 @@ public class TimeseriesBusiness(
     /// <param name="fileType"></param>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="Exception"></exception>
-    public async Task AppendTimeseriesTable(long dataSourceId, long projectId, IFormFile file, string tableName, string fileType)
+    public async Task AppendTimeseriesTable(long dataSourceId, long projectId, IFormFile file, string tableName)
     {
-        var fileExtension = Path.GetExtension(file.FileName);
-        if (fileType != "csv" && fileType != "parquet")
+        var fileType = Path.GetExtension(file.FileName);
+        if (fileType != ".csv" && fileType != ".parquet")
         {
             throw new ArgumentException("Only CSV and Parquet files are supported.");
         }
@@ -364,17 +364,19 @@ public class TimeseriesBusiness(
         var guid = Guid.NewGuid();
         var tempFolderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), guid.ToString());
         Directory.CreateDirectory(tempFolderPath);
+        
         var tempFilePath = Path.Combine(tempFolderPath, file.FileName);
+        
         await using var stream = new FileStream(tempFilePath, FileMode.Create);
         await file.CopyToAsync(stream);
         
         await using var command = duckDbConnection.CreateCommand();
 
-        if (fileType == "csv")
+        if (fileType == ".csv")
         {
-            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}' (HEADER true)";
+            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}' (AUTO_DETECT true)";
         }
-        else if (fileType == "parquet")
+        else if (fileType == ".parquet")
         {
             command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}'";
         }
