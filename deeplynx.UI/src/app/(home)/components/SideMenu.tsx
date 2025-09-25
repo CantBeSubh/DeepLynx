@@ -324,7 +324,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
-                href={`${process.env.NEXT_PUBLIC_DOCS_PATH}`}
+                href={ process.env.NEXT_PUBLIC_DOCS_PATH ? `${process.env.NEXT_PUBLIC_DOCS_PATH}` : "http://localhost:3001" }
                 /*
                 href="#"
                 prefetch={false}
