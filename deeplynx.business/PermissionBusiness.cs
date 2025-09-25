@@ -123,7 +123,7 @@ public class PermissionBusiness : IPermissionBusiness
         long? projectId, long? organizationId)
     {
         // ensure one and only one of projectID or organizationID is supplied
-        if (projectId.HasValue && organizationId.HasValue)
+        if (!projectId.HasValue && !organizationId.HasValue)
             throw new ArgumentException("One of Project ID or Organization ID must be provided");
         if (projectId.HasValue && organizationId.HasValue)
             throw new ArgumentException("Please provide only one of Project ID or Organization ID, not both");
@@ -283,10 +283,10 @@ public class PermissionBusiness : IPermissionBusiness
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
         // ensure that hardcoded cannot be edited
+        if (permission != null && permission.IsHardcoded)
+            throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
         if (permission == null || !permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found or is not archived");
-        if (permission.IsHardcoded)
-            throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
         
         permission.IsArchived = false;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
@@ -332,7 +332,7 @@ public class PermissionBusiness : IPermissionBusiness
         {
             OrganizationId = permission.OrganizationId,
             ProjectId = permission.ProjectId,
-            Operation = "unarchive",
+            Operation = "delete",
             EntityType = "permission",
             EntityId = permission.Id,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
