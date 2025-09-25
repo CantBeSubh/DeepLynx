@@ -87,6 +87,20 @@ spec:
             # DuckDB Configuration
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}
+            - name: SMTP_SERVER
+              value: ${SMTP_SERVER}
+            - name: SMTP_PORT
+              value: ${SMTP_PORT}
+            - name: SMTP_ENABLE_SSL
+              value: ${SMTP_ENABLE_SSL}
+            - name: FROM_EMAIL
+              value: ${FROM_EMAIL}
+            - name: FROM_NAME
+              value: ${FROM_NAME}
+            - name: INVITE_URL
+              value: ${INVITE_URL}
+            - name: SUPPORT_EMAIL
+              value: ${SUPPORT_EMAIL}
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             - name: NEXT_PUBLIC_DOCS_PATH
@@ -201,6 +215,20 @@ spec:
             # DuckDB Configuration (same as frontend)
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}
+            - name: SMTP_SERVER
+              value: ${SMTP_SERVER}
+            - name: SMTP_PORT
+              value: ${SMTP_PORT}
+            - name: SMTP_ENABLE_SSL
+              value: ${SMTP_ENABLE_SSL}
+            - name: FROM_EMAIL
+              value: ${FROM_EMAIL}
+            - name: FROM_NAME
+              value: ${FROM_NAME}
+            - name: INVITE_URL
+              value: ${INVITE_URL}
+            - name: SUPPORT_EMAIL
+              value: ${SUPPORT_EMAIL}
             # - name: TENANT_MODE
             #   value: ${TENANT_MODE}
             # Backend may also need these environment variables
