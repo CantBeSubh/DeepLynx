@@ -15,6 +15,7 @@ namespace deeplynx.interfaces
             TimeseriesUploadCompleteRequestDto request);
 
         Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath);
+        
         Task AppendTimeseriesTable(long dataSourceId, long projectId, IFormFile file, string tableName);
 
         Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long datasourceId, string fileType);
