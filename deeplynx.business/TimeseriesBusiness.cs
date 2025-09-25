@@ -361,6 +361,7 @@ public class TimeseriesBusiness(
         
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
         
+        // save file to temporary directory
         var guid = Guid.NewGuid();
         var tempFolderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), guid.ToString());
         Directory.CreateDirectory(tempFolderPath);
