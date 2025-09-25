@@ -7,6 +7,7 @@ using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using StackExchange.Redis;
@@ -306,7 +307,13 @@ try
     app.UseOpenApi();
 
     var customcss = File.ReadAllText("moon.css");
-    app.UseStaticFiles();
+    
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(
+            Path.Combine(Directory.GetCurrentDirectory(), "Templates")),
+        RequestPath = "/Templates"
+    });
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
