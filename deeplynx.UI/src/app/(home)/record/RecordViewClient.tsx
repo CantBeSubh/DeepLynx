@@ -27,7 +27,7 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
-import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
+// import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
 import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
@@ -165,35 +165,35 @@ export default function RecordViewClient({
     fetchData();
   }, [recordId, projectId]);
 
-  useEffect(() => {
-    const fetchRelatedRecords = async () => {
-      try {
-        if (record && !hasFetchedRelatedRecords) {
-          const request = {
-            tablename: record.className,
-            id: record.id,
-            depth: 1,
-          };
+  // useEffect(() => {
+  //   const fetchRelatedRecords = async () => {
+  //     try {
+  //       if (record && !hasFetchedRelatedRecords) {
+  //         const request = {
+  //           tablename: record.className,
+  //           id: record.id,
+  //           depth: 1,
+  //         };
 
-          const relatedRecordsData = await getNodesWithinDepth(
-            Number(projectId),
-            request
-          );
+  //         const relatedRecordsData = await getNodesWithinDepth(
+  //           Number(projectId),
+  //           request
+  //         );
 
-          setRelatedRecords(relatedRecordsData);
+  //         setRelatedRecords(relatedRecordsData);
 
-          setHasFetchedRelatedRecords(true);
-        }
-      } catch (error) {
-        console.error("Error fetching related records:", error);
-      }
-    };
-    if (record?.className && record?.id) {
-      if (record?.className && record?.id) {
-        fetchRelatedRecords();
-      }
-    }
-  }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
+  //         setHasFetchedRelatedRecords(true);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching related records:", error);
+  //     }
+  //   };
+  //   if (record?.className && record?.id) {
+  //     if (record?.className && record?.id) {
+  //       fetchRelatedRecords();
+  //     }
+  //   }
+  // }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
     const parseRelatedRecords = (
@@ -461,22 +461,23 @@ export default function RecordViewClient({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value:
+          typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   const tabs = [
     {
       label: "Record Information",
       content: (
-        <div className="flex gap-4 mt-6">
+        <div className="flex gap-4">
           <div className="w-full md:w-1/2 p-3">
             <PropertyTable
+              className=""
               title="System Properties"
               rows={systemPropertiesRows}
             />
@@ -486,7 +487,7 @@ export default function RecordViewClient({
               rows={additionalPropertiesRows}
             />
           </div>
-          <div className="flex-grow">
+          <div className="mt-3">
             <div className="card bg-base-100 shadow-md p-4 relative mb-20">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
