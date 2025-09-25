@@ -297,16 +297,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deeplynxdocs
+  name: deeplynx-docs
   namespace: deeplynxv3-dev
 spec:
   selector:
     matchLabels:
-      app: deeplynxdocs
+      app: deeplynx-docs
   template:
     metadata:
       labels:
-        app: deeplynxdocs
+        app: deeplynx-docs
     spec:
       containers:
         - name: deeplynxv3
@@ -365,7 +365,7 @@ spec:
       port: 80
       targetPort: 3001
   selector:
-    app: deeplynxdocs
+    app: deeplynx-docs
 
 ---
 
