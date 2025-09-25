@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -164,11 +165,50 @@ namespace deeplynx.datalayer.Migrations
                 principalTable: "organizations",
                 principalColumn: "id",
                 onDelete: ReferentialAction.SetNull);
+
+            migrationBuilder.AlterColumn<long>(
+                name: "id",
+                schema: "deeplynx",
+                table: "project_members",
+                type: "bigint",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer")
+                .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+                .OldAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
+            migrationBuilder.Sql(@"
+                CREATE OR REPLACE PROCEDURE deeplynx.archive_role(arc_role_id INTEGER, arc_time TIMESTAMP WITHOUT TIME ZONE)
+                LANGUAGE plpgsql AS $$
+                BEGIN
+                    UPDATE deeplynx.roles 
+                        SET is_archived = TRUE, last_updated_at = arc_time 
+                        WHERE id = arc_role_id;
+                    -- remove this role from anyone who holds it
+                    UPDATE deeplynx.project_members 
+                        SET role_id = NULL
+                        WHERE role_id = arc_role_id;
+                END;
+                $$;
+            ");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.Sql("DROP PROCEDURE IF EXISTS deeplynx.archive_role;");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "id",
+                schema: "deeplynx",
+                table: "project_members",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(long),
+                oldType: "bigint")
+                .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+                .OldAnnotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn);
+
             migrationBuilder.DropForeignKey(
                 name: "events_project_id_fkey",
                 schema: "deeplynx",

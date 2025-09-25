@@ -275,8 +275,8 @@ public class RoleBusiness : IRoleBusiness
     public async Task<bool> UnarchiveRole(long roleId)
     {
         var role = await _context.Roles.FindAsync(roleId);
-        if (role == null || role.IsArchived)
-            throw new KeyNotFoundException($"Role with id {roleId} not found or is archived");
+        if (role == null || !role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found or is not archived");
         
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);

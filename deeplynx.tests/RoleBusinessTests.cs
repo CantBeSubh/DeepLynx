@@ -1,14 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Moq;
-using Record = deeplynx.datalayer.Models.Record;
-using System.Text.Json.Nodes;
 
 namespace deeplynx.tests
 {
@@ -18,13 +13,19 @@ namespace deeplynx.tests
         private EventBusiness _eventBusiness;
         private RoleBusiness _roleBusiness;
 
-        public long oid;    // organization ID
-        public long pid;    // project ID
-        public long rid1;   // role IDs
+        public long oid;        // organization ID
+        public long pid;        // project ID
+        public long rid1;       // role IDs
         public long rid2;
         public long rid3;
         public long rid4;
         public long rid5;
+        public long uid;        // user ID
+        public long mid;        // project member ID
+        public long permid1;    // permission IDs
+        public long permid2;
+        public long permid3;
+        public long permid4;
         
         public RoleBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -292,163 +293,488 @@ namespace deeplynx.tests
         
         #endregion
         
+        #region UpdateRole Tests
+        
         [Fact]
         public async Task UpdateRole_Success_ReturnsRole()
         {
+            // Arrange
+            var dto = new UpdateRoleRequestDto
+            {
+                Name = "Updated Role",
+                Description = "Now with a description",
+            };
             
+            // Act
+            var result = await _roleBusiness.UpdateRole(rid1, dto);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(rid1, result.Id);
+            Assert.Equal("Updated Role", result.Name);
+            Assert.Equal("Now with a description", result.Description);
+            
+            // Verify it was actually saved to DB
+            var savedRole = await Context.Roles.FindAsync(rid1);
+            Assert.NotNull(savedRole);
+            Assert.Equal("Updated Role", savedRole.Name);
+            Assert.Equal("Now with a description", savedRole.Description);
         }
         
         [Fact]
         public async Task UpdateRole_Success_CreatesEvent()
         {
+            // Arrange
+            var dto = new UpdateRoleRequestDto
+            {
+                Name = "Updated Role",
+                Description = "Now with a description",
+            };
             
+            // Act
+            var result = await _roleBusiness.UpdateRole(rid1, dto);
+            
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("Updated Role", result.Name);
+            
+            // Ensure that the Role update event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "update",
+                EntityType = "role",
+                EntityId = result.Id,
+            });
         }
         
         [Fact]
         public async Task UpdateRole_Fails_IfNotFound()
         {
+            // Arrange
+            var dto = new UpdateRoleRequestDto
+            {
+                Name = "Updated Role",
+                Description = "Now with a description",
+            };
             
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.UpdateRole(rid3, dto));
+            
+            // Assert
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
+            
+            // Ensure that no event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
+        
+        #endregion
+        
+        #region ArchiveRole Tests
         
         [Fact]
         public async Task ArchiveRole_Succeeds_IfNotArchived()
         {
+            // Act
+            var result = await _roleBusiness.ArchiveRole(rid1);
             
+            // Assert
+            Assert.True(result);
+            
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+            
+            // Verify it was actually saved to DB
+            var savedRole = await Context.Roles.FindAsync(rid1);
+            Assert.NotNull(savedRole);
+            Assert.True(savedRole.IsArchived);
+            
+            // Ensure that the Role archive event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "archive",
+                EntityType = "role",
+                EntityId = rid1,
+            });
         }
 
-        [Fact] public async Task ArchiveRole_RemovesRole_FromProjectMembers()
+        [Fact] 
+        public async Task ArchiveRole_RemovesRole_FromProjectMembers()
         {
+            // Confirm that user exists as project member with role
+            var member = await Context.ProjectMembers.FindAsync(mid);
+            Assert.NotNull(member);
+            Assert.Equal(pid, member.ProjectId);
+            Assert.Equal(uid, member.UserId);
+            Assert.Equal(rid4, member.RoleId);
             
+            // Act
+            var result = await _roleBusiness.ArchiveRole(rid4);
+            
+            // Assert
+            Assert.True(result);
+            
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+            
+            // Confirm that user no longer holds role
+            var updatedMember = await Context.ProjectMembers.FindAsync(mid);
+            Assert.NotNull(updatedMember);
+            Assert.Equal(pid, updatedMember.ProjectId);
+            Assert.Equal(uid, updatedMember.UserId);
+            Assert.NotEqual(rid4, updatedMember.RoleId);
+            Assert.Null(updatedMember.RoleId);
         }
         
         [Fact]
         public async Task ArchiveRole_Fails_IfArchived()
         {
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.ArchiveRole(rid2));
             
+            // Assert
+            Assert.Contains($"Role with id {rid2} not found or is archived", exception.Message);
+            
+            // Ensure that no event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
+        
+        #endregion
+        
+        #region UnarchiveRole Tests
         
         [Fact]
         public async Task UnarchiveRole_Succeeds_IfArchived()
         {
-            
+            // Act
+            var result = await _roleBusiness.UnarchiveRole(rid2);
+    
+            // Assert
+            Assert.True(result);
+    
+            // Verify it was actually saved to DB
+            var savedRole = await Context.Roles.FindAsync(rid2);
+            Assert.NotNull(savedRole);
+            Assert.False(savedRole.IsArchived);
+    
+            // Ensure that the Role unarchive event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "unarchive",
+                EntityType = "role",
+                EntityId = rid2,
+            });
         }
-        
+
         [Fact]
         public async Task UnarchiveRole_Fails_IfNotArchived()
         {
-            
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.UnarchiveRole(rid1));
+    
+            // Assert
+            Assert.Contains($"Role with id {rid1} not found or is not archived", exception.Message);
+    
+            // Ensure that no event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
+        
+        #endregion
+        
+        #region DeleteRole Tests
         
         [Fact]
         public async Task DeleteRole_Succeeds_WhenExists()
         {
-            
+            // Act
+            var result = await _roleBusiness.DeleteRole(rid1);
+    
+            // Assert
+            Assert.True(result);
+    
+            // Verify it was actually deleted from DB
+            var deletedRole = await Context.Roles.FindAsync(rid1);
+            Assert.Null(deletedRole);
+    
+            // Ensure that the Role delete event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                Operation = "delete",
+                EntityType = "role",
+                EntityId = rid1,
+            });
         }
-        
+
         [Fact]
         public async Task DeleteRole_Fails_IfNotFound()
         {
-            
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.DeleteRole(rid3));
+    
+            // Assert
+            Assert.Contains($"Role with id {rid3} not found or is archived", exception.Message);
+    
+            // Ensure that no event was logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
         }
+        
+        #endregion
+        
+        #region GetPermissionsByRole Tests
         
         [Fact]
         public async Task GetPermissionsByRole_Lists_AllPermissionsForRole()
         {
+            // Act
+            var result = await _roleBusiness.GetPermissionsByRole(rid1);
+            var permissions = result.ToList();
             
+            // Assert
+            Assert.Equal(2, permissions.Count);
+            Assert.Contains(permissions, p => p.Id == permid1);
+            Assert.Contains(permissions, p => p.Id == permid2);
         }
-        
+
         [Fact]
         public async Task GetPermissionsByRole_DoesNotList_PermissionsNotForRole()
         {
+            // Act
+            var result = await _roleBusiness.GetPermissionsByRole(rid1);
+            var permissions = result.ToList();
             
+            // Assert
+            Assert.Equal(2, permissions.Count);
+            Assert.Contains(permissions, p => p.Id == permid1);
+            Assert.Contains(permissions, p => p.Id == permid2);
+            Assert.DoesNotContain(permissions, p => p.Id == permid3);
         }
-        
+
         [Fact]
         public async Task GetPermissionsByRole_Fails_IfRoleNotFound()
         {
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.GetPermissionsByRole(rid3));
             
+            // Assert
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task GetPermissionsByRole_ReturnsEmpty_IfNoPermissionsForRole()
         {
+            // Act
+            var result = await _roleBusiness.GetPermissionsByRole(rid4);
+            var permissions = result.ToList();
             
+            // Assert
+            Assert.Empty(permissions);
         }
+        
+        #endregion
+        
+        #region AddPermissionToRole Tests
         
         [Fact]
         public async Task AddPermissionToRole_AddsPermissionToRole()
         {
-            
+            // Act
+            var result = await _roleBusiness.AddPermissionToRole(rid1, permid3);
+    
+            // Assert
+            Assert.True(result);
+    
+            // Verify permission was added
+            var role = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Contains(role.Permissions, p => p.Id == permid3);
         }
-        
+
         [Fact]
         public async Task AddPermissionToRole_Fails_IfRoleNotFound()
         {
+            // Act
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.AddPermissionToRole(rid3, permid3));
             
+            // Assert
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task AddPermissionToRole_Fails_IfPermissionNotFound()
         {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.AddPermissionToRole(rid1, permid4));
             
+            // Assert
+            Assert.Contains($"Permission with id {permid4} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task AddPermissionToRole_Fails_IfPermissionExistsForRole()
         {
-            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _roleBusiness.AddPermissionToRole(rid1, permid2));
+    
+            Assert.Contains($"Permission with id {permid2} already exists as part of role {rid1}", exception.Message);
         }
+        
+        #endregion
+        
+        #region RemovePermissionFromRole Tests
         
         [Fact]
         public async Task RemovePermissionFromRole_RemovesPermissionFromRole()
         {
-            
+            // Act
+            var result = await _roleBusiness.RemovePermissionFromRole(rid1, permid1);
+    
+            // Assert
+            Assert.True(result);
+    
+            // Verify permission was removed
+            var updatedRole = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.DoesNotContain(updatedRole.Permissions, p => p.Id == permid1);
         }
-        
+
         [Fact]
         public async Task RemovePermissionFromRole_Fails_IfRoleNotFound()
         {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.RemovePermissionFromRole(rid3, permid3));
             
+            // Assert
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task RemovePermissionFromRole_Fails_IfPermissionNotExistsForRole()
         {
-            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.RemovePermissionFromRole(rid1, permid3));
+    
+            Assert.Contains($"Permission with id {permid3} is not assigned to role {rid1}", exception.Message);
         }
+        
+        #endregion
+        
+        #region SetPermissionsForRole Tests
         
         [Fact]
         public async Task SetPermissionsForRole_SetsPermissionsForEmptyRole()
         {
+            // Arrange
+            var permissionIds = new long[] { permid1, permid2 };
             
+            // Act
+            var result = await _roleBusiness.SetPermissionsForRole(rid4, permissionIds);
+            
+            // Assert
+            Assert.True(result);
+            
+            // Verify permissions were set
+            var role = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Equal(2, role.Permissions.Count);
+            Assert.Contains(role.Permissions, p => p.Id == permid1);
+            Assert.Contains(role.Permissions, p => p.Id == permid2);
         }
-        
+
         [Fact]
         public async Task SetPermissionsForRole_ResetsPermissionsIfAnyExist()
         {
+            // Check existing permissions for role 1 to ensure perms 1 and 2 exist
+            var roleBefore = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Equal(2, roleBefore.Permissions.Count);
+            Assert.Contains(roleBefore.Permissions, p => p.Id == permid1);
+            Assert.Contains(roleBefore.Permissions, p => p.Id == permid2);
             
+            // Arrange
+            var permissionIds = new long[] { permid1, permid3 };
+            
+            // Act
+            var result = await _roleBusiness.SetPermissionsForRole(rid1, permissionIds);
+            
+            // Assert
+            Assert.True(result);
+            var roleAfter = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Equal(2, roleAfter.Permissions.Count);
+            Assert.Contains(roleAfter.Permissions, p => p.Id == permid1);
+            Assert.DoesNotContain(roleAfter.Permissions, p => p.Id == permid2);
+            Assert.Contains(roleAfter.Permissions, p => p.Id == permid3);
         }
-        
+
         [Fact]
         public async Task SetPermissionsForRole_SetsPermissionsBlank_IfNoneSupplied()
         {
+            // Check existing permissions for role 1 to ensure perms 1 and 2 exist
+            var roleBefore = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Equal(2, roleBefore.Permissions.Count);
+            Assert.Contains(roleBefore.Permissions, p => p.Id == permid1);
+            Assert.Contains(roleBefore.Permissions, p => p.Id == permid2);
             
+            // Arrange
+            var emptyPermissionIds = new long[] { };
+            
+            // Act
+            var result = await _roleBusiness.SetPermissionsForRole(rid1, emptyPermissionIds);
+            
+            // Assert
+            Assert.True(result);
+            var roleAfter = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == rid1);
+            Assert.Empty(roleAfter.Permissions);
         }
-        
+
         [Fact]
         public async Task SetPermissionsForRole_Fails_IfRoleNotFound()
         {
+            // Arrange
+            var permissionIds = new long[] { permid1, permid2 };
             
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.SetPermissionsForRole(rid3, permissionIds));
+    
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task SetPermissionsForRole_Fails_IfAnyPermissionNotFound()
         {
+            // Arrange
+            var permissionIds = new long[] { permid4 };
             
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.SetPermissionsForRole(rid1, permissionIds));
+    
+            Assert.Contains($"Permissions not found: {string.Join(", ", permissionIds)}", exception.Message);
         }
+        
+        #endregion
         
         protected override async Task SeedTestDataAsync()
         {
+            await CleanupTestData();
+            
             await base.SeedTestDataAsync();
             // create test organization
             var organization = new Organization { Name = "Test" };
@@ -468,11 +794,7 @@ namespace deeplynx.tests
             var role3 = new Role { Name = "Role 3" };
             var role4 = new Role { Name = "Role 4", ProjectId = pid };
             var role5 = new Role { Name = "Role 5", OrganizationId = oid };
-            Context.Roles.Add(role1);
-            Context.Roles.Add(role2);
-            Context.Roles.Add(role3);
-            Context.Roles.Add(role4);
-            Context.Roles.Add(role5);
+            Context.Roles.AddRange(role1, role2, role3, role4, role5);
             await Context.SaveChangesAsync();
             rid1 = role1.Id;
             rid2 = role2.Id;
@@ -483,10 +805,56 @@ namespace deeplynx.tests
             // delete role 3
             Context.Roles.Remove(role3);
             await Context.SaveChangesAsync();
+            
+            // create user
+            var user = new User { Name = "Test User", Email = "test@test.com" };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid = user.Id;
+            
+            // add user as project member
+            var projectMember = new ProjectMember { ProjectId = pid, UserId = uid, RoleId = rid4 };
+            Context.ProjectMembers.Add(projectMember);
+            await Context.SaveChangesAsync();
+            mid = projectMember.Id;
+            
+            // create permissions
+            var permission1 = new Permission { Name = "Permission 1", Action = "read", Resource = "test" };
+            var permission2 = new Permission { Name = "Permission 2", Action = "write", Resource = "test" };
+            var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test" };
+            var permission4 = new Permission { Name = "Permission 4", Action = "glorbulon", Resource = "test" };
+            Context.Permissions.AddRange(permission1, permission2, permission3, permission4);
+            await Context.SaveChangesAsync();
+            permid1 = permission1.Id;
+            permid2 = permission2.Id;
+            permid3 = permission3.Id;
+            permid4 = permission4.Id;
+            
+            // delete permission 4
+            Context.Permissions.Remove(permission4);
+            await Context.SaveChangesAsync();
+            
+            // add permissions 1 and 2 to role 1
+            var role1perms = await Context.Roles
+                .Include(r => r.Permissions)
+                .FirstAsync(r => r.Id == rid1);
+            role1perms.Permissions.Add(permission1);
+            role1perms.Permissions.Add(permission2);
+            await Context.SaveChangesAsync();
         }
         
         private async Task CleanupTestData()
         {
+            // Remove all project members (or just test-specific ones)
+            var existingProjectMembers = await Context.ProjectMembers.ToListAsync();
+            Context.ProjectMembers.RemoveRange(existingProjectMembers);
+            await Context.SaveChangesAsync();
+            
+            // Remove all permissions (or just test-specific ones)
+            var existingPerms = await Context.Permissions.ToListAsync();
+            Context.Permissions.RemoveRange(existingPerms);
+            await Context.SaveChangesAsync();
+            
             // Remove all roles (or just test-specific ones)
             var existingRoles = await Context.Roles.ToListAsync();
             Context.Roles.RemoveRange(existingRoles);
