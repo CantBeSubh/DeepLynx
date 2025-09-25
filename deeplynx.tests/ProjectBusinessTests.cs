@@ -29,6 +29,13 @@ namespace deeplynx.tests
         public long ArchivedProject2Id;
         public long TestClassId;
         public long TestDataSourceId;
+        public long TestUserId;
+        public long TestRoleId;
+        public long TestGroupId;
+        public long MissingUserId;
+        public long MissingRoleId;
+        public long MissingGroupId;
+        public long TestOrgId;
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -621,182 +628,355 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public void AddMemberToProject_CanAddUserToProject_WithoutRole()
+        public async Task AddMemberToProject_CanAddUserToProject_WithoutRole()
         {
-            
+            // Act
+            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+            projectMember.Should().NotBeNull();
+            projectMember!.RoleId.Should().BeNull();
         }
-        
+
         [Fact]
-        public void AddMemberToProject_CanAddGroupToProject_WithoutRole()
+        public async Task AddMemberToProject_CanAddGroupToProject_WithoutRole()
         {
-            
+            // Act
+            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, null, TestGroupId);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+            projectMember.Should().NotBeNull();
+            projectMember!.RoleId.Should().BeNull();
         }
-        
+
         [Fact]
-        public void AddMemberToProject_CanAddUserToProject_WithRole()
+        public async Task AddMemberToProject_CanAddUserToProject_WithRole()
         {
-            
+            // Act
+            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, TestRoleId, TestUserId, null);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+            projectMember.Should().NotBeNull();
+            projectMember!.RoleId.Should().Be(TestRoleId);
         }
-        
+
         [Fact]
-        public void AddMemberToProject_CanAddGroupToProject_WithRole()
+        public async Task AddMemberToProject_CanAddGroupToProject_WithRole()
         {
-            
+            // Act
+            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, TestRoleId, null, TestGroupId);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+            projectMember.Should().NotBeNull();
+            projectMember!.RoleId.Should().Be(TestRoleId);
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfBothUserAndGroupAreSet()
+        public async Task AddMemberToProject_Fails_IfBothUserAndGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, TestGroupId);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfNeitherUserNorGroupAreSet()
+        public async Task AddMemberToProject_Fails_IfNeitherUserNorGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, null, null);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("One of User ID or Group ID must be provided");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfRoleNotSet()
+        public async Task AddMemberToProject_Fails_IfUserDoesNotExist()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, MissingUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {MissingUserId} not found");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfUserDoesNotExist()
+        public async Task AddMemberToProject_Fails_IfGroupDoesNotExist()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, null, MissingGroupId);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Group with id {MissingGroupId} not found");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfGroupDoesNotExist()
+        public async Task AddMemberToProject_Fails_IfRoleDoesNotExist()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, MissingRoleId, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Role with id {MissingRoleId} not found");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfRoleDoesNotExist()
+        public async Task AddMemberToProject_Fails_IfProjectDoesNotExist()
         {
-            
+            // Act & Assert
+            const long MissingProjectId = 999999;
+            var result = () => _projectBusiness.AddMemberToProject(MissingProjectId, null, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Project with id {MissingProjectId} not found");
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfProjectDoesNotExist()
+        public async Task AddMemberToProject_Fails_IfProjectMemberExists()
         {
-            
+            // Add the member first
+            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+
+            // Act & Assert - try to add the same member again
+            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            result.Should().BeFalse(); // Should return false when member already exists
         }
-        
+
         [Fact]
-        public void AddMemberToProject_Fails_IfProjectMemberExists()
+        public async Task UpdateProjectMemberRole_CanUpdateUserRole()
         {
-            
+            var originalRole = new Role
+            {
+                Name = "Original Role",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            var newRole = new Role
+            {
+                Name = "New Role",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.Roles.AddRange(originalRole, newRole);
+            await Context.SaveChangesAsync();
+
+            // Add member with original role
+            await _projectBusiness.AddMemberToProject(TestProject1Id, originalRole.Id, TestUserId, null);
+
+            // Act
+            var result = await _projectBusiness.UpdateProjectMemberRole(TestProject1Id, newRole.Id, TestUserId, null);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+            projectMember!.RoleId.Should().Be(newRole.Id);
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_CanUpdateUserRole()
+        public async Task UpdateProjectMemberRole_CanUpdateGroupRole()
         {
-            
+            // Arrange
+            var originalRole = new Role
+            {
+                Name = "Original Role",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            var newRole = new Role
+            {
+                Name = "New Role",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            Context.Roles.AddRange(originalRole, newRole);
+            await Context.SaveChangesAsync();
+
+            // Add member with original role
+            await _projectBusiness.AddMemberToProject(TestProject1Id, originalRole.Id, null, TestGroupId);
+
+            // Act
+            var result = await _projectBusiness.UpdateProjectMemberRole(TestProject1Id, newRole.Id, null, TestGroupId);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+            projectMember!.RoleId.Should().Be(newRole.Id);
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_CanUpdateGroupRole()
+        public async Task UpdateProjectMemberRole_Fails_IfBothUserAndGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, 1, 1);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfBothUserAndGroupAreSet()
+        public async Task UpdateProjectMemberRole_Fails_IfNeitherUserNorGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, null, null);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("One of User ID or Group ID must be provided");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfNeitherUserNorGroupAreSet()
+        public async Task UpdateProjectMemberRole_Fails_IfUserDoesNotExist()
         {
+            // Act & Assert
             
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, MissingUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProject1Id}");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfUserDoesNotExist()
+        public async Task UpdateProjectMemberRole_Fails_IfGroupDoesNotExist()
         {
-            
+            // Act & Assert
+           
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, null, MissingGroupId);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProject1Id}");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfGroupDoesNotExist()
+        public async Task UpdateProjectMemberRole_Fails_IfRoleDoesNotExist()
         {
+            // Add user to project first
+            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+
+            // Act & Assert
             
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, MissingRoleId, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Role with id {MissingRoleId} not found");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfRoleDoesNotExist()
+        public async Task UpdateProjectMemberRole_Fails_IfProjectDoesNotExist()
         {
-            
+            // Act & Assert
+            const long MissingProjectId = 999999;
+            var result = () => _projectBusiness.UpdateProjectMemberRole(MissingProjectId, TestRoleId, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {TestUserId} is not a member of project {MissingProjectId}");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfProjectDoesNotExist()
+        public async Task UpdateProjectMemberRole_Fails_IfProjectMemberNotExists()
         {
-            
+            // Act & Assert (user exists but is not a member of the project)
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {TestUserId} is not a member of project {TestProject1Id}");
         }
-        
+
         [Fact]
-        public void UpdateProjectMemberRole_Fails_IfProjectMemberNotExists()
+        public async Task RemoveMemberFromProject_CanRemoveUser()
         {
-            
+            // Add user to project first
+            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+
+            // Act
+            var result = await _projectBusiness.RemoveMemberFromProject(TestProject1Id, TestUserId, null);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+            projectMember.Should().BeNull();
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_CanRemoveUser()
+        public async Task RemoveMemberFromProject_CanRemoveGroup()
         {
-            
+            // Add group to project first
+            await _projectBusiness.AddMemberToProject(TestProject1Id, null, null, TestGroupId);
+
+            // Act
+            var result = await _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, TestGroupId);
+
+            // Assert
+            result.Should().BeTrue();
+            var projectMember = await Context.ProjectMembers
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+            projectMember.Should().BeNull();
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_CanRemoveGroup()
+        public async Task RemoveMemberFromProject_Fails_IfBothUserAndGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, 1, 1);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_Fails_IfBothUserAndGroupAreSet()
+        public async Task RemoveMemberFromProject_Fails_IfNeitherUserNorGroupAreSet()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, null);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("One of either User ID or Group ID must be provided");
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_Fails_IfNeitherUserNorGroupAreSet()
+        public async Task RemoveMemberFromProject_Fails_IfUserDoesNotExist()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, MissingUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProject1Id}");
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_Fails_IfUserDoesNotExist()
+        public async Task RemoveMemberFromProject_Fails_IfGroupDoesNotExist()
         {
-            
+            // Act & Assert
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, MissingGroupId);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProject1Id}");
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_Fails_IfGroupDoesNotExist()
+        public async Task RemoveMemberFromProject_Fails_IfProjectDoesNotExist()
         {
-            
+            // Act & Assert
+            const long nonExistentProjectId = 999999;
+            var result = () => _projectBusiness.RemoveMemberFromProject(nonExistentProjectId, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {TestUserId} is not a member of project {nonExistentProjectId}");
         }
-        
+
         [Fact]
-        public void RemoveMemberFromProject_Fails_IfProjectDoesNotExist()
+        public async Task RemoveMemberFromProject_Fails_IfProjectMemberNotExists()
         {
-            
-        }
-        
-        [Fact]
-        public void RemoveMemberFromProject_Fails_IfProjectMemberNotExists()
-        {
-            
+            // Act & Assert (user exists but is not a member of the project)
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, TestUserId, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>()
+                .WithMessage($"User with id {TestUserId} is not a member of project {TestProject1Id}");
         }
         
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
+            var testOrg = new Organization{Name = "Test Org"};
+            Context.Organizations.Add(testOrg);
+            await Context.SaveChangesAsync();
+            TestOrgId = testOrg.Id;
+            
             var testProjects = new List<Project>
             {
                 new Project {
@@ -856,7 +1036,50 @@ namespace deeplynx.tests
             };
             Context.Records.Add(testRecord);
             await Context.SaveChangesAsync();
+
+            // create some test users
+            var testUser = new User
+            {
+                Email = "test@example.com",
+                Name = "Test User",
+            };
+            var missingUser = new User
+            {
+                Email = "ope@example.com",
+                Name = "Missing User",
+            };
+            Context.Users.AddRange(testUser, missingUser);
+            await Context.SaveChangesAsync();
+            TestUserId = testUser.Id;
+            MissingUserId = missingUser.Id;
             
+            // delete missing user
+            Context.Users.Remove(missingUser);
+            await Context.SaveChangesAsync();
+            
+            // add test roles
+            var testRole = new Role {Name = "Test Role"};
+            var missingRole = new Role { Name = "Missing Role" };
+            Context.Roles.AddRange(testRole, missingRole);
+            await Context.SaveChangesAsync();
+            TestRoleId = testRole.Id;
+            MissingRoleId = missingRole.Id;
+            
+            // delete missing role
+            Context.Roles.Remove(missingRole);
+            await Context.SaveChangesAsync();
+            
+            // add test groups
+            var testGroup = new Group {Name = "Test Group", OrganizationId = TestOrgId};
+            var missingGroup = new Group { Name = "Missing Group", OrganizationId = TestOrgId};
+            Context.Groups.AddRange(testGroup, missingGroup);
+            await Context.SaveChangesAsync();
+            TestGroupId = testGroup.Id;
+            MissingGroupId = missingGroup.Id;
+            
+            // delete missing group
+            Context.Groups.Remove(missingGroup);
+            await Context.SaveChangesAsync();
         }
     }
 }
