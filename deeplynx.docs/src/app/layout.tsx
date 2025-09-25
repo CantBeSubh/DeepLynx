@@ -47,7 +47,10 @@ const navbar = (
 )
 
 const footer = <Footer>{new Date().getFullYear()} © Idaho National Laboratory.</Footer>
- 
+
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
+const faviconPath = `${basePath}/cropped-lynx-white.png` 
+
 export default async function RootLayout({ children }: { children: ReactNode }) { 
   return (
     <html
@@ -58,8 +61,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       // Suggested by `next-themes` package https://github.com/pacocoursey/next-themes#with-app
       suppressHydrationWarning
     >
+      
       <Head >
-        <link rel="icon" href="/cropped-lynx-white.png" type="image/png" />
+        <link rel="icon" href={faviconPath} type="image/png" />
         {/* Your additional tags should be passed as `children` of `<Head>` element */}
       </Head>
       <body>

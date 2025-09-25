@@ -11,11 +11,11 @@ const withNextra = nextra({
 export default withNextra({
   // Add regular Next.js options here
   reactStrictMode: true,
-  assetPrefix: '/docs',
-  basePath: '/docs',
+  assetPrefix: process.env.NEXT_PUBLIC_BASE_PATH || '',
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.output.publicPath = '/docs/_next/';
+      config.output.publicPath = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/_next/`;
     }
     return config;
   },
