@@ -308,12 +308,13 @@ try
 
     var customcss = File.ReadAllText("moon.css");
     
-    app.UseStaticFiles(new StaticFileOptions
-    {
-        FileProvider = new PhysicalFileProvider(
-            Path.Combine(builder.Environment.ContentRootPath, "Templates")),
-        RequestPath = "/Templates"
-    });
+    // app.UseStaticFiles(new StaticFileOptions
+    // {
+    //     FileProvider = new PhysicalFileProvider(
+    //         Path.Combine(builder.Environment.ContentRootPath, "Templates")),
+    //     RequestPath = "/Templates"
+    // });
+    app.UseStaticFiles();
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();
