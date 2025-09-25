@@ -333,8 +333,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                   // open modal / external
                 }}
                 // onClick={(e) => handleItemClick("/help", e)}
-                className={getItemClass("/help")}
                 */
+                className={getItemClass("/help")}
               >
                 <QuestionMarkCircleIcon className="size-6" />
                 {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}
