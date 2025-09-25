@@ -9,7 +9,7 @@ import { ReactNode } from 'react'
   // For more information on metadata API, see: https://nextjs.org/docs/app/building-your-application/optimizing/jmetadata
 //}
  
-const banner = <Banner storageKey="banner-key0">Welcome to the release of Nexus Docs 1.0 🎉</Banner>
+const banner = <Banner storageKey="banner-key0">Welcome to the release of Nexus Docs 1.0 🎉😄</Banner>
 const navbar = (
   <Navbar
     logo={
