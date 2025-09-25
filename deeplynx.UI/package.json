@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:app\" \"npm run dev:docs\"",
-    "dev:app": "next dev --port 3000 --turbopack",
+    "dev": "next dev --port 3000 --turbopack",
+    "all": "concurrently \"npm run dev:ui\" \"npm run dev:docs\"",
+    "dev:ui": "next dev --port 3000 --turbopack",
     "dev:docs": "npm --prefix ../deeplynx.docs run dev",
     "build": "next build",
     "start": "next start",
