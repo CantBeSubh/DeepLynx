@@ -64,7 +64,7 @@ public class NotificationBusiness : INotificationBusiness
         
         
         string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory).Parent.Parent.Parent.FullName;
-        string templateFile = Path.Combine(projectRoot, "InviteTemplate.html");
+        string templateFile = Path.Combine(projectRoot, "Templates", "InviteTemplate.html");
 
 
         if (!File.Exists(templateFile))

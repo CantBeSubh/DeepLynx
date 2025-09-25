@@ -311,7 +311,7 @@ try
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(
-            Path.Combine(Directory.GetCurrentDirectory(), "Templates")),
+            Path.Combine(builder.Environment.ContentRootPath, "Templates")),
         RequestPath = "/Templates"
     });
     if (app.Environment.IsDevelopment())
