@@ -10,6 +10,7 @@ import RolesTable from '././ProjectTables/RolesTable';
 import DataSourceTable from '././ProjectTables/DataSourceTable';
 import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
 import MemberSearchBar from './MemberSearchBar';
+import { useRouter } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface ProjectSettingsProps {
@@ -20,6 +21,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
+  const router = useRouter();
 
   const tabData = [
     {
@@ -60,6 +62,15 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     setActiveTab(label);
   };
 
+  const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
+    event.preventDefault();
+    if (activeTab === "Roles") {
+      router.push("/project_settings/project_roles");
+    } else if (activeTab === "Members") {
+      setAddProjectMemberModal(true);
+    }
+  };
+
   return (
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
@@ -67,14 +78,14 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
           <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
           <div className="flex space-x-4">
             <button
-              onClick={() => setAddProjectMemberModal(true)}
+              onClick={handleAddButtonClick}
               className="btn btn-secondary text-white"
             >
               <PlusIcon className="size-6" />
               {activeTab === "Members" ? t.translations.MEMBER : t.translations.ROLE}
             </button>
             <div className="flex flex-col">
-              <MemberSearchBar />
+              {activeTab === "Members" && <MemberSearchBar />}
             </div>
           </div>
         </div>

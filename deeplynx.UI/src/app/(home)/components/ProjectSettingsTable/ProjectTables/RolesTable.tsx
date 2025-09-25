@@ -82,11 +82,11 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData }) => {
           sortable: false,
         },
         {
-          header: "Edit",
+          header: "",
           cell: (row: MyRolesTable, index: number) => (
             <div className="flex">
               <button onClick={() => setHandleEdit(true)}>
-                <PencilIcon className="size-6" />
+                <PencilIcon className="size-6 text-secondary" />
               </button>
             </div>
           ),
