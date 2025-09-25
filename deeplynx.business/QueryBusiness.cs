@@ -277,17 +277,19 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(properties::text, '') || ' ' ||
                 coalesce(tags::text, '')
             )@@ websearch_to_tsquery('english',@query)
-        ORDER BY hr.record_id, hr.last_updated_at DESC;";
+        ORDER BY hr.record_id, hr.last_updated_at DESC";
 
         var param = new NpgsqlParameter("query", userQuery);
 
-        var results = await _context.Database
-            .SqlQueryRaw<HistoricalRecordResponseDto>(sql, param)
-            .ToListAsync();
+        // var results = await _context.Database
+        //     .SqlQueryRaw<HistoricalRecordResponseDto>(sql, param)
+        //     .ToListAsync();
+        var results = _context.HistoricalRecords.FromSqlRaw(sql, param);
         
         return results
-            .Select(r => new HistoricalRecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto
             {
+                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
@@ -304,7 +306,7 @@ public class QueryBusiness : IQueryBusiness
                 Tags = r.Tags,
                 LastUpdatedBy = r.LastUpdatedBy,
                 LastUpdatedAt = r.LastUpdatedAt
-            });
+            }).ToList();
     }
     
     
