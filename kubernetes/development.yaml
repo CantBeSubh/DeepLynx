@@ -297,16 +297,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deeplynxv3-docs
+  name: deeplynxdocs
   namespace: deeplynxv3-dev
 spec:
   selector:
     matchLabels:
-      app: deeplynxv3-docs
+      app: deeplynxdocs
   template:
     metadata:
       labels:
-        app: deeplynxv3-docs
+        app: deeplynxdocs
     spec:
       containers:
         - name: deeplynxv3
@@ -314,8 +314,8 @@ spec:
           imagePullPolicy: Always
           resources:
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "4Gi"
+              cpu: "1500m"
           ports:
             - containerPort: 3001
 
@@ -365,7 +365,7 @@ spec:
       port: 80
       targetPort: 3001
   selector:
-    app: deeplynxv3-docs
+    app: deeplynxdocs
 
 ---
 
