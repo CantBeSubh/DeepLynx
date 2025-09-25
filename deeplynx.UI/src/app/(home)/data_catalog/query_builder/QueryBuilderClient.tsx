@@ -9,7 +9,7 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
+import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
 
@@ -56,8 +56,6 @@ export default function QueryBuilderClient({
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
   const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
-
-
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
   const [rows, setRows] = useState<Query[]>([emptyRow()]);
@@ -147,18 +145,34 @@ export default function QueryBuilderClient({
     }
   }, [hasLoaded, currentProjectId, selectedProjects]);
 
+  const hasValidQueries = (): boolean => {
+    const queryDtos = rows.map(r => r.query);
+    return queryDtos.some(query => {
+      return (query.filter !== "") || (query.operator !== "") || (query.value !== "") || (query.jsonKey !== "") || (query.jsonValue !== "");
+    });
+  };
+
+
   const handleSubmit = async () => {
     try {
       const queryDtos = rows.map(r => r.query);
-      const data = await queryBuilder(queryDtos, searchTerm);
-      if (data) {
-        setQueriedRecords(data);
+      if (hasValidQueries()) {
+        const data = await queryBuilder(queryDtos, searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
+      } else {
+        const data = await fullTextSearch(searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
       }
     } catch (error) {
       console.error("Failed to send query")
     }
 
   };
+
 
   return (
     <div>
@@ -220,6 +234,7 @@ export default function QueryBuilderClient({
                               },
                             })
                           }
+                          disabled={idx === 0 && !searchTerm.trim()} // Disable for first row when no search term
                         >
                           <option value="" disabled>
                             {t.translations.CONNECTOR}
@@ -475,40 +490,40 @@ export default function QueryBuilderClient({
               </div>
             </div>
             {/* Other search controls */}
-            <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
-              <div className="p-6 text-sm">Other Search Controls and Options</div>
+            {/* <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
+              <div className="p-6 text-sm">Other Search Controls and Options</div> */}
 
-              {/* Saved searches */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Saved searches */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to saved searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <PlusCircleIcon className="w-4 h-4" />
                 </button>
-              </div>
+              </div> */}
 
-              {/* Favorites */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Favorites */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to favorites searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <StarIcon className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </div> */}
 
 
           </div>
           {/* Submit search */}
-          <div className="grid justify-items-end p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm">Search Records
+          <div className="grid justify-items-start p-4">
+            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!searchTerm && !hasValidQueries()}>{t.translations.SEARCH_RECORDS}
             </button>
           </div>
         </div>
       </div>
-      {records &&
-        <ListView
-          data={records}
-        />
-      }
+      {records && records?.length > 0 ? (
+        <ListView data={records} />
+      ) : (records &&
+        <div className="p-10">{t.translations.NO_RECORDS}</div>
+      )}
     </div>
   );
 }

@@ -78,3 +78,42 @@ export const unAttachTagFromRecord = async (projectId: number, recordId: number,
         throw error;
     }
 };
+
+export type CreateRecordPayload = {
+  name: string;
+  original_id: string;
+  description: string;
+
+  properties: Record<string, unknown>;
+
+  class_id?: number | null;
+  object_storage_id?: number | null;
+  uri?: string | null;
+  class_name?: string | null;
+  tags?: string[] | null;
+  sensitivity_labels?: string[] | null;
+};
+
+export async function createRecord(
+  projectId: number,
+  payload: CreateRecordPayload,
+  opts?: { dataSourceId?: number }
+) {
+  try {
+    const res = await api.post(
+      `/projects/${projectId}/records/CreateRecord`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+        params:
+          opts?.dataSourceId !== undefined
+            ? { dataSourceId: opts.dataSourceId }
+            : undefined,
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error creating record: ", error);
+    throw error;
+  }
+}

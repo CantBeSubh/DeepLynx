@@ -32,10 +32,7 @@ const RecordViewModal: React.FC<RecordViewModalProps> = ({ isOpen, onClose, reco
     { label: "Uri", value: record.dataSourceName },
     { label: "Class Name", value: record.dataSourceName },
     { label: "OriginalID", value: record.originalId },
-    { label: "Created By", value: record.createdBy },
-    { label: "Created At", value: formatDate(record.createdAt) },
-    { label: "Modified By", value: record.modifiedBy },
-    { label: "Modified At", value: formatDate(record.modifiedAt) },
+    { label: "Last Updated At", value: record.lastUpdatedAt }
   ];
 
   const relatedRecordsColumns: Column<RelatedRecord>[] = [

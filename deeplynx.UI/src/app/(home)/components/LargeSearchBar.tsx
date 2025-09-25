@@ -61,11 +61,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   return (
     <div className={`${className}`}>
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-neutral size-6" />
+        <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-base-content size-6" />
         <input
           type="text"
           placeholder={placeholder}
-          className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
+          className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-base-content"
           onChange={
             isControlled ? onChange : (e) => setInternalValue(e.target.value)
           }

@@ -148,6 +148,35 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
+        
+        var projectResponseDto = new ProjectResponseDto
+        {
+            Id = project.Id,
+            Name = project.Name,
+            Description = project.Description,
+            Abbreviation = project.Abbreviation,
+            LastUpdatedBy = project.LastUpdatedBy,
+            LastUpdatedAt = project.LastUpdatedAt,
+            OrganizationId = project.OrganizationId
+        };
+
+        // Update the Project Cache List
+        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
+
+        if (cachedProjectList == null)
+        {
+            cachedProjectList = new List<ProjectResponseDto>();
+        }
+        
+        // add the new project to the project list and set the cache
+        cachedProjectList.Add(projectResponseDto);
+        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
+        
+        // If project cache count differs from the database refresh it to match the database and return
+        if (cachedProjectList.Count != _context.Projects.Count())
+        {
+            await RefreshProjectsCache();
+        }
 
         // TODO: project config should determine whether to do this (true by default)
         // create built-in classes for Timeseries and Report
@@ -205,8 +234,19 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Instance Default",
             Config = config
         };
+
+        var timeseriesObjectStorageMethod = new CreateObjectStorageRequestDto
+        {
+            Name = "Timeseries Default",
+            Config = new JsonObject
+            {
+                ["mountPath"] = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb"
+            }
+
+        };
         await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
-        
+        await _objectStorageBusiness.CreateObjectStorage(project.Id, timeseriesObjectStorageMethod);
+
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -219,31 +259,6 @@ public class ProjectBusiness : IProjectBusiness
             Properties = JsonSerializer.Serialize(new { project.Name }),
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
-
-        var projectResponseDto = new ProjectResponseDto
-        {
-            Id = project.Id,
-            Name = project.Name,
-            Description = project.Description,
-            OrganizationId = project.OrganizationId,
-            Abbreviation = project.Abbreviation,
-            LastUpdatedBy = project.LastUpdatedBy,
-            LastUpdatedAt = project.LastUpdatedAt,
-        };
-
-        // Update the Project Cache List
-        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-        
-        // If project cache list is empty- refresh it to match the database and return
-        if (cachedProjectList == null)
-        {
-            await RefreshProjectsCache();
-            return projectResponseDto;
-        }
-        
-        // if cache exists- add the new project to the project list and set the cache
-        cachedProjectList.Add(projectResponseDto);
-        await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
 
         return projectResponseDto;
     }

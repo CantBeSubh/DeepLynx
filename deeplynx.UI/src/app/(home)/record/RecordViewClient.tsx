@@ -1,21 +1,40 @@
+// src/app/(home)/record/RecordViewClient.tsx
+
 "use client";
 
 import { useCallback, useState } from "react";
 import React, { useEffect } from "react";
 import toast from "react-hot-toast";
-
-import TagButton from "@/app/(home)/components/TagButton"
-import { updateRecord, unAttachTagFromRecord, getRecord } from "@/app/lib/record_services.client";
+import TagButton from "@/app/(home)/components/TagButton";
+import {
+  updateRecord,
+  unAttachTagFromRecord,
+  getRecord,
+} from "@/app/lib/record_services.client";
 import { getTagsForProjects } from "@/app/lib/query_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
-import { Column, FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
-import { XMarkIcon, PencilIcon, CheckCircleIcon, XCircleIcon, EyeIcon } from "@heroicons/react/24/outline";
+import {
+  Column,
+  FileViewerTableRow,
+  TagResponseDto,
+} from "@/app/(home)/types/types";
+import {
+  XMarkIcon,
+  PencilIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  EyeIcon,
+} from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
 import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
+import RelatedRecordsCard, {
+  CardColumn,
+} from "./components/RelatedRecordsCard";
+import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
@@ -67,7 +86,10 @@ export default function RecordViewClient({
   projectId,
   recordId,
 }: Props) {
-  const [record, setRecord] = useState<FileViewerTableRow | null>(initialRecord);
+  const { t } = useLanguage();
+  const [record, setRecord] = useState<FileViewerTableRow | null>(
+    initialRecord
+  );
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -135,7 +157,6 @@ export default function RecordViewClient({
             setSelectedTags(tags);
             setSelectedIds(tags.map((tag: { id: string }) => tag.id));
           }
-
         }
       } catch (error) {
         console.error("Error fetching record:", error);
@@ -163,7 +184,6 @@ export default function RecordViewClient({
 
           setHasFetchedRelatedRecords(true);
         }
-
       } catch (error) {
         console.error("Error fetching related records:", error);
       }
@@ -176,10 +196,9 @@ export default function RecordViewClient({
   }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
   useEffect(() => {
-    console.log("Related records: ");
-    console.log(relatedRecords);
-
-    const parseRelatedRecords = (relatedRecords: RelatedRecord[] | undefined) => {
+    const parseRelatedRecords = (
+      relatedRecords: RelatedRecord[] | undefined
+    ) => {
       if (!relatedRecords) return [];
 
       const relationshipNames: string[] = [];
@@ -187,8 +206,8 @@ export default function RecordViewClient({
       const names: string[] = [];
       const recordIds: number[] = [];
 
-      relatedRecords.forEach(item => {
-        if ('relationshipName' in item) {
+      relatedRecords.forEach((item) => {
+        if ("relationshipName" in item) {
           relationshipNames.push(item.relationshipName);
         } else {
           if (item.recordId == recordId) {
@@ -203,17 +222,15 @@ export default function RecordViewClient({
       const relatedRecordsArray: ParsedRecord[] = [];
       const relationshipIndex = 0;
 
-      console.log('relationshipNames:', relationshipNames);
-      console.log('classNames:', classNames);
-      console.log('names:', names);
-      console.log('recordIds:', recordIds);
-
       relatedRecords.forEach((item, _) => {
-        if (!('relationshipName' in item)) {
+        if (!("relationshipName" in item)) {
           if (item.recordId == recordId) {
             return;
           }
-          const relationship = relationshipNames.length > relationshipIndex ? relationshipNames[relationshipIndex] : '';
+          const relationship =
+            relationshipNames.length > relationshipIndex
+              ? relationshipNames[relationshipIndex]
+              : "";
           relatedRecordsArray.push({
             relationship: relationship,
             id: item.recordId.toString(),
@@ -224,7 +241,10 @@ export default function RecordViewClient({
                 <button
                   className="text-blue-500 cursor-pointer"
                   onClick={async () => {
-                    const selectedRecord = await getRecord(Number(projectId), item.recordId);
+                    const selectedRecord = await getRecord(
+                      Number(projectId),
+                      item.recordId
+                    );
                     setSelectedRecord(selectedRecord);
                     setRecordViewModalOpen(true);
                   }}
@@ -234,7 +254,12 @@ export default function RecordViewClient({
                 <button
                   className="text-red-500 ml-2 cursor-pointer border rounded px-1"
                   onClick={() => {
-                    handleToggleToRemove(item.recordId.toString(), item.name, item.className, 'relatedRecord');
+                    handleToggleToRemove(
+                      item.recordId.toString(),
+                      item.name,
+                      item.className,
+                      "relatedRecord"
+                    );
                   }}
                 >
                   Remove Link
@@ -267,7 +292,9 @@ export default function RecordViewClient({
 
   const handleTagSelectionChange = async (selected: string[]) => {
     if (JSON.stringify(selected) !== JSON.stringify(selectedIds)) {
-      const newTags = tags.filter(tag => selected.includes(tag.id.toString()));
+      const newTags = tags.filter((tag) =>
+        selected.includes(tag.id.toString())
+      );
       setSelectedTags(newTags);
       setSelectedIds(selected);
 
@@ -294,29 +321,48 @@ export default function RecordViewClient({
         Number(tagId)
       );
     }
-    setSelectedTags((prevTags) => prevTags.filter(tag => !tagsToRemove.includes(tag.id.toString())));
-    setSelectedIds((prevIds) => prevIds.filter(id => !tagsToRemove.includes(id)));
+    setSelectedTags((prevTags) =>
+      prevTags.filter((tag) => !tagsToRemove.includes(tag.id.toString()))
+    );
+    setSelectedIds((prevIds) =>
+      prevIds.filter((id) => !tagsToRemove.includes(id))
+    );
     setTagsToRemove([]);
     setIsEditing(false);
-
   };
 
   const handleConfirmUnlink = async () => {
-    if (confirmationType === 'tag') {
+    if (confirmationType === "tag") {
       if (idToRemove) {
         setTagsToRemove((prev) =>
-          prev.includes(idToRemove) ? prev.filter(id => id !== idToRemove) : [...prev, idToRemove]
+          prev.includes(idToRemove)
+            ? prev.filter((id) => id !== idToRemove)
+            : [...prev, idToRemove]
         );
         toast.success(`Tag ${selectedNameToRemove} removed successfully.`);
       }
-    } else if (confirmationType === 'relatedRecord') {
+    } else if (confirmationType === "relatedRecord") {
       if (idToRemove && selectedOriginId && selectedDestinationId) {
         try {
-          console.log("deleting edge")
-          if (await getEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId))) {
-            await deleteEdge(projectId, null, String(selectedOriginId), String(selectedDestinationId));
+          if (
+            await getEdge(
+              projectId,
+              null,
+              String(selectedOriginId),
+              String(selectedDestinationId)
+            )
+          ) {
+            await deleteEdge(
+              projectId,
+              null,
+              String(selectedOriginId),
+              String(selectedDestinationId)
+            );
           }
-          await queryKuzu(projectId, `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`);
+          // await queryKuzu(
+          //   projectId,
+          //   `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
+          // );
           setParsedRelatedRecords((prevRecords) =>
             prevRecords.filter((record) => record.id !== idToRemove)
           );
@@ -401,36 +447,34 @@ export default function RecordViewClient({
       },
     },
     { label: "Original ID", value: record.originalId },
-    { label: "Created By", value: record.createdBy },
-    { label: "Created At", value: formatDate(record.createdAt) },
-    { label: "Modified By", value: record.modifiedBy },
-    { label: "Modified At", value: formatDate(record.modifiedAt) },
+    { label: "Last Updated At", value: record.lastUpdatedAt },
   ];
 
-  const relatedRecordsColumns: Column<ParsedRecord>[] = [
-    { header: "Relationship", data: "relationship" },
-    { header: "ID", data: "id" },
-    { header: "Class", data: "class" },
-    { header: "Name", data: "name" },
-    { header: "Actions", data: "actions", sortable: false },
+  const relatedRecordsColumn: CardColumn<ParsedRecord>[] = [
+    { key: "relationship", label: "Relationship" },
+    { key: "id", label: "ID" },
+    { key: "class", label: "Class" },
+    { key: "name", label: "Name" },
+    { key: "actions", label: "Actions" },
   ];
 
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-      const value = parsedProperties[key as keyof object];
-      return {
-        label: key,
-        value: typeof value === "object" ? JSON.stringify(value) : String(value),
-      };
-    })
+        const value = parsedProperties[key as keyof object];
+        return {
+          label: key,
+          value:
+            typeof value === "object" ? JSON.stringify(value) : String(value),
+        };
+      })
     : [];
 
   const tabs = [
     {
       label: "Record Information",
       content: (
-        <div className="flex gap-4">
+        <div className="flex gap-4 mt-6">
           <div className="w-full md:w-1/2 p-3">
             <PropertyTable
               title="System Properties"
@@ -443,9 +487,11 @@ export default function RecordViewClient({
             />
           </div>
           <div className="flex-grow">
-            <div className="card bg-base-100 shadow-md p-2 relative mb-20">
+            <div className="card bg-base-100 shadow-md p-4 relative mb-20">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold mb-4 p-4">Tags:</h2>
+                <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
+                  {t.translations.TAGS}
+                </h2>
                 <div className="flex items-center">
                   <TagButton
                     tags={tags}
@@ -457,18 +503,18 @@ export default function RecordViewClient({
                   />
                   {!isEditing && (
                     <PencilIcon
-                      className="w-6 h-6 ml-2 cursor-pointer text-secondary"
+                      className="w-6 h-6 ml-2 cursor-pointer text-primary hover:text-primary-content"
                       onClick={toggleEditMode}
                     />
                   )}
                   {isEditing && (
                     <>
                       <CheckCircleIcon
-                        className="w-6 h-6 ml-2 cursor-pointer text-success"
+                        className="w-6 h-6 ml-2 cursor-pointer text-success hover:text-success-content"
                         onClick={handleSave}
                       />
                       <XCircleIcon
-                        className="w-6 h-6 ml-2 cursor-pointer text-error"
+                        className="w-6 h-6 ml-2 cursor-pointer text-error hover:text-error-content"
                         onClick={toggleEditMode}
                       />
                     </>
@@ -479,49 +525,31 @@ export default function RecordViewClient({
                 {selectedTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="font-inter flex items-center border rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0"
-                    style={{
-                      borderColor: "#07519E",
-                      color: "#07519E",
-                      font: "Inter",
-                    }}
+                    className="font-inter flex items-center border-2 border-primary text-primary rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0 hover:bg-primary hover:text-primary-content transition-colors"
                   >
                     {tag.name}
                     {!tagsToRemove.includes(tag.id.toString()) && isEditing && (
                       <XMarkIcon
-                        className="w-4 h-4 ml-1 cursor-pointer text-red-600"
-                        onClick={() => handleToggleToRemove(tag.id.toString(), tag.name, record?.name || "Unknown Record", 'tag')}
+                        className="w-4 h-4 ml-1 cursor-pointer text-error hover:text-error-content"
+                        onClick={() =>
+                          handleToggleToRemove(
+                            tag.id.toString(),
+                            tag.name,
+                            record?.name || "Unknown Record",
+                            "tag"
+                          )
+                        }
                       />
                     )}
                   </span>
                 ))}
               </span>
             </div>
-            <GenericTable
-              columns={relatedRecordsColumns}
-              data={parsedRelatedRecords}
-              title="Related Records:"
-              bordered
-              searchBar={false}
-              enablePagination={false}
-              actionButtons={false}
-              tableClassName=".table-bordered"
-            />
+            {/* <RelatedRecordsCard
+              columns={relatedRecordsColumn}
+              rows={parsedRelatedRecords}
+            /> */}
           </div>
-          <ConfirmationModal
-            isOpen={isModalOpen}
-            onClose={() => setModalOpen(false)}
-            onConfirm={handleConfirmUnlink}
-            tagName={selectedNameToRemove}
-            recordName={selectedRecordNameToRemove}
-          />
-          <RecordViewModal
-            isOpen={isRecordViewModalOpen}
-            onClose={() => setRecordViewModalOpen(false)}
-            record={selectedRecord}
-            relatedRecords={parsedRelatedRecords}
-            tags={tags}
-          />
           <ConfirmationModal
             isOpen={isModalOpen}
             onClose={() => setModalOpen(false)}
@@ -539,23 +567,24 @@ export default function RecordViewClient({
         </div>
       ),
     },
-    { label: "Timeseries Viewer", content: "" },
-    { label: "Graph Viewer", content: "" },
-    { label: "Record History", content: "" },
+    // { label: "Timeseries Viewer", content: "" },
+    // { label: "Graph Viewer", content: "" },
+    // { label: "Record History", content: "" },
   ];
 
   return (
     <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-info-content">
+          <h1 className="text-2xl font-bold text-base-content">
             {record?.name}
           </h1>
         </div>
       </div>
-      <div className="p-10">
-        <Tabs tabs={tabs} className={""}></Tabs>
-      </div>
+
+      <div className="divider"></div>
+
+      <Tabs tabs={tabs} className={"ml-4"}></Tabs>
     </div>
   );
-};
+}

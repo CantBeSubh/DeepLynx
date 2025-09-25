@@ -62,7 +62,11 @@ try
                 .WithOrigins(
                       "http://localhost:3000",
                       "http://ui:3000",
-                      "https://nexus.dev.inl.gov")
+                      "https://deeplynx.dev.inl.gov",
+                      "https://deeplynx.acc.inl.gov",
+                      "https://deeplynx.scan.inl.gov",
+                      "https://deeplynx.test.inl.gov",
+                      "https://deeplynx.inl.gov")
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -148,6 +152,7 @@ try
     builder.Services.AddTransient<ITagBusiness, TagBusiness>();
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
+    builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -286,6 +291,11 @@ try
                 {
                     Name = "File",
                     Description = "Handles operations related to file management"
+                }, 
+                new OpenApiTag
+                {
+                    Name = "Notification",
+                    Description = "Handles notification operations."
                 },
                 new OpenApiTag
                 {
