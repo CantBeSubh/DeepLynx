@@ -145,20 +145,30 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="projectId"></param>
+        /// <param name="dataSourceId"></param>
+        /// <param name="file"></param>
+        /// <param name="tableName"></param>
+        /// <param name="fileType"></param>
+        /// <returns></returns>
         [HttpPatch("append", Name = "api_append_timeseries_file")]
-        public async Task<ActionResult<string>> AppendFile(long projectId, long dataSourceId, IFormFile file)
+        public async Task<ActionResult<string>> AppendFile(long projectId, long dataSourceId, IFormFile file, string tableName, string fileType)
         {
             try
             {
-                var duckdbTable = Request.Form["duckdb_table"].ToString();
+                // var duckdbTable = Request.Form["duckdb_table"].ToString();
+                //
+                // using (var reader = new StreamReader(file.OpenReadStream()))
+                // {
+                //     var fileContent = await reader.ReadToEndAsync();
+                //     Console.WriteLine($"DuckDB Table: {duckdbTable}"); 
+                //     Console.WriteLine(fileContent); 
+                // }
 
-                using (var reader = new StreamReader(file.OpenReadStream()))
-                {
-                    var fileContent = await reader.ReadToEndAsync();
-                    Console.WriteLine($"DuckDB Table: {duckdbTable}"); 
-                    Console.WriteLine(fileContent); 
-                }
+                await _timeseriesBusiness.AppendTimeseriesTable(projectId, dataSourceId, file, tableName, fileType);
 
                 return Ok("Data Received 👍");
             }
