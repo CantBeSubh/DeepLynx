@@ -45,16 +45,15 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
     <div className={`${className}`}>
       <div className="card bg-base-100 shadow-md p-2">
         {title && (
-          <h2 className="text-xl font-bold mb-4 text-base-content">{title}</h2>
+          <h2 className="text-xl font-bold m-4 text-base-content">{title}</h2>
         )}
         <div className="card-body p-4">
           <div className="border border-base-300 rounded-lg overflow-hidden bg-base-100">
             {rows.map((row, index) => (
               <div
                 key={index}
-                className={`grid grid-cols-12 ${
-                  index !== rows.length - 1 ? "border-b" : ""
-                } border-base-300`}
+                className={`grid grid-cols-12 ${index !== rows.length - 1 ? "border-b" : ""
+                  } border-base-300`}
               >
                 <div className="col-span-4 p-3 font-medium text-base-content text-sm bg-base-200 border-r border-base-300">
                   {row.label}
