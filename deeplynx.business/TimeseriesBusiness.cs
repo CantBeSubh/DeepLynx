@@ -78,14 +78,20 @@ public class TimeseriesBusiness(
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="tableName">Timeseries table name</param>
     /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
-    public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath)
+    public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath, string fileType)
     {
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
-
-        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
-        var executeNonQuery = await command.ExecuteNonQueryAsync();
+        if (fileType == ".csv")
+        {
+            command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}'); ";
+        }
+        else if (fileType == ".parquet")
+        {
+            command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_parquet('{filePath}'); ";
+        }
+        await command.ExecuteNonQueryAsync();
     }
 
     /// <summary>
@@ -99,6 +105,11 @@ public class TimeseriesBusiness(
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
     public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
     {
+        var fileType = Path.GetExtension(file.FileName);
+        if (fileType != ".csv" && fileType != ".parquet")
+        {
+            throw new ArgumentException("Only .csv and .parquet files are supported");
+        }
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
         if (file == null || file.Length == 0)
@@ -117,7 +128,7 @@ public class TimeseriesBusiness(
             await file.CopyToAsync(stream);
         }
 
-        await CreateTimeseriesTable(projectId, dataSourceId, tableName, filePath);
+        await CreateTimeseriesTable(projectId, dataSourceId, tableName, filePath, fileType);
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
@@ -219,8 +230,10 @@ public class TimeseriesBusiness(
         }
 
         Directory.Delete(folderPath); // Clean up the upload folder
+        
+        var fileType = Path.GetExtension(request.FileName);
 
-        await CreateTimeseriesTable(projectId, dataSourceId, tableName, finalFilePath);
+        await CreateTimeseriesTable(projectId, dataSourceId, tableName, finalFilePath, fileType);
 
         var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
         var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
