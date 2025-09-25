@@ -12,6 +12,7 @@ export default withNextra({
   // Add regular Next.js options here
   reactStrictMode: true,
   assetPrefix: '/docs',
+  basePath: '/docs',
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.output.publicPath = '/docs/_next/';
