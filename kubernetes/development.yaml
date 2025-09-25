@@ -302,11 +302,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: deeplynxv3
+      app: deeplynxv3-docs
   template:
     metadata:
       labels:
-        app: deeplynxv3
+        app: deeplynxv3-docs
     spec:
       containers:
         - name: deeplynxv3
