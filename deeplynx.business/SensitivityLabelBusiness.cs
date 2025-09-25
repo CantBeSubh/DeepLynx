@@ -62,6 +62,7 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
                 LastUpdatedBy = l.LastUpdatedBy,
                 ProjectId = l.ProjectId,
                 OrganizationId = l.OrganizationId,
+                IsArchived = l.IsArchived,
             })
             .ToListAsync();
     }

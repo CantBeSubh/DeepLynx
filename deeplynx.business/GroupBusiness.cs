@@ -99,7 +99,8 @@ public class GroupBusiness : IGroupBusiness
             Name = dto.Name,
             Description = dto.Description,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null // TODO: implement user ID here when JWT tokens are ready
+            LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready
+            OrganizationId = organizationId,
         };
         
         _context.Groups.Add(group);
@@ -226,7 +227,7 @@ public class GroupBusiness : IGroupBusiness
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             OrganizationId = group.OrganizationId,
-            Operation = "archive",
+            Operation = "unarchive",
             EntityType = "group",
             EntityId = group.Id,
             Properties = JsonSerializer.Serialize(new { group.Name }),
