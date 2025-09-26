@@ -1,20 +1,18 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
-import EditRole from '@/app/(home)/components/ProjectSettingsTable/ProjectModals/EditRole'
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, MyRolesTable } from '../../../types/types';
+import { Column, ProjectPermissionsTable } from '../../../types/types';
 import { PencilIcon } from '@heroicons/react/24/outline';
 
-interface RolesTableProps {
-  data: MyRolesTable[];
+interface PermissionTableProps {
+  data: ProjectPermissionsTable[];
 }
 
-const ProjectManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
+const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData }) => {
     const { t } = useLanguage();
-    const [data, setData] = useState<MyRolesTable[]>(initialData);
+    const [data, setData] = useState<ProjectPermissionsTable[]>(initialData);
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
     const [selectAll, setSelectAll] = useState<boolean>(false);
-    const [handleEdit, setHandleEdit] = useState<boolean>(false);
 
     const handleSelectAll = () => {
     const newSelection = !selectAll;
@@ -38,7 +36,7 @@ const ProjectManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-    const columns: Column<MyRolesTable>[] = [
+    const columns: Column<ProjectPermissionsTable>[] = [
         {
           header: "Project Management",
           data: "role",
@@ -46,17 +44,6 @@ const ProjectManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
         {
           header: "Description",
           data: "description",
-          sortable: false,
-        },
-        {
-          header: "",
-          cell: (row: MyRolesTable, index: number) => (
-            <div className="flex">
-              <button onClick={() => setHandleEdit(true)}>
-                <PencilIcon className="size-6 text-secondary" />
-              </button>
-            </div>
-          ),
           sortable: false,
         },
         {
@@ -68,7 +55,7 @@ const ProjectManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
               onChange={handleSelectAll}
             />
           ),
-          cell: (row: MyRolesTable, index: number) => (
+          cell: (row: ProjectPermissionsTable, index: number) => (
                 <input
                 type="checkbox"
                 className="checkbox"
@@ -85,7 +72,7 @@ const ProjectManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
             <GenericTable
                 columns={columns}
                 data={data}
-                enablePagination
+                // enablePagination
                 // rowsPerPage={5}
             />
         </div>

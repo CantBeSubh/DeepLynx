@@ -1,6 +1,8 @@
 import React from 'react';
 import { useLanguage } from "@/app/contexts/Language";
+import { projectPermissions, userPermissions } from "../../../dummy_data/data";
 import ProjectManagementTable from './ProjectManagementTable';
+import UserManagementTable from './UserManagementTable';
 
 interface PermissionsTabProps {
   onCancel: () => void;
@@ -13,10 +15,8 @@ const PermissionsTab: React.FC<PermissionsTabProps> = ({ onCancel, onSave }) => 
   return (
     <div>
         <div>
-            <ProjectManagementTable data={[]} />
-            {/* TODO Add data here for project permissions */}
-            <ProjectManagementTable data={[]} />
-            {/* TODO Add data here for user management */}
+            <ProjectManagementTable data={projectPermissions} />
+            <UserManagementTable data={userPermissions} />
         </div>
       <div className="modal-action">
         <button className="btn" onClick={onCancel}>

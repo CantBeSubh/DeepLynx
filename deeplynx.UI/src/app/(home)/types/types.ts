@@ -93,6 +93,16 @@ export type MyRolesTable = {
   description: string;
 }
 
+export type ProjectPermissionsTable = {
+  role: string;
+  description: string;
+}
+
+export type UserPermissionsTable = {
+  role: string;
+  description: string;
+}
+
 export type TeamMember = {
   id: number;
   name: string;

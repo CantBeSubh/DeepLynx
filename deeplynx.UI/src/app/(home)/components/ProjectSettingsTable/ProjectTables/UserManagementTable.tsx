@@ -2,19 +2,18 @@ import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import EditRole from '@/app/(home)/components/ProjectSettingsTable/ProjectModals/EditRole'
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, MyRolesTable } from '../../../types/types';
+import { Column, UserPermissionsTable } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 
-interface RolesTableProps {
-  data: MyRolesTable[];
+interface UserPermsTableProps {
+  data: UserPermissionsTable[];
 }
 
-const UserManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
+const UserManagementTable: FC<UserPermsTableProps> = ({ data: initialData }) => {
     const { t } = useLanguage();
-    const [data, setData] = useState<MyRolesTable[]>(initialData);
+    const [data, setData] = useState<UserPermissionsTable[]>(initialData);
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
     const [selectAll, setSelectAll] = useState<boolean>(false);
-    const [handleEdit, setHandleEdit] = useState<boolean>(false);
 
     const handleSelectAll = () => {
     const newSelection = !selectAll;
@@ -34,25 +33,11 @@ const UserManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
     }
   };
 
-  const handleDelete = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
-  };
-
-  const handleDeleteSelected = () => {
-    const newData = data.filter((_, index) => !selectedMembers[index]);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
-  };
-
   const multipleSelected = () => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-    const columns: Column<MyRolesTable>[] = [
+    const columns: Column<UserPermissionsTable>[] = [
         {
           header: "User Mangement",
           data: "role",
@@ -60,17 +45,6 @@ const UserManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
         {
           header: "Description",
           data: "description",
-          sortable: false,
-        },
-        {
-          header: "",
-          cell: (row: MyRolesTable, index: number) => (
-            <div className="flex">
-              <button onClick={() => setHandleEdit(true)}>
-                <PencilIcon className="size-6 text-secondary" />
-              </button>
-            </div>
-          ),
           sortable: false,
         },
         {
@@ -82,7 +56,7 @@ const UserManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
               onChange={handleSelectAll}
             />
           ),
-          cell: (row: MyRolesTable, index: number) => (
+          cell: (row: UserPermissionsTable, index: number) => (
                 <input
                 type="checkbox"
                 className="checkbox"
@@ -99,7 +73,7 @@ const UserManagementTable: FC<RolesTableProps> = ({ data: initialData }) => {
             <GenericTable
                 columns={columns}
                 data={data}
-                enablePagination
+                // enablePagination
                 // rowsPerPage={5}
             />
         </div>

@@ -1216,6 +1216,142 @@ export const defaultRoles = [
   }
 ];
 
+export const projectPermissions = [
+  {
+    id: 1,
+    role: "Write Project",
+    description: "Allows the user to create and modify project details.",
+  },
+  {
+    id: 2,
+    role: "Read Project",
+    description: "Allows the user to view project details.",
+  },
+  {
+    id: 3,
+    role: "Write Object Storage",
+    description: "Allows the user to add, modify, and delete objects in storage.",
+  },
+  {
+    id: 4,
+    role: "Read Object Storage",
+    description: "Allows the user to view objects stored in storage.",
+  },
+  {
+    id: 5,
+    role: "Write Data Source",
+    description: "Allows the user to create and modify data source configurations.",
+  },
+  {
+    id: 6,
+    role: "Read Data Source",
+    description: "Allows the user to view data source information.",
+  },
+  {
+    id: 7,
+    role: "Write Record",
+    description: "Allows the user to add and modify records in the database.",
+  },
+  {
+    id: 8,
+    role: "Read Record",
+    description: "Allows the user to view records in the database.",
+  },
+  {
+    id: 9,
+    role: "Write Edge",
+    description: "Allows the user to create and modify edges in the graph database.",
+  },
+  {
+    id: 10,
+    role: "Read Edge",
+    description: "Allows the user to view edges in the graph database.",
+  },
+  {
+    id: 11,
+    role: "Write File",
+    description: "Allows the user to upload and modify files.",
+  },
+  {
+    id: 12,
+    role: "Read File",
+    description: "Allows the user to view files.",
+  },
+  {
+    id: 13,
+    role: "Write Tag",
+    description: "Allows the user to add and modify tags for categorizing resources.",
+  },
+  {
+    id: 14,
+    role: "Read Tag",
+    description: "Allows the user to view tags associated with resources.",
+  },
+  {
+    id: 15,
+    role: "Write Class",
+    description: "Allows the user to create and modify class definitions.",
+  },
+  {
+    id: 16,
+    role: "Read Class",
+    description: "Allows the user to view class definitions.",
+  },
+  {
+    id: 17,
+    role: "Write Relationship",
+    description: "Allows the user to create and modify relationships between entities.",
+  },
+  {
+    id: 18,
+    role: "Read Relationship",
+    description: "Allows the user to view relationships between entities.",
+  },
+];
+
+export const userPermissions = [
+  {
+    id: 1,
+    role: "Write User",
+    description: "Allows the user to create and modify user accounts.",
+  },
+  {
+    id: 2,
+    role: "Read User",
+    description: "Allows the user to view user account details.",
+  },
+  {
+    id: 3,
+    role: "Write Group",
+    description: "Allows the user to create and modify user groups.",
+  },
+  {
+    id: 4,
+    role: "Read Group",
+    description: "Allows the user to view user group details.",
+  },
+  {
+    id: 5,
+    role: "Write Organization",
+    description: "Allows the user to create and modify organization information.",
+  },
+  {
+    id: 6,
+    role: "Read Organization",
+    description: "Allows the user to view organization details.",
+  },
+  {
+    id: 7,
+    role: "Write Role",
+    description: "Allows the user to create and modify role definitions.",
+  },
+  {
+    id: 8,
+    role: "Read Role",
+    description: "Allows the user to view role definitions.",
+  },
+];
+
 export const dropDownProjects = [
   "Aurora Initiative",
   "Quantum Quest",
