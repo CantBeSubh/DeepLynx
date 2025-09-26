@@ -49,6 +49,11 @@ public class RecordBusiness : IRecordBusiness
         {
             recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
+
+        if (dataSourceId.HasValue)
+        {
+            recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
+        }
         
         var records = await recordQuery
             .Include(r => r.Tags)

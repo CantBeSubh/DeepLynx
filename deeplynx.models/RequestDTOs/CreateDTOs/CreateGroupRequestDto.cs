@@ -10,7 +10,4 @@ public class CreateGroupRequestDto
     public string Name { get; set; }
     
     public string? Description { get; set; }
-    
-    [Required]
-    public string OrganizationId { get; set; }
 }
