@@ -81,7 +81,8 @@ try
     // ----------------------------------
     var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");   // e.g. https://YOUR_OKTA_DOMAIN/oauth2/<authServerId>
     var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"); // e.g. api://deeplynx
-
+    var localDevelopment = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION"); // e.g. api://deeplynx
+    
     if (string.IsNullOrWhiteSpace(issuer))
         throw new InvalidOperationException("JWT_ISSUER not configured");
     if (string.IsNullOrWhiteSpace(audience))
@@ -94,7 +95,10 @@ try
             // This makes ASP.NET fetch OIDC metadata + JWKS from:
             // {issuer}/.well-known/openid-configuration
             options.Authority = issuer;
-
+            if (localDevelopment == "true")
+            {
+                options.RequireHttpsMetadata = false; 
+            }
             options.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
