@@ -180,7 +180,9 @@ export const translations = {
             SAVING: "Saving...",
             NO_RECORDS: "No records match your search criteria",
             SEARCH_RECORDS: "Search Records",
-            SEARCH: "Search"
+            SEARCH: "Search",
+            TAG: "Tag",
+            ADD_A_TAG: "Add A Tag"
         }
     },
     es: {
@@ -374,6 +376,8 @@ export const translations = {
             NO_RECORDS: "No hay registros que coincidan con tus criterios de búsqueda",
             SEARCH_RECORDS: "Buscar registros",
             SEARCH: "Buscar",
+            TAG: "Etiqueta",
+            ADD_A_TAG: "Agregar una etiqueta"
         }
     }
 }
