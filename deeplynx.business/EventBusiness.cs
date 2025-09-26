@@ -11,27 +11,6 @@ public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
-    private static readonly List<string> AllowedEntityTypes = new List<string>
-    {
-        "class", 
-        "data_source", 
-        "relationship", 
-        "project", 
-        "edge", 
-        "edge_mapping", 
-        "record", 
-        "record_mapping",
-        "metadata", 
-        "user", 
-        "tag"
-    };
-
-    private static readonly List<string> AllowedOperations = new List<string>
-    {
-        "create",
-        "update",
-        "delete",
-    };
     
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
@@ -101,7 +80,8 @@ public class EventBusiness : IEventBusiness
     /// <returns>The new Event which was just created.</returns>
     public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, _cacheBusiness, false);
+        // TODO: since project may be absent, determine if this check is still needed here
+        // await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, _cacheBusiness, false);
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");

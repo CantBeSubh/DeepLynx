@@ -7,6 +7,7 @@ using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using StackExchange.Redis;
@@ -172,6 +173,11 @@ try
     builder.Services.AddTransient<FileAzureBusiness>();
     builder.Services.AddTransient<FileS3Business>();
     builder.Services.AddTransient<IFileBusinessFactory, FileBusinessFactory>();
+    builder.Services.AddTransient<IOrganizationBusiness, OrganizationBusiness>();
+    builder.Services.AddTransient<IGroupBusiness, GroupBusiness>();
+    builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
+    builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
+    builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     
     var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
 
@@ -291,6 +297,31 @@ try
                 {
                     Name = "Notification",
                     Description = "Handles notification operations."
+                },
+                new OpenApiTag
+                {
+                    Name = "SensitivityLabel",
+                    Description = "Handles operations related to Sensitivity Label management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Group",
+                    Description = "Handles operations related to Group management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Organization",
+                    Description = "Handles operations related to Organization management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Role",
+                    Description = "Handles operations related to Role management"
+                },
+                new OpenApiTag
+                {
+                    Name = "Permission",
+                    Description = "Handles operations related to Permission management"
                 }
             };
         });
@@ -306,6 +337,7 @@ try
     app.UseOpenApi();
 
     var customcss = File.ReadAllText("moon.css");
+    
     app.UseStaticFiles();
     
     // We're always using scalar for now.

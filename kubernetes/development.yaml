@@ -101,10 +101,10 @@ spec:
               value: ${INVITE_URL}
             - name: SUPPORT_EMAIL
               value: ${SUPPORT_EMAIL}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
             - name: NEXT_PUBLIC_DOCS_PATH
               value: "/docs"
+            - name: TENANT_MODE
+              value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -229,8 +229,8 @@ spec:
               value: ${INVITE_URL}
             - name: SUPPORT_EMAIL
               value: ${SUPPORT_EMAIL}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
+            - name: TENANT_MODE
+              value: ${TENANT_MODE}
             # Backend may also need these environment variables
             - name: OKTA_CLIENT_SECRET
               valueFrom:

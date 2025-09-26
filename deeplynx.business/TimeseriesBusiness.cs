@@ -83,7 +83,7 @@ public class TimeseriesBusiness(
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
-
+        
         command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
         var executeNonQuery = await command.ExecuteNonQueryAsync();
     }
@@ -331,6 +331,60 @@ public class TimeseriesBusiness(
                 throw new Exception("Failed while writing report to csv and postgres: " + e.Message);
             }
         });
+    }
+
+    /// <summary>
+    /// Appends file to existing table
+    /// </summary>
+    /// <param name="dataSourceId"></param>
+    /// <param name="projectId"></param>
+    /// <param name="file"></param>
+    /// <param name="tableName"></param>
+    /// <param name="fileType"></param>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="Exception"></exception>
+    public async Task AppendTimeseriesTable(long dataSourceId, long projectId, IFormFile file, string tableName)
+    {
+        var fileType = Path.GetExtension(file.FileName);
+        if (fileType != ".csv" && fileType != ".parquet")
+        {
+            throw new ArgumentException("Only CSV and Parquet files are supported.");
+        }
+        
+        if (file.Length == 0)
+        {
+            throw new Exception("Can not append empty file");
+        }
+        
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        
+        using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
+        
+        // save file to temporary directory
+        var guid = Guid.NewGuid();
+        var tempFolderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), guid.ToString());
+        Directory.CreateDirectory(tempFolderPath);
+        
+        var tempFilePath = Path.Combine(tempFolderPath, file.FileName);
+        
+        await using var stream = new FileStream(tempFilePath, FileMode.Create);
+        await file.CopyToAsync(stream);
+        
+        await using var command = duckDbConnection.CreateCommand();
+
+        if (fileType == ".csv")
+        {
+            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}' (AUTO_DETECT true)";
+        }
+        else if (fileType == ".parquet")
+        {
+            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}'";
+        }
+        
+        await command.ExecuteNonQueryAsync();
+        
+        Directory.Delete(tempFolderPath, true);
     }
 
     //todo: Determine how to structure query result depending on how UI needs it. This function will be commented out for now
