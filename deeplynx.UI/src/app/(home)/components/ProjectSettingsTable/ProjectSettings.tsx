@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import { mySavedSearches, projectMembers, defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
@@ -10,7 +10,7 @@ import RolesTable from '././ProjectTables/RolesTable';
 import DataSourceTable from '././ProjectTables/DataSourceTable';
 import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
 import MemberSearchBar from './MemberSearchBar';
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 
 interface ProjectSettingsProps {
@@ -22,6 +22,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const tabData = [
     {
@@ -71,6 +72,14 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     }
   };
 
+   // Effect to set the active tab from the query parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
   return (
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
@@ -93,6 +102,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
           tabs={tabData}
           className="tabs tabs-border"
           onTabChange={handleTabChange}
+          activeTab={activeTab}
         />
       </div>
 
