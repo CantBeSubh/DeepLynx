@@ -1,9 +1,9 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
-import EditRole from '@/app/(home)/components/ProjectSettingsTable/ProjectModals/EditRole'
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, MyRolesTable } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { useRouter } from "next/navigation";
 
 interface RolesTableProps {
   data: MyRolesTable[];
@@ -15,6 +15,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData }) => {
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
     const [selectAll, setSelectAll] = useState<boolean>(false);
     const [handleEdit, setHandleEdit] = useState<boolean>(false);
+    const router = useRouter();
 
     const handleSelectAll = () => {
     const newSelection = !selectAll;
@@ -83,12 +84,12 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData }) => {
         },
         {
           header: "",
-          cell: (row: MyRolesTable, index: number) => (
-            <div className="flex">
-              <button onClick={() => setHandleEdit(true)}>
-                <PencilIcon className="size-6 text-secondary" />
-              </button>
-            </div>
+      cell: (row: MyRolesTable) => (
+        <div className="flex">
+          <button onClick={() => router.push(`/project_settings/project_roles?roleId=${row.id}`)}>
+            <PencilIcon className="size-6 text-secondary" />
+          </button>
+        </div>
           ),
           sortable: false,
         },
@@ -120,10 +121,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData }) => {
                 data={data}
                 enablePagination
                 // rowsPerPage={5}
-            />
-            <EditRole
-                isOpen={handleEdit}
-                onClose={() => setHandleEdit(false)}
             />
         </div>
     );

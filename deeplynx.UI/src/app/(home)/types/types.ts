@@ -89,16 +89,19 @@ export type ProjectMembersTable = {
 }
 
 export type MyRolesTable = {
+  id: number;
   role: string;
   description: string;
 }
 
 export type ProjectPermissionsTable = {
+  id: number;
   role: string;
   description: string;
 }
 
 export type UserPermissionsTable = {
+  id: number;
   role: string;
   description: string;
 }
