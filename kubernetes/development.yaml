@@ -323,8 +323,6 @@ spec:
           env:
             - name: NEXT_PUBLIC_BASE_PATH
               value: "/docs"
-            - name: NEXUS_HOSTED_LINK
-              value: "https://deeplynx.dev.inl.gov/"
           resources:
             limits:
               memory: "4Gi"
