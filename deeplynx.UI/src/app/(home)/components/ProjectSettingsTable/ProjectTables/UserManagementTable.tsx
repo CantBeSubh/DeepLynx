@@ -1,9 +1,7 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
-import EditRole from '@/app/(home)/components/ProjectSettingsTable/ProjectModals/EditRole'
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, UserPermissionsTable } from '../../../types/types';
-import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 
 interface UserPermsTableProps {
   data: UserPermissionsTable[];

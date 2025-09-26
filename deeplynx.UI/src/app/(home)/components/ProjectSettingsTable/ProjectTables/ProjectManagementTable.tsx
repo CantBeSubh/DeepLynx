@@ -2,7 +2,6 @@ import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, ProjectPermissionsTable } from '../../../types/types';
-import { PencilIcon } from '@heroicons/react/24/outline';
 
 interface PermissionTableProps {
   data: ProjectPermissionsTable[];
