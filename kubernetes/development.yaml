@@ -80,6 +80,10 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            - name: JWT_ISSUER
+              value: ${JWT_ISSUER}
+            - name: JWT_AUDIENCE
+              value: ${JWT_AUDIENCE}
             # DuckDB Configuration
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}
@@ -205,6 +209,10 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            - name: JWT_ISSUER
+              value: ${JWT_ISSUER}
+            - name: JWT_AUDIENCE
+              value: ${JWT_AUDIENCE}
             # DuckDB Configuration (same as frontend)
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}

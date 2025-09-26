@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -7,7 +8,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/edges")]
-    
+    [NexusAuthorize]
     public class EdgeController : ControllerBase
     {
         private readonly IEdgeBusiness _edgeBusiness;

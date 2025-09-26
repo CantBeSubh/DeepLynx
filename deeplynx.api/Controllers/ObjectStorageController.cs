@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/storages")]
+    [NexusAuthorize]
     public class ObjectStorageController : ControllerBase
     {
         private readonly IObjectStorageBusiness _objectStorageBusiness;

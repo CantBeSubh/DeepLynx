@@ -26,6 +26,8 @@ jobs:
           OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
+          JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
@@ -125,6 +127,8 @@ jobs:
           POSTGRES_DB_HOST: ${{ vars.POSTGRES_DB_HOST }}
           POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}
           DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}

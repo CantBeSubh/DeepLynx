@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ namespace deeplynx.api.Controllers;
 
 [Route("api/projects/{projectId}/datasources/{dataSourceId}/metadata")]
 [ApiController]
+[NexusAuthorize]
 public class MetadataController : ControllerBase
 {
     private readonly IMetadataBusiness _metadataBusiness;
