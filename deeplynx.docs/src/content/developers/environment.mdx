@@ -18,10 +18,10 @@ Before you begin, ensure you have the following:
 
 In your project’s root directory, create a file named `.env`. This file will store your PostgreSQL database connection details. Open the `.env` file in a text editor and add the following content:
 
-```plaintext
-# PostgreSQL connection details
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=myuser
-DB_PASSWORD=mypassword
-DB_NAME=mydatabase
+```js copy filename=".env"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=nexuscore
+POSTGRES_DB_NAME=deeplynx
+POSTGRES_DB_HOST=localhost
+POSTGRES_PORT=5432
+```
