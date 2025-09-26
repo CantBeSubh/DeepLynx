@@ -38,6 +38,7 @@ services:
       FROM_NAME: DeepLynx Nexus
       INVITE_URL: http://localhost:3000
       SUPPORT_EMAIL: jaren.brownlee@inl.gov
+      DISABLE_FRONTEND_AUTHENTICATION: false
 
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
