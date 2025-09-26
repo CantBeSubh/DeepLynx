@@ -16,6 +16,9 @@ RUN npm install
 # Copy the rest of the frontend source code
 COPY deeplynx.docs .
 
+# Set the environment variable for the deployed route instance in build phase 
+ENV NEXT_PUBLIC_BASE_PATH="/docs"
+
 # Build the frontend
 RUN npm run build
 
