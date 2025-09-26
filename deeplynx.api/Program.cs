@@ -6,8 +6,10 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using StackExchange.Redis;
@@ -75,28 +77,57 @@ try
     });
 
     // ----------------------------------
-    // Authentication
+    // Authentication (Okta RS256)
     // ----------------------------------
-    builder.Services.AddAuthentication(options =>
+    var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");   // e.g. https://YOUR_OKTA_DOMAIN/oauth2/<authServerId>
+    var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"); // e.g. api://deeplynx
+
+    if (string.IsNullOrWhiteSpace(issuer))
+        throw new InvalidOperationException("JWT_ISSUER not configured");
+    if (string.IsNullOrWhiteSpace(audience))
+        throw new InvalidOperationException("JWT_AUDIENCE not configured");
+    
+    builder.Services
+        .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            options.DefaultScheme = "Cookies";
-            options.DefaultChallengeScheme = "oidc";
-        })
-        .AddCookie("Cookies")
-        .AddOpenIdConnect("oidc", options =>
-        {
-            options.Authority = "https://identity-preview.inl.gov/";
-            options.ClientId = "client-id";
-            options.ClientSecret = "secret";
-            options.ResponseType = "code";
-            options.SaveTokens = true;
-            options.Scope.Clear();
-            options.Scope.Add("openid");
-            options.Scope.Add("profile");
+            // This makes ASP.NET fetch OIDC metadata + JWKS from:
+            // {issuer}/.well-known/openid-configuration
+            options.Authority = issuer;
+
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+
+                ValidateAudience = true,
+                ValidAudience = audience,
+
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromMinutes(1),
+
+                // Verify RS256 signature using Okta’s JWKS
+                ValidateIssuerSigningKey = true,
+                RequireSignedTokens = true,
+                ValidAlgorithms = new[] { SecurityAlgorithms.RsaSha256 }
+            };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnAuthenticationFailed = context =>
+                {
+                    Log.Fatal($"Authentication failed: {context.Exception.Message}");
+                    return Task.CompletedTask;
+                },
+                OnTokenValidated = context =>
+                {
+                    Log.Information("Token validated successfully");
+                    return Task.CompletedTask;
+                }
+            };
         });
-
-
     builder.Services.AddAuthorization();
+    
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
@@ -366,6 +397,7 @@ try
         </div>"));
 
     app.UseCors("AllowAll"); 
+    app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
     app.Run();

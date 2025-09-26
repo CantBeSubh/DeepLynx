@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -6,6 +7,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/user")]
+    [NexusAuthorize]
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
