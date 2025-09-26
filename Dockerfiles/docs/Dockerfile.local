@@ -1,33 +1,11 @@
 # Stage 1: Build the frontend
 FROM node:lts-alpine3.20 AS frontend-build
 
-# Define build arguments
-ARG NEXT_PUBLIC_OKTA_CLIENT_ID
-ARG NEXT_PUBLIC_OKTA_ISSUER
-ARG NEXT_PUBLIC_REDIRECT_LINK
-ARG NEXT_PUBLIC_API_URL
-ARG BACKEND_BASE_URL
-ARG OKTA_CLIENT_SECRET
-ARG AUTH_SECRET
-ARG SERVICE_TOKEN
-ARG NEXTAUTH_URL
-
-# Set environment variables
-ENV NEXT_PUBLIC_OKTA_CLIENT_ID=${NEXT_PUBLIC_OKTA_CLIENT_ID}
-ENV NEXT_PUBLIC_OKTA_ISSUER=${NEXT_PUBLIC_OKTA_ISSUER}
-ENV NEXT_PUBLIC_REDIRECT_LINK=${NEXT_PUBLIC_REDIRECT_LINK}
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
-ENV OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
-ENV AUTH_SECRET=${AUTH_SECRET}
-ENV SERVICE_TOKEN=${SERVICE_TOKEN}
-ENV NEXTAUTH_URL=${NEXTAUTH_URL}
-
 # Set working directory
 WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json first
-COPY deeplynx.UI/package*.json ./
+COPY deeplynx.docs/package*.json .
 
 # Configure INL certs and environment variables
 RUN apk --no-check-certificate add wget ca-certificates
@@ -46,8 +24,7 @@ RUN apk add --no-cache nodejs npm
 RUN npm install
 
 # Copy the rest of the frontend source code
-COPY deeplynx.UI .
-RUN rm -rf ./src/docs
+COPY deeplynx.docs .
 
 # Build the frontend
 RUN npm run build
@@ -75,7 +52,7 @@ COPY --from=frontend-build /usr/src/app .
 RUN npm install --omit=dev
 
 # Expose the port the app runs on
-EXPOSE 3000
+EXPOSE 3001
 
 # Set the command to run the application
-CMD ["npm", "start"]
+CMD ["npm", "start" ]
