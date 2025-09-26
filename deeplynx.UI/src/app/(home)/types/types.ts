@@ -88,6 +88,25 @@ export type ProjectMembersTable = {
   role: string;
 }
 
+export type SystemUsersTable = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export type SystemGroupsTable = {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export type SystemOrgsTable = {
+  id: number;
+  name: string;
+  description: string;
+}
+
 export type MyRolesTable = {
   id: number;
   role: string;

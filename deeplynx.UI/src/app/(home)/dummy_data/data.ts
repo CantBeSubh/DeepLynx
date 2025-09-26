@@ -1122,6 +1122,127 @@ export const myRecentSearches = [
   }
 ];
 
+export const systemUsers = [
+  {
+    id: 1,
+    name: "Autumn Combs",
+    email: "Autumn.combs@inl.gov",
+    role: "Admin",
+    filters: ["Nexus"],
+    createdAt: "8-15-2018"
+  },
+  {
+    id: 2,
+    name: "Natalie Hergesheimer",
+    email: "Natalie.hergesheimer@inl.gov",
+    role: "Admin",
+    filters: ["Alexandria"],
+    createdAt: "5-10-2020"
+  },
+  {
+    id: 3,
+    name: "Isaac Huffman",
+    email: "Isaac.huffman@inl.gov",
+    role: "User",
+    filters: ["SMARTUSA"],
+    createdAt: "4-22-2019"
+  },
+  {
+    id: 4,
+    name: "Jaren Brownlee",
+    email: "Jaren.brownlee@inl.gov",
+    role: "Admin",
+    filters: ["Nexus"],
+    createdAt: "3-18-2021"
+  },
+  {
+    id: 5,
+    name: "Jeren Browning",
+    email: "Jeren.browning@inl.gov",
+    role: "User",
+    filters: ["Alexandria"],
+    createdAt: "11-30-2021"
+  },
+  {
+    id: 6,
+    name: "Jen Rogers",
+    email: "Jen.rogers@inl.gov",
+    role: "User",
+    filters: ["Alexandria"],
+    createdAt: "7-12-2022"
+  },
+  {
+    id: 7,
+    name: "Keaton Flake",
+    email: "Keaton.flake@inl.gov",
+    role: "User",
+    filters: ["Nexus"],
+    createdAt: "2-14-2023"
+  },
+  {
+    id: 8,
+    name: "Ross Kunz",
+    email: "Ross.kunz@inl.gov",
+    role: "Admin",
+    filters: ["SMARTUSA"],
+    createdAt: "9-5-2023"
+  },
+  {
+    id: 9,
+    name: "Victor Walker",
+    email: "Victor.walker@inl.gov",
+    role: "Admin",
+    filters: ["Alexandria"],
+    createdAt: "6-20-2020"
+  }
+];
+
+export const systemGroups = [
+  {
+    id: 1,
+    name: "Nexus Developers",
+    description: "All Nexus Devs",
+  },
+  {
+    id: 2,
+    name: "Ecosystem Developers",
+    description: "All Ecosystem Devs",
+  },
+  {
+    id: 3,
+    name: "Alexandria",
+    description: "All Alexandria Devs",
+  },
+  {
+    id: 4,
+    name: "SMART USA",
+    description: "All SMART USA Devs",
+  },
+]
+
+export const systemOrgs = [
+  {
+    id: 1,
+    name: "C550",
+    description: "All C550 Devs",
+  },
+  {
+    id: 2,
+    name: "C540",
+    description: "All C540 Devs",
+  },
+  {
+    id: 3,
+    name: "Sandia",
+    description: "All Sandia Devs",
+  },
+  {
+    id: 4,
+    name: "C500",
+    description: "All C500 Devs",
+  },
+]
+
 export const projectMembers = [
   {
     id: 1,
@@ -1207,10 +1328,12 @@ export const projectMembers = [
 
 export const defaultRoles = [
   {
+    id: 1,
     role: "Admin",
     description: "Administrator with full access to all project resources and settings."
   },
   {
+    id: 2,
     role: "User",
     description: "Standard user with limited access to project resources."
   }
