@@ -73,6 +73,11 @@ jobs:
             --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
             .
 
+          az acr build --registry $ACR_REGISTRY \
+            --image $ACR_PATH:deeplynxv3-docs-$GITHUB_RUN_NUMBER \
+            --file Dockerfiles/docs/Dockerfile.public \
+            .
+
   kubernetes:
     needs: build
     runs-on: [self-hosted]
