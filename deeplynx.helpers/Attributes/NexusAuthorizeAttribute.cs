@@ -7,7 +7,6 @@ using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
 
-
 namespace deeplynx.helpers;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
@@ -23,6 +22,12 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
+        if (IsLocalDevelopmentBypassEnabled(context))
+        {
+            SetMockUserPrincipal(context.HttpContext);
+            return; 
+        }
+
         try
         {
             var token = ExtractToken(context.HttpContext.Request);
@@ -45,6 +50,29 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         {
             SetUnauthorizedResult(context, $"Authorization failed: {ex.Message}");
         }
+    }
+
+    private bool IsLocalDevelopmentBypassEnabled(AuthorizationFilterContext context)
+    {
+        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
+        
+        return disableAuth;
+    }
+
+    private void SetMockUserPrincipal(HttpContext httpContext)
+    {
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.Name, "LocalDeveloper"),
+            new Claim(ClaimTypes.NameIdentifier, "local-dev-user"),
+            new Claim("sub", "local-dev-user"),
+            new Claim("email", "developer@localhost"),
+            new Claim(ClaimTypes.Role, "Developer"),
+        };
+
+        var identity = new ClaimsIdentity(claims, "LocalDevelopment");
+        var principal = new ClaimsPrincipal(identity);
+        httpContext.User = principal;
     }
 
     private string? ExtractToken(HttpRequest request)
