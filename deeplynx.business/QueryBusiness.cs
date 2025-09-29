@@ -266,6 +266,7 @@ public class QueryBusiness : IQueryBusiness
             hr.is_archived as IsArchived
         FROM deeplynx.historical_records hr
         WHERE hr.is_archived = false
+        AND hr.project_id in (@project_id)
         AND to_tsvector('english',
                 coalesce(name, '') || ' ' ||
                 coalesce(description, '') || ' ' ||
