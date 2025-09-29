@@ -1,57 +1,65 @@
-import React, { FC, useState } from 'react';
-import GenericTable from '../../GenericTable';
+// src/app/(home)/components/MemberSettingsTable/MembersTable/UsersTable.tsx
+
+"use client";
+
+import React, { useEffect, useState } from "react";
+import GenericTable from "../../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, SystemUsersTable } from '../../../types/types';
-import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
+import { Column, SystemUsersTable } from "../../../types/types";
+import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { getAllUsers } from "@/app/lib/user_services.client";
 
-interface MembersTableProps {
-  data: SystemUsersTable[];
-}
-
-const UsersTable: FC<MembersTableProps> = ({ data: initialData }) => {
+const UsersTable = () => {
   const { t } = useLanguage();
-  const [data, setData] = useState<SystemUsersTable[]>(initialData);
-  const [addRoleSwap, setAddRoleSwap] = useState<boolean>(false);
-  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
-  const [selectAll, setSelectAll] = useState<boolean>(false);
+  const [data, setData] = useState<SystemUsersTable[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  useEffect(() => {
+    setSelectedMembers(new Array(data.length).fill(false));
+    setSelectAll(false);
+  }, [data.length]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const users = await getAllUsers();
+        setData(users);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load users.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const handleSelectAll = () => {
-    const newSelection = !selectAll;
-    setSelectAll(newSelection);
-    setSelectedMembers(new Array(data.length).fill(newSelection));
+    const next = !selectAll;
+    setSelectAll(next);
+    setSelectedMembers(new Array(data.length).fill(next));
   };
 
   const handleCheckboxChange = (index: number) => {
-    const newSelection = [...selectedMembers];
-    newSelection[index] = !newSelection[index];
-    setSelectedMembers(newSelection);
-
-    if (newSelection.every(Boolean)) {
-      setSelectAll(true);
-    } else {
-      setSelectAll(false);
-    }
+    const next = [...selectedMembers];
+    next[index] = !next[index];
+    setSelectedMembers(next);
+    setSelectAll(next.every(Boolean));
   };
 
   const handleDelete = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+    setData((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDeleteSelected = () => {
-    const newData = data.filter((_, index) => !selectedMembers[index]);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+    setData((prev) => prev.filter((_, i) => !selectedMembers[i]));
   };
 
-  const multipleSelected = () => {
-    return selectedMembers.filter(selected => selected).length > 1;
-  };
+  const multipleSelected = () => selectedMembers.filter(Boolean).length > 1;
 
-    const columns: Column<SystemUsersTable>[] = [
+  const columns: Column<SystemUsersTable>[] = [
     {
       header: (
         <input
@@ -61,35 +69,29 @@ const UsersTable: FC<MembersTableProps> = ({ data: initialData }) => {
           onChange={handleSelectAll}
         />
       ),
-      cell: (row: SystemUsersTable, index: number) => (
-            <input
-            type="checkbox"
-            className="checkbox"
-            checked={selectedMembers[index]}
-            onChange={() => handleCheckboxChange(index)}
-            />
+      cell: (_row, index) => (
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={!!selectedMembers[index]}
+          onChange={() => handleCheckboxChange(index)}
+        />
       ),
       sortable: false,
     },
+    { header: "Name", data: "name" },
+    { header: "Email", data: "email" },
     {
-      header: "Name",
-      data: "name",
-    },
-    {
-      header: "Email",
-      data: "email",
-    },
-    {
-          header: "",
-      cell: (row: SystemUsersTable) => (
+      header: "",
+      cell: () => (
         <div className="flex">
           <button>
             <PencilIcon className="size-6 text-secondary" />
           </button>
         </div>
-          ),
-          sortable: false,
-        },
+      ),
+      sortable: false,
+    },
     {
       header: (
         <div className="flex">
@@ -100,7 +102,7 @@ const UsersTable: FC<MembersTableProps> = ({ data: initialData }) => {
           )}
         </div>
       ),
-      cell: (row: SystemUsersTable, index: number) => (
+      cell: (_row, index) => (
         <div className="flex">
           <button onClick={() => handleDelete(index)}>
             <TrashIcon className="size-6 text-red-500" />
@@ -111,16 +113,10 @@ const UsersTable: FC<MembersTableProps> = ({ data: initialData }) => {
     },
   ];
 
-  return (
-    <div>
-        <GenericTable
-            columns={columns}
-            data={data}
-            enablePagination
-            // rowsPerPage={5}
-        />
-    </div>
-  );
+  if (loading) return <div className="p-4">Loading users…</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
+
+  return <GenericTable columns={columns} data={data} enablePagination />;
 };
 
 export default UsersTable;

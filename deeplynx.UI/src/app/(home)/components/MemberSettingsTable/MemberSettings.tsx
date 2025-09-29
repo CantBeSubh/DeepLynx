@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { systemUsers, systemGroups, systemOrgs } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import { useRouter, useSearchParams } from "next/navigation";
-import MemberSearchBar from '../ProjectSettingsTable/MemberSearchBar';
+import MemberSearchBar from "../ProjectSettingsTable/MemberSearchBar";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import UsersTable from './MemberTables/UsersTable';
-import GroupsTable from './MemberTables/GroupsTable';
-import OrganizationsTable from './MemberTables/OrganizationsTable';
+import UsersTable from "./MemberTables/UsersTable";
+import GroupsTable from "./MemberTables/GroupsTable";
+import OrganizationsTable from "./MemberTables/OrganizationsTable";
 
 interface ProjectSettingsProps {
   className?: string;
@@ -25,27 +25,15 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
   const tabData = [
     {
       label: "Users",
-      content: (
-        <UsersTable
-          data={systemUsers}
-        />
-      ),
+      content: <UsersTable />,
     },
     {
       label: "Groups",
-      content: (
-        <GroupsTable
-          data={systemGroups}
-        />
-      ),
+      content: <GroupsTable data={systemGroups} />,
     },
     {
       label: "Organizations",
-      content: (
-        <OrganizationsTable
-          data={systemOrgs}
-        />
-      ),
+      content: <OrganizationsTable data={systemOrgs} />,
     },
   ];
 
@@ -62,9 +50,9 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
     }
   };
 
-   // Effect to set the active tab from the query parameter
+  // Effect to set the active tab from the query parameter
   useEffect(() => {
-    const tab = searchParams.get('tab');
+    const tab = searchParams.get("tab");
     if (tab) {
       setActiveTab(tab);
     }
@@ -81,7 +69,9 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
               className="btn btn-secondary text-white"
             >
               <PlusIcon className="size-6" />
-              {activeTab === "Users" ? t.translations.USER : t.translations.MEMBER}
+              {activeTab === "Users"
+                ? t.translations.USER
+                : t.translations.MEMBER}
             </button>
             <div className="flex flex-col">
               {activeTab === "Users" && <MemberSearchBar />}
@@ -96,7 +86,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
         />
       </div>
 
-        {/* TO DO: SWITCH TO ADD USER TO NEXUS
+      {/* TO DO: SWITCH TO ADD USER TO NEXUS
       <AddProjectMember
         isOpen={addProjectMemberModal}
         onClose={() => setAddProjectMemberModal(false)}
