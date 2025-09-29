@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { mySavedSearches, projectMembers, defaultRoles } from "../../dummy_data/data";
+import { projectMembers, defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
-import DataSourceTable from '././ProjectTables/DataSourceTable';
-import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
+// import DataSourceTable from '././ProjectTables/DataSourceTable';
+// import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
 import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
@@ -41,22 +41,23 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
         />
       ),
     },
-    {
-      label: "Data Source",
-      content: (
-        <DataSourceTable
-          data={mySavedSearches}
-        />
-      ),
-    },
-    {
-      label: "Object Storage",
-      content: (
-        <ObjectStorageTable
-          data={mySavedSearches}
-        />
-      ),
-    },
+    //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
+    // {
+    //   label: "Data Source",
+    //   content: (
+    //     <DataSourceTable
+    //       data={mySavedSearches}
+    //     />
+    //   ),
+    // },
+    // {
+    //   label: "Object Storage",
+    //   content: (
+    //     <ObjectStorageTable
+    //       data={mySavedSearches}
+    //     />
+    //   ),
+    // },
   ];
 
   const handleTabChange = (label: string) => {
