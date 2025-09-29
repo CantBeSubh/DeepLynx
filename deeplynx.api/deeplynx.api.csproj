@@ -11,6 +11,7 @@
     <ItemGroup>
         <PackageReference Include="DotNetEnv" Version="3.1.1" />
         <PackageReference Include="DuckDB.NET.Data.Full" Version="1.3.2" />
+        <PackageReference Include="Microsoft.AspNet.SignalR.Core" Version="2.4.3" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0-preview.5.25277.114" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.0-preview.5.25277.114" />
@@ -39,6 +40,7 @@
       <ProjectReference Include="..\deeplynx.business\deeplynx.business.csproj" />
       <ProjectReference Include="..\deeplynx.datalayer\deeplynx.datalayer.csproj" />
       <ProjectReference Include="..\deeplynx.helpers\deeplynx.helpers.csproj" />
+      <ProjectReference Include="..\deeplynx.hubs\deeplynx.hubs.csproj" />
       <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
       <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
       <ProjectReference Include="..\deeplynx.graph\deeplynx.graph.csproj" />
