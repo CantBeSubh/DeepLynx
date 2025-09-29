@@ -87,6 +87,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/fileBug",
       "/upload_center",
       "/data_catalog",
+      "/member_management",
     ];
     const isExactMatch = selectedItem === targetPath;
     const isDynamicProject =
@@ -136,7 +137,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
           <li className="mt-2">
-            <div className="flex items-center">
               <Link
                 href={"/member_management"}
                 onClick={(e) => handleItemClick("/member_management", e)}
@@ -147,7 +147,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                   <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
                 )}
               </Link>
-            </div>
           </li>
         </ul>
 
