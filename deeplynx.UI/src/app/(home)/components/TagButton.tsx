@@ -36,7 +36,6 @@ const TagButton: React.FC<TagButtonProps> = ({
 
   useEffect(() => {
     if (longestNameRef.current) {
-      console.log(longestNameRef)
       const longestNameWidth = longestNameRef.current.offsetWidth;
       if (dropdownRef.current) {
         dropdownRef.current.style.minWidth = `${longestNameWidth + 40}px`;
@@ -57,18 +56,17 @@ const TagButton: React.FC<TagButtonProps> = ({
   const toggleTag = async (id: string) => {
     let newSelectionIds: string[];
 
-    if (tempSelectedIds.includes(id)) {
-      newSelectionIds = tempSelectedIds.filter((sid) => sid !== id);
+    if (tempSelectedIds.map(String).includes(id)) {
+      newSelectionIds = tempSelectedIds.map(String).filter((selectedId) => selectedId !== id);
       await unAttachTagFromRecord(projectId, recordId, Number(id));
     } else {
-      newSelectionIds = [...tempSelectedIds, id];
+      newSelectionIds = [...tempSelectedIds.map(String), id];
       try {
         await attachTagToRecord(projectId, recordId, Number(id));
       } catch (error) {
         console.error("Error attaching tag to record:", error);
       }
     }
-
     setTempSelectedIds(newSelectionIds);
 
     if (onSelectionChange) {
@@ -107,7 +105,7 @@ const TagButton: React.FC<TagButtonProps> = ({
                 <input
                   type="checkbox"
                   className="checkbox checkbox-primary"
-                  checked={tempSelectedIds.includes(tag.id.toString())}
+                  checked={tempSelectedIds.map(String).includes(tag.id.toString())}
                   onChange={() => toggleTag(tag.id.toString())}
                 />
                 <span className="label-text" ref={tag.id === filteredTags[0]?.id ? longestNameRef : null}>
@@ -117,15 +115,9 @@ const TagButton: React.FC<TagButtonProps> = ({
             ))}
           </div>
           <div className="flex flex-row items-center gap-2 my-4">
-            {/* <button
-              className="flex items-center justify-center rounded-md bg-primary text-white cursor-pointer"
-              onClick={() => setIsOpen(!isOpen)}
-            >
-              <span className="flex p-2">Create Tag</span>
-            </button> */}
             <button
               onClick={() => setIsTagModalOpen(true)}
-              className="btn btn-outline btn-secondary btn-sm flex-1 sm:flex-initial"
+              className="btn btn-primary btn-sm flex-1 sm:flex-initial"
             >
               <PlusIcon className="size-5" />
               <span>{t.translations.TAG}</span>
@@ -136,8 +128,11 @@ const TagButton: React.FC<TagButtonProps> = ({
 
       )}
       <AddTagModal
+        projectId={projectId}
         isOpen={isTagModalOpen}
-        onClose={() => setIsTagModalOpen(false)}
+        onClose={() => {
+          setIsTagModalOpen(false)
+        }}
       />
     </div>
   );

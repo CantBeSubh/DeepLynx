@@ -145,6 +145,7 @@ export default function RecordViewClient({
           setRecord(data);
           if (data.tags) {
             const tags = JSON.parse(data.tags);
+
             setSelectedTags(tags);
             setSelectedIds(tags.map((tag: { id: string }) => tag.id));
           }
@@ -420,7 +421,6 @@ export default function RecordViewClient({
     {
       label: "Class Name",
       value: record.className,
-      // editable: true, I dont see a className being returned form the BE
       onEdit: async (newValue: string) => {
         try {
           const update = await updateRecord(
