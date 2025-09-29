@@ -68,15 +68,15 @@ export default function Signin() {
       <main className="flex flex-col items-center w-full max-w-lg mt-0 mb-2">
         <div className="w-full p-2 bg-white border-2 border-solid rounded-3xl">
           <div className="fieldset m-5">
-            {/* <h2 className="text-sm text-center text-slate-800">
+            <h2 className="text-sm text-center text-slate-800">
               {t.translations.USERNAME}
-            </h2> */}
-            {/* <div className="flex flex-col items-center">
+            </h2>
+            <div className="flex flex-col items-center">
               <label className="w-5/6 h-15 mb-2 bg-white border-black input">
                 <input type="text" className="text-black" />
               </label>
-            </div> */}
-            {/* <label className="text-md text-slate-800 label">
+            </div>
+            <label className="text-md text-slate-800 label">
               <input
                 type="checkbox"
                 defaultChecked={isChecked}
@@ -84,9 +84,9 @@ export default function Signin() {
                 className="checkbox w-6 h-6 appearance-none border-1 border-black rounded-md ml-9"
               />
               {t.translations.KEEP_SIGNED_IN}
-            </label> */}
+            </label>
             <div className="flex flex-col items-center mt-10">
-              {/* <Link
+              <Link
                 className="w-70 py-4 mx-5 text-sm text-center text-gray-50 bg-gray-700 border-2 border-black rounded-xl"
                 href="/"
               >
@@ -94,7 +94,7 @@ export default function Signin() {
               </Link>
               <div className="my-15 text-sm text-gray-800 divider divider-primary">
                 {t.translations.OR}
-              </div> */}
+              </div>
 
               <button
                 onClick={handleOktaSignIn}
