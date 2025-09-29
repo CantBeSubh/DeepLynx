@@ -238,8 +238,8 @@ public class TimeseriesBusiness(
             throw new ArgumentException("Only .csv and .parquet files are supported");
         }
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        
         var uploadId = Guid.NewGuid().ToString();
         var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), uploadId);
         Directory.CreateDirectory(folderPath);
@@ -260,10 +260,18 @@ public class TimeseriesBusiness(
     public async Task<string> UploadChunk(long projectId, long dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
-        var tempFilePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
-            "datasource_" + dataSourceId.ToString(), uploadId, $"{chunkNumber}.part");
+        var dataSourcePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
+            "datasource_" + dataSourceId.ToString());
+        var tempFolderPath = Path.Combine(dataSourcePath, uploadId);
+        var tempFilePath = Path.Combine(tempFolderPath, $"{chunkNumber}.part");
+        
         try
         {
+            var fileType = Path.GetExtension(chunk.FileName);
+            if (fileType != ".csv" && fileType != ".parquet")
+            {
+                throw new  ArgumentException("Only .csv and .parquet files are supported");
+            }
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
             if (chunk == null || chunk.Length == 0)
@@ -277,11 +285,15 @@ public class TimeseriesBusiness(
         }
         catch (Exception ex)
         {
-            var directory = Path.GetDirectoryName(tempFilePath);
-            Directory.Delete(directory, true);
-            directory = Path.GetDirectoryName(directory);
-            
-            CleanDirectoryUpToBasePath(directory);
+            if (Directory.Exists(tempFolderPath))
+            {
+                Directory.Delete(tempFolderPath, true);
+            }
+
+            if (Directory.Exists(dataSourcePath))
+            {
+                CleanDirectoryUpToBasePath(dataSourcePath);
+            }
             
             throw ex;
         }
@@ -307,7 +319,10 @@ public class TimeseriesBusiness(
         try
         {
             var fileType = Path.GetExtension(request.FileName);
-            
+            if (fileType != ".csv" && fileType != ".parquet")
+            {
+                throw new ArgumentException("Only .csv and .parquet files are supported");
+            }
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
             await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
             await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
@@ -428,7 +443,7 @@ public class TimeseriesBusiness(
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
             using var connection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
             var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
-                "datasource_" + dataSourceId.ToString(), "reports");
+                "datasource_" + dataSourceId.ToString());
             var filePath = Path.Combine(folderPath, fileName);
 
             try
