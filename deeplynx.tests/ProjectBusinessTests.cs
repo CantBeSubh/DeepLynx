@@ -19,6 +19,7 @@ namespace deeplynx.tests
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;
         private EventBusiness _eventBusiness = null!;
+        private RoleBusiness _roleBusiness = null!;
         private Mock<IEdgeBusiness> _mockEdgeBusiness = null!;
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
@@ -53,6 +54,7 @@ namespace deeplynx.tests
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
 
+            _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(
                 Context, _cacheBusiness, _mockEdgeBusiness.Object,
                 _mockRecordBusiness.Object, _eventBusiness);
@@ -60,8 +62,9 @@ namespace deeplynx.tests
                 Context, _cacheBusiness, _mockRecordBusiness.Object, 
                 _mockRelationshipBusiness.Object, _eventBusiness);
             _projectBusiness = new ProjectBusiness(
-                Context, _cacheBusiness, _mockLogger.Object, _classBusiness,
-                _dataSourceBusiness, _objectStorageBusiness.Object, _eventBusiness);
+                Context, _cacheBusiness, _mockLogger.Object, 
+                _classBusiness, _roleBusiness, _dataSourceBusiness, 
+                _objectStorageBusiness.Object, _eventBusiness);
         }
         
         [Fact]
@@ -101,15 +104,13 @@ namespace deeplynx.tests
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(10);
-            // three classes and a datasource will be logged before project event is logged
-            eventList[4].Should().BeEquivalentTo(new
-            {
-                ProjectId = result.Id,
-                Operation = "create",
-                EntityType = "project",
-                EntityId = result.Id,
-            });
+            eventList.Should().HaveCount(14);
+            eventList.Should().ContainSingle(e =>
+                e.ProjectId == result.Id &&
+                e.Operation == "create" &&
+                e.EntityType == "project" &&
+                e.EntityId == result.Id
+            );
         }
 
         [Fact]
@@ -132,15 +133,13 @@ namespace deeplynx.tests
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(5);
-            // three classes and a datasource will be logged before project event is logged
-            eventList[4].Should().BeEquivalentTo(new
-            {
-                ProjectId = project.Id,
-                Operation = "create",
-                EntityType = "project",
-                EntityId = project.Id,
-            });
+            eventList.Should().HaveCount(7);
+            eventList.Should().ContainSingle(e =>
+                e.ProjectId == project.Id &&
+                e.Operation == "create" &&
+                e.EntityType == "project" &&
+                e.EntityId == project.Id
+            );
         }
         
         [Fact]
@@ -164,15 +163,60 @@ namespace deeplynx.tests
             
             // Ensure that the project create event was logged
             var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(5);
-            // three classes and a datasource will be logged before project event is logged
-            eventList[4].Should().BeEquivalentTo(new
+            eventList.Should().HaveCount(7);
+            eventList.Should().ContainSingle(e =>
+                e.ProjectId == project.Id &&
+                e.Operation == "create" &&
+                e.EntityType == "project" &&
+                e.EntityId == project.Id
+            );
+        }
+        
+        [Fact]
+        public async Task CreateProject_Creates_DefaultRoles_AndPermissions()
+        {
+            // Arrange
+            var dto = new CreateProjectRequestDto
             {
-                ProjectId = project.Id,
-                Operation = "create",
-                EntityType = "project",
-                EntityId = project.Id,
-            });
+                Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Abbreviation = "TST"
+            };
+   
+            // Act
+            var project = await _projectBusiness.CreateProject(dto);
+    
+            // Assert
+            project.Name.Should().Be(dto.Name);
+    
+            // Verify default roles were created
+            // var roles = await _roleBusiness.GetAllRoles(project.Id);
+            var roles = Context.Roles.Where(r => r.ProjectId == project.Id).ToList();
+            roles.Count.Should().Be(2);
+    
+            var adminRole = roles.Single(r => r.Name == "Admin");
+            var userRole = roles.Single(r => r.Name == "User");
+    
+            adminRole.Should().NotBeNull();
+            userRole.Should().NotBeNull();
+    
+            // Verify admin role has correct permissions
+            var adminRoleWithPerms = Context.Roles
+                .Include(r => r.Permissions)
+                .Where(r => r.Id == adminRole.Id).ToList();
+            var adminPermissionsList = adminRoleWithPerms[0].Permissions.ToList();
+            adminPermissionsList.Count.Should().BeGreaterThan(0);
+            adminPermissionsList.Should().Contain(p => p.Resource == "permission" && p.Action == "write");
+            adminPermissionsList.Should().NotContain(p => p.Resource == "organization" && p.Action == "write");
+    
+            // Verify user role has correct permissions
+            var userRoleWithPerms = Context.Roles
+                .Include(r => r.Permissions)
+                .Where(r => r.Id == userRole.Id).ToList();
+            var userPermissionsList = userRoleWithPerms[0].Permissions.ToList();
+            userPermissionsList.Count.Should().BeGreaterThan(0);
+            userPermissionsList.Should().Contain(p => p.Resource == "project" && p.Action == "read");
+            userPermissionsList.Should().NotContain(p => p.Resource == "permission" && p.Action == "write");
         }
 
         [Fact]

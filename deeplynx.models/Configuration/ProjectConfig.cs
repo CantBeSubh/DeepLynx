@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace deeplynx.datalayer.Models;
+namespace deeplynx.models.Configuration;
 
 /// <summary>
 /// Configuration settings for project mutability controls.

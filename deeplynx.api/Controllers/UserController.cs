@@ -23,6 +23,7 @@ namespace deeplynx.api.Controllers
             _userBusiness = userBusiness;
             _logger = logger;
         }
+        
         /// <summary>
         /// Get all users
         /// </summary>

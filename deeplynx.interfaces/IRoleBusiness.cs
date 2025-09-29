@@ -7,6 +7,7 @@ public interface IRoleBusiness
     Task<IEnumerable<RoleResponseDto>> GetAllRoles(long? projectId, long? organizationId, bool hideArchived = true);
     Task<RoleResponseDto> GetRole(long roleId, bool hideArchived = true);
     Task<RoleResponseDto> CreateRole(CreateRoleRequestDto role, long? projectId, long? organizationId);
+    Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> dtos);
     Task<RoleResponseDto> UpdateRole(long roleId, UpdateRoleRequestDto role);
     Task<bool> ArchiveRole(long roleId);
     Task<bool> UnarchiveRole(long roleId);
@@ -15,4 +16,5 @@ public interface IRoleBusiness
     Task<bool> AddPermissionToRole(long roleId, long permissionId);
     Task<bool> RemovePermissionFromRole(long roleId, long permissionId);
     Task<bool> SetPermissionsForRole(long roleId, long[] permissionIds);
+    Task<bool> SetPermissionsByPattern(long roleId, Dictionary<string, string[]> permissionPatterns);
 }
