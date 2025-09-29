@@ -8,6 +8,7 @@ using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using deeplynx.business;
+using NpgsqlTypes;
 
 namespace deeplynx.business;
 
@@ -37,7 +38,7 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch = null)
+    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
         if (request == null)
         {
@@ -63,10 +64,17 @@ public class QueryBusiness : IQueryBusiness
                     hr.record_id as RecordId,
                     hr.is_archived as IsArchived
                 FROM deeplynx.historical_records hr
-                WHERE hr.is_archived = false";
+                WHERE hr.is_archived = false
+                AND hr.project_id = ANY(@projectIds)";
 
             var parameters = new List<NpgsqlParameter>();
             var conditions = new List<string>();
+            var projectIdsParam = new NpgsqlParameter("projectIds", NpgsqlDbType.Array | NpgsqlDbType.Bigint)
+            {
+                Value = projectIds
+            };
+            parameters.Add(projectIdsParam);
+
 
             // Build individual conditions
             if (request?.Length > 0)
@@ -243,7 +251,7 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery, long[] projectIds)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
@@ -266,7 +274,7 @@ public class QueryBusiness : IQueryBusiness
             hr.is_archived as IsArchived
         FROM deeplynx.historical_records hr
         WHERE hr.is_archived = false
-        AND hr.project_id in (@project_id)
+        AND hr.project_id = ANY(@project_ids)
         AND to_tsvector('english',
                 coalesce(name, '') || ' ' ||
                 coalesce(description, '') || ' ' ||
@@ -281,11 +289,11 @@ public class QueryBusiness : IQueryBusiness
         ORDER BY hr.record_id, hr.last_updated_at DESC";
 
         var param = new NpgsqlParameter("query", userQuery);
-
-        // var results = await _context.Database
-        //     .SqlQueryRaw<HistoricalRecordResponseDto>(sql, param)
-        //     .ToListAsync();
-        var results = _context.HistoricalRecords.FromSqlRaw(sql, param);
+        var param2 = new NpgsqlParameter("project_ids", NpgsqlDbType.Array | NpgsqlDbType.Bigint)
+        {
+            Value = projectIds
+        };
+        var results = _context.HistoricalRecords.FromSqlRaw(sql, param, param2);
         
         return results
             .Select(r => new HistoricalRecordResponseDto

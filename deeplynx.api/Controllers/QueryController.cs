@@ -38,11 +38,11 @@ namespace deeplynx.api.Controllers
         /// <returns>List of historical record response DTOs</returns>
         [HttpGet("Filter", Name = "api_filter_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
-            [FromQuery] string userQuery)
+            [FromQuery] string userQuery, [FromQuery] long[] projectIds)
         {
             try
             {
-                var records = await _queryBusiness.Search(userQuery);
+                var records = await _queryBusiness.Search(userQuery, projectIds);
                 return Ok(records);
             }
             catch (Exception exc)
@@ -63,11 +63,11 @@ namespace deeplynx.api.Controllers
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("QueryBuilder", Name = "api_query_builder_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
-            [FromQuery] string? textSearch, [FromBody] CustomQueryRequestDto[] filterArray)
+            [FromQuery] string? textSearch, [FromQuery] long[] projectIds, [FromBody] CustomQueryRequestDto[] filterArray)
         {
             try
             {
-                var records = _queryBusiness.QueryBuilder(filterArray, textSearch);
+                var records = _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
                 return Ok(records);
             }
             catch (Exception exc)
