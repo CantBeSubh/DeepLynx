@@ -47,6 +47,7 @@ RUN npm install
 
 # Copy the rest of the frontend source code
 COPY deeplynx.UI .
+RUN rm -rf ./src/docs
 
 # Build the frontend
 RUN npm run build

@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -6,6 +7,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects")]
+    [NexusAuthorize]
     public class ProjectController : ControllerBase
     {
         private readonly IProjectBusiness _projectBusiness;
@@ -25,15 +27,19 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all projects
         /// </summary>
+        /// <param name="organizationId">(Optional)ID of an organization to filter by</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects", Name = "api_get_all_projects")]
-        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects([FromQuery] bool hideArchived = true)
+        public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects(
+            [FromQuery] long? organizationId,
+            [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var projects = await _projectBusiness.GetAllProjects(hideArchived);
+                var projects = await _projectBusiness
+                    .GetAllProjects(organizationId, hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)
@@ -47,7 +53,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get a project
         /// </summary>
-        /// <param name="projectId">THe ID by which to retrieve the project</param>
+        /// <param name="projectId">The ID by which to retrieve the project</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}", Name = "api_get_a_project")]
@@ -214,6 +220,84 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing records: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Add User or Group to Project
+        /// </summary>
+        /// <param name="projectId">ID of project</param>
+        /// <param name="roleId">(Optional) ID of member role</param>
+        /// <param name="userId">ID of user if user is member</param>
+        /// <param name="groupId">ID of group if group is member</param>
+        /// <returns></returns>
+        [HttpPost("AddMemberToProject", Name = "api_add_member_to_project")]
+        public async Task<ActionResult> AddMemberToProject(
+            [FromQuery] long projectId, [FromQuery] long? roleId, 
+            [FromQuery] long? userId, [FromQuery] long? groupId)
+        {
+            try
+            {
+                await _projectBusiness.AddMemberToProject(projectId, roleId, userId, groupId);
+                return Ok(new { message = $"Added member to project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while adding member to project {projectId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Update Member Role in Project
+        /// </summary>
+        /// <param name="projectId">ID of project</param>
+        /// <param name="roleId">ID of role</param>
+        /// <param name="userId">ID of user if user is member</param>
+        /// <param name="groupId">ID of group if group is member</param>
+        /// <returns></returns>
+        [HttpPut("UpdateProjectMemberRole", Name = "api_update_project_member_role")]
+        public async Task<ActionResult> UpdateProjectMemberRole(
+            [FromQuery] long projectId, [FromQuery] long roleId, 
+            [FromQuery] long? userId, [FromQuery] long? groupId)
+        {
+            try
+            {
+                await _projectBusiness.UpdateProjectMemberRole(projectId, roleId, userId, groupId);
+                return Ok(new { message = $"Updated member role in project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while updating member role in project {projectId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Remove User or Group from Project
+        /// </summary>
+        /// <param name="projectId">ID of the project</param>
+        /// <param name="userId">ID of the user if user is member</param>
+        /// <param name="groupId">ID of the group if group is member</param>
+        /// <returns></returns>
+        [HttpDelete("RemoveMemberFromProject", Name = "api_remove_member_from_project")]
+        public async Task<ActionResult> RemoveMemberFromProject(
+            [FromQuery] long projectId,
+            [FromQuery] long? userId, 
+            [FromQuery] long? groupId)
+        {
+            try
+            {
+                await _projectBusiness.RemoveMemberFromProject(projectId, userId, groupId);
+                return Ok(new { message = $"Removed member from project {projectId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while removing member from project {projectId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

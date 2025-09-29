@@ -4,7 +4,9 @@ metadata:
   name: deeplynxv3-dev
   labels:
     name: deeplynxv3-dev
+
 ---
+
 # Storage Class for DuckDB Azure Files
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
@@ -28,6 +30,7 @@ mountOptions:
 volumeBindingMode: Immediate
 
 ---
+
 # Persistent Volume Claim for DuckDB storage
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -43,6 +46,7 @@ spec:
   storageClassName: azurefile-duckdb
 
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -80,11 +84,31 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            - name: JWT_ISSUER
+              value: ${JWT_ISSUER}
+            - name: JWT_AUDIENCE
+              value: ${JWT_AUDIENCE}
             # DuckDB Configuration
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
+            - name: SMTP_SERVER
+              value: ${SMTP_SERVER}
+            - name: SMTP_PORT
+              value: ${SMTP_PORT}
+            - name: SMTP_ENABLE_SSL
+              value: ${SMTP_ENABLE_SSL}
+            - name: FROM_EMAIL
+              value: ${FROM_EMAIL}
+            - name: FROM_NAME
+              value: ${FROM_NAME}
+            - name: INVITE_URL
+              value: ${INVITE_URL}
+            - name: SUPPORT_EMAIL
+              value: ${SUPPORT_EMAIL}
+            - name: NEXT_PUBLIC_DOCS_PATH
+              value: "/docs"
+            - name: TENANT_MODE
+              value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -154,6 +178,7 @@ spec:
             claimName: deeplynx-duckdb-pvc
 
 ---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -191,11 +216,29 @@ spec:
               value: ${POSTGRES_USER}
             - name: POSTGRES_PASSWORD
               value: ${POSTGRES_PASSWORD}
+            - name: JWT_ISSUER
+              value: ${JWT_ISSUER}
+            - name: JWT_AUDIENCE
+              value: ${JWT_AUDIENCE}
             # DuckDB Configuration (same as frontend)
             - name: DUCKDB_BASE_PATH
               value: ${DUCKDB_BASE_PATH}
-            # - name: TENANT_MODE
-            #   value: ${TENANT_MODE}
+            - name: SMTP_SERVER
+              value: ${SMTP_SERVER}
+            - name: SMTP_PORT
+              value: ${SMTP_PORT}
+            - name: SMTP_ENABLE_SSL
+              value: ${SMTP_ENABLE_SSL}
+            - name: FROM_EMAIL
+              value: ${FROM_EMAIL}
+            - name: FROM_NAME
+              value: ${FROM_NAME}
+            - name: INVITE_URL
+              value: ${INVITE_URL}
+            - name: SUPPORT_EMAIL
+              value: ${SUPPORT_EMAIL}
+            - name: TENANT_MODE
+              value: ${TENANT_MODE}
             # Backend may also need these environment variables
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -257,6 +300,38 @@ spec:
             claimName: deeplynx-duckdb-pvc
 
 ---
+
+#docs
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deeplynx-docs
+  namespace: deeplynxv3-dev
+spec:
+  selector:
+    matchLabels:
+      app: deeplynx-docs
+  template:
+    metadata:
+      labels:
+        app: deeplynx-docs
+    spec:
+      containers:
+        - name: deeplynxv3
+          image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-docs-${GITHUB_RUN_NUMBER}
+          imagePullPolicy: Always
+          env:
+            - name: NEXT_PUBLIC_BASE_PATH
+              value: "/docs"
+          resources:
+            limits:
+              memory: "4Gi"
+              cpu: "1500m"
+          ports:
+            - containerPort: 3001
+
+---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -272,6 +347,7 @@ spec:
     app: deeplynxv3
 
 ---
+
 apiVersion: v1
 kind: Service
 metadata:
@@ -287,6 +363,23 @@ spec:
     app: deeplynxbackend
 
 ---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: deeplynxv3-docs-service
+  namespace: deeplynxv3-dev
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3001
+  selector:
+    app: deeplynx-docs
+
+---
+
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -315,7 +408,7 @@ metadata:
         }
 spec:
   rules:
-    - host: nexus.dev.inl.gov
+    - host: deeplynx.dev.inl.gov
       http:
         paths:
           - path: /
@@ -339,7 +432,16 @@ spec:
                 name: deeplynxv3-service
                 port:  
                   number: 80 
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:  
+                name: deeplynxv3-docs-service
+                port:  
+                  number: 80 
+
 ---
+
 # # Database if needed for deployment
 # Dummy change to force build.
 # apiVersion: apps/v1

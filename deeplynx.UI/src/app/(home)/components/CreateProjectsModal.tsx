@@ -70,15 +70,10 @@ const CreateProject = ({
       {/* Render the modal dialog if isOpen is true */}
       {isOpen && (
         <dialog className="modal modal-open">
-          {" "}
-          {/* Modal dialog with styles */}
           <div className="modal-box max-w-lg">
-            {" "}
-            {/* Box for modal content with max width */}
-            <h3 className="font-bold text-lg mb-4 text-neutral">
+            <h3 className="font-bold text-lg mb-4 text-base-content">
               {t.translations.CREATE_PROJECT}
             </h3>
-            {/* Form for creating a new project */}
             <form
               method="dialog"
               className="flex flex-col gap-4"
@@ -90,54 +85,30 @@ const CreateProject = ({
               <input
                 type="text"
                 placeholder={t.translations.NAME}
-                className="input input-primary w-full"
+                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
-              <input
-                type="text"
-                placeholder={t.translations.ABBREVIATION}
-                className="input input-primary w-full"
-                value={abbreviation}
-                onChange={(e) => setAbbreviation(e.target.value)}
-              />
               <textarea
                 placeholder={t.translations.DESCRIPTION} // Placeholder for project description
-                className="textarea textarea-primary w-full" // Textarea styling
+                className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              {/* <div className="bg-base-200 p-4 rounded-xl">
-                {" "}
-               
-                <label className="form-control">
-                  <span className="label-text text-neutral">
-                    Upload .owl file (optional) 
-                  </span>
-                  <input
-                    type="file" // File input for uploading .owl files
-                    className="file-input file-input-primary text-neutral w-full" // File input styling
-                  />
-                </label>
-              </div> */}
 
-              {/* Help text with a link to the Wiki */}
-              <p className="cursor-pointer text-xs text-neutral">
-                {t.translations.NEED_HELP}{" "}
-                <a className="link">{t.translations.WIKI}</a>
-              </p>
-              {/* Modal Action Buttons */}
-              <div className="modal-action">
-                <button className="btn" onClick={onClose}>
-                  {" "}
-                  {/* Cancel button calls onClose */}
+              {/* Modal Actions */}
+              <div className="modal-action mt-6">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={onClose}
+                >
                   {t.translations.CANCEL}
                 </button>
                 <button type="submit" className="btn btn-primary">
                   {t.translations.CREATE}
-                </button>{" "}
-                {/* Save button for saving the project */}
+                </button>
               </div>
             </form>
           </div>

@@ -17,13 +17,13 @@ public partial class ProjectMember
 {
     [Key]
     [Column("id")]
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     [Column("project_id")]
     public long ProjectId { get; set; }
 
     [Column("role_id")]
-    public long RoleId { get; set; }
+    public long? RoleId { get; set; }
 
     [Column("group_id")]
     public long? GroupId { get; set; }

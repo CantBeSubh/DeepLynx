@@ -398,7 +398,7 @@ import {
   UsersIcon,
   UserGroupIcon,
   ShieldCheckIcon,
-  UserPlusIcon
+  UserPlusIcon,
 } from "@heroicons/react/24/outline";
 
 // Define the props for the SideMenu component
@@ -469,7 +469,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     setIsMemberManagementExpanded(!isMemberManagementExpanded);
     setSelectedItem("/member_management");
     router.push("/member_management");
-};
+  };
 
   // Function to handle item click events
   const handleItemClick = (
@@ -545,9 +545,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <li className="mt-2">
             <div className="flex items-center">
               <Link
-                href={"/upload_center"}
+                href={"#"}
                 onClick={toggleMemberManagement}
-                className={getItemClass("/upload_center")}
+                className={getItemClass("/member_management")}
               >
                 <AdjustmentsHorizontalIcon className="size-6" />
                 {!isCollapsed && (
@@ -560,7 +560,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 <li className="mt-2">
                   <Link
                     href="/project_settings/members/users"
-                    onClick={(e) => handleItemClick("/project_settings/members/users", e)}
+                    onClick={(e) =>
+                      handleItemClick("/project_settings/members/users", e)
+                    }
                     className={getItemClass("/project_settings/members/users")}
                   >
                     <UserPlusIcon className="size-6" />
@@ -572,7 +574,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 <li className="mt-2">
                   <Link
                     href="/project_settings/members/groups"
-                    onClick={(e) => handleItemClick("/project_settings/members/groups", e)}
+                    onClick={(e) =>
+                      handleItemClick("/project_settings/members/groups", e)
+                    }
                     className={getItemClass("/project_settings/members/groups")}
                   >
                     <UsersIcon className="size-6" />
@@ -584,8 +588,15 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 <li className="mt-2">
                   <Link
                     href="/project_settings/members/organizations"
-                    onClick={(e) => handleItemClick("/project_settings/members/organizations", e)}
-                    className={getItemClass("/project_settings/members/organizations")}
+                    onClick={(e) =>
+                      handleItemClick(
+                        "/project_settings/members/organizations",
+                        e
+                      )
+                    }
+                    className={getItemClass(
+                      "/project_settings/members/organizations"
+                    )}
                   >
                     <UserGroupIcon className="size-6" />
                     {!isCollapsed && (
@@ -659,7 +670,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 <li className="mt-2">
                   <Link
                     href="/project_settings/members"
-                    onClick={(e) => handleItemClick("/project_settings/members", e)}
+                    onClick={(e) =>
+                      handleItemClick("/project_settings/members", e)
+                    }
                     className={getItemClass("/project_settings/members")}
                   >
                     <UsersIcon className="size-6" />
@@ -692,6 +705,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
+                href={ process.env.NEXT_PUBLIC_DOCS_PATH ? `${process.env.NEXT_PUBLIC_DOCS_PATH}` : "http://localhost:3001" }
+                /*
                 href="#"
                 prefetch={false}
                 onClick={(e) => {
@@ -699,6 +714,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                   // open modal / external
                 }}
                 // onClick={(e) => handleItemClick("/help", e)}
+                */
                 className={getItemClass("/help")}
               >
                 <QuestionMarkCircleIcon className="size-6" />

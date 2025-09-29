@@ -40,41 +40,49 @@ const ProjectOverviewWidget = () => {
       <h2 className="card-title">{t.translations.PROJECT_OVERVIEW}</h2>
       <div className="stats shadow">
         <div className="stat">
-          <div className="stat-title text-secondary">
+          <div className="stat-title text-base-content">
             {t.translations.LINKED_SOURCES}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <LinkIcon className="size-7 mr-2" />
-            {stats?.linkedSources ? stats.linkedSources : 0}
+            <div className="text-base-content">
+              {stats?.linkedSources ? stats.linkedSources : 0}
+            </div>
           </div>
         </div>
         <div className="stat">
-          <div className="stat-title text-secondary">
+          <div className="stat-title text-base-content">
             {t.translations.DATA_RECORD}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <CircleStackIcon className="size-8 mr-2" />
-            {stats?.records ? stats.records : 0}
+            <div className="text-base-content">
+              {stats?.records ? stats.records : 0}
+            </div>
           </div>
         </div>
       </div>
       <div className="stats shadow">
         <div className="stat">
-          <div className="stat-title text-secondary">
+          <div className="stat-title text-base-content">
             {t.translations.CLASSES}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <RectangleGroupIcon className="size-8 mr-2" />
-            {stats?.classes ? stats.classes : 0}
+            <div className="text-base-content">
+              {stats?.classes ? stats.classes : 0}
+            </div>
           </div>
         </div>
         <div className="stat">
-          <div className="stat-title text-secondary">
+          <div className="stat-title text-base-content">
             {t.translations.CONNECTIONS}
           </div>
           <div className="stat-value text-secondary flex items-center">
             <ArrowsRightLeftIcon className="size-8 mr-2" />
-            {stats?.connections ? stats.connections : 0}
+            <div className="text-base-content">
+              {stats?.connections ? stats.connections : 0}
+            </div>
           </div>
         </div>
       </div>

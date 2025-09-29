@@ -2,11 +2,13 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.business;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/datasources")]
+    [NexusAuthorize]
     public class DataSourceController : ControllerBase
     {
         private readonly IDataSourceBusiness _dataSourceBusiness;
@@ -26,16 +28,16 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all data sources
         /// </summary>
-        /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
+        /// <param name="projectId">The ID of the project whose data sources are to be retrieved</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result (Default true)</param>
         /// <returns>A list of data sources for the given project.</returns>
         [HttpGet("GetAllDataSources", Name = "api_get_all_data_sources")]
-        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(
-           [FromBody] long[] projectIds, bool hideArchived = true)
+        public async Task<ActionResult<IEnumerable<DataSourceResponseDto>>> GetAllDataSources(long projectId, 
+           [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectIds, hideArchived);
+                var dataSources = await _dataSourceBusiness.GetAllDataSources(projectId, hideArchived);
                 return Ok(dataSources);
             }
             catch (Exception exc)

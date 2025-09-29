@@ -5,6 +5,8 @@
 *.log
 *.zip
 dist
+**/.next
+**/_pagefind/
 
 ## Mac OS ##
 *.DS_Store

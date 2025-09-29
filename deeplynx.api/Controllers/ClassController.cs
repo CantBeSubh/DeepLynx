@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -14,6 +15,7 @@ namespace deeplynx.api.Controllers
 
     [ApiController]
     [Route("api/projects/{projectId}/classes")]
+    [NexusAuthorize]
     public class ClassController : ControllerBase
     {
         private readonly IClassBusiness _classBusiness;
@@ -32,7 +34,7 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all classes
         /// </summary>
-        /// <param name="projectIds">The IDs of the projects to which the class belongs</param>
+        /// <param name="projectId">The ID of the project to which the class belongs</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result (Default true)</param>
         /// <returns>List of class response DTOs</returns>
         [HttpGet("GetAllClasses", Name = "api_get_all_classes")]
@@ -42,7 +44,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var classes = await _classBusiness.GetAllClasses(new[] { projectId }, hideArchived);
+                var classes = await _classBusiness.GetAllClasses(projectId, hideArchived);
                 return Ok(classes);
             }
             catch (Exception exc)

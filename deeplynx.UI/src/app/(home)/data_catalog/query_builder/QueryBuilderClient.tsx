@@ -9,12 +9,9 @@ import AdvancedSearchBar from "../../components/AdvancedSearchBar";
 import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
-import { getClassesForProjects } from "@/app/lib/class_services client";
-import { getDataSourcesForProjects } from "@/app/lib/data_source_services.client";
-import { getTagsForProjects } from "@/app/lib/tag_services.client";
+import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
-
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -33,14 +30,14 @@ export type Query = {
 };
 
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "" } });
+const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
 
 export default function QueryBuilderClient({
   initialProjects,
   initialSelectedProjects,
   initialSearchTerm,
   connectors = ["AND", "OR"], //TODO: Add NOT
-  filters = [{ name: "Class", value: "ClassName" }, { name: "Tag", value: "Tags" }, { name: "Original Data ID", value: "OriginalId" }, { name: "Data Source", value: "DataSourceName" }, { name: "Properties", value: "Properties" }],
+  filters = [{ name: "Class", value: "class_name" }, { name: "Tag", value: "tags" }, { name: "Original Data ID", value: "original_id" }, { name: "Time Range", value: "last_updated_at" }, { name: "Data Source", value: "data_source_name" }, { name: "Properties", value: "properties" }],
   operators = ["=", "<", ">", "LIKE", "KEY_VALUE"],
   values = [],
   queriedRecords
@@ -59,8 +56,6 @@ export default function QueryBuilderClient({
   const [isLoadingDataSources, setIsLoadingDataSources] = useState(false);
   const [isLoadingTags, setIsLoadingTags] = useState(false);
   const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
-
-
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
   const [rows, setRows] = useState<Query[]>([emptyRow()]);
@@ -95,7 +90,7 @@ export default function QueryBuilderClient({
     async function loadClasses() {
       try {
         setIsLoadingClasses(true);
-        const data = await getClassesForProjects(currentProjectId, selectedProjects);
+        const data = await getClassesForProjects(selectedProjects);
         setClasses(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -115,7 +110,7 @@ export default function QueryBuilderClient({
     async function loadDataSources() {
       try {
         setIsLoadingDataSources(true);
-        const data = await getDataSourcesForProjects(currentProjectId, selectedProjects);
+        const data = await getDataSourcesForProjects(selectedProjects);
         setDataSources(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -134,7 +129,7 @@ export default function QueryBuilderClient({
     async function loadTags() {
       try {
         setIsLoadingTags(true);
-        const data = await getTagsForProjects(currentProjectId, selectedProjects);
+        const data = await getTagsForProjects(selectedProjects);
         setTags(data);
       } catch (error) {
         console.error("Failed to fetch classes:", error);
@@ -150,18 +145,34 @@ export default function QueryBuilderClient({
     }
   }, [hasLoaded, currentProjectId, selectedProjects]);
 
+  const hasValidQueries = (): boolean => {
+    const queryDtos = rows.map(r => r.query);
+    return queryDtos.some(query => {
+      return (query.filter !== "") || (query.operator !== "") || (query.value !== "") || (query.jsonKey !== "") || (query.jsonValue !== "");
+    });
+  };
+
+
   const handleSubmit = async () => {
     try {
       const queryDtos = rows.map(r => r.query);
-      const data = await queryBuilder(queryDtos, searchTerm);
-      if (data) {
-        setQueriedRecords(data);
+      if (hasValidQueries()) {
+        const data = await queryBuilder(queryDtos, searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
+      } else {
+        const data = await fullTextSearch(searchTerm);
+        if (data) {
+          setQueriedRecords(data);
+        }
       }
     } catch (error) {
       console.error("Failed to send query")
     }
 
   };
+
 
   return (
     <div>
@@ -223,6 +234,7 @@ export default function QueryBuilderClient({
                               },
                             })
                           }
+                          disabled={idx === 0 && !searchTerm.trim()} // Disable for first row when no search term
                         >
                           <option value="" disabled>
                             {t.translations.CONNECTOR}
@@ -247,18 +259,18 @@ export default function QueryBuilderClient({
                               },
                             });
 
-                            if (value === "ClassName") {
-                              getClassesForProjects(currentProjectId, selectedProjects)
+                            if (value === "class_name") {
+                              getClassesForProjects(selectedProjects)
                                 .then(setClasses)
                                 .catch((err: Error) => console.error("Failed to fetch classes:", err));
                             }
-                            if (value === "DataSourceName") {
-                              getDataSourcesForProjects(currentProjectId, selectedProjects)
+                            if (value === "data_source_name") {
+                              getDataSourcesForProjects(selectedProjects)
                                 .then(setDataSources)
                                 .catch((err: Error) => console.error("Failed to fetch datasources:", err));
                             }
-                            if (value === "Tags") {
-                              getTagsForProjects(currentProjectId, selectedProjects)
+                            if (value === "tags") {
+                              getTagsForProjects(selectedProjects)
                                 .then(setTags)
                                 .catch((err) => console.error("Failed to fetch tags:", err));
                             }
@@ -297,14 +309,14 @@ export default function QueryBuilderClient({
                           {operators
                             // filter logic
                             .filter((opt) => {
-                              if (row.query.filter === "Properties") {
+                              if (row.query.filter === "properties") {
                                 return opt === "KEY_VALUE";
                               }
-                              if (row.query.filter === "Time Range") {
+                              if (row.query.filter === "last_updated_at") {
                                 return opt === "<" || opt === ">" || opt === '='; // only show < or >
                               }
-                              if (row.query.filter === "ClassName" || row.query.filter === "OriginalId" || row.query.filter === "DataSourceName" || row.query.filter === "Tags") {
-                                return opt !== "<" && opt !== ">" && opt !== 'KEY'; // hide < and >
+                              if (row.query.filter === "class_name" || row.query.filter === "original_id" || row.query.filter === "data_source_name" || row.query.filter === "tags") {
+                                return opt !== "<" && opt !== ">" && opt !== 'KEY_VALUE'; // hide < and >
                               }
                               return true; // otherwise allow all
                             })
@@ -317,27 +329,54 @@ export default function QueryBuilderClient({
 
                         {/* Text input for Property Field; select for others (except Time Range) */}
                         {/* Value */}
-                        {row.query.filter !== "Time Range" && (
-                          (row.query.filter === "Properties" || row.query.filter === "OriginalId") ? (
-                            <input
-                              type="text"
-                              className="input input-sm input-bordered w-full"
-                              value={
-                                row.query.filter === "Properties"
-                                  ? (row.query.json ?? "")
-                                  : (row.query.value ?? "")
-                              }
-                              onChange={(e) => updateRow(row.id, {
-                                query: {
-                                  ...row.query,
-                                  ...(row.query.filter === "Properties"
-                                    ? { json: e.target.value }
-                                    : { value: e.target.value }),
-                                },
-                              })}
-                              placeholder={t.translations.VALUE}
-                            />
-                          ) : (
+                        {row.query.filter !== "last_updated_at" && (
+                          (row.query.filter === "properties" || row.query.filter === "original_id") ? (
+                            (row.query.filter === "properties") ? (
+                              <div className="grid grid-cols-2 gap-2 w-full">
+                                <input
+                                  type="text"
+                                  className="input input-sm input-bordered w-full"
+                                  value={row.query.jsonKey ?? ""}
+                                  onChange={(e) =>
+                                    updateRow(row.id, {
+                                      query: {
+                                        ...row.query,
+                                        jsonKey: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  placeholder={"Key"}
+                                />
+
+                                <input
+                                  type="text"
+                                  className="input input-sm input-bordered w-full"
+                                  value={row.query.jsonValue ?? ""}
+                                  onChange={(e) =>
+                                    updateRow(row.id, {
+                                      query: {
+                                        ...row.query,
+                                        jsonValue: e.target.value,
+                                      },
+                                    })
+                                  }
+                                  placeholder={"Value"}
+                                />
+                              </div>
+                            ) : (
+                              <input
+                                type="text"
+                                className="input input-sm input-bordered w-full"
+                                value={row.query.value ?? ""}
+                                onChange={(e) => updateRow(row.id, {
+                                  query: {
+                                    ...row.query,
+                                    value: e.target.value
+                                  },
+                                })}
+                                placeholder={t.translations.VALUE}
+                              />
+                            )) : (
                             <select
                               className="select select-sm select-bordered w-full"
                               value={row.query.value}
@@ -348,14 +387,14 @@ export default function QueryBuilderClient({
                                 },
                               })}
                               disabled={
-                                (row.query.filter === "ClassName" && isLoadingClasses) ||
-                                (row.query.filter === "DataSourceName" && isLoadingDataSources) ||
-                                (row.query.filter === "Tags" && isLoadingTags)
+                                (row.query.filter === "class_name" && isLoadingClasses) ||
+                                (row.query.filter === "data_source_name" && isLoadingDataSources) ||
+                                (row.query.filter === "tags" && isLoadingTags)
                               }
                             >
                               <option value="" disabled>{t.translations.VALUE}</option>
 
-                              {row.query.filter === "ClassName" ? (
+                              {row.query.filter === "class_name" ? (
                                 classes.length ? (
                                   classes.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -367,7 +406,7 @@ export default function QueryBuilderClient({
                                     {isLoadingClasses ? "Loading classes..." : "No classes found"}
                                   </option>
                                 )
-                              ) : row.query.filter === "DataSourceName" ? (
+                              ) : row.query.filter === "data_source_name" ? (
                                 datasources.length ? (
                                   datasources.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -379,7 +418,7 @@ export default function QueryBuilderClient({
                                     {isLoadingDataSources ? "Loading datasources..." : "No datasources found"}
                                   </option>
                                 )
-                              ) : row.query.filter === "Tags" ? (
+                              ) : row.query.filter === "tags" ? (
                                 tags.length ? (
                                   tags.map((opt) => (
                                     <option key={opt.id} value={opt.name}>
@@ -403,14 +442,14 @@ export default function QueryBuilderClient({
                         )}
 
                         {/* Time Range*/}
-                        {row.query.filter === "Time Range" ? (
+                        {row.query.filter === "last_updated_at" ? (
                           <DatePicker
                             row={row}
                             onChange={(dateTime: string) =>
                               updateRow(row.id, {
                                 query: {
                                   ...row.query,
-                                  connector: dateTime,
+                                  value: dateTime,
                                 },
                               }) // store datetime in row.value
                             }
@@ -451,40 +490,40 @@ export default function QueryBuilderClient({
               </div>
             </div>
             {/* Other search controls */}
-            <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
-              <div className="p-6 text-sm">Other Search Controls and Options</div>
+            {/* <div className="max-h-60 shadow-md w-1/4 text-info-content rounded-lg flex flex-col">
+              <div className="p-6 text-sm">Other Search Controls and Options</div> */}
 
-              {/* Saved searches */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Saved searches */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to saved searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <PlusCircleIcon className="w-4 h-4" />
                 </button>
-              </div>
+              </div> */}
 
-              {/* Favorites */}
-              <div className="flex items-center justify-between text-xs px-6">
+            {/* Favorites */}
+            {/* <div className="flex items-center justify-between text-xs px-6">
                 <span className="hidden sm:inline">Add to favorites searches</span>
                 <button onClick={reset} className="btn btn-ghost btn-sm">
                   <StarIcon className="w-4 h-4" />
                 </button>
               </div>
-            </div>
+            </div> */}
 
 
           </div>
           {/* Submit search */}
-          <div className="grid justify-items-end p-4">
-            <button onClick={handleSubmit} className="btn btn-primary btn-sm">Search Records
+          <div className="grid justify-items-start p-4">
+            <button onClick={handleSubmit} className="btn btn-primary btn-sm" disabled={!searchTerm && !hasValidQueries()}>{t.translations.SEARCH_RECORDS}
             </button>
           </div>
         </div>
       </div>
-      {records &&
-        <ListView
-          data={records}
-        />
-      }
+      {records && records?.length > 0 ? (
+        <ListView data={records} />
+      ) : (records &&
+        <div className="p-10">{t.translations.NO_RECORDS}</div>
+      )}
     </div>
   );
 }
