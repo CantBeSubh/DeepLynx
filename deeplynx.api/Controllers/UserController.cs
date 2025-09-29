@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -6,6 +7,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/user")]
+    [NexusAuthorize]
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
@@ -169,50 +171,6 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         
-        }
-        
-        /// <summary>
-        /// Add user to project
-        /// </summary>
-        /// <param name="userId">Id of user to be added</param>
-        /// /// <param name="projectId">Id of project to add user to</param>
-        /// <returns>Success message</returns>
-        [HttpPost("AddUserToProject", Name = "api_add_user_to_project")]
-        public async Task<IActionResult> AddUserToProject(long userId, long projectId)
-        {
-            try
-            { 
-                await _userBusiness.AddUserToProject(userId, projectId);
-                return Ok(new { message = $"Added user {userId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while adding user {userId} to project {projectId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-        
-        /// <summary>
-        /// Remove user from project
-        /// </summary>
-        /// <param name="userId">Id of user to be removed</param>
-        /// /// <param name="projectId">Id of project to remove user from</param>
-        /// <returns>Success message</returns>
-        [HttpPost("RemoveUserFromProject", Name = "api_remove_user_from_project")]
-        public async Task<IActionResult> RemoveUserFromProject(long userId, long projectId)
-        {
-            try
-            { 
-                await _userBusiness.RemoveUserFromProject(userId, projectId);
-                return Ok(new { message = $"Removed user {userId} from project {projectId}" });
-            }
-            catch (Exception exc)
-            {
-                var message = $"An error occurred while removing user {userId} from project {projectId}: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
         }
         
         /// <summary>
