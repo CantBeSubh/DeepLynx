@@ -133,7 +133,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: app-config
-                  key: disabled_front_auth
+                  key: disabled-front-auth
             - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:
@@ -261,7 +261,7 @@ spec:
               valueFrom:
                 configMapKeyRef:
                   name: app-config
-                  key: disabled_front_auth
+                  key: disabled-front-auth
             - name: OKTA_CLIENT_ID
               valueFrom:
                 configMapKeyRef:

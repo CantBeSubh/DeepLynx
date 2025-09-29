@@ -114,7 +114,7 @@ jobs:
             --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
-            --from-literal=disabled_front_auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
+            --from-literal=disabled-front-auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Overwrites ${VARIABLES} in the kube manifest with secrets
