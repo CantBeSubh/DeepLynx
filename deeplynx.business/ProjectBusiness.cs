@@ -34,6 +34,8 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
+    /// <param name="logger">Used for uniformity in logging</param>
+    /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
         DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, 
         IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
@@ -50,31 +52,39 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Retrieves all projects
     /// </summary>
+    /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
-    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(bool hideArchived)
+    public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(
+        long? organizationId,
+        bool hideArchived = true)
     {
-        // Check to see if projects are in Cache
-        var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-
-        // If no projects are cached update the Cache
-        if (cachedProjectList == null)
-        {
-            await RefreshProjectsCache();
-            cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-            if (cachedProjectList == null)
-            {
-                cachedProjectList = new List<ProjectResponseDto>();
-            }
-        }
+        var projectQuery = _context.Projects.AsQueryable();
 
         if (hideArchived)
         {
-            cachedProjectList = cachedProjectList.Where(p => !p.IsArchived).ToList();
+            projectQuery = projectQuery.Where(p => !p.IsArchived);
         }
 
-        return cachedProjectList;
+        if (organizationId.HasValue)
+        {
+            projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
+        }
+
+        var projects = await projectQuery.ToListAsync();
+
+        return projects
+            .Select(p => new ProjectResponseDto()
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Abbreviation = p.Abbreviation,
+                LastUpdatedAt = p.LastUpdatedAt,
+                LastUpdatedBy = p.LastUpdatedBy,
+                IsArchived = p.IsArchived,
+            });
     }
 
     /// <summary>
@@ -84,7 +94,7 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>The given project to return</returns>
     /// <exception cref="KeyNotFoundException">Returned if project not found or is archived</exception>
-    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived)
+    public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived = true)
     {
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
     
@@ -131,9 +141,9 @@ public class ProjectBusiness : IProjectBusiness
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
+            OrganizationId = dto.OrganizationId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
-            OrganizationId = dto.OrganizationId,
         };
 
         _context.Projects.Add(project);
@@ -185,7 +195,10 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Default Data Source",
             Description = "This data source was created alongside the project for ease of use."
         };
-
+        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
+        
+        // TODO: project config should determine whether to do this (true by default)
+        // create default object storage upon project creation
         Env.Load("../.env");
         var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
 
@@ -233,11 +246,11 @@ public class ProjectBusiness : IProjectBusiness
         };
         await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
         await _objectStorageBusiness.CreateObjectStorage(project.Id, timeseriesObjectStorageMethod);
-        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
 
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
+            OrganizationId = project.OrganizationId,
             ProjectId = project.Id,
             Operation = "create",
             EntityType = "project",
@@ -605,6 +618,143 @@ public class ProjectBusiness : IProjectBusiness
                 Tags = r.Tags
             });
     }
+
+    /// <summary>
+    /// Add a user or a group to a project
+    /// </summary>
+    /// <param name="projectId">Project to which to add member</param>
+    /// <param name="roleId">(optional) Role which member will be added under</param>
+    /// <param name="userId">(optional) ID of user to be added</param>
+    /// <param name="groupId">(optional) ID of group to be added</param>
+    /// <returns>True if user or group successfully added to project</returns>
+    /// <returns>False if user or group already exists in project</returns>
+    /// <exception cref="ArgumentException">Returned if none or both of userID/groupID supplied</exception>
+    /// <exception cref="KeyNotFoundException">Returned if user, group, role or project not found</exception>
+    public async Task<bool> AddMemberToProject(long projectId, long? roleId, long? userId, long? groupId)
+    {
+        // ensure one and only one of userID or groupID is supplied
+        if (!userId.HasValue && !groupId.HasValue)
+            throw new ArgumentException("One of User ID or Group ID must be provided");
+        if (userId.HasValue && groupId.HasValue)
+            throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
+        
+        // check if the group or user is already in the project
+        var existingProjectMember = await _context.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (pm.UserId == userId || pm.GroupId == groupId));
+        if (existingProjectMember != null)
+            return false; // group or user is already present in the project
+        
+        // TODO: determine if user account discovery/creation is required
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (userId.HasValue && (user == null || user.IsArchived))
+            throw new KeyNotFoundException($"User with id {userId} not found");
+        
+        var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == groupId);
+        if (groupId.HasValue && (group == null || group.IsArchived))
+            throw new KeyNotFoundException($"Group with id {groupId} not found");
+        
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+        if (roleId.HasValue && (role == null || role.IsArchived))
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
+        if (project == null || project.IsArchived)
+            throw new KeyNotFoundException($"Project with id {projectId} not found");
+        
+        // add member to project and assign role
+        var projMember = new ProjectMember
+        {
+            ProjectId = projectId,
+            RoleId = roleId,
+            UserId = userId,
+            GroupId = groupId,
+        };
+        
+        _context.ProjectMembers.Add(projMember);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
+
+    /// <summary>
+    /// Update a user or group's role within a project
+    /// </summary>
+    /// <param name="projectId">ID of project in which to adjust role</param>
+    /// <param name="roleId">ID of role to adjust</param>
+    /// <param name="userId">(optional) ID of user to adjust</param>
+    /// <param name="groupId">(optional) ID of group to adjust</param>
+    /// <returns>True if user or group role adjusted</returns>
+    /// <exception cref="ArgumentException">Returned if none or both of userID/groupID supplied</exception>
+    /// <exception cref="KeyNotFoundException">Returned if member doesn't exist in project</exception>
+    public async Task<bool> UpdateProjectMemberRole(long projectId, long roleId, long? userId, long? groupId)
+    {
+        // ensure one and only one of userID or groupID is supplied
+        if (!userId.HasValue && !groupId.HasValue)
+            throw new ArgumentException("One of User ID or Group ID must be provided");
+        if (userId.HasValue && groupId.HasValue)
+            throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
+        
+        // ensure role exists
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // Find the existing project member to update
+        var existingProjectMember = await _context.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && 
+                                       ((userId.HasValue && pm.UserId == userId) || 
+                                        (groupId.HasValue && pm.GroupId == groupId)));
+        if (existingProjectMember == null)
+        {
+            var memberType = userId.HasValue ? "User" : "Group";
+            var memberId = userId ?? groupId;
+            throw new KeyNotFoundException($"{memberType} with id {memberId} is not a member of project {projectId}");
+        }
+    
+        // Update the role
+        existingProjectMember.RoleId = roleId;
+        _context.ProjectMembers.Update(existingProjectMember);
+        await _context.SaveChangesAsync();
+    
+        return true;
+    }
+    
+    /// <summary>
+    /// Remove a user or group from a project
+    /// </summary>
+    /// <param name="projectId">ID of the project</param>
+    /// <param name="userId">(optional) ID of the user</param>
+    /// <param name="groupId">(optional) ID of the group</param>
+    /// <returns>True if member successfully removed</returns>
+    /// <exception cref="ArgumentException">Returned if none or both of userID/groupID supplied</exception>
+    /// <exception cref="KeyNotFoundException">Returned if member doesn't exist in project</exception>
+    public async Task<bool> RemoveMemberFromProject(long projectId, long? userId, long? groupId)
+    {
+        // ensure one and only one of userID or groupID is supplied
+        if (!userId.HasValue && !groupId.HasValue)
+            throw new ArgumentException("One of either User ID or Group ID must be provided");
+        if (userId.HasValue && groupId.HasValue)
+            throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
+        
+        // Find the existing project member to update
+        var existingProjectMember = await _context.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && 
+                                       ((userId.HasValue && pm.UserId == userId) || 
+                                        (groupId.HasValue && pm.GroupId == groupId)));
+    
+        if (existingProjectMember == null)
+        {
+            var memberType = userId.HasValue ? "User" : "Group";
+            var memberId = userId ?? groupId;
+            throw new KeyNotFoundException($"{memberType} with id {memberId} is not a member of project {projectId}");
+        }
+        
+        // remove project member
+        _context.ProjectMembers.Remove(existingProjectMember);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
     
     private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
     {
@@ -633,6 +783,5 @@ public class ProjectBusiness : IProjectBusiness
             IsArchived = p.IsArchived,
             OrganizationId =  p.OrganizationId
         }).ToList();
-    }
-    
+    }    
 }

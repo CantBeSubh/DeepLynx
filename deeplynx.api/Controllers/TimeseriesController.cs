@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -7,6 +8,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
+    [NexusAuthorize]
     public class TimeseriesController : ControllerBase
     {
         private readonly ITimeseriesBusiness _timeseriesBusiness;

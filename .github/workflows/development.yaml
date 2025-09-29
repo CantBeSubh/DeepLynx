@@ -26,6 +26,8 @@ jobs:
           OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
+          JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
@@ -33,6 +35,7 @@ jobs:
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+          DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -51,6 +54,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
             .
           
           az acr build --registry $ACR_REGISTRY \
@@ -66,6 +70,12 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
+            .
+
+          az acr build --registry $ACR_REGISTRY \
+            --image $ACR_PATH:deeplynxv3-docs-$GITHUB_RUN_NUMBER \
+            --file Dockerfiles/docs/Dockerfile.public \
             .
 
   kubernetes:
@@ -109,6 +119,7 @@ jobs:
             --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
+            --from-literal=disabled-front-auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Overwrites ${VARIABLES} in the kube manifest with secrets
@@ -125,6 +136,8 @@ jobs:
           POSTGRES_DB_HOST: ${{ vars.POSTGRES_DB_HOST }}
           POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}
           DUCKDB_BASE_PATH: ${{ vars.DUCKDB_BASE_PATH }}
@@ -135,6 +148,7 @@ jobs:
           FROM_NAME: ${{ vars.FROM_NAME }}
           INVITE_URL: ${{ vars.INVITE_URL }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          DISABLE_BACKEND_AUTHENTICATION: ${{ vars.DISABLE_BACKEND_AUTHENTICATION }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes

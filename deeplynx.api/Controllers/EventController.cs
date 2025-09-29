@@ -1,3 +1,4 @@
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -13,6 +14,7 @@ namespace deeplynx.api.Controllers
 
     [ApiController]
     [Route("api/events/{projectId}")]
+    [NexusAuthorize]
     public class EventController : ControllerBase // Inherit from ControllerBase
     {
         private readonly IEventBusiness _eventBusiness;
