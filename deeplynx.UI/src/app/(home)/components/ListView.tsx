@@ -116,7 +116,7 @@ const ListView: React.FC<ListViewProps> = ({
               className="py-4 mb-2 card cursor-pointer hover:bg-base-200/30 p-3 shadow-md rounded"
               onClick={() =>
                 router.push(
-                  `/data_catalog/record?recordId=${record.id}&projectId=${record.projectId}`
+                  `/record?recordId=${record.id}&projectId=${record.projectId}`
                 )
               }
             >
