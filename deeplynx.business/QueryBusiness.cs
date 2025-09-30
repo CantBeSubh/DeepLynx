@@ -98,24 +98,47 @@ public class QueryBusiness : IQueryBusiness
                     }
                     else if (query.Operator == "LIKE")
                     {
-                        condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        // Check if this is a JSONB column that needs special handling
+                        var jsonbColumns = new[] { "properties", "tags" };
+    
+                        if (jsonbColumns.Contains(query.Filter.ToLower()))
+                        {
+                            // For JSONB columns, convert to text and search
+                            condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
+                        }
+                        else
+                        {
+                            condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        }
                         parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                     }
                     else if (query.Operator == "=")
                     {
-                        condition = $"hr.{query.Filter} = @{paramName}";
-                        
-                        if (int.TryParse(query.Value, out var intVal))
+                        // Check if this is a JSONB column that needs special handling
+                        var jsonbColumns = new[] { "properties", "tags" };
+    
+                        if (jsonbColumns.Contains(query.Filter.ToLower()))
                         {
-                            parameters.Add(new NpgsqlParameter(paramName, intVal));
-                        }
-                        else if (DateTime.TryParse(query.Value, out var dateVal))
-                        {
-                            parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                            // For JSONB columns, convert to text for exact match
+                            condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
+                            parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                         }
                         else
                         {
-                            parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                            condition = $"hr.{query.Filter} = @{paramName}";
+        
+                            if (int.TryParse(query.Value, out var intVal))
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, intVal));
+                            }
+                            else if (DateTime.TryParse(query.Value, out var dateVal))
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                            }
+                            else
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                            }
                         }
                     }
                     else if (query.Operator == ">")
@@ -179,20 +202,29 @@ public class QueryBusiness : IQueryBusiness
             {
                 var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
                 parameters.Add(textSearchParam);
-                
+    
                 var textSearchCondition = @"
-                    AND to_tsvector('english',
-                            coalesce(name, '') || ' ' ||
-                            coalesce(description, '') || ' ' ||
-                            coalesce(class_name, '') || ' ' ||
-                            coalesce(uri, '') || ' ' ||
-                            coalesce(original_id, '') || ' ' ||
-                            coalesce(data_source_name, '') || ' ' ||
-                            coalesce(project_name, '') || ' ' ||
-                            coalesce(properties::text, '') || ' ' ||
-                            coalesce(tags::text, '')
-                        )@@ websearch_to_tsquery('english', @textSearch)";
-                
+        AND (
+            to_tsvector('english',
+                coalesce(hr.name, '') || ' ' ||
+                coalesce(hr.description, '') || ' ' ||
+                coalesce(hr.class_name, '') || ' ' ||
+                coalesce(hr.uri, '') || ' ' ||
+                coalesce(hr.original_id, '') || ' ' ||
+                coalesce(hr.data_source_name, '') || ' ' ||
+                coalesce(hr.project_name, '')
+            ) @@ websearch_to_tsquery('english', @textSearch)
+            OR
+            to_tsvector('english', 
+                coalesce(jsonb_pretty(hr.properties), '')
+            ) @@ websearch_to_tsquery('english', @textSearch)
+            OR
+            EXISTS (
+                SELECT 1 FROM jsonb_array_elements_text(hr.tags) tag
+                WHERE to_tsvector('english', tag) @@ websearch_to_tsquery('english', @textSearch)
+            )
+        )";
+    
                 sql += textSearchCondition;
             }
 
