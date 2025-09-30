@@ -5,22 +5,26 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
+using deeplynx.hubs;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
+    private readonly IHubContext<EventNotificationHub>  _hubContext;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
-    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
+    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IHubContext<EventNotificationHub> hubContext)
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
+        _hubContext = hubContext;
     }
 
     /// <summary>
@@ -85,7 +89,7 @@ public class EventBusiness : IEventBusiness
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-        
+    
         var newEvent = new Event
         {
             Operation = dto.Operation,
@@ -100,8 +104,8 @@ public class EventBusiness : IEventBusiness
 
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
-
-        return new EventResponseDto
+    
+        var response = new EventResponseDto
         {
             Id = newEvent.Id,
             ProjectId = newEvent.ProjectId,
@@ -113,6 +117,14 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = newEvent.LastUpdatedBy,
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
+
+        // Serialize the response object to JSON using fully qualified JsonSerializer
+        var jsonResponse = System.Text.Json.JsonSerializer.Serialize(response);
+
+        // Send notification with the serialized JSON object
+        await _hubContext.Clients.All.SendAsync("ReceiveNotification", jsonResponse);
+
+        return response;
     }
 
     /// <summary>

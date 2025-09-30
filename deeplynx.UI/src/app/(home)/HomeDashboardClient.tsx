@@ -15,6 +15,7 @@ import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
+import EventNotifications from "./components/EventNotifications";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";

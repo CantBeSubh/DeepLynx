@@ -369,6 +369,12 @@ try
 
     app.UseStaticFiles();
 
+    
+    // add endpoint for real-time notifications with SignalR
+    app.UseRouting();
+
+    app.MapHub<EventNotificationHub>("/eventNotificationHub");
+    
     // We're always using scalar for now.
     //if (app.Environment.IsDevelopment()) { ...
     app.MapOpenApi();

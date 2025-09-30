@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNet.SignalR;
+using Microsoft.AspNetCore.SignalR;
 
-namespace deeplynx.hubs
+namespace deeplynx.hubs;
+
+public class EventNotificationHub : Hub
 {
-    public class EventNotificationHub : Hub
+    public async Task SendNotification(string user, string message)
     {
-        public async Task SendNotification(string message)
-        {
-            await Clients.All.SendAsync("ReceiveNotification", message);
-        }
+        await Clients.All.SendAsync("ReceiveNotification", user, message);
     }
 }

@@ -16,7 +16,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.tests", "deeplynx.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.graph", "deeplynx.graph\deeplynx.graph.csproj", "{0FE55B56-333F-48D1-B99C-351E15DE7B05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.hubs", "deeplynx.hubs\deeplynx.hubs.csproj", "{4475F65F-FC37-4A42-A222-C7CCB76F450E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "deeplynx.hubs", "deeplynx.hubs\deeplynx.hubs.csproj", "{AF8617CD-F267-4253-A6AF-2474C5A3DDBC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -56,9 +56,9 @@ Global
 		{0FE55B56-333F-48D1-B99C-351E15DE7B05}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0FE55B56-333F-48D1-B99C-351E15DE7B05}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0FE55B56-333F-48D1-B99C-351E15DE7B05}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4475F65F-FC37-4A42-A222-C7CCB76F450E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4475F65F-FC37-4A42-A222-C7CCB76F450E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4475F65F-FC37-4A42-A222-C7CCB76F450E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4475F65F-FC37-4A42-A222-C7CCB76F450E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF8617CD-F267-4253-A6AF-2474C5A3DDBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF8617CD-F267-4253-A6AF-2474C5A3DDBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF8617CD-F267-4253-A6AF-2474C5A3DDBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF8617CD-F267-4253-A6AF-2474C5A3DDBC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

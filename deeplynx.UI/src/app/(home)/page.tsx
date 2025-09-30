@@ -5,6 +5,7 @@ import {
   type ProjectDTO, // make sure this includes optional fields below
 } from "../lib/projects_services.server";
 import type { ProjectsList } from "./types/types";
+import { NotificationProvider } from "../contexts/NotificationsProvider"
 import AuthGuard from "./components/AuthGuard";
 
 export const dynamic = "force-dynamic"; // if behind auth
@@ -36,8 +37,10 @@ export default async function Page() {
   } else
 
     return (
-      // <AuthGuard>
-      <HomeDashboardClient initialProjects={projects} />
-      // </AuthGuard>
+        // <AuthGuard>
+        <NotificationProvider>
+            <HomeDashboardClient initialProjects={projects} />
+        </NotificationProvider>
+        // </AuthGuard>
     );
 }
