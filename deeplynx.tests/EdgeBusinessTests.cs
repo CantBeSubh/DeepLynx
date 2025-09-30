@@ -23,6 +23,7 @@ namespace deeplynx.tests
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
+        private Mock<IRoleBusiness> _mockRoleBusiness = null!;
         public long pid;
         public long dsid;
         public long originRecordId;
@@ -39,6 +40,7 @@ namespace deeplynx.tests
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             _eventBusiness = new EventBusiness(Context, _cacheBusiness);
             _mockObjectStorageBusiness = new Mock<IObjectStorageBusiness>();
+            _mockRoleBusiness = new Mock<IRoleBusiness>();
 
             _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(Context, _cacheBusiness, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
@@ -47,8 +49,9 @@ namespace deeplynx.tests
                 _mockRelationshipBusiness.Object, _eventBusiness);
             
             _projectBusiness = new ProjectBusiness(
-                Context, _cacheBusiness, _mockLogger.Object,_classBusiness, _dataSourceBusiness, 
-                _mockObjectStorageBusiness.Object,_eventBusiness);
+                Context, _cacheBusiness, _mockLogger.Object, _classBusiness, 
+                _mockRoleBusiness.Object, _dataSourceBusiness, 
+                _mockObjectStorageBusiness.Object, _eventBusiness);
         }
 
         [Fact]
