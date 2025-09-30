@@ -81,6 +81,7 @@ export default function QueryBuilderClient({
   const reset = () => {
     setRows([emptyRow()]);
     setQueriedRecords(null);
+    setSearchTerm("")
   }
 
 
@@ -211,6 +212,7 @@ export default function QueryBuilderClient({
                   }
                   showResultsMessage={activeFilters.length > 0}
                   className="w-full max-w-3xl"
+                  onSubmit={handleSubmit}
                 />
               </div>
               {/* Query Builder */}
@@ -463,6 +465,7 @@ export default function QueryBuilderClient({
                             type="button"
                             className="btn btn-outline btn-error btn-sm"
                             onClick={() => removeRow(row.id)}
+                            hidden={idx === 0}
                           >
                             <TrashIcon className="w-4 h-4" />
                           </button>
