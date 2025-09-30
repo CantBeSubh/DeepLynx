@@ -121,7 +121,7 @@ const CreateProject = ({
                 <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary">
                   {isLoading ? (
                   <>
-                    <span className="spinner" aria-hidden="true"/>Loading...
+                    <span className="spinner" aria-hidden="true"/>
                   </>
                 ):(t.translations.CREATE)}
                 </button>
