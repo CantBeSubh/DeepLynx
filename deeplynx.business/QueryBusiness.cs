@@ -251,6 +251,7 @@ public class QueryBusiness : IQueryBusiness
     /// Full text records search
     /// </summary>
     /// <param name="userQuery">String query</param>
+    /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
     public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery, long[] projectIds)
     {

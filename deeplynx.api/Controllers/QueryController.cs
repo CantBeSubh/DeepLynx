@@ -35,6 +35,7 @@ namespace deeplynx.api.Controllers
         /// Full text search for records
         /// </summary>
         /// <param name="userQuery">String phrase entered by user</param>
+        /// /// <param name="projectIds">Project ids that a user has access to</param>
         /// <returns>List of historical record response DTOs</returns>
         [HttpGet("Filter", Name = "api_filter_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> SearchRecords(
