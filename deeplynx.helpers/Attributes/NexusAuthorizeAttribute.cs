@@ -21,6 +21,8 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
     private static IConfigurationManager<OpenIdConnectConfiguration>? _configManager;
     private static readonly object _lock = new();
 
+    
+    
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         try
@@ -129,3 +131,4 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         context.Result = new JsonResult(new { error = message, status = 403 }) { StatusCode = 403 };
     }
 }
+

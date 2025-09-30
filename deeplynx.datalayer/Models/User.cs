@@ -46,4 +46,8 @@ public partial class User
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
+    
+    [ForeignKey("UserId")]
+    [InverseProperty("Users")]
+    public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
 }

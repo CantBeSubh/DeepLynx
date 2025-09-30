@@ -6,6 +6,7 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
@@ -185,6 +186,7 @@ try
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
+    builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -399,6 +401,7 @@ try
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseMiddleware<UserContextMiddleware>();
     app.MapControllers();
     app.Run();
 }

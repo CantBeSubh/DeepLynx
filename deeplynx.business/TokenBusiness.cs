@@ -1,0 +1,93 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.helpers.Context;
+using deeplynx.interfaces;
+using Microsoft.IdentityModel.Tokens;
+
+namespace deeplynx.business;
+
+public class TokenBusiness : ITokenBusiness
+{
+    private readonly DeeplynxContext _context;
+
+    public TokenBusiness(DeeplynxContext context)
+    {
+        _context = context;
+    }
+
+    public string CreateToken(string secretKey, string apiKey)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(secretKey);
+        var expirationMinutes = 60;
+        var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");   
+        var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"); 
+
+        if (string.IsNullOrWhiteSpace(issuer))
+            throw new InvalidOperationException("JWT_ISSUER not configured");
+        if (string.IsNullOrWhiteSpace(audience))
+            throw new InvalidOperationException("JWT_AUDIENCE not configured");
+        
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, UserContextStorage.Username),
+            new Claim(JwtRegisteredClaimNames.Name, UserContextStorage.Username),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Iat, 
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), 
+                ClaimValueTypes.Integer64)
+        };
+
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key), 
+                SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
+
+    public string GetApiKey(string apiKey)
+    {
+        try
+        {
+            var user = _context.Users.FirstOrDefault(u => u.Email == UserContextStorage.Username);
+            if (user == null)
+            {
+                return string.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            return string.Empty;
+        }
+    }
+
+    public string CreateApiKey()
+    {
+        string apiKey = KeyGenerator.GenerateKeyBase64();
+        string secret = KeyGenerator.GenerateKeyBase64();
+        string hashedKey = HashApiKey(apiKey);
+
+        return apiKey;
+    }
+
+    private string HashApiKey(string apiKey)
+    {
+        return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
+    }
+
+    private bool VerifyApiKey(string providedKey, string storedHash)
+    {
+        return BCrypt.Net.BCrypt.Verify(providedKey, storedHash);
+    }
+}

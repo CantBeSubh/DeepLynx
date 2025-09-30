@@ -16,6 +16,8 @@ public partial class DeeplynxContext : DbContext
     }
 
     public virtual DbSet<Action> Actions { get; set; }
+    
+    public virtual DbSet<ApiKey> ApiKeys { get; set; }
 
     public virtual DbSet<Class> Classes { get; set; }
 
@@ -68,6 +70,11 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Project).WithMany(p => p.Actions).HasConstraintName("actions_project_id_fkey");
+        });
+
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("api_keys_pkey");
         });
 
         modelBuilder.Entity<Class>(entity =>
@@ -444,6 +451,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.Property(e => e.IsSysAdmin).HasDefaultValue(false);
+            entity.HasMany(a => a.ApiKeys).WithOne(a => a.User).HasForeignKey(a => a.UserId);
 
             entity.HasMany(d => d.Projects).WithMany(p => p.Users)
                 .UsingEntity<Dictionary<string, object>>(
