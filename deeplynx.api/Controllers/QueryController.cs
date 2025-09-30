@@ -60,6 +60,7 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="filterArray">Array of QueryComponent dtos</param>
         /// <param name="textSearch">Full text search phrase</param>
+        /// /// <param name="projectIds">Project ids that a user has access to</param>
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("QueryBuilder", Name = "api_query_builder_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(

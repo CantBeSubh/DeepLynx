@@ -37,6 +37,7 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
+    /// /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
     public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
