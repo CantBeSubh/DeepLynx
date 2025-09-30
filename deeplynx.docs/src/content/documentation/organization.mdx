@@ -18,8 +18,8 @@ You may alter the order, give documentation sections titles different from their
 
 ```js copy filename="src/content/_meta.ts"
 export default {
-  overview: {
-    title: "How it works"
+  overview: {                 // Folder name
+    title: "How it works"     // Sidebar appearance
   },
   users: '',
   developers: '',
@@ -32,13 +32,13 @@ export default {
   }
 }
 ```
+> [!NOTE]
+>
+> *contact* \{...\} in this example will instead alter the navbar contact section via the 'page' type. These are features provided by Nextra. 
+
 > [!TIP]
 >
 > If no order is given, the app will default to alphabetical order. 
-
-> [!NOTE]
->
-> *contact* \{...\} in this example will instead alter the navbar contact section. These are features provided by nextra. 
 
 ### Subdirectory `_meta.ts` files
 
