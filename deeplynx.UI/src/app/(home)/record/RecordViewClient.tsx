@@ -27,7 +27,7 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
-import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
+// import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
 import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
@@ -119,15 +119,6 @@ export default function RecordViewClient({
   >(null);
   const [relationship, setRelationship] = useState<string | null>(null);
 
-  function formatDate(date?: string | null) {
-    if (!date) return "N/A";
-    return new Date(date).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  }
-
   const handleToggleToRemove = useCallback(
     (
       id: string,
@@ -154,6 +145,7 @@ export default function RecordViewClient({
           setRecord(data);
           if (data.tags) {
             const tags = JSON.parse(data.tags);
+
             setSelectedTags(tags);
             setSelectedIds(tags.map((tag: { id: string }) => tag.id));
           }
@@ -165,118 +157,118 @@ export default function RecordViewClient({
     fetchData();
   }, [recordId, projectId]);
 
-  useEffect(() => {
-    const fetchRelatedRecords = async () => {
-      try {
-        if (record && !hasFetchedRelatedRecords) {
-          const request = {
-            tablename: record.className,
-            id: record.id,
-            depth: 1,
-          };
+  // useEffect(() => {
+  //   const fetchRelatedRecords = async () => {
+  //     try {
+  //       if (record && !hasFetchedRelatedRecords) {
+  //         const request = {
+  //           tablename: record.className,
+  //           id: record.id,
+  //           depth: 1,
+  //         };
 
-          const relatedRecordsData = await getNodesWithinDepth(
-            Number(projectId),
-            request
-          );
+  //         const relatedRecordsData = await getNodesWithinDepth(
+  //           Number(projectId),
+  //           request
+  //         );
 
-          setRelatedRecords(relatedRecordsData);
+  //         setRelatedRecords(relatedRecordsData);
 
-          setHasFetchedRelatedRecords(true);
-        }
-      } catch (error) {
-        console.error("Error fetching related records:", error);
-      }
-    };
-    if (record?.className && record?.id) {
-      if (record?.className && record?.id) {
-        fetchRelatedRecords();
-      }
-    }
-  }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
+  //         setHasFetchedRelatedRecords(true);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching related records:", error);
+  //     }
+  //   };
+  //   if (record?.className && record?.id) {
+  //     if (record?.className && record?.id) {
+  //       fetchRelatedRecords();
+  //     }
+  //   }
+  // }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
 
-  useEffect(() => {
-    const parseRelatedRecords = (
-      relatedRecords: RelatedRecord[] | undefined
-    ) => {
-      if (!relatedRecords) return [];
+  // useEffect(() => {
+  //   const parseRelatedRecords = (
+  //     relatedRecords: RelatedRecord[] | undefined
+  //   ) => {
+  //     if (!relatedRecords) return [];
 
-      const relationshipNames: string[] = [];
-      const classNames: string[] = [];
-      const names: string[] = [];
-      const recordIds: number[] = [];
+  //     const relationshipNames: string[] = [];
+  //     const classNames: string[] = [];
+  //     const names: string[] = [];
+  //     const recordIds: number[] = [];
 
-      relatedRecords.forEach((item) => {
-        if ("relationshipName" in item) {
-          relationshipNames.push(item.relationshipName);
-        } else {
-          if (item.recordId == recordId) {
-            return;
-          }
-          classNames.push(item.className);
-          names.push(item.name);
-          recordIds.push(item.recordId);
-        }
-      });
+  //     relatedRecords.forEach((item) => {
+  //       if ("relationshipName" in item) {
+  //         relationshipNames.push(item.relationshipName);
+  //       } else {
+  //         if (item.recordId == recordId) {
+  //           return;
+  //         }
+  //         classNames.push(item.className);
+  //         names.push(item.name);
+  //         recordIds.push(item.recordId);
+  //       }
+  //     });
 
-      const relatedRecordsArray: ParsedRecord[] = [];
-      const relationshipIndex = 0;
+  //     const relatedRecordsArray: ParsedRecord[] = [];
+  //     const relationshipIndex = 0;
 
-      relatedRecords.forEach((item, _) => {
-        if (!("relationshipName" in item)) {
-          if (item.recordId == recordId) {
-            return;
-          }
-          const relationship =
-            relationshipNames.length > relationshipIndex
-              ? relationshipNames[relationshipIndex]
-              : "";
-          relatedRecordsArray.push({
-            relationship: relationship,
-            id: item.recordId.toString(),
-            class: item.className,
-            name: item.name,
-            actions: (
-              <div className="flex items-center">
-                <button
-                  className="text-blue-500 cursor-pointer"
-                  onClick={async () => {
-                    const selectedRecord = await getRecord(
-                      Number(projectId),
-                      item.recordId
-                    );
-                    setSelectedRecord(selectedRecord);
-                    setRecordViewModalOpen(true);
-                  }}
-                >
-                  <EyeIcon className="w-4 h-4" />
-                </button>
-                <button
-                  className="text-red-500 ml-2 cursor-pointer border rounded px-1"
-                  onClick={() => {
-                    handleToggleToRemove(
-                      item.recordId.toString(),
-                      item.name,
-                      item.className,
-                      "relatedRecord"
-                    );
-                  }}
-                >
-                  Remove Link
-                </button>
-              </div>
-            ),
-          });
-        }
-      });
+  //     relatedRecords.forEach((item, _) => {
+  //       if (!("relationshipName" in item)) {
+  //         if (item.recordId == recordId) {
+  //           return;
+  //         }
+  //         const relationship =
+  //           relationshipNames.length > relationshipIndex
+  //             ? relationshipNames[relationshipIndex]
+  //             : "";
+  //         relatedRecordsArray.push({
+  //           relationship: relationship,
+  //           id: item.recordId.toString(),
+  //           class: item.className,
+  //           name: item.name,
+  //           actions: (
+  //             <div className="flex items-center">
+  //               <button
+  //                 className="text-blue-500 cursor-pointer"
+  //                 onClick={async () => {
+  //                   const selectedRecord = await getRecord(
+  //                     Number(projectId),
+  //                     item.recordId
+  //                   );
+  //                   setSelectedRecord(selectedRecord);
+  //                   setRecordViewModalOpen(true);
+  //                 }}
+  //               >
+  //                 <EyeIcon className="w-4 h-4" />
+  //               </button>
+  //               <button
+  //                 className="text-red-500 ml-2 cursor-pointer border rounded px-1"
+  //                 onClick={() => {
+  //                   handleToggleToRemove(
+  //                     item.recordId.toString(),
+  //                     item.name,
+  //                     item.className,
+  //                     "relatedRecord"
+  //                   );
+  //                 }}
+  //               >
+  //                 Remove Link
+  //               </button>
+  //             </div>
+  //           ),
+  //         });
+  //       }
+  //     });
 
-      return relatedRecordsArray;
-      return relatedRecordsArray;
-    };
+  //     return relatedRecordsArray;
+  //     return relatedRecordsArray;
+  //   };
 
-    const parsedRecords = parseRelatedRecords(relatedRecords);
-    setParsedRelatedRecords(parsedRecords);
-  }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
+  //   const parsedRecords = parseRelatedRecords(relatedRecords);
+  //   setParsedRelatedRecords(parsedRecords);
+  // }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -429,7 +421,6 @@ export default function RecordViewClient({
     {
       label: "Class Name",
       value: record.className,
-      // editable: true, I dont see a className being returned form the BE
       onEdit: async (newValue: string) => {
         try {
           const update = await updateRecord(
@@ -461,22 +452,23 @@ export default function RecordViewClient({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
+      const value = parsedProperties[key as keyof object];
+      return {
+        label: key,
+        value:
+          typeof value === "object" ? JSON.stringify(value) : String(value),
+      };
+    })
     : [];
 
   const tabs = [
     {
       label: "Record Information",
       content: (
-        <div className="flex gap-4 mt-6">
+        <div className="flex">
           <div className="w-full md:w-1/2 p-3">
             <PropertyTable
+              className=""
               title="System Properties"
               rows={systemPropertiesRows}
             />
@@ -486,9 +478,9 @@ export default function RecordViewClient({
               rows={additionalPropertiesRows}
             />
           </div>
-          <div className="flex-grow">
-            <div className="card bg-base-100 shadow-md p-4 relative mb-20">
-              <div className="flex justify-between items-center">
+          <div className="flex-1 mt-3 mr-6">
+            <div className="card bg-base-100 shadow-md p-4 flex">
+              <div className="flex items-center">
                 <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
                   {t.translations.TAGS}
                 </h2>
@@ -574,17 +566,15 @@ export default function RecordViewClient({
 
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2 pb-4">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 p-2 pb-4">
         <div>
-          <h1 className="text-2xl font-bold text-base-content">
+          <h1 className="text-2xl font-bold text-base-content p-2">
             {record?.name}
           </h1>
         </div>
       </div>
 
-      <div className="divider"></div>
-
-      <Tabs tabs={tabs} className={"ml-4"}></Tabs>
+      <Tabs tabs={tabs} className={"ml-6 pt-6"}></Tabs>
     </div>
   );
 }
