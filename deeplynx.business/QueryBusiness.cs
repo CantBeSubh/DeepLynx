@@ -204,26 +204,17 @@ public class QueryBusiness : IQueryBusiness
                 parameters.Add(textSearchParam);
     
                 var textSearchCondition = @"
-        AND (
-            to_tsvector('english',
-                coalesce(hr.name, '') || ' ' ||
-                coalesce(hr.description, '') || ' ' ||
-                coalesce(hr.class_name, '') || ' ' ||
-                coalesce(hr.uri, '') || ' ' ||
-                coalesce(hr.original_id, '') || ' ' ||
-                coalesce(hr.data_source_name, '') || ' ' ||
-                coalesce(hr.project_name, '')
-            ) @@ websearch_to_tsquery('english', @textSearch)
-            OR
-            to_tsvector('english', 
-                coalesce(jsonb_pretty(hr.properties), '')
-            ) @@ websearch_to_tsquery('english', @textSearch)
-            OR
-            EXISTS (
-                SELECT 1 FROM jsonb_array_elements_text(hr.tags) tag
-                WHERE to_tsvector('english', tag) @@ websearch_to_tsquery('english', @textSearch)
-            )
-        )";
+                    AND to_tsvector('english',
+                            coalesce(name, '') || ' ' ||
+                            coalesce(description, '') || ' ' ||
+                            coalesce(class_name, '') || ' ' ||
+                            coalesce(uri, '') || ' ' ||
+                            coalesce(original_id, '') || ' ' ||
+                            coalesce(data_source_name, '') || ' ' ||
+                            coalesce(project_name, '') || ' ' ||
+                            coalesce(properties::text, '') || ' ' ||
+                            coalesce(tags::text, '')
+                        )@@ websearch_to_tsquery('english', @textSearch)";
     
                 sql += textSearchCondition;
             }
