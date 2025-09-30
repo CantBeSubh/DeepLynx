@@ -205,16 +205,6 @@ This can be done after you've made your migration to verify that the changes are
 dotnet ef database update -c DeeplynxContext --verbose --project deeplynx.datalayer --startup-project deeplynx.api
 ```
 
-### Update the database/migration.sql file
-
-The dockerized version of the app is not compatible with .NET Entity Framework. 
-Updating the migration.sql file is necessary for our changes to work on deployed instances.
-<br>Use this command:
-
-```
-dotnet ef migrations script -o database/migration.sql --project deeplynx.datalayer --startup-project deeplynx.api --idempotent
-```
-
 ### Removing a migration
 If you have already applied the migration, you need to run an update pointing to the migration before the one you want
 to remove (skip to step 3 if you have not applied it).

@@ -92,7 +92,12 @@ public class UserBusiness : IUserBusiness
     public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
         // TODO: adjusting is_sys_admin is currently disabled. Enable once route permission protections are in place
-
+        var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+        if (otherUserHasEmail)
+        {
+            throw new ArgumentException("User with email already exists");
+        }
+        
         var user = new User
         {
             Name = dto.Name,
@@ -143,8 +148,16 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.Name = dto.Name ?? user.Name;
-        user.Email = dto.Email ?? user.Email;
-
+        if (dto.Email != null)
+        {
+            var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+            if (otherUserHasEmail)
+            {
+                throw new ArgumentException("User with email already exists");
+            }
+            user.Email = dto.Email;
+        }
+        
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
