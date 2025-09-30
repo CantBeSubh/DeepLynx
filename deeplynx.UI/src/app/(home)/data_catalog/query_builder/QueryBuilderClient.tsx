@@ -157,7 +157,7 @@ export default function QueryBuilderClient({
     try {
       const queryDtos = rows.map(r => r.query);
       if (hasValidQueries()) {
-        const data = await queryBuilder(queryDtos, searchTerm);
+        const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
         if (data) {
           setQueriedRecords(data);
         }
