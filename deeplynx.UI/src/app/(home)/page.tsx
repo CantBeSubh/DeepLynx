@@ -37,8 +37,8 @@ export default async function Page() {
   } else
 
     return (
-      <AuthGuard>
-        <HomeDashboardClient initialProjects={projects} />
-      </AuthGuard>
+      // <AuthGuard>
+         <HomeDashboardClient initialProjects={projects} />
+      // </AuthGuard>
     );
 }
