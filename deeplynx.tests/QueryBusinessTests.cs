@@ -185,7 +185,7 @@ namespace deeplynx.tests
             };
             
             var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
-            result.Should().HaveCount(5); // 5 records in Anakin project
+            result.Should().HaveCount(5); 
             result.All(r => r.LastUpdatedAt > DateTime.Now.AddMinutes(-30)).Should().BeTrue();
         }
 
@@ -229,7 +229,7 @@ namespace deeplynx.tests
             };
             
             var result = _queryBusiness.QueryBuilder([dto1, dto2], new[] { pid }, null);
-            result.Should().HaveCount(6); // Records between Rex and Ahsoka in Anakin project
+            result.Should().HaveCount(6); 
         }
 
         [Fact]
@@ -244,7 +244,7 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-7567"
             };
             var result = _queryBusiness.QueryBuilder([dto1, dto2], new[] { pid }, null);
-            result.Should().HaveCount(1); // Only Captain Rex
+            result.Should().HaveCount(1); 
         }
 
         [Fact]
@@ -308,7 +308,7 @@ namespace deeplynx.tests
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, "Captain");
-            result.Should().HaveCount(1); // Captain Rex uses R2D2 datasource
+            result.Should().HaveCount(1); 
         }
 
         [Fact]
@@ -388,9 +388,7 @@ namespace deeplynx.tests
             var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
             result.Should().HaveCount(4);
         }
-
-        // NEW TESTS FOR CROSS-PROJECT QUERIES WITH PROJECT ID FILTERING
-
+        
         [Fact]
         public async Task QueryBuilderFilterByMultipleProjectIdsAsync()
         {
@@ -402,21 +400,23 @@ namespace deeplynx.tests
                 Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { anakinId, rebellionId }, null);
-            result.Should().HaveCount(6); // Captain Rex, Han, Leia, Wedge Antilles
+            result.Should().HaveCount(6); 
         }
 
         [Fact]
         public async Task QueryBuilderFilterByProjectNameRebellionAsync()
         {
-            var rebellionId = await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
-            
+            var rebellionId =
+                await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
+
             var dto = new CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Rebellion"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
-            result.Should().HaveCount(4); // Leia, Luke, Han, Wedge
+            result.Should().HaveCount(4);
         }
+
 
         [Fact]
         public async Task QueryBuilderFilterByProjectNameEmpireAsync()
@@ -428,7 +428,7 @@ namespace deeplynx.tests
                 Connector = null, Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { empireId }, null);
-            result.Should().HaveCount(3); // Vader, Tarkin, Thrawn
+            result.Should().HaveCount(3); 
         }
 
         [Fact]
@@ -441,24 +441,22 @@ namespace deeplynx.tests
                 Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Mandalorians"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { mandoId }, null);
-            result.Should().HaveCount(4); // Din, Bo-Katan, Boba, Paz
+            result.Should().HaveCount(4); 
         }
 
         [Fact]
         public async Task QueryBuilderUserAccessToSpecificProjectsOnlyAsync()
         {
-            // Simulate user has access to only Anakin and Empire projects
             var anakinId = await Context.Projects.Where(p => p.Name == "Anakin").Select(p => p.Id).FirstAsync();
             var empireId = await Context.Projects.Where(p => p.Name == "The Galactic Empire").Select(p => p.Id).FirstAsync();
             
             var result = _queryBusiness.QueryBuilder([], new[] { anakinId, empireId }, null);
-            result.Should().HaveCount(8); // 5 from Anakin + 3 from Empire
+            result.Should().HaveCount(8); 
         }
 
         [Fact]
         public async Task FullTextSearchRestrictedToUserProjectsAsync()
         {
-            // User only has access to Rebellion project
             var rebellionId = await Context.Projects.Where(p => p.Name == "The Rebellion").Select(p => p.Id).FirstAsync();
             
             var result = await _queryBusiness.Search("the", new[] { rebellionId });
@@ -474,7 +472,6 @@ namespace deeplynx.tests
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { pid }, null);
             result.Should().HaveCount(5);
-            // These records use datasources and classes from other projects
         }
 
         [Fact]
@@ -487,7 +484,7 @@ namespace deeplynx.tests
                 Connector = null, Filter = "data_source_name", Operator = "LIKE", Value = "Yavin"
             };
             var result = _queryBusiness.QueryBuilder([dto], allProjectIds, null);
-            result.Should().HaveCount(4); // Hunter, Leia, Tarkin, Bo-Katan use Rebellion datasource
+            result.Should().HaveCount(4); 
         }
 
         [Fact]
@@ -497,7 +494,6 @@ namespace deeplynx.tests
             {
                 Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
             };
-            // Pass empty project IDs array
             var result = _queryBusiness.QueryBuilder([dto], Array.Empty<long>(), null);
             result.Should().BeEmpty();
         }
@@ -507,7 +503,7 @@ namespace deeplynx.tests
         {
             var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
             var result = await _queryBusiness.Search("Captain", allProjectIds);
-            result.Should().HaveCount(2); // Only Captain Rex
+            result.Should().HaveCount(2); 
         }
 
         [Fact]
@@ -520,13 +516,12 @@ namespace deeplynx.tests
                 Connector = null, Filter = "original_id", Operator = "LIKE", Value = "REB-"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
-            result.Should().HaveCount(4); // All Rebellion records
+            result.Should().HaveCount(4); 
         }
 
         [Fact]
         public async Task QueryBuilderComplexQueryWithLimitedProjectAccessAsync()
         {
-            // User has access to Anakin and Mandalorians projects only
             var anakinId = await Context.Projects.Where(p => p.Name == "Anakin").Select(p => p.Id).FirstAsync();
             var mandoId = await Context.Projects.Where(p => p.Name == "Mandalorians").Select(p => p.Id).FirstAsync();
             
@@ -535,13 +530,12 @@ namespace deeplynx.tests
                 Connector = null, Filter = "original_id", Operator = "LIKE", Value = "CT-"
             };
             var result = _queryBusiness.QueryBuilder([dto], new[] { anakinId, mandoId }, null);
-            result.Should().HaveCount(5); // All CT- prefixed records are in Anakin project
+            result.Should().HaveCount(5); 
         }
 
         [Fact]
         public async Task FullTextSearchWithProjectFilterFindsRecordsUsingCrossProjectResourcesAsync()
         {
-            // Tech is in Anakin project but uses Empire datasource
             var result = await _queryBusiness.Search("Death Star", new[] { pid });
             result.Should().HaveCount(1);
             result.First().Name.Should().Be("Tech");
@@ -584,7 +578,7 @@ namespace deeplynx.tests
         {
             var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
             var result = await _queryBusiness.Search("Bounty", allProjectIds);
-            result.Should().HaveCount(2); // Din and Boba have "Bounty Hunter" tag
+            result.Should().HaveCount(2); 
         }
         [Fact]
         public async Task QueryBuilderKeyValueSearchForLegion501stAsync()
