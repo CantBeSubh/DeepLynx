@@ -75,7 +75,7 @@ public class FileBusiness
             objectStorage = await _context.ObjectStorages.FirstOrDefaultAsync(
                      os=> os.Id == objectStorageId 
                      && os.ProjectId == projectId 
-                     && os.IsArchived
+                     && !os.IsArchived
                      );
         }
         else

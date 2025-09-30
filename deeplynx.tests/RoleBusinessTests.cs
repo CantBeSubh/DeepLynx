@@ -182,6 +182,105 @@ namespace deeplynx.tests
         
         #endregion
         
+        # region BulkCreateRoles Tests
+        
+        [Fact]
+        public async Task CreateRoles_Success_OnBulkCreate()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var bulkDto = new List<CreateRoleRequestDto>
+            {
+                new CreateRoleRequestDto
+                {
+                    Name = $"Test Role 1",
+                    Description = "Test Description 1"
+                },
+                new CreateRoleRequestDto
+                {
+                    Name = $"Test Role 2",
+                    Description = "Test Description 2"
+                }
+            };
+
+            // Act
+            var result = await _roleBusiness.BulkCreateRoles(pid, bulkDto);
+    
+            // Assert
+            result.Should().HaveCount(2);
+            result.First().Name.Should().Be("Test Role 1");
+            result.First().Description.Should().Be("Test Description 1");
+            result.Last().Name.Should().Be("Test Role 2");
+            result.Last().Description.Should().Be("Test Description 2");
+    
+            // Ensure the create event is logged for each role create
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(2);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "role",
+                EntityId = result[0].Id,
+            });
+            eventList[1].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "role",
+                EntityId = result[1].Id,
+            });
+        }
+        
+        [Fact]
+        public async Task BulkCreateRoles_Success_OnNameCollision_UpdatesDescription()
+        {
+            // Arrange
+            var existingRole = new CreateRoleRequestDto
+            {
+                Name = "Existing Role",
+                Description = "Original Description"
+            };
+    
+            var created = await _roleBusiness.BulkCreateRoles(pid, new List<CreateRoleRequestDto> { existingRole });
+            var existingRoleId = created.First().Id;
+    
+            // Clear events from initial creation
+            Context.Events.RemoveRange(Context.Events);
+            await Context.SaveChangesAsync();
+    
+            var bulkDto = new List<CreateRoleRequestDto>
+            {
+                new CreateRoleRequestDto
+                {
+                    Name = "Existing Role",
+                    Description = "Updated Description"
+                }
+            };
+
+            // Act
+            var result = await _roleBusiness.BulkCreateRoles(pid, bulkDto);
+    
+            // Assert
+            result.Should().HaveCount(1);
+            result.First().Id.Should().Be(existingRoleId); // Same ID as existing role
+            result.First().Name.Should().Be("Existing Role");
+            result.First().Description.Should().Be("Updated Description");
+    
+            // Ensure the create event is logged even for upsert
+            var eventList = await Context.Events.ToListAsync();
+            eventList.Count.Should().Be(1);
+            eventList[0].Should().BeEquivalentTo(new
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "role",
+                EntityId = existingRoleId,
+            });
+        }
+        
+        # endregion
+        
         #region GetAllRole Tests
         
         [Fact]
@@ -771,6 +870,69 @@ namespace deeplynx.tests
         
         #endregion
         
+        # region SetPermissionsByPattern Tests
+        
+        [Fact]
+        public async Task SetPermissionsByPattern_Success_SetsPermissions()
+        {
+            // Arrange
+            var permissionPatterns = new Dictionary<string, string[]>
+            {
+                { "test", new[] { "read", "write" } },
+                { "test2", new[] { "execute" } }
+            };
+
+            var testRoleId = rid4;
+
+            // Act
+            var result = await _roleBusiness.SetPermissionsByPattern(testRoleId, permissionPatterns);
+
+            // Assert
+            Assert.True(result);
+
+            // Verify permissions were set correctly
+            var role = await Context.Roles.Include(r => r.Permissions).FirstAsync(r => r.Id == testRoleId);
+
+            // Get resources to query
+            var resources = permissionPatterns.Keys.ToList();
+    
+            // Fetch all permissions for those resources, then filter in memory
+            var allPermissionsForResources = await Context.Permissions
+                .Where(p => resources.Contains(p.Resource))
+                .ToListAsync();
+    
+            // Filter in memory to get expected permissions
+            var expectedPermissions = allPermissionsForResources
+                .Where(p => permissionPatterns.ContainsKey(p.Resource) &&
+                            permissionPatterns[p.Resource].Contains(p.Action))
+                .ToList();
+
+            role.Permissions.Count.Should().Be(expectedPermissions.Count);
+
+            foreach (var expectedPerm in expectedPermissions)
+            {
+                Assert.Contains(role.Permissions, p => p.Id == expectedPerm.Id);
+            }
+        }
+
+        [Fact]
+        public async Task SetPermissionsByPattern_Fails_IfRoleNotFound()
+        {
+            // Arrange
+            var permissionPatterns = new Dictionary<string, string[]>
+            {
+                { "test", new[] { "read" } }
+            };
+    
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _roleBusiness.SetPermissionsByPattern(rid3, permissionPatterns));
+
+            Assert.Contains($"Role with id {rid3} not found", exception.Message);
+        }
+        
+        # endregion
+        
         protected override async Task SeedTestDataAsync()
         {
             await CleanupTestData();
@@ -821,7 +983,7 @@ namespace deeplynx.tests
             // create permissions
             var permission1 = new Permission { Name = "Permission 1", Action = "read", Resource = "test" };
             var permission2 = new Permission { Name = "Permission 2", Action = "write", Resource = "test" };
-            var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test" };
+            var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test2" };
             var permission4 = new Permission { Name = "Permission 4", Action = "glorbulon", Resource = "test" };
             Context.Permissions.AddRange(permission1, permission2, permission3, permission4);
             await Context.SaveChangesAsync();

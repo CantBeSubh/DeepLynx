@@ -22,15 +22,23 @@ function mapToProjectsList(p: ProjectDTO): ProjectsList {
 export default async function Page() {
   let projects: ProjectsList[] = [];
   try {
-    const apiProjects = await getAllProjectsServer(); // ProjectDTO[]
+    const apiProjects = await getAllProjectsServer();
     projects = apiProjects.map(mapToProjectsList);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
   }
 
-  return (
-    <AuthGuard>
-      <HomeDashboardClient initialProjects={projects} />;
-    </AuthGuard>
-  );
+  // Local development bypass
+  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
+
+  if (disableAuth == "true") {
+    console.log(disableAuth)
+    return <HomeDashboardClient initialProjects={projects} />;
+  } else
+
+    return (
+      // <AuthGuard>
+         <HomeDashboardClient initialProjects={projects} />
+      // </AuthGuard>
+    );
 }

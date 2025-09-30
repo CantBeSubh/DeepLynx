@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("users", Schema = "deeplynx")]
-[Index("Email", Name = "idx_users_email")]
+[Index("Email", Name = "idx_users_email", IsUnique = true)]
 [Index("Id", Name = "idx_users_id")]
 public partial class User
 {

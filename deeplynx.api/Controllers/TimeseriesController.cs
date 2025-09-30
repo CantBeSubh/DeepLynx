@@ -88,7 +88,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var uploadId = await _timeseriesBusiness.StartUpload(projectId, dataSourceId);
+                var uploadId = await _timeseriesBusiness.StartUpload(projectId, dataSourceId, request.FileName);
                 return Ok(new { UploadId = uploadId });
             }
             catch (Exception e)

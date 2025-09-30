@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Update;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -78,14 +79,21 @@ public class TimeseriesBusiness(
     /// <param name="dataSourceId">The Data Source ID</param>
     /// <param name="tableName">Timeseries table name</param>
     /// <param name="filePath">The path of the file being uploaded to DuckDB</param>
-    public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath)
+    public async Task CreateTimeseriesTable(long projectId, long dataSourceId, string tableName, string filePath, string fileType)
     {
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
 
         await using var command = duckDbConnection.CreateCommand();
-        
-        command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}', timestampformat = 'TIMESTAMP_NS'); ";
-        var executeNonQuery = await command.ExecuteNonQueryAsync();
+        if (fileType == ".csv")
+        {
+            command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_csv('{filePath}'); ";
+        }
+        else if (fileType == ".parquet")
+        {
+            command.CommandText = $"CREATE TABLE '{tableName}' AS SELECT * from read_parquet('{filePath}'); ";
+        }
+        await command.ExecuteNonQueryAsync();
+        await duckDbConnection.CloseAsync();
     }
 
     /// <summary>
@@ -99,47 +107,120 @@ public class TimeseriesBusiness(
     /// <exception cref="InvalidOperationException">If the server cannot create the directory</exception>
     public async Task<RecordResponseDto> UploadFile(long projectId, long dataSourceId, IFormFile file)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        var fileType = Path.GetExtension(file.FileName);
+        if (fileType != ".csv" && fileType != ".parquet")
+        {
+            throw new ArgumentException("Only .csv and .parquet files are supported");
+        }
+        
         if (file == null || file.Length == 0)
         {
             throw new ArgumentException("File is required and cannot be empty or whitespace.");
         }
-
+        
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        
+        // folder prep
         var uploadId = Guid.NewGuid().ToString();
-        string tableName = uploadId + "_" + file.FileName;
-        var filePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), "uploads", uploadId + "_" + file.FileName);
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath) ?? throw new InvalidOperationException("error creating upload path"));
+        var tableName = uploadId + "_" + file.FileName;
+        var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
+            "datasource_" + dataSourceId.ToString());
+        var filePath = Path.Combine(folderPath, tableName);
+        Directory.CreateDirectory(folderPath ?? throw new InvalidOperationException("error creating upload path"));
+        
         var uri = "duckdb://" + tableName;
-
-        await using (var stream = new FileStream(filePath, FileMode.Create))
+        
+        try
         {
-            await file.CopyToAsync(stream);
-        }
-
-        await CreateTimeseriesTable(projectId, dataSourceId, tableName, filePath);
-
-        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
-        var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
-        var fileName = file.FileName;
-
-        var recordRequest = new CreateRecordRequestDto
-        {
-            Properties = new JsonObject
+            // copy file to path for db
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
-                ["columns"] = columns,
-                ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower(),
-            },
-            Name = fileName,
-            Description = $"Table name: {tableName}",
-            OriginalId = uploadId,
-            Uri = uri,
-            ClassId = recordClass.Id,
-            ClassName = recordClass.Name,
-        };
+                await file.CopyToAsync(stream);
+            }
+            
+            // write file as table
+            await CreateTimeseriesTable(projectId, dataSourceId, tableName, filePath, fileType);
+            
+            // delete file when its in duckdb
+            File.Delete(filePath);
+            
+            
+            // create record for file's db table
+            var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
+            var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
+            var fileName = file.FileName;
 
-        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+            var recordRequest = new CreateRecordRequestDto
+            {
+                Properties = new JsonObject
+                {
+                    ["columns"] = columns,
+                    ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    ["fileType"] = Path.GetExtension(file.FileName).TrimStart('.').ToLower(),
+                },
+                Name = fileName,
+                Description = $"Table name: {tableName}",
+                OriginalId = uploadId,
+                Uri = uri,
+                ClassId = recordClass.Id,
+                ClassName = recordClass.Name,
+            };
+
+            return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        }
+        catch (Exception ex)
+        {
+            // delete file if file exists but fails when creating table 
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+            
+            var timeseriesPath = Path.Combine(folderPath, "timeseries.duckdb");
+            var timeseriesWalPath = Path.Combine(folderPath, "timeseries.duckdb.wal");
+            
+            // initial check to see if there is a timeseries db
+            if (File.Exists(timeseriesPath))
+            {
+                var connection = await GetDuckDbConnection(projectId, dataSourceId);
+                await using var command = connection.CreateCommand();
+                
+                // checks if table exists
+                command.CommandText = $" SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{tableName}'"; 
+                var exists = Convert.ToInt32(command.ExecuteScalar()) > 0;
+                
+                // drop table if it exists after failure
+                if (exists)
+                {
+                    command.CommandText = $"DROP TABLE \"{tableName}\"";
+                    command.ExecuteNonQuery();
+                }
+                
+                // check to see if db has any tables
+                command.CommandText = $" SELECT COUNT(*) FROM information_schema.tables";
+                var hasTables = Convert.ToInt32(command.ExecuteScalar()) > 0;
+                if (!hasTables)
+                {
+                    // delete unneeded timeseries files if no tables
+                    File.Delete(timeseriesPath);
+                    if (File.Exists(timeseriesWalPath))
+                    {
+                        File.Delete(timeseriesWalPath);
+                    }
+                }
+                
+                await connection.CloseAsync();
+            }
+            
+            // Clean up possible empty directories up to the base file path
+            if (Directory.Exists(folderPath))
+            {
+                CleanDirectoryUpToBasePath(folderPath);
+            }
+            
+            throw ex;
+        }
     }
 
     /// <summary>
@@ -147,14 +228,20 @@ public class TimeseriesBusiness(
     /// </summary>
     /// <param name="projectId">The project ID</param>
     /// <param name="dataSourceId">The Data Source ID</param>
+    /// <param name="fileName">The Data Source ID</param>
     /// <returns>The upload ID (guid format) for file chunks to go to the right directory</returns>
-    public async Task<string> StartUpload(long projectId, long dataSourceId)
+    public async Task<string> StartUpload(long projectId, long dataSourceId, string fileName)
     {
+        var fileType = Path.GetExtension(fileName);
+        if (fileType != ".csv" && fileType != ".parquet")
+        {
+            throw new ArgumentException("Only .csv and .parquet files are supported");
+        }
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        
         var uploadId = Guid.NewGuid().ToString();
-        var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), "uploads", uploadId);
+        var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), uploadId);
         Directory.CreateDirectory(folderPath);
 
         return uploadId;
@@ -173,18 +260,43 @@ public class TimeseriesBusiness(
     public async Task<string> UploadChunk(long projectId, long dataSourceId, IFormFile chunk,
         string uploadId, int chunkNumber)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        if (chunk == null || chunk.Length == 0)
+        var dataSourcePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
+            "datasource_" + dataSourceId.ToString());
+        var tempFolderPath = Path.Combine(dataSourcePath, uploadId);
+        var tempFilePath = Path.Combine(tempFolderPath, $"{chunkNumber}.part");
+        
+        try
         {
-            throw new ArgumentException("No chunk uploaded.");
+            var fileType = Path.GetExtension(chunk.FileName);
+            if (fileType != ".csv" && fileType != ".parquet")
+            {
+                throw new  ArgumentException("Only .csv and .parquet files are supported");
+            }
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+            await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+            if (chunk == null || chunk.Length == 0)
+            {
+                throw new ArgumentException("No chunk uploaded.");
+            }
+            await using var stream = new FileStream(tempFilePath, FileMode.Create);
+            await chunk.CopyToAsync(stream);
+
+            return "success";
         }
+        catch (Exception ex)
+        {
+            if (Directory.Exists(tempFolderPath))
+            {
+                Directory.Delete(tempFolderPath, true);
+            }
 
-        var tempFilePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), "uploads", uploadId, $"{chunkNumber}.part");
-        await using var stream = new FileStream(tempFilePath, FileMode.Create);
-        await chunk.CopyToAsync(stream);
-
-        return "success";
+            if (Directory.Exists(dataSourcePath))
+            {
+                CleanDirectoryUpToBasePath(dataSourcePath);
+            }
+            
+            throw ex;
+        }
     }
 
     /// <summary>
@@ -197,52 +309,114 @@ public class TimeseriesBusiness(
     public async Task<RecordResponseDto> CompleteUpload(long projectId, long dataSourceId,
         TimeseriesUploadCompleteRequestDto request)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), "uploads", request.UploadId);
+        var dataSourceFolderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
+            "datasource_" + dataSourceId.ToString());
+        var tempFolderPath = Path.Combine(dataSourceFolderPath, request.UploadId);
         var tableName = request.UploadId + "_" + request.FileName;
-        var finalFilePath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), "uploads",
-            request.UploadId + "_" + request.FileName);
+        var finalFilePath = Path.Combine( tempFolderPath, request.UploadId + "_" + request.FileName);
         var uri = "duckdb://" + tableName;
 
-        await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
+        try
         {
-            for (var i = 0; i < request.TotalChunks; i++)
+            var fileType = Path.GetExtension(request.FileName);
+            if (fileType != ".csv" && fileType != ".parquet")
             {
-                var partFilePath = Path.Combine(folderPath, $"{i}.part");
-                await using (var partStream = new FileStream(partFilePath, FileMode.Open))
-                {
-                    await partStream.CopyToAsync(finalFileStream);
-                }
-                File.Delete(partFilePath); // Clean up the chunk file
+                throw new ArgumentException("Only .csv and .parquet files are supported");
             }
-        }
-
-        Directory.Delete(folderPath); // Clean up the upload folder
-
-        await CreateTimeseriesTable(projectId, dataSourceId, tableName, finalFilePath);
-
-        var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
-        var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
-        var fileName = request.FileName;
-
-        var recordRequest = new CreateRecordRequestDto
-        {
-            Properties = new JsonObject
+            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+            await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+            await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
             {
-                ["columns"] = columns,
-                ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
-            },
-            Name = fileName,
-            Description = $"Table name: {tableName}",
-            OriginalId = request.UploadId,
-            Uri = uri,
-            ClassId = recordClass.Id,
-            ClassName = recordClass.Name,
-        };
+                for (var i = 0; i < request.TotalChunks; i++)
+                {
+                    var partFilePath = Path.Combine(tempFolderPath, $"{i}.part");
+                    await using (var partStream = new FileStream(partFilePath, FileMode.Open))
+                    {
+                        await partStream.CopyToAsync(finalFileStream);
+                    }
 
-        return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+                    File.Delete(partFilePath); // Clean up the chunk file
+                }
+            }
+
+            await CreateTimeseriesTable(projectId, dataSourceId, tableName, finalFilePath, fileType);
+            
+            Directory.Delete(tempFolderPath, true); // Clean up the datasource folder
+
+            var recordClass = await _classBusiness.GetClassInfo(projectId, "Timeseries");
+            var columns = await GetColumnsFromDb(projectId, dataSourceId, tableName);
+            var fileName = request.FileName;
+
+            var recordRequest = new CreateRecordRequestDto
+            {
+                Properties = new JsonObject
+                {
+                    ["columns"] = columns,
+                    ["timeUploaded"] = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    ["fileType"] = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
+                },
+                Name = fileName,
+                Description = $"Table name: {tableName}",
+                OriginalId = request.UploadId,
+                Uri = uri,
+                ClassId = recordClass.Id,
+                ClassName = recordClass.Name,
+            };
+
+            return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
+        }
+        catch (Exception ex)
+        {
+            // delete temporary folder if exists
+            if (Directory.Exists(tempFolderPath))
+            {
+                // recursive = true to delete folder contents
+                Directory.Delete(tempFolderPath, true);
+            }
+            
+            var timeseriesPath = Path.Combine(dataSourceFolderPath, "timeseries.duckdb");
+            var timeseriesWalPath = Path.Combine(dataSourceFolderPath, "timeseries.duckdb.wal");
+            
+            // initial check to see if db exists
+            if (File.Exists(timeseriesPath))
+            {
+                var connection = await GetDuckDbConnection(projectId, dataSourceId);
+                await using var command = connection.CreateCommand();
+                
+                //gets table from db
+                command.CommandText = $" SELECT COUNT(*) FROM information_schema.tables WHERE table_name = '{tableName}'"; 
+                var exists = Convert.ToInt32(command.ExecuteScalar()) > 0;
+                
+                if (exists)
+                {
+                    // drop table if it still exists after failure
+                    command.CommandText = $"DROP TABLE \"{tableName}\"";
+                    command.ExecuteNonQuery();
+                }
+                
+                // check if db has any other tables
+                command.CommandText = $" SELECT COUNT(*) FROM information_schema.tables";
+                var hasTables = Convert.ToInt32(command.ExecuteScalar()) > 0;
+                if (!hasTables)
+                {
+                    // delete duckdb files if db is empty
+                    File.Delete(timeseriesPath);
+                    if (File.Exists(timeseriesWalPath))
+                    {
+                        File.Delete(timeseriesWalPath);
+                    }
+                }
+                await connection.CloseAsync();
+            }
+            
+            //cleans up empty folders up to base path
+            if (Directory.Exists(dataSourceFolderPath))
+            {
+                CleanDirectoryUpToBasePath(dataSourceFolderPath);
+            }
+            
+            throw ex;
+        }
     }
 
     /// <summary>
@@ -268,17 +442,16 @@ public class TimeseriesBusiness(
             using var scope = _serviceScopeFactory.CreateScope();
             var backgroundContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
             using var connection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
+            var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
+                "datasource_" + dataSourceId.ToString());
+            var filePath = Path.Combine(folderPath, fileName);
 
             try
             {
-                var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(),
-                    "datasource_" + dataSourceId.ToString(), "reports");
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-                var filePath = Path.Combine(folderPath, fileName);
+                Directory.CreateDirectory(folderPath);
+                
                 var command = connection.CreateCommand();
+                
                 if (fileType == "csv")
                 {
                     command.CommandText = $"COPY ({query}) TO '{filePath}' (HEADER, DELIMITER ',');";
@@ -289,6 +462,7 @@ public class TimeseriesBusiness(
                 }
                 
                 await command.ExecuteNonQueryAsync();
+                await connection.CloseAsync();
                 
                 var properties = new JsonObject
                 {
@@ -310,6 +484,11 @@ public class TimeseriesBusiness(
             }
             catch (Exception e)
             {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                } 
+                
                 var properties = new JsonObject
                 {
                     ["status"] = Status.Failed,
@@ -326,6 +505,7 @@ public class TimeseriesBusiness(
 
                 backgroundContext.Records.Update(record);
                 await backgroundContext.SaveChangesAsync();
+                await connection.CloseAsync();
 
                 logger.LogError(e.Message);
                 throw new Exception("Failed while writing report to csv and postgres: " + e.Message);
@@ -449,6 +629,8 @@ public class TimeseriesBusiness(
         command.CommandText = $"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{tableName}';";
 
         using var reader = await command.ExecuteReaderAsync();
+        
+        await duckDbConnection.CloseAsync();
 
         while (reader.Read())
         {
@@ -539,9 +721,6 @@ public class TimeseriesBusiness(
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
-        // var resultTable = new DataTable();
-        // using var duckDBConnection = await GetReadOnlyDuckDbConnection(projectId, dataSourceId);
-        // using var command = duckDBConnection.CreateCommand();
         var queryId = Guid.NewGuid().ToString();
         string fileName;
         
@@ -657,5 +836,25 @@ public class TimeseriesBusiness(
         RunBackgroundJob(recordResponse, request.Query, projectId, dataSourceId, fileName, fileType);
 
         return recordResponse;
+    }
+
+    private void CleanDirectoryUpToBasePath(string? startDirectoryPath)
+    {
+        var normalizedBasePath = Path.GetFullPath(_duckDbBasePath).TrimEnd(Path.DirectorySeparatorChar);
+            
+        while (!string.IsNullOrEmpty(startDirectoryPath) &&
+               Directory.Exists(startDirectoryPath) &&
+               !Path.GetFullPath(startDirectoryPath).Equals(normalizedBasePath, StringComparison.OrdinalIgnoreCase))
+        {
+            if (Directory.GetFileSystemEntries(startDirectoryPath).Length == 0)
+            {
+                Directory.Delete(startDirectoryPath);
+                startDirectoryPath = Path.GetDirectoryName(startDirectoryPath);
+            }
+            else
+            {
+                break;
+            }
+        }
     }
 }

@@ -8,6 +8,7 @@ using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using deeplynx.business;
+using NpgsqlTypes;
 
 namespace deeplynx.business;
 
@@ -36,8 +37,9 @@ public class QueryBusiness : IQueryBusiness
     /// </summary>
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
+    /// /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, string? textSearch = null)
+    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
         if (request == null)
         {
@@ -63,10 +65,17 @@ public class QueryBusiness : IQueryBusiness
                     hr.record_id as RecordId,
                     hr.is_archived as IsArchived
                 FROM deeplynx.historical_records hr
-                WHERE hr.is_archived = false";
+                WHERE hr.is_archived = false
+                AND hr.project_id = ANY(@projectIds)";
 
             var parameters = new List<NpgsqlParameter>();
             var conditions = new List<string>();
+            var projectIdsParam = new NpgsqlParameter("projectIds", NpgsqlDbType.Array | NpgsqlDbType.Bigint)
+            {
+                Value = projectIds
+            };
+            parameters.Add(projectIdsParam);
+
 
             // Build individual conditions
             if (request?.Length > 0)
@@ -89,24 +98,47 @@ public class QueryBusiness : IQueryBusiness
                     }
                     else if (query.Operator == "LIKE")
                     {
-                        condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        // Check if this is a JSONB column that needs special handling
+                        var jsonbColumns = new[] { "properties", "tags" };
+    
+                        if (jsonbColumns.Contains(query.Filter.ToLower()))
+                        {
+                            // For JSONB columns, convert to text and search
+                            condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
+                        }
+                        else
+                        {
+                            condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        }
                         parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                     }
                     else if (query.Operator == "=")
                     {
-                        condition = $"hr.{query.Filter} = @{paramName}";
-                        
-                        if (int.TryParse(query.Value, out var intVal))
+                        // Check if this is a JSONB column that needs special handling
+                        var jsonbColumns = new[] { "properties", "tags" };
+    
+                        if (jsonbColumns.Contains(query.Filter.ToLower()))
                         {
-                            parameters.Add(new NpgsqlParameter(paramName, intVal));
-                        }
-                        else if (DateTime.TryParse(query.Value, out var dateVal))
-                        {
-                            parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                            // For JSONB columns, convert to text for exact match
+                            condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
+                            parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                         }
                         else
                         {
-                            parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                            condition = $"hr.{query.Filter} = @{paramName}";
+        
+                            if (int.TryParse(query.Value, out var intVal))
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, intVal));
+                            }
+                            else if (DateTime.TryParse(query.Value, out var dateVal))
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                            }
+                            else
+                            {
+                                parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                            }
                         }
                     }
                     else if (query.Operator == ">")
@@ -170,7 +202,7 @@ public class QueryBusiness : IQueryBusiness
             {
                 var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
                 parameters.Add(textSearchParam);
-                
+    
                 var textSearchCondition = @"
                     AND to_tsvector('english',
                             coalesce(name, '') || ' ' ||
@@ -183,7 +215,7 @@ public class QueryBusiness : IQueryBusiness
                             coalesce(properties::text, '') || ' ' ||
                             coalesce(tags::text, '')
                         )@@ websearch_to_tsquery('english', @textSearch)";
-                
+    
                 sql += textSearchCondition;
             }
 
@@ -242,8 +274,9 @@ public class QueryBusiness : IQueryBusiness
     /// Full text records search
     /// </summary>
     /// <param name="userQuery">String query</param>
+    /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided query parameters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> Search(string userQuery, long[] projectIds)
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
@@ -266,6 +299,7 @@ public class QueryBusiness : IQueryBusiness
             hr.is_archived as IsArchived
         FROM deeplynx.historical_records hr
         WHERE hr.is_archived = false
+        AND hr.project_id = ANY(@project_ids)
         AND to_tsvector('english',
                 coalesce(name, '') || ' ' ||
                 coalesce(description, '') || ' ' ||
@@ -277,17 +311,19 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(properties::text, '') || ' ' ||
                 coalesce(tags::text, '')
             )@@ websearch_to_tsquery('english',@query)
-        ORDER BY hr.record_id, hr.last_updated_at DESC;";
+        ORDER BY hr.record_id, hr.last_updated_at DESC";
 
         var param = new NpgsqlParameter("query", userQuery);
-
-        var results = await _context.Database
-            .SqlQueryRaw<HistoricalRecordResponseDto>(sql, param)
-            .ToListAsync();
+        var param2 = new NpgsqlParameter("project_ids", NpgsqlDbType.Array | NpgsqlDbType.Bigint)
+        {
+            Value = projectIds
+        };
+        var results = _context.HistoricalRecords.FromSqlRaw(sql, param, param2);
         
         return results
-            .Select(r => new HistoricalRecordResponseDto()
+            .Select(r => new HistoricalRecordResponseDto
             {
+                Id = r.RecordId,
                 Uri = r.Uri,
                 Properties = r.Properties,
                 OriginalId = r.OriginalId,
@@ -304,7 +340,7 @@ public class QueryBusiness : IQueryBusiness
                 Tags = r.Tags,
                 LastUpdatedBy = r.LastUpdatedBy,
                 LastUpdatedAt = r.LastUpdatedAt
-            });
+            }).ToList();
     }
     
     

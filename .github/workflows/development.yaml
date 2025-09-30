@@ -35,6 +35,7 @@ jobs:
           NEXT_PUBLIC_REDIRECT_LINK: ${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+          DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -53,6 +54,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
             .
           
           az acr build --registry $ACR_REGISTRY \
@@ -68,6 +70,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
             .
 
           az acr build --registry $ACR_REGISTRY \
@@ -116,6 +119,7 @@ jobs:
             --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
+            --from-literal=disabled-front-auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Overwrites ${VARIABLES} in the kube manifest with secrets
@@ -144,6 +148,7 @@ jobs:
           FROM_NAME: ${{ vars.FROM_NAME }}
           INVITE_URL: ${{ vars.INVITE_URL }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+          DISABLE_BACKEND_AUTHENTICATION: ${{ vars.DISABLE_BACKEND_AUTHENTICATION }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
