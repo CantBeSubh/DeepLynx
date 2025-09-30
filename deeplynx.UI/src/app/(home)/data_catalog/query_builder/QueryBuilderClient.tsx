@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
-import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
 import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
@@ -162,7 +162,7 @@ export default function QueryBuilderClient({
           setQueriedRecords(data);
         }
       } else {
-        const data = await fullTextSearch(searchTerm);
+        const data = await fullTextSearch(searchTerm, selectedProjects);
         if (data) {
           setQueriedRecords(data);
         }
