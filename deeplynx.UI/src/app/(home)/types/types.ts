@@ -92,9 +92,15 @@ export type SystemUsersTable = {
 }
 
 export type SystemGroupsTable = {
+  id: number | null;
+  name: string;
+  description?: string | null;
+}
+
+export interface Group {
   id: number;
   name: string;
-  description: string;
+  description?: string;
 }
 
 export type SystemOrgsTable = {
