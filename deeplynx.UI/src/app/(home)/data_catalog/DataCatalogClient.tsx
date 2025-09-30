@@ -38,7 +38,7 @@ export default function DataCatalogClient({
   const { t } = useLanguage();
 
   // Project session (client provider)
-  const { hasLoaded, setProject: setProjectSession} = useProjectSession();
+  const { hasLoaded, setProject: setProjectSession } = useProjectSession();
 
   // Local state
   const [projects] = useState(initialProjects);
@@ -142,20 +142,20 @@ export default function DataCatalogClient({
   );
 
   // Update project session when selectedProjects change
-    useEffect(() => {
-      if (!hasLoaded) return;
-      if (selectedProjects.length > 0) {
-        const selectedProject = projects.find(
-            (project) => project.id === selectedProjects[0]
-        );
-        if (selectedProject) {
-          setProjectSession({
-            projectId: selectedProject.id,
-            projectName: selectedProject.name,
-          });
-        }
+  useEffect(() => {
+    if (!hasLoaded) return;
+    if (selectedProjects.length > 0) {
+      const selectedProject = projects.find(
+        (project) => project.id === selectedProjects[0]
+      );
+      if (selectedProject) {
+        setProjectSession({
+          projectId: selectedProject.id,
+          projectName: selectedProject.name,
+        });
       }
-    }, [selectedProjects, hasLoaded, projects, setProjectSession]);
+    }
+  }, [selectedProjects, hasLoaded, projects, setProjectSession]);
 
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {
@@ -304,9 +304,9 @@ export default function DataCatalogClient({
         <div className="w-2/3">
           <RecentRecordsCard selectedProjects={selectedProjects} />
         </div>
-        <div className="w-1/3">
+        {/* <div className="w-1/3">
           <SavedSearches />
-        </div>
+        </div> */}
       </div>
     </div>
   );
