@@ -207,7 +207,7 @@ export default function DataCatalogClient({
       }
     }
     catch (error) {
-      console.error("Failed to send query")
+      console.error("Failed to send query", error)
     }
 
   };
