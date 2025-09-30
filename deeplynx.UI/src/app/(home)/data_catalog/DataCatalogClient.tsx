@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
@@ -21,6 +21,9 @@ import {
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import SearchBar from "@/app/(home)/components/SearchBar";
+import { fullTextSearch } from "@/app/lib/query_services.client";
+import ListView from "../components/ListView";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -48,6 +51,8 @@ export default function DataCatalogClient({
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
+  const [records, setQueriedRecords] = useState<FileViewerTableRow[]>(initialRecords ?? []);
+
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<
     Array<{ id: number; term: string }>
@@ -57,6 +62,7 @@ export default function DataCatalogClient({
   const [showAll, setShowAll] = useState(
     Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
   );
+
 
   const activeSearchTerms = useMemo(
     () => activeFilters.map((f) => f.term.toLowerCase()),
@@ -105,6 +111,7 @@ export default function DataCatalogClient({
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
+    setQueriedRecords([]);
 
     const ctrl = new AbortController();
     fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
@@ -185,20 +192,21 @@ export default function DataCatalogClient({
     fetchRecordsForSelection,
   ]);
 
-  function renderTags(tags: string) {
+
+  const handleSubmit = async () => {
     try {
-      const parsed: string[] = JSON.parse(tags);
-      return parsed
-        .filter((t) => t != null)
-        .map((t) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
-    } catch {
-      return null;
+
+      const data = await fullTextSearch(searchTerm, selectedProjects);
+      if (data) {
+        setQueriedRecords(data);
+      }
     }
-  }
+    catch (error) {
+      console.error("Failed to send query")
+    }
+
+  };
+
 
   const selectedProjectIdsNum = useMemo(
     () => selectedProjects.map((id) => Number(id)),
@@ -230,11 +238,11 @@ export default function DataCatalogClient({
       <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
         {/* Left: Search */}
         <div className="flex flex-col md:w-1/2">
-          <LargeSearchBar
+          <SearchBar
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onEnter={handleSearch}
+            onSubmit={handleSubmit}
             activeFilters={activeFilters}
             onRemoveFilter={(id) =>
               setActiveFilters((prev) => prev.filter((f) => f.id !== id))
@@ -301,9 +309,14 @@ export default function DataCatalogClient({
         </div>
       </div>
       <div className="flex w-full gap-8 p-8">
-        <div className="w-2/3">
-          <RecentRecordsCard selectedProjects={selectedProjects} />
-        </div>
+
+        {records && records?.length > 0 ? (
+          <ListView data={records} />
+        ) : (records &&
+          <div className="w-2/3">
+            <RecentRecordsCard selectedProjects={selectedProjects} />
+          </div>
+        )}
         {/* <div className="w-1/3">
           <SavedSearches />
         </div> */}

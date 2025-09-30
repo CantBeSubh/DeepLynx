@@ -1,6 +1,6 @@
 "use client";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowsRightLeftIcon,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
