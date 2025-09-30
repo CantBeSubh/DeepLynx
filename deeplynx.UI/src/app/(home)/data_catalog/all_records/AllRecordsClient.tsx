@@ -250,20 +250,7 @@ export default function DataCatalogClient({
             showResultsMessage={activeFilters.length > 0}
             className="w-1/4"
           />
-          {/* <SearchBar
-            placeholder="Search"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onEnter={handleSearch}
-            activeFilters={activeFilters}
-            onRemoveFilter={(id) =>
-              setActiveFilters((prev) => prev.filter((f) => f.id !== id))
-            }
-            onClearAll={clearAllFilters}
-            resultCount={tableData.length}
-            showResultsMessage={activeFilters.length > 0}
-            className="w-1/4"
-          /> */}
+
         </div>
         <div className="divider my-0"></div>
         {/* Bottom: Actions */}
