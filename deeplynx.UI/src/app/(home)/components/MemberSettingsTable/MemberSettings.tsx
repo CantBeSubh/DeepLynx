@@ -59,7 +59,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
   }, [searchParams]);
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
+    <div className="bg-base-100 text-accent-content rounded-xl shadow-md card">
       <div className="card-body">
         <div className="flex justify-between items-start">
           <h2 className="card-title">{t.translations.MEMBER_MANAGEMENT}</h2>

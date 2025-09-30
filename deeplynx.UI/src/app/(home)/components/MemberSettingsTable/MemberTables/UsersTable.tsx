@@ -116,7 +116,15 @@ const UsersTable = () => {
   if (loading) return <div className="p-4">Loading users…</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
-  return <GenericTable columns={columns} data={data} enablePagination />;
+  return (
+    <div>
+      <GenericTable
+        columns={columns}
+        data={data}
+        enablePagination
+      />
+    </div>
+  );
 };
 
 export default UsersTable;
