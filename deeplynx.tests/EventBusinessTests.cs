@@ -361,7 +361,7 @@ namespace deeplynx.tests
             var users = new List<User>
             {
                 new User { Name = "user1", Email = "test@gmail.com" },
-                new User { Name = "user2", Email = "test@gmail.com" },
+                new User { Name = "user2", Email = "test2@gmail.com" },
             };
             Context.Users.AddRange(users);
             await Context.SaveChangesAsync();
