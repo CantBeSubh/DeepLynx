@@ -18,18 +18,18 @@ namespace deeplynx.business;
 public class QueryBusiness : IQueryBusiness
 {
     private readonly DeeplynxContext _context;
-    private readonly ICacheBusiness _cache;
+    private readonly CacheBusiness _cache;
 
     /// <summary>
     /// Filter record request
     /// </summary>
     /// <param name="context">The database context to be used for filter operations.</param>
     public QueryBusiness(
-        DeeplynxContext context, ICacheBusiness? cacheBusiness
+        DeeplynxContext context, CacheBusiness cache
     )
     {
         _context = context;
-        _cache = cacheBusiness;
+        _cache = cache;
     }
     
     /// <summary>

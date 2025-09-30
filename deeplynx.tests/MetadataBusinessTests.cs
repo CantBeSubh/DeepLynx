@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -8,7 +7,6 @@ using deeplynx.models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using Microsoft.Extensions.Logging;
 
 namespace deeplynx.tests
 {
@@ -22,6 +20,7 @@ namespace deeplynx.tests
         private RecordBusiness _recordBusiness = null!;
         private EdgeBusiness _edgeBusiness = null!;
         private EventBusiness _eventBusiness = null!;
+        private CacheBusiness _cacheBusiness = null!;
      
         private Mock<IRecordBusiness> _mockRecordBusiness = null!;
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
@@ -42,7 +41,8 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _eventBusiness = new EventBusiness(Context);
+            _cacheBusiness = new CacheBusiness();
             
             _classBusiness = new ClassBusiness(
                 Context, _cacheBusiness, _mockRecordBusiness.Object, 
