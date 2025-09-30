@@ -271,10 +271,11 @@ public class UserBusiness : IUserBusiness
     public async Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(long[] projectIds)
     {
         var records = _context.HistoricalRecords
-                .Where(p => projectIds.Contains(p.ProjectId))
-                .OrderByDescending(p => p.LastUpdatedAt)
-                .Where(r => !r.IsArchived)
-                .ToList();
+            .Where(p => projectIds.Contains(p.ProjectId))
+            .Where(r => !r.IsArchived)
+            .GroupBy(r => r.RecordId)
+            .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
+            .ToList();
         
         return records
             .Select(r => new HistoricalRecordResponseDto()
