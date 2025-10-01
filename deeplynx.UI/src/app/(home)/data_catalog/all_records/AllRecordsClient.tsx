@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import SearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow, Tags } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
@@ -14,7 +14,8 @@ import ListView from "../../components/ListView";
 import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
-import { QueueListIcon, TableCellsIcon } from "@heroicons/react/24/outline";
+import { ArrowUturnLeftIcon, EyeIcon, QueueListIcon, TableCellsIcon } from "@heroicons/react/24/outline";
+import { fullTextSearch } from "@/app/lib/query_services.client";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -48,9 +49,6 @@ export default function DataCatalogClient({
   >([]);
   const [nextFilterId, setNextFilterId] = useState(1);
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
-  const [showAll, setShowAll] = useState(
-    Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
-  );
 
   const activeSearchTerms = useMemo(
     () => activeFilters.map((f) => f.term.toLowerCase()),
@@ -89,7 +87,6 @@ export default function DataCatalogClient({
         signal,
       });
       setTableData(data);
-      // setShowAll(true);
       setViewMode("list");
     },
     [effectiveProjectIds]
@@ -130,7 +127,6 @@ export default function DataCatalogClient({
       setNextFilterId((n) => n + 1);
       setSearchTerm("");
       setViewMode("list");
-      // setShowAll(true);
     },
     [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
   );
@@ -197,6 +193,20 @@ export default function DataCatalogClient({
     [selectedProjects]
   );
 
+  const handleSubmit = async () => {
+    try {
+
+      const data = await fullTextSearch(searchTerm, selectedProjects);
+      if (data) {
+        setTableData(data);
+      }
+    }
+    catch (error) {
+      console.error("Failed to send query", error)
+    }
+
+  };
+
   if (!hasLoaded) return null;
 
   return (
@@ -221,11 +231,11 @@ export default function DataCatalogClient({
       <div className="flex flex-col gap-4 mb-4 pt-4 pl-8 w-full">
         {/* Top: Search */}
         <div className="flex justify-end pr-10">
-          <LargeSearchBar
+          <SearchBar
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onEnter={handleSearch}
+            onSubmit={handleSubmit}
             activeFilters={activeFilters}
             onRemoveFilter={(id) =>
               setActiveFilters((prev) => prev.filter((f) => f.id !== id))
@@ -235,12 +245,26 @@ export default function DataCatalogClient({
             showResultsMessage={activeFilters.length > 0}
             className="w-1/4"
           />
+
         </div>
         <div className="divider my-0"></div>
         {/* Bottom: Actions */}
         <div className="flex items-center justify-between">
           <div className="text-info-content px-4 text-lg">All Records</div>
           <div className="flex gap-1 pr-10">
+            <div className="pr-4">
+              <Link
+                href="/data_catalog"
+                className="btn btn-sm btn-outline btn-primary"
+                onClick={() => {
+                  setViewMode("list");
+                  clearAllFilters();
+                }}
+              >
+                <ArrowUturnLeftIcon className="h-7 w-6" />
+                {t.translations.DATA_CATALOG}
+              </Link>
+            </div>
             <button
               className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
                 }`}

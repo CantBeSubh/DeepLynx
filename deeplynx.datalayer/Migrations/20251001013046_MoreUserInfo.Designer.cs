@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251001013046_MoreUserInfo")]
+    partial class MoreUserInfo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -31,9 +34,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long>("UserId")
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
-
-                    b.Property<long>("2")
-                        .HasColumnType("bigint");
 
                     b.HasKey("GroupId", "UserId")
                         .HasName("group_users_pkey");
@@ -151,37 +151,6 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId" }, "idx_project_id");
 
                     b.ToTable("actions", "deeplynx");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.ApiKey", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Key")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("key");
-
-                    b.Property<string>("Secret")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("secret");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id")
-                        .HasName("api_keys_pkey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("api_keys", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
@@ -1539,18 +1508,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.ApiKey", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.User", "User")
-                        .WithMany("ApiKeys")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("api_keys_user_id_fkey");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
@@ -2046,8 +2003,6 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.User", b =>
                 {
-                    b.Navigation("ApiKeys");
-
                     b.Navigation("OrganizationUsers");
 
                     b.Navigation("ProjectMembers");

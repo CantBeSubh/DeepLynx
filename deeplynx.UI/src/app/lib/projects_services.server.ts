@@ -28,7 +28,7 @@ export type ProjectDTO = {
   id: number | string;
   name: string;
   description?: string | null;
-  lastViewed?: string | null;
+  lastUpdatedAt?: string | null;
   createdAt?: string | null;
 };
 

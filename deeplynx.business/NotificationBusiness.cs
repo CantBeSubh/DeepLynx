@@ -33,7 +33,7 @@ public class NotificationBusiness : INotificationBusiness
     /// <param name="toEmail">Recipient email address</param>
     /// <param name="name">Recipient name</param>
     /// <returns>True if email was sent successfully, false otherwise</returns>
-    public async Task<bool> SendEmail(string toEmail, string name)
+    public async Task<bool> SendEmail(string toEmail, string? name)
     {
        try 
        {
