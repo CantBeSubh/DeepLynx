@@ -4,5 +4,5 @@ namespace deeplynx.interfaces;
 
 public interface INotificationBusiness
 {
-    Task<bool> SendEmail(string toEmail, string name = "User");
+    Task<bool> SendEmail(string toEmail, string? name);
 }
