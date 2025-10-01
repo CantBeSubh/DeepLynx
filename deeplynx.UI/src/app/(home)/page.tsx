@@ -5,7 +5,6 @@ import {
   type ProjectDTO, // make sure this includes optional fields below
 } from "../lib/projects_services.server";
 import type { ProjectsList } from "./types/types";
-import AuthGuard from "./components/AuthGuard";
 
 export const dynamic = "force-dynamic"; // if behind auth
 
@@ -28,11 +27,5 @@ export default async function Page() {
     console.error("getAllProjectsServer failed:", e);
   }
 
-  // Local development bypass
-  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
-
-  if (disableAuth == "true") {
-    console.log(disableAuth);
-    return <HomeDashboardClient initialProjects={projects} />;
-  } else return <HomeDashboardClient initialProjects={projects} />;
+  return <HomeDashboardClient initialProjects={projects} />;
 }

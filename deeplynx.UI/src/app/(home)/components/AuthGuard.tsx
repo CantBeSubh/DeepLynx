@@ -53,5 +53,11 @@ export default function AuthGuard({
   }
 
   // User is authenticated, show the protected content
-  return <>{children}</>;
+  // Local development bypass
+  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
+
+  if (disableAuth == "true") {
+    console.log(disableAuth);
+    return <>{children}</>;
+  } else return <>{children}</>;
 }
