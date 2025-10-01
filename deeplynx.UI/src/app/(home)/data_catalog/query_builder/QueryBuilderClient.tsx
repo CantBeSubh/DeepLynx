@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
-import { PlusCircleIcon, PlusIcon, StarIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { DatePicker } from "../../components/DatePicker";
 import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
@@ -81,6 +81,7 @@ export default function QueryBuilderClient({
   const reset = () => {
     setRows([emptyRow()]);
     setQueriedRecords(null);
+    setSearchTerm("")
   }
 
 
@@ -157,12 +158,12 @@ export default function QueryBuilderClient({
     try {
       const queryDtos = rows.map(r => r.query);
       if (hasValidQueries()) {
-        const data = await queryBuilder(queryDtos, searchTerm);
+        const data = await queryBuilder(queryDtos, searchTerm, selectedProjects);
         if (data) {
           setQueriedRecords(data);
         }
       } else {
-        const data = await fullTextSearch(searchTerm);
+        const data = await fullTextSearch(searchTerm, selectedProjects);
         if (data) {
           setQueriedRecords(data);
         }
@@ -211,6 +212,7 @@ export default function QueryBuilderClient({
                   }
                   showResultsMessage={activeFilters.length > 0}
                   className="w-full max-w-3xl"
+                  onSubmit={handleSubmit}
                 />
               </div>
               {/* Query Builder */}
@@ -463,6 +465,7 @@ export default function QueryBuilderClient({
                             type="button"
                             className="btn btn-outline btn-error btn-sm"
                             onClick={() => removeRow(row.id)}
+                            hidden={idx === 0}
                           >
                             <TrashIcon className="w-4 h-4" />
                           </button>

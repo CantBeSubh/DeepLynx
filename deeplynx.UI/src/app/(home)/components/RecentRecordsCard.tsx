@@ -67,19 +67,19 @@ const RecentRecordsCard = ({
   };
 
   return (
-    <div className="bg-base-200/10 rounded-xl">
+    <div className="shadow shadow-md rounded-xl">
       {/* Header */}
-      <h2 className="text-lg font-semibold text-base-content mb-2 pl-2">
+      <h2 className="text-lg font-semibold text-base-content mb-2 p-4">
         {t.translations.RECENTLY_ADDED_RECORDS}
       </h2>
       <div className="divider m-0"></div>
 
       {/* Records List */}
-      <ul className="space-y-1">
+      <ul className="space-y-1 p-2">
         {paginatedRecords.map((record, index) => (
           <li
             key={index}
-            className="border-b border-base-300/30 cursor-pointer hover:bg-base-200/40 p-3 -mx-1 rounded-lg transition-colors"
+            className="border-b border-base-300/30 cursor-pointer hover:bg-base-200/40 p-3 -mx-1 transition-colors"
             onClick={() =>
               router.push(
                 `/record?recordId=${record.id}&projectId=${record.projectId}`
@@ -134,7 +134,7 @@ const RecentRecordsCard = ({
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex justify-end items-center gap-2 mt-4 pt-4 border-base-300/30">
+        <div className="flex justify-end items-center gap-2 p-4 border-base-300/30">
           <button
             className="btn btn-sm btn-ghost hover:bg-base-200"
             disabled={currentPage === 1}

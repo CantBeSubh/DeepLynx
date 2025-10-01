@@ -159,7 +159,7 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Email Notifications",
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
-            LAST_VIEWED: "Last Viewed",
+            LAST_UPDATED_AT: "Last Updated At",
             API_KEYPAIRS: "API Keypairs",
             NO_RECENT_RECORDS: "No recent records found",
             ORIGINAL_ID: "Original ID",
@@ -353,7 +353,7 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Notificaciones por correo electrónico",
             LANGUAGE: "Idioma",
             RECORD_NAME: "Nombre del registro",
-            LAST_VIEWED: "Última vez visto",
+            LAST_UPDATED_AT: "Última actualización en",
             ORIGINAL_ID: "ID original",
             PROPERTIES_EXAMPLE:
                 `Propiedades.\nEjemplo:\n  { "key1": "value1" },\n O \n { "key2": { "subKey2": "subValue2" } } \n(solo un objeto JSON)`,
