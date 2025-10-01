@@ -13,7 +13,6 @@ function toProjectsList(p: ProjectDTO): ProjectsList {
     name: p.name ?? "",
     description: p.description ?? "",
     lastUpdatedAt: p.lastUpdatedAt,
-    createdAt: p.createdAt ?? "",
   };
 }
 
