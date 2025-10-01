@@ -14,7 +14,7 @@ import ListView from "../../components/ListView";
 import ProjectDropdown from "../../components/ProjectDropdown";
 
 import { useLanguage } from "@/app/contexts/Language";
-import { QueueListIcon, TableCellsIcon } from "@heroicons/react/24/outline";
+import { ArrowUturnLeftIcon, EyeIcon, QueueListIcon, TableCellsIcon } from "@heroicons/react/24/outline";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 
 type Props = {
@@ -49,9 +49,6 @@ export default function DataCatalogClient({
   >([]);
   const [nextFilterId, setNextFilterId] = useState(1);
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
-  const [showAll, setShowAll] = useState(
-    Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
-  );
 
   const activeSearchTerms = useMemo(
     () => activeFilters.map((f) => f.term.toLowerCase()),
@@ -90,7 +87,6 @@ export default function DataCatalogClient({
         signal,
       });
       setTableData(data);
-      // setShowAll(true);
       setViewMode("list");
     },
     [effectiveProjectIds]
@@ -131,7 +127,6 @@ export default function DataCatalogClient({
       setNextFilterId((n) => n + 1);
       setSearchTerm("");
       setViewMode("list");
-      // setShowAll(true);
     },
     [activeFilters, nextFilterId, effectiveProjectIds, projects.length]
   );
@@ -257,6 +252,19 @@ export default function DataCatalogClient({
         <div className="flex items-center justify-between">
           <div className="text-info-content px-4 text-lg">All Records</div>
           <div className="flex gap-1 pr-10">
+            <div className="pr-4">
+              <Link
+                href="/data_catalog"
+                className="btn btn-sm btn-outline btn-primary"
+                onClick={() => {
+                  setViewMode("list");
+                  clearAllFilters();
+                }}
+              >
+                <ArrowUturnLeftIcon className="h-7 w-6" />
+                {t.translations.DATA_CATALOG}
+              </Link>
+            </div>
             <button
               className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"
                 }`}
