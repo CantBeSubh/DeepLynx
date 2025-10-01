@@ -14,6 +14,7 @@ import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
+import { format } from "date-fns";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
@@ -46,8 +47,8 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.lastUpdatedAt).getTime();
-      const dateB = new Date(b.lastUpdatedAt).getTime();
+      const dateA = new Date(a.lastUpdatedAt!).getTime();
+      const dateB = new Date(b.lastUpdatedAt!).getTime();
       return dateB - dateA;
     });
 
@@ -85,7 +86,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     {
       header: t.translations.LAST_UPDATED_AT,
       data: (row: ProjectsList) => (
-        <span className="text-base-content/60 text-sm">{row.lastUpdatedAt}</span>
+        <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
       ),
     },
   ];

@@ -57,8 +57,7 @@ export type ProjectsList = {
   id?: string;
   name: string;
   description: string;
-  lastUpdatedAt: string;
-  createdAt: string;
+  lastUpdatedAt?: Date;
 };
 
 export type PopularTable = {

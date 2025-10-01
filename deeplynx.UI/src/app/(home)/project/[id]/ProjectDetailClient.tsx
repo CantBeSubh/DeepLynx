@@ -83,8 +83,8 @@ export default function ProjectDetailClient({
         <p className="mt-2 text-base-content/70">{project.description}</p>
         <p className="mt-2 text-sm text-base-content/60">
           <span className="font-semibold">{t.translations.CREATED}: </span>
-          {project.createdAt &&
-            format(new Date(project.createdAt), "MM/dd/yyyy")}
+          {project.lastUpdatedAt &&
+            format(new Date(project.lastUpdatedAt), "MM/dd/yyyy")}
         </p>
         <ProjectDropdownSingleSelect
           projects={projects}
