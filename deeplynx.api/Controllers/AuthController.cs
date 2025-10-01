@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new token for api access for api users
+    /// Create JWT Token
     /// </summary>
     /// <param name="tokenDto"></param>
     /// <returns>Jwt token</returns>
@@ -36,7 +36,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Creates an api secret and an api key for users accessing the api via an api key
+    /// Create API Secret
     /// </summary>
     /// <returns>Api secret and api key</returns>
     [HttpPost("CreateApiKey", Name = "api_create_api_key")]

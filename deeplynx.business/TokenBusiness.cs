@@ -84,7 +84,7 @@ public class TokenBusiness : ITokenBusiness
         string apiKey = KeyGenerator.GenerateKeyBase64();
         string secret = KeyGenerator.GenerateKeyBase64();
         string hashedKey = HashApiKey(apiKey);
-        var user = _context.Users.FirstOrDefault(u => u.Email == UserContextStorage.Email);
+        var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == UserContextStorage.Email.ToLower());
         
         if (user == null)
         {
