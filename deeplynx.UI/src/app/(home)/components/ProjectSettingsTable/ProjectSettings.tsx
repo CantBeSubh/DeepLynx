@@ -9,7 +9,7 @@ import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
 // import DataSourceTable from '././ProjectTables/DataSourceTable';
 // import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
-import MemberSearchBar from './MemberSearchBar';
+// import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 
@@ -95,7 +95,8 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
               {activeTab === "Members" ? t.translations.MEMBER : t.translations.ROLE}
             </button>
             <div className="flex flex-col">
-              {activeTab === "Members" && <MemberSearchBar />}
+              {/* TODO POST FY
+              {activeTab === "Members" && <MemberSearchBar />} */}
             </div>
           </div>
         </div>

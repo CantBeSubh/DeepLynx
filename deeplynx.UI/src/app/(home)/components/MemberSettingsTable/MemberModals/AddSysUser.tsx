@@ -1,4 +1,6 @@
+import React, { useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
+import { sendEmail } from "@/app/lib/notification_services.client";
 
 interface AddSysUserProps {
   isOpen: boolean;
@@ -8,7 +10,55 @@ interface AddSysUserProps {
 // Main CreateWidget component
 const AddSysUser = ({ isOpen, onClose }: AddSysUserProps) => {
   const { t } = useLanguage();
-  return (
+  const [email, setEmail] = useState("");
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      await sendEmail(email);
+      alert("Invitation sent successfully!");
+    } catch (error) {
+      console.error("Error sending email:", error);
+      alert("An error occurred while sending the email.");
+    }
+
+    onClose();
+  };
+
+//   return (
+//     <>
+//       {isOpen && (
+//         <dialog className="modal modal-open">
+//           <div className="modal-box max-w-lg">
+//             <h3 className="font-bold text-lg mb-4 text-neutral">
+//               {t.translations.ADD_NEW_USER}
+//             </h3>
+//             {/* Form for adding a new member and selecting their role*/}
+//             <form method="dialog" className="flex flex-col gap-4">
+//                 <input
+//                 type="text"
+//                 placeholder="Email"
+//                 className="input input-primary w-full"
+//                 />
+//             </form>
+//             {/* Modal Action Buttons */}
+//             <div className="modal-action">
+//                 <button className="btn" onClick={onClose}>
+//                     {t.translations.CANCEL}
+//                 </button>
+//                 <button className="btn btn-primary" onClick={onClose}>
+//                     {t.translations.INVITE}
+//                 </button>
+//             </div>
+//           </div>
+//         </dialog>
+//       )}
+//     </>
+//   );
+// };
+
+ return (
     <>
       {isOpen && (
         <dialog className="modal modal-open">
@@ -16,23 +66,24 @@ const AddSysUser = ({ isOpen, onClose }: AddSysUserProps) => {
             <h3 className="font-bold text-lg mb-4 text-neutral">
               {t.translations.ADD_NEW_USER}
             </h3>
-            {/* Form for adding a new member and selecting their role*/}
-            <form method="dialog" className="flex flex-col gap-4">
-                <input
+            <form method="dialog" className="flex flex-col gap-4" onSubmit={handleInvite}>
+              <input
                 type="text"
                 placeholder="Email"
                 className="input input-primary w-full"
-                />
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <div className="modal-action">
+                <button type="button" className="btn" onClick={onClose}>
+                  {t.translations.CANCEL}
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  {t.translations.INVITE}
+                </button>
+              </div>
             </form>
-            {/* Modal Action Buttons */}
-            <div className="modal-action">
-                <button className="btn" onClick={onClose}>
-                    {t.translations.CANCEL}
-                </button>
-                <button className="btn btn-primary" onClick={onClose}>
-                    {t.translations.INVITE}
-                </button>
-            </div>
           </div>
         </dialog>
       )}
