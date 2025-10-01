@@ -13,7 +13,7 @@ function mapToProjectsList(p: ProjectDTO): ProjectsList {
     id: String(p.id),
     name: p.name ?? "",
     description: p.description ?? "", // fallback to empty string
-    lastViewed: p.lastViewed ?? "", // or a formatted date if you have it
+    lastUpdatedAt: p.lastUpdatedAt ?? "", // or a formatted date if you have it
     createdAt: p.createdAt ?? "", // note: your type had "createdAtt" in the error; use the real key
   };
 }

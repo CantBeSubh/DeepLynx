@@ -444,25 +444,8 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.Property(e => e.IsSysAdmin).HasDefaultValue(false);
-
-            entity.HasMany(d => d.Projects).WithMany(p => p.Users)
-                .UsingEntity<Dictionary<string, object>>(
-                    "UserProject",
-                    r => r.HasOne<Project>().WithMany()
-                        .HasForeignKey("ProjectId")
-                        .HasConstraintName("user_project_project_id_fkey"),
-                    l => l.HasOne<User>().WithMany()
-                        .HasForeignKey("UserId")
-                        .HasConstraintName("user_project_user_id_fkey"),
-                    j =>
-                    {
-                        j.HasKey("UserId", "ProjectId").HasName("user_project_pkey");
-                        j.ToTable("user_project", "deeplynx");
-                        j.HasIndex(new[] { "ProjectId" }, "idx_user_project_project_id");
-                        j.HasIndex(new[] { "UserId" }, "idx_user_project_user_id");
-                        j.IndexerProperty<long>("UserId").HasColumnName("user_id");
-                        j.IndexerProperty<long>("ProjectId").HasColumnName("project_id");
-                    });
+            
+            entity.Property(e => e.IsActive).HasDefaultValue(false);
         });
 
         OnModelCreatingPartial(modelBuilder);
