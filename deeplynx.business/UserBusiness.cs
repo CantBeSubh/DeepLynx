@@ -32,31 +32,22 @@ public class UserBusiness : IUserBusiness
     {
         List<User> users;
 
-        if (projectId == null)
-        {
-            users = await _context.Users
-                .Where(p => !p.IsArchived)
-                .ToListAsync();
-        }
-        else
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
-
-            users = await _context.Users
-                .Where(u => u.Projects.Any(p => p.Id == projectId))
-                .ToListAsync();
-
-        }
+        users = await _context.Users
+            .Where(p => !p.IsArchived)
+            .ToListAsync();
 
         return users.Select(p => new UserResponseDto()
         {
             Id = p.Id,
+            SsoId = p.SsoId,
             Name = p.Name,
+            Username = p.Username,
             Email = p.Email,
-            IsSysAdmin = p.IsSysAdmin
+            IsSysAdmin = p.IsSysAdmin,
+            IsArchived = p.IsArchived,
+            IsActive = p.IsActive,
         });
     }
-
 
     /// <summary>
     /// Retrieves a specific user by ID
@@ -78,9 +69,13 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
+            SsoId = user.SsoId,
             Name = user.Name,
+            Username = user.Username,
             Email = user.Email,
-            IsSysAdmin = user.IsSysAdmin
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive,
         };
     }
 
@@ -102,31 +97,58 @@ public class UserBusiness : IUserBusiness
         {
             Name = dto.Name,
             Email = dto.Email,
+            Username = dto.Username,
+            SsoId = dto.SsoId,
+            IsActive = dto.IsActive ?? false,
+            IsArchived = dto.IsArchived ?? false,
         };
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        if (dto.ProjectId.HasValue)
-        {
-            await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId.Value, _cacheBusiness);
-
-            var project = _context.Projects.FirstOrDefault(p => p.Id == dto.ProjectId);
-
-            if (project != null)
-            {
-                project.Users.Add(user);
-                _context.SaveChanges();
-            }
-        }
-     
 
         return new UserResponseDto()
         {
             Id = user.Id,
+            SsoId = user.SsoId,
             Name = user.Name,
+            Username = user.Username,
             Email = user.Email,
-            IsSysAdmin = user.IsSysAdmin
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive,
         };
+    }
+
+    /// <summary>
+    /// Insert user if email not exists, else update user
+    /// </summary>
+    /// <param name="dto">The user information supplied</param>
+    /// <returns>The user which was just updated</returns>
+    public async Task<UserResponseDto> RefreshUser(CreateUserRequestDto dto)
+    {
+        var existingUser = await _context.Users
+            .Where(u => u.Email == dto.Email)
+            .FirstOrDefaultAsync();
+    
+        if (existingUser != null)
+        {
+            // If user exists, update using UpdateUser logic
+            var updateDto = new UpdateUserRequestDto
+            {
+                Name = dto.Name,
+                SsoId = dto.SsoId,
+                Username = dto.Username,
+                IsArchived = dto.IsArchived,
+                IsActive = dto.IsActive
+            };
+        
+            return await UpdateUser(existingUser.Id, updateDto);
+        }
+        else
+        {
+            // If user does not exist, create
+            return await CreateUser(dto);
+        }
     }
 
     /// <summary>
@@ -136,8 +158,6 @@ public class UserBusiness : IUserBusiness
     /// <param name="dto">A data transfer object with details on the user to be updated.</param>
     /// <returns>The user which was just updated.</returns>
     /// <exception cref="KeyNotFoundException">Returned if the user was not found.</exception>
-    /// TODO: Decide if we want to update to null if null value is given in the DTO
-    /// TODO: Decide if we want to allow add/remove to a project in this update method 
     public async Task<UserResponseDto> UpdateUser(long userId, UpdateUserRequestDto dto)
     {
         var user = await _context.Users
@@ -148,15 +168,10 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.Name = dto.Name ?? user.Name;
-        if (dto.Email != null)
-        {
-            var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email == dto.Email);
-            if (otherUserHasEmail)
-            {
-                throw new ArgumentException("User with email already exists");
-            }
-            user.Email = dto.Email;
-        }
+        user.SsoId = dto.SsoId ?? user.SsoId;
+        user.Username = dto.Username ?? user.Username;
+        user.IsArchived = dto.IsArchived ?? user.IsArchived;
+        user.IsActive = dto.IsActive ?? user.IsActive;
         
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
@@ -164,9 +179,13 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
+            SsoId = user.SsoId,
             Name = user.Name,
+            Username = user.Username,
             Email = user.Email,
             IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive,
         };
     }
 
@@ -231,6 +250,8 @@ public class UserBusiness : IUserBusiness
         await _context.SaveChangesAsync();
         return true;
     }
+    
+    // TODO: set IsSysAdmin with a business function. Should only be executable by SysAdmins
 
     /// <summary>
     /// Retrieves data overview counts for a user
@@ -239,20 +260,18 @@ public class UserBusiness : IUserBusiness
     /// <returns>Data overview object</returns>
     public async Task<DataOverviewDto> GetUserOverview(long userId)
     {
-
         // Filtering projects by a user
-        var projectsTotal = _context.Projects
-            .Include(p => p.Users)
-            .Count(p => p.Users.Any(u => u.Id == userId));
+        var projectsTotal = _context.ProjectMembers
+            .Count(p => p.UserId == userId);
 
         var datasources = _context.DataSources
-            .Count(d => d.Project.Users.Any(u => u.Id == userId));
+            .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         var records = _context.Records
-            .Count(d => d.Project.Users.Any(u => u.Id == userId));
+            .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         var tags = _context.Tags
-            .Count(d => d.Project.Users.Any(u => u.Id == userId));
+            .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         return new DataOverviewDto
         {

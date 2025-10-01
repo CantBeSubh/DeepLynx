@@ -84,8 +84,4 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-
-    [ForeignKey("ProjectId")]
-    [InverseProperty("Projects")]
-    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }
