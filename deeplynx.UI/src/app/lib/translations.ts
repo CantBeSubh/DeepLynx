@@ -369,6 +369,7 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Notificaciones por correo",
             LANGUAGE: "Idioma",
             RECORD_NAME: "Nombre de Registro",
+            LAST_UPDATED_AT: "Última Actualización en",
             LAST_VIEWED: "Última visualización",
             QUERY_BUILDER: "Constructor de consultas",
             CLEAR_SEARCH: "Limpiar búsqueda",
