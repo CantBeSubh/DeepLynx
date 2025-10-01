@@ -12,7 +12,7 @@ function toProjectsList(p: ProjectDTO): ProjectsList {
     id: String(p.id), // <- normalize to string
     name: p.name ?? "",
     description: p.description ?? "",
-    lastUpdatedAt: p.lastUpdatedAt ?? "",
+    lastUpdatedAt: p.lastUpdatedAt,
     createdAt: p.createdAt ?? "",
   };
 }

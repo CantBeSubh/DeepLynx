@@ -62,6 +62,19 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
+  const formatDateTime = (date: Date) => {
+    const d = date instanceof Date ? date : new Date(date);
+
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   return (
     <div>
       {/* Header Section */}
@@ -74,7 +87,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {project.lastUpdatedAt}
+            {t.translations.LAST_EDIT} {formatDateTime(project.lastUpdatedAt!)}
           </p>
         </div>
         <button

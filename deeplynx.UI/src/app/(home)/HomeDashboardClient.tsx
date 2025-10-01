@@ -46,8 +46,8 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       );
     })
     .sort((a, b) => {
-      const dateA = new Date(a.lastUpdatedAt).getTime();
-      const dateB = new Date(b.lastUpdatedAt).getTime();
+      const dateA = new Date(a.lastUpdatedAt!).getTime();
+      const dateB = new Date(b.lastUpdatedAt!).getTime();
       return dateB - dateA;
     });
 
@@ -58,6 +58,19 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     } catch (err) {
       console.error("Failed to refresh projects:", err);
     }
+  };
+
+  const formatDateTime = (date: Date) => {
+    const d = date instanceof Date ? date : new Date(date);
+
+    return d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   const onExplore = (row: ProjectsList) => {
@@ -85,7 +98,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     {
       header: t.translations.LAST_UPDATED_AT,
       data: (row: ProjectsList) => (
-        <span className="text-base-content/60 text-sm">{row.lastUpdatedAt}</span>
+        <span className="text-base-content/60 text-sm">{formatDateTime(row.lastUpdatedAt!)}</span>
       ),
     },
   ];
