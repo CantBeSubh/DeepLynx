@@ -96,7 +96,7 @@ try
             // This makes ASP.NET fetch OIDC metadata + JWKS from:
             // {issuer}/.well-known/openid-configuration
             options.Authority = issuer;
-            options.RequireHttpsMetadata = false; 
+            //options.RequireHttpsMetadata = false; for local only
             if (localDevelopment == "true")
             {
                 options.RequireHttpsMetadata = false; 
