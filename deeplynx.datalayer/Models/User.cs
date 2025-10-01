@@ -7,8 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace deeplynx.datalayer.Models;
 
 [Table("users", Schema = "deeplynx")]
-[Index("Email", Name = "idx_users_email")]
+[Index("Email", Name = "idx_users_email", IsUnique = true)]
 [Index("Id", Name = "idx_users_id")]
+[Index("SsoId", Name = "idx_users_sso_id")]
 public partial class User
 {
     [Key]
@@ -20,6 +21,15 @@ public partial class User
 
     [Column("email")]
     public string Email { get; set; } = null!;
+    
+    [Column("username")]
+    public string? Username { get; set; } = null!;
+    
+    [Column("sso_id")]
+    public string? SsoId { get; set; }
+
+    [Column("is_active")] 
+    public bool IsActive { get; set; }
 
     [Column("password")]
     public string? Password { get; set; }
@@ -42,8 +52,4 @@ public partial class User
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
-
-    [ForeignKey("UserId")]
-    [InverseProperty("Users")]
-    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
 }

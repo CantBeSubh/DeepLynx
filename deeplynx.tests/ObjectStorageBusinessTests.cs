@@ -17,6 +17,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
     private Mock<IClassBusiness> _mockClassBusiness = null!;
     private Mock<IDataSourceBusiness> _mockDataSourceBusiness = null!;
+    private Mock<IRoleBusiness> _mockRoleBusiness = null!;
     private EventBusiness _eventBusiness = null!;
     private ProjectBusiness _projectBusiness;
     public long pid;
@@ -35,11 +36,13 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _mockClassBusiness = new Mock<IClassBusiness>();
         _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();
+        _mockRoleBusiness = new Mock<IRoleBusiness>();
         _projectBusiness = new ProjectBusiness(
             Context,
             _cacheBusiness,
             _mockLogger.Object,
             _mockClassBusiness.Object, 
+            _mockRoleBusiness.Object,
             _mockDataSourceBusiness.Object, 
             _objectStorageBusiness,
             _eventBusiness);

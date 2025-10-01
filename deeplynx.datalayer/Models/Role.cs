@@ -10,6 +10,8 @@ namespace deeplynx.datalayer.Models;
 [Index("Id", Name = "idx_roles_id")]
 [Index("OrganizationId", Name = "idx_roles_organization_id")]
 [Index("ProjectId", Name = "idx_roles_project_id")]
+[Index("ProjectId", "Name", Name = "unique_project_role_name", IsUnique = true)]
+[Index("OrganizationId", "Name", Name = "unique_organization_role_name", IsUnique = true)]
 public partial class Role
 {
     [Key]

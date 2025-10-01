@@ -20,7 +20,7 @@ type JsonValue = Record<string, unknown>;
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  initialProjects: ProjectsList[];
+  initialProjects: ProjectsList[] | { id: string; name: string }[];
 };
 
 const AddRecordModal: React.FC<Props> = ({

@@ -7,6 +7,7 @@ using deeplynx.helpers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using deeplynx.models.Configuration;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -20,6 +21,7 @@ public class ProjectBusiness : IProjectBusiness
     private readonly IEventBusiness _eventBusiness;
     private readonly ILogger<ProjectBusiness> _logger;
     private readonly IClassBusiness _classBusiness;
+    private readonly IRoleBusiness _roleBusiness;
     private readonly IDataSourceBusiness _dataSourceBusiness;
     private readonly IObjectStorageBusiness _objectStorageBusiness;
     private readonly ICacheBusiness _cacheBusiness;
@@ -32,17 +34,20 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="context">The database context used for the project operations.</param>
     /// <param name="cacheBusiness">Used to cache project data</param>
     /// <param name="classBusiness">Used to create default classes automatically on project creation.</param>
+    /// <param name="roleBusiness">Used to create default roles automatically on project creation.</param>
     /// <param name="dataSourceBusiness">Used to create a default datasource on project creation.</param>
     /// <param name="eventBusiness">Used for logging events during create and update Operations.</param>
     /// <param name="logger">Used for uniformity in logging</param>
     /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
-        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,IClassBusiness classBusiness, 
-        IDataSourceBusiness dataSourceBusiness, IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
+        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger, 
+        IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness, 
+        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
     {
         _context = context;
         _logger = logger;
         _classBusiness = classBusiness;
+        _roleBusiness = roleBusiness;
         _dataSourceBusiness = dataSourceBusiness;
         _objectStorageBusiness = objectStorageBusiness;
         _eventBusiness = eventBusiness;
@@ -148,10 +153,11 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
+        var projectId = project.Id;
         
         var projectResponseDto = new ProjectResponseDto
         {
-            Id = project.Id,
+            Id = projectId,
             Name = project.Name,
             Description = project.Description,
             Abbreviation = project.Abbreviation,
@@ -178,87 +184,20 @@ public class ProjectBusiness : IProjectBusiness
             await RefreshProjectsCache();
         }
 
-        // TODO: project config should determine whether to do this (true by default)
-        // create built-in classes for Timeseries and Report
-        var defaultClasses = new List<CreateClassRequestDto>
-        {
-            new CreateClassRequestDto { Name = "Timeseries" },
-            new CreateClassRequestDto { Name = "Report" },
-            new CreateClassRequestDto { Name = "File" }
-        };
-        await _classBusiness.BulkCreateClasses(project.Id, defaultClasses);
-
-        // TODO: project config should determine whether to do this (true by default)
-        // create default data source upon project creation
-        var defaultDataSource = new CreateDataSourceRequestDto()
-        {
-            Name = "Default Data Source",
-            Description = "This data source was created alongside the project for ease of use."
-        };
-        await _dataSourceBusiness.CreateDataSource(project.Id, defaultDataSource, true);
-        
-        // TODO: project config should determine whether to do this (true by default)
-        // create default object storage upon project creation
-        Env.Load("../.env");
-        var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
-
-        var config = new JsonObject();
-        if (defaultObjectStorageMethod == "filesystem")
-        {
-            var mountPath =
-                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ??
-                throw new NullReferenceException($"Storage file path not set");
-            config["mountPath"] = mountPath;
-        }
-        else if (defaultObjectStorageMethod == "azure_object")
-        {
-            var azureConnectionString =
-                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ??
-                throw new NullReferenceException($"Azure connection string not set");
-            config["azureConnectionString"] = azureConnectionString;
-        }
-        else if (defaultObjectStorageMethod == "aws_s3")
-        {
-            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
-                                      throw new NullReferenceException($"AWS connection string not set");
-            config["awsConnectionString"] = awsConnectionString;
-        }
-        else
-        {
-            throw new NullReferenceException(
-                $"Unknown object storage method, make sure your environment variables are correctly set");
-        }
-
-        var objectStorageRequestDto = new CreateObjectStorageRequestDto
-        {
-            Name = "Instance Default",
-            Config = config
-        };
-
-        var timeseriesObjectStorageMethod = new CreateObjectStorageRequestDto
-        {
-            Name = "Timeseries Default",
-            Config = new JsonObject
-            {
-                ["mountPath"] = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb"
-            }
-
-        };
-        await _objectStorageBusiness.CreateObjectStorage(project.Id, objectStorageRequestDto, true);
-        await _objectStorageBusiness.CreateObjectStorage(project.Id, timeseriesObjectStorageMethod);
-
         // Log create Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
             OrganizationId = project.OrganizationId,
-            ProjectId = project.Id,
+            ProjectId = projectId,
             Operation = "create",
             EntityType = "project",
-            EntityId = project.Id,
+            EntityId = projectId,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
+
+        await SetProjectDefaults(projectId);
 
         return projectResponseDto;
     }
@@ -783,5 +722,104 @@ public class ProjectBusiness : IProjectBusiness
             IsArchived = p.IsArchived,
             OrganizationId =  p.OrganizationId
         }).ToList();
-    }    
+    }
+
+    private async Task SetProjectDefaults(long projectId)
+    {
+        // ===============================
+        // CREATE DEFAULT CLASSES
+        // ===============================
+        // TODO: project config should determine whether to do this (true by default)
+        var defaultClasses = new List<CreateClassRequestDto>
+        {
+            new CreateClassRequestDto { Name = "Timeseries" },
+            new CreateClassRequestDto { Name = "Report" },
+            new CreateClassRequestDto { Name = "File" }
+        };
+        var cls = await _classBusiness.BulkCreateClasses(projectId, defaultClasses);
+
+        // ===============================
+        // CREATE DEFAULT DATA SOURCE
+        // ===============================
+        // TODO: project config should determine whether to do this (true by default)
+        var defaultDataSource = new CreateDataSourceRequestDto()
+        {
+            Name = "Default Data Source",
+            Description = "This data source was created alongside the project for ease of use."
+        };
+        await _dataSourceBusiness.CreateDataSource(projectId, defaultDataSource, true);
+        
+        // ===============================
+        // CREATE DEFAULT OBJECT STORAGE
+        // ===============================
+        // TODO: project config should determine whether to do this (true by default)
+        Env.Load("../.env");
+        var defaultObjectStorageMethod = Environment.GetEnvironmentVariable("FILE_STORAGE_METHOD");
+
+        var config = new JsonObject();
+        if (defaultObjectStorageMethod == "filesystem")
+        {
+            var mountPath =
+                Environment.GetEnvironmentVariable("STORAGE_DIRECTORY") ??
+                throw new NullReferenceException($"Storage file path not set");
+            config["mountPath"] = mountPath;
+        }
+        else if (defaultObjectStorageMethod == "azure_object")
+        {
+            var azureConnectionString =
+                Environment.GetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING") ??
+                throw new NullReferenceException($"Azure connection string not set");
+            config["azureConnectionString"] = azureConnectionString;
+        }
+        else if (defaultObjectStorageMethod == "aws_s3")
+        {
+            var awsConnectionString = Environment.GetEnvironmentVariable("AWS_S3_CONNECTION_STRING") ??
+                                      throw new NullReferenceException($"AWS connection string not set");
+            config["awsConnectionString"] = awsConnectionString;
+        }
+        else
+        {
+            throw new NullReferenceException(
+                $"Unknown object storage method, make sure your environment variables are correctly set");
+        }
+
+        var objectStorageRequestDto = new CreateObjectStorageRequestDto
+        {
+            Name = "Instance Default",
+            Config = config
+        };
+        await _objectStorageBusiness.CreateObjectStorage(projectId, objectStorageRequestDto, true);
+        
+        // ===============================
+        // CREATE DEFAULT TIMESERIES MOUNT
+        // ===============================
+        // TODO: project config should determine whether to do this (true by default)
+        var timeseriesObjectStorageMethod = new CreateObjectStorageRequestDto
+        {
+            Name = "Timeseries Default",
+            Config = new JsonObject
+            {
+                ["mountPath"] = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb"
+            }
+
+        };
+        var obj = await _objectStorageBusiness.CreateObjectStorage(projectId, timeseriesObjectStorageMethod);
+        
+        // ===============================
+        // CREATE DEFAULT PROJECT ROLES
+        // ===============================
+        // TODO: project config should determine whether to do this (true by default)
+        var defaultRoles = new List<CreateRoleRequestDto>
+        {
+            new CreateRoleRequestDto { Name = "Admin" },
+            new CreateRoleRequestDto { Name = "User" }
+        };
+        var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
+        var adminId = roles.Single(r => r.Name == "Admin").Id;
+        var userId = roles.Single(r => r.Name == "User").Id;
+        
+        // set role permissions for admin and user
+        await _roleBusiness.SetPermissionsByPattern(adminId, DefaultRolePermissions.Admin.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(userId, DefaultRolePermissions.User.AllowedPermissions);
+    }
 }

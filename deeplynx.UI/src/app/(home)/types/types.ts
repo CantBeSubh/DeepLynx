@@ -57,7 +57,7 @@ export type ProjectsList = {
   id?: string;
   name: string;
   description: string;
-  lastViewed: string;
+  lastUpdatedAt: string;
   createdAt: string;
 };
 

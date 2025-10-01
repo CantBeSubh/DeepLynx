@@ -5,6 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers;
 using System.Text.Json;
 using deeplynx.helpers.exceptions;
+using Npgsql;
 
 namespace deeplynx.business;
 
@@ -161,6 +162,73 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = role.ProjectId,
             OrganizationId = role.OrganizationId,
         };
+    }
+
+    /// <summary>
+    /// Upsert multiple roles at a time
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <param name="roles"></param>
+    /// <returns></returns>
+    public async Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> roles)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        
+        // TODO: add support for organization roles
+        // Bulk insert into roles; if there is a name collision, update the description if present
+        var sql = @"
+            INSERT INTO deeplynx.roles (project_id, name, description, last_updated_at, last_updated_by)
+            VALUES {0}
+            ON CONFLICT (project_id, name) DO UPDATE SET
+                description = COALESCE(EXCLUDED.description, roles.description),
+                last_updated_at = @now
+            RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;                                  
+        ";
+        
+        // establish "constant" parameters
+        var parameters = new List<NpgsqlParameter>
+        {
+            new NpgsqlParameter("@projectId", projectId),
+            new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
+        };
+        
+        // establish "dynamic" parameters (new for each dto in the list)
+        parameters.AddRange(roles.SelectMany((dto, i) => new[]
+        {
+            new NpgsqlParameter($"@p{i}_name", dto.Name),
+            new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
+        }));
+        
+        // stringify the params and comma separate them
+        var valueTuples = string.Join(", ", roles.Select((dto, i) =>
+            $"(@projectId, @p{i}_name, @p{i}_desc, @now, NULL)"));
+        
+        // put everything together and execute the query
+        sql = string.Format(sql, valueTuples);
+        
+        // returns the resulting upserted classes
+        var result = await _context.Database
+            .SqlQueryRaw<RoleResponseDto>(sql, parameters.ToArray())
+            .ToListAsync();
+
+        // for each created class Bulk log events
+        var events = new List<CreateEventRequestDto> { };
+        foreach (var item in result)
+        {
+            events.Add(new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "create",
+                EntityType = "role",
+                EntityId = item.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {item.Name}),
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+            });
+        }
+        await _eventBusiness.BulkCreateEvents(projectId, events);
+        
+        return result;
     }
 
     /// <summary>
@@ -449,6 +517,44 @@ public class RoleBusiness : IRoleBusiness
         // clear existing permissions and add new ones
         role.Permissions.Clear();
         foreach (var permission in permissions)
+            role.Permissions.Add(permission);
+        
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>
+    /// Set all permissions for a role by pattern
+    /// </summary>
+    /// <param name="roleId">ID of the role to update permissions for</param>
+    /// <param name="permissionPatterns">Dictionary of resource: action[] permission patterns</param>
+    /// <returns>True if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if role not found</exception>
+    public async Task<bool> SetPermissionsByPattern(long roleId, Dictionary<string, string[]> permissionPatterns)
+    {
+        var role = await _context.Roles
+            .Include(r => r.Permissions)
+            .FirstOrDefaultAsync(r => r.Id == roleId);
+        if (role == null || role.IsArchived)
+            throw new KeyNotFoundException($"Role with id {roleId} not found");
+        
+        // get the list of resources we're interested in
+        var resources = permissionPatterns.Keys.ToList();
+    
+        // fetch all permissions for these resources
+        var allPermissions = await _context.Permissions
+            .Where(p => resources.Contains(p.Resource))
+            .ToListAsync();
+    
+        // filter in memory to match the exact actions
+        var matchingPermissions = allPermissions
+            .Where(p => permissionPatterns.ContainsKey(p.Resource) && 
+                        permissionPatterns[p.Resource].Contains(p.Action))
+            .ToList();
+        
+        // clear existing permissions and add new ones
+        role.Permissions.Clear();
+        foreach (var permission in matchingPermissions)
             role.Permissions.Add(permission);
         
         await _context.SaveChangesAsync();

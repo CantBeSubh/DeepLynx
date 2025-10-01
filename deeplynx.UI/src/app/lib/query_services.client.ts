@@ -8,7 +8,7 @@ import api from "./api";
 
 export async function queryBuilder(
     queryObj: CustomQueryRequestDto[],
-    fullTextSearch: string | null
+    fullTextSearch: string | null, projectIds: string[]
 ) {
     //Building json string format from key/value input
     for (const obj of queryObj) {
@@ -17,8 +17,9 @@ export async function queryBuilder(
             obj.json = json;
         }
     }
-
-    const query = (`textSearch=${fullTextSearch}`);
+    const newProjectIds = projectIds.map((str) => Number(str));
+    const projectIdsQuery = newProjectIds.map(id => `projectIds=${id}`).join('&');
+    const query = (`${projectIdsQuery}&textSearch=${fullTextSearch}`);
     const res = await api.post(`/records/QueryBuilder?${query}`, queryObj, {
         headers: { "Content-Type": "application/json" },
     });
@@ -26,9 +27,11 @@ export async function queryBuilder(
 }
 
 export async function fullTextSearch(
-    userQuery: string,
+    userQuery: string, projectIds: string[]
 ): Promise<FileViewerTableRow[]> {
-    const res = await api.get(`/records/Filter?userQuery=${userQuery}`);
+    const newProjectIds = projectIds.map((str) => Number(str));
+    const projectIdsQuery = newProjectIds.map(id => `projectIds=${id}`).join('&');
+    const res = await api.get(`/records/Filter?userQuery=${userQuery}&${projectIdsQuery}`);
     return res.data as FileViewerTableRow[];
 }
 

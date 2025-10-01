@@ -1,5 +1,7 @@
+"use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { createProject } from "@/app/lib/projects_services.client";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface CreateProjectsModalProps {
@@ -18,15 +20,20 @@ const CreateProject = ({
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   // TODO: Use the react hot toast ... it uses a lot less code
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<
     "success" | "error" | "info" | null
   >(null);
+  const router = useRouter();
 
   const handleSubmit = async () => {
+    let data;
+    if(isLoading) return;
+    setIsLoading(true);
     try {
-      await createProject({
+      data = await createProject({
         name,
         abbreviation: abbreviation || null,
         description: description || null,
@@ -54,6 +61,11 @@ const CreateProject = ({
         setToastMessage("");
         setToastType(null);
       }, 2000);
+    }finally{
+      setIsLoading(false);
+      router.push(
+        `/project/${data.id}`
+      )
     }
   };
 
@@ -106,8 +118,12 @@ const CreateProject = ({
                 >
                   {t.translations.CANCEL}
                 </button>
-                <button type="submit" className="btn btn-primary">
-                  {t.translations.CREATE}
+                <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary">
+                  {isLoading ? (
+                  <>
+                    <span className="spinner" aria-hidden="true"/>
+                  </>
+                ):(t.translations.CREATE)}
                 </button>
               </div>
             </form>

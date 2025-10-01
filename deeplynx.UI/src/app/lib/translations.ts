@@ -174,7 +174,7 @@ export const translations = {
             EMAIL_NOTIFICATIONS: "Email Notifications",
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
-            LAST_VIEWED: "Last Viewed",
+            LAST_UPDATED_AT: "Last Updated At",
             API_KEYPAIRS: "API Keypairs",
             NO_RECENT_RECORDS: "No recent records found",
             ORIGINAL_ID: "Original ID",
