@@ -265,12 +265,15 @@ public class UserBusiness : IUserBusiness
             .Count(p => p.UserId == userId);
 
         var datasources = _context.DataSources
+            .Where(d => !d.IsArchived)
             .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         var records = _context.Records
+            .Where(d => !d.IsArchived)
             .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         var tags = _context.Tags
+            .Where(d => !d.IsArchived)
             .Count(d => d.Project.ProjectMembers.Any(u => u.UserId == userId));
 
         return new DataOverviewDto
