@@ -74,7 +74,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {project.lastViewed}
+            {t.translations.LAST_EDIT} {project.lastUpdatedAt}
           </p>
         </div>
         <button
