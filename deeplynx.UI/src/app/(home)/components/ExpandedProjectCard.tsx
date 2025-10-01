@@ -14,6 +14,7 @@ import React, { useEffect, useState } from "react";
 import { peopleData } from "../dummy_data/data";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
+import { format } from "date-fns";
 
 interface Props {
   project: ProjectsList;
@@ -62,18 +63,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
-  const formatDateTime = (date: Date) => {
-    const d = date instanceof Date ? date : new Date(date);
-
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
 
   return (
     <div>
@@ -87,7 +76,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {formatDateTime(project.lastUpdatedAt!)}
+            {t.translations.LAST_EDIT} {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
           </p>
         </div>
         <button

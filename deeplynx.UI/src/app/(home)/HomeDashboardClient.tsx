@@ -14,6 +14,7 @@ import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
+import { format } from "date-fns";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
@@ -60,19 +61,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     }
   };
 
-  const formatDateTime = (date: Date) => {
-    const d = date instanceof Date ? date : new Date(date);
-
-    return d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
   const onExplore = (row: ProjectsList) => {
     router.push(`/project/${row.id}`);
   };
@@ -98,7 +86,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     {
       header: t.translations.LAST_UPDATED_AT,
       data: (row: ProjectsList) => (
-        <span className="text-base-content/60 text-sm">{formatDateTime(row.lastUpdatedAt!)}</span>
+        <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
       ),
     },
   ];
