@@ -13,7 +13,7 @@ function getBase(): string {
   if (!/^https?:\/\//.test(v)) {
     throw new Error(`[ENV] BACKEND_BASE_URL must start with http(s):// (got "${v}")`);
   }
-  _BASE = v.replace(/\/+$/, ""); // Strip trailing slash
+  _BASE = v.replace(/\/+$/, "");
   return _BASE;
 }
 

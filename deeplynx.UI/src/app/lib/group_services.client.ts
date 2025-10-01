@@ -1,6 +1,6 @@
 "use client";
 
-import api from "./api"; // Import your API utility
+import api from "./api";
 export interface Group {
   id: number | null;
   name: string;

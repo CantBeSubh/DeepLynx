@@ -261,7 +261,7 @@ import AddGroup from "./MemberModals/AddGroup";
 import AddOrg from "./MemberModals/AddOrg";
 import { SystemGroupsTable } from "@/app/(home)/types/types";
 import { systemOrgs } from "../../dummy_data/data";
-import { createGroup, Group } from "@/app/lib/group_services.client"; // Ensure this path is correct
+import { createGroup, Group } from "@/app/lib/group_services.client";
 
 interface ProjectSettingsProps {
   className?: string;
@@ -276,7 +276,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
   const searchParams = useSearchParams();
 
   // Explicitly define the type of groups
-  const [groups, setGroups] = useState<Group[]>([]); // Use the appropriate Group type
+  const [groups, setGroups] = useState<Group[]>([]);
 
   const tabData = [
     {
@@ -285,7 +285,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
     },
     {
       label: "Groups",
-      content: <GroupsTable data={groups} />, // Pass groups data to GroupsTable
+      content: <GroupsTable data={groups} />,
     },
     {
       label: "Organizations",
@@ -322,8 +322,8 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
 
   const handleAddGroup = async (groupName: string, description?: string | null) => {
   try {
-    const newGroup = await createGroup({ name: groupName, description }); // Pass as an object
-    setGroups((prevGroups) => [...prevGroups, newGroup]); // Update state with the new group
+    const newGroup = await createGroup({ name: groupName, description });
+    setGroups((prevGroups) => [...prevGroups, newGroup]);
   } catch (error) {
     console.error('Error adding group:', error);
   }
@@ -331,7 +331,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
 
   // Effect to set the active tab from the query parameter
   useEffect(() => {
-    const tab = searchParams.get("tab") || "Users"; // Default to "Users"
+    const tab = searchParams.get("tab") || "Users";
     setActiveTab(tab);
   }, [searchParams]);
 
@@ -372,7 +372,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
       <AddGroup
         isOpen={addGroupModal}
         onClose={() => setAddGroupModal(false)}
-        onAddGroup={handleAddGroup} // Pass the add group handler
+        onAddGroup={handleAddGroup}
       />
       <AddOrg
         isOpen={addOrgModal}
