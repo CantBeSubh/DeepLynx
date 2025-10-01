@@ -21,6 +21,7 @@ import {
 import SearchBar from "@/app/(home)/components/SearchBar";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import ListView from "../components/ListView";
+import AddRecordModal from "../components/AddRecordModal";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -45,6 +46,8 @@ export default function DataCatalogClient({
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
@@ -253,9 +256,12 @@ export default function DataCatalogClient({
             <EyeIcon className="h-6 w-6" />
             {t.translations.EXPLORE_ALL_RECORDS}
           </Link>
-          <button className="btn btn-primary text-white">
-            <PlusIcon className="h-6 w-6" />
-            {t.translations.RECORD}
+          <button
+            onClick={() => setIsRecordModalOpen(true)}
+            className="btn btn-primary text-white"
+          >
+            <PlusIcon className="size-5" />
+            <span>{t.translations.RECORD}</span>
           </button>
 
           {(activeFilters.length > 0 || showAll) && (
@@ -291,6 +297,11 @@ export default function DataCatalogClient({
           <SavedSearches />
         </div> */}
       </div>
+      <AddRecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        initialProjects={projects}
+      />
     </div>
   );
 }
