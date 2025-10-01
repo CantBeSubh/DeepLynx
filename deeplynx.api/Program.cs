@@ -231,6 +231,12 @@ try
             {
                 new OpenApiTag
                 {
+                    Name = "Auth",
+                    Description =
+                        "Provides endpoints to create tokens and api keys"
+                },
+                new OpenApiTag
+                {
                     Name = "Class",
                     Description =
                         "Handles class management including creation, updates, retrieval, and deletion of class entities."

@@ -39,7 +39,7 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
-    [ForeignKey("UserId")]
+    [ForeignKey("2")]
     [InverseProperty("Users")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 
@@ -47,7 +47,6 @@ public partial class User
     [InverseProperty("Users")]
     public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
     
-    [ForeignKey("UserId")]
-    [InverseProperty("Users")]
+    [InverseProperty("User")]
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
 }

@@ -19,6 +19,6 @@ public partial class ApiKey
     public string Key { get; set; }
 
     [ForeignKey("UserId")]
-    [InverseProperty("Users")]
+    [InverseProperty("ApiKeys")]
     public virtual User User { get; set; } = null!;
 }

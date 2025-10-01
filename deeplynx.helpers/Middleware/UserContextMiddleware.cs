@@ -1,3 +1,4 @@
+using deeplynx.datalayer.Models;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -21,11 +22,23 @@ public class UserContextMiddleware
             if (context.User.Identity?.IsAuthenticated == true)
             {
                 // Try multiple common claim names for username including namespaced claims
-                UserContextStorage.Username = context.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                UserContextStorage.Email = context.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                if (!string.IsNullOrEmpty(UserContextStorage.Email))
+                {
+                    using (var dbContext = new DeeplynxContext())
+                    {
+                        var user = dbContext.Users.FirstOrDefault(u => u.Email == UserContextStorage.Email);
+                        if (user != null)
+                        {
+                            UserContextStorage.UserId = user.Id;
+                        }
+                    }
+                }
             }
             else
             {
-                UserContextStorage.Username = null;
+                UserContextStorage.Email = null;
+                UserContextStorage.UserId = 0;
             }
 
             await _next(context);
@@ -33,7 +46,8 @@ public class UserContextMiddleware
         finally
         {
             // Always clear after request completes
-            UserContextStorage.Username = null;
+            UserContextStorage.Email = null;
+            UserContextStorage.UserId = 0;
         }
     }
 }

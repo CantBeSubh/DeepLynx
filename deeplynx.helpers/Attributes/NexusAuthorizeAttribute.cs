@@ -32,14 +32,26 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
 
         try
         {
+            var principal = new ClaimsPrincipal(new ClaimsIdentity());
+            var handler = new JwtSecurityTokenHandler();
             var token = ExtractToken(context.HttpContext.Request);
             if (string.IsNullOrEmpty(token))
             {
                 SetUnauthorizedResult(context, "No token provided");
                 return;
             }
+            var jwtToken = handler.ReadJwtToken(token);
+            var algorithm = jwtToken.Header.Alg;
 
-            var principal = ValidateToken(token).GetAwaiter().GetResult();
+            if (algorithm.StartsWith("RS"))
+            {
+                principal = ValidateRsaToken(token).GetAwaiter().GetResult();
+            }
+            else if (algorithm.StartsWith("HS"))
+            {
+                //TODO: handle apikey token
+            }
+
             context.HttpContext.User = principal;
 
             // TODO: custom permission/role checks if you need them
@@ -92,7 +104,7 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         return string.IsNullOrEmpty(tokenCookie) ? null : tokenCookie;
     }
 
-    private async Task<ClaimsPrincipal> ValidateToken(string token)
+    private async Task<ClaimsPrincipal> ValidateRsaToken(string token)
     {
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");   // e.g. "https://YOUR_OKTA_DOMAIN/oauth2/YOUR_AUTH_SERVER_ID"
         var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"); // e.g. "api://deeplynx"
