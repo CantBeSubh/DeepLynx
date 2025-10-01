@@ -5,6 +5,7 @@ import LayoutShell from "../(home)/components/LayoutShell";
 // If you have client providers, wrap them here (but they must not suspend)
 import { UserSessionProvider } from "../contexts/UserSessionProvider";
 import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
+import AuthGuard from "./components/AuthGuard";
 
 export default function HomeLayout({
   children,
@@ -13,9 +14,11 @@ export default function HomeLayout({
 }) {
   return (
     <UserSessionProvider>
-      <ProjectSessionProvider>
-        <LayoutShell>{children}</LayoutShell>
-      </ProjectSessionProvider>
+      <AuthGuard>
+        <ProjectSessionProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </ProjectSessionProvider>
+      </AuthGuard>
     </UserSessionProvider>
   );
 }

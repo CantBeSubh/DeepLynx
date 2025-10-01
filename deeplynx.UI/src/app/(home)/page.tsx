@@ -32,13 +32,7 @@ export default async function Page() {
   const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
 
   if (disableAuth == "true") {
-    console.log(disableAuth)
+    console.log(disableAuth);
     return <HomeDashboardClient initialProjects={projects} />;
-  } else
-
-    return (
-      // <AuthGuard>
-         <HomeDashboardClient initialProjects={projects} />
-      // </AuthGuard>
-    );
+  } else return <HomeDashboardClient initialProjects={projects} />;
 }
