@@ -31,37 +31,37 @@ public class NotificationBusiness : INotificationBusiness
     /// Sends an email notification
     /// </summary>
     /// <param name="toEmail">Recipient email address</param>
-    /// <param name="name">Recipient name</param>
+    /// <param name="name">Recipient name (optional, defaults to "User")</param>
     /// <returns>True if email was sent successfully, false otherwise</returns>
     public async Task<bool> SendEmail(string toEmail, string? name)
     {
-       try 
+       try
        {
-        var smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER") 
+        var smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER")
             ?? throw new InvalidOperationException("SMTP_SERVER environment variable is not set");
-        
+
         var smtpPortStr = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
         if (!int.TryParse(smtpPortStr, out int smtpPort))
         {
-            smtpPort = 587; //default 
+            smtpPort = 587; //default
         }
 
-        var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL") 
+        var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL")
             ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
-        
-        var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL") 
+
+        var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL")
                         ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
-        
+
         var emailPassword = "";
-        
+
         var fromName = Environment.GetEnvironmentVariable("FROM_NAME") ?? "DeepLynx Nexus Notification";
-        
-        var url = Environment.GetEnvironmentVariable("INVITE_URL") 
+
+        var url = Environment.GetEnvironmentVariable("INVITE_URL")
             ?? throw new InvalidOperationException("Invite URL environment variable is not set");;
-        
+
         var enableSslStr = Environment.GetEnvironmentVariable("SMTP_ENABLE_SSL") ?? "true";
         bool.TryParse(enableSslStr, out bool enableSsl);
-        
+
         string templateContent = @"<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
         <html xmlns=""http://www.w3.org/1999/xhtml"">
         <head>
@@ -118,14 +118,14 @@ public class NotificationBusiness : INotificationBusiness
         </table>
         </body>
         </html>";
-        
+
         templateContent = templateContent.Replace("{{name}}", name);
         templateContent = templateContent.Replace("{{email}}", toEmail);
         templateContent = templateContent.Replace("{{url}}", url);
         templateContent = templateContent.Replace("{{support}}", support);
-        
-        
-       
+
+
+
 
         // Create message
         using var mailMessage = new MailMessage();
@@ -143,7 +143,7 @@ public class NotificationBusiness : INotificationBusiness
 
         // Send the email
         await smtpClient.SendMailAsync(mailMessage);
-        
+
         return true;
        }
        catch (SmtpException smtpEx)
@@ -157,5 +157,5 @@ public class NotificationBusiness : INotificationBusiness
            return false;
        }
     }
-    
+
 }

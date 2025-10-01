@@ -5,7 +5,7 @@ import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
 
-export async function getAllUsers(projectId: number) {
+export async function getAllUsers(projectId?: number) {
   try {
     const res = await api.get(`/user/GetAllUsers`, {
       params: { projectId },

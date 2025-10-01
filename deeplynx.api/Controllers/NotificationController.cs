@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace deeplynx.api.Controllers
 {
-    
+
     /// <summary>
     /// Controller for managing notifications.
     /// </summary>
@@ -49,8 +49,6 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
         }
-       
     }
 }

@@ -1,8 +1,7 @@
 import React from "react";
-import { FileViewerTableRow } from "../types/types";
-import MemberMangementClient from "./MemberManagementClient";
+import { FileViewerTableRow } from "../../types/types";
+import RoleSettingsClient from "./RoleSettingsClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import MemberManagementClient from "./MemberManagementClient";
 
 type ProjectDTO = { id: number | string; name: string };
 
@@ -28,7 +27,7 @@ export default async function Page({
   const initialRecords = [] as FileViewerTableRow[];
 
   return (
-    <MemberManagementClient
+    <RoleSettingsClient
     />
   );
 }

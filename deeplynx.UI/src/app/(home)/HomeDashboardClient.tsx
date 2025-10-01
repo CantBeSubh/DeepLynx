@@ -158,7 +158,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
           </div>
         </div>
 
-        {/* 
+        {/*
           This will be added later ...
         <div className="w-full md:w-2/5 px-4">
             <WidgetCard

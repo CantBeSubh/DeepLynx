@@ -1,3 +1,5 @@
+import React, { ReactNode } from 'react';
+
 export type DataSourceTableRow = {
   name: string;
   country: string;
@@ -45,10 +47,10 @@ export type TableRow = DataSourceTableRow | FileViewerTableRow;
 
 export type Column<T extends object> = {
   accessor?: string;
-  header?: string;
+  header?: string | ReactNode;
   data?: keyof T;
   sortable?: boolean;
-  cell?: (row: T) => React.ReactNode
+  cell?: (row: T, index: number) => React.ReactNode
 };
 
 export type ProjectsList = {
@@ -73,6 +75,56 @@ export type MySearchsTable = {
   filters: string[];
   createdAt: string;
   sortable?: boolean;
+}
+
+export type ProjectMembersTable = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export type SystemUsersTable = {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
+export type SystemGroupsTable = {
+  id: number | null;
+  name: string;
+  description?: string | null;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export type SystemOrgsTable = {
+  id: number;
+  name: string;
+  description: string;
+}
+
+export type MyRolesTable = {
+  id: number;
+  role: string;
+  description: string;
+}
+
+export type ProjectPermissionsTable = {
+  id: number;
+  role: string;
+  description: string;
+}
+
+export type UserPermissionsTable = {
+  id: number;
+  role: string;
+  description: string;
 }
 
 export type TeamMember = {
