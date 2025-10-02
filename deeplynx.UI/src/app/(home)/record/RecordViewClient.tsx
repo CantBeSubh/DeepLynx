@@ -472,7 +472,11 @@ export default function RecordViewClient({
               className=""
               title="System Properties"
               rows={systemPropertiesRows}
-              download
+              download={
+                !!record?.uri &&
+                record.uri.trim().length > 0 &&
+                record.uri.toLowerCase() !== "null"
+              }
               recordName={record?.name}
             />
             <PropertyTable
