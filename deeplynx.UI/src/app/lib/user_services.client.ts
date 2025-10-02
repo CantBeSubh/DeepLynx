@@ -41,7 +41,6 @@ export async function getRecentlyAddedRecords(projectIds: string[]) {
 
 export async function updateUser(userId: number, name?: string) {
   try {
-    console.log(`Updating user with ID: ${userId} and Name: ${name}`);
     const res = await api.put(`/user/UpdateUser/${userId}`, {
       name,
     });
