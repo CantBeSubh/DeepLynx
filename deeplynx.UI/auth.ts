@@ -1,10 +1,92 @@
-// auth.ts (root)
+// auth.ts
 import NextAuth from "next-auth";
 import { JWT, JWTEncodeParams, JWTDecodeParams } from "next-auth/jwt";
 import Okta from "next-auth/providers/okta";
 import jsonWebToken from "jsonwebtoken";
 
 export const runtime = "nodejs";
+
+// ======================================================================
+// TODO: This is trying to extract the isues from the access token.      |
+// But we need to know the exact issuer URL to hold it in a ENV variable |
+// ======================================================================
+async function refreshAccessToken(token: JWT): Promise<JWT> {
+    try {
+        if (!token.refresh_token) {
+            throw new Error("No refresh token available");
+        }
+
+        // Determine the correct auth server from the access token
+        let authServerPath = '/oauth2'; // default for org-level auth server
+        
+        if (token.access_token) {
+            try {
+                const decoded = jsonWebToken.decode(token.access_token as string) as any;
+                const issuer = decoded?.iss;
+                
+                if (issuer) {
+                    // Extract auth server path from issuer
+                    const match = issuer.match(/\/oauth2\/[^\/]+/);
+                    if (match) {
+                        authServerPath = match[0];
+                    } else if (issuer.includes('/oauth2/')) {
+                        authServerPath = '/oauth2/default';
+                    } else {
+                        // Root issuer - use org authorization server
+                        authServerPath = '/oauth2';
+                    }
+                }
+            } catch (e) {
+                // If we can't decode, use default path
+            }
+        }
+
+        // Build the token endpoint URL
+        let baseUrl = process.env.OKTA_ISSUER!;
+        baseUrl = baseUrl.replace(/\/oauth2\/[^\/]*\/?$/, '').replace(/\/$/, '');
+        const url = `${baseUrl}${authServerPath}/v1/token`;
+        
+        const credentials = Buffer.from(
+            `${process.env.OKTA_CLIENT_ID}:${process.env.OKTA_CLIENT_SECRET}`
+        ).toString("base64");
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+                Authorization: `Basic ${credentials}`,
+            },
+            body: new URLSearchParams({
+                grant_type: "refresh_token",
+                refresh_token: token.refresh_token as string,
+                scope: "openid profile email offline_access",
+            }),
+        });
+
+        const refreshedTokens = await response.json();
+
+        if (!response.ok) {
+            throw refreshedTokens;
+        }
+
+        const newExpiresAt = Math.floor(Date.now() / 1000 + refreshedTokens.expires_in);
+
+        return {
+            ...token,
+            access_token: refreshedTokens.access_token,
+            id_token: refreshedTokens.id_token ?? token.id_token,
+            expires_at: newExpiresAt,
+            refresh_token: refreshedTokens.refresh_token ?? token.refresh_token,
+            error: undefined, // Clear any previous errors
+        };
+    } catch (error) {
+        return {
+            ...token,
+            error: "RefreshAccessTokenError",
+        };
+    }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     providers: [
@@ -14,53 +96,96 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             issuer: process.env.OKTA_ISSUER,
             authorization: {
                 params: {
-                    scope: "openid profile email",
+                    scope: "openid profile email offline_access",
                     redirect_uri: process.env.NEXT_PUBLIC_REDIRECT_LINK!
                 }
             },
         })
     ],
     callbacks: {
-        async jwt({ token, account, profile }) {
-            // Store Okta tokens and user info in JWT
-            if (account) {
-                token.access_token = account.access_token;
-                token.id_token = account.id_token;
-                token.expires_at = account.expires_at;
+        async jwt({ token, account, profile }): Promise<JWT> {
+            // Initial sign in
+            if (account && profile) {
+                return {
+                    ...token,
+                    access_token: account.access_token,
+                    id_token: account.id_token,
+                    expires_at: account.expires_at,
+                    refresh_token: account.refresh_token,
+                    oktaId: profile.sub || undefined,
+                    username: (profile as any).preferred_username || undefined,
+                    groups: (profile as any).groups || [],
+                    name: profile.name || undefined,
+                    email: profile.email || undefined,
+                    sub: profile.sub || undefined,
+                };
             }
 
-            if (profile) {
-                token.oktaId = profile.sub;
-                token.username = (profile as any).preferred_username;
-                token.groups = (profile as any).groups || [];
+            // Check if token needs refresh
+            const now = Date.now();
+            const expiresAt = (token.expires_at as number) * 1000;
+            const timeUntilExpiry = (expiresAt - now) / 1000; // in seconds
+            
+            // Proactive refresh: refresh 5 minutes before expiry
+            const BUFFER_TIME_SECONDS = 5 * 60;
+            
+            // Check if token is still valid but will expire soon
+            if (now < expiresAt && timeUntilExpiry < BUFFER_TIME_SECONDS) {
+                if (!token.refresh_token) {
+                    return {
+                        ...token,
+                        error: "NoRefreshToken",
+                    };
+                }
+                return await refreshAccessToken(token);
             }
 
-            return token;
+            // Return current token if still valid
+            if (now < expiresAt) {
+                return token;
+            }
+
+            // Token has expired, attempt refresh
+            if (!token.refresh_token) {
+                return {
+                    ...token,
+                    error: "NoRefreshToken",
+                };
+            }
+
+            return await refreshAccessToken(token);
         },
 
         async session({ session, token }) {
-            // Add Okta-specific data to session
-            if (token) {
-                (session.user as any).oktaId = token.oktaId;
-                (session.user as any).username = token.username;
-                (session.user as any).groups = token.groups;
-
-                (session as any).tokens = {
-                    access_token: token.access_token,
-                    id_token: token.id_token,
-                    expires_at: token.expires_at,
-                };
+            // Handle errors
+            if (token.error) {
+                session.error = token.error;
             }
+
+            // Add user information to session
+            if (session.user) {
+                session.user.oktaId = (token.oktaId || undefined) as string | undefined;
+                session.user.username = (token.username || undefined) as string | undefined;
+                session.user.groups = token.groups as string[] | undefined;
+            }
+
+            // Add tokens to session
+            session.tokens = {
+                access_token: token.access_token as string | undefined,
+                id_token: token.id_token as string | undefined,
+                expires_at: token.expires_at as number | undefined,
+            };
 
             return session;
         },
     },
     pages: {
         signIn: '/login/signin',
+        error: '/login/error',
     },
     session: {
         strategy: "jwt",
-        maxAge: 30 * 24 * 60 * 60, // 30 days
+        maxAge: 8 * 60 * 60, // 8 hours - requires login once per work day
     },
     jwt: {
         encode: async (params: JWTEncodeParams) => {
@@ -68,9 +193,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (!token) {
                 throw new Error("Token is undefined");
             }
-            // Ensure secret is treated as a string
             const signingSecret = typeof secret === 'string' ? secret : secret[0];
-            // Use the 'jsonwebtoken' library to sign the token
             return jsonWebToken.sign(token, signingSecret);
         },
         decode: async (params: JWTDecodeParams) => {
@@ -78,11 +201,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (!token) {
                 throw new Error("Token is undefined");
             }
-            // Ensure secret is treated as a string
             const verifyingSecret = typeof secret === 'string' ? secret : secret[0];
-            // Use the 'jsonwebtoken' library to verify and decode the token
             return jsonWebToken.verify(token, verifyingSecret) as JWT;
         },
     },
-    secret: process.env.NEXTAUTH_SECRET!, // Ensure TypeScript knows this is a string
+    secret: process.env.NEXTAUTH_SECRET!,
 });
+
+// Helper functions for use in your app
+export function isTokenExpired(expiresAt: number | undefined): boolean {
+    if (!expiresAt) return true;
+    return Date.now() >= expiresAt * 1000;
+}
+
+export function isTokenAboutToExpire(expiresAt: number | undefined, bufferMinutes: number = 5): boolean {
+    if (!expiresAt) return true;
+    const bufferMs = bufferMinutes * 60 * 1000;
+    return Date.now() >= (expiresAt * 1000 - bufferMs);
+}

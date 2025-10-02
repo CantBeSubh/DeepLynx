@@ -51,5 +51,14 @@
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.1",
     "typescript": "^5"
+  },
+  "overrides": {
+    "openssl": "3.3.5-r0",
+    "broadcast-channel": {
+      "@babel/runtime": "^7.26.10"
+    },
+    "minimatch@3.1.2": {
+      "brace-expansion": "^2.0.2"
+    }
   }
 }

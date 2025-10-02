@@ -26,15 +26,28 @@ public class UserBusiness : IUserBusiness
     /// <summary>
     /// Retrieves all users
     /// </summary>
-    /// /// <param name="projectId">Optional ID for project</param>
-    /// <returns>A list of users, or a list of users for a project</returns>
-    public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId)
+    /// <param name="projectId">Optional ID for project</param>
+    /// <param name="organizationId">Optional ID for organization</param>
+    /// <returns>A list of users, optionally filtered by project or organization</returns>
+    public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId, long? organizationId)
     {
-        List<User> users;
+        var users = _context.Users.Where(p => !p.IsArchived);
 
-        users = await _context.Users
-            .Where(p => !p.IsArchived)
-            .ToListAsync();
+        if (projectId != null)
+        {
+            users = users.Where(u =>
+                u.ProjectMembers.Any(p => p.ProjectId == projectId && p.UserId == u.Id) ||
+                u.Groups.Any(g => g.ProjectMembers.Any(pm => pm.ProjectId == projectId && pm.GroupId == g.Id))
+            );
+        }
+
+        if (organizationId != null)
+        {
+            users = users.Where(u => 
+                u.OrganizationUsers.Any(ou => ou.OrganizationId == organizationId && ou.UserId == u.Id) ||
+                u.Groups.Any(g => g.OrganizationId == organizationId)
+            );
+        }
 
         return users.Select(p => new UserResponseDto()
         {
