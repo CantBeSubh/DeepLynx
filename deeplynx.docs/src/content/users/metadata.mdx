@@ -1,0 +1,166 @@
+---
+title: Upload Metadata
+description: How to bulk upload metadata
+---
+
+# Bulk Upload Your Metadata
+
+If you are looking to upload many metadata records at once, Nexus can support that. All you need is to provide a
+correctly formatted JSON to:
+
+`https://deeplynx.inl.gov/api/projects/{projectId}/datasources/{dataSourceId}/metadata/CreateMetadata`
+
+## Build a JSON Object
+In the body of your request, you will need a JSON that can be processed by our backend. In the JSON object, there should
+be arrays for the types of metadata you want to upload. You can upload classes, relationships, records, edges, and
+tags.
+
+### Classes
+
+| Field Name  | Type   | Required? (Y/N)   |
+|-------------|--------|:-----------------:|
+| name        | string | Y                 |
+| description | string | N                 |
+| uuid        | string | N                 |
+
+If you provide a name of a class that already exists in the project, Nexus will update the existing class to contain the 
+provided description and uuid (if any).
+
+### Relationships
+
+| Field Name  | Type   | Required? (Y/N)   |
+|-------------|--------|:-----------------:|
+| name        | string | Y                 |
+| description | string | N                 |
+| uuid        | string | N                 |
+
+If a relationship with the same name already exists in the project, Nexus will update the existing relationship
+to contain the description and uuid you provide (if any). 
+
+### Records
+
+| Field Name        | Type     | Required? (Y/N)   |
+|-------------------|----------|:-----------------:|
+| original_id       | string   | Y                 |
+| name              | string   | Y                 |
+| description       | string   | Y                 |
+| properties        | json     | Y                 |
+| uri               | string   | N                 |
+| class_name        | string   | N                 |
+| tags              | string[] | N                 |
+
+Any referenced tags and classes that do not exist will be created by Nexus. If 
+there is already a record with the same original_id in the datasource, Nexus will update the existing record to contain 
+the additional information you provided.
+
+### Edges
+
+| Field Name        | Type     | Required? (Y/N)   |
+|-------------------|----------|:-----------------:|
+| origin_oid        | string   | Y                 |
+| destination_oid   | string   | Y                 |
+| relationship_name | string   | N                 |
+
+Any referenced relationships that do not exist will be created by Nexus. Any Edges with the same origin_id and 
+destination_id within the project will be updated to include the relationship that you provided (if any).
+
+### Tags
+
+| Field Name  | Type     | Required? (Y/N)   |
+|-------------|----------|:-----------------:|
+| name        | string   | Y                 |
+
+### Example
+Here is an example of a valid JSON:
+
+```json
+{
+  "classes": [
+    {
+      "name": "Reactor Core"
+    },
+    {
+      "name": "Core material",
+      "description": "Primary substrate or base material used in the manufacturing process",
+      "uuid": "a3f5e8c2-4b7d-4e9a-b1c3-5d8f2a6e9b4c"
+    }
+  ],
+  "relationships": [
+    {
+      "name": "relates_to"
+    },
+    {
+      "name": "depends_on",
+      "description": "Indicates that one entity requires or relies upon another entity to function properly or be completed",
+      "uuid": "7c2d9f3e-6a1b-4c8e-9d5a-3f7b8e2c4a1d"
+    }
+  ],
+  "records": [
+    {
+      "original_id": "1",
+      "name": "Reactor Core",
+      "class_name": "Reactor Core",
+      "properties": {
+        "model results name": [
+          "k_crit",
+          "k_min",
+          "k_max"
+        ],
+        "height": 200.0,
+        "diameter": 224.0,
+        "total core power": 5
+      },
+      "description": "Core Description"
+    },
+    {
+      "original_id": "2",
+      "name": "Core material",
+      "class_name": "Core material",
+      "properties": {
+        "description": "Graphite"
+      },
+      "description": "Graphite",
+      "uri": "uri_to_data",
+      "tags": [
+        "eco-friendly"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "origin_oid": "2",
+      "relationship_name": "relates_to",
+      "destination_oid": "1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "dangerous"
+    },
+    {
+      "name": "safe"
+    },
+    {
+      "name": "expensive"
+    }
+  ]
+}
+```
+
+## Why Natural Keys?
+
+You may have noticed that we are using natural keys (origin_oid, class_name, etc.) instead of IDs. This is to simplify 
+the generation of JSON so you do not need to know their IDs in the Nexus database beforehand. A key principle to 
+understand is the fact that Nexus will create the metadata records that have a natural key that does not exist in
+the database. For the natural keys that already exist in the project/datasource, Nexus will update the existing
+record to the fields that are provided in the JSON object. 
+
+
+
+
+
+
+
+
+
+
