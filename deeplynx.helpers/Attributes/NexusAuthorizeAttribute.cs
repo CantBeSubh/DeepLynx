@@ -1,11 +1,17 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using deeplynx.datalayer.Models;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace deeplynx.helpers;
 
@@ -20,8 +26,6 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
     private static IConfigurationManager<OpenIdConnectConfiguration>? _configManager;
     private static readonly object _lock = new();
 
-    
-    
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         if (IsLocalDevelopmentBypassEnabled(context))
@@ -49,7 +53,7 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
             }
             else if (algorithm.StartsWith("HS"))
             {
-                //TODO: handle apikey token
+                principal = ValidateShaToken(token, context.HttpContext).GetAwaiter().GetResult();
             }
 
             context.HttpContext.User = principal;
@@ -151,14 +155,108 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
 
         var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
 
-        // (Optional) double-check alg in the header
-        if (validatedToken is JwtSecurityToken jwt &&
-            !string.Equals(jwt.Header.Alg, SecurityAlgorithms.RsaSha256, StringComparison.Ordinal))
+        return principal;
+    }
+
+    private async Task<ClaimsPrincipal> ValidateShaToken(string token, HttpContext httpContext)
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        var jwtToken = handler.ReadJwtToken(token);
+        var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "username")?.Value;
+
+        // Extract API key from claims
+        var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
+
+        var secret = await GetSecretForUser(username, apiKey, httpContext);
+        
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException($"ApiKey is not valid - Username: {username}, ApiKey: {apiKey}");
+
+        // Use the actual secret from database
+        var secretKey = secret;
+
+        // Ensure secret is long enough for HMAC-SHA256 (pad if necessary)
+        if (secretKey.Length < 32)
         {
-            throw new SecurityTokenInvalidAlgorithmException("Unexpected token algorithm.");
+            secretKey = secretKey.PadRight(32, '0'); // Pad with zeros to meet minimum length
         }
 
+        // Manually validate the JWT signature
+        if (!ValidateJwtSignature(token, secretKey))
+        {
+            throw new SecurityTokenValidationException("JWT signature validation failed");
+        }
+
+        // Create claims principal from the validated token
+        var claimsIdentity = new ClaimsIdentity(jwtToken.Claims, "JWT");
+        var principal = new ClaimsPrincipal(claimsIdentity);
+
         return principal;
+
+
+    }
+
+    private bool ValidateJwtSignature(string token, string secret)
+    {
+        try
+        {
+            var parts = token.Split('.');
+            if (parts.Length != 3)
+                return false;
+
+            var header = parts[0];
+            var payload = parts[1];
+            var signature = parts[2];
+
+            // Create the signature from header and payload
+            var message = $"{header}.{payload}";
+            var keyBytes = Encoding.UTF8.GetBytes(secret);
+
+            using (var hmac = new HMACSHA256(keyBytes))
+            {
+                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+                var computedSignature = Base64UrlEncode(computedHash);
+
+                return computedSignature == signature;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private string Base64UrlEncode(byte[] input)
+    {
+        var output = Convert.ToBase64String(input);
+        output = output.Split('=')[0]; // Remove any trailing '='s
+        output = output.Replace('+', '-'); // 62nd char of encoding
+        output = output.Replace('/', '_'); // 63rd char of encoding
+        return output;
+    }
+
+    private async Task<string?> GetSecretForUser(string username, string apiKeyValue, HttpContext httpContext)
+    {
+        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(apiKeyValue))
+        {
+            var serviceScopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+                var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == username.ToLower());
+                if (user != null)
+                {
+                    var apiKey = await dbContext.ApiKeys.FirstOrDefaultAsync(a => a.Key == apiKeyValue && a.UserId == user.Id);
+                    return apiKey?.Secret;
+                }
+            }
+        }
+        return null;
     }
 
     private void SetUnauthorizedResult(AuthorizationFilterContext context, string message)

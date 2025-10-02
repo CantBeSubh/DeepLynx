@@ -19,20 +19,21 @@ public class TokenBusiness : ITokenBusiness
         _context = context;
     }
 
-    public string CreateToken(string secretKey, string apiKey)
+    public string CreateToken(string secretKey, string apiKey, double? expiration)
     {
         if (VerifyApiKey(apiKey, secretKey))
         {
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(secretKey);
-            var expirationMinutes = 60;
-            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
-            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+            var secret = _context.ApiKeys.FirstOrDefault(x => x.Key == apiKey)?.Secret;
+            if (string.IsNullOrEmpty(secret))
+            {
+                throw new KeyNotFoundException($"Api key not found");
+            }
 
-            if (string.IsNullOrWhiteSpace(issuer))
-                throw new InvalidOperationException("JWT_ISSUER not configured");
-            if (string.IsNullOrWhiteSpace(audience))
-                throw new InvalidOperationException("JWT_AUDIENCE not configured");
+            // Use the actual secret from database with padding if needed
+            var secretCheck = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
+            var key = Encoding.UTF8.GetBytes(secretCheck);
+            double expirationMinutes = expiration > 0 ? (double)expiration: 60;
 
             var claims = new[]
             {
@@ -41,15 +42,14 @@ public class TokenBusiness : ITokenBusiness
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat,
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                    ClaimValueTypes.Integer64)
+                    ClaimValueTypes.Integer64), 
+                new Claim("apiKey", apiKey)
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
-                Issuer = issuer,
-                Audience = audience,
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(key),
                     SecurityAlgorithms.HmacSha256Signature)

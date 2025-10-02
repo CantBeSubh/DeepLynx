@@ -32,7 +32,7 @@ public class AuthController : ControllerBase
     [HttpPost("CreateToken", Name = "api_create_token")]
     public IActionResult CreateToken([FromBody] CreateTokenDto tokenDto)
     {
-        return Ok(_tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey));
+        return Ok(_tokenBusiness.CreateToken(tokenDto.ApiSecret, tokenDto.ApiKey, tokenDto.ExpirationMinutes));
     }
 
     /// <summary>
