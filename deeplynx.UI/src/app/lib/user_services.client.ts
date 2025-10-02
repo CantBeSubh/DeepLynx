@@ -51,3 +51,14 @@ export async function updateUser(userId: number, name?: string) {
     throw error;
   }
 }
+
+export async function deleteUser(userId: number) {
+  try {
+    console.log(`Deleting user with ID: ${userId}`);
+    const res = await api.delete(`/user/DeleteUser/${userId}`);
+    return res.data;
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
+}

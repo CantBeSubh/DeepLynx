@@ -1,11 +1,9 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import GenericTable from "../../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, SystemUsersTable } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import { getAllUsers, updateUser } from "@/app/lib/user_services.client";
+import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "../MemberModals/EditSysUser";
 
 const UsersTable = () => {
@@ -53,12 +51,26 @@ const UsersTable = () => {
     setSelectAll(next.every(Boolean));
   };
 
-  const handleDelete = (index: number) => {
-    setData((prev) => prev.filter((_, i) => i !== index));
+  const handleDelete = async (index: number) => {
+    const userId = data[index].id;
+    try {
+      await deleteUser(userId);
+      setData((prev) => prev.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      setError("Failed to delete user.");
+    }
   };
 
-  const handleDeleteSelected = () => {
-    setData((prev) => prev.filter((_, i) => !selectedMembers[i]));
+  const handleDeleteSelected = async () => {
+    const selectedUserIds = data.filter((_, i) => selectedMembers[i]).map(user => user.id);
+    try {
+      await Promise.all(selectedUserIds.map(userId => deleteUser(userId)));
+      setData((prev) => prev.filter((_, i) => !selectedMembers[i]));
+    } catch (err) {
+      console.error("Failed to delete selected users:", err);
+      setError("Failed to delete selected users.");
+    }
   };
 
   const multipleSelected = () => selectedMembers.filter(Boolean).length > 1;
