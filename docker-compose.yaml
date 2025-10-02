@@ -45,9 +45,7 @@ services:
       STORAGE_DIRECTORY: /data
       AZURE_OBJECT_CONNECTION_STRING: azure-example-connection-string
       AWS_S3_CONNECTION_STRING: aws-example-connection-string
-      # this is under development, ask about getting scalar working for the docker server
-      ScalarApi__BaseUrl: http://scalar-api:5050 # http://localhost:5000/scalar/, not 5050.
-      JWT_SECRET_KEY: ZGDcnDdkRjLcx1kty9lXzlZ9L2ywFv3rC/91I3Z6fLQ= # for your local backend and can be changed
+      JWT_SECRET_KEY: demo_ZGDcnDdkRjLcx1kty9lXzlZ9L2ywFv3rC/91I3Z6fLQ= # for your local backend and can be changed
       JWT_ISSUER: https://identity-preview.inl.gov
       JWT_AUDIENCE: https://identity-preview.inl.gov
       SMTP_SERVER: mailhost.inl.gov
