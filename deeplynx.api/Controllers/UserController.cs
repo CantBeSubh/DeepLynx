@@ -28,13 +28,16 @@ namespace deeplynx.api.Controllers
         /// Get all users
         /// </summary>
         /// <param name="projectId">(Optional) ID of project that users are associated with</param>
+        /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
         /// <returns>List of user response DTOs</returns>
         [HttpGet("GetAllUsers", Name = "api_get_all_users")]
-        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(long? projectId)
+        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(
+            [FromQuery] long? projectId, 
+            [FromQuery] long? organizationId)
         {
             try
             {
-                var users = await _userBusiness.GetAllUsers(projectId);
+                var users = await _userBusiness.GetAllUsers(projectId, organizationId);
                 return Ok(users);
             }
             catch (Exception exc)
@@ -67,7 +70,6 @@ namespace deeplynx.api.Controllers
         
         }
         
-        
         /// <summary>
         /// Create a user
         /// </summary>
@@ -88,6 +90,28 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Refresh stored user info
+        /// </summary>
+        /// <param name="dto">User request DTO</param>
+        /// <returns>User response DTO</returns>
+        [HttpPost("RefreshUser", Name = "api_refresh_user")]
+        public async Task<ActionResult<UserResponseDto>> RefreshUser([FromBody] CreateUserRequestDto dto)
+        {
+            try
+            {
+                var user = await _userBusiness.RefreshUser(dto);
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while creating or updating this user: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
         /// <summary>
         /// Update a user
         /// </summary>

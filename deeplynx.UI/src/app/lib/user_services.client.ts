@@ -5,7 +5,7 @@ import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
 
-export async function getAllUsers(projectId: number) {
+export async function getAllUsers(projectId?: number) {
   try {
     const res = await api.get(`/user/GetAllUsers`, {
       params: { projectId },
@@ -32,6 +32,19 @@ export async function getRecentlyAddedRecords(projectIds: string[]) {
     const params = new URLSearchParams();
     projectIds.forEach((id) => params.append("projectId", id));
     const res = await api.get(`/user/GetRecentlyAddedRecords?${params.toString()}`);
+    return res.data;
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
+}
+
+export async function updateUser(userId: number, name?: string) {
+  try {
+    console.log(`Updating user with ID: ${userId} and Name: ${name}`);
+    const res = await api.put(`/user/UpdateUser/${userId}`, {
+      name,
+    });
     return res.data;
   } catch (error) {
     console.error("API call failed:", error);

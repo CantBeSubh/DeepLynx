@@ -9,7 +9,7 @@ interface Filter {
   id: number;
   term: string;
 }
-interface LargeSearchBarProps {
+interface MemberSearchBarProps {
   placeholder?: string;
   className?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -22,9 +22,9 @@ interface LargeSearchBarProps {
   showResultsMessage?: boolean;
 }
 
-const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
-  placeholder = "Search...", // Default placeholder text
-  className = "", // Default className
+const MemberSearchBar: React.FC<MemberSearchBarProps> = ({
+  placeholder = "Search...",
+  className = "",
   onChange,
   onEnter,
   value,
@@ -61,11 +61,11 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   return (
     <div className={`${className}`}>
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-base-content size-6" />
+        <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-neutral size-6" />
         <input
           type="text"
           placeholder={placeholder}
-          className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-base-content"
+          className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-neutral"
           onChange={
             isControlled ? onChange : (e) => setInternalValue(e.target.value)
           }
@@ -88,14 +88,6 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
             <XMarkIcon className="size-6" />
           </button>
         )}
-        <div className="text-right mt-1">
-          <a
-            href="/data_catalog/query_builder"
-            className="text-sm underline text-secondary hover:underline"
-          >
-            {t.translations.ADITIONAL_FILTERS}
-          </a>
-        </div>
       </div>
 
       {/* Filter Chips */}
@@ -145,4 +137,4 @@ const LargeSearchBar: React.FC<LargeSearchBarProps> = ({
   );
 };
 
-export default LargeSearchBar;
+export default MemberSearchBar;

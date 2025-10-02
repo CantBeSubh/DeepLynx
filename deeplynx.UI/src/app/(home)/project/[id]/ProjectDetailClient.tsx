@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
+import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import SavedSearches from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import { ProjectsList } from "@/app/(home)/types/types";
@@ -83,8 +83,8 @@ export default function ProjectDetailClient({
         <p className="mt-2 text-base-content/70">{project.description}</p>
         <p className="mt-2 text-sm text-base-content/60">
           <span className="font-semibold">{t.translations.CREATED}: </span>
-          {project.createdAt &&
-            format(new Date(project.createdAt), "MM/dd/yyyy")}
+          {project.lastUpdatedAt &&
+            format(new Date(project.lastUpdatedAt), "MM/dd/yyyy")}
         </p>
         <ProjectDropdownSingleSelect
           projects={projects}
@@ -97,9 +97,8 @@ export default function ProjectDetailClient({
       <div className="flex flex-col lg:flex-row gap-6 px-4 lg:px-6 mt-6">
         {/* Left Column */}
         <div
-          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${
-            canCustomize ? "opacity-50 pointer-events-none" : ""
-          }`}
+          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${canCustomize ? "opacity-50 pointer-events-none" : ""
+            }`}
         >
           {/* Search Bar */}
           <div className="mb-6">

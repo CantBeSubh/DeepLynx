@@ -7,6 +7,7 @@ import { Column, MySearchsTable, PopularTable } from "../types/types";
 import AvatarCell from "./Avatar";
 import GenericTable from "./GenericTable";
 import Tabs from "./Tabs";
+import { useState } from "react";
 
 interface SavedSearchProps {
   className?: string;
@@ -14,6 +15,8 @@ interface SavedSearchProps {
 
 const SavedSearches = ({ className }: SavedSearchProps) => {
   const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState("Recent");
+
   const my_search_table_columns: Column<MySearchsTable>[] = [
     {
       header: "Name",
@@ -96,7 +99,12 @@ const SavedSearches = ({ className }: SavedSearchProps) => {
         </div>
 
         {/* Tabs */}
-        <Tabs tabs={tabData} className="tabs tabs-boxed bg-base-100" />
+        <Tabs
+          tabs={tabData}
+          className="tabs tabs-boxed bg-base-100"
+          activeTab={activeTab}
+          onTabChange={(label) => setActiveTab(label)}
+        />
       </div>
     </div>
   );

@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import LargeSearchBar from "@/app/(home)/components/LargeSearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
@@ -15,12 +13,15 @@ import SavedSearches from "../components/SavedSearches";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
-  ArrowUturnLeftIcon,
   EyeIcon,
   PlusIcon,
   QueueListIcon,
   TableCellsIcon,
 } from "@heroicons/react/24/outline";
+import SearchBar from "@/app/(home)/components/SearchBar";
+import { fullTextSearch } from "@/app/lib/query_services.client";
+import ListView from "../components/ListView";
+import AddRecordModal from "../components/AddRecordModal";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -38,16 +39,20 @@ export default function DataCatalogClient({
   const { t } = useLanguage();
 
   // Project session (client provider)
-  const { hasLoaded, setProject: setProjectSession} = useProjectSession();
+  const { hasLoaded, setProject: setProjectSession } = useProjectSession();
 
   // Local state
   const [projects] = useState(initialProjects);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
+  const [records, setQueriedRecords] = useState<FileViewerTableRow[]>(initialRecords ?? []);
+
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<
     Array<{ id: number; term: string }>
@@ -56,11 +61,6 @@ export default function DataCatalogClient({
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(
     Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
-  );
-
-  const activeSearchTerms = useMemo(
-    () => activeFilters.map((f) => f.term.toLowerCase()),
-    [activeFilters]
   );
 
   // === memoized “complex” deps ===
@@ -105,6 +105,7 @@ export default function DataCatalogClient({
   const clearAllFilters = useCallback(() => {
     setActiveFilters([]);
     setSearchTerm("");
+    setQueriedRecords([]);
 
     const ctrl = new AbortController();
     fetchRecordsForSelection(ctrl.signal).catch((e: FileViewerTableRow) => {
@@ -142,20 +143,20 @@ export default function DataCatalogClient({
   );
 
   // Update project session when selectedProjects change
-    useEffect(() => {
-      if (!hasLoaded) return;
-      if (selectedProjects.length > 0) {
-        const selectedProject = projects.find(
-            (project) => project.id === selectedProjects[0]
-        );
-        if (selectedProject) {
-          setProjectSession({
-            projectId: selectedProject.id,
-            projectName: selectedProject.name,
-          });
-        }
+  useEffect(() => {
+    if (!hasLoaded) return;
+    if (selectedProjects.length > 0) {
+      const selectedProject = projects.find(
+        (project) => project.id === selectedProjects[0]
+      );
+      if (selectedProject) {
+        setProjectSession({
+          projectId: selectedProject.id,
+          projectName: selectedProject.name,
+        });
       }
-    }, [selectedProjects, hasLoaded, projects, setProjectSession]);
+    }
+  }, [selectedProjects, hasLoaded, projects, setProjectSession]);
 
   // If we arrive with a search term, run it once after session is ready
   useEffect(() => {
@@ -185,25 +186,20 @@ export default function DataCatalogClient({
     fetchRecordsForSelection,
   ]);
 
-  function renderTags(tags: string) {
-    try {
-      const parsed: string[] = JSON.parse(tags);
-      return parsed
-        .filter((t) => t != null)
-        .map((t) => (
-          <span key={t} className="badge mr-1">
-            {t}
-          </span>
-        ));
-    } catch {
-      return null;
-    }
-  }
 
-  const selectedProjectIdsNum = useMemo(
-    () => selectedProjects.map((id) => Number(id)),
-    [selectedProjects]
-  );
+  const handleSubmit = async () => {
+    try {
+
+      const data = await fullTextSearch(searchTerm, selectedProjects);
+      if (data) {
+        setQueriedRecords(data);
+      }
+    }
+    catch (error) {
+      console.error("Failed to send query")
+    }
+
+  };
 
   if (!hasLoaded) return null;
 
@@ -230,11 +226,11 @@ export default function DataCatalogClient({
       <div className="flex justify-between gap-4 mb-4 pt-20 pl-8 w-full box-border">
         {/* Left: Search */}
         <div className="flex flex-col md:w-1/2">
-          <LargeSearchBar
+          <SearchBar
             placeholder="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            onEnter={handleSearch}
+            onSubmit={handleSubmit}
             activeFilters={activeFilters}
             onRemoveFilter={(id) =>
               setActiveFilters((prev) => prev.filter((f) => f.id !== id))
@@ -248,36 +244,24 @@ export default function DataCatalogClient({
 
         {/* Right: actions */}
         <div className="flex gap-4 pr-4">
-          {showAll ? (
-            <button
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(false);
-                setViewMode("list");
-                // clearAllFilters();
-              }}
-            >
-              <ArrowUturnLeftIcon className="h-6 w-6" />
-              {t.translations.RECENT_ACTIVITY}
-            </button>
-          ) : (
-            <Link
-              href="data_catalog/all_records"
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(true);
-                setViewMode("list");
-                clearAllFilters();
-              }}
-            >
-              <EyeIcon className="h-6 w-6" />
-              {t.translations.EXPLORE_ALL_RECORDS}
-            </Link>
-          )}
-
-          <button className="btn btn-primary text-white">
-            <PlusIcon className="h-6 w-6" />
-            {t.translations.RECORD}
+          <Link
+            href="data_catalog/all_records"
+            className="btn btn-outline btn-primary"
+            onClick={() => {
+              setShowAll(true);
+              setViewMode("list");
+              clearAllFilters();
+            }}
+          >
+            <EyeIcon className="h-6 w-6" />
+            {t.translations.EXPLORE_ALL_RECORDS}
+          </Link>
+          <button
+            onClick={() => setIsRecordModalOpen(true)}
+            className="btn btn-primary text-white"
+          >
+            <PlusIcon className="size-5" />
+            <span>{t.translations.RECORD}</span>
           </button>
 
           {(activeFilters.length > 0 || showAll) && (
@@ -301,13 +285,23 @@ export default function DataCatalogClient({
         </div>
       </div>
       <div className="flex w-full gap-8 p-8">
-        <div className="w-2/3">
-          <RecentRecordsCard selectedProjects={selectedProjects} />
-        </div>
-        <div className="w-1/3">
+
+        {records && records?.length > 0 ? (
+          <ListView data={records} />
+        ) : (records &&
+          <div className="w-2/3">
+            <RecentRecordsCard selectedProjects={selectedProjects} />
+          </div>
+        )}
+        {/* <div className="w-1/3">
           <SavedSearches />
-        </div>
+        </div> */}
       </div>
+      <AddRecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        initialProjects={projects}
+      />
     </div>
   );
 }
