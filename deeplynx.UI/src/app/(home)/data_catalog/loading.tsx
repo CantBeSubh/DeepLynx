@@ -32,7 +32,7 @@ export default function DataCatalogLoading() {
 
       <ToolbarSkeleton showListButtons={showListSkeleton} />
 
-      {showListSkeleton ? <ListViewSkeleton /> : <CatalogViewSkeleton />}
+      {showListSkeleton ? <ListViewSkeleton /> : <div/>}
     </div>
   );
 }
@@ -135,83 +135,5 @@ function ListViewSkeleton() {
         ))}
       </ul>
     </div>
-  );
-}
-
-function CatalogViewSkeleton() {
-  const { t } = useLanguage();
-  const rows = 6;
-  const totalPages = 2;
-
-  return (
-    // <div className="flex w-full gap-8 pl-8">
-    //   <div className="w-2/3">
-    //     <div className="bg-base-100 rounded-xl p-4">
-    //       <h2 className="text-lg text-black mb-2">
-    //         <Skeleton width={220} />
-    //       </h2>
-    //       <div className="divider m-0 mt-2"></div>
-
-    //       <ul className="list mt-0">
-    //         {times(rows).map((i) => (
-    //           <li
-    //             key={i}
-    //             className="border-b border-base-content/20 hover:bg-base-200/30 p-2 pl-0 rounded-sm"
-    //           >
-    //             <div className="text-accent-content mb-1">
-    //               <Skeleton width="55%" />
-    //             </div>
-    //             <div className="text-sm text-base-300 space-x-2 flex flex-wrap items-center">
-    //               <span>
-    //                 {t.translations.CLASS}{" "}
-    //                 <span className="badge badge-info badge-sm text-xs">
-    //                   <Skeleton width={60} />
-    //                 </span>
-    //               </span>
-    //               <span className="ml-4">
-    //                 {t.translations.LAST_EDIT} <Skeleton width={80} />
-    //               </span>
-    //               <span className="ml-4">
-    //                 {t.translations.PROJECT} <Skeleton width={120} />
-    //               </span>
-    //               <span className="ml-4">
-    //                 {t.translations.DATA_SOURCE} <Skeleton width={100} />
-    //               </span>
-    //             </div>
-    //           </li>
-    //         ))}
-    //       </ul>
-
-    //       {totalPages > 1 && (
-    //         <div className="flex justify-end gap-2 mt-4">
-    //           <button className="btn btn-sm btn-ghost">
-    //             <ChevronLeftIcon className="size-6" />
-    //           </button>
-    //           <span className="px-2 text-sm">
-    //             <Skeleton width={60} />
-    //           </span>
-    //           <button className="btn btn-sm btn-ghost">
-    //             <ChevronRightIcon className="size-6" />
-    //           </button>
-    //         </div>
-    //       )}
-    //     </div>
-    //   </div>
-
-    //   <div className="w-1/3">
-    //     <div className="bg-base-100 text-accent-content rounded-xl p-4 shadow-md card card-border mt-6">
-    //       <h3 className="text-lg font-semibold mb-2">
-    //         <Skeleton width={160} />
-    //       </h3>
-    //       <Skeleton width={160} height={80} />
-    //       {times(8).map((i) => (
-    //         <div key={i} className="py-2 border-b border-base-content/10">
-    //           <Skeleton />
-    //         </div>
-    //       ))}
-    //     </div>
-    //   </div>
-    // </div>
-    <div></div>
   );
 }
