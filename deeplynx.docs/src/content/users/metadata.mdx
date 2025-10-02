@@ -150,10 +150,10 @@ Here is an example of a valid JSON:
 ## Why Natural Keys?
 
 You may have noticed that we are using natural keys (origin_oid, class_name, etc.) instead of IDs. This is to simplify 
-the generation of JSON so you do not need to know their IDs in the Nexus database beforehand. A key principle to 
-understand is the fact that Nexus will create the metadata records that have a natural key that does not exist in
-the database. For the natural keys that already exist in the project/datasource, Nexus will update the existing
-record to the fields that are provided in the JSON object. 
+the generation of JSON so you do not need to know their IDs in the Nexus database beforehand. Nexus will check to see if 
+the natural key references metadata in the same JSON object, then if it doesn't find one, it checks the database for 
+any records that have those natural keys. If a record with the natural key already exists in the database, Nexus will 
+update the existing record with the fields that were provided in the JSON.
 
 
 
