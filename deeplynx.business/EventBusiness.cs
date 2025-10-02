@@ -13,20 +13,23 @@ public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
-    private readonly IHubContext<EventNotificationHub>  _hubContext;
-    
+    private readonly INotificationBusiness _notificationBusiness;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
-    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness, IHubContext<EventNotificationHub> hubContext)
+    public EventBusiness(
+        DeeplynxContext context, 
+        ICacheBusiness cacheBusiness,
+        INotificationBusiness notificationBusiness
+        )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
-        _hubContext = hubContext;
+        _notificationBusiness = notificationBusiness;
     }
-
     /// <summary>
     /// Retrieves all project events that the user is subscribed to.
     /// </summary>
@@ -34,7 +37,7 @@ public class EventBusiness : IEventBusiness
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
     public async Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId)
     {
-        
+
         var subscriptions = await _context.Set<Subscription>()
             .Where(s => s.UserId == userId && s.ProjectId == projectId)
             .ToListAsync();
@@ -76,7 +79,7 @@ public class EventBusiness : IEventBusiness
                 LastUpdatedAt = e.LastUpdatedAt,
             }).ToList();
     }
-    
+
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
@@ -89,7 +92,7 @@ public class EventBusiness : IEventBusiness
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-    
+
         var newEvent = new Event
         {
             Operation = dto.Operation,
@@ -104,7 +107,7 @@ public class EventBusiness : IEventBusiness
 
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
-    
+
         var response = new EventResponseDto
         {
             Id = newEvent.Id,
@@ -117,12 +120,10 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = newEvent.LastUpdatedBy,
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
-
-        // Serialize the response object to JSON using fully qualified JsonSerializer
-        var jsonResponse = System.Text.Json.JsonSerializer.Serialize(response);
-
-        // Send notification with the serialized JSON object
-        await _hubContext.Clients.All.SendAsync("ReceiveNotification", jsonResponse);
+        
+        // Send notification if there are users subscribed to this event
+        // Fire and forget - don't wait for notification to complete
+        _ = _notificationBusiness.SendEventNotification(response);
 
         return response;
     }
@@ -142,6 +143,7 @@ public class EventBusiness : IEventBusiness
             ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         }
+
         var eventEntities = events.Select(dto => new Event
         {
             ProjectId = projectId,
@@ -157,7 +159,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.AddRange(eventEntities);
         await _context.SaveChangesAsync();
 
-        return eventEntities.Select(e => new EventResponseDto
+        var response = eventEntities.Select(e => new EventResponseDto
         {
             Id = e.Id,
             ProjectId = e.ProjectId,
@@ -170,5 +172,10 @@ public class EventBusiness : IEventBusiness
             LastUpdatedAt = e.LastUpdatedAt
         }).ToList();
         
+        // Send notification if there are users subscribed to this event
+        // Fire and forget - don't wait for notification to complete
+        _ = _notificationBusiness.SendBulkEventNotifications(response);
+        
+        return response;
     }
 }

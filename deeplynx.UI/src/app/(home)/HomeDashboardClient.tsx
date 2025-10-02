@@ -15,7 +15,7 @@ import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
-import EventNotifications from "./components/EventNotifications";
+import { EventNotifications, EventBannerNotification } from "./components/EventNotifications";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
@@ -103,6 +103,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
 
   return (
     <div className="min-h-screen bg-base-100">
+      <EventBannerNotification/>
       {/* Header Section */}
       <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
