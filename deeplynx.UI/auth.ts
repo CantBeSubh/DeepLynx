@@ -6,6 +6,10 @@ import jsonWebToken from "jsonwebtoken";
 
 export const runtime = "nodejs";
 
+// ======================================================================
+// TODO: This is trying to extract the isues from the access token.      |
+// But we need to know the exact issuer URL to hold it in a ENV variable |
+// ======================================================================
 async function refreshAccessToken(token: JWT): Promise<JWT> {
     try {
         if (!token.refresh_token) {
