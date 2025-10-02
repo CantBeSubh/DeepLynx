@@ -1,13 +1,10 @@
-// src/app/(home)/components/MemberSettingsTable/MembersTable/UsersTable.tsx
-
-"use client";
-
 import React, { useEffect, useState } from "react";
 import GenericTable from "../../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, SystemUsersTable } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
+import EditSysUser from "../MemberModals/EditSysUser";
 
 const UsersTable = () => {
   const { t } = useLanguage();
@@ -16,25 +13,30 @@ const UsersTable = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [editSysUserModal, setEditSysUserModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
+
+  const fetchUsers = async () => {
+    try {
+      const users = await getAllUsers();
+      setData(users);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     setSelectedMembers(new Array(data.length).fill(false));
     setSelectAll(false);
   }, [data.length]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const users = await getAllUsers();
-        setData(users);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load users.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const handleSelectAll = () => {
     const next = !selectAll;
@@ -49,15 +51,35 @@ const UsersTable = () => {
     setSelectAll(next.every(Boolean));
   };
 
-  const handleDelete = (index: number) => {
-    setData((prev) => prev.filter((_, i) => i !== index));
+  const handleDelete = async (index: number) => {
+    const userId = data[index].id;
+    try {
+      await deleteUser(userId);
+      setData((prev) => prev.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      setError("Failed to delete user.");
+    }
   };
 
-  const handleDeleteSelected = () => {
-    setData((prev) => prev.filter((_, i) => !selectedMembers[i]));
+  const handleDeleteSelected = async () => {
+    const selectedUserIds = data.filter((_, i) => selectedMembers[i]).map(user => user.id);
+    try {
+      await Promise.all(selectedUserIds.map(userId => deleteUser(userId)));
+      setData((prev) => prev.filter((_, i) => !selectedMembers[i]));
+    } catch (err) {
+      console.error("Failed to delete selected users:", err);
+      setError("Failed to delete selected users.");
+    }
   };
 
   const multipleSelected = () => selectedMembers.filter(Boolean).length > 1;
+
+  const openEditModal = (userId: number, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setEditSysUserModal(true);
+  };
 
   const columns: Column<SystemUsersTable>[] = [
     {
@@ -83,9 +105,9 @@ const UsersTable = () => {
     { header: "Email", data: "email" },
     {
       header: "",
-      cell: () => (
+      cell: (row) => (
         <div className="flex">
-          <button>
+          <button onClick={() => openEditModal(row.id, row.name)}>
             <PencilIcon className="size-6 text-secondary" />
           </button>
         </div>
@@ -118,11 +140,15 @@ const UsersTable = () => {
 
   return (
     <div>
-      <GenericTable
-        columns={columns}
-        data={data}
-        enablePagination
-      />
+      <GenericTable columns={columns} data={data} enablePagination />
+      {selectedUserId !== null && (
+        <EditSysUser
+          isOpen={editSysUserModal}
+          onClose={() => setEditSysUserModal(false)}
+          userId={selectedUserId}
+          userName={selectedUserName}
+        />
+      )}
     </div>
   );
 };

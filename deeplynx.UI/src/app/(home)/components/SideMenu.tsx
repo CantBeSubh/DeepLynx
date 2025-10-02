@@ -168,7 +168,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
 
-          <li className="mt-2">
+          {/* <li className="mt-2">
             <Link
               href="#saved-searches"
               onClick={(e) => handleItemClick("#saved-searches", e)}
@@ -191,7 +191,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 <p className="ml-2">{t.translations.TIMESERIES_VIEWER}</p>
               )}
             </Link>
-          </li>
+          </li> */}
           <li className="mt-2">
             <div className="flex items-center">
               <Link
@@ -215,7 +215,11 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
-                href={process.env.NEXT_PUBLIC_DOCS_PATH ? `${process.env.NEXT_PUBLIC_DOCS_PATH}` : "http://localhost:3001"}
+                href={
+                  process.env.NEXT_PUBLIC_DOCS_PATH
+                    ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
+                    : "http://localhost:3001"
+                }
                 /*
                 href="#"
                 prefetch={false}
