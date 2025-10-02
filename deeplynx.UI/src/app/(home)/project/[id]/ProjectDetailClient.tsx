@@ -97,8 +97,9 @@ export default function ProjectDetailClient({
       <div className="flex flex-col lg:flex-row gap-6 px-4 lg:px-6 mt-6">
         {/* Left Column */}
         <div
-          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${canCustomize ? "opacity-50 pointer-events-none" : ""
-            }`}
+          className={`flex-1 lg:w-3/5 transition-opacity duration-300 ${
+            canCustomize ? "opacity-50 pointer-events-none" : ""
+          }`}
         >
           {/* Search Bar */}
           <div className="mb-6">
@@ -121,7 +122,7 @@ export default function ProjectDetailClient({
                     },
                   }}
                 >
-                  Visit
+                  {t.translations.VISIT}
                 </Link>
               </div>
 
