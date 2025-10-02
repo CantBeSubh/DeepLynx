@@ -12,13 +12,24 @@ export default function HomeLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <UserSessionProvider>
-      <AuthGuard>
+  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
+
+  if (disableAuth == "true") {
+    return (
+      <UserSessionProvider>
         <ProjectSessionProvider>
           <LayoutShell>{children}</LayoutShell>
         </ProjectSessionProvider>
-      </AuthGuard>
-    </UserSessionProvider>
-  );
+      </UserSessionProvider>
+    )
+  } else
+    return (
+      <UserSessionProvider>
+        <AuthGuard>
+          <ProjectSessionProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </ProjectSessionProvider>
+        </AuthGuard>
+      </UserSessionProvider>
+    );
 }
