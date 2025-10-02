@@ -239,6 +239,29 @@ namespace deeplynx.tests
             var list = await _edgeBusiness.GetAllEdges(pid, null, true);
             Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
         }
+        
+        [Fact]
+        public async Task GetAllEdges_ReturnsOnlyByRecord()
+        {
+            var p2 = new Project { Name = "ExtraProj" };
+            Context.Projects.Add(p2);
+            await Context.SaveChangesAsync();
+
+            var ds2 = new DataSource
+            {
+                Name = "Extra DataSource",
+                ProjectId = p2.Id,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.DataSources.Add(ds2);
+            await Context.SaveChangesAsync();
+
+            await _edgeBusiness.CreateEdge(pid, dsid, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+
+            var list = await _edgeBusiness.GetAllEdges(pid, null, true);
+            Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
+        }
 
         [Fact]
         public async Task GetAllEdges_ExcludesSoftDeleted()

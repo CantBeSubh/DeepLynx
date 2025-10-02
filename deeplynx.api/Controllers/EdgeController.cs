@@ -50,6 +50,32 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Get all edges
+        /// </summary>
+        /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
+        /// <param name="recordId">The ID of the datasource by which to filter edges</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+        /// <returns>A list of edges based on the applied filters.</returns>
+        [HttpGet("GetAllEdgesByRecord", Name = "api_get_all_edges_")]
+        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdgesByRecord(
+            long projectId,
+            long recordId,
+            bool hideArchived = true)
+        {
+            try
+            {
+                var edges = await _edgeBusiness.GetAllEdgesByRecord(recordId, hideArchived); 
+                return Ok(edges);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing all edges: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Get edge 

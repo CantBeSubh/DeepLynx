@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -44,6 +45,49 @@ public class EdgeBusiness : IEdgeBusiness
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var edgeQuery = _context.Edges
             .Where(e => e.ProjectId == projectId);
+
+        if (hideArchived)
+        {
+            edgeQuery = edgeQuery.Where(e => e.IsArchived == false);
+        }
+        
+        var edges = await edgeQuery.ToListAsync();
+
+        return edges
+            .Select(e => new EdgeResponseDto()
+            {
+                Id = e.Id,
+                OriginId = e.OriginId,
+                DestinationId = e.DestinationId,
+                RelationshipId = e.RelationshipId,
+                DataSourceId = e.DataSourceId,
+                ProjectId = e.ProjectId,
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                IsArchived = e.IsArchived,
+            }).ToList();
+    }
+    
+    /// <summary>
+    /// Retrieves all edges for a specific project and (optionally) datasource
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
+    /// <param name="recordId">The ID of the record by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
+    /// <returns>A list of edges based on the applied filters.</returns>
+    public async Task<List<EdgeResponseDto>> GetAllEdgesByRecord(
+        long recordId,
+        bool hideArchived)
+    {
+        var userProjectsIds = await _context.Projects.Where(p => 
+            p.ProjectMembers.Any(pm => 
+                pm.UserId == UserContextStorage.UserId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == UserContextStorage.UserId))
+            )
+        ).Select(p => p.Id).ToListAsync();
+        
+        var edgeQuery = _context.Edges
+            .Where(e => userProjectsIds.Contains(e.ProjectId) && (e.OriginId == recordId || e.DestinationId == recordId) );
 
         if (hideArchived)
         {

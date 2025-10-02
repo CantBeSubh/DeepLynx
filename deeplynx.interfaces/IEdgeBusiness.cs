@@ -8,6 +8,7 @@ public interface IEdgeBusiness
 {
     Task<List<EdgeResponseDto>> GetAllEdges(
         long projectId, long? dataSourceId, bool hideArchived);
+    Task<List<EdgeResponseDto>> GetAllEdgesByRecord(long recordId, bool hideArchived);
     Task<EdgeResponseDto> GetEdge(
         long projectId, long? edgeId, long? originId, long? destinationId, bool hideArchived);
     Task<EdgeResponseDto> CreateEdge(
