@@ -38,3 +38,16 @@ export async function getRecentlyAddedRecords(projectIds: string[]) {
     throw error;
   }
 }
+
+export async function deleteUser(userId: number) {
+  try {
+    console.log(`Deleting user with ID: ${userId}`);
+    const res = await api.delete(`/user/DeleteUser/${userId}`, {
+      userId
+    });
+    return res.data;
+  } catch (error) {
+    console.error("API call failed:", error);
+    throw error;
+  }
+}
