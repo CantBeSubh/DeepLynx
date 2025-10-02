@@ -19,19 +19,19 @@ const UsersTable = () => {
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>("");
 
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const users = await getAllUsers();
-        setData(users);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load users.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchUsers = async () => {
+    try {
+      const users = await getAllUsers();
+      setData(users);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchUsers();
   }, []);
 
@@ -67,14 +67,6 @@ const UsersTable = () => {
     setSelectedUserId(userId);
     setSelectedUserName(userName);
     setEditSysUserModal(true);
-  };
-
-  const handleUserUpdate = (updatedName: string) => {
-    setData((prevData) =>
-      prevData.map((user) =>
-        user.id === selectedUserId ? { ...user, name: updatedName } : user
-      )
-    );
   };
 
   const columns: Column<SystemUsersTable>[] = [
@@ -143,7 +135,6 @@ const UsersTable = () => {
           onClose={() => setEditSysUserModal(false)}
           userId={selectedUserId}
           userName={selectedUserName}
-          onUpdate={handleUserUpdate}
         />
       )}
     </div>

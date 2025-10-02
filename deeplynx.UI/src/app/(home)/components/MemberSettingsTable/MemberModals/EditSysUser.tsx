@@ -7,11 +7,10 @@ interface EditSysUserProps {
   onClose: () => void;
   userId: number;
   userName: string;
-  onUpdate: (updatedName: string) => void;
 }
 
 // Main EditSysUser component
-const EditSysUser = ({ isOpen, onClose, userId, userName, onUpdate }: EditSysUserProps) => {
+const EditSysUser = ({ isOpen, onClose, userId, userName }: EditSysUserProps) => {
   const { t } = useLanguage();
   const [name, setName] = useState(userName);
 
@@ -22,12 +21,9 @@ const EditSysUser = ({ isOpen, onClose, userId, userName, onUpdate }: EditSysUse
   }, [isOpen, userName]);
 
   const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-
     try {
       await updateUser(userId, name);
       alert("User updated successfully!");
-      onUpdate(name);
     } catch (error) {
       console.error("Error updating user:", error);
       alert("An error occurred while updating the user.");
@@ -44,7 +40,7 @@ const EditSysUser = ({ isOpen, onClose, userId, userName, onUpdate }: EditSysUse
             <h3 className="font-bold text-lg mb-4 text-neutral">
               {t.translations.EDIT_USER}
             </h3>
-            <form method="dialog" className="flex flex-col gap-4" onSubmit={handleUpdate}>
+            <form className="flex flex-col gap-4" onSubmit={handleUpdate}>
               <input
                 type="text"
                 placeholder="Name"
