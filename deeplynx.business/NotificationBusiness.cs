@@ -48,7 +48,7 @@ public class NotificationBusiness : INotificationBusiness
         try
         {
             // Get all users subscribed to this event
-            var subscribedUserIds = await GetSubscribedUserIds(eventDto);
+            var subscribedUserIds = await GetSubscribedUserIdsForEvent(eventDto);
             
             if (!subscribedUserIds.Any())
             {
@@ -94,13 +94,22 @@ public class NotificationBusiness : INotificationBusiness
 
         try
         {
-            // Group events by subscribed users to optimize notifications
+            // Serialize each event ONCE
+            var eventJsonCache = eventDtos.ToDictionary(
+                e => e,
+                e => System.Text.Json.JsonSerializer.Serialize(e)
+            );
+
+            // ✅ Single database query for all subscriptions
+            var eventSubscriptionsMap = await GetSubscribedUserIdsForManyEvents(eventDtos);
+
+            // Group events by subscribed users
             var userEventMap = new Dictionary<long, List<EventResponseDto>>();
 
             foreach (var eventDto in eventDtos)
             {
-                var subscribedUserIds = await GetSubscribedUserIds(eventDto);
-                
+                var subscribedUserIds = eventSubscriptionsMap[eventDto.Id];
+            
                 foreach (var userId in subscribedUserIds)
                 {
                     if (!userEventMap.ContainsKey(userId))
@@ -117,13 +126,13 @@ public class NotificationBusiness : INotificationBusiness
                 return;
             }
 
-            // Send all notifications for each user
+            // Send all notifications
             var notificationTasks = userEventMap.Select(kvp => 
-                SendEventsToUser(kvp.Key, kvp.Value)
+                SendEventsToUser(kvp.Key, kvp.Value, eventJsonCache)
             );
 
             await Task.WhenAll(notificationTasks);
-            
+        
             _logger.LogInformation(
                 "Successfully sent bulk notifications for {EventCount} events to {UserCount} users", 
                 eventDtos.Count, 
@@ -137,27 +146,25 @@ public class NotificationBusiness : INotificationBusiness
         }
     }
 
-    /// <summary>
-    /// Sends multiple events to a single user
-    /// </summary>
-    /// <param name="userId">The user ID to send notifications to</param>
-    /// <param name="events">List of events to send</param>
-    private async Task SendEventsToUser(long userId, List<EventResponseDto> events)
+    private async Task SendEventsToUser(
+        long userId, 
+        List<EventResponseDto> events, 
+        Dictionary<EventResponseDto, string> eventJsonCache)
     {
         try
         {
-            foreach (var eventDto in events)
-            {
-                var jsonResponse = System.Text.Json.JsonSerializer.Serialize(eventDto);
-                await SendToUserGroup(userId, jsonResponse, eventDto.Id);
-            }
+            // Send all events to this user in parallel using cached JSON
+            var notificationTasks = events.Select(eventDto =>
+                SendToUserGroup(userId, eventJsonCache[eventDto], eventDto.Id)
+            );
+
+            await Task.WhenAll(notificationTasks);
             
             _logger.LogDebug("Sent {EventCount} notifications to user {UserId}", events.Count, userId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending events to user {UserId}", userId);
-            // Don't throw - allow other users to still receive notifications
         }
     }
 
@@ -191,7 +198,7 @@ public class NotificationBusiness : INotificationBusiness
     /// </summary>
     /// <param name="eventDto">The event to check subscriptions for</param>
     /// <returns>List of user IDs subscribed to this event</returns>
-    private async Task<List<long>> GetSubscribedUserIds(EventResponseDto eventDto)
+    private async Task<List<long>> GetSubscribedUserIdsForEvent(EventResponseDto eventDto)
     {
         try
         {
@@ -216,6 +223,49 @@ public class NotificationBusiness : INotificationBusiness
                 eventDto.Id, eventDto.ProjectId);
             return new List<long>();
         }
+    }
+    
+    /// <summary>
+    /// Gets all user IDs subscribed to any of the provided events (optimized for bulk)
+    /// </summary>
+    /// <param name="eventDtos">Events to check subscriptions for</param>
+    /// <returns>Dictionary mapping each event ID to its list of subscribed user IDs</returns>
+    private async Task<Dictionary<long, List<long>>> GetSubscribedUserIdsForManyEvents(
+        List<EventResponseDto> eventDtos)
+    {
+        if (!eventDtos.Any())
+        {
+            return new Dictionary<long, List<long>>();
+        }
+
+        var projectIds = eventDtos.Select(e => e.ProjectId).Distinct().ToList();
+
+        // Fetch ALL relevant subscriptions in ONE query
+        var allSubscriptions = await _context.Set<Subscription>()
+            .Where(s => projectIds.Contains(s.ProjectId))
+            .ToListAsync();
+
+        // Match subscriptions to events in memory
+        var result = new Dictionary<long, List<long>>();
+
+        foreach (var eventDto in eventDtos)
+        {
+            var matchingUserIds = allSubscriptions
+                .Where(s => s.ProjectId == eventDto.ProjectId)
+                .Where(s => 
+                    (s.EntityId == eventDto.EntityId || s.EntityId == null) &&
+                    (s.EntityType == eventDto.EntityType || s.EntityType == null) &&
+                    (s.DataSourceId == eventDto.DataSourceId || s.DataSourceId == null) &&
+                    (s.Operation == eventDto.Operation || s.Operation == null)
+                )
+                .Select(s => s.UserId)
+                .Distinct()
+                .ToList();
+
+            result[eventDto.Id] = matchingUserIds;
+        }
+
+        return result;
     }
 
     /// <summary>
