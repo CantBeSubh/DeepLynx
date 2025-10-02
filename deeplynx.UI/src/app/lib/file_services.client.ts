@@ -43,15 +43,11 @@ export async function downloadFile(
 
     const blob = res.data as Blob;
 
-    // 1) Server-provided name (best)
-    // 2) Caller-provided name
-    // 3) Fallback "file"
     let filename =
       parseFilenameFromCD(res.headers["content-disposition"]) ||
       recordName?.trim() ||
       "file";
 
-    // Does not guess if an extension already exists
     if (!hasExtension(filename)) {
       const ext = MIME_EXT[blob.type];
       if (ext) filename += `.${ext}`;

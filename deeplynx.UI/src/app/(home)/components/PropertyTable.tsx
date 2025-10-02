@@ -35,8 +35,6 @@ const PropertyTable: React.FC<PropertyTableProps> = ({
 }) => {
   const [editingIdex, setEditingIndex] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>("");
-
-  // 🔎 read ?projectId=1&recordId=45 from the URL
   const searchParams = useSearchParams();
   const projectIdParam = searchParams.get("projectId");
   const recordIdParam = searchParams.get("recordId");
