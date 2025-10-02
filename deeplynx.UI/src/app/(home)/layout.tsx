@@ -8,28 +8,28 @@ import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
 import AuthGuard from "./components/AuthGuard";
 
 export default function HomeLayout({
-                                       children,
-                                   }: {
-    children: React.ReactNode;
+  children,
+}: {
+  children: React.ReactNode;
 }) {
-    const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
+  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
 
-    if (disableAuth == "true") {
-        return (
-            <UserSessionProvider>
-                <ProjectSessionProvider>
-                    <LayoutShell>{children}</LayoutShell>
-                </ProjectSessionProvider>
-            </UserSessionProvider>
-        )
-    } else
-        return (
-            <UserSessionProvider>
-                <AuthGuard>
-                    <ProjectSessionProvider>
-                        <LayoutShell>{children}</LayoutShell>
-                    </ProjectSessionProvider>
-                </AuthGuard>
-            </UserSessionProvider>
-        );
+  if (disableAuth == "true") {
+    return (
+      <UserSessionProvider>
+        <ProjectSessionProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </ProjectSessionProvider>
+      </UserSessionProvider>
+    )
+  } else
+    return (
+      <UserSessionProvider>
+        <AuthGuard>
+          <ProjectSessionProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </ProjectSessionProvider>
+        </AuthGuard>
+      </UserSessionProvider>
+    );
 }
