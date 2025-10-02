@@ -51,6 +51,7 @@ const ProjectSettings = ({
       label: "Roles",
       content: (
         <RolesTable
+          id={selectedProjectId}
           data={defaultRoles}
         />
       ),
@@ -87,6 +88,10 @@ const ProjectSettings = ({
     }
   };
 
+  const handleProjectChange = (newProjectId: string) => {
+    setSelectedProjectId(newProjectId);
+  };
+
   // Effect to set the active tab from the query parameter
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -107,12 +112,12 @@ const ProjectSettings = ({
 
               <ProjectDropdownSingleSelect
                 projects={projects}
-                onSelectionChange={setSelectedProjectId}
+                onSelectionChange={handleProjectChange}
                 defaultSelectedId={initialProject?.id || ""}
               />
             </div>
           </div>
-          <div className="flex space-x-4">
+          <div className="flex justify-end space-x-4 pt-4">
             <button
               onClick={handleAddButtonClick}
               className="btn btn-secondary text-white"
@@ -122,7 +127,7 @@ const ProjectSettings = ({
             </button>
             <div className="flex flex-col">
               {/* TODO POST FY
-              {activeTab === "Members" && <MemberSearchBar />} */}
+    {activeTab === "Members" && <MemberSearchBar />} */}
             </div>
           </div>
         </div>

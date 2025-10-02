@@ -2,32 +2,31 @@ import React from "react";
 import { FileViewerTableRow } from "../../../../types/types";
 import RoleSettingsClient from "./RoleSettingsClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
+import { notFound } from "next/navigation";
 
 type ProjectDTO = { id: number | string; name: string };
 
 export default async function Page({
+  params,
   searchParams,
 }: {
+  params: Promise<{ id: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = await searchParams;
-  const fromProject =
-    typeof params.fromProject === "string" ? params.fromProject : "";
-  const initialSearch = typeof params.search === "string" ? params.search : "";
+  const { id } = await params;  // Get id from params, not searchParams
+  const search = await searchParams;
 
-  // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projects.map((p) => ({
-    id: String(p.id),
-    name: p.name,
-  }));
+  if (!id) return notFound();
 
-  // Let the client fetch records after mount based on the dropdown selection
-  const initialSelectedProjects = fromProject ? [fromProject] : [];
-  const initialRecords = [] as FileViewerTableRow[];
+  const roleId = typeof search.roleId === "string" ? search.roleId : "";
+  const fromProject = typeof search.fromProject === "string" ? search.fromProject : "";
+  const initialSearch = typeof search.search === "string" ? search.search : "";
+
+  // Rest of your code...
 
   return (
     <RoleSettingsClient
+      projectId={id}
     />
-  );
+  )
 }

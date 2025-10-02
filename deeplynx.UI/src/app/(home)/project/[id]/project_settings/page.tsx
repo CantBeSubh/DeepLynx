@@ -18,7 +18,7 @@ type Props = {
   params: Promise<{ id?: string }>;
 };
 
-export default async function ProjectPage({ params }: Props) {
+export default async function Page({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 

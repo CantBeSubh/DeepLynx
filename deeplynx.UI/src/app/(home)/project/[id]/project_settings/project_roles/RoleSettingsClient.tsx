@@ -4,7 +4,11 @@ import React from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import RoleSettings from "../../../../components/ProjectSettingsTable/ProjectTables/RoleSettings";
 
-const RoleSettingsClient = () => {
+type Props = {
+    projectId: string | string[];
+};
+
+export default function RoleSettingsClient({ projectId }: Props) {
     const { t } = useLanguage();
 
     return (
@@ -19,11 +23,11 @@ const RoleSettingsClient = () => {
 
             <div className="flex w-full gap-8 p-8">
                 <div className="w-full">
-                    <RoleSettings />
+                    <RoleSettings
+                        id={projectId}
+                    />
                 </div>
             </div>
         </div>
     );
 };
-
-export default RoleSettingsClient;
