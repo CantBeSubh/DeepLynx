@@ -95,7 +95,7 @@ export default function RecordViewClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
-   const [activeTab, setActiveTab] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const [relatedRecords, setRelatedRecords] = useState<RelatedRecord[]>();
   const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] =
     useState(false);
@@ -453,13 +453,13 @@ export default function RecordViewClient({
   const parsedProperties = JSON.parse(record.properties!);
   const additionalPropertiesRows = parsedProperties
     ? Object.keys(parsedProperties).map((key) => {
-      const value = parsedProperties[key as keyof object];
-      return {
-        label: key,
-        value:
-          typeof value === "object" ? JSON.stringify(value) : String(value),
-      };
-    })
+        const value = parsedProperties[key as keyof object];
+        return {
+          label: key,
+          value:
+            typeof value === "object" ? JSON.stringify(value) : String(value),
+        };
+      })
     : [];
 
   const tabs = [
@@ -472,6 +472,8 @@ export default function RecordViewClient({
               className=""
               title="System Properties"
               rows={systemPropertiesRows}
+              download
+              recordName={record?.name}
             />
             <PropertyTable
               className="mt-4"
@@ -567,7 +569,7 @@ export default function RecordViewClient({
 
   // Function to handle tab change
   const handleTabChange = (label: string) => {
-    const index = tabs.findIndex(tab => tab.label === label);
+    const index = tabs.findIndex((tab) => tab.label === label);
     if (index !== -1) {
       setActiveTab(index);
     }
