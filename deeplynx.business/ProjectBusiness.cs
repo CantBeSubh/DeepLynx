@@ -28,6 +28,8 @@ public class ProjectBusiness : IProjectBusiness
     private readonly string ProjectsCacheKey = "projects";
     private readonly TimeSpan cacheTTL = TimeSpan.FromHours(1);
 
+    private long _userId = 0;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
     /// </summary>
@@ -66,7 +68,7 @@ public class ProjectBusiness : IProjectBusiness
         bool hideArchived = true)
     {
         var projectQuery = _context.Projects.AsQueryable();
-
+        
         if (hideArchived)
         {
             projectQuery = projectQuery.Where(p => !p.IsArchived);
@@ -76,9 +78,15 @@ public class ProjectBusiness : IProjectBusiness
         {
             projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
         }
-
+        
+        projectQuery = projectQuery.Where(p => 
+            p.ProjectMembers.Any(pm => 
+                pm.UserId == _userId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == _userId))
+            )
+        );
+        
         var projects = await projectQuery.ToListAsync();
-
         return projects
             .Select(p => new ProjectResponseDto()
             {
@@ -197,7 +205,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
-        await SetProjectDefaults(projectId);
+        await SetProjectDefaults(projectId, _userId);
 
         return projectResponseDto;
     }
@@ -724,7 +732,7 @@ public class ProjectBusiness : IProjectBusiness
         }).ToList();
     }
 
-    private async Task SetProjectDefaults(long projectId)
+    private async Task SetProjectDefaults(long projectId, long userId)
     {
         // ===============================
         // CREATE DEFAULT CLASSES
@@ -815,11 +823,13 @@ public class ProjectBusiness : IProjectBusiness
             new CreateRoleRequestDto { Name = "User" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
-        var adminId = roles.Single(r => r.Name == "Admin").Id;
-        var userId = roles.Single(r => r.Name == "User").Id;
+        var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
+        var userRoleId = roles.Single(r => r.Name == "User").Id;
         
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminId, DefaultRolePermissions.Admin.AllowedPermissions);
-        await _roleBusiness.SetPermissionsByPattern(userId, DefaultRolePermissions.User.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
+        
+        await AddMemberToProject(projectId, adminRoleId, userId, null);
     }
 }
