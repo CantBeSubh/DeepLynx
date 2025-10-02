@@ -25,11 +25,11 @@ export default async function Page({
   // Let the client fetch records after mount based on the dropdown selection
   const initialSelectedProjects = fromProject ? [fromProject] : [];
   const initialRecords = [] as FileViewerTableRow[];
-// helper function for delay
+//helper function for delay
 //  const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 //   // 👇 artificial delay (e.g., 2 seconds)
-//   await delay(1000);
+//   await delay(2000);
   return (
     <DataCatalogClient
       initialProjects={initialProjects}

@@ -301,7 +301,7 @@ export default function UploadCenterClient({
                 </select>
               </label>
               <label className="label flex-col items-start text-base-content font-bold">
-                <span className="label-text mb-1">Object Storage</span>
+                <span className="label-text mb-1">Storage Destination</span>
                 <select
                   value={objectStorageId}
                   onChange={(e) => setObjectstorageId(e.target.value)}
@@ -320,35 +320,6 @@ export default function UploadCenterClient({
                 </select>
               </label>
             </fieldset>
-            <fieldset>
-              <label className="label cursor-pointer justify-start gap-3">
-                <span className="label-text text-xs">
-                  {t.translations.UPLOAD_MULTIPLE_FILES}
-                </span>
-                <input
-                  type="checkbox"
-                  checked={multi}
-                  disabled={!isMultiAllowed}
-                  onChange={(e) => {
-                    if (!isMultiAllowed) return;
-                    const checked = e.target.checked;
-                    if (!checked && selectedFiles.length > 1) {
-                      setShowMultiFileWarning(true);
-                      return;
-                    }
-                    setMulti(checked);
-                  }}
-                  className="toggle toggle-secondary"
-                  aria-describedby="multi-files-hint"
-                />
-              </label>
-              {/* {!isMultiAllowed && (
-                <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
-                  {t.translations.MULTI_FILES_ONLY_AVAILABLE}.
-                </p>
-              )} */}
-            </fieldset>
-
             <fieldset>
               <label className="label text-base-content font-bold">
                 {t.translations.UPLOADING}
@@ -389,25 +360,35 @@ export default function UploadCenterClient({
               </label>
             </fieldset>
 
-            <fieldset>
-              <label className="label text-base-content font-bold">
-                {t.translations.TO_DESTINATION}
-                <select
-                  value={destination}
-                  onChange={(e) => setDestination(e.target.value)}
-                  className="select select-info select-sm mt-2"
-                  required
-                >
-                  {/* TODO: We need to pull the destiantions via API */}
-                  <option value="" disabled>
-                    {t.translations.CHOOSE_A_DESTINATION}
-                  </option>
-                  <option value="nexus">{t.translations.NEXUS_DEFAULT}</option>
-                  {/* <option value="remote-db">{t.translations.REMOTE_DB}</option>
-                  <option value="onsite-db">{t.translations.ONSITE_DB}</option> */}
-                </select>
+                        <fieldset>
+              <label className="label cursor-pointer justify-start gap-3">
+                <span className="label-text text-xs">
+                  {t.translations.UPLOAD_MULTIPLE_FILES}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={multi}
+                  disabled={!isMultiAllowed}
+                  onChange={(e) => {
+                    if (!isMultiAllowed) return;
+                    const checked = e.target.checked;
+                    if (!checked && selectedFiles.length > 1) {
+                      setShowMultiFileWarning(true);
+                      return;
+                    }
+                    setMulti(checked);
+                  }}
+                  className="toggle toggle-secondary"
+                  aria-describedby="multi-files-hint"
+                />
               </label>
+              {/* {!isMultiAllowed && (
+                <p id="multi-files-hint" className="text-xs opacity-60 mt-1">
+                  {t.translations.MULTI_FILES_ONLY_AVAILABLE}.
+                </p>
+              )} */}
             </fieldset>
+
 
             {(multi || selectedFiles.length === 0) && (
               <DropUpload
@@ -416,7 +397,7 @@ export default function UploadCenterClient({
                 files={selectedFiles}
                 onFilesChange={setSelectedFiles}
                 disabled={
-                  !uploadType || !destination || (needsTarget && !targetFileId)
+                  !uploadType || (needsTarget && !targetFileId)
                 }
               />
             )}

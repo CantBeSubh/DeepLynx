@@ -104,32 +104,29 @@ export default function Loadingtranslations() {
                             <React.Fragment key={globalIndex}>
                               <tr className="bg-base-200/30 hover:bg-base-200/50 rounded-lg overflow-hidden">
                                 {columns.map((col, i) => (
-                                  <>
-                                    <td key={i} className="text-base-content">
-                                      <Skeleton
-                                        width={100}
-                                        baseColor="var(--color-base-200)"
-                                        highlightColor="var(--color-base-300)" />
-                                    </td>
-                                    <td key={i+1} className="text-base-content">
+                                  
+                                    <><td key={i} className="text-base-content">
+                                    <Skeleton
+                                      width={100}
+                                      baseColor="var(--color-base-200)"
+                                      highlightColor="var(--color-base-300)" />
+                                  </td><td key={i + 1} className="text-base-content">
                                       <Skeleton
                                         width={350}
                                         baseColor="var(--color-base-200)"
                                         highlightColor="var(--color-base-300)" />
-                                    </td>
-                                    <td key={i+2} className="text-base-content">
+                                    </td><td key={i + 2} className="text-base-content">
                                       <Skeleton
                                         width={75}
                                         baseColor="var(--color-base-200)"
                                         highlightColor="var(--color-base-300)" />
-                                    </td>
-                                    <td key={i + 3} className="text-base-content">
+                                    </td><td key={i + 3} className="text-base-content">
                                       <Skeleton
                                         width={50}
                                         baseColor="var(--color-base-200)"
                                         highlightColor="var(--color-base-300)" />
-                                      </td>
-                                  </>
+                                    </td></>
+                              
                                 )
                                 )}
                               </tr>
