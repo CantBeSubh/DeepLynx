@@ -87,6 +87,6 @@ const AddProjectMember = ({ isOpen, onClose }: AddMemberModalProps) => {
       )}
     </>
   );
-};
+}
 
 export default AddProjectMember;

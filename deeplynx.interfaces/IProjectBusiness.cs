@@ -19,5 +19,5 @@ public interface IProjectBusiness
     Task<bool> RemoveMemberFromProject(long projectId, long? userId, long? groupId);
 
     // TODO: move this to query business
-    Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(long[] projects, bool hideArchived); 
+    Task<IEnumerable<HistoricalRecordResponseDto>> GetMultiProjectRecords(long[] projects, bool hideArchived);
 }

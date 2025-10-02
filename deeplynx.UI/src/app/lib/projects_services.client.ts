@@ -51,12 +51,13 @@ export async function addMember(
   groupId?: number,
   roleId?: number,
   name?: string,
-  email?: string
+  email?: string,
+  role?: string,
   ) {
   try {
-    console.log(`Adding member to project: ${userId} Name: ${name} and Email: ${email}`);
+    console.log(`Adding member to project: ${userId} Name: ${name} and Role: ${role}`);
     const res = await api.post(`/projects/AddMemberToProject`, {
-      params: { projectId, userId, groupId },
+      params: { projectId, userId, role },
     });
     return res.data;
   } catch (error) {
