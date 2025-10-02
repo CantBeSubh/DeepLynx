@@ -1,5 +1,3 @@
-// src/app/(home)/components/MemberSettingsTable/MembersTable/UsersTable.tsx
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -7,7 +5,8 @@ import GenericTable from "../../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, SystemUsersTable } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import { getAllUsers } from "@/app/lib/user_services.client";
+import { getAllUsers, updateUser } from "@/app/lib/user_services.client";
+import EditSysUser from "../MemberModals/EditSysUser";
 
 const UsersTable = () => {
   const { t } = useLanguage();
@@ -16,14 +15,12 @@ const UsersTable = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [editSysUserModal, setEditSysUserModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
 
   useEffect(() => {
-    setSelectedMembers(new Array(data.length).fill(false));
-    setSelectAll(false);
-  }, [data.length]);
-
-  useEffect(() => {
-    (async () => {
+    const fetchUsers = async () => {
       try {
         const users = await getAllUsers();
         setData(users);
@@ -33,8 +30,15 @@ const UsersTable = () => {
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchUsers();
   }, []);
+
+  useEffect(() => {
+    setSelectedMembers(new Array(data.length).fill(false));
+    setSelectAll(false);
+  }, [data.length]);
 
   const handleSelectAll = () => {
     const next = !selectAll;
@@ -58,6 +62,20 @@ const UsersTable = () => {
   };
 
   const multipleSelected = () => selectedMembers.filter(Boolean).length > 1;
+
+  const openEditModal = (userId: number, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setEditSysUserModal(true);
+  };
+
+  const handleUserUpdate = (updatedName: string) => {
+    setData((prevData) =>
+      prevData.map((user) =>
+        user.id === selectedUserId ? { ...user, name: updatedName } : user
+      )
+    );
+  };
 
   const columns: Column<SystemUsersTable>[] = [
     {
@@ -83,9 +101,9 @@ const UsersTable = () => {
     { header: "Email", data: "email" },
     {
       header: "",
-      cell: () => (
+      cell: (row) => (
         <div className="flex">
-          <button>
+          <button onClick={() => openEditModal(row.id, row.name)}>
             <PencilIcon className="size-6 text-secondary" />
           </button>
         </div>
@@ -118,11 +136,16 @@ const UsersTable = () => {
 
   return (
     <div>
-      <GenericTable
-        columns={columns}
-        data={data}
-        enablePagination
-      />
+      <GenericTable columns={columns} data={data} enablePagination />
+      {selectedUserId !== null && (
+        <EditSysUser
+          isOpen={editSysUserModal}
+          onClose={() => setEditSysUserModal(false)}
+          userId={selectedUserId}
+          userName={selectedUserName}
+          onUpdate={handleUserUpdate}
+        />
+      )}
     </div>
   );
 };
