@@ -116,6 +116,7 @@ public class FileBusiness
             Uri = uri,
             ClassId = fileClass.Id,
             ClassName = fileClass.Name,
+            FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
         };
         
         // return the newly created metadata record for the file
@@ -156,6 +157,7 @@ public class FileBusiness
             },
             Name = file.FileName,
             Uri = uri,
+            FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             
         };
         return await _recordBusiness.UpdateRecord(projectId, recordId, updateRecordRequest);

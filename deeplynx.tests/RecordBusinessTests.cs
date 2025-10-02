@@ -28,6 +28,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public string rogid;
     public string rdesc;
     public string ruri;
+    public string rfiletype;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -106,7 +107,8 @@ public class RecordBusinessTests : IntegrationTestBase
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            FileType = "pdf"
         };
         
         Context.Records.Add(testRecord);
@@ -119,6 +121,7 @@ public class RecordBusinessTests : IntegrationTestBase
         rogid = testRecord.OriginalId;
         rdesc = testRecord.Description;
         ruri = testRecord.Uri;
+        rfiletype = testRecord.FileType;
     }
 
     #region GetAllRecords Tests
@@ -231,7 +234,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",
-            ClassId = cid
+            ClassId = cid,
+            FileType = "png"
         };
 
         // Act
@@ -246,6 +250,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("test://uri", result.Uri);
         Assert.Equal("original-123", result.OriginalId);
         Assert.Equal(cid, result.ClassId);
+        Assert.Equal("png", result.FileType);
 
         // Verify record was actually created in database
         var createdRecord = await Context.Records.FindAsync(result.Id);
@@ -476,7 +481,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Uri = "updated://uri",
             OriginalId = "updated-123",
             Description = "Updated Description",
-            ClassId = cid
+            ClassId = cid,
+            FileType = "png"
         };
 
         // Act
@@ -488,6 +494,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("updated://uri", result.Uri);
         Assert.Equal("updated-123", result.OriginalId);
         Assert.Equal("Updated Description", result.Description);
+        Assert.Equal("png", result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -499,6 +506,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(getResult);
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
+        Assert.Equal("png", getResult.FileType);
         Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
@@ -535,6 +543,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal(rogid, result.OriginalId);
         Assert.Equal(rdesc, result.Description);
         Assert.Equal(rprop, result.Properties);
+        Assert.Equal(rfiletype, result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -879,7 +888,8 @@ public class RecordBusinessTests : IntegrationTestBase
             DataSourceId = did,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true
+            IsArchived = true,
+            FileType = "pdf"
         };
         Context.Records.Add(archivedRecord);
         await Context.SaveChangesAsync();

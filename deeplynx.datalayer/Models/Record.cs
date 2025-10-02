@@ -56,7 +56,10 @@ public partial class Record
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
-
+    
+    [Column("file_type")]
+    public string? FileType { get; set; }
+    
     [ForeignKey("ClassId")]
     [InverseProperty("Records")]
     public virtual Class? Class { get; set; }
