@@ -376,7 +376,7 @@ try
     app.UseStaticFiles();
     
     // We're always using scalar for now.
-    //if (app.Environment.IsDevelopment())
+    //if (app.Environment.IsDevelopment()) { ...
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
         .WithDarkMode(true)
