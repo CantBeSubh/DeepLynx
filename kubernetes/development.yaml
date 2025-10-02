@@ -337,6 +337,11 @@ spec:
           env:
             - name: NEXT_PUBLIC_BASE_PATH
               value: "/docs"
+            - name: HOSTED_LINK 
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: auth-url
           resources:
             limits:
               memory: "4Gi"

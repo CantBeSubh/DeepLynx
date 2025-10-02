@@ -1,6 +1,14 @@
 # Stage 1: Build the frontend
 FROM node:lts-alpine3.20 AS frontend-build
 
+# Define build arguments
+ARG HOSTED_LINK
+ARG NEXT_PUBLIC_BASE_PATH
+
+# Set environment variables
+ENV NEXTAUTH_URL=${HOSTED_LINK}
+ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+
 # Set working directory
 WORKDIR /usr/src/app
 
@@ -15,10 +23,6 @@ RUN npm install
 
 # Copy the rest of the frontend source code
 COPY deeplynx.docs .
-
-# Set the environment variable for the deployed route instance and link in build phase 
-ENV NEXT_PUBLIC_BASE_PATH="/docs"
-ENV NEXUS_HOSTED_LINK="https://deeplynx.dev.inl.gov/"
 
 # Build the frontend
 RUN npm run build
