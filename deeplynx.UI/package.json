@@ -53,7 +53,8 @@
     "typescript": "^5"
   },
   "overrides": {
-    "openssl": "3.3.5-r0",
+    "openssl": "^3.3.5-r0",
+    "brace-expansion": "^2.0.2",
     "broadcast-channel": {
       "@babel/runtime": "^7.26.10"
     },
