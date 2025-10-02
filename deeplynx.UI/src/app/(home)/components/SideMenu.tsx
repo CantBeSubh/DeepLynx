@@ -107,9 +107,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 flex z-50">
       <aside
-        className={`h-full shadow-xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
@@ -137,16 +136,16 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
           <li className="mt-2">
-              <Link
-                href={"/member_management"}
-                onClick={(e) => handleItemClick("/member_management", e)}
-                className={getItemClass("/member_management")}
-              >
-                <AdjustmentsHorizontalIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
-                )}
-              </Link>
+            <Link
+              href={"/member_management"}
+              onClick={(e) => handleItemClick("/member_management", e)}
+              className={getItemClass("/member_management")}
+            >
+              <AdjustmentsHorizontalIcon className="size-6" />
+              {!isCollapsed && (
+                <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
+              )}
+            </Link>
           </li>
         </ul>
 
@@ -197,8 +196,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <div className="flex items-center">
               <Link
                 href="/project_settings"
-                onClick={(e) => handleItemClick("/project_settings", e)}
-                className={getItemClass("/project_settings")}
+                onClick={(e) => handleItemClick(`/project/${project?.projectId}/project_settings`, e)}
+                className={getItemClass(`/project/${project?.projectId}/project_settings`)}
               >
                 <AdjustmentsHorizontalIcon className="size-6" />
                 {!isCollapsed && (
@@ -216,7 +215,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <Link
-                href={ process.env.NEXT_PUBLIC_DOCS_PATH ? `${process.env.NEXT_PUBLIC_DOCS_PATH}` : "http://localhost:3001" }
+                href={process.env.NEXT_PUBLIC_DOCS_PATH ? `${process.env.NEXT_PUBLIC_DOCS_PATH}` : "http://localhost:3001"}
                 /*
                 href="#"
                 prefetch={false}

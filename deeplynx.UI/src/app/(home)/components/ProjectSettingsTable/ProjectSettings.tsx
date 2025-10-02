@@ -12,17 +12,31 @@ import RolesTable from '././ProjectTables/RolesTable';
 // import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import ProjectDropdown from '../ProjectDropdown';
+import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
+import { ProjectsList } from '../../types/types';
 
 interface ProjectSettingsProps {
-  className?: string;
+  projects: ProjectsList[];
+  initialProject: ProjectsList | null;
 }
 
-const ProjectSettings = ({ className }: ProjectSettingsProps) => {
+const ProjectSettings = ({
+  projects,
+  initialProject,
+}: ProjectSettingsProps) => {
+  // const [selectedProjects, setSelectedProjects] = useState<string[]>(
+  //   initialSelectedProjects
+  // );
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    initialProject ? initialProject.id : null
+  );
 
   const tabData = [
     {
@@ -73,7 +87,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     }
   };
 
-   // Effect to set the active tab from the query parameter
+  // Effect to set the active tab from the query parameter
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) {
@@ -82,10 +96,22 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   }, [searchParams]);
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
-      <div className="card-body">
-        <div className="flex justify-between items-start">
-          <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
+    <div className="">
+      <div className="">
+        <div className="">
+          <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
+            <div>
+              <h1 className="text-2xl font-bold text-info-content">
+                {t.translations.PROJECT_SETTINGS}
+              </h1>
+
+              <ProjectDropdownSingleSelect
+                projects={projects}
+                onSelectionChange={setSelectedProjectId}
+                defaultSelectedId={initialProject?.id || ""}
+              />
+            </div>
+          </div>
           <div className="flex space-x-4">
             <button
               onClick={handleAddButtonClick}
