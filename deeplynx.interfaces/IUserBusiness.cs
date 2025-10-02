@@ -7,7 +7,7 @@ namespace deeplynx.interfaces;
 
 public interface IUserBusiness
 {
-    Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId);
+    Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId, long? organizationId);
     Task<UserResponseDto> GetUser(long userId);
     Task<UserResponseDto> CreateUser(CreateUserRequestDto dto);
     Task<UserResponseDto> RefreshUser(CreateUserRequestDto dto);

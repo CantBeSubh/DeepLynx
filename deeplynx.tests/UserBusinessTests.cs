@@ -15,9 +15,18 @@ namespace deeplynx.tests
         public long uid2;
         public long uid3;
         public long uid4;
+        public long uid5;
+        public long ouid1;
+        public long ouid2;
+        public long guid1;
+        public long guid2;
+        public long oid;        // organization IDs
+        public long oid2;       
+        public long oid3;
         public long pid;        // project IDs
         public long pid2;
         public long pid3;
+        public long pid4;
         public long dsid1;      // data source IDs
         public long dsid2;
         public long dsid3;
@@ -30,6 +39,8 @@ namespace deeplynx.tests
         public long rid5;
         public long rid6;
         public long arcrid;     // archived record
+        public long gid1;       // group IDs
+        public long gid2;
         
         public UserBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -179,25 +190,105 @@ namespace deeplynx.tests
         #endregion
         
         #region GetAllUsers Tests
-        
+
         [Fact]
-        public async Task GetAllUsers_ExcludesArchived()
+        public async Task GetAllUsers_NoFilters_ReturnsAllNonArchivedUsers()
         {
             // Act
-            var result = await _userBusiness.GetAllUsers(null);
+            var result = await _userBusiness.GetAllUsers(null, null);
             var users = result.ToList();
             
             // Assert
-            Assert.Equal(2, users.Count);
+            Assert.Equal(7, users.Count);
+            Assert.All(users, u => Assert.False(u.IsArchived));
+            Assert.Contains(users, u => u.Id == uid5);
+            Assert.DoesNotContain(users, u => u.Id == uid2); // archived
+            Assert.DoesNotContain(users, u => u.Id == uid3); // archived
+        }
+
+        [Fact]
+        public async Task GetAllUsers_FilterByProjectId_ReturnsOnlyProjectMembers()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(pid, null);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.NotEmpty(users);
+            Assert.Equal(3, users.Count);
             Assert.All(users, u => Assert.False(u.IsArchived));
             Assert.Contains(users, u => u.Id == uid1);
-            Assert.DoesNotContain(users, u => u.Id == uid2);
-            Assert.DoesNotContain(users, u => u.Id == uid3);
-            Assert.Contains(users, u => u.Id == uid4);
+            Assert.Contains(users, u => u.Id == ouid2);
+            Assert.Contains(users, u => u.Id == guid1); // group is project member
         }
-        
+
+        [Fact]
+        public async Task GetAllUsers_FilterByOrganizationId_ReturnsOnlyOrgMembers()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(null, oid);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.NotEmpty(users);
+            Assert.Equal(3, users.Count);
+            Assert.All(users, u => Assert.False(u.IsArchived));
+            Assert.Contains(users, u => u.Id == ouid1);
+            Assert.Contains(users, u => u.Id == ouid2);
+            Assert.Contains(users, u => u.Id == guid2); // group is in organization
+        }
+
+        [Fact]
+        public async Task GetAllUsers_FilterByBothProjectAndOrg_ReturnsUsersInBoth()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(pid, oid);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.NotEmpty(users);
+            Assert.Single(users);
+            Assert.Contains(users, u => u.Id == ouid2); // ou2 is in both org and proj;
+            Assert.DoesNotContain(users, u => u.Id == ouid1); // ou1 is not in proj
+            Assert.DoesNotContain(users, u => u.Id == uid4); // u4 is not in org
+        }
+
+        [Fact]
+        public async Task GetAllUsers_FilterByNonExistentProject_ReturnsEmpty()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(pid4, null);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.Empty(users);
+        }
+
+        [Fact]
+        public async Task GetAllUsers_FilterByNonExistentOrg_ReturnsEmpty()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(null, oid2);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.Empty(users);
+        }
+
+        [Fact]
+        public async Task GetAllUsers_FilterByProject_ExcludesArchivedMembers()
+        {
+            // Act
+            var result = await _userBusiness.GetAllUsers(pid2, null);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.All(users, u => Assert.False(u.IsArchived));
+            Assert.DoesNotContain(users, u => u.Id == uid2); // archived user excluded
+        }
+
         #endregion
-        
+
         #region GetUser Tests
 
         [Fact]
@@ -460,7 +551,7 @@ namespace deeplynx.tests
         public async Task GetUserOverview_ReturnsZeroCounts_ForUserWithNoProjects()
         {
             // Act
-            var result = await _userBusiness.GetUserOverview(uid4);
+            var result = await _userBusiness.GetUserOverview(uid5);
             
             // Assert
             Assert.NotNull(result);
@@ -545,6 +636,32 @@ namespace deeplynx.tests
             
             await base.SeedTestDataAsync();
             
+            // create test organization
+            var org = new Organization
+            {
+                Name = "Org 1",
+                Description = "Org 1 description",
+            };
+            var org2 = new Organization
+            {
+                Name = "Org 2",
+                Description = "Org 2 description",
+            };
+            var org3 = new Organization
+            {
+                Name = "Org 3",
+                Description = "Org 3 description",
+            };
+            Context.Organizations.AddRange(org, org2, org3);
+            await Context.SaveChangesAsync();
+            oid = org.Id;
+            oid2 = org2.Id;
+            oid3 = org3.Id;
+            
+            // delete org2
+            Context.Organizations.Remove(org2);
+            await Context.SaveChangesAsync();
+            
             // create test projects
             var project1 = new Project 
             { 
@@ -567,11 +684,23 @@ namespace deeplynx.tests
                 Abbreviation = "TST3",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
-            Context.Projects.AddRange(project1, project2, project3);
+            var project4 = new Project 
+            { 
+                Name = "Test Project 4",
+                Description = "User not a part of this",
+                Abbreviation = "TST4",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Projects.AddRange(project1, project2, project3, project4);
             await Context.SaveChangesAsync();
             pid = project1.Id;
             pid2 = project2.Id;
             pid3 = project3.Id;
+            pid4 = project4.Id;
+            
+            // delete project 4
+            Context.Projects.Remove(project4);
+            await Context.SaveChangesAsync();
             
             // create test users
             var user1 = new User 
@@ -602,17 +731,77 @@ namespace deeplynx.tests
                 Username = "user4",
                 IsActive = false
             };
+            var user5 = new User 
+            { 
+                Name = "User 5", 
+                Email = "user5@test.com",
+                Username = "user5",
+                IsActive = false
+            };
+            var organizationUser1 = new User 
+            { 
+                Name = "OrgUser 1", 
+                Email = "org_user1@test.com",
+                Username = "ou1",
+                IsActive = false
+            };
+            var organizationUser2 = new User 
+            { 
+                Name = "OrgUser 2", 
+                Email = "org_user2@test.com",
+                Username = "ou2",
+                IsActive = false
+            };
+            var groupUser1 = new User
+            {
+                Name = "GroupUser 1",
+                Email = "group_user1@test.com",
+                Username = "group_user1",
+            };
+            var groupUser2 = new User
+            {
+                Name = "GroupUser 2",
+                Email = "group_user2@test.com",
+                Username = "group_user2",
+            };
             
-            Context.Users.AddRange(user1, user2, user3, user4);
+            Context.Users.AddRange(
+                user1, user2, user3, user4, user5, organizationUser1, 
+                organizationUser2, groupUser1, groupUser2);
             await Context.SaveChangesAsync();
             uid1 = user1.Id;
             uid2 = user2.Id;
             uid3 = user3.Id;
             uid4 = user4.Id;
+            uid5 = user5.Id;
+            ouid1 = organizationUser1.Id;
+            ouid2 = organizationUser2.Id;
+            guid1 = groupUser1.Id;
+            guid2 = groupUser2.Id;
             
             // delete user 3
             Context.Users.Remove(user3);
             await Context.SaveChangesAsync();
+            
+            // create test group
+            var group1 = new Group
+            {
+                Name = "Group 1",
+                Description = "Group 1 description",
+                Users = new List<User> {groupUser1},
+                OrganizationId = oid3
+            };
+            var group2 = new Group
+            {
+                Name = "Group 2",
+                Description = "Group 2 description",
+                OrganizationId = oid,
+                Users = new List<User> {groupUser2}
+            };
+            Context.Groups.AddRange(group1, group2);
+            await Context.SaveChangesAsync();
+            gid1 = group1.Id;
+            gid2 = group2.Id;
             
             // add user1 as member of projects 1 and 2
             var projectMember1 = new ProjectMember 
@@ -625,7 +814,46 @@ namespace deeplynx.tests
                 ProjectId = pid2, 
                 UserId = uid1
             };
-            Context.ProjectMembers.AddRange(projectMember1, projectMember2);
+            // add orgUser2 as a member of project 1
+            var projectMember3 = new ProjectMember 
+            { 
+                ProjectId = pid, 
+                UserId = ouid2
+            };
+            // add user 4 as a member of project 2
+            var projectMember4 = new ProjectMember 
+            { 
+                ProjectId = pid2, 
+                UserId = uid4
+            };
+            // add group 1 to project 1
+            var projectMember5 = new ProjectMember
+            {
+                ProjectId = pid,
+                GroupId = gid1
+            };
+            // add user 2 (archived user) to project 2
+            var projectMember6 = new ProjectMember
+            {
+                ProjectId = pid,
+                UserId = uid2
+            };
+            Context.ProjectMembers.AddRange(projectMember1, projectMember2, 
+                projectMember3, projectMember4, projectMember5, projectMember6);
+            await Context.SaveChangesAsync();
+            
+            // add orgUser1 and orgUser2 as members of org
+            var orgUser1 = new OrganizationUser
+            {
+                OrganizationId = oid,
+                UserId = ouid1
+            };
+            var orgUser2 = new OrganizationUser
+            {
+                OrganizationId = oid,
+                UserId = ouid2
+            };
+            Context.OrganizationUsers.AddRange(orgUser1, orgUser2);
             await Context.SaveChangesAsync();
             
             // create data sources
