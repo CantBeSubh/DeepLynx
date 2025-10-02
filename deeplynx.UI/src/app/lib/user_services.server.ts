@@ -73,3 +73,11 @@ export async function updateUserServer<T = UserDTO>(
   });
   return asJson<T>(res);
 }
+
+export async function deleteUserServer<T = void>(userId: number): Promise<T> {
+  const res = await fetch(`${BASE}/user/DeleteUser/${userId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return asJson<T>(res);
+}
