@@ -437,6 +437,13 @@ namespace deeplynx.tests
             edges.Should().NotContain(e => e.Id == edge3.Id);
             edges.Should().NotContain(e => e.Id == edge4.Id);
         }
+
+        [Fact]
+        public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
+        {
+            var result = () => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
         
         [Fact]
         public async Task GetEdge_Success_WhenExistsById()
