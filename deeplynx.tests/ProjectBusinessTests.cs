@@ -1242,6 +1242,20 @@ namespace deeplynx.tests
             // delete missing group
             Context.Groups.Remove(missingGroup);
             await Context.SaveChangesAsync();
+            
+            // add minimum default permissions - could target all RolePerms in DefaultRolePermissions.cs, but we only
+            // simulate testing for a few - in reality all default RolePerms will/should get added at runtime upon creating a
+            // new project
+            var defaultPermissions = new List<Permission>()
+            {
+                new Permission
+                    { Resource = "permission", Action = "write", IsHardcoded = false, Name = "Write Permissions" },
+                new Permission
+                    { Resource = "project", Action = "read", IsHardcoded = false, Name = "Read Projects" }
+            };
+            
+            Context.Permissions.AddRange(defaultPermissions);
+            await Context.SaveChangesAsync();
         }
     }
 }

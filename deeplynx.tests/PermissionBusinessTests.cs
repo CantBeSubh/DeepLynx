@@ -29,6 +29,7 @@ namespace deeplynx.tests
         public long permid5;
         public long permid6;    
         public long permid7;
+        public long permid8;
         
         public PermissionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -60,6 +61,7 @@ namespace deeplynx.tests
             Assert.Contains(permissions, p => p.Id == permid5);
             Assert.Contains(permissions, p => p.Id == permid6);
             Assert.Contains(permissions, p => p.Id == permid7);
+            Assert.Contains(permissions, p => p.Id == permid8);
         }
         
         [Fact]
@@ -79,6 +81,7 @@ namespace deeplynx.tests
             Assert.Contains(permissions, p => p.Id == permid1);
             Assert.Contains(permissions, p => p.Id == permid3);
             Assert.Contains(permissions, p => p.Id == permid5);
+            Assert.Contains(permissions, p => p.Id == permid8);
         }
         
         [Fact]
@@ -97,6 +100,7 @@ namespace deeplynx.tests
             Assert.All(permissions, p => Assert.True(p.ProjectId == pid || p.IsHardcoded));
             Assert.Contains(permissions, p => p.Id == permid3);
             Assert.Contains(permissions, p => p.Id == permid6);
+            Assert.Contains(permissions, p => p.Id == permid8);
         }
         
         [Fact]
@@ -115,6 +119,7 @@ namespace deeplynx.tests
             Assert.All(permissions, p => Assert.True(p.OrganizationId == oid || p.IsHardcoded));
             Assert.Contains(permissions, p => p.Id == permid5);
             Assert.Contains(permissions, p => p.Id == permid7);
+            Assert.Contains(permissions, p => p.Id == permid8);
         }
         
         [Fact]
@@ -132,6 +137,7 @@ namespace deeplynx.tests
             Assert.Equal(expectedHardcodedCount + 1, permissions.Count);
             Assert.All(permissions, p => Assert.True(p.ProjectId == pid || p.LabelId == lid || p.IsHardcoded));
             Assert.Contains(permissions, p => p.Id == permid3);
+            Assert.Contains(permissions, p => p.Id == permid8);
         }
         
         [Fact]
@@ -801,10 +807,18 @@ namespace deeplynx.tests
                 OrganizationId = oid,
                 IsHardcoded = false
             };
+            var permission8 = new Permission 
+            { 
+                Name = "Hardcoded Permission with Project", 
+                Action = "write", 
+                LabelId = lid,
+                ProjectId = pid,
+                IsHardcoded = true
+            };
             
             Context.Permissions.AddRange(
                 permission1, permission2, permission3, permission4, 
-                permission5, permission6, permission7);
+                permission5, permission6, permission7, permission8);
             await Context.SaveChangesAsync();
             permid1 = permission1.Id;
             permid2 = permission2.Id;
@@ -813,18 +827,19 @@ namespace deeplynx.tests
             permid5 = permission5.Id;
             permid6 = permission6.Id;
             permid7 = permission7.Id;
+            permid8 = permission8.Id;
             
             // delete permission 4 to test "not found" scenarios
             Context.Permissions.Remove(permission4);
             await Context.SaveChangesAsync();
         }
         
-        private async Task CleanupTestData()
-        {
-            // Remove all permissions (or just test-specific ones)
-            var existingPerms = await Context.Permissions.ToListAsync();
-            Context.Permissions.RemoveRange(existingPerms);
-            await Context.SaveChangesAsync();
-        }
+        // private async Task CleanupTestData()
+        // {
+        //     // Remove all permissions (or just test-specific ones)
+        //     var existingPerms = await Context.Permissions.ToListAsync();
+        //     Context.Permissions.RemoveRange(existingPerms);
+        //     await Context.SaveChangesAsync();
+        // }
     }
 }
