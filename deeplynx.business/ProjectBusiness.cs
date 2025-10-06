@@ -7,6 +7,7 @@ using deeplynx.helpers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.Context;
 using deeplynx.models.Configuration;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -27,8 +28,6 @@ public class ProjectBusiness : IProjectBusiness
     private readonly ICacheBusiness _cacheBusiness;
     private readonly string ProjectsCacheKey = "projects";
     private readonly TimeSpan cacheTTL = TimeSpan.FromHours(1);
-
-    private long _userId = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
@@ -67,6 +66,8 @@ public class ProjectBusiness : IProjectBusiness
         long? organizationId,
         bool hideArchived = true)
     {
+        var currentUserId = UserContextStorage.UserId;
+        
         var projectQuery = _context.Projects.AsQueryable();
         
         if (hideArchived)
@@ -81,8 +82,8 @@ public class ProjectBusiness : IProjectBusiness
         
         projectQuery = projectQuery.Where(p => 
             p.ProjectMembers.Any(pm => 
-                pm.UserId == _userId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == _userId))
+                pm.UserId == currentUserId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == currentUserId))
             )
         );
         
@@ -149,6 +150,9 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
     {
         ValidationHelper.ValidateModel(dto);
+        
+        var currentUserId = UserContextStorage.UserId;
+        
         var project = new Project
         {
             Name = dto.Name,
@@ -205,7 +209,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
-        await SetProjectDefaults(projectId, _userId);
+        await SetProjectDefaults(projectId, currentUserId);
 
         return projectResponseDto;
     }
