@@ -10,6 +10,7 @@ interface AddMemberModalProps {
 interface User {
   id: number;
   name: string;
+  email: string;
 }
 
 // Main AddProjectMember component
@@ -55,7 +56,7 @@ const AddProjectMember = ({ isOpen, onClose }: AddMemberModalProps) => {
                 </option>
                 {users.map((user) => (
                   <option key={user.id} value={user.id}>
-                    {user.name}
+                    {user.email}
                   </option>
                 ))}
               </select>
