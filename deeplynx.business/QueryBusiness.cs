@@ -200,7 +200,11 @@ public class QueryBusiness : IQueryBusiness
 
             if (!string.IsNullOrWhiteSpace(textSearch))
             {
-                var textSearchParam = new NpgsqlParameter("textSearch", textSearch);
+                // Split query into words and add :* to each for prefix matching
+                var processedQuery = string.Join(" & ", 
+                    textSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(word => word.Trim() + ":*"));
+                var textSearchParam = new NpgsqlParameter("processedQuery", processedQuery);
                 parameters.Add(textSearchParam);
     
                 var textSearchCondition = @"
@@ -214,7 +218,7 @@ public class QueryBusiness : IQueryBusiness
                             coalesce(project_name, '') || ' ' ||
                             coalesce(properties::text, '') || ' ' ||
                             coalesce(tags::text, '')
-                        )@@ websearch_to_tsquery('english', @textSearch)";
+                        )@@ to_tsquery('english', @processedQuery)";
     
                 sql += textSearchCondition;
             }
@@ -281,6 +285,11 @@ public class QueryBusiness : IQueryBusiness
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
         
+        // Split query into words and add :* to each for prefix matching
+        var processedQuery = string.Join(" & ", 
+            userQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(word => word.Trim() + ":*"));
+        
         var sql = @"
             SELECT DISTINCT ON (hr.record_id)
             hr.*,
@@ -310,10 +319,10 @@ public class QueryBusiness : IQueryBusiness
                 coalesce(project_name, '') || ' ' ||
                 coalesce(properties::text, '') || ' ' ||
                 coalesce(tags::text, '')
-            )@@ websearch_to_tsquery('english',@query)
+            )@@ to_tsquery('english',@processedQuery)
         ORDER BY hr.record_id, hr.last_updated_at DESC";
 
-        var param = new NpgsqlParameter("query", userQuery);
+        var param = new NpgsqlParameter("processedQuery", processedQuery);
         var param2 = new NpgsqlParameter("project_ids", NpgsqlDbType.Array | NpgsqlDbType.Bigint)
         {
             Value = projectIds
