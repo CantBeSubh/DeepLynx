@@ -113,7 +113,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
                   </option>
                 ))}
               </select>
-              <select
+              {/* <select
                 value={selectedRole || ''}
                 onChange={handleRoleChange}
                 className="w-full select select-primary text-neutral"
@@ -126,7 +126,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
                     {role.name}
                   </option>
                 ))}
-              </select>
+              </select> */}
             </form>
             <div className="modal-action">
               <button className="btn" onClick={onClose}>
