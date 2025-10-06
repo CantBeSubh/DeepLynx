@@ -266,11 +266,11 @@ namespace deeplynx.api.Controllers
             try
             {
                 await _projectBusiness.AddMemberToProject(projectId, roleId, userId, groupId);
-                return Ok(new { message = $"Added member to project {projectId}" });
+                return Ok(new { message = $"Added member {userId ?? groupId} to project {projectId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while adding member to project {projectId}: {exc}";
+                var message = $"An error occurred while adding member {userId ?? groupId} to project {projectId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
