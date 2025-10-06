@@ -52,14 +52,16 @@ const GenericTable = <T extends object>({
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter data based on the search input
-  const filteredData = data?.filter((row) =>
-    columns.some((column) =>
-      row[column.data as keyof T]
-        ?.toString()
-        .toLowerCase()
-        .includes(filterText.toLowerCase())
-    )
-  ) || [];
+  const filteredData = React.useMemo(() => {
+    return data?.filter((row) =>
+      columns.some((column) =>
+        row[column.data as keyof T]
+          ?.toString()
+          .toLowerCase()
+          .includes(filterText.toLowerCase())
+      )
+    ) || [];
+  }, [data, columns, filterText]);
 
   // State and logic for column sorting
   const [sortConfig, setSortConfig] = useState<{
@@ -238,8 +240,8 @@ const GenericTable = <T extends object>({
             <button
               onClick={deleteSelectedRows}
               className={`transition-colors ${!isAnyRowSelected
-                  ? "text-base-300 cursor-not-allowed"
-                  : "text-error hover:text-error-focus cursor-pointer"
+                ? "text-base-300 cursor-not-allowed"
+                : "text-error hover:text-error-focus cursor-pointer"
                 }`}
               disabled={!isAnyRowSelected}
             >
@@ -302,8 +304,8 @@ const GenericTable = <T extends object>({
               <tr
                 key={rowIndex}
                 className={`${typeof rowClassName === "function"
-                    ? rowClassName(row, rowIndex)
-                    : rowClassName || ""
+                  ? rowClassName(row, rowIndex)
+                  : rowClassName || ""
                   } ${isPrivate
                     ? "opacity-60 cursor-not-allowed"
                     : "hover:bg-base-200 transition-colors"
@@ -313,8 +315,8 @@ const GenericTable = <T extends object>({
                   <td
                     key={colIndex}
                     className={`text-base-content ${column.data === "id"
-                        ? "sticky left-0 z-10 bg-base-100"
-                        : ""
+                      ? "sticky left-0 z-10 bg-base-100"
+                      : ""
                       } ${gridView ? "border border-base-300" : ""}`}
                   >
                     {column.cell
