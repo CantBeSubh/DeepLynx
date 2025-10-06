@@ -12,7 +12,7 @@ export async function getAllUsers(projectId?: number) {
     });
     return res.data;
   } catch (error) {
-    console.error("API call failed:", error);
+    console.error("API call failed error getting all users:", error);
     throw error;
   }
 }
