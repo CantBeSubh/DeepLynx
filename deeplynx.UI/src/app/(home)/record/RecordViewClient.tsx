@@ -24,7 +24,6 @@ import {
   PencilIcon,
   CheckCircleIcon,
   XCircleIcon,
-  EyeIcon,
 } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
@@ -38,6 +37,8 @@ import {
   getEdge,
   getEdgesByRecord,
 } from "@/app/lib/edge_services.client";
+import Link from "next/link";
+import { ClientPageRoot } from "next/dist/client/components/client-page";
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
@@ -50,6 +51,7 @@ interface ParsedRecord {
   id: string;
   class: string;
   name: string;
+  recordId: number;
   actions: React.JSX.Element;
 }
 
@@ -268,6 +270,83 @@ export default function RecordViewClient({
     setModalOpen(false);
   };
 
+  useEffect(() => {
+    const fetchDetailedRelatedRecords = async () => {
+      if (!recordId || !projectId || hasFetchedRelatedRecords) return;
+
+      try {
+        // Fetch edges for this record
+        const edges = await getEdgesByRecord(
+          projectId.toString(),
+          recordId,
+          true
+        );
+        console.log("edges", edges)
+        // For each edge, you might want to fetch the actual record details
+        // This assumes you have a getRecord endpoint that can fetch by ID
+        const parsedPromises = edges.map(async (edge: Edge) => {
+          try {
+            // Determine if current record is origin or destination
+            const isOrigin = edge.originId === recordId;
+            const relatedRecordId = isOrigin
+              ? edge.destinationId
+              : edge.originId;
+
+            // Fetch the related record details
+            const relatedRecord = await getRecord(projectId, relatedRecordId);
+
+            return {
+              relationship: `Relationship ${edge.relationshipId}`,
+              id: relatedRecordId.toString(),
+              class: relatedRecord.className || "Record",
+              name: relatedRecord.name || `Record ${relatedRecordId}`,
+              recordId: relatedRecordId,
+              actions: (
+                <div className="flex gap-2">
+                  <XMarkIcon
+                    className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
+                    onClick={() => {
+                      setSelectedOriginId(edge.originId);
+                      setSelectedDestinationId(edge.destinationId);
+                      handleToggleToRemove(
+                        edge.id.toString(),
+                        `Edge ${edge.id}`,
+                        record?.name,
+                        "relatedRecord"
+                      );
+                    }}
+                  />
+                </div>
+              ),
+            };
+          } catch (error) {
+            console.error(`Error fetching details for edge ${edge.id}:`, error);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(parsedPromises);
+        const validResults = results.filter(
+          (r): r is ParsedRecord => r !== null
+        );
+
+        setParsedRelatedRecords(validResults);
+        setHasFetchedRelatedRecords(true);
+      } catch (error) {
+        console.error("Error fetching related records:", error);
+        toast.error("Failed to fetch related records");
+      }
+    };
+
+    fetchDetailedRelatedRecords();
+  }, [
+    recordId,
+    projectId,
+    hasFetchedRelatedRecords,
+    record?.name,
+    handleToggleToRemove,
+  ]);
+
   if (!record) {
     return <div className="loading loading-spinner loading-xl" />;
   }
@@ -342,10 +421,20 @@ export default function RecordViewClient({
   ];
 
   const relatedRecordsColumn: CardColumn<ParsedRecord>[] = [
-    { key: "relationship", label: "Relationship" },
     { key: "id", label: "ID" },
     { key: "class", label: "Class" },
-    { key: "name", label: "Name" },
+    { 
+      key: "name", 
+      label: "Name",
+      render: (row: ParsedRecord) => (
+        <Link 
+          href={`/record?recordId=${row.recordId}&projectId=${projectId}`}
+          className="text-primary hover:text-primary-content hover:underline"
+        >
+          {row.name}
+        </Link>
+      )
+    },
     { key: "actions", label: "Actions" },
   ];
 
@@ -465,9 +554,6 @@ export default function RecordViewClient({
         </div>
       ),
     },
-    // { label: "Timeseries Viewer", content: "" },
-    // { label: "Graph Viewer", content: "" },
-    // { label: "Record History", content: "" },
   ];
 
   // Function to handle tab change
@@ -477,90 +563,6 @@ export default function RecordViewClient({
       setActiveTab(index);
     }
   };
-
-  useEffect(() => {
-    const fetchDetailedRelatedRecords = async () => {
-      if (!recordId || !projectId || hasFetchedRelatedRecords) return;
-
-      try {
-        // Fetch edges for this record
-        const edges = await getEdgesByRecord(
-          projectId.toString(),
-          recordId,
-          true
-        );
-
-        // For each edge, you might want to fetch the actual record details
-        // This assumes you have a getRecord endpoint that can fetch by ID
-        const parsedPromises = edges.map(async (edge: Edge) => {
-          try {
-            // Determine if current record is origin or destination
-            const isOrigin = edge.originId === recordId;
-            const relatedRecordId = isOrigin
-              ? edge.destinationId
-              : edge.originId;
-
-            // Fetch the related record details (you'll need this endpoint)
-            // const relatedRecord = await getRecord(projectId, relatedRecordId);
-
-            return {
-              relationship: `Relationship ${edge.relationshipId}`, // Or fetch actual relationship name
-              id: relatedRecordId.toString(),
-              class: "Record", // Or use relatedRecord.className
-              name: `Record ${relatedRecordId}`, // Or use relatedRecord.name
-              actions: (
-                <div className="flex gap-2">
-                  <EyeIcon
-                    className="w-5 h-5 cursor-pointer text-primary hover:text-primary-content"
-                    onClick={() => {
-                      // Open record view modal or navigate to record
-                      // setSelectedRecord(relatedRecord);
-                      // setRecordViewModalOpen(true);
-                    }}
-                  />
-                  <XMarkIcon
-                    className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
-                    onClick={() => {
-                      setSelectedOriginId(edge.originId);
-                      setSelectedDestinationId(edge.destinationId);
-                      handleToggleToRemove(
-                        edge.id.toString(),
-                        `Edge ${edge.id}`,
-                        record?.name,
-                        "relatedRecord"
-                      );
-                    }}
-                  />
-                </div>
-              ),
-            };
-          } catch (error) {
-            console.error(`Error fetching details for edge ${edge.id}:`, error);
-            return null;
-          }
-        });
-
-        const results = await Promise.all(parsedPromises);
-        const validResults = results.filter(
-          (r): r is ParsedRecord => r !== null
-        );
-
-        setParsedRelatedRecords(validResults);
-        setHasFetchedRelatedRecords(true);
-      } catch (error) {
-        console.error("Error fetching related records:", error);
-        toast.error("Failed to fetch related records");
-      }
-    };
-
-    fetchDetailedRelatedRecords();
-  }, [
-    recordId,
-    projectId,
-    hasFetchedRelatedRecords,
-    record?.name,
-    handleToggleToRemove,
-  ]);
 
   return (
     <div>
