@@ -33,3 +33,23 @@ export const getEdge = async (projectId: number, edgeId: string | null, originId
         throw error;
     }
 };
+
+export const getEdgesByRecord = async (
+    projectId: string, 
+    recordId?: number, 
+    hideArchived: boolean = true
+) => {
+    try {
+        const queryParams = new URLSearchParams();
+        if (recordId !== undefined) queryParams.append('recordId', recordId.toString());
+        queryParams.append('hideArchived', hideArchived.toString());
+
+        const res = await api.get(`/projects/${projectId}/edges/GetAllEdgesByRecord`, {
+            params: queryParams
+        });
+        return res.data;
+    } catch (error) {
+        console.error("API call failed:", error);
+        throw error;
+    }
+};

@@ -26,7 +26,7 @@ function RelatedRecordsCard<T extends object>({
   showIndex = true,
 }: RelatedRecordsCardProps<T>) {
   return (
-    <div className="card bg-base-100 shadow-md p-2">
+    <div className="card bg-base-100 shadow-md mt-4 p-2">
       <h2 className="text-xl font-bold md-4 text-base-content">{title}</h2>
       <div className="card-body p-4">
         <div className="overflow-x-auto rounded-box border border-base-300 bg-base-100">

@@ -27,14 +27,17 @@ import {
   EyeIcon,
 } from "@heroicons/react/24/outline";
 import GenericTable from "@/app/(home)/components/GenericTable";
-// import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RecordViewModal from "@/app/(home)/components/RecordViewModal";
-import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
 import RelatedRecordsCard, {
   CardColumn,
 } from "./components/RelatedRecordsCard";
 import { useLanguage } from "@/app/contexts/Language";
+import {
+  deleteEdge,
+  getEdge,
+  getEdgesByRecord,
+} from "@/app/lib/edge_services.client";
 
 type Props = {
   initialRecord: FileViewerTableRow | null;
@@ -48,6 +51,18 @@ interface ParsedRecord {
   class: string;
   name: string;
   actions: React.JSX.Element;
+}
+
+interface Edge {
+  id: number;
+  originId: number;
+  destinationId: number;
+  relationshipId: number;
+  dataSourceId: number;
+  projectId: number;
+  lastUpdatedAt: string;
+  lastUpdatedBy: string | null;
+  isArchived: boolean;
 }
 
 type Record = {
@@ -158,119 +173,6 @@ export default function RecordViewClient({
     fetchData();
   }, [recordId, projectId]);
 
-  // useEffect(() => {
-  //   const fetchRelatedRecords = async () => {
-  //     try {
-  //       if (record && !hasFetchedRelatedRecords) {
-  //         const request = {
-  //           tablename: record.className,
-  //           id: record.id,
-  //           depth: 1,
-  //         };
-
-  //         const relatedRecordsData = await getNodesWithinDepth(
-  //           Number(projectId),
-  //           request
-  //         );
-
-  //         setRelatedRecords(relatedRecordsData);
-
-  //         setHasFetchedRelatedRecords(true);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching related records:", error);
-  //     }
-  //   };
-  //   if (record?.className && record?.id) {
-  //     if (record?.className && record?.id) {
-  //       fetchRelatedRecords();
-  //     }
-  //   }
-  // }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
-
-  // useEffect(() => {
-  //   const parseRelatedRecords = (
-  //     relatedRecords: RelatedRecord[] | undefined
-  //   ) => {
-  //     if (!relatedRecords) return [];
-
-  //     const relationshipNames: string[] = [];
-  //     const classNames: string[] = [];
-  //     const names: string[] = [];
-  //     const recordIds: number[] = [];
-
-  //     relatedRecords.forEach((item) => {
-  //       if ("relationshipName" in item) {
-  //         relationshipNames.push(item.relationshipName);
-  //       } else {
-  //         if (item.recordId == recordId) {
-  //           return;
-  //         }
-  //         classNames.push(item.className);
-  //         names.push(item.name);
-  //         recordIds.push(item.recordId);
-  //       }
-  //     });
-
-  //     const relatedRecordsArray: ParsedRecord[] = [];
-  //     const relationshipIndex = 0;
-
-  //     relatedRecords.forEach((item, _) => {
-  //       if (!("relationshipName" in item)) {
-  //         if (item.recordId == recordId) {
-  //           return;
-  //         }
-  //         const relationship =
-  //           relationshipNames.length > relationshipIndex
-  //             ? relationshipNames[relationshipIndex]
-  //             : "";
-  //         relatedRecordsArray.push({
-  //           relationship: relationship,
-  //           id: item.recordId.toString(),
-  //           class: item.className,
-  //           name: item.name,
-  //           actions: (
-  //             <div className="flex items-center">
-  //               <button
-  //                 className="text-blue-500 cursor-pointer"
-  //                 onClick={async () => {
-  //                   const selectedRecord = await getRecord(
-  //                     Number(projectId),
-  //                     item.recordId
-  //                   );
-  //                   setSelectedRecord(selectedRecord);
-  //                   setRecordViewModalOpen(true);
-  //                 }}
-  //               >
-  //                 <EyeIcon className="w-4 h-4" />
-  //               </button>
-  //               <button
-  //                 className="text-red-500 ml-2 cursor-pointer border rounded px-1"
-  //                 onClick={() => {
-  //                   handleToggleToRemove(
-  //                     item.recordId.toString(),
-  //                     item.name,
-  //                     item.className,
-  //                     "relatedRecord"
-  //                   );
-  //                 }}
-  //               >
-  //                 Remove Link
-  //               </button>
-  //             </div>
-  //           ),
-  //         });
-  //       }
-  //     });
-
-  //     return relatedRecordsArray;
-  //     return relatedRecordsArray;
-  //   };
-
-  //   const parsedRecords = parseRelatedRecords(relatedRecords);
-  //   setParsedRelatedRecords(parsedRecords);
-  // }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
-
   useEffect(() => {
     const fetchTags = async () => {
       try {
@@ -352,10 +254,7 @@ export default function RecordViewClient({
               String(selectedDestinationId)
             );
           }
-          // await queryKuzu(
-          //   projectId,
-          //   `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
-          // );
+
           setParsedRelatedRecords((prevRecords) =>
             prevRecords.filter((record) => record.id !== idToRemove)
           );
@@ -544,10 +443,10 @@ export default function RecordViewClient({
                 ))}
               </span>
             </div>
-            {/* <RelatedRecordsCard
+            <RelatedRecordsCard
               columns={relatedRecordsColumn}
               rows={parsedRelatedRecords}
-            /> */}
+            />
           </div>
           <ConfirmationModal
             isOpen={isModalOpen}
@@ -578,6 +477,68 @@ export default function RecordViewClient({
       setActiveTab(index);
     }
   };
+
+  useEffect(() => {
+    const fetchRelatedRecords = async () => {
+      if (!recordId || !projectId || hasFetchedRelatedRecords) return;
+
+      try {
+        // Fetch edges for this record
+        const edges = await getEdgesByRecord(
+          projectId.toString(),
+          recordId,
+          true // hide archived edges
+        );
+
+        // Process the edges to create ParsedRecord objects
+        const parsed: ParsedRecord[] = edges.map((edge: Edge) => ({
+          relationship: edge.relationshipId.toString(), // You might want to fetch relationship name
+          id: edge.id.toString(),
+          class: "Edge", // You might want to fetch the actual class name
+          name: `Edge ${edge.id}`, // You might want to fetch the actual record name
+          actions: (
+            <div className="flex gap-2">
+              <EyeIcon
+                className="w-5 h-5 cursor-pointer text-primary hover:text-primary-content"
+                onClick={() => {
+                  // Handle view action - you might want to fetch the full record details
+                  console.log("View edge:", edge.id);
+                }}
+              />
+              <XMarkIcon
+                className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
+                onClick={() =>
+                  handleToggleToRemove(
+                    edge.id.toString(),
+                    `Edge ${edge.id}`,
+                    record?.name,
+                    "relatedRecord"
+                  )
+                }
+              />
+            </div>
+          ),
+        }));
+
+        setParsedRelatedRecords(parsed);
+        setHasFetchedRelatedRecords(true);
+
+        // If you need to store the raw related records data
+        // setRelatedRecords(edges);
+      } catch (error) {
+        console.error("Error fetching related records:", error);
+        toast.error("Failed to fetch related records");
+      }
+    };
+
+    fetchRelatedRecords();
+  }, [
+    recordId,
+    projectId,
+    hasFetchedRelatedRecords,
+    record?.name,
+    handleToggleToRemove,
+  ]);
 
   return (
     <div>
