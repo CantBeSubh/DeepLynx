@@ -7,6 +7,7 @@ using deeplynx.helpers.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
+namespace deeplynx.business;
 /// <summary>
 /// Handles all notification operations including SignalR real-time notifications
 /// </summary>
