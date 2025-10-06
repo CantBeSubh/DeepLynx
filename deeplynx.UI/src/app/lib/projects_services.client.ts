@@ -103,7 +103,7 @@ export async function addMember(
 ) {
   try {
     console.log(`Adding member to project: ${userId}, Role: ${roleId}, Project: ${projectId}`);
-    const res = await api.post(`/projects/${projectId}/AddMemberToProject`, {
+    const res = await api.post(`/projects/AddMemberToProject?projectId=${projectId}&roleId=${roleId}&userId=${userId}`, {
       projectId,
       userId,
       roleId,

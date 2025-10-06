@@ -153,12 +153,12 @@ export async function createProjectServer(data: {
 }
 
 export async function addMemberServer(data: {
-  projectId: number,
-  userId: number,
-  roleId: number,
-  groupId?: number,
+  projectId: number;
+  userId: number;
+  roleId?: number;
+  groupId?: number;
 }): Promise<ProjectDTO> {
-  const res = await apiFetch(`/projects/${data.projectId}/AddMemberToProject`, {
+  const res = await apiFetch(`/projects/AddMemberToProject?projectId=${data.projectId}&userId=${data.userId}&roleId=${data.roleId}`, {
     method: "POST",
     body: JSON.stringify(data),
   });

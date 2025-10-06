@@ -231,3 +231,10 @@ export type UserResponseDto =
     IsArchined: boolean;
     isActive: boolean;
   }
+
+  export type RoleDTO =
+  {
+    roleId: number;
+    name: string;
+    description?: string;
+  }

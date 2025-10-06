@@ -1,19 +1,12 @@
-// "use client";
+"use client";
 
-// import api from "./api";
+import api from "./api";
 
-// export async function getAllRoles(projectId: number, organizationId?: number, hideArchived?: boolean) {
-//   const params = new URLSearchParams();
-//   params.append('projectId', projectId.toString());
+export async function getAllRoles(projectId: number) {
+  if (!projectId) {
+    throw new Error("Project ID must be provided");
+  }
 
-//   if (organizationId !== undefined) {
-//     params.append('organizationId', organizationId.toString());
-//   }
-
-//   if (hideArchived !== undefined) {
-//     params.append('hideArchived', hideArchived.toString());
-//   }
-
-//   const res = await api.get(`/roles/GetAllRoles?${params.toString()}`);
-//   return res.data;
-// }
+  const res = await api.get(`/roles/GetAllRoles?projectId=${projectId}`);
+  return res.data;
+}

@@ -1,112 +1,100 @@
-// import "server-only";
-// import { auth } from "../../../auth";
-// import { RoleDTO } from "@/app/(home)/types/types"; // Adjust the import based on your actual types
+import "server-only";
+import { auth } from "../../../auth";
+import { RoleDTO } from "@/app/(home)/types/types";
 
-// /** ----- Strict env handling (lazy) ----- */
-// let _BASE: string | null = null;
+/** ----- Strict env handling (lazy) ----- */
+let _BASE: string | null = null;
 
-// function getBase(): string {
-//   if (_BASE) return _BASE;
+function getBase(): string {
+  if (_BASE) return _BASE;
 
-//   const v = process.env.BACKEND_BASE_URL;
-//   if (!v) throw new Error("[ENV] BACKEND_BASE_URL is not set");
-//   if (!/^https?:\/\//.test(v)) {
-//     throw new Error(`[ENV] BACKEND_BASE_URL must start with http(s):// (got "${v}")`);
-//   }
-//   _BASE = v.replace(/\/+$/, ""); // strip trailing slash
-//   return _BASE;
-// }
+  const v = process.env.BACKEND_BASE_URL;
+  if (!v) throw new Error("[ENV] BACKEND_BASE_URL is not set");
+  if (!/^https?:\/\//.test(v)) {
+    throw new Error(`[ENV] BACKEND_BASE_URL must start with http(s):// (got "${v}")`);
+  }
+  _BASE = v.replace(/\/+$/, ""); // strip trailing slash
+  return _BASE;
+}
 
-// // Optional: use a machine/service token in SSR when the user token isn't available
-// const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
+// Optional: use a machine/service token in SSR when the user token isn't available
+const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
 
-// /** ----- Session helpers ----- */
-// type SessionShapeA = { tokens?: { access_token?: unknown } };
-// type SessionShapeB = { accessToken?: unknown };
-// type MaybeSession = SessionShapeA & SessionShapeB;
+/** ----- Session helpers ----- */
+type SessionShapeA = { tokens?: { access_token?: unknown } };
+type SessionShapeB = { accessToken?: unknown };
+type MaybeSession = SessionShapeA & SessionShapeB;
 
-// /** Safely pull an access token from unknown session shapes */
-// function extractAccessToken(x: unknown): string | null {
-//   if (typeof x !== "object" || x === null) return null;
+/** Safely pull an access token from unknown session shapes */
+function extractAccessToken(x: unknown): string | null {
+  if (typeof x !== "object" || x === null) return null;
 
-//   // tokens.access_token path
-//   const maybeTokens = (x as SessionShapeA).tokens;
-//   if (typeof maybeTokens === "object" && maybeTokens !== null) {
-//     const at = (maybeTokens as { access_token?: unknown }).access_token;
-//     if (typeof at === "string") return at;
-//   }
+  // tokens.access_token path
+  const maybeTokens = (x as SessionShapeA).tokens;
+  if (typeof maybeTokens === "object" && maybeTokens !== null) {
+    const at = (maybeTokens as { access_token?: unknown }).access_token;
+    if (typeof at === "string") return at;
+  }
 
-//   // accessToken path
-//   const at2 = (x as SessionShapeB).accessToken;
-//   if (typeof at2 === "string") return at2;
+  // accessToken path
+  const at2 = (x as SessionShapeB).accessToken;
+  if (typeof at2 === "string") return at2;
 
-//   return null;
-// }
+  return null;
+}
 
-// /** Get a JWT: prefer user token; fall back to service token for SSR */
-// async function getBearer(): Promise<string | null> {
-//   const session: unknown = await auth().catch(() => null);
-//   const userToken = extractAccessToken(session);
-//   return userToken ?? (SERVICE_TOKEN || null);
-// }
+/** Get a JWT: prefer user token; fall back to service token for SSR */
+async function getBearer(): Promise<string | null> {
+  const session: unknown = await auth().catch(() => null);
+  const userToken = extractAccessToken(session);
+  return userToken ?? (SERVICE_TOKEN || null);
+}
 
-// async function authHeaders(): Promise<HeadersInit> {
-//   const token = await getBearer();
-//   return {
-//     Accept: "application/json",
-//     "Content-Type": "application/json",
-//     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-//   };
-// }
+async function authHeaders(): Promise<HeadersInit> {
+  const token = await getBearer();
+  return {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
 
-// /** Small fetch wrapper with detailed error logging */
-// async function apiFetch(path: string, init: RequestInit = {}) {
-//   const url = `${getBase()}${path.startsWith("/") ? "" : "/"}${path}`;
-//   const headers = {
-//     ...(await authHeaders()),
-//     ...(init.headers || {}),
-//   };
+/** Small fetch wrapper with detailed error logging */
+async function apiFetch(path: string, init: RequestInit = {}) {
+  const url = `${getBase()}${path.startsWith("/") ? "" : "/"}${path}`;
+  const headers = {
+    ...(await authHeaders()),
+    ...(init.headers || {}),
+  };
 
-//   const res = await fetch(url, {
-//     ...init,
-//     headers,
-//     cache: "no-store",
-//   });
+  const res = await fetch(url, {
+    ...init,
+    headers,
+    cache: "no-store",
+  });
 
-//   if (!res.ok) {
-//     const body = await res.text().catch(() => "<no response body>");
-//     console.error("[API ERROR]", {
-//       method: init.method || "GET",
-//       url,
-//       status: res.status,
-//       statusText: res.statusText,
-//       respHeaders: Object.fromEntries(res.headers.entries()),
-//       body: body.slice(0, 2000),
-//     });
-//     throw new Error(`API ${init.method || "GET"} ${path} -> ${res.status}`);
-//   }
-//   return res;
-// }
+  if (!res.ok) {
+    const body = await res.text().catch(() => "<no response body>");
+    console.error("[API ERROR]", {
+      method: init.method || "GET",
+      url,
+      status: res.status,
+      statusText: res.statusText,
+      respHeaders: Object.fromEntries(res.headers.entries()),
+      body: body.slice(0, 2000),
+    });
+    throw new Error(`API ${init.method || "GET"} ${path} -> ${res.status}`);
+  }
+  return res;
+}
 
-// async function asJson<T>(res: Response): Promise<T> {
-//   return (await res.json()) as T;
-// }
+async function asJson<T>(res: Response): Promise<T> {
+  return (await res.json()) as T;
+}
 
-// /** ===== Server-safe calls ===== */
+/** ===== Server-safe calls ===== */
 
-// export async function getAllRolesServer(projectId: number, organizationId?: number, hideArchived?: boolean): Promise<RoleDTO[]> {
-
-//   const params = new URLSearchParams();
-//   params.append('projectId', projectId.toString());
-
-//   if (organizationId !== undefined) {
-//     params.append('organizationId', organizationId.toString());
-//   }
-
-//   if (hideArchived !== undefined) {
-//     params.append('hideArchived', hideArchived.toString());
-//   }
-
-//   const res = await apiFetch(`/roles/GetAllRoles?${params.toString()}`);
-//   return asJson<RoleDTO[]>(res);
-// }
+export async function getAllRolesServer(projectId: number): Promise<RoleDTO[]> {
+  const res = await apiFetch(`/roles/GetAllRoles?projectId=${projectId}`);
+  return asJson<RoleDTO[]>(res);
+}

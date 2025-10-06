@@ -157,6 +157,7 @@ const ProjectSettings = ({
       </div>
 
       <AddProjectMember
+        projectId={Number(selectedProjectId)}
         isOpen={addProjectMemberModal}
         onClose={() => setAddProjectMemberModal(false)}
       />
