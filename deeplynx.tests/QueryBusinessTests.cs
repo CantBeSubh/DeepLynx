@@ -624,6 +624,218 @@ namespace deeplynx.tests
             result.First().Name.Should().Be("Captain Rex");
         }
         
+        [Fact]
+        public async Task FullTextSearchPartialNameMatchAsync()
+        {
+            // Search for "Rex" should find "Captain Rex"
+            var result = await _queryBusiness.Search("capt", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Captain Rex");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialNameMatchMultipleResultsAsync()
+        {
+            // Search for "Dar" should find "Darth Vader"
+            var empireId = await Context.Projects
+                .Where(p => p.Name == "The Galactic Empire")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = await _queryBusiness.Search("dar", new[] { empireId });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Darth Vader");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialOriginalIdMatchAsync()
+        {
+            // Search for "CT-99" should find all Bad Batch members
+            var result = await _queryBusiness.Search("CT-99", new[] { pid });
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialOriginalIdSingleDigitAsync()
+        {
+            // Search for just "99" should find Clone Force 99 members
+            var result = await _queryBusiness.Search("99", new[] { pid });
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialDescriptionMatchAsync()
+        {
+            // Search for "stop" should find Hunter (description: "Omega, stop doing that")
+            var result = await _queryBusiness.Search("stop", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Hunter");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialDataSourceNameAsync()
+        {
+            // Search for "Yav" should find records using "Yavin IV Base"
+            var allProjectIds = await Context.Projects.Select(p => p.Id).ToArrayAsync();
+            var result = await _queryBusiness.Search("Yav", allProjectIds);
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialProjectNameAsync()
+        {
+            // Search for "Rebel" should find records in "The Rebellion" project
+            var rebellionId = await Context.Projects
+                .Where(p => p.Name == "The Rebellion")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = await _queryBusiness.Search("Rebel", new[] { rebellionId });
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialPropertyValueAsync()
+        {
+            // Search for "501" should find Captain Rex (Legion: "501st")
+            var result = await _queryBusiness.Search("501", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Captain Rex");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialTagName2Async()
+        {
+            // Search for "Pad" should find records tagged with "Padme"
+            var result = await _queryBusiness.Search("Pad", new[] { pid });
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchVeryShortPartialMatchAsync()
+        {
+            var mandoId = await Context.Projects
+                .Where(p => p.Name == "Mandalorians")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = await _queryBusiness.Search("Bo", new[] { mandoId });
+            result.Should().HaveCount(3);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchCaseInsensitiveAsync()
+        {
+            // Search for "CAPT" (uppercase) should find "Captain Rex"
+            var result = await _queryBusiness.Search("CAPT", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Captain Rex");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchMultipleWordsAsync()
+        {
+            // Search for "grand adm" should find "Grand Admiral Thrawn"
+            var empireId = await Context.Projects
+                .Where(p => p.Name == "The Galactic Empire")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = await _queryBusiness.Search("grand adm", new[] { empireId });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Grand Admiral Thrawn");
+        }
+        
+        [Fact]
+        public async Task FullTextSearchPartialMatchMiddleOfWordAsync()
+        {
+            // Search for "eck" should find "Wrecker"
+            var result = await _queryBusiness.Search("eck", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Wrecker");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchInUriAsync()
+        {
+            // Search for "8090" should find all records with that port
+            var result = await _queryBusiness.Search("8090", new[] { pid });
+            result.Should().HaveCount(5);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchBeginningOfWordAsync()
+        {
+            // Search for "Wre" should find "Wrecker"
+            var result = await _queryBusiness.Search("Wre", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Wrecker");
+        }
+
+        [Fact]
+        public async Task QueryBuilderPartialMatchWithLikeOperatorAsync()
+        {
+            // LIKE operator should do partial matching
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = null,
+                Filter = "name",
+                Operator = "LIKE",
+                Value = "Prin" // Partial match for "Princess Leia"
+            };
+            var rebellionId = await Context.Projects
+                .Where(p => p.Name == "The Rebellion")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = _queryBusiness.QueryBuilder([dto], new[] { rebellionId }, null);
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Princess Leia");
+        }
+
+        [Fact]
+        public async Task QueryBuilderPartialMatchOriginalIdAsync()
+        {
+            // Partial match on original_id
+            var dto = new CustomQueryRequestDto
+            {
+                Connector = null,
+                Filter = "original_id",
+                Operator = "LIKE",
+                Value = "MANDO-00" // Should find all Mandalorian records
+            };
+            var mandoId = await Context.Projects
+                .Where(p => p.Name == "Mandalorians")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = _queryBusiness.QueryBuilder([dto], new[] { mandoId }, null);
+            result.Should().HaveCount(4);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchWithSpecialCharactersAsync()
+        {
+            // Search for "CT-" should find all clone troopers
+            var result = await _queryBusiness.Search("CT-", new[] { pid });
+            result.Should().HaveCount(5);
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchAcrossMultipleFieldsAsync()
+        {
+            // Search for "Sith" appears in Vader's properties
+            var empireId = await Context.Projects
+                .Where(p => p.Name == "The Galactic Empire")
+                .Select(p => p.Id)
+                .FirstAsync();
+            var result = await _queryBusiness.Search("Sith", new[] { empireId });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Darth Vader");
+        }
+
+        [Fact]
+        public async Task FullTextSearchPartialMatchNoResultsAsync()
+        {
+            // Search for something that doesn't exist
+            var result = await _queryBusiness.Search("Wookiee", new[] { pid });
+            result.Should().BeEmpty();
+        }
+        
         
         protected override async Task SeedTestDataAsync()
 {

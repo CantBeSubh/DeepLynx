@@ -214,6 +214,8 @@ public class GroupBusiness : IGroupBusiness
     public async Task<bool> UnarchiveGroup(long groupId)
     {
         var group = await _context.Groups.FindAsync(groupId);
+        // note that we purposefully return an error here if a group is not archived.
+        // we only want to unarchive what has already been archived
         if (group == null || !group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found or is not archived");
         
@@ -246,7 +248,7 @@ public class GroupBusiness : IGroupBusiness
     public async Task<bool> DeleteGroup(long groupId)
     {
         var group = await _context.Groups.FindAsync(groupId);
-        if (group == null || !group.IsArchived)
+        if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
         
         _context.Groups.Remove(group);
@@ -276,12 +278,12 @@ public class GroupBusiness : IGroupBusiness
     public async Task<bool> AddUserToGroup(long groupId, long userId)
     {
         var group = await _context.Groups.FindAsync(groupId);
-        if (group == null || !group.IsArchived)
+        if (group == null || group.IsArchived)
             throw new KeyNotFoundException($"Group with id {groupId} not found");
         
         var user = _context.Users.FirstOrDefault(u => u.Id == userId);
-        if (user == null || !user.IsArchived)
-            throw new KeyNotFoundException($"User with id {userId} does not exist");
+        if (user == null || user.IsArchived)
+            throw new KeyNotFoundException($"User with id {userId} not found");
         
         group.Users.Add(user);
         await _context.SaveChangesAsync();

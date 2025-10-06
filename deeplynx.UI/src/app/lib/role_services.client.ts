@@ -1,12 +1,22 @@
-"use client";
+import api from './api';
 
-import api from "./api";
 
-export async function getAllRoles(projectId: number) {
-  if (!projectId) {
-    throw new Error("Project ID must be provided");
-  }
-
-  const res = await api.get(`/roles/GetAllRoles?projectId=${projectId}`);
-  return res.data;
+export const getAllRoles = async (
+    projectId?: number,
+    organizationId?: number,
+    hideArchived: boolean = true
+) => {
+    try {
+        const res = await api.get('/roles/GetAllRoles', {
+            params: {
+                projectId,
+                organizationId,
+                hideArchived
+            }
+        });
+        return res.data;
+    } catch (error) {
+        console.error("Error getting all roles:", error);
+        throw error;
+    }
 }

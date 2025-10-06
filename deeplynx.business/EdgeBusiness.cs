@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -65,6 +66,68 @@ public class EdgeBusiness : IEdgeBusiness
                 LastUpdatedBy = e.LastUpdatedBy,
                 IsArchived = e.IsArchived,
             }).ToList();
+    }
+    
+    /// <summary>
+    /// Retrieves all edges for a specific project and (optionally) datasource
+    /// </summary>
+    /// <param name="recordId">The ID of the record by which to filter edges</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
+    /// <returns>A list of edges based on the applied filters.</returns>
+    public async Task<List<EdgeResponseDto>> GetEdgesByRecord(
+        long recordId,
+        bool hideArchived)
+    {
+        
+        var recordExists = await _context.Records.AnyAsync(record => record.Id == recordId);
+        if (!recordExists)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+        
+        var edgeQuery = _context.Edges
+            .Where(e => e.DestinationId == recordId || e.OriginId == recordId);
+        
+        // Todo: Add this query back when we want to filter all record edges by user access
+        
+        // var userProjectIds = await _context.Projects.Where(p => 
+        //     p.ProjectMembers.Any(pm => 
+        //         pm.UserId == userId ||
+        //         (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+        //     ))
+        //     .Select(p => p.Id)
+        //     .ToListAsync();
+        //
+        // if (!userProjectIds.Any())
+        // {
+        //     return new List<EdgeResponseDto>();
+        // }
+        //
+        // var edgeQuery = _context.Edges
+        //     .Where(e =>
+        //         userProjectIds.Contains(e.ProjectId) && 
+        //         (e.OriginId == recordId || e.DestinationId == recordId) && 
+        //         userProjectIds.Contains(e.Origin.ProjectId) && 
+        //         userProjectIds.Contains(e.Destination.ProjectId));
+
+        if (hideArchived)
+        {
+            edgeQuery = edgeQuery.Where(e => !e.IsArchived);
+        }
+
+        return await edgeQuery
+            .Select(e => new EdgeResponseDto()
+            {
+                Id = e.Id,
+                OriginId = e.OriginId,
+                DestinationId = e.DestinationId,
+                RelationshipId = e.RelationshipId,
+                DataSourceId = e.DataSourceId,
+                ProjectId = e.ProjectId,
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy,
+                IsArchived = e.IsArchived,
+            }).ToListAsync();
     }
 
     /// <summary>
