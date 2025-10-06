@@ -61,7 +61,6 @@ namespace deeplynx.api.Controllers
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
         public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetEdgesByRecord(
-            long projectId,
             long recordId,
             bool hideArchived = true)
         {
