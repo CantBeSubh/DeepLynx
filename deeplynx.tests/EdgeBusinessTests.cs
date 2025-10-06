@@ -25,11 +25,16 @@ namespace deeplynx.tests
         private Mock<IObjectStorageBusiness> _mockObjectStorageBusiness = null!;
         private Mock<IRoleBusiness> _mockRoleBusiness = null!;
         public long pid;
+        public long pid2;
         public long dsid;
+        public long dsid2;
         public long originRecordId;
+        public long originRecordId2;
         public long destinationRecordId;
         public long destinationRecordId2;
+        public long destinationRecordId3;
         public long relationshipId;
+        public long uid1;
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -273,7 +278,150 @@ namespace deeplynx.tests
             listWithArchived.Should().Contain(e => e.Id == archivedEdge.Id);
             listWithoutArchived.Should().NotContain(e => e.Id == archivedEdge.Id);
         }
+        
+        // Todo: Add test back in when we filter record edges by user access
+        
+        // [Fact]
+        // public async Task GetEdgesByRecord_ReturnsEdgesWithUserAccess()
+        // {
+        //     var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+        //     Assert.True(userAdded);
+        //     
+        //     var edge1 = new Edge
+        //     {
+        //         OriginId = originRecordId,
+        //         DestinationId = destinationRecordId,
+        //         DataSourceId = dsid,
+        //         ProjectId = pid,
+        //         LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        //         LastUpdatedBy = null
+        //     };
+        //
+        //     var edge2 = new Edge
+        //     {
+        //         OriginId = destinationRecordId,
+        //         DestinationId = originRecordId,
+        //         DataSourceId = dsid,
+        //         ProjectId = pid,
+        //         LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        //         LastUpdatedBy = null
+        //     };
+        //     
+        //     var edgeRestrictedProject = new Edge
+        //     {
+        //         OriginId = destinationRecordId,
+        //         DestinationId = originRecordId,
+        //         DataSourceId = dsid,
+        //         ProjectId = pid2,
+        //         LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        //         LastUpdatedBy = null
+        //     };
+        //     
+        //     var edgeWithOriginInRestrictedProject = new Edge
+        //     {
+        //         OriginId = destinationRecordId3,
+        //         DestinationId = originRecordId,
+        //         DataSourceId = dsid,
+        //         ProjectId = pid,
+        //         LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        //         LastUpdatedBy = null
+        //     };
+        //     
+        //     var edgeWithDestinationInRestrictedProject = new Edge
+        //     {
+        //         OriginId = destinationRecordId,
+        //         DestinationId = originRecordId2,
+        //         DataSourceId = dsid,
+        //         ProjectId = pid,
+        //         LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+        //         LastUpdatedBy = null
+        //     };
+        //     
+        //     Context.Edges.Add(edge1);
+        //     Context.Edges.Add(edge2);
+        //     Context.Edges.Add(edgeRestrictedProject);
+        //     Context.Edges.Add(edgeWithOriginInRestrictedProject);
+        //     Context.Edges.Add(edgeWithDestinationInRestrictedProject);
+        //     
+        //     await Context.SaveChangesAsync();
+        //
+        //     var edges = await _edgeBusiness.GetAllEdgesByRecord(originRecordId, uid1, true);
+        //     edges.Count.Should().Be(2);
+        //     edges.Should().Contain(e => e.Id == edge1.Id);
+        //     edges.Should().Contain(e => e.Id == edge2.Id);
+        //     edges.Should().NotContain(e => e.Id == edgeRestrictedProject.Id);
+        //     edges.Should().NotContain(e => e.Id == edgeWithOriginInRestrictedProject.Id);
+        //     edges.Should().NotContain(e => e.Id == edgeWithDestinationInRestrictedProject.Id);
+        // }
+        
+        [Fact]
+        public async Task GetEdgesByRecord_ReturnsEdgesWithRecordID()
+        {
+            var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            Assert.True(userAdded);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            
+            await Context.SaveChangesAsync();
+        
+            var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, true);
+            edges.Count.Should().Be(2);
+            edges.Should().Contain(e => e.Id == edge1.Id);
+            edges.Should().Contain(e => e.Id == edge2.Id);
+            edges.Should().NotContain(e => e.Id == edge3.Id);
+            edges.Should().NotContain(e => e.Id == edge4.Id);
+        }
 
+        [Fact]
+        public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
+        {
+            var result = () => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
+        
         [Fact]
         public async Task GetEdge_Success_WhenExistsById()
         {
@@ -729,10 +877,24 @@ namespace deeplynx.tests
         {
             await base.SeedTestDataAsync();
 
+            var user = new User
+            {
+                Name = "Test User 1",
+                Email = "test_email@example.com"
+            };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid1 = user.Id;
+
             var project = new Project { Name = "Project 1" };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
+            
+            var project2 = new Project { Name = "Project 2" };
+            Context.Projects.Add(project2);
+            await Context.SaveChangesAsync();
+            pid2 = project2.Id;
 
             var dataSource = new DataSource
             {
@@ -743,6 +905,16 @@ namespace deeplynx.tests
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             dsid = dataSource.Id;
+            
+            var dataSource2 = new DataSource
+            {
+                Name = "DataSource 2",
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.DataSources.Add(dataSource2);
+            await Context.SaveChangesAsync();
+            dsid2 = dataSource2.Id;
 
             var testClass = new Class
             {
@@ -765,6 +937,18 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(originRecord);
+            
+            var originRecord2 = new Record
+            {
+                ProjectId = pid2,
+                DataSourceId = dsid2,
+                Properties = "{\"test\": \"origin2_value\"}",
+                Name = "Origin 2",
+                Description = "Origin Description 2",
+                OriginalId = "orig2",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Records.Add(originRecord2);
 
             var destinationRecord = new Record
             {
@@ -791,6 +975,19 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Records.Add(destinationRecord2);
+            
+            //Record in another project
+            var destinationRecord3 = new Record
+            {
+                ProjectId = pid2,
+                DataSourceId = dsid2,
+                Properties = "{\"test\": \"destination3_value\"}",
+                Name = "Destination 3",
+                Description = "Destination Description 3",
+                OriginalId = "dest3",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Records.Add(destinationRecord3);
 
             var relationship = new Relationship
             {
@@ -805,8 +1002,10 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             originRecordId = originRecord.Id;
+            originRecordId2 = originRecord2.Id;
             destinationRecordId = destinationRecord.Id;
             destinationRecordId2 = destinationRecord2.Id;
+            destinationRecordId3 = destinationRecord3.Id;
             relationshipId = relationship.Id;
         }
     }
