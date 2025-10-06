@@ -83,6 +83,7 @@ export type ProjectMembersTable = {
   role: string;
   memberId?: number | null;
   groupId?: number | null;
+  roleId?: number | null;
 }
 
 export type SystemUsersTable = {

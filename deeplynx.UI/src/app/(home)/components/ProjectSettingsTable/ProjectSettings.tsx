@@ -17,6 +17,7 @@ import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
 import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
 import { getAllUsers } from '@/app/lib/user_services.client';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
+import { getAllRoles } from '@/app/lib/role_services.client';
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -41,6 +42,16 @@ const ProjectSettings = ({
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
 
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const rolesData = await getAllRoles(Number(selectedProjectId)); // Your API call
+      setRoles(rolesData);
+    };
+    fetchRoles();
+  }, [selectedProjectId]);
+
   useEffect(() => {
     if (!selectedProjectId) return;
 
@@ -61,6 +72,7 @@ const ProjectSettings = ({
         <MembersTable
           data={projectMembers}
           projectId={selectedProjectId}
+          roles={roles}
         />
       ),
     },

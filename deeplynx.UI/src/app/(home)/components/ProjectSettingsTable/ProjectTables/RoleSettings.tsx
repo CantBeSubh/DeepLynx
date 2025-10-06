@@ -36,7 +36,6 @@ const RoleSettings = ({ id }: RoleSettingsProps) => {
   useEffect(() => {
     const roleId = searchParams.get('roleId');
     if (roleId) {
-      console.log(`Editing role with ID: ${roleId}`);
       // Fetch the role data using the roleId if needed
     }
   }, [searchParams]);
