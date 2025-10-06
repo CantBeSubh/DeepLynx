@@ -8,6 +8,7 @@
 //   isOpen: boolean;
 //   onClose: () => void;
 //   projectId: number;
+//   onMemberAdded: () => void;
 // }
 
 // interface User {
@@ -23,7 +24,7 @@
 //   name: string;
 // }
 
-// const AddProjectMember = ({ isOpen, onClose, projectId }: AddMemberModalProps) => {
+// const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemberModalProps) => {
 //   const { t } = useLanguage();
 //   const [users, setUsers] = useState<User[]>([]);
 //   const [roles, setRoles] = useState<Role[]>([]);
@@ -62,34 +63,20 @@
 //     setSelectedRole(isNaN(roleId) ? null : roleId);
 //   };
 
-// // const handleSave = async () => {
-// //   if (selectedUser) {
-// //     const user = users.find(u => u.id === selectedUser);
-// //     if (user) {
-// //       try {
-// //         await addMember(projectId, selectedUser, selectedRole !== null ? selectedRole : undefined);
-// //         onClose();
-// //       } catch (error) {
-// //         console.error('Error adding member:', error);
-// //       }
-// //     }
-// //   }
-// // };
-
-// const handleSave = async () => {
-//   if (selectedUser) {
-//     const user = users.find(u => u.id === selectedUser);
-//     if (user) {
-//       try {
-//         await addMember(projectId, selectedUser, selectedRole !== null ? selectedRole : undefined); 
-//         onMemberAdded();
-//         onClose();
-//       } catch (error) {
-//         console.error('Error adding member:', error);
+//   const handleSave = async () => {
+//     if (selectedUser) {
+//       const user = users.find(u => u.id === selectedUser);
+//       if (user) {
+//         try {
+//           await addMember(projectId, selectedUser, selectedRole !== null ? selectedRole : undefined); 
+//           onMemberAdded();
+//           onClose();
+//         } catch (error) {
+//           console.error('Error adding member:', error);
+//         }
 //       }
 //     }
-//   }
-// };
+//   };
 
 //   return (
 //     <>
@@ -211,12 +198,24 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
     setSelectedRole(isNaN(roleId) ? null : roleId);
   };
 
-  const handleSave = async () => {
+  // const handleSave = async () => {
+  //   if (selectedUser) {
+  //     try {
+  //       await addMember(projectId, selectedUser, selectedRole || undefined);
+  //       onMemberAdded();
+  //       onClose();
+  //     } catch (error) {
+  //       console.error('Error adding member:', error);
+  //     }
+  //   }
+  // };
+
+    const handleSave = async () => {
     if (selectedUser) {
       const user = users.find(u => u.id === selectedUser);
       if (user) {
         try {
-          await addMember(projectId, selectedUser, selectedRole !== null ? selectedRole : undefined); 
+          await addMember(projectId, selectedUser, selectedRole || undefined);
           onMemberAdded();
           onClose();
         } catch (error) {
