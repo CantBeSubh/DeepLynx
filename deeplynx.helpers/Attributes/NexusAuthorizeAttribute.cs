@@ -12,6 +12,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace deeplynx.helpers;
 
@@ -31,7 +33,7 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         if (IsLocalDevelopmentBypassEnabled(context))
         {
             SetMockUserPrincipal(context.HttpContext);
-            return; 
+            return;
         }
 
         try
@@ -57,6 +59,9 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
             }
 
             context.HttpContext.User = principal;
+
+            // ensures the user exists in DB before UserContextMiddleware attempts to fetch User ID
+            EnsureUserExists(context.HttpContext, principal).GetAwaiter().GetResult();
 
             // TODO: custom permission/role checks if you need them
         }
@@ -173,7 +178,7 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
 
         var secret = await GetSecretForUser(username, apiKey, httpContext);
-        
+
         if (string.IsNullOrWhiteSpace(secret))
             throw new InvalidOperationException($"ApiKey is not valid - Username: {username}, ApiKey: {apiKey}");
 
@@ -267,5 +272,97 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
     private void SetForbiddenResult(AuthorizationFilterContext context, string message)
     {
         context.Result = new JsonResult(new { error = message, status = 403 }) { StatusCode = 403 };
+    }
+
+
+    /// <summary>
+    /// Insert user if not exists in DB; Update user if SSO ID not exists in DB
+    /// </summary>
+    /// <param name="httpContext">Request context</param>
+    /// <param name="principal">SSO information</param>
+    private async Task EnsureUserExists(HttpContext httpContext, ClaimsPrincipal principal)
+    {
+        try
+        {
+            // extract email from claims
+            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (string.IsNullOrEmpty(email))
+            {
+                // fall back to other common claim types
+                email = principal.FindFirst(ClaimTypes.Email)?.Value
+                    ?? principal.FindFirst("email")?.Value
+                    ?? principal.FindFirst("sub")?.Value;
+            }
+
+            if (string.IsNullOrEmpty(email))
+            {
+                // No email found - can't provision user
+                return;
+            }
+
+            // Extract additional profile info for insertion into DB
+            var ssoId = principal.FindFirst("sub")?.Value             // okta user ID
+                ?? principal.FindFirst("cid")?.Value 
+                ?? principal.FindFirst("uid")?.Value;  
+            var username = principal.FindFirst("preferred_username")?.Value // use email if username not found
+                ?? email;  
+            var name = principal.FindFirst(ClaimTypes.Name)?.Value          // use username if name not found
+                ?? principal.FindFirst("name")?.Value
+                ?? username;                                                            
+
+            // get DB context
+            var serviceScopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+
+                // TODO: see if this check can be performed as a cache function to avoid extraneous DB round trip
+                // check if user already exists
+                var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+                if (existingUser != null)
+                {
+                    // user exists- check if SSO ID needs to be populated (and if it can be with claims info)
+                    if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId))
+                    {
+                        existingUser.SsoId = ssoId;
+                        existingUser.Username = username;
+                        existingUser.Name = name;
+                        existingUser.IsActive = true;
+                        existingUser.IsArchived = false;
+                        await dbContext.SaveChangesAsync();
+
+                        var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+                        logger?.LogInformation($"Updated SSO ID for existing user {email}");
+                    }
+                }
+                else
+                {
+                    // user does not exist- create them in the DB
+                    var newUser = new User
+                    {
+                        Name = name,
+                        Email = email,
+                        Username = username,
+                        SsoId = ssoId,
+                        IsActive = true,
+                        IsArchived = false
+                    };
+
+                    dbContext.Users.Add(newUser);
+                    await dbContext.SaveChangesAsync();
+
+                    var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+                    logger?.LogInformation($"User with email {email} created successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail the request; UserContextMiddleware will handle missing user if relevant
+            var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+            logger?.LogError(ex, "Error during user provisioning");
+        }
     }
 }
