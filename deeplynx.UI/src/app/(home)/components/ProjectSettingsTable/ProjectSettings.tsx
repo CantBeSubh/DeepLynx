@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import { projectMembers, defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
@@ -14,7 +14,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdown from '../ProjectDropdown';
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { ProjectsList } from '../../types/types';
+import { ProjectsList, UserResponseDto } from '../../types/types';
+import { getAllUsers } from '@/app/lib/user_services.client';
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -37,6 +38,18 @@ const ProjectSettings = ({
   const [selectedProjectId, setSelectedProjectId] = useState(
     initialProject ? initialProject.id : null
   );
+  // const [projectMembers, setProjectMembers] = useState<UserResponseDto>();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // const users = await getAllUsers();
+        // setProjectMembers(users);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, []);
 
   const tabData = [
     {

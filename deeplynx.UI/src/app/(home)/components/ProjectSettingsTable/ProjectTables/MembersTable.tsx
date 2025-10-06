@@ -1,9 +1,11 @@
-import React, { FC, useState } from 'react';
+'use client';
+import React, { FC, useEffect, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
 import { Column, ProjectMembersTable } from '../../../types/types';
 import RoleSwap from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/RoleSwap";
 import { TrashIcon } from '@heroicons/react/24/outline';
+import { removeProjectMemberRole } from '@/app/lib/projects_services.client';
 
 interface MembersTableProps {
   data: ProjectMembersTable[];
@@ -34,11 +36,26 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
     }
   };
 
-  const handleDelete = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+  const handleDelete = async (row: ProjectMembersTable, index: number) => {
+    const memberToDelete = data[index];
+
+    try {
+      // Call the API to remove the member
+      await removeProjectMemberRole(
+        memberToDelete.projectId,
+        memberToDelete.userId || undefined,
+        memberToDelete.groupId || undefined
+      );
+
+      // Update local state only after successful API call
+      const newData = data.filter((_, i) => i !== index);
+      setData(newData);
+      setSelectedMembers(new Array(newData.length).fill(false));
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to delete member:', error);
+      // Optionally show error message to user
+    }
   };
 
   const handleDeleteSelected = () => {
@@ -52,7 +69,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-    const columns: Column<ProjectMembersTable>[] = [
+  const columns: Column<ProjectMembersTable>[] = [
     {
       header: (
         <input
@@ -63,12 +80,12 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
         />
       ),
       cell: (row: ProjectMembersTable, index: number) => (
-            <input
-            type="checkbox"
-            className="checkbox"
-            checked={selectedMembers[index]}
-            onChange={() => handleCheckboxChange(index)}
-            />
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={selectedMembers[index]}
+          onChange={() => handleCheckboxChange(index)}
+        />
       ),
       sortable: false,
     },
@@ -83,20 +100,20 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
     {
       header: (
         <div className="flex">
-            {multipleSelected() && (
-                <button className="btn" onClick={() => setAddRoleSwap(true)}>
-                    {t.translations.ROLE}
-                </button>
-            )}
+          {multipleSelected() && (
+            <button className="btn" onClick={() => setAddRoleSwap(true)}>
+              {t.translations.ROLE}
+            </button>
+          )}
         </div>
       ),
       cell: (row: ProjectMembersTable) => (
         <div className="flex">
-            <button className="btn"
-                onClick={() => setAddRoleSwap(true)}>
-                {row.role}
-                {/* {t.translations.ROLE} */}
-            </button>
+          <button className="btn"
+            onClick={() => setAddRoleSwap(true)}>
+            {row.role}
+            {/* {t.translations.ROLE} */}
+          </button>
         </div>
       ),
       sortable: false,
@@ -113,7 +130,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
       ),
       cell: (row: ProjectMembersTable, index: number) => (
         <div className="flex">
-          <button onClick={() => handleDelete(index)}>
+          <button onClick={() => handleDelete(row, index)}>
             <TrashIcon className="size-6 text-red-500" />
           </button>
         </div>
@@ -124,17 +141,17 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
 
   return (
     <div>
-        <GenericTable
-            columns={columns}
-            data={data}
-            enablePagination
-            // rowsPerPage={5}
-        />
+      <GenericTable
+        columns={columns}
+        data={data}
+        enablePagination
+      // rowsPerPage={5}
+      />
 
-        <RoleSwap
-            isOpen={addRoleSwap}
-            onClose={() => setAddRoleSwap(false)}
-        />
+      <RoleSwap
+        isOpen={addRoleSwap}
+        onClose={() => setAddRoleSwap(false)}
+      />
     </div>
   );
 };

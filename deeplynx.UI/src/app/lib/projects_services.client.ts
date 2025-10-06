@@ -44,3 +44,38 @@ export async function createProject(data: {
   });
   return res.data;
 }
+
+export async function updateProjectMemberRole(
+  projectId: number,
+  roleId: number,
+  userId: number,
+  groupId: number
+) {
+  const res = await api.put(`/projects/UpdateProjectMemberRole?projectId=${projectId}&roleId=${roleId}&userId=${userId}&groupId=${groupId}`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.data;
+}
+
+export async function removeProjectMemberRole(
+  projectId: number,
+  userId?: number,
+  groupId?: number
+) {
+  const queryParams = [
+    `projectId=${projectId}`,
+    userId !== undefined ? `userId=${userId}` : null,
+    groupId !== undefined ? `groupId=${groupId}` : null,
+  ]
+    .filter(Boolean)
+    .join('&');
+
+  const res = await api.delete(
+    `/projects/RemoveMemberFromProject?${queryParams}`,
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  return res.data;
+}
+
