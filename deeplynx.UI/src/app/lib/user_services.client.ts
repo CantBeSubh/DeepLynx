@@ -41,7 +41,6 @@ export async function getRecentlyAddedRecords(projectIds: string[]) {
 
 export async function updateUser(userId: number, name?: string) {
   try {
-    console.log(`Updating user with ID: ${userId} and Name: ${name}`);
     const res = await api.put(`/user/UpdateUser/${userId}`, {
       name,
     });
@@ -54,7 +53,6 @@ export async function updateUser(userId: number, name?: string) {
 
 export async function deleteUser(userId: number) {
   try {
-    console.log(`Deleting user with ID: ${userId}`);
     const res = await api.delete(`/user/DeleteUser/${userId}`);
     return res.data;
   } catch (error) {
