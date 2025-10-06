@@ -95,6 +95,7 @@ export default function RecordViewClient({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
+   const [activeTab, setActiveTab] = useState(0);
   const [relatedRecords, setRelatedRecords] = useState<RelatedRecord[]>();
   const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] =
     useState(false);
@@ -564,6 +565,14 @@ export default function RecordViewClient({
     // { label: "Record History", content: "" },
   ];
 
+  // Function to handle tab change
+  const handleTabChange = (label: string) => {
+    const index = tabs.findIndex(tab => tab.label === label);
+    if (index !== -1) {
+      setActiveTab(index);
+    }
+  };
+
   return (
     <div>
       <div className="flex justify-between items-center bg-base-200/40 pl-12 p-2 pb-4">
@@ -574,7 +583,12 @@ export default function RecordViewClient({
         </div>
       </div>
 
-      <Tabs tabs={tabs} className={"ml-6 pt-6"}></Tabs>
+      <Tabs
+        tabs={tabs}
+        className={"ml-6 pt-6"}
+        activeTab={tabs[activeTab].label}
+        onTabChange={handleTabChange}
+      />
     </div>
   );
 }

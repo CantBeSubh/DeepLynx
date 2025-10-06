@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { queryRecords } from "@/app/lib/filter_services.client";
@@ -15,7 +13,6 @@ import SavedSearches from "../components/SavedSearches";
 
 import { useLanguage } from "@/app/contexts/Language";
 import {
-  ArrowUturnLeftIcon,
   EyeIcon,
   PlusIcon,
   QueueListIcon,
@@ -24,6 +21,7 @@ import {
 import SearchBar from "@/app/(home)/components/SearchBar";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import ListView from "../components/ListView";
+import AddRecordModal from "../components/AddRecordModal";
 
 type Props = {
   initialProjects: { id: string; name: string }[];
@@ -48,6 +46,8 @@ export default function DataCatalogClient({
   const [selectedProjects, setSelectedProjects] = useState<string[]>(
     initialSelectedProjects
   );
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
     initialRecords ?? []
   );
@@ -61,12 +61,6 @@ export default function DataCatalogClient({
   const [viewMode, setViewMode] = useState<"list" | "table">("list");
   const [showAll, setShowAll] = useState(
     Boolean(initialSearchTerm) || initialSelectedProjects.length > 0
-  );
-
-
-  const activeSearchTerms = useMemo(
-    () => activeFilters.map((f) => f.term.toLowerCase()),
-    [activeFilters]
   );
 
   // === memoized “complex” deps ===
@@ -207,12 +201,6 @@ export default function DataCatalogClient({
 
   };
 
-
-  const selectedProjectIdsNum = useMemo(
-    () => selectedProjects.map((id) => Number(id)),
-    [selectedProjects]
-  );
-
   if (!hasLoaded) return null;
 
   return (
@@ -256,36 +244,24 @@ export default function DataCatalogClient({
 
         {/* Right: actions */}
         <div className="flex gap-4 pr-4">
-          {showAll ? (
-            <button
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(false);
-                setViewMode("list");
-                // clearAllFilters();
-              }}
-            >
-              <ArrowUturnLeftIcon className="h-6 w-6" />
-              {t.translations.RECENT_ACTIVITY}
-            </button>
-          ) : (
-            <Link
-              href="data_catalog/all_records"
-              className="btn btn-outline btn-primary"
-              onClick={() => {
-                setShowAll(true);
-                setViewMode("list");
-                clearAllFilters();
-              }}
-            >
-              <EyeIcon className="h-6 w-6" />
-              {t.translations.EXPLORE_ALL_RECORDS}
-            </Link>
-          )}
-
-          <button className="btn btn-primary text-white">
-            <PlusIcon className="h-6 w-6" />
-            {t.translations.RECORD}
+          <Link
+            href="data_catalog/all_records"
+            className="btn btn-outline btn-primary"
+            onClick={() => {
+              setShowAll(true);
+              setViewMode("list");
+              clearAllFilters();
+            }}
+          >
+            <EyeIcon className="h-6 w-6" />
+            {t.translations.EXPLORE_ALL_RECORDS}
+          </Link>
+          <button
+            onClick={() => setIsRecordModalOpen(true)}
+            className="btn btn-primary text-white"
+          >
+            <PlusIcon className="size-5" />
+            <span>{t.translations.RECORD}</span>
           </button>
 
           {(activeFilters.length > 0 || showAll) && (
@@ -321,6 +297,11 @@ export default function DataCatalogClient({
           <SavedSearches />
         </div> */}
       </div>
+      <AddRecordModal
+        isOpen={isRecordModalOpen}
+        onClose={() => setIsRecordModalOpen(false)}
+        initialProjects={projects}
+      />
     </div>
   );
 }

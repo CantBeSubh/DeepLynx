@@ -14,6 +14,7 @@ import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
+import { format } from "date-fns";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
@@ -37,13 +38,19 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     "Graph",
   ]);
 
-  const filteredProjects = projects.filter((project) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      project.name.toLowerCase().includes(term) ||
-      project.description?.toLowerCase().includes(term)
-    );
-  });
+  const filteredProjects = projects
+    .filter((project) => {
+      const term = searchTerm.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(term) ||
+        project.description?.toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.lastUpdatedAt!).getTime();
+      const dateB = new Date(b.lastUpdatedAt!).getTime();
+      return dateB - dateA;
+    });
 
   const refreshProjects = async () => {
     try {
@@ -77,9 +84,9 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       ),
     },
     {
-      header: t.translations.LAST_VIEWED,
+      header: t.translations.LAST_UPDATED_AT,
       data: (row: ProjectsList) => (
-        <span className="text-base-content/60 text-sm">{row.lastViewed}</span>
+        <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
       ),
     },
   ];
@@ -152,7 +159,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
           </div>
         </div>
 
-        {/* 
+        {/*
           This will be added later ...
         <div className="w-full md:w-2/5 px-4">
             <WidgetCard

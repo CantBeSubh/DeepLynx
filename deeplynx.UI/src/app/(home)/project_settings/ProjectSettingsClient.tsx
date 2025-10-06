@@ -1,22 +1,11 @@
 "use client";
 
 import React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { peopleData } from "../dummy_data/data";
-import AvatarCell from "../components/Avatar";
 import { useLanguage } from "@/app/contexts/Language";
-import ThemeToggle from "../components/ThemeToggle";
-import ProjectSettings from "../components/ProjectSettings";
-
-import {
-  AdjustmentsHorizontalIcon,
-  ArrowUpTrayIcon,
-  BookmarkSquareIcon
-} from "@heroicons/react/24/outline";
+import ProjectSettings from "../components/ProjectSettingsTable/ProjectSettings";
 
 const ProjectSettingsClient = () => {
-  const { t } = useLanguage(); // <-- t comes from translations[lang]
-  const jason = peopleData.find((p) => p.name === "Jason");
+  const { t } = useLanguage();
 
     return (
         <div>

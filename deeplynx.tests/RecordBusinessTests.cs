@@ -28,7 +28,6 @@ public class RecordBusinessTests : IntegrationTestBase
     public string rogid;
     public string rdesc;
     public string ruri;
-    public string rfiletype;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -38,92 +37,7 @@ public class RecordBusinessTests : IntegrationTestBase
         _eventBusiness =  new EventBusiness(Context, _cacheBusiness);
         _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
     }
-
-    protected override async Task SeedTestDataAsync()
-    {
-        await base.SeedTestDataAsync();
-        
-        // Seed test data
-        var project = new Project
-        {
-            Name = "Test Project",
-            Description = "Test project for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.Projects.Add(project);
-        await Context.SaveChangesAsync();
-        pid = project.Id;
-        
-        var dataSource = new DataSource
-        {
-            Name = "Test Data Source",
-            Description = "Test data source for unit tests",
-            ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.DataSources.Add(dataSource);
-        await Context.SaveChangesAsync();
-        did = dataSource.Id;
-        
-        var testClass = new Class
-        {
-            Name = "Test Class",
-            Description = "Test class for unit tests",
-            ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.Classes.Add(testClass);
-        await Context.SaveChangesAsync();
-        cid = testClass.Id;
-        
-        var config = new JsonObject();
-        var objectStorage = new ObjectStorage
-        {
-            Name = "Object Storage 1",
-            Type = "filesystem",
-            Config = config.ToString(),
-            ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        Context.ObjectStorages.Add(objectStorage);
-        await Context.SaveChangesAsync();
-        os1 = objectStorage.Id;
-
-        var testTag = new Tag
-        {
-            Name = "Test Tag",
-            ProjectId = project.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-        
-        var testRecord = new Record
-        {
-            Name = "Test Record",
-            Description = "Test record for unit tests",
-            OriginalId = "og_id",
-            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
-            ProjectId = project.Id,
-            DataSourceId = dataSource.Id,
-            ClassId = testClass.Id,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            Tags =  new List<Tag> { testTag },
-            Uri = "localhost:8090",
-            FileType = "pdf"
-        };
-        
-        Context.Records.Add(testRecord);
-        Context.Tags.Add(testTag);
-        await Context.SaveChangesAsync();
-        
-        rid =  testRecord.Id;
-        tid = testTag.Id;
-        rprop = testRecord.Properties;
-        rogid = testRecord.OriginalId;
-        rdesc = testRecord.Description;
-        ruri = testRecord.Uri;
-        rfiletype = testRecord.FileType;
-    }
-
+    
     #region GetAllRecords Tests
 
     [Fact]
@@ -234,8 +148,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",
-            ClassId = cid,
-            FileType = "png"
+            ClassId = cid
         };
 
         // Act
@@ -250,7 +163,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("test://uri", result.Uri);
         Assert.Equal("original-123", result.OriginalId);
         Assert.Equal(cid, result.ClassId);
-        Assert.Equal("png", result.FileType);
 
         // Verify record was actually created in database
         var createdRecord = await Context.Records.FindAsync(result.Id);
@@ -481,8 +393,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Uri = "updated://uri",
             OriginalId = "updated-123",
             Description = "Updated Description",
-            ClassId = cid,
-            FileType = "png"
+            ClassId = cid
         };
 
         // Act
@@ -494,7 +405,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("updated://uri", result.Uri);
         Assert.Equal("updated-123", result.OriginalId);
         Assert.Equal("Updated Description", result.Description);
-        Assert.Equal("png", result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -506,7 +416,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(getResult);
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
-        Assert.Equal("png", getResult.FileType);
         Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
@@ -543,7 +452,6 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal(rogid, result.OriginalId);
         Assert.Equal(rdesc, result.Description);
         Assert.Equal(rprop, result.Properties);
-        Assert.Equal(rfiletype, result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -888,8 +796,7 @@ public class RecordBusinessTests : IntegrationTestBase
             DataSourceId = did,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true,
-            FileType = "pdf"
+            IsArchived = true
         };
         Context.Records.Add(archivedRecord);
         await Context.SaveChangesAsync();
@@ -1035,102 +942,185 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     #endregion
-#region GetRecordsByOriginalId Tests
+    
+    #region GetRecordsByOriginalId Tests
 
-[Fact]
-public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords()
-{
-    // Arrange
-    var record1 = new Record
+    [Fact]
+    public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords()
     {
-        Name = "Test Record 1",
-        ProjectId = pid,
-        DataSourceId = did,
-        ObjectStorageId = os1,
-        ClassId = cid,
-        Properties = "{}",
-        OriginalId = "original-id-1",
-        Description = "Test record 1",
-        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-    };
+        // Arrange
+        var record1 = new Record
+        {
+            Name = "Test Record 1",
+            ProjectId = pid,
+            DataSourceId = did,
+            ObjectStorageId = os1,
+            ClassId = cid,
+            Properties = "{}",
+            OriginalId = "original-id-1",
+            Description = "Test record 1",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
 
-    Context.Records.Add(record1);
-    await Context.SaveChangesAsync();
+        Context.Records.Add(record1);
+        await Context.SaveChangesAsync();
 
-    var originalIds = new List<string> { "original-id-1" };
+        var originalIds = new List<string> { "original-id-1" };
 
-    // Act
-    var result = await _recordBusiness.GetRecordsByOriginalId(pid, originalIds);
+        // Act
+        var result = await _recordBusiness.GetRecordsByOriginalId(pid, originalIds);
 
-    // Assert
-    Assert.Equal(1, result.Count);
-    Assert.Equal("original-id-1", result.First().OriginalId);
-    Assert.Equal(pid, result.First().ProjectId);
-}
+        // Assert
+        Assert.Equal(1, result.Count);
+        Assert.Equal("original-id-1", result.First().OriginalId);
+        Assert.Equal(pid, result.First().ProjectId);
+    }
 
-[Fact]
-public async Task GetRecordsByOriginalId_MissingOriginalIds_ThrowsKeyNotFoundException()
-{
-    // Arrange
-    var originalIds = new List<string> { "non-existent-id" };
-
-    // Act & Assert
-    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
-    
-    Assert.Contains("Records not found with original IDs", exception.Message);
-}
-
-[Fact]
-public async Task GetRecordsByOriginalId_NullOriginalIds_ThrowsArgumentException()
-{
-    // Act & Assert
-    await Assert.ThrowsAsync<ArgumentException>(
-        () => _recordBusiness.GetRecordsByOriginalId(pid, null));
-}
-
-[Fact]
-public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
-{
-    // Arrange
-    var archivedRecord = new Record
+    [Fact]
+    public async Task GetRecordsByOriginalId_MissingOriginalIds_ThrowsKeyNotFoundException()
     {
-        Name = "Archived Record",
-        ProjectId = pid,
-        DataSourceId = did,
-        ObjectStorageId = os1,
-        ClassId = cid,
-        Properties = "{}",
-        OriginalId = "archived-id",
-        Description = "Archived record",
-        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        IsArchived = true
-    };
+        // Arrange
+        var originalIds = new List<string> { "non-existent-id" };
 
-    Context.Records.Add(archivedRecord);
-    await Context.SaveChangesAsync();
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+        
+        Assert.Contains("Records not found with original IDs", exception.Message);
+    }
 
-    var originalIds = new List<string> { "archived-id" };
+    [Fact]
+    public async Task GetRecordsByOriginalId_NullOriginalIds_ThrowsArgumentException()
+    {
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => _recordBusiness.GetRecordsByOriginalId(pid, null));
+    }
 
-    // Act & Assert
-    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
-    
-    Assert.Contains("archived-id", exception.Message);
-}
+    [Fact]
+    public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
+    {
+        // Arrange
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            ProjectId = pid,
+            DataSourceId = did,
+            ObjectStorageId = os1,
+            ClassId = cid,
+            Properties = "{}",
+            OriginalId = "archived-id",
+            Description = "Archived record",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            IsArchived = true
+        };
 
-[Fact]
-public async Task GetRecordsByOriginalId_InvalidProjectId_ThrowsKeyNotFoundException()
-{
-    // Arrange
-    var originalIds = new List<string> { "some-id" };
-    var invalidProjectId = 999L;
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
 
-    // Act & Assert
-    await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _recordBusiness.GetRecordsByOriginalId(invalidProjectId, originalIds));
-}
+        var originalIds = new List<string> { "archived-id" };
 
-#endregion
-    
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+        
+        Assert.Contains("archived-id", exception.Message);
+    }
+
+    [Fact]
+    public async Task GetRecordsByOriginalId_InvalidProjectId_ThrowsKeyNotFoundException()
+    {
+        // Arrange
+        var originalIds = new List<string> { "some-id" };
+        var invalidProjectId = 999L;
+
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _recordBusiness.GetRecordsByOriginalId(invalidProjectId, originalIds));
+    }
+
+    #endregion
+        
+    protected override async Task SeedTestDataAsync()
+    {
+        await base.SeedTestDataAsync();
+        
+        // Seed test data
+        var project = new Project
+        {
+            Name = "Test Project",
+            Description = "Test project for unit tests",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.Projects.Add(project);
+        await Context.SaveChangesAsync();
+        pid = project.Id;
+        
+        var dataSource = new DataSource
+        {
+            Name = "Test Data Source",
+            Description = "Test data source for unit tests",
+            ProjectId = project.Id,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.DataSources.Add(dataSource);
+        await Context.SaveChangesAsync();
+        did = dataSource.Id;
+        
+        var testClass = new Class
+        {
+            Name = "Test Class",
+            Description = "Test class for unit tests",
+            ProjectId = project.Id,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.Classes.Add(testClass);
+        await Context.SaveChangesAsync();
+        cid = testClass.Id;
+        
+        var config = new JsonObject();
+        var objectStorage = new ObjectStorage
+        {
+            Name = "Object Storage 1",
+            Type = "filesystem",
+            Config = config.ToString(),
+            ProjectId = pid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.ObjectStorages.Add(objectStorage);
+        await Context.SaveChangesAsync();
+        os1 = objectStorage.Id;
+
+        var testTag = new Tag
+        {
+            Name = "Test Tag",
+            ProjectId = project.Id,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        
+        var testRecord = new Record
+        {
+            Name = "Test Record",
+            Description = "Test record for unit tests",
+            OriginalId = "og_id",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
+            ProjectId = project.Id,
+            DataSourceId = dataSource.Id,
+            ClassId = testClass.Id,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags =  new List<Tag> { testTag },
+            Uri = "localhost:8090"
+        };
+        
+        Context.Records.Add(testRecord);
+        Context.Tags.Add(testTag);
+        await Context.SaveChangesAsync();
+        
+        rid =  testRecord.Id;
+        tid = testTag.Id;
+        rprop = testRecord.Properties;
+        rogid = testRecord.OriginalId;
+        rdesc = testRecord.Description;
+        ruri = testRecord.Uri;
+    }
 }

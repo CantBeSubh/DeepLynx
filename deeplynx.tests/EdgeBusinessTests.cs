@@ -620,111 +620,111 @@ namespace deeplynx.tests
             }
         }
 
-      [Fact]
-public async Task BulkCreateEdges_Fails_IfNullDto()
-{
-    var result = () => _edgeBusiness.BulkCreateEdges(pid, dsid, null);
-    await result.Should().ThrowAsync<ArgumentNullException>();
-    
-    // Ensure that create edge event is not logged
-    var eventList = Context.Events.ToList();
-    eventList.Count.Should().Be(0);
-}
+        [Fact]
+        public async Task BulkCreateEdges_Fails_IfNullDto()
+        {
+            var result = () => _edgeBusiness.BulkCreateEdges(pid, dsid, null);
+            await result.Should().ThrowAsync<ArgumentNullException>();
+            
+            // Ensure that create edge event is not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
+        }
 
-[Fact]
-public async Task ArchiveEdge_Fails_IfNotFound()
-{
-    var result = () => _edgeBusiness.ArchiveEdge(pid, 999, null, null);
-    await result.Should().ThrowAsync<KeyNotFoundException>();
-    // Ensure that create edge event is not logged
-    var eventList = Context.Events.ToList();
-    eventList.Count.Should().Be(0);
-}
+        [Fact]
+        public async Task ArchiveEdge_Fails_IfNotFound()
+        {
+            var result = () => _edgeBusiness.ArchiveEdge(pid, 999, null, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+            // Ensure that create edge event is not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
+        }
 
-[Fact]
-public async Task DeleteEdge_Fails_IfNotFound()
-{
-    var result = () => _edgeBusiness.DeleteEdge(pid, 999, null, null);
-    await result.Should().ThrowAsync<KeyNotFoundException>();
-}
+        [Fact]
+        public async Task DeleteEdge_Fails_IfNotFound()
+        {
+            var result = () => _edgeBusiness.DeleteEdge(pid, 999, null, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+        }
 
-[Fact]
-public async Task UnarchiveEdge_Fails_IfNotFound()
-{
-    var result = () => _edgeBusiness.UnarchiveEdge(pid, 999, null, null);
-    await result.Should().ThrowAsync<KeyNotFoundException>();
-    
-    // Ensure that create edge event is not logged
-    var eventList = Context.Events.ToList();
-    eventList.Count.Should().Be(0);
-}
+        [Fact]
+        public async Task UnarchiveEdge_Fails_IfNotFound()
+        {
+            var result = () => _edgeBusiness.UnarchiveEdge(pid, 999, null, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that create edge event is not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
+        }
 
-[Fact]
-public async Task UnarchiveEdge_Fails_IfNotArchived()
-{
-    var activeEdge = new Edge
-    {
-        OriginId = originRecordId,
-        DestinationId = destinationRecordId,
-        DataSourceId = dsid,
-        ProjectId = pid,
-        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        LastUpdatedBy = null
-    };
-    Context.Edges.Add(activeEdge);
-    await Context.SaveChangesAsync();
+        [Fact]
+        public async Task UnarchiveEdge_Fails_IfNotArchived()
+        {
+            var activeEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Edges.Add(activeEdge);
+            await Context.SaveChangesAsync();
 
-    var result = () => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null);
-    await result.Should().ThrowAsync<KeyNotFoundException>();
-    
-    // Ensure that create edge event is not logged
-    var eventList = Context.Events.ToList();
-    eventList.Count.Should().Be(0);
-}
+            var result = () => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null);
+            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            // Ensure that create edge event is not logged
+            var eventList = Context.Events.ToList();
+            eventList.Count.Should().Be(0);
+        }
 
-[Fact]
-public void EdgeRequestDto_AllProperties_CanBeSetAndRetrieved()
-{
-    var dto = new CreateEdgeRequestDto
-    {
-        OriginId = 1,
-        DestinationId = 2,
-        RelationshipId = 3,
-        RelationshipName = "Test Relationship"
-    };
+        [Fact]
+        public void EdgeRequestDto_AllProperties_CanBeSetAndRetrieved()
+        {
+            var dto = new CreateEdgeRequestDto
+            {
+                OriginId = 1,
+                DestinationId = 2,
+                RelationshipId = 3,
+                RelationshipName = "Test Relationship"
+            };
 
-    Assert.Equal(1, dto.OriginId);
-    Assert.Equal(2, dto.DestinationId);
-    Assert.Equal(3, dto.RelationshipId);
-    Assert.Equal("Test Relationship", dto.RelationshipName);
-}
+            Assert.Equal(1, dto.OriginId);
+            Assert.Equal(2, dto.DestinationId);
+            Assert.Equal(3, dto.RelationshipId);
+            Assert.Equal("Test Relationship", dto.RelationshipName);
+        }
 
-[Fact]
-public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
-{
-    var now = DateTime.UtcNow;
-    var dto = new EdgeResponseDto
-    {
-        Id = 1,
-        OriginId = 2,
-        DestinationId = 3,
-        RelationshipId = 4,
-        DataSourceId = 6,
-        ProjectId = 7,
-        LastUpdatedBy = "test@example.com",
-        LastUpdatedAt = now,
-        IsArchived = false
-    };
+        [Fact]
+        public void EdgeResponseDto_AllProperties_CanBeSetAndRetrieved()
+        {
+            var now = DateTime.UtcNow;
+            var dto = new EdgeResponseDto
+            {
+                Id = 1,
+                OriginId = 2,
+                DestinationId = 3,
+                RelationshipId = 4,
+                DataSourceId = 6,
+                ProjectId = 7,
+                LastUpdatedBy = "test@example.com",
+                LastUpdatedAt = now,
+                IsArchived = false
+            };
 
-    Assert.Equal(1, dto.Id);
-    Assert.Equal(2, dto.OriginId);
-    Assert.Equal(3, dto.DestinationId);
-    Assert.Equal(4, dto.RelationshipId);
-    Assert.Equal(6, dto.DataSourceId);
-    Assert.Equal(7, dto.ProjectId);
-    Assert.Equal(now, dto.LastUpdatedAt);
-    Assert.False(dto.IsArchived);
-}
+            Assert.Equal(1, dto.Id);
+            Assert.Equal(2, dto.OriginId);
+            Assert.Equal(3, dto.DestinationId);
+            Assert.Equal(4, dto.RelationshipId);
+            Assert.Equal(6, dto.DataSourceId);
+            Assert.Equal(7, dto.ProjectId);
+            Assert.Equal(now, dto.LastUpdatedAt);
+            Assert.False(dto.IsArchived);
+        }
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

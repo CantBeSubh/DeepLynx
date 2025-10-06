@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace deeplynx.api.Controllers
 {
-    
+
     /// <summary>
     /// Controller for managing notifications.
     /// </summary>
@@ -32,10 +32,14 @@ namespace deeplynx.api.Controllers
         /// Send email
         /// </summary>
         [HttpPost("SendEmail", Name = "api_send_email")]
-        public async Task<IActionResult> SendEmail([FromQuery] string email, string name)
+        public async Task<IActionResult> SendEmail([FromQuery] string email, string? name)
         {
             try
             {
+                if (string.IsNullOrEmpty(name))
+                {
+                    name = email;
+                }
                 var message = await _notificationBusiness.SendEmail(email, name);
                 return Ok(message);
             }
@@ -45,8 +49,6 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
         }
-       
     }
 }

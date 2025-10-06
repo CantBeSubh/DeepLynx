@@ -1,6 +1,4 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface Tab {
   label: string;
@@ -10,10 +8,25 @@ interface Tab {
 interface TabsProps {
   tabs: Tab[];
   className?: string;
+  onTabChange?: (label: string) => void;
+  activeTab: string;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, className = "", onTabChange, activeTab }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+
+  // Use useEffect to update activeIndex based on activeTab prop
+  useEffect(() => {
+    const index = tabs.findIndex(tab => tab.label === activeTab);
+    setActiveIndex(index !== -1 ? index : 0);
+  }, [activeTab, tabs]);
+
+  const handleTabClick = (index: number, label: string) => {
+    setActiveIndex(index);
+    if (onTabChange) {
+      onTabChange(label);
+    }
+  };
 
   return (
     <div className={className}>
@@ -22,10 +35,8 @@ const Tabs: React.FC<TabsProps> = ({ tabs, className = "" }) => {
         {tabs.map((tab, index) => (
           <a
             key={index}
-            className={`tab tab-bordered ${
-              activeIndex === index ? "tab-active text-secondary " : ""
-            }`}
-            onClick={() => setActiveIndex(index)}
+            className={`tab tab-bordered ${activeIndex === index ? "tab-active text-secondary" : ""}`}
+            onClick={() => handleTabClick(index, tab.label)}
           >
             {tab.label}
           </a>
