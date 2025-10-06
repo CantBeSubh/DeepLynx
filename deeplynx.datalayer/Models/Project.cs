@@ -52,9 +52,6 @@ public partial class Project
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
     [InverseProperty("Project")]
-    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
-
-    [InverseProperty("Project")]
     public virtual ICollection<ObjectStorage> ObjectStorages { get; set; } = new List<ObjectStorage>();
 
     [ForeignKey("OrganizationId")]

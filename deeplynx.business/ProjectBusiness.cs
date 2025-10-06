@@ -7,6 +7,7 @@ using deeplynx.helpers;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.Context;
 using deeplynx.models.Configuration;
 using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -57,16 +58,18 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Retrieves all projects
     /// </summary>
+    /// <param name="userId">ID of user querying projects</param>
     /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(
+        long userId,
         long? organizationId,
         bool hideArchived = true)
     {
         var projectQuery = _context.Projects.AsQueryable();
-
+        
         if (hideArchived)
         {
             projectQuery = projectQuery.Where(p => !p.IsArchived);
@@ -76,9 +79,15 @@ public class ProjectBusiness : IProjectBusiness
         {
             projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
         }
-
+        
+        projectQuery = projectQuery.Where(p => 
+            p.ProjectMembers.Any(pm => 
+                pm.UserId == userId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+            )
+        );
+        
         var projects = await projectQuery.ToListAsync();
-
         return projects
             .Select(p => new ProjectResponseDto()
             {
@@ -136,11 +145,14 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Creates a new project based on the data transfer object supplied.
     /// </summary>
+    /// <param name="userId">Name of user creating the project</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(long userId, CreateProjectRequestDto dto)
     {
+        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
+        
         var project = new Project
         {
             Name = dto.Name,
@@ -197,7 +209,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
-        await SetProjectDefaults(projectId);
+        await SetProjectDefaults(projectId, userId);
 
         return projectResponseDto;
     }
@@ -613,7 +625,9 @@ public class ProjectBusiness : IProjectBusiness
         
         // check if the group or user is already in the project
         var existingProjectMember = await _context.ProjectMembers
-            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (pm.UserId == userId || pm.GroupId == groupId));
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (
+                (userId != null && pm.UserId == userId) || 
+                (groupId != null && pm.GroupId == groupId)));
         if (existingProjectMember != null)
             return false; // group or user is already present in the project
         
@@ -758,7 +772,7 @@ public class ProjectBusiness : IProjectBusiness
         }).ToList();
     }
 
-    private async Task SetProjectDefaults(long projectId)
+    private async Task SetProjectDefaults(long projectId, long userId)
     {
         // ===============================
         // CREATE DEFAULT CLASSES
@@ -849,11 +863,13 @@ public class ProjectBusiness : IProjectBusiness
             new CreateRoleRequestDto { Name = "User" }
         };
         var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
-        var adminId = roles.Single(r => r.Name == "Admin").Id;
-        var userId = roles.Single(r => r.Name == "User").Id;
+        var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
+        var userRoleId = roles.Single(r => r.Name == "User").Id;
         
         // set role permissions for admin and user
-        await _roleBusiness.SetPermissionsByPattern(adminId, DefaultRolePermissions.Admin.AllowedPermissions);
-        await _roleBusiness.SetPermissionsByPattern(userId, DefaultRolePermissions.User.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
+        await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
+        
+        await AddMemberToProject(projectId, adminRoleId, userId, null);
     }
 }
