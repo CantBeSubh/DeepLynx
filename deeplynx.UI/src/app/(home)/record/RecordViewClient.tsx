@@ -479,7 +479,7 @@ export default function RecordViewClient({
   };
 
   useEffect(() => {
-    const fetchRelatedRecords = async () => {
+    const fetchDetailedRelatedRecords = async () => {
       if (!recordId || !projectId || hasFetchedRelatedRecords) return;
 
       try {
@@ -487,51 +487,73 @@ export default function RecordViewClient({
         const edges = await getEdgesByRecord(
           projectId.toString(),
           recordId,
-          true // hide archived edges
+          true
         );
 
-        // Process the edges to create ParsedRecord objects
-        const parsed: ParsedRecord[] = edges.map((edge: Edge) => ({
-          relationship: edge.relationshipId.toString(), // You might want to fetch relationship name
-          id: edge.id.toString(),
-          class: "Edge", // You might want to fetch the actual class name
-          name: `Edge ${edge.id}`, // You might want to fetch the actual record name
-          actions: (
-            <div className="flex gap-2">
-              <EyeIcon
-                className="w-5 h-5 cursor-pointer text-primary hover:text-primary-content"
-                onClick={() => {
-                  // Handle view action - you might want to fetch the full record details
-                  console.log("View edge:", edge.id);
-                }}
-              />
-              <XMarkIcon
-                className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
-                onClick={() =>
-                  handleToggleToRemove(
-                    edge.id.toString(),
-                    `Edge ${edge.id}`,
-                    record?.name,
-                    "relatedRecord"
-                  )
-                }
-              />
-            </div>
-          ),
-        }));
+        // For each edge, you might want to fetch the actual record details
+        // This assumes you have a getRecord endpoint that can fetch by ID
+        const parsedPromises = edges.map(async (edge: Edge) => {
+          try {
+            // Determine if current record is origin or destination
+            const isOrigin = edge.originId === recordId;
+            const relatedRecordId = isOrigin
+              ? edge.destinationId
+              : edge.originId;
 
-        setParsedRelatedRecords(parsed);
+            // Fetch the related record details (you'll need this endpoint)
+            // const relatedRecord = await getRecord(projectId, relatedRecordId);
+
+            return {
+              relationship: `Relationship ${edge.relationshipId}`, // Or fetch actual relationship name
+              id: relatedRecordId.toString(),
+              class: "Record", // Or use relatedRecord.className
+              name: `Record ${relatedRecordId}`, // Or use relatedRecord.name
+              actions: (
+                <div className="flex gap-2">
+                  <EyeIcon
+                    className="w-5 h-5 cursor-pointer text-primary hover:text-primary-content"
+                    onClick={() => {
+                      // Open record view modal or navigate to record
+                      // setSelectedRecord(relatedRecord);
+                      // setRecordViewModalOpen(true);
+                    }}
+                  />
+                  <XMarkIcon
+                    className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
+                    onClick={() => {
+                      setSelectedOriginId(edge.originId);
+                      setSelectedDestinationId(edge.destinationId);
+                      handleToggleToRemove(
+                        edge.id.toString(),
+                        `Edge ${edge.id}`,
+                        record?.name,
+                        "relatedRecord"
+                      );
+                    }}
+                  />
+                </div>
+              ),
+            };
+          } catch (error) {
+            console.error(`Error fetching details for edge ${edge.id}:`, error);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(parsedPromises);
+        const validResults = results.filter(
+          (r): r is ParsedRecord => r !== null
+        );
+
+        setParsedRelatedRecords(validResults);
         setHasFetchedRelatedRecords(true);
-
-        // If you need to store the raw related records data
-        // setRelatedRecords(edges);
       } catch (error) {
         console.error("Error fetching related records:", error);
         toast.error("Failed to fetch related records");
       }
     };
 
-    fetchRelatedRecords();
+    fetchDetailedRelatedRecords();
   }, [
     recordId,
     projectId,
