@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -52,21 +53,21 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
-        /// Get all edges
+        /// Get edges by record
         /// </summary>
         /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
         /// <param name="recordId">The ID of the datasource by which to filter edges</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
-        [HttpGet("GetAllEdgesByRecord", Name = "api_get_all_edges_")]
-        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdgesByRecord(
+        [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
+        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetEdgesByRecord(
             long projectId,
             long recordId,
             bool hideArchived = true)
         {
             try
             {
-                var edges = await _edgeBusiness.GetAllEdgesByRecord(recordId, hideArchived); 
+                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, hideArchived); 
                 return Ok(edges);
             }
             catch (Exception exc)
