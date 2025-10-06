@@ -54,6 +54,13 @@ const ProjectSettings = ({
     })();
   }, [selectedProjectId]);
 
+  const refreshMembers = async () => {
+    if (selectedProjectId) {
+      const users = await getProjectMembers(Number(selectedProjectId));
+      setProjectMembers(users);
+    }
+  };
+
   const tabData = [
     {
       label: "Members",
@@ -160,6 +167,7 @@ const ProjectSettings = ({
         projectId={Number(selectedProjectId)}
         isOpen={addProjectMemberModal}
         onClose={() => setAddProjectMemberModal(false)}
+        onMemberAdded={refreshMembers}
       />
     </div>
   );
