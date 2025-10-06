@@ -49,7 +49,7 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
     } finally {
       setIsLoading(false);
     }
-  }, [selectedProjects, t.translations]);
+  }, [selectedProjects]);
 
   useEffect(() => {
     fetchRecentRecords();
