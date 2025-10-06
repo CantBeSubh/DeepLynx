@@ -834,12 +834,12 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
         }
         
-        // private async Task CleanupTestData()
-        // {
-        //     // Remove all permissions (or just test-specific ones)
-        //     var existingPerms = await Context.Permissions.ToListAsync();
-        //     Context.Permissions.RemoveRange(existingPerms);
-        //     await Context.SaveChangesAsync();
-        // }
+        private async Task CleanupTestData()
+        {
+            // Remove all permissions (or just test-specific ones)
+            var existingPerms = await Context.Permissions.ToListAsync();
+            Context.Permissions.RemoveRange(existingPerms);
+            await Context.SaveChangesAsync();
+        }
     }
 }
