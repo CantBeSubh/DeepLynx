@@ -83,6 +83,7 @@ export type ProjectMembersTable = {
   role: string;
   memberId?: number | null;
   groupId?: number | null;
+  roleId?: number | null;
 }
 
 export type SystemUsersTable = {
@@ -230,4 +231,11 @@ export type UserResponseDto =
     IsSysAdmin: boolean;
     IsArchined: boolean;
     isActive: boolean;
+  }
+
+  export type RoleDTO =
+  {
+    roleId: number;
+    name: string;
+    description?: string;
   }
