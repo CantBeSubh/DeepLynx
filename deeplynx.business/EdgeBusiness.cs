@@ -71,7 +71,6 @@ public class EdgeBusiness : IEdgeBusiness
     /// <summary>
     /// Retrieves all edges for a specific project and (optionally) datasource
     /// </summary>
-    /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
     /// <param name="recordId">The ID of the record by which to filter edges</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
@@ -79,24 +78,33 @@ public class EdgeBusiness : IEdgeBusiness
         long recordId,
         bool hideArchived)
     {
-        var userProjectsIds = await _context.Projects.Where(p => 
+        var currentUserId = UserContextStorage.UserId;
+        var userProjectIds = await _context.Projects.Where(p => 
             p.ProjectMembers.Any(pm => 
-                pm.UserId == UserContextStorage.UserId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == UserContextStorage.UserId))
-            )
-        ).Select(p => p.Id).ToListAsync();
+                pm.UserId == currentUserId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == currentUserId))
+            ))
+            .Select(p => p.Id)
+            .ToListAsync();
+        
+        if (!userProjectIds.Any())
+        {
+            return new List<EdgeResponseDto>();
+        }
         
         var edgeQuery = _context.Edges
-            .Where(e => userProjectsIds.Contains(e.ProjectId) && (e.OriginId == recordId || e.DestinationId == recordId) );
+            .Where(e =>
+                userProjectIds.Contains(e.ProjectId) && 
+                (e.OriginId == recordId || e.DestinationId == recordId) && 
+                userProjectIds.Contains(e.Origin.ProjectId) && 
+                userProjectIds.Contains(e.Destination.ProjectId));
 
         if (hideArchived)
         {
-            edgeQuery = edgeQuery.Where(e => e.IsArchived == false);
+            edgeQuery = edgeQuery.Where(e => !e.IsArchived);
         }
-        
-        var edges = await edgeQuery.ToListAsync();
 
-        return edges
+        return await edgeQuery
             .Select(e => new EdgeResponseDto()
             {
                 Id = e.Id,
@@ -108,7 +116,7 @@ public class EdgeBusiness : IEdgeBusiness
                 LastUpdatedAt = e.LastUpdatedAt,
                 LastUpdatedBy = e.LastUpdatedBy,
                 IsArchived = e.IsArchived,
-            }).ToList();
+            }).ToListAsync();
     }
 
     /// <summary>
