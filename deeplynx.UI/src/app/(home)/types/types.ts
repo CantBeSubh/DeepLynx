@@ -81,7 +81,7 @@ export type ProjectMembersTable = {
   name: string;
   email: string;
   role: string;
-  userId?: number | null;
+  memberId?: number | null;
   groupId?: number | null;
 }
 

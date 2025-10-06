@@ -5,18 +5,28 @@ import { useLanguage } from "@/app/contexts/Language";
 import { Column, ProjectMembersTable } from '../../../types/types';
 import RoleSwap from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/RoleSwap";
 import { TrashIcon } from '@heroicons/react/24/outline';
-import { removeProjectMemberRole } from '@/app/lib/projects_services.client';
+import { removeProjectMemberRole, updateProjectMemberRole } from '@/app/lib/projects_services.client';
 
 interface MembersTableProps {
   data: ProjectMembersTable[];
+  projectId: string | null;
 }
 
-const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
+const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId }) => {
   const { t } = useLanguage();
   const [data, setData] = useState<ProjectMembersTable[]>(initialData);
   const [addRoleSwap, setAddRoleSwap] = useState<boolean>(false);
-  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
+  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(
+    new Array(initialData?.length || 0).fill(false)
+  );
   const [selectAll, setSelectAll] = useState<boolean>(false);
+  const [selectedMemberForRoleSwap, setSelectedMemberForRoleSwap] = useState<ProjectMembersTable | null>(null);
+
+  useEffect(() => {
+    setData(initialData);
+    setSelectedMembers(new Array(initialData?.length || 0).fill(false));
+    setSelectAll(false);
+  }, [initialData]);
 
   const handleSelectAll = () => {
     const newSelection = !selectAll;
@@ -38,31 +48,80 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
 
   const handleDelete = async (row: ProjectMembersTable, index: number) => {
     const memberToDelete = data[index];
+    console.log(data);
 
     try {
-      // Call the API to remove the member
       await removeProjectMemberRole(
-        memberToDelete.projectId,
-        memberToDelete.userId || undefined,
+        Number(projectId),
+        memberToDelete.memberId || undefined,
         memberToDelete.groupId || undefined
       );
 
-      // Update local state only after successful API call
       const newData = data.filter((_, i) => i !== index);
       setData(newData);
       setSelectedMembers(new Array(newData.length).fill(false));
       setSelectAll(false);
     } catch (error) {
       console.error('Failed to delete member:', error);
-      // Optionally show error message to user
     }
   };
 
-  const handleDeleteSelected = () => {
-    const newData = data.filter((_, index) => !selectedMembers[index]);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+  const handleDeleteSelected = async () => {
+    const membersToDelete = data.filter((_, index) => selectedMembers[index]);
+
+    try {
+      // Delete all selected members
+      await Promise.all(
+        membersToDelete.map(member =>
+          removeProjectMemberRole(
+            Number(projectId),
+            member.memberId || undefined,
+            member.groupId || undefined
+          )
+        )
+      );
+
+      const newData = data.filter((_, index) => !selectedMembers[index]);
+      setData(newData);
+      setSelectedMembers(new Array(newData.length).fill(false));
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to delete selected members:', error);
+    }
+  };
+
+  const handleRoleSwapOpen = (member: ProjectMembersTable) => {
+    setSelectedMemberForRoleSwap(member);
+    setAddRoleSwap(true);
+  };
+
+  const handleRoleSwapClose = () => {
+    setSelectedMemberForRoleSwap(null);
+    setAddRoleSwap(false);
+  };
+
+  const handleRoleUpdate = async (newRoleId: number) => {
+    if (!selectedMemberForRoleSwap || !projectId) return;
+
+    try {
+      await updateProjectMemberRole(
+        Number(projectId),
+        newRoleId,
+        selectedMemberForRoleSwap.memberId || undefined,
+        selectedMemberForRoleSwap.groupId || undefined
+      );
+
+      // Update local state
+      const updatedData = data.map(member =>
+        member.memberId === selectedMemberForRoleSwap.memberId
+          ? { ...member, roleId: newRoleId }
+          : member
+      );
+      setData(updatedData);
+      handleRoleSwapClose();
+    } catch (error) {
+      console.error('Failed to update role:', error);
+    }
   };
 
   const multipleSelected = () => {
@@ -98,6 +157,10 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
       data: "email",
     },
     {
+      header: "Role",
+      data: "role",
+    },
+    {
       header: (
         <div className="flex">
           {multipleSelected() && (
@@ -109,10 +172,11 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
       ),
       cell: (row: ProjectMembersTable) => (
         <div className="flex">
-          <button className="btn"
-            onClick={() => setAddRoleSwap(true)}>
-            {row.role}
-            {/* {t.translations.ROLE} */}
+          <button
+            className="btn"
+            onClick={() => handleRoleSwapOpen(row)}
+          >
+            {t.translations.ROLE}
           </button>
         </div>
       ),
@@ -145,12 +209,13 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData }) => {
         columns={columns}
         data={data}
         enablePagination
-      // rowsPerPage={5}
       />
 
       <RoleSwap
         isOpen={addRoleSwap}
-        onClose={() => setAddRoleSwap(false)}
+        onClose={handleRoleSwapClose}
+      // onRoleUpdate={handleRoleUpdate}
+      // currentMember={selectedMemberForRoleSwap}
       />
     </div>
   );

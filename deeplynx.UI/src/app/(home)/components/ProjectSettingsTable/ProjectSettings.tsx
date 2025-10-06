@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect, use, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { projectMembers, defaultRoles } from "../../dummy_data/data";
+import { defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
@@ -14,8 +14,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdown from '../ProjectDropdown';
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { ProjectsList, UserResponseDto } from '../../types/types';
+import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
 import { getAllUsers } from '@/app/lib/user_services.client';
+import { getProjectMembers } from '@/app/lib/projects_services.client';
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -35,21 +36,23 @@ const ProjectSettings = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    initialProject ? initialProject.id : null
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    initialProject?.id || null
   );
-  // const [projectMembers, setProjectMembers] = useState<UserResponseDto>();
+  const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
 
   useEffect(() => {
+    if (!selectedProjectId) return;
+
     (async () => {
       try {
-        // const users = await getAllUsers();
-        // setProjectMembers(users);
+        const users = await getProjectMembers(Number(selectedProjectId));
+        setProjectMembers(users);
       } catch (err) {
         console.error(err);
       }
     })();
-  }, []);
+  }, [selectedProjectId]);
 
   const tabData = [
     {
@@ -57,6 +60,7 @@ const ProjectSettings = ({
       content: (
         <MembersTable
           data={projectMembers}
+          projectId={selectedProjectId}
         />
       ),
     },
@@ -101,9 +105,9 @@ const ProjectSettings = ({
     }
   };
 
-  const handleProjectChange = (newProjectId: string) => {
+  const handleProjectChange = useCallback((newProjectId: string) => {
     setSelectedProjectId(newProjectId);
-  };
+  }, []);
 
   // Effect to set the active tab from the query parameter
   useEffect(() => {
