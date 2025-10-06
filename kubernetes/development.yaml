@@ -439,6 +439,13 @@ spec:
                 name: deeplynxv3-backend-service
                 port:
                   number: 80
+          - path: /api/scalar
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-backend-service
+                port:
+                  number: 80
           - path: /api/auth
             pathType: Prefix
             backend:

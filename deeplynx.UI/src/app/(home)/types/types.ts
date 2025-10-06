@@ -77,10 +77,12 @@ export type MySearchsTable = {
 }
 
 export type ProjectMembersTable = {
-  id: number;
+  projectId: number;
   name: string;
   email: string;
   role: string;
+  memberId?: number | null;
+  groupId?: number | null;
 }
 
 export type SystemUsersTable = {
@@ -218,3 +220,14 @@ export type HistoricalRecordResponseDto = {
   LastUpdatedAt?: Date;
 }
 
+export type UserResponseDto =
+  {
+    Id: number;
+    Name: string;
+    Email: string;
+    Username: string;
+    SsoId: string;
+    IsSysAdmin: boolean;
+    IsArchined: boolean;
+    isActive: boolean;
+  }

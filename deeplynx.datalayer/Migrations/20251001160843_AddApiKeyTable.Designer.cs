@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251001160843_AddApiKeyTable")]
+    partial class AddApiKeyTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -103,6 +106,26 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "RoleId" }, "idx_role_permissions_role_id");
 
                     b.ToTable("role_permissions", "deeplynx");
+                });
+
+            modelBuilder.Entity("UserProject", b =>
+                {
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("user_id");
+
+                    b.Property<long>("ProjectId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("project_id");
+
+                    b.HasKey("UserId", "ProjectId")
+                        .HasName("user_project_pkey");
+
+                    b.HasIndex(new[] { "ProjectId" }, "idx_user_project_project_id");
+
+                    b.HasIndex(new[] { "UserId" }, "idx_user_project_user_id");
+
+                    b.ToTable("user_project", "deeplynx");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Action", b =>
@@ -1017,10 +1040,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
-                    b.Property<string>("FileType")
-                        .HasColumnType("text")
-                        .HasColumnName("file_type");
-
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1415,12 +1434,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("email");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_active");
-
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -1442,14 +1455,6 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("text")
                         .HasColumnName("password");
 
-                    b.Property<string>("SsoId")
-                        .HasColumnType("text")
-                        .HasColumnName("sso_id");
-
-                    b.Property<string>("Username")
-                        .HasColumnType("text")
-                        .HasColumnName("username");
-
                     b.HasKey("Id")
                         .HasName("users_pkey");
 
@@ -1457,8 +1462,6 @@ namespace deeplynx.datalayer.Migrations
                         .IsUnique();
 
                     b.HasIndex(new[] { "Id" }, "idx_users_id");
-
-                    b.HasIndex(new[] { "SsoId" }, "idx_users_sso_id");
 
                     b.ToTable("users", "deeplynx");
                 });
@@ -1529,6 +1532,23 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("role_permissions_role_id_fkey");
+                });
+
+            modelBuilder.Entity("UserProject", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_project_project_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("user_project_user_id_fkey");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Action", b =>

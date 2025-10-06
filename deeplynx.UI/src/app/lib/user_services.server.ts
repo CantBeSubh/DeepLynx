@@ -58,3 +58,26 @@ export async function getRecentlyAddedRecordsServer<T = RecentRecordDTO>(
   });
   return asJson<T>(res);
 }
+
+export async function updateUserServer<T = UserDTO>(
+  userId: number,
+  name?: string
+): Promise<T> {
+  const res = await fetch(`${BASE}/user/UpdateUser/${userId}`, {
+    method: 'PUT',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+  return asJson<T>(res);
+}
+
+export async function deleteUserServer<T = void>(userId: number): Promise<T> {
+  const res = await fetch(`${BASE}/user/DeleteUser/${userId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  return asJson<T>(res);
+}
