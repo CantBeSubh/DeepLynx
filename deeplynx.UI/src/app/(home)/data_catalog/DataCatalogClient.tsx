@@ -284,7 +284,7 @@ export default function DataCatalogClient({
           )}
         </div>
       </div>
-      <div className="flex w-full gap-8 p-8">
+      <div className="flex w-full gap-8 p-8 justify-center">
 
         {records && records?.length > 0 ? (
           <ListView data={records} />
