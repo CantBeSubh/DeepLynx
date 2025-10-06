@@ -3,6 +3,7 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.tests
 {
@@ -439,10 +440,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task DeleteGroup_Succeeds_WhenExists()
         {
-            // Note: Based on GroupBusiness implementation, it expects archived groups only
-            // First archive the group
-            await _groupBusiness.ArchiveGroup(gid);
-            
             // Act
             var result = await _groupBusiness.DeleteGroup(gid);
             
@@ -479,13 +476,13 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task DeleteGroup_Fails_IfNotArchived()
+        public async Task DeleteGroup_Fails_IfArchived()
         {
-            // Act & Assert - trying to delete non-archived group
+            // Act & Assert - trying to delete archived group
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.DeleteGroup(gid)); // not archived
+                () => _groupBusiness.DeleteGroup(gid2)); // archived
             
-            Assert.Contains($"Group with id {gid} not found", exception.Message);
+            Assert.Contains($"Group with id {gid2} not found", exception.Message);
         }
         
         #endregion
@@ -495,30 +492,19 @@ namespace deeplynx.tests
         [Fact]
         public async Task AddUser_Succeeds_IfGroupAndUserExists()
         {
-            // Note: There's a bug in GroupBusiness.AddUserToGroup - it checks for !group.IsArchived and !user.IsArchived
-            // which means it's looking for archived entities, but should be looking for non-archived entities
-            // For now, testing the current implementation behavior
+            var newGroup = new Group { Name = "Test Group", OrganizationId = oid };
+            Context.Groups.Add(newGroup);
+            await Context.SaveChangesAsync();
+            var newGroupId = newGroup.Id;
             
-            // This test will fail due to the bug - the business logic is inverted
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.AddUserToGroup(gid, uid2));
+            var added = await _groupBusiness.AddUserToGroup(newGroupId, uid);
             
-            Assert.Contains($"Group with id {gid} not found", exception.Message);
-        }
-        
-        [Fact]
-        public async Task AddUser_Fails_IfGroupUserExists()
-        {
-            // This would test if user is already in group, but due to the bug in GroupBusiness
-            // the method won't work correctly. This test documents the expected behavior.
-            
-            // The method should return false if user is already in group
-            // but currently it will throw exception due to the inverted logic
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                () => _groupBusiness.AddUserToGroup(gid, uid));
-            
-            Assert.Contains($"Group with id {gid} not found", exception.Message);
+            Assert.True(added);
+            var group = await Context.Groups.FirstOrDefaultAsync(g => g.Id == newGroupId);
+            Assert.NotNull(group);
+            Assert.Single(group.Users);
+            var user = group.Users.FirstOrDefault(u => u.Id == uid);
+            Assert.NotNull(user);
         }
         
         [Fact]
@@ -538,7 +524,7 @@ namespace deeplynx.tests
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _groupBusiness.AddUserToGroup(gid, 99999));
             
-            Assert.Contains("Group with id", exception.Message); // Will fail on group check first due to bug
+            Assert.Contains($"User with id 99999 not found", exception.Message);
         }
         
         #endregion

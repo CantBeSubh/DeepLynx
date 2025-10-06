@@ -1,4 +1,5 @@
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -38,8 +39,10 @@ namespace deeplynx.api.Controllers
         {
             try
             {
+                // get user ID from the middleware context
+                var currentUserId = UserContextStorage.UserId;
                 var projects = await _projectBusiness
-                    .GetAllProjects(organizationId, hideArchived);
+                    .GetAllProjects(currentUserId, organizationId, hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)
@@ -84,7 +87,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var project = await _projectBusiness.CreateProject(dto);
+                var currentUserId = UserContextStorage.UserId;
+                var project = await _projectBusiness.CreateProject(currentUserId, dto);
                 return Ok(project);
             }
             catch (Exception exc)

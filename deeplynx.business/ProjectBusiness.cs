@@ -58,16 +58,16 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Retrieves all projects
     /// </summary>
+    /// <param name="userId">ID of user querying projects</param>
     /// <param name="organizationId">(Optional)Organization ID within which to constrain returned projects</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result</param>
     /// <returns>A list of projects</returns>
     /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
     public async Task<IEnumerable<ProjectResponseDto>> GetAllProjects(
+        long userId,
         long? organizationId,
         bool hideArchived = true)
     {
-        var currentUserId = UserContextStorage.UserId;
-        
         var projectQuery = _context.Projects.AsQueryable();
         
         if (hideArchived)
@@ -82,8 +82,8 @@ public class ProjectBusiness : IProjectBusiness
         
         projectQuery = projectQuery.Where(p => 
             p.ProjectMembers.Any(pm => 
-                pm.UserId == currentUserId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == currentUserId))
+                pm.UserId == userId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
             )
         );
         
@@ -145,13 +145,13 @@ public class ProjectBusiness : IProjectBusiness
     /// <summary>
     /// Creates a new project based on the data transfer object supplied.
     /// </summary>
+    /// <param name="userId">Name of user creating the project</param>
     /// <param name="dto">A data transfer object with details on the new project to be created.</param>
     /// <returns>The new project which was just created.</returns>
-    public async Task<ProjectResponseDto> CreateProject(CreateProjectRequestDto dto)
+    public async Task<ProjectResponseDto> CreateProject(long userId, CreateProjectRequestDto dto)
     {
+        await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
-        
-        var currentUserId = UserContextStorage.UserId;
         
         var project = new Project
         {
@@ -209,7 +209,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
-        await SetProjectDefaults(projectId, currentUserId);
+        await SetProjectDefaults(projectId, userId);
 
         return projectResponseDto;
     }
@@ -625,7 +625,9 @@ public class ProjectBusiness : IProjectBusiness
         
         // check if the group or user is already in the project
         var existingProjectMember = await _context.ProjectMembers
-            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (pm.UserId == userId || pm.GroupId == groupId));
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (
+                (userId != null && pm.UserId == userId) || 
+                (groupId != null && pm.GroupId == groupId)));
         if (existingProjectMember != null)
             return false; // group or user is already present in the project
         
