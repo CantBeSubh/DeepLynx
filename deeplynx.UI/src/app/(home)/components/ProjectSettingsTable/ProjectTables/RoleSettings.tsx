@@ -6,10 +6,10 @@ import PermissionsTab from './RolePermissions';
 import { useRouter, useSearchParams } from "next/navigation";
 
 interface RoleSettingsProps {
-  className?: string;
+  id?: string | string[];
 }
 
-const RoleSettings = ({ className }: RoleSettingsProps) => {
+const RoleSettings = ({ id }: RoleSettingsProps) => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("Settings");
   const router = useRouter();
@@ -19,20 +19,20 @@ const RoleSettings = ({ className }: RoleSettingsProps) => {
     setActiveTab(label);
   };
 
-   const toPermissionsTab = () => {
+  const toPermissionsTab = () => {
     setActiveTab("Permissions");
   };
 
   const onCancel = () => {
-    router.push("/project_settings?tab=Roles");
+    router.push(`/project_settings?tab=Roles`);
   };
 
   const onSave = () => {
     // TODO Add logic to save role changes
-    router.push("/project_settings?tab=Roles");
+    router.push(`/project_settings?tab=Roles`);
   };
 
-   // Effect to read roleId from query and perform any necessary logic
+  // Effect to read roleId from query and perform any necessary logic
   useEffect(() => {
     const roleId = searchParams.get('roleId');
     if (roleId) {
@@ -42,8 +42,8 @@ const RoleSettings = ({ className }: RoleSettingsProps) => {
   }, [searchParams]);
 
   const tabData = [
-    { label: "Settings", content: <SettingsTab toPermissionsTab={toPermissionsTab} onCancel={onCancel}/> },
-    { label: "Permissions", content: <PermissionsTab onCancel={onCancel} onSave={onSave}/> },
+    { label: "Settings", content: <SettingsTab toPermissionsTab={toPermissionsTab} onCancel={onCancel} /> },
+    { label: "Permissions", content: <PermissionsTab onCancel={onCancel} onSave={onSave} /> },
   ];
 
   return (

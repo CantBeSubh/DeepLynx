@@ -107,9 +107,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 flex z-50">
       <aside
-        className={`h-full shadow-xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
@@ -197,8 +196,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <div className="flex items-center">
               <Link
                 href="/project_settings"
-                onClick={(e) => handleItemClick("/project_settings", e)}
-                className={getItemClass("/project_settings")}
+                onClick={(e) => handleItemClick(`/project/${project?.projectId}/project_settings`, e)}
+                className={getItemClass(`/project/${project?.projectId}/project_settings`)}
               >
                 <AdjustmentsHorizontalIcon className="size-6" />
                 {!isCollapsed && (
