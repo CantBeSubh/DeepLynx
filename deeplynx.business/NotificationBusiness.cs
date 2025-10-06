@@ -100,7 +100,7 @@ public class NotificationBusiness : INotificationBusiness
                 e => System.Text.Json.JsonSerializer.Serialize(e)
             );
 
-            // ✅ Single database query for all subscriptions
+            // Single database query for all subscriptions
             var eventSubscriptionsMap = await GetSubscribedUserIdsForManyEvents(eventDtos);
 
             // Group events by subscribed users
