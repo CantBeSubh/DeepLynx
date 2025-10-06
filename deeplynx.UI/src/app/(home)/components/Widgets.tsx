@@ -116,13 +116,13 @@ const WidgetCard: React.FC<WidgetCardProps> = ({
             </button>
           </>
         )}
-        <button
+        {/* <button
           onClick={() => setWidgetModal(true)}
           className="btn btn-sm btn-secondary"
         >
           <PlusIcon className="h-5 w-5" />
           <span>{t.translations.WIDGET}</span>
-        </button>
+        </button> */}
       </div>
 
       <Reorder.Group

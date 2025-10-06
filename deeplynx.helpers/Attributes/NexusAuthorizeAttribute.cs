@@ -1,11 +1,19 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using deeplynx.datalayer.Models;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace deeplynx.helpers;
 
@@ -25,20 +33,35 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         if (IsLocalDevelopmentBypassEnabled(context))
         {
             SetMockUserPrincipal(context.HttpContext);
-            return; 
+            return;
         }
 
         try
         {
+            var principal = new ClaimsPrincipal(new ClaimsIdentity());
+            var handler = new JwtSecurityTokenHandler();
             var token = ExtractToken(context.HttpContext.Request);
             if (string.IsNullOrEmpty(token))
             {
                 SetUnauthorizedResult(context, "No token provided");
                 return;
             }
+            var jwtToken = handler.ReadJwtToken(token);
+            var algorithm = jwtToken.Header.Alg;
 
-            var principal = ValidateToken(token).GetAwaiter().GetResult();
+            if (algorithm.StartsWith("RS"))
+            {
+                principal = ValidateRsaToken(token).GetAwaiter().GetResult();
+            }
+            else if (algorithm.StartsWith("HS"))
+            {
+                principal = ValidateShaToken(token, context.HttpContext).GetAwaiter().GetResult();
+            }
+
             context.HttpContext.User = principal;
+
+            // ensures the user exists in DB before UserContextMiddleware attempts to fetch User ID
+            EnsureUserExists(context.HttpContext, principal).GetAwaiter().GetResult();
 
             // TODO: custom permission/role checks if you need them
         }
@@ -90,7 +113,7 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
         return string.IsNullOrEmpty(tokenCookie) ? null : tokenCookie;
     }
 
-    private async Task<ClaimsPrincipal> ValidateToken(string token)
+    private async Task<ClaimsPrincipal> ValidateRsaToken(string token)
     {
         var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");   // e.g. "https://YOUR_OKTA_DOMAIN/oauth2/YOUR_AUTH_SERVER_ID"
         var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"); // e.g. "api://deeplynx"
@@ -137,14 +160,108 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
 
         var principal = tokenHandler.ValidateToken(token, validationParameters, out var validatedToken);
 
-        // (Optional) double-check alg in the header
-        if (validatedToken is JwtSecurityToken jwt &&
-            !string.Equals(jwt.Header.Alg, SecurityAlgorithms.RsaSha256, StringComparison.Ordinal))
+        return principal;
+    }
+
+    private async Task<ClaimsPrincipal> ValidateShaToken(string token, HttpContext httpContext)
+    {
+        var handler = new JwtSecurityTokenHandler();
+
+        var jwtToken = handler.ReadJwtToken(token);
+        var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value
+                       ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "username")?.Value;
+
+        // Extract API key from claims
+        var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
+
+        var secret = await GetSecretForUser(username, apiKey, httpContext);
+
+        if (string.IsNullOrWhiteSpace(secret))
+            throw new InvalidOperationException($"ApiKey is not valid - Username: {username}, ApiKey: {apiKey}");
+
+        // Use the actual secret from database
+        var secretKey = secret;
+
+        // Ensure secret is long enough for HMAC-SHA256 (pad if necessary)
+        if (secretKey.Length < 32)
         {
-            throw new SecurityTokenInvalidAlgorithmException("Unexpected token algorithm.");
+            secretKey = secretKey.PadRight(32, '0'); // Pad with zeros to meet minimum length
         }
 
+        // Manually validate the JWT signature
+        if (!ValidateJwtSignature(token, secretKey))
+        {
+            throw new SecurityTokenValidationException("JWT signature validation failed");
+        }
+
+        // Create claims principal from the validated token
+        var claimsIdentity = new ClaimsIdentity(jwtToken.Claims, "JWT");
+        var principal = new ClaimsPrincipal(claimsIdentity);
+
         return principal;
+
+
+    }
+
+    private bool ValidateJwtSignature(string token, string secret)
+    {
+        try
+        {
+            var parts = token.Split('.');
+            if (parts.Length != 3)
+                return false;
+
+            var header = parts[0];
+            var payload = parts[1];
+            var signature = parts[2];
+
+            // Create the signature from header and payload
+            var message = $"{header}.{payload}";
+            var keyBytes = Encoding.UTF8.GetBytes(secret);
+
+            using (var hmac = new HMACSHA256(keyBytes))
+            {
+                var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+                var computedSignature = Base64UrlEncode(computedHash);
+
+                return computedSignature == signature;
+            }
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private string Base64UrlEncode(byte[] input)
+    {
+        var output = Convert.ToBase64String(input);
+        output = output.Split('=')[0]; // Remove any trailing '='s
+        output = output.Replace('+', '-'); // 62nd char of encoding
+        output = output.Replace('/', '_'); // 63rd char of encoding
+        return output;
+    }
+
+    private async Task<string?> GetSecretForUser(string username, string apiKeyValue, HttpContext httpContext)
+    {
+        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(apiKeyValue))
+        {
+            var serviceScopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+                var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == username.ToLower());
+                if (user != null)
+                {
+                    var apiKey = await dbContext.ApiKeys.FirstOrDefaultAsync(a => a.Key == apiKeyValue && a.UserId == user.Id);
+                    return apiKey?.Secret;
+                }
+            }
+        }
+        return null;
     }
 
     private void SetUnauthorizedResult(AuthorizationFilterContext context, string message)
@@ -155,5 +272,97 @@ public class NexusAuthorizeAttribute : Attribute, IAuthorizationFilter
     private void SetForbiddenResult(AuthorizationFilterContext context, string message)
     {
         context.Result = new JsonResult(new { error = message, status = 403 }) { StatusCode = 403 };
+    }
+
+
+    /// <summary>
+    /// Insert user if not exists in DB; Update user if SSO ID not exists in DB
+    /// </summary>
+    /// <param name="httpContext">Request context</param>
+    /// <param name="principal">SSO information</param>
+    private async Task EnsureUserExists(HttpContext httpContext, ClaimsPrincipal principal)
+    {
+        try
+        {
+            // extract email from claims
+            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (string.IsNullOrEmpty(email))
+            {
+                // fall back to other common claim types
+                email = principal.FindFirst(ClaimTypes.Email)?.Value
+                    ?? principal.FindFirst("email")?.Value
+                    ?? principal.FindFirst("sub")?.Value;
+            }
+
+            if (string.IsNullOrEmpty(email))
+            {
+                // No email found - can't provision user
+                return;
+            }
+
+            // Extract additional profile info for insertion into DB
+            var ssoId = principal.FindFirst("sub")?.Value             // okta user ID
+                ?? principal.FindFirst("cid")?.Value 
+                ?? principal.FindFirst("uid")?.Value;  
+            var username = principal.FindFirst("preferred_username")?.Value // use email if username not found
+                ?? email;  
+            var name = principal.FindFirst(ClaimTypes.Name)?.Value          // use username if name not found
+                ?? principal.FindFirst("name")?.Value
+                ?? username;                                                            
+
+            // get DB context
+            var serviceScopeFactory = httpContext.RequestServices.GetRequiredService<IServiceScopeFactory>();
+            using (var scope = serviceScopeFactory.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+
+                // TODO: see if this check can be performed as a cache function to avoid extraneous DB round trip
+                // check if user already exists
+                var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+                if (existingUser != null)
+                {
+                    // user exists- check if SSO ID needs to be populated (and if it can be with claims info)
+                    if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId))
+                    {
+                        existingUser.SsoId = ssoId;
+                        existingUser.Username = username;
+                        existingUser.Name = name;
+                        existingUser.IsActive = true;
+                        existingUser.IsArchived = false;
+                        await dbContext.SaveChangesAsync();
+
+                        var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+                        logger?.LogInformation($"Updated SSO ID for existing user {email}");
+                    }
+                }
+                else
+                {
+                    // user does not exist- create them in the DB
+                    var newUser = new User
+                    {
+                        Name = name,
+                        Email = email,
+                        Username = username,
+                        SsoId = ssoId,
+                        IsActive = true,
+                        IsArchived = false
+                    };
+
+                    dbContext.Users.Add(newUser);
+                    await dbContext.SaveChangesAsync();
+
+                    var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+                    logger?.LogInformation($"User with email {email} created successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log error but don't fail the request; UserContextMiddleware will handle missing user if relevant
+            var logger = httpContext.RequestServices.GetService<ILogger<NexusAuthorizeAttribute>>();
+            logger?.LogError(ex, "Error during user provisioning");
+        }
     }
 }

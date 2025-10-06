@@ -567,6 +567,40 @@ public class ProjectBusiness : IProjectBusiness
     }
 
     /// <summary>
+    /// List the users and groups in a given project, along with their roles
+    /// </summary>
+    /// <param name="projectId"></param>
+    /// <returns></returns>
+    public async Task<IEnumerable<ProjectMemberResponseDto>> GetProjectMembers(long projectId)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+
+        var users = _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId && pm.UserId != null)
+            .Select(pm => new ProjectMemberResponseDto
+            {
+                Name = pm.User.Name,
+                MemberId = pm.UserId,
+                Email = pm.User.Email,
+                Role = pm.Role.Name,
+                RoleId = pm.Role.Id,
+            });
+        
+        var groups = _context.ProjectMembers
+            .Where(pm => pm.ProjectId == projectId && pm.GroupId != null)
+            .Select(pm => new ProjectMemberResponseDto
+            {
+                Name = pm.Group.Name,
+                MemberId = pm.GroupId,
+                Email = string.Empty,
+                Role = pm.Role.Name,
+                RoleId = pm.Role.Id
+            });
+        
+        return await users.Union(groups).ToListAsync();
+    }
+
+    /// <summary>
     /// Add a user or a group to a project
     /// </summary>
     /// <param name="projectId">Project to which to add member</param>

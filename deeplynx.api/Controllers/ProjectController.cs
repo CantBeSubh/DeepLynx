@@ -226,6 +226,27 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// List Project Members
+        /// </summary>
+        /// <param name="projectId">(Optional)ID of the project</param>
+        /// <returns>A list of groups and users in the project, along with their roles</returns>
+        [HttpGet("GetProjectMembers/{projectId}", Name = "api_get_project_members")]
+        public async Task<ActionResult> GetProjectMembers(long projectId)
+        {
+            try
+            {
+                var members = await _projectBusiness.GetProjectMembers(projectId);
+                return Ok(members);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing project members for project {projectId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Add User or Group to Project
         /// </summary>
         /// <param name="projectId">ID of project</param>

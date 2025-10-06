@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -49,7 +49,10 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
-    [ForeignKey("UserId")]
+    [ForeignKey("2")]
     [InverseProperty("Users")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
 }

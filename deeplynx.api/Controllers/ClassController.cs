@@ -12,7 +12,6 @@ namespace deeplynx.api.Controllers
     /// <remarks>
     /// This controller provides endpoints to create, update, delete, and retrieve class information.
     /// </remarks>
-
     [ApiController]
     [Route("api/projects/{projectId}/classes")]
     [NexusAuthorize]

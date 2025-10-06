@@ -23,18 +23,21 @@ namespace deeplynx.api.Controllers
             _userBusiness = userBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get all users
         /// </summary>
         /// <param name="projectId">(Optional) ID of project that users are associated with</param>
+        /// <param name="organizationId">(Optional) ID of organization that users are associated with</param>
         /// <returns>List of user response DTOs</returns>
         [HttpGet("GetAllUsers", Name = "api_get_all_users")]
-        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(long? projectId)
+        public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers(
+            [FromQuery] long? projectId,
+            [FromQuery] long? organizationId)
         {
             try
             {
-                var users = await _userBusiness.GetAllUsers(projectId);
+                var users = await _userBusiness.GetAllUsers(projectId, organizationId);
                 return Ok(users);
             }
             catch (Exception exc)
@@ -64,9 +67,9 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-        
+
         }
-        
+
         /// <summary>
         /// Create a user
         /// </summary>
@@ -87,7 +90,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Refresh stored user info
         /// </summary>
@@ -108,7 +111,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update a user
         /// </summary>
@@ -130,9 +133,9 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Deletes a user 
+        /// Deletes a user
         /// </summary>
         /// <param name="userId">The ID of the user to delete.</param>
         /// <returns>A message stating the user was successfully deleted.</returns>
@@ -151,9 +154,9 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Archive a user 
+        /// Archive a user
         /// </summary>
         /// <param name="userId">The ID of the user to archive.</param>
         /// <returns>A message stating the user was successfully archived.</returns>
@@ -172,7 +175,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get data overview for user
         /// </summary>
@@ -192,11 +195,11 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-        
+
         }
-        
+
         /// <summary>
-        /// Unarchive a user 
+        /// Unarchive a user
         /// </summary>
         /// <param name="userId">The ID of the user to unarchive.</param>
         /// <returns>A message stating the user was successfully unarchived.</returns>
@@ -215,7 +218,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get recent records
         /// </summary>
