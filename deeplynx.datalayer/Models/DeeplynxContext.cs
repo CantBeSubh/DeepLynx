@@ -132,12 +132,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("events_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.Events)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("events_dataSource_id_fkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Events).HasConstraintName("events_project_id_fkey");
         });
 
         modelBuilder.Entity<Group>(entity =>
