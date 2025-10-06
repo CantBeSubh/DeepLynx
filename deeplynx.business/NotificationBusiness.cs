@@ -3,7 +3,7 @@ using System.Net.Mail;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using Microsoft.Extensions.Logging;
-using deeplynx.hubs;
+using deeplynx.helpers.Hubs;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 

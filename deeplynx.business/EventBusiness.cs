@@ -5,7 +5,6 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
-using deeplynx.hubs;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -123,7 +122,7 @@ public class EventBusiness : IEventBusiness
         
         // Send notification if there are users subscribed to this event
         // Fire and forget - don't wait for notification to complete
-        _ = _notificationBusiness.SendEventNotification(response);
+        await _notificationBusiness.SendEventNotification(response);
 
         return response;
     }
@@ -174,7 +173,7 @@ public class EventBusiness : IEventBusiness
         
         // Send notification if there are users subscribed to this event
         // Fire and forget - don't wait for notification to complete
-        _ = _notificationBusiness.SendBulkEventNotifications(response);
+        await _notificationBusiness.SendBulkEventNotifications(response);
         
         return response;
     }
