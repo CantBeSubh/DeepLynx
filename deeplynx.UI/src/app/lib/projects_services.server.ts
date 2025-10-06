@@ -145,7 +145,20 @@ export async function createProjectServer(data: {
   abbreviation: string | null;
   description: string | null;
 }): Promise<ProjectDTO> {
-  const res = await apiFetch("/projects/CreateProject", {
+  const res = await apiFetch(`/projects/CreateProject`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return asJson<ProjectDTO>(res);
+}
+
+export async function addMemberServer(data: {
+  projectId: number,
+  userId: number,
+  roleId: number,
+  groupId?: number,
+}): Promise<ProjectDTO> {
+  const res = await apiFetch(`/projects/${data.projectId}/AddMemberToProject`, {
     method: "POST",
     body: JSON.stringify(data),
   });
