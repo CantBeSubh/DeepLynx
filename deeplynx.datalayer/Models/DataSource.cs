@@ -51,9 +51,6 @@ public partial class DataSource
     [InverseProperty("DataSource")]
     public virtual ICollection<Edge> Edges { get; set; } = new List<Edge>();
 
-    [InverseProperty("DataSource")]
-    public virtual ICollection<Event> Events { get; set; } = new List<Event>();
-
     [ForeignKey("ProjectId")]
     [InverseProperty("DataSources")]
     public virtual Project Project { get; set; } = null!;

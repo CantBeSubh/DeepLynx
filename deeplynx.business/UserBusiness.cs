@@ -100,7 +100,7 @@ public class UserBusiness : IUserBusiness
     public async Task<UserResponseDto> CreateUser(CreateUserRequestDto dto)
     {
         // TODO: adjusting is_sys_admin is currently disabled. Enable once route permission protections are in place
-        var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email == dto.Email);
+        var otherUserHasEmail = await _context.Users.AnyAsync(u => u.Email.ToLower() == dto.Email.ToLower());
         if (otherUserHasEmail)
         {
             throw new ArgumentException("User with email already exists");
