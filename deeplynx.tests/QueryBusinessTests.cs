@@ -741,6 +741,15 @@ namespace deeplynx.tests
             result.Should().HaveCount(1);
             result.First().Name.Should().Be("Grand Admiral Thrawn");
         }
+        
+        [Fact]
+        public async Task FullTextSearchPartialMatchMiddleOfWordAsync()
+        {
+            // Search for "eck" should find "Wrecker"
+            var result = await _queryBusiness.Search("eck", new[] { pid });
+            result.Should().HaveCount(1);
+            result.First().Name.Should().Be("Wrecker");
+        }
 
         [Fact]
         public async Task FullTextSearchPartialMatchInUriAsync()
