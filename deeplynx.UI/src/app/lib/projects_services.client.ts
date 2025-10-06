@@ -44,3 +44,54 @@ export async function createProject(data: {
   });
   return res.data;
 }
+
+export async function updateProjectMemberRole(
+  projectId: number,
+  roleId: number,
+  userId?: number,
+  groupId?: number
+) {
+  const params = new URLSearchParams({
+    projectId: projectId.toString(),
+    roleId: roleId.toString(),
+  });
+
+  if (userId !== undefined) {
+    params.append('userId', userId.toString());
+  }
+  if (groupId !== undefined) {
+    params.append('groupId', groupId.toString());
+  }
+
+  const res = await api.put(`/projects/UpdateProjectMemberRole?${params.toString()}`, {
+    headers: { "Content-Type": "application/json" },
+  });
+  return res.data;
+}
+export async function removeProjectMemberRole(
+  projectId: number,
+  userId?: number,
+  groupId?: number
+) {
+  const queryParams = [
+    `projectId=${projectId}`,
+    userId !== undefined ? `userId=${userId}` : null,
+    groupId !== undefined ? `groupId=${groupId}` : null,
+  ]
+    .filter(Boolean)
+    .join('&');
+
+  const res = await api.delete(
+    `/projects/RemoveMemberFromProject?${queryParams}`,
+    {
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+  return res.data;
+}
+
+export async function getProjectMembers(projectId: number) {
+  const res = await api.get(`/projects/GetProjectMembers/${projectId}`);
+  return res.data;
+}
+

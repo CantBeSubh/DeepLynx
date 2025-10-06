@@ -22,8 +22,7 @@ type Props = {
 
 export default function ProjectDetailClient({
   projects,
-  initialProject,
-  projectId,
+  initialProject
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
