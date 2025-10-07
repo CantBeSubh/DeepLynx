@@ -1,0 +1,91 @@
+import { Footer, Layout, Navbar } from 'nextra-theme-docs'
+import { Banner, Head } from 'nextra/components'
+import { getPageMap } from 'nextra/page-map'
+
+[//]: # (import Image from 'next/image')
+ 
+# API Keys
+
+API authentication requires you to first obtain an API Key and Secret from the app, then exchange them for an access token that can be used to make API requests.
+
+## Authentication Workflow
+
+### Step 1: Sign into the Application
+
+First, sign into the app through the web interface to access your account.
+
+### Step 2: Retrieve your API Key & Secret
+
+Once signed in, navigate to your account settings or API management section to retrieve your unique API Key and Secret credentials.
+
+{/* ADD IMAGE WHEN UI IS FINISHED */}
+{/* <Image  */}
+{/*   src="/images/api-credentials.png"  */}
+{/*   alt="API Credentials UI"  */}
+{/*   width={800}  */}
+{/*   height={600}  */}
+{/* /> */}
+
+> **Important**: Keep your API Secret secure. Never share it or commit it to version control. Your generated API Key and Secret will only be displayed once, so save them immediately in a secure location.
+
+### Step 3: Create an Access Token
+
+Use your API Key and Secret to generate an access token by making a request to the token endpoint.
+
+#### Endpoint
+
+```
+POST /api/auth/CreateToken
+```
+
+#### Request Body
+
+```json copy
+{
+  "apiKey": "[your-api-key]",
+  "apiSecret": "[your-api-secret]",
+  "expirationMinutes": null
+}
+```
+
+> **Important**: The expirationMinutes key is optional, but if provided sets the Token-Time-To-Live (TTL) in minutes. If not provided the TTL defaults to 60 min. When your token expires, simply request a new one using the same API Key and Secret.
+
+#### Example Request
+
+```bash copy
+curl /api/auth/CreateToken \
+  --request POST \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "apiKey": "[your-api-key]",
+    "apiSecret": "[your-api-secret]",
+    "expirationMinutes": null
+  }'
+```
+
+#### Response
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expiresIn": 3600
+}
+```
+
+### Step 4: Use the Token for API Requests
+
+Include the token in the Authorization header of your API requests:
+
+```json copy
+{
+  "Authorization": "Bearer [token]"
+}
+```
+
+#### Example API Request
+
+```bash copy
+curl /api/projects/GetAllProjects \
+  --request GET \
+  --header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
