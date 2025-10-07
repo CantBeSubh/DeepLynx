@@ -406,6 +406,7 @@ metadata:
   namespace: deeplynxv3-dev
   annotations:
     kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_clear_headers "strict-transport-security";
       more_clear_headers "x-content-type-options";
@@ -437,14 +438,7 @@ spec:
                 name: deeplynxv3-service
                 port:
                   number: 80
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: deeplynxv3-backend-service
-                port:
-                  number: 80
-          - path: /api/scalar
+          - path: /api(/|$)(.*)
             pathType: Prefix
             backend:
               service:
