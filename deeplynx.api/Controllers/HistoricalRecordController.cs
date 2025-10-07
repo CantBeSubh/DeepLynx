@@ -6,7 +6,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/records/historical")]
+    [Route("/projects/{projectId}/records/historical")]
     [NexusAuthorize]
     public class HistoricalRecordController : ControllerBase
     {

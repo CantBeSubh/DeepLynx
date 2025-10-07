@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("api/projects/{projectId}/tags")]
+[Route("/projects/{projectId}/tags")]
 [ApiController]
 [NexusAuthorize]
 public class TagController : ControllerBase

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
+    [Route("/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
     [NexusAuthorize]
     public class TimeseriesController : ControllerBase
     {

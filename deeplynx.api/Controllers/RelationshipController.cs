@@ -6,7 +6,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/relationships")]
+    [Route("/projects/{projectId}/relationships")]
     [NexusAuthorize]
     public class RelationshipController : ControllerBase
     {

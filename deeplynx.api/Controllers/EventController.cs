@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("api/events/{projectId}")]
+    [Route("/events/{projectId}")]
     [NexusAuthorize]
     public class EventController : ControllerBase // Inherit from ControllerBase
     {

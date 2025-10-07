@@ -13,7 +13,7 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [NexusAuthorize]
-[Route("api/auth")]
+[Route("/auth")]
 public class AuthController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;

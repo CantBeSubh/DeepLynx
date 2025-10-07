@@ -14,7 +14,7 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("api/records")]
+    [Route("/records")]
     [NexusAuthorize]
     public class QueryController : ControllerBase
     {

@@ -5,7 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/groups")]
+    [Route("/groups")]
     public class GroupController : ControllerBase
     {
         private readonly IGroupBusiness _groupBusiness;

@@ -7,7 +7,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/files")]
+    [Route("/projects/{projectId}/files")]
     [NexusAuthorize]
     public class FileController : ControllerBase
         {

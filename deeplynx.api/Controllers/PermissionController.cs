@@ -5,7 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/permissions")]
+    [Route("/permissions")]
     public class PermissionController : ControllerBase
     {
         private readonly IPermissionBusiness _permissionBusiness;

@@ -6,7 +6,7 @@ using deeplynx.interfaces;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/graph")]
+    [Route("/projects/{projectId}/graph")]
     [NexusAuthorize]
     public class KuzuDatabaseManagerController : ControllerBase
     {

@@ -7,7 +7,7 @@ using deeplynx.helpers;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/datasources")]
+    [Route("/projects/{projectId}/datasources")]
     [NexusAuthorize]
     public class DataSourceController : ControllerBase
     {

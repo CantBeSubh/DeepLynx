@@ -11,7 +11,7 @@ namespace deeplynx.api.Controllers
     /// Controller for managing notifications.
     /// </summary>
     [ApiController]
-    [Route("api/notification")]
+    [Route("/notification")]
     [NexusAuthorize]
     public class NotificationController : ControllerBase
     {

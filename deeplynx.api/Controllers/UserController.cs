@@ -6,7 +6,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/user")]
+    [Route("/user")]
     [NexusAuthorize]
     public class UserController : ControllerBase
     {

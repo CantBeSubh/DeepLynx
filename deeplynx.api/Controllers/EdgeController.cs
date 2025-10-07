@@ -8,7 +8,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/edges")]
+    [Route("/projects/{projectId}/edges")]
     [NexusAuthorize]
     public class EdgeController : ControllerBase
     {

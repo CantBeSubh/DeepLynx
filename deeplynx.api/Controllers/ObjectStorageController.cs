@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/storages")]
+    [Route("/projects/{projectId}/storages")]
     [NexusAuthorize]
     public class ObjectStorageController : ControllerBase
     {
