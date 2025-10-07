@@ -18,6 +18,7 @@ import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/
 import { getAllUsers } from '@/app/lib/user_services.client';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
+import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -43,6 +44,7 @@ const ProjectSettings = ({
   const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
 
   const [roles, setRoles] = useState([]);
+  const [isMembersLoading, setIsMembersLoading] = useState(true);
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -59,6 +61,7 @@ const ProjectSettings = ({
       try {
         const users = await getProjectMembers(Number(selectedProjectId));
         setProjectMembers(users);
+        setIsMembersLoading(false);
       } catch (err) {
         console.error(err);
       }
@@ -72,15 +75,13 @@ const ProjectSettings = ({
     }
   };
 
+  const memberConent = isMembersLoading? <ProjectSettingsMemberSkeleton/>:<MembersTable data={projectMembers} projectId={selectedProjectId} roles={roles}/>;
+
   const tabData = [
     {
       label: "Members",
       content: (
-        <MembersTable
-          data={projectMembers}
-          projectId={selectedProjectId}
-          roles={roles}
-        />
+        memberConent
       ),
     },
     {
