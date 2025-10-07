@@ -407,10 +407,11 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: deeplynxv3-ui-ingress
+  name: deeplynxv3-ingress
   namespace: deeplynxv3-dev
   annotations:
     kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_clear_headers "strict-transport-security";
       more_clear_headers "x-content-type-options";
@@ -442,48 +443,6 @@ spec:
                 name: deeplynxv3-service
                 port:
                   number: 80
-          - path: /docs
-            pathType: Prefix
-            backend:
-              service:  
-                name: deeplynxv3-docs-service
-                port:  
-                  number: 80 
-
----
-
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: deeplynxv3-server-ingress
-  namespace: deeplynxv3-dev
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_clear_headers "strict-transport-security";
-      more_clear_headers "x-content-type-options";
-      more_clear_headers "x-frame-options";
-      more_clear_headers "content-security-policy";
-      more_set_headers "cache-Control: no-cache, no-store";
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/server-snippets: |
-      location / {
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_set_header   X-Forwarded-Host $host;
-        proxy_set_header   X-Cluster-Client-Ip $remote_addr;
-        }
-spec:
-  rules:
-    - host: deeplynx.dev.inl.gov
-      http:
-        paths:
           - path: /api(/|$)(.*)
             pathType: Prefix
             backend:
@@ -494,10 +453,19 @@ spec:
           - path: /api/auth
             pathType: Prefix
             backend:
-              service:
+              service:  
                 name: deeplynxv3-service
-                port:
-                  number: 80
+                port:  
+                  number: 80 
+          - path: /docs
+            pathType: Prefix
+            backend:
+              service:  
+                name: deeplynxv3-docs-service
+                port:  
+                  number: 80 
+
+---
 
 # # Database if needed for deployment
 # Dummy change to force build.
