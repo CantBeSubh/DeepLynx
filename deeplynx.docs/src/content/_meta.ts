@@ -9,6 +9,6 @@ export default {
   deeplynx: {
     title: "Back to DeepLynx",
     type: 'page',
-    href: process.env.NEXUS_HOSTED_LINK ? process.env.NEXUS_HOSTED_LINK : "http://localhost:3000"
+    href: process.env.HOSTED_LINK ? process.env.HOSTED_LINK : "http://localhost:3000"
   }
 }

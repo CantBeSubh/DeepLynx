@@ -19,6 +19,7 @@ public class RecordBusinessTests : IntegrationTestBase
     private RecordBusiness _recordBusiness;
     private EventBusiness _eventBusiness;
     public long pid;
+    public long pid2;
     public long did;
     public long cid;
     public long rid;
@@ -28,6 +29,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public string rogid;
     public string rdesc;
     public string ruri;
+    public string rfiletype;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -148,7 +150,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!,
             Uri = "test://uri",
             OriginalId = "original-123",
-            ClassId = cid
+            ClassId = cid,
+            FileType = "png"
         };
 
         // Act
@@ -163,6 +166,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("test://uri", result.Uri);
         Assert.Equal("original-123", result.OriginalId);
         Assert.Equal(cid, result.ClassId);
+        Assert.Equal("png", result.FileType);
 
         // Verify record was actually created in database
         var createdRecord = await Context.Records.FindAsync(result.Id);
@@ -267,6 +271,31 @@ public class RecordBusinessTests : IntegrationTestBase
         // Ensure that no record create event was logged
         var eventList = Context.Events.ToList();
         eventList.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateRecord_WithInvalidDataSource_ThrowsException()
+    {
+        var dataSourceInWrongProject = new DataSource
+        {
+            Name = "Test Data Source",
+            Description = "Test data source for unit tests",
+            ProjectId = pid2,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.DataSources.Add(dataSourceInWrongProject);
+        await Context.SaveChangesAsync(); 
+        
+        var dto = new CreateRecordRequestDto
+        {
+            Name = "Invalid Record",
+            Description = "Invalid Record Description",
+            OriginalId = "original-12334532",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
+        };
+        
+        var result = () => _recordBusiness.CreateRecord(pid, dataSourceInWrongProject.Id, dto);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     
     #endregion
@@ -393,7 +422,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Uri = "updated://uri",
             OriginalId = "updated-123",
             Description = "Updated Description",
-            ClassId = cid
+            ClassId = cid,
+            FileType = "png"
         };
 
         // Act
@@ -405,6 +435,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("updated://uri", result.Uri);
         Assert.Equal("updated-123", result.OriginalId);
         Assert.Equal("Updated Description", result.Description);
+        Assert.Equal("png", result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -416,6 +447,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(getResult);
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
+        Assert.Equal("png", getResult.FileType);
         Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
@@ -452,6 +484,7 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal(rogid, result.OriginalId);
         Assert.Equal(rdesc, result.Description);
         Assert.Equal(rprop, result.Properties);
+        Assert.Equal(rfiletype, result.FileType);
 
         // Verify record was actually updated in database
         var updatedRecord = await Context.Records.FindAsync(recordId);
@@ -796,7 +829,8 @@ public class RecordBusinessTests : IntegrationTestBase
             DataSourceId = did,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true
+            IsArchived = true,
+            FileType = "pdf"
         };
         Context.Records.Add(archivedRecord);
         await Context.SaveChangesAsync();
@@ -1052,9 +1086,17 @@ public class RecordBusinessTests : IntegrationTestBase
             Description = "Test project for unit tests",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+        var project2 = new Project
+        {
+            Name = "Test Project 2",
+            Description = "Test project 2 for unit tests",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
         Context.Projects.Add(project);
+        Context.Projects.Add(project2);
         await Context.SaveChangesAsync();
         pid = project.Id;
+        pid2 = project2.Id;
         
         var dataSource = new DataSource
         {
@@ -1109,7 +1151,8 @@ public class RecordBusinessTests : IntegrationTestBase
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             Tags =  new List<Tag> { testTag },
-            Uri = "localhost:8090"
+            Uri = "localhost:8090",
+            FileType = "pdf"
         };
         
         Context.Records.Add(testRecord);
@@ -1122,5 +1165,6 @@ public class RecordBusinessTests : IntegrationTestBase
         rogid = testRecord.OriginalId;
         rdesc = testRecord.Description;
         ruri = testRecord.Uri;
+        rfiletype = testRecord.FileType;
     }
 }

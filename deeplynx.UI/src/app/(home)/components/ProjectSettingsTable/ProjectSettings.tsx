@@ -17,6 +17,8 @@ import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
 import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
 import { getAllUsers } from '@/app/lib/user_services.client';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
+import { getAllRoles } from '@/app/lib/role_services.client';
+import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -41,6 +43,17 @@ const ProjectSettings = ({
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
 
+  const [roles, setRoles] = useState([]);
+  const [isMembersLoading, setIsMembersLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const rolesData = await getAllRoles(Number(selectedProjectId)); // Your API call
+      setRoles(rolesData);
+    };
+    fetchRoles();
+  }, [selectedProjectId]);
+
   useEffect(() => {
     if (!selectedProjectId) return;
 
@@ -48,20 +61,27 @@ const ProjectSettings = ({
       try {
         const users = await getProjectMembers(Number(selectedProjectId));
         setProjectMembers(users);
+        setIsMembersLoading(false);
       } catch (err) {
         console.error(err);
       }
     })();
   }, [selectedProjectId]);
 
+  const refreshMembers = async () => {
+    if (selectedProjectId) {
+      const users = await getProjectMembers(Number(selectedProjectId));
+      setProjectMembers(users);
+    }
+  };
+
+  const memberConent = isMembersLoading? <ProjectSettingsMemberSkeleton/>:<MembersTable data={projectMembers} projectId={selectedProjectId} roles={roles}/>;
+
   const tabData = [
     {
       label: "Members",
       content: (
-        <MembersTable
-          data={projectMembers}
-          projectId={selectedProjectId}
-        />
+        memberConent
       ),
     },
     {
@@ -157,8 +177,10 @@ const ProjectSettings = ({
       </div>
 
       <AddProjectMember
+        projectId={Number(selectedProjectId)}
         isOpen={addProjectMemberModal}
         onClose={() => setAddProjectMemberModal(false)}
+        onMemberAdded={refreshMembers}
       />
     </div>
   );
