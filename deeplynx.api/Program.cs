@@ -372,12 +372,20 @@ try
         });
     });
 
-    /* ╔════════════════════════════╗
-       ║      Apply Migrations      ║
-       ╚════════════════════════════╝ */
+/* ╔════════════════════════════╗
+   ║      Apply Migrations      ║
+   ╚════════════════════════════╝ */
     await MigrationRunner.ApplyMigrations(connectionString);
-
+    
+/* ╔════════════════════════════╗
+   ║     App Configurations     ║
+   ╚════════════════════════════╝ */
     var app = builder.Build();
+    
+/* ╔════════════════════════════╗
+   ║       App Base Path        ║
+   ╚════════════════════════════╝ */
+    app.UsePathBase("/api/v1/");
 
     app.UseOpenApi();
 
@@ -385,11 +393,9 @@ try
     
     app.UseStaticFiles();
     
-    /*
-    ╔════════════════════════════╗
+ /* ╔════════════════════════════╗
     ║   Scalar Configuration     ║
-    ╚════════════════════════════╝
-    */
+    ╚════════════════════════════╝ */
     // Always using scalar:
     //if (app.Environment.IsDevelopment()) { ...
     
