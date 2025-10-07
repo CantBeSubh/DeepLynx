@@ -33,7 +33,6 @@ function RelatedRecordsCard<T extends object>({
           <table className="table">
             <thead>
               <tr className="bg-base-200 text-base-content">
-                {showIndex && <th></th>}
                 {columns.map((col) => (
                   <th key={String(col.key)}>{col.label}</th>
                 ))}
@@ -42,7 +41,6 @@ function RelatedRecordsCard<T extends object>({
             <tbody>
               {rows.map((row, i) => (
                 <tr key={i}>
-                  {showIndex && <th>{i + 1}</th>}
                   {columns.map((col) => {
                     const raw = row[col.key];
                     const content = col.render
