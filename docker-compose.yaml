@@ -4,11 +4,11 @@ services:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
-        NEXT_PUBLIC_API_URL: "http://localhost:5000/api/v1"
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
         NEXT_PUBLIC_DOCS_PATH: "#"
     environment:
       NODE_ENV: production
-      BACKEND_BASE_URL: "http://server:5000/api/v1"
+      BACKEND_BASE_URL: "http://server:5000/api"
       DISABLE_FRONTEND_AUTHENTICATION: true
     ports:
       - "3000:3000"

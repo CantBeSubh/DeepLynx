@@ -385,7 +385,7 @@ try
 /* ╔════════════════════════════╗
    ║       App Base Path        ║
    ╚════════════════════════════╝ */
-    app.UsePathBase("/api/v1");
+    app.UsePathBase("/api");
 
     app.UseOpenApi();
 
