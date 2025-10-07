@@ -397,7 +397,7 @@ try
     var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK"); 
     if (!string.IsNullOrEmpty(hostedLink))
     {
-        imageSrc = $"{hostedLink}{imageSrc}";
+        imageSrc = $"{hostedLink}/api/{imageSrc}";
     }
     // Build the HTML content with our image src string interpolation
     var scalarHeaderContent = $@"
