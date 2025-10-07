@@ -400,7 +400,7 @@ try
         imageSrc = $"{hostedLink}{imageSrc}";
     }
     // Build the HTML content with our image src string interpolation
-    var headerContent = $@"
+    var scalarHeaderContent = $@"
     <div class='references-header'>
       <header class='header t-doc__header'>
         <div class='header-container'>
@@ -423,7 +423,7 @@ try
         .WithTheme(ScalarTheme.Kepler)
         .WithTitle("DeepLynx Nexus API")
         .WithCustomCss(customcss)
-        .AddHeaderContent(headerContent));
+        .AddHeaderContent(scalarHeaderContent));
 
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
