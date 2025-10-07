@@ -165,6 +165,7 @@ public class TimeseriesBusiness(
                 Uri = uri,
                 ClassId = recordClass.Id,
                 ClassName = recordClass.Name,
+                FileType = Path.GetExtension(file.FileName).TrimStart('.').ToLower()
             };
 
             return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
@@ -361,6 +362,7 @@ public class TimeseriesBusiness(
                 Uri = uri,
                 ClassId = recordClass.Id,
                 ClassName = recordClass.Name,
+                FileType = Path.GetExtension(request.FileName).TrimStart('.').ToLower()
             };
 
             return await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
@@ -699,6 +701,7 @@ public class TimeseriesBusiness(
             ClassId = reportClass.Id,
             ClassName = reportClass.Name,
             ObjectStorageId = timeseriesObjectStorageMethod.Id,
+            FileType = fileType
         };
         
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
@@ -770,6 +773,7 @@ public class TimeseriesBusiness(
             ClassId = reportClass.Id,
             ClassName = reportClass.Name,
             ObjectStorageId = timeseriesObjectStorageMethod.Id,
+            FileType = fileType
         };
 
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
@@ -829,6 +833,7 @@ public class TimeseriesBusiness(
             ClassId = reportClass.Id,
             ClassName = reportClass.Name,
             ObjectStorageId = timeseriesObjectStorageMethod.Id,
+            FileType = fileType
         };
         var recordResponse = await _recordBusiness.CreateRecord(projectId, dataSourceId, recordRequest);
         

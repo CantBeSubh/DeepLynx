@@ -130,6 +130,8 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Actions.RemoveRange(actions);
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
+        var permissions = await Context.Permissions.ToListAsync();
+        Context.Permissions.RemoveRange(permissions);
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }
