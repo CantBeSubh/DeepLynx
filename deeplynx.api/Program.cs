@@ -67,6 +67,7 @@ try
                       "http://localhost:3000",
                       "http://ui:3000",
                       "https://deeplynx.dev.inl.gov",
+                      "https://deeplynx.dev.inl.gov/api/scalar",
                       "https://deeplynx.acc.inl.gov",
                       "https://deeplynx.scan.inl.gov",
                       "https://deeplynx.test.inl.gov",
