@@ -89,15 +89,15 @@ namespace deeplynx.helpers
             return project;
         }
         
-        public static async Task EnsureDataSourceExistsAsync(DeeplynxContext context, long dataSourceId, bool hideArchived = true)
+        public static async Task EnsureDataSourceExistsForProjectAsync(DeeplynxContext context, long dataSourceId, long projectId, bool hideArchived = true)
         {
             var dataSourceExists = hideArchived
-                ? await context.DataSources.AnyAsync(ds => ds.Id == dataSourceId && ds.IsArchived == false)
-                : await context.DataSources.AnyAsync(ds => ds.Id == dataSourceId);
+                ? await context.DataSources.AnyAsync(ds => ds.ProjectId == projectId && ds.Id == dataSourceId && ds.IsArchived == false)
+                : await context.DataSources.AnyAsync(ds => ds.ProjectId == projectId && ds.Id == dataSourceId);
 
             if (!dataSourceExists)
             {
-                throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found");
+                throw new KeyNotFoundException($"DataSource with id {dataSourceId} not found in project with id {projectId}");
             }
         }
     }
