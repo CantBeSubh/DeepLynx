@@ -384,30 +384,46 @@ try
     
     app.UseStaticFiles();
     
-    // We're always using scalar for now.
+    /*
+    ╔════════════════════════════╗
+    ║   Scalar Configuration     ║
+    ╚════════════════════════════╝
+    */
+    // Always using scalar:
     //if (app.Environment.IsDevelopment()) { ...
+    
+    var imageSrc = "/images/lynx-white.png";
+    // Conditional image hosting
+    var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK"); 
+    if (!string.IsNullOrEmpty(hostedLink))
+    {
+        imageSrc = $"{hostedLink}{imageSrc}";
+    }
+    // Build the HTML content with our image src string interpolation
+    var headerContent = $@"
+    <div class='references-header'>
+      <header class='header t-doc__header'>
+        <div class='header-container'>
+          <div class='header-item header-item-meta'>
+            <a class='header-item-logo'>
+              <img
+                alt='lynx'
+                class='header-item-logo-image'
+                src='{imageSrc}'
+                style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
+            </a>
+          </div>
+        </div>
+      </header>
+    </div>";
+    
     app.MapOpenApi();
     app.MapScalarApiReference(o => o
         .WithDarkMode(true)
         .WithTheme(ScalarTheme.Kepler)
         .WithTitle("DeepLynx Nexus API")
         .WithCustomCss(customcss)
-        .AddHeaderContent(@"
-        <div class='references-header'>
-          <header class='header t-doc__header'>
-            <div class='header-container'>
-              <div class='header-item header-item-meta'>
-                <a class='header-item-logo'>
-                  <img
-                    alt='lynx'
-                    class='header-item-logo-image'
-                    src='/images/lynx-white.png'
-                    style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
-                </a>
-              </div>
-            </div>
-          </header>
-        </div>"));
+        .AddHeaderContent(headerContent));
 
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
