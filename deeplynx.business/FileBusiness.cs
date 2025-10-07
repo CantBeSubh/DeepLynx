@@ -59,7 +59,7 @@ public class FileBusiness
         }
         if (dataSourceId.HasValue)
         {
-            await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId.Value);
+            await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId.Value, projectId);
             realDataSourceId = dataSourceId.Value;
         }
         else

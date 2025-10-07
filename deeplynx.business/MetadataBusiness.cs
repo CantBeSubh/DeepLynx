@@ -57,7 +57,7 @@ public class MetadataBusiness : IMetadataBusiness
     public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         if (metadataRequestDto == null)
             throw new ArgumentNullException(nameof(metadataRequestDto));
