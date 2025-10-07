@@ -189,7 +189,7 @@ public class EdgeBusiness : IEdgeBusiness
         CreateEdgeRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context,dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context,dataSourceId, projectId);
 
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
         {
@@ -248,7 +248,7 @@ public class EdgeBusiness : IEdgeBusiness
         List<CreateEdgeRequestDto> edges)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"

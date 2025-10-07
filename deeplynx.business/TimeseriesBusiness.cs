@@ -119,7 +119,7 @@ public class TimeseriesBusiness(
         }
         
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         // folder prep
         var uploadId = Guid.NewGuid().ToString();
@@ -238,7 +238,7 @@ public class TimeseriesBusiness(
             throw new ArgumentException("Only .csv and .parquet files are supported");
         }
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         var uploadId = Guid.NewGuid().ToString();
         var folderPath = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString(), "datasource_" + dataSourceId.ToString(), uploadId);
@@ -273,7 +273,7 @@ public class TimeseriesBusiness(
                 throw new  ArgumentException("Only .csv and .parquet files are supported");
             }
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-            await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+            await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
             if (chunk == null || chunk.Length == 0)
             {
                 throw new ArgumentException("No chunk uploaded.");
@@ -324,7 +324,7 @@ public class TimeseriesBusiness(
                 throw new ArgumentException("Only .csv and .parquet files are supported");
             }
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-            await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+            await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
             await using (var finalFileStream = new FileStream(finalFilePath, FileMode.Create))
             {
                 for (var i = 0; i < request.TotalChunks; i++)
@@ -537,7 +537,7 @@ public class TimeseriesBusiness(
         }
         
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);
         
@@ -658,7 +658,7 @@ public class TimeseriesBusiness(
     public async Task<RecordResponseDto> ExportTimeseriesTable(long projectId, long dataSourceId, string tableName, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         var request = new TimeseriesQueryRequestDto
         {
             Query = $"SELECT * FROM '{tableName}'"
@@ -720,7 +720,7 @@ public class TimeseriesBusiness(
     public async Task<RecordResponseDto> InterpolateRows(long projectId, long dataSourceId, string rowNumber, string tableName, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         var queryId = Guid.NewGuid().ToString();
         string fileName;
         
@@ -792,7 +792,7 @@ public class TimeseriesBusiness(
     public async Task<RecordResponseDto> QueryTimeseries(TimeseriesQueryRequestDto request, long projectId, long dataSourceId, string fileType)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         var queryId = Guid.NewGuid().ToString();
         string fileName;

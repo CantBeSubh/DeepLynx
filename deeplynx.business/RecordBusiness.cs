@@ -145,7 +145,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
        ValidationHelper.ValidateModel(dto);
         
         if(dto.Properties == null)
@@ -225,7 +225,7 @@ public class RecordBusiness : IRecordBusiness
         List<CreateRecordRequestDto> records)
     {
        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
        if (records.Count == 0)
        {
