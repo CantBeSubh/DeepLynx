@@ -5,6 +5,7 @@ import { Column, SystemUsersTable } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "../MemberModals/EditSysUser";
+import MemberManagementUserSkeleton from "../../skeletons/membermanagementusersskeleton";
 
 const UsersTable = () => {
   const { t } = useLanguage();
@@ -135,7 +136,7 @@ const UsersTable = () => {
     },
   ];
 
-  if (loading) return <div className="p-4">Loading users…</div>;
+  if (loading) return <MemberManagementUserSkeleton />;;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (

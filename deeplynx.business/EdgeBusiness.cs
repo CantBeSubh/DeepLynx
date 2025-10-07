@@ -74,7 +74,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="recordId">The ID of the record by which to filter edges</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
-    public async Task<List<EdgeResponseDto>> GetEdgesByRecord(
+    public async Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(
         long recordId,
         bool hideArchived)
     {
@@ -86,6 +86,9 @@ public class EdgeBusiness : IEdgeBusiness
         }
         
         var edgeQuery = _context.Edges
+            .Include(e => e.Destination)
+            .Include(e => e.Origin)
+            .Include(e => e.Relationship)
             .Where(e => e.DestinationId == recordId || e.OriginId == recordId);
         
         // Todo: Add this query back when we want to filter all record edges by user access
@@ -116,17 +119,18 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return await edgeQuery
-            .Select(e => new EdgeResponseDto()
+            .Select(e => new
             {
-                Id = e.Id,
-                OriginId = e.OriginId,
-                DestinationId = e.DestinationId,
-                RelationshipId = e.RelationshipId,
-                DataSourceId = e.DataSourceId,
-                ProjectId = e.ProjectId,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy,
-                IsArchived = e.IsArchived,
+                Edge = e,
+                RelatedRecord = e.OriginId == recordId ? e.Destination : e.Origin
+            })
+            .Select(x => new RelatedRecordsResponseDto()
+            {
+                RelatedRecordName = x.RelatedRecord.Name,
+                RelatedRecordId = x.RelatedRecord.Id,
+                RelatedRecordProjectId = x.RelatedRecord.ProjectId,
+                RelationshipName = x.Edge.Relationship != null? x.Edge.Relationship.Name: null,
+                IsOrigin = x.Edge.OriginId == recordId
             }).ToListAsync();
     }
 
