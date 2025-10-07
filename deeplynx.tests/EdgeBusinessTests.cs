@@ -355,7 +355,7 @@ namespace deeplynx.tests
         // }
         
         [Fact]
-        public async Task GetEdgesByRecord_ReturnsEdgesWithRecordID()
+        public async Task GetEdgesByRecord_ReturnsCorrectRelatedInfo()
         {
             var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAdded);
@@ -372,7 +372,7 @@ namespace deeplynx.tests
         
             var edge2 = new Edge
             {
-                OriginId = destinationRecordId,
+                OriginId = destinationRecordId2,
                 DestinationId = originRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
@@ -409,10 +409,14 @@ namespace deeplynx.tests
         
             var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, true);
             edges.Count.Should().Be(2);
-            edges.Should().Contain(e => e.Id == edge1.Id);
-            edges.Should().Contain(e => e.Id == edge2.Id);
-            edges.Should().NotContain(e => e.Id == edge3.Id);
-            edges.Should().NotContain(e => e.Id == edge4.Id);
+            edges.Should().Contain(r => r.RelatedRecordName == "Destination 1" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId &&
+                                        r.RelatedRecordProjectId == pid && r.IsOrigin == true);
+            edges.Should().Contain(r => r.RelatedRecordName == "Destination 2" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId2 &&
+                                        r.RelatedRecordProjectId == pid && r.IsOrigin == false);
+            edges.Should().NotContain(r => r.RelatedRecordName == "Destination 3");
+            edges.Should().NotContain(r => r.RelatedRecordName == "Origin 2");
         }
 
         [Fact]
