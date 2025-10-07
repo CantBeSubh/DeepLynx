@@ -392,9 +392,9 @@ try
     // Always using scalar:
     //if (app.Environment.IsDevelopment()) { ...
     
-    var imageSrc = "/images/lynx-white.png";
-    // Conditional image hosting
     var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK"); 
+    // Conditional image hosting
+    var imageSrc = "/images/lynx-white.png";
     if (!string.IsNullOrEmpty(hostedLink))
     {
         imageSrc = $"{hostedLink}/api/{imageSrc}";
@@ -418,12 +418,19 @@ try
     </div>";
     
     app.MapOpenApi();
-    app.MapScalarApiReference(o => o
-        .WithDarkMode(true)
-        .WithTheme(ScalarTheme.Kepler)
-        .WithTitle("DeepLynx Nexus API")
-        .WithCustomCss(customcss)
-        .AddHeaderContent(scalarHeaderContent));
+    app.MapScalarApiReference(options => {
+        options.WithDarkMode(true)
+            .WithTheme(ScalarTheme.Kepler)
+            .WithTitle("DeepLynx Nexus API")
+            .WithCustomCss(customcss)
+            .AddHeaderContent(scalarHeaderContent);
+
+        if (!string.IsNullOrEmpty(hostedLink))
+        {
+            options.Servers = [new ScalarServer(hostedLink)];
+        }
+    });
+    
 
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
