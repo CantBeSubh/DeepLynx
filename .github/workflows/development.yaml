@@ -152,6 +152,7 @@ jobs:
           INVITE_URL: ${{ vars.INVITE_URL }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
           DISABLE_BACKEND_AUTHENTICATION: ${{ vars.DISABLE_BACKEND_AUTHENTICATION }}
+          HOSTED_LINK: ${{ vars.HOSTED_LINK }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
