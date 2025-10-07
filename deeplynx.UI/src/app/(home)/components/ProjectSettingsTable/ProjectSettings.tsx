@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { projectMembers, defaultRoles } from "../../dummy_data/data";
+import { defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
@@ -12,17 +12,65 @@ import RolesTable from '././ProjectTables/RolesTable';
 // import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
+import ProjectDropdown from '../ProjectDropdown';
+import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
+import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
+import { getAllUsers } from '@/app/lib/user_services.client';
+import { getProjectMembers } from '@/app/lib/projects_services.client';
+import { getAllRoles } from '@/app/lib/role_services.client';
 
 interface ProjectSettingsProps {
-  className?: string;
+  projects: ProjectsList[];
+  initialProject: ProjectsList | null;
 }
 
-const ProjectSettings = ({ className }: ProjectSettingsProps) => {
+const ProjectSettings = ({
+  projects,
+  initialProject,
+}: ProjectSettingsProps) => {
+  // const [selectedProjects, setSelectedProjects] = useState<string[]>(
+  //   initialSelectedProjects
+  // );
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    initialProject?.id || null
+  );
+  const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
+
+  const [roles, setRoles] = useState([]);
+
+  useEffect(() => {
+    const fetchRoles = async () => {
+      const rolesData = await getAllRoles(Number(selectedProjectId)); // Your API call
+      setRoles(rolesData);
+    };
+    fetchRoles();
+  }, [selectedProjectId]);
+
+  useEffect(() => {
+    if (!selectedProjectId) return;
+
+    (async () => {
+      try {
+        const users = await getProjectMembers(Number(selectedProjectId));
+        setProjectMembers(users);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [selectedProjectId]);
+
+  const refreshMembers = async () => {
+    if (selectedProjectId) {
+      const users = await getProjectMembers(Number(selectedProjectId));
+      setProjectMembers(users);
+    }
+  };
 
   const tabData = [
     {
@@ -30,6 +78,8 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       content: (
         <MembersTable
           data={projectMembers}
+          projectId={selectedProjectId}
+          roles={roles}
         />
       ),
     },
@@ -37,6 +87,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       label: "Roles",
       content: (
         <RolesTable
+          id={selectedProjectId}
           data={defaultRoles}
         />
       ),
@@ -73,7 +124,11 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
     }
   };
 
-   // Effect to set the active tab from the query parameter
+  const handleProjectChange = useCallback((newProjectId: string) => {
+    setSelectedProjectId(newProjectId);
+  }, []);
+
+  // Effect to set the active tab from the query parameter
   useEffect(() => {
     const tab = searchParams.get('tab');
     if (tab) {
@@ -82,11 +137,23 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
   }, [searchParams]);
 
   return (
-    <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
-      <div className="card-body">
-        <div className="flex justify-between items-start">
-          <h2 className="card-title">{t.translations.PROJECT_SETTINGS}</h2>
-          <div className="flex space-x-4">
+    <div className="">
+      <div className="">
+        <div className="">
+          <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
+            <div>
+              <h1 className="text-2xl font-bold text-info-content">
+                {t.translations.PROJECT_SETTINGS}
+              </h1>
+
+              <ProjectDropdownSingleSelect
+                projects={projects}
+                onSelectionChange={handleProjectChange}
+                defaultSelectedId={initialProject?.id || ""}
+              />
+            </div>
+          </div>
+          <div className="flex justify-end space-x-4 pt-4">
             <button
               onClick={handleAddButtonClick}
               className="btn btn-secondary text-white"
@@ -96,7 +163,7 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
             </button>
             <div className="flex flex-col">
               {/* TODO POST FY
-              {activeTab === "Members" && <MemberSearchBar />} */}
+    {activeTab === "Members" && <MemberSearchBar />} */}
             </div>
           </div>
         </div>
@@ -109,8 +176,10 @@ const ProjectSettings = ({ className }: ProjectSettingsProps) => {
       </div>
 
       <AddProjectMember
+        projectId={Number(selectedProjectId)}
         isOpen={addProjectMemberModal}
         onClose={() => setAddProjectMemberModal(false)}
+        onMemberAdded={refreshMembers}
       />
     </div>
   );

@@ -12,6 +12,16 @@ namespace deeplynx.helpers
 {
     public static class ExistenceHelper
     {
+        public static async Task EnsureUserExistsAsync(DeeplynxContext context, long userId, bool hideArchived = true)
+        {
+            var userExists = hideArchived
+                ? await context.Users.AnyAsync(u => u.Id == userId && u.IsArchived == false)
+                : await context.Users.AnyAsync(u => u.Id == userId);
+            
+            if (!userExists)
+                throw new KeyNotFoundException($"User with id {userId} does not exist");
+        }
+        
         /// <summary>
         /// Check if an organization exists
         /// </summary>

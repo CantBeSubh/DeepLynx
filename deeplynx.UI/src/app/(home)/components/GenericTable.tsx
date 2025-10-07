@@ -52,14 +52,16 @@ const GenericTable = <T extends object>({
   const [currentPage, setCurrentPage] = useState(1);
 
   // Filter data based on the search input
-  const filteredData = data.filter((row) =>
-    columns.some((column) =>
-      row[column.data as keyof T]
-        ?.toString()
-        .toLowerCase()
-        .includes(filterText.toLowerCase())
-    )
-  );
+  const filteredData = React.useMemo(() => {
+    return data?.filter((row) =>
+      columns.some((column) =>
+        row[column.data as keyof T]
+          ?.toString()
+          .toLowerCase()
+          .includes(filterText.toLowerCase())
+      )
+    ) || [];
+  }, [data, columns, filterText]);
 
   // State and logic for column sorting
   const [sortConfig, setSortConfig] = useState<{
@@ -102,9 +104,9 @@ const GenericTable = <T extends object>({
   // Get data for the current page
   const currentData = enablePagination
     ? sortedData.slice(
-        (currentPage - 1) * rowsPerPage,
-        currentPage * rowsPerPage
-      )
+      (currentPage - 1) * rowsPerPage,
+      currentPage * rowsPerPage
+    )
     : sortedData;
 
   // Handle page click for pagination
@@ -121,9 +123,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -147,9 +148,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -189,9 +189,8 @@ const GenericTable = <T extends object>({
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${
-              currentPage === i ? "btn-primary" : ""
-            }`}
+            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+              }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -217,9 +216,8 @@ const GenericTable = <T extends object>({
 
   return (
     <div
-      className={`overflow-x-auto ${
-        bordered ? "rounded-box border border-base-300" : ""
-      } p-4`}
+      className={`overflow-x-auto ${bordered ? "rounded-box border border-base-300" : ""
+        } p-4`}
     >
       {title && (
         <h2 className="text-xl font-bold text-base-content">{title}</h2>
@@ -241,11 +239,10 @@ const GenericTable = <T extends object>({
             </button>
             <button
               onClick={deleteSelectedRows}
-              className={`transition-colors ${
-                !isAnyRowSelected
-                  ? "text-base-300 cursor-not-allowed"
-                  : "text-error hover:text-error-focus cursor-pointer"
-              }`}
+              className={`transition-colors ${!isAnyRowSelected
+                ? "text-base-300 cursor-not-allowed"
+                : "text-error hover:text-error-focus cursor-pointer"
+                }`}
               disabled={!isAnyRowSelected}
             >
               <TrashIcon className="size-6" />
@@ -254,29 +251,25 @@ const GenericTable = <T extends object>({
         )}
       </div>
       <table
-        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${
-          tableClassName ?? ""
-        }`}
+        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${tableClassName ?? ""
+          }`}
       >
         <thead>
           <tr className="text-base-content bg-base-300">
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`${
-                  gridView ? "border border-base-300 bg-base-200" : ""
-                } ${
-                  column.sortable !== false
+                className={`${gridView ? "border border-base-300 bg-base-200" : ""
+                  } ${column.sortable !== false
                     ? "cursor-pointer select-none hover:bg-base-300 transition-colors"
                     : ""
-                } ${
-                  column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
-                }`}
+                  } ${column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
+                  }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                    sortConfig?.direction === "asc"
+                      sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });
@@ -310,24 +303,21 @@ const GenericTable = <T extends object>({
             return (
               <tr
                 key={rowIndex}
-                className={`${
-                  typeof rowClassName === "function"
-                    ? rowClassName(row, rowIndex)
-                    : rowClassName || ""
-                } ${
-                  isPrivate
+                className={`${typeof rowClassName === "function"
+                  ? rowClassName(row, rowIndex)
+                  : rowClassName || ""
+                  } ${isPrivate
                     ? "opacity-60 cursor-not-allowed"
                     : "hover:bg-base-200 transition-colors"
-                }`}
+                  }`}
               >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className={`text-base-content ${
-                      column.data === "id"
-                        ? "sticky left-0 z-10 bg-base-100"
-                        : ""
-                    } ${gridView ? "border border-base-300" : ""}`}
+                    className={`text-base-content ${column.data === "id"
+                      ? "sticky left-0 z-10 bg-base-100"
+                      : ""
+                      } ${gridView ? "border border-base-300" : ""}`}
                   >
                     {column.cell
                       ? column.cell(row, rowIndex)

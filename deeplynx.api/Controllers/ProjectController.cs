@@ -1,4 +1,5 @@
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -38,8 +39,10 @@ namespace deeplynx.api.Controllers
         {
             try
             {
+                // get user ID from the middleware context
+                var currentUserId = UserContextStorage.UserId;
                 var projects = await _projectBusiness
-                    .GetAllProjects(organizationId, hideArchived);
+                    .GetAllProjects(currentUserId, organizationId, hideArchived);
                 return Ok(projects);
             }
             catch (Exception exc)
@@ -84,7 +87,8 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var project = await _projectBusiness.CreateProject(dto);
+                var currentUserId = UserContextStorage.UserId;
+                var project = await _projectBusiness.CreateProject(currentUserId, dto);
                 return Ok(project);
             }
             catch (Exception exc)
@@ -226,6 +230,27 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// List Project Members
+        /// </summary>
+        /// <param name="projectId">(Optional)ID of the project</param>
+        /// <returns>A list of groups and users in the project, along with their roles</returns>
+        [HttpGet("GetProjectMembers/{projectId}", Name = "api_get_project_members")]
+        public async Task<ActionResult> GetProjectMembers(long projectId)
+        {
+            try
+            {
+                var members = await _projectBusiness.GetProjectMembers(projectId);
+                return Ok(members);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing project members for project {projectId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Add User or Group to Project
         /// </summary>
         /// <param name="projectId">ID of project</param>
@@ -241,11 +266,11 @@ namespace deeplynx.api.Controllers
             try
             {
                 await _projectBusiness.AddMemberToProject(projectId, roleId, userId, groupId);
-                return Ok(new { message = $"Added member to project {projectId}" });
+                return Ok(new { message = $"Added member {userId ?? groupId} to project {projectId}" });
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while adding member to project {projectId}: {exc}";
+                var message = $"An error occurred while adding member {userId ?? groupId} to project {projectId}: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

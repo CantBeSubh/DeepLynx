@@ -26,17 +26,20 @@ namespace deeplynx.tests
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
 
-        public long TestProject1Id;
-        public long ArchivedProject2Id;
-        public long TestClassId;
-        public long TestDataSourceId;
-        public long TestUserId;
-        public long TestRoleId;
-        public long TestGroupId;
-        public long MissingUserId;
-        public long MissingRoleId;
-        public long MissingGroupId;
-        public long TestOrgId;
+        private long TestProjectId;
+        private long ArchivedProjectId;
+        private long TestClassId;
+        private long TestDataSourceId;
+        private long TestUserId;
+        private long TestRoleId;
+        private long TestGroupId;
+        private long MissingUserId;
+        private long MissingRoleId;
+        private long MissingGroupId;
+        private long TestOrgId;
+        private long LonelyUserId;
+        private long OtherProjectId;
+        private long LonelyProjectId;
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -78,7 +81,7 @@ namespace deeplynx.tests
                 Abbreviation = "TST"
             };
            
-            var result = await _projectBusiness.CreateProject(dto);
+            var result = await _projectBusiness.CreateProject(TestUserId, dto);
             
             result.Id.Should().BeGreaterThan(0);
             result.LastUpdatedAt.Should().BeOnOrAfter(now);
@@ -94,7 +97,7 @@ namespace deeplynx.tests
                 Abbreviation = "TST"
             };
             
-            var newResult = await _projectBusiness.CreateProject(dto2);
+            var newResult = await _projectBusiness.CreateProject(TestUserId, dto2);
             
             newResult.Id.Should().BeGreaterThan(0);
             newResult.LastUpdatedAt.Should().BeOnOrAfter(now);
@@ -123,7 +126,7 @@ namespace deeplynx.tests
                 Abbreviation = "TST"
             };
            
-            var project = await _projectBusiness.CreateProject(dto);
+            var project = await _projectBusiness.CreateProject(TestUserId, dto);
             project.Name.Should().Be(dto.Name);
             var classResult = await _classBusiness.GetAllClasses(project.Id, true);
             classResult.Count.Should().Be(3);
@@ -153,7 +156,7 @@ namespace deeplynx.tests
                 Abbreviation = "TST"
             };
            
-            var project = await _projectBusiness.CreateProject(dto);
+            var project = await _projectBusiness.CreateProject(TestUserId, dto);
             project.Name.Should().Be(dto.Name);
             
             var dataSourceResult = await _dataSourceBusiness.GetAllDataSources(project.Id, true);
@@ -184,7 +187,7 @@ namespace deeplynx.tests
             };
    
             // Act
-            var project = await _projectBusiness.CreateProject(dto);
+            var project = await _projectBusiness.CreateProject(TestUserId, dto);
     
             // Assert
             project.Name.Should().Be(dto.Name);
@@ -226,22 +229,31 @@ namespace deeplynx.tests
             var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
 
            
-            var result = () => _projectBusiness.CreateProject(dto);
+            var result = () => _projectBusiness.CreateProject(TestUserId, dto);
             await result.Should().ThrowAsync<ValidationException>();
             
             // Ensure that no project create event is logged
             var eventList = Context.Events.ToList();
             eventList.Should().HaveCount(0);
+        }
+        
+        [Fact]
+        public async Task CreateProject_Fails_IfNoUser()
+        {
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
+            
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _projectBusiness.CreateProject(MissingUserId, dto));
+            
+            Assert.Contains($"User with id {MissingUserId} does not exist", exception.Message);
         }
 
         [Fact]
         public async Task CreateProject_Fails_IfEmptyName()
         {
-            
             var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description" };
-
            
-            var result = () => _projectBusiness.CreateProject(dto);
+            var result = () => _projectBusiness.CreateProject(TestUserId, dto);
             await result.Should().ThrowAsync<ValidationException>();
             
             // Ensure that no project create event is logged
@@ -250,25 +262,45 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllProjects_ExcludesArchived()
+        public async Task GetAllProjects_ReturnsProjectsForUser()
         {
-            var listWithArchived = await _projectBusiness.GetAllProjects(null, false);
-            var listWithoutArchived = await _projectBusiness.GetAllProjects(null, true);
+            var listForTestUser = (await _projectBusiness.GetAllProjects(TestUserId, null)).ToList();
+            var listForLonely = (await _projectBusiness.GetAllProjects(LonelyUserId, null)).ToList();
 
             // Assert
-            listWithArchived.Should().Contain(p => p.Id == ArchivedProject2Id);
-            listWithoutArchived.Should().NotContain(p => p.Id == ArchivedProject2Id);
+            Assert.NotNull(listForTestUser);
+            Assert.NotEmpty(listForTestUser);
+            Assert.Equal(2, listForTestUser.Count);
+            Assert.Contains(listForTestUser, p => p.Name == "Test Project");
+            Assert.Contains(listForTestUser, p => p.Name == "Other Project");
+            
+            Assert.NotNull(listForLonely);
+            Assert.NotEmpty(listForLonely);
+            Assert.Single(listForLonely);
+            Assert.Contains(listForLonely, p => p.Name == "Lone Project");
+        }
+        
+        [Fact]
+        public async Task GetAllProjects_IncludesArchivedWhenSpecified()
+        {
+            var listWithArchived = (await _projectBusiness.GetAllProjects(TestUserId, null, false)).ToList();
+
+            // Assert
+            Assert.NotNull(listWithArchived);
+            Assert.NotEmpty(listWithArchived);
+            Assert.Equal(3, listWithArchived.Count);
+            Assert.Contains(listWithArchived, p => p.Name == "Archived Project");
         }
 
         [Fact]
         public async Task GetProject_Success_WhenExists()
         {
            
-            var result = await _projectBusiness.GetProject(TestProject1Id, true);
+            var result = await _projectBusiness.GetProject(TestProjectId, true);
 
           
             result.Should().NotBeNull();
-            result.Id.Should().Be(TestProject1Id);
+            result.Id.Should().Be(TestProjectId);
             result.Name.Should().Be("Test Project");
         }
 
@@ -286,7 +318,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProject_Fails_IfDeletedProject()
         {
-            Func<Task> act = async () => { await _projectBusiness.GetProject(ArchivedProject2Id, true); };
+            Func<Task> act = async () => { await _projectBusiness.GetProject(ArchivedProjectId, true); };
 
             await act.Should().ThrowAsync<KeyNotFoundException>();
         }
@@ -504,7 +536,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProjectStats_Success_ReturnsCorrectCounts()
         {
-            var result = await _projectBusiness.GetProjectStats(TestProject1Id);
+            var result = await _projectBusiness.GetProjectStats(TestProjectId);
 
           
             result.classes.Should().Be(1);    // 1 test class
@@ -558,7 +590,7 @@ namespace deeplynx.tests
             var record1 = new Record
             {
                 Name = "Multi Project Record 1",
-                ProjectId = TestProject1Id,
+                ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
@@ -587,7 +619,7 @@ namespace deeplynx.tests
             {
                 RecordId = record1.Id,
                 Name = record1.Name,
-                ProjectId = TestProject1Id,
+                ProjectId = TestProjectId,
                 ObjectStorageName = secondProject.Name,
                 ProjectName = "Test Project",
                 Properties = record1.Properties,
@@ -620,10 +652,10 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
            
-            var projectIds = new long[] { TestProject1Id, secondProject.Id };
+            var projectIds = new long[] { TestProjectId, secondProject.Id };
             var result = await _projectBusiness.GetMultiProjectRecords(projectIds, true);
 
-            result.Should().Contain(r => r.ProjectId == TestProject1Id);
+            result.Should().Contain(r => r.ProjectId == TestProjectId);
             result.Should().Contain(r => r.ProjectId == secondProject.Id);
         }
 
@@ -670,17 +702,135 @@ namespace deeplynx.tests
             dto.LastUpdatedBy.Should().Be("test@example.com");
             dto.IsArchived.Should().BeFalse();
         }
+        
+        [Fact]
+        public async Task GetProjectMembers_WithOnlyUsers_ReturnsUserMembers()
+        {
+            // Arrange - Create project with only user members
+            var projectWithUsers = new Project
+            {
+                Name = "Users Only Project",
+                Description = "Test project with only users",
+                Abbreviation = "USR1",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Projects.Add(projectWithUsers);
+            await Context.SaveChangesAsync();
+            
+            var userProjectMember = new ProjectMember
+            {
+                ProjectId = projectWithUsers.Id,
+                UserId = TestUserId,
+                RoleId = TestRoleId
+            };
+            Context.ProjectMembers.Add(userProjectMember);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _projectBusiness.GetProjectMembers(projectWithUsers.Id);
+            var members = result.ToList();
+            //
+            // // Assert
+            // Assert.NotEmpty(members);
+            // Assert.Single(members);
+            // Assert.All(members, m => Assert.NotEmpty(m.Email)); // All should have emails (users only)
+            // Assert.Contains(members, m => m.Name == "Test User" && m.Email == "test@example.com" && m.Role == "Test Role");
+        }
+
+        [Fact]
+        public async Task GetProjectMembers_WithOnlyGroups_ReturnsGroupMembers()
+        {
+            // Arrange - Create project with only group members
+            var projectWithGroups = new Project
+            {
+                Name = "Groups Only Project",
+                Description = "Test project with only groups",
+                Abbreviation = "GRP1",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Projects.Add(projectWithGroups);
+            await Context.SaveChangesAsync();
+            
+            var groupProjectMember = new ProjectMember
+            {
+                ProjectId = projectWithGroups.Id,
+                GroupId = TestGroupId,
+                RoleId = TestRoleId
+            };
+            Context.ProjectMembers.Add(groupProjectMember);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _projectBusiness.GetProjectMembers(projectWithGroups.Id);
+            var members = result.ToList();
+            
+            // Assert
+            Assert.NotEmpty(members);
+            Assert.Single(members);
+            Assert.All(members, m => Assert.Empty(m.Email)); // All should have empty emails (groups only)
+            Assert.Contains(members, m => m.Name == "Test Group" && m.Email == string.Empty && m.Role == "Test Role");
+        }
+
+        [Fact]
+        public async Task GetProjectMembers_WithUsersAndGroups_ReturnsBothTypes()
+        {
+            // Arrange - Create project with both users and groups
+            var projectWithBoth = new Project
+            {
+                Name = "Mixed Project",
+                Description = "Test project with users and groups",
+                Abbreviation = "MIX1",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Projects.Add(projectWithBoth);
+            await Context.SaveChangesAsync();
+            
+            var userProjectMember = new ProjectMember
+            {
+                ProjectId = projectWithBoth.Id,
+                UserId = TestUserId,
+                RoleId = TestRoleId
+            };
+            var groupProjectMember = new ProjectMember
+            {
+                ProjectId = projectWithBoth.Id,
+                GroupId = TestGroupId,
+                RoleId = TestRoleId
+            };
+            Context.ProjectMembers.AddRange(userProjectMember, groupProjectMember);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _projectBusiness.GetProjectMembers(projectWithBoth.Id);
+            var members = result.ToList();
+            
+            // Assert
+            Assert.NotEmpty(members);
+            Assert.Equal(2, members.Count);
+            
+            // Verify user
+            Assert.Contains(members, m => m.Name == "Test User" && m.Email == "test@example.com" && m.Role == "Test Role");
+            
+            // Verify group
+            Assert.Contains(members, m => m.Name == "Test Group" && m.Email == string.Empty && m.Role == "Test Role");
+            
+            // Verify mix of emails (users have emails, groups don't)
+            var usersWithEmails = members.Where(m => !string.IsNullOrEmpty(m.Email)).ToList();
+            var groupsWithoutEmails = members.Where(m => string.IsNullOrEmpty(m.Email)).ToList();
+            Assert.Single(usersWithEmails);
+            Assert.Single(groupsWithoutEmails);
+        }
 
         [Fact]
         public async Task AddMemberToProject_CanAddUserToProject_WithoutRole()
         {
             // Act
-            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            var result = await _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, null);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.UserId == TestUserId);
             projectMember.Should().NotBeNull();
             projectMember!.RoleId.Should().BeNull();
         }
@@ -689,12 +839,12 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_CanAddGroupToProject_WithoutRole()
         {
             // Act
-            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, null, TestGroupId);
+            var result = await _projectBusiness.AddMemberToProject(LonelyProjectId, null, null, TestGroupId);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.GroupId == TestGroupId);
             projectMember.Should().NotBeNull();
             projectMember!.RoleId.Should().BeNull();
         }
@@ -703,12 +853,12 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_CanAddUserToProject_WithRole()
         {
             // Act
-            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, TestRoleId, TestUserId, null);
+            var result = await _projectBusiness.AddMemberToProject(LonelyProjectId, TestRoleId, TestUserId, null);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.UserId == TestUserId);
             projectMember.Should().NotBeNull();
             projectMember!.RoleId.Should().Be(TestRoleId);
         }
@@ -717,12 +867,12 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_CanAddGroupToProject_WithRole()
         {
             // Act
-            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, TestRoleId, null, TestGroupId);
+            var result = await _projectBusiness.AddMemberToProject(LonelyProjectId, TestRoleId, null, TestGroupId);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.GroupId == TestGroupId);
             projectMember.Should().NotBeNull();
             projectMember!.RoleId.Should().Be(TestRoleId);
         }
@@ -731,7 +881,7 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfBothUserAndGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, TestGroupId);
+            var result = () => _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, TestGroupId);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
@@ -740,7 +890,7 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfNeitherUserNorGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, null, null);
+            var result = () => _projectBusiness.AddMemberToProject(LonelyProjectId, null, null, null);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("One of User ID or Group ID must be provided");
         }
@@ -749,7 +899,7 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfUserDoesNotExist()
         {
             // Act & Assert
-            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, MissingUserId, null);
+            var result = () => _projectBusiness.AddMemberToProject(LonelyProjectId, null, MissingUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage($"User with id {MissingUserId} not found");
         }
@@ -758,7 +908,7 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfGroupDoesNotExist()
         {
             // Act & Assert
-            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, null, null, MissingGroupId);
+            var result = () => _projectBusiness.AddMemberToProject(LonelyProjectId, null, null, MissingGroupId);
             await result.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage($"Group with id {MissingGroupId} not found");
         }
@@ -767,7 +917,7 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfRoleDoesNotExist()
         {
             // Act & Assert
-            var result = () => _projectBusiness.AddMemberToProject(TestProject1Id, MissingRoleId, TestUserId, null);
+            var result = () => _projectBusiness.AddMemberToProject(LonelyProjectId, MissingRoleId, TestUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage($"Role with id {MissingRoleId} not found");
         }
@@ -786,10 +936,10 @@ namespace deeplynx.tests
         public async Task AddMemberToProject_Fails_IfProjectMemberExists()
         {
             // Add the member first
-            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, null);
 
             // Act & Assert - try to add the same member again
-            var result = await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            var result = await _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, null);
             result.Should().BeFalse(); // Should return false when member already exists
         }
 
@@ -812,15 +962,15 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add member with original role
-            await _projectBusiness.AddMemberToProject(TestProject1Id, originalRole.Id, TestUserId, null);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, originalRole.Id, TestUserId, null);
 
             // Act
-            var result = await _projectBusiness.UpdateProjectMemberRole(TestProject1Id, newRole.Id, TestUserId, null);
+            var result = await _projectBusiness.UpdateProjectMemberRole(TestProjectId, newRole.Id, TestUserId, null);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProjectId && pm.UserId == TestUserId);
             projectMember!.RoleId.Should().Be(newRole.Id);
         }
 
@@ -844,15 +994,15 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add member with original role
-            await _projectBusiness.AddMemberToProject(TestProject1Id, originalRole.Id, null, TestGroupId);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, originalRole.Id, null, TestGroupId);
 
             // Act
-            var result = await _projectBusiness.UpdateProjectMemberRole(TestProject1Id, newRole.Id, null, TestGroupId);
+            var result = await _projectBusiness.UpdateProjectMemberRole(LonelyProjectId, newRole.Id, null, TestGroupId);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.GroupId == TestGroupId);
             projectMember!.RoleId.Should().Be(newRole.Id);
         }
 
@@ -860,7 +1010,7 @@ namespace deeplynx.tests
         public async Task UpdateProjectMemberRole_Fails_IfBothUserAndGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, 1, 1);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProjectId, TestRoleId, 1, 1);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
@@ -869,7 +1019,7 @@ namespace deeplynx.tests
         public async Task UpdateProjectMemberRole_Fails_IfNeitherUserNorGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, null, null);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProjectId, TestRoleId, null, null);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("One of User ID or Group ID must be provided");
         }
@@ -879,9 +1029,9 @@ namespace deeplynx.tests
         {
             // Act & Assert
             
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, MissingUserId, null);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProjectId, TestRoleId, MissingUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProject1Id}");
+                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProjectId}");
         }
 
         [Fact]
@@ -889,20 +1039,20 @@ namespace deeplynx.tests
         {
             // Act & Assert
            
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, null, MissingGroupId);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProjectId, TestRoleId, null, MissingGroupId);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProject1Id}");
+                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProjectId}");
         }
 
         [Fact]
         public async Task UpdateProjectMemberRole_Fails_IfRoleDoesNotExist()
         {
             // Add user to project first
-            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, null);
 
             // Act & Assert
             
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, MissingRoleId, TestUserId, null);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProjectId, MissingRoleId, TestUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
                 .WithMessage($"Role with id {MissingRoleId} not found");
         }
@@ -921,24 +1071,24 @@ namespace deeplynx.tests
         public async Task UpdateProjectMemberRole_Fails_IfProjectMemberNotExists()
         {
             // Act & Assert (user exists but is not a member of the project)
-            var result = () => _projectBusiness.UpdateProjectMemberRole(TestProject1Id, TestRoleId, TestUserId, null);
+            var result = () => _projectBusiness.UpdateProjectMemberRole(LonelyProjectId, TestRoleId, TestUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"User with id {TestUserId} is not a member of project {TestProject1Id}");
+                .WithMessage($"User with id {TestUserId} is not a member of project {LonelyProjectId}");
         }
 
         [Fact]
         public async Task RemoveMemberFromProject_CanRemoveUser()
         {
             // Add user to project first
-            await _projectBusiness.AddMemberToProject(TestProject1Id, null, TestUserId, null);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, null, TestUserId, null);
 
             // Act
-            var result = await _projectBusiness.RemoveMemberFromProject(TestProject1Id, TestUserId, null);
+            var result = await _projectBusiness.RemoveMemberFromProject(TestProjectId, TestUserId, null);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.UserId == TestUserId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProjectId && pm.UserId == TestUserId);
             projectMember.Should().BeNull();
         }
 
@@ -946,15 +1096,15 @@ namespace deeplynx.tests
         public async Task RemoveMemberFromProject_CanRemoveGroup()
         {
             // Add group to project first
-            await _projectBusiness.AddMemberToProject(TestProject1Id, null, null, TestGroupId);
+            await _projectBusiness.AddMemberToProject(LonelyProjectId, null, null, TestGroupId);
 
             // Act
-            var result = await _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, TestGroupId);
+            var result = await _projectBusiness.RemoveMemberFromProject(LonelyProjectId, null, TestGroupId);
 
             // Assert
             result.Should().BeTrue();
             var projectMember = await Context.ProjectMembers
-                .FirstOrDefaultAsync(pm => pm.ProjectId == TestProject1Id && pm.GroupId == TestGroupId);
+                .FirstOrDefaultAsync(pm => pm.ProjectId == LonelyProjectId && pm.GroupId == TestGroupId);
             projectMember.Should().BeNull();
         }
 
@@ -962,7 +1112,7 @@ namespace deeplynx.tests
         public async Task RemoveMemberFromProject_Fails_IfBothUserAndGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, 1, 1);
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProjectId, 1, 1);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("Please provide only one of User ID or Group ID, not both");
         }
@@ -971,7 +1121,7 @@ namespace deeplynx.tests
         public async Task RemoveMemberFromProject_Fails_IfNeitherUserNorGroupAreSet()
         {
             // Act & Assert
-            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, null);
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProjectId, null, null);
             await result.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("One of either User ID or Group ID must be provided");
         }
@@ -980,18 +1130,18 @@ namespace deeplynx.tests
         public async Task RemoveMemberFromProject_Fails_IfUserDoesNotExist()
         {
             // Act & Assert
-            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, MissingUserId, null);
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProjectId, MissingUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProject1Id}");
+                .WithMessage($"User with id {MissingUserId} is not a member of project {TestProjectId}");
         }
 
         [Fact]
         public async Task RemoveMemberFromProject_Fails_IfGroupDoesNotExist()
         {
             // Act & Assert
-            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, null, MissingGroupId);
+            var result = () => _projectBusiness.RemoveMemberFromProject(TestProjectId, null, MissingGroupId);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProject1Id}");
+                .WithMessage($"Group with id {MissingGroupId} is not a member of project {TestProjectId}");
         }
 
         [Fact]
@@ -1008,9 +1158,9 @@ namespace deeplynx.tests
         public async Task RemoveMemberFromProject_Fails_IfProjectMemberNotExists()
         {
             // Act & Assert (user exists but is not a member of the project)
-            var result = () => _projectBusiness.RemoveMemberFromProject(TestProject1Id, TestUserId, null);
+            var result = () => _projectBusiness.RemoveMemberFromProject(LonelyProjectId, TestUserId, null);
             await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage($"User with id {TestUserId} is not a member of project {TestProject1Id}");
+                .WithMessage($"User with id {TestUserId} is not a member of project {LonelyProjectId}");
         }
         
         protected override async Task SeedTestDataAsync()
@@ -1021,33 +1171,50 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             TestOrgId = testOrg.Id;
             
-            var testProjects = new List<Project>
+            // add projects
+            var testProj = new Project
             {
-                new Project {
-                    Name = "Test Project",
-                    Description = "Test project for unit tests",
-                    Abbreviation = "TST",
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    IsArchived = false 
-                },
-                new Project
-                {
-                    Name = $"Archived Project",
-                    Description = "Archived project for unit tests",
-                    Abbreviation = "TST",
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    IsArchived = true
-                }
+                Name = "Test Project",
+                Description = "Test project for unit tests",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
             };
-            Context.Projects.AddRange(testProjects);
+            var testProj2 = new Project
+            {
+                Name = "Other Project",
+                Description = "Secondary project for unit tests",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            var loneProj = new Project
+            {
+                Name = "Lone Project",
+                Description = "Project with just the lonely user",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false
+            };
+            var arcProj = new Project
+            {
+                Name = $"Archived Project",
+                Description = "Archived project for unit tests",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+            };
+            Context.Projects.AddRange(testProj, testProj2, loneProj, arcProj);
             await Context.SaveChangesAsync();
-            TestProject1Id = testProjects[0].Id;
-            ArchivedProject2Id = testProjects[1].Id;
-
+            TestProjectId = testProj.Id;
+            OtherProjectId = testProj2.Id;
+            LonelyProjectId = loneProj.Id;
+            ArchivedProjectId = arcProj.Id;
+            
             var testClass = new Class
             {
                 Name = "Test Class",
-                ProjectId = TestProject1Id,
+                ProjectId = TestProjectId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = false
             };
@@ -1058,7 +1225,7 @@ namespace deeplynx.tests
             var testDataSource = new DataSource
             {
                 Name = "Test DataSource",
-                ProjectId = TestProject1Id,
+                ProjectId = TestProjectId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = false
             };
@@ -1069,7 +1236,7 @@ namespace deeplynx.tests
             var testRecord = new Record
             {
                 Name = "Test Record",
-                ProjectId = TestProject1Id,
+                ProjectId = TestProjectId,
                 DataSourceId = TestDataSourceId,
                 ClassId = TestClassId,
                 Properties = "{}",
@@ -1092,10 +1259,16 @@ namespace deeplynx.tests
                 Email = "ope@example.com",
                 Name = "Missing User",
             };
-            Context.Users.AddRange(testUser, missingUser);
+            var lonelyUser = new User
+            {
+                Email = "lonely@example.com",
+                Name = "Lonely User",
+            };
+            Context.Users.AddRange(testUser, missingUser, lonelyUser);
             await Context.SaveChangesAsync();
             TestUserId = testUser.Id;
             MissingUserId = missingUser.Id;
+            LonelyUserId = lonelyUser.Id;
             
             // delete missing user
             Context.Users.Remove(missingUser);
@@ -1123,6 +1296,33 @@ namespace deeplynx.tests
             
             // delete missing group
             Context.Groups.Remove(missingGroup);
+            await Context.SaveChangesAsync();
+            
+            // add project members
+            var projectMembers = new List<ProjectMember>
+            {
+                new ProjectMember
+                {
+                    ProjectId = TestProjectId,
+                    UserId = TestUserId,
+                },
+                new ProjectMember
+                {
+                    ProjectId = OtherProjectId,
+                    UserId = TestUserId,
+                },
+                new ProjectMember
+                {
+                    ProjectId = LonelyProjectId,
+                    UserId = LonelyUserId,
+                },
+                new ProjectMember()
+                {
+                    ProjectId = ArchivedProjectId,
+                    UserId = TestUserId,
+                }
+            };
+            Context.ProjectMembers.AddRange(projectMembers);
             await Context.SaveChangesAsync();
         }
     }

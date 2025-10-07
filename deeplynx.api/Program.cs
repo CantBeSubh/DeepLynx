@@ -6,6 +6,7 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.business;
 using deeplynx.interfaces;
 using deeplynx.graph;
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
@@ -95,6 +96,7 @@ try
             // This makes ASP.NET fetch OIDC metadata + JWKS from:
             // {issuer}/.well-known/openid-configuration
             options.Authority = issuer;
+            //options.RequireHttpsMetadata = false; for local only
             if (localDevelopment == "true")
             {
                 options.RequireHttpsMetadata = false; 
@@ -189,6 +191,7 @@ try
     builder.Services.AddTransient<ITimeseriesBusiness, TimeseriesBusiness>();
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
+    builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -227,6 +230,12 @@ try
 
             document.Tags = new HashSet<OpenApiTag>
             {
+                new OpenApiTag
+                {
+                    Name = "Auth",
+                    Description =
+                        "Provides endpoints to create tokens and api keys"
+                },
                 new OpenApiTag
                 {
                     Name = "Class",
@@ -403,6 +412,7 @@ try
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseMiddleware<UserContextMiddleware>();
     app.MapControllers();
     app.Run();
 }

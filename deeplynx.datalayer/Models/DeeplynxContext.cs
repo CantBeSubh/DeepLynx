@@ -16,6 +16,8 @@ public partial class DeeplynxContext : DbContext
     }
 
     public virtual DbSet<Action> Actions { get; set; }
+    
+    public virtual DbSet<ApiKey> ApiKeys { get; set; }
 
     public virtual DbSet<Class> Classes { get; set; }
 
@@ -70,6 +72,15 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Project).WithMany(p => p.Actions).HasConstraintName("actions_project_id_fkey");
         });
 
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("api_keys_pkey");
+
+            entity.HasOne(d => d.User).WithMany(p => p.ApiKeys)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("api_keys_user_id_fkey");
+        });
+
         modelBuilder.Entity<Class>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("classes_pkey");
@@ -121,12 +132,6 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("events_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-            entity.HasOne(d => d.DataSource).WithMany(p => p.Events)
-                .OnDelete(DeleteBehavior.SetNull)
-                .HasConstraintName("events_dataSource_id_fkey");
-
-            entity.HasOne(d => d.Project).WithMany(p => p.Events).HasConstraintName("events_project_id_fkey");
         });
 
         modelBuilder.Entity<Group>(entity =>

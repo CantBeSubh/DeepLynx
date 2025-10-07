@@ -28,11 +28,12 @@ export default function Loadingtranslations() {
   return (
     <WithT>
       {(t) => (
-        <div className="bg-base-100">
+        <div className="min-h-screen bg-base-100">
           {/* Header */}
           <div className="flex justify-between items-center bg-base-200/40 pl-12 pt-3 pb-2">
             <h1 className="text-2xl font-bold text-base-content">
-              <Skeleton />
+                                      <span>{t.translations.WELECOME}</span>
+
             </h1>
             <label
               className={`input input-bordered flex items-center relative mr-4`}
@@ -45,8 +46,15 @@ export default function Loadingtranslations() {
           </div>
 
           {/* Main Content */}
-          <div className="mr-6 py-6">
-            <div className="flex justify-between items-center justify-end mb-4">
+          <div className="p-6">
+            <div
+              //This is commented out till we get digets
+              // className={`w-full md:w-3/5 px-4 ${
+              //   canCustomize ? "grayed-out" : ""
+              // }`}
+              className="w-4/5 mx-auto"
+            >
+            {/* <div className="flex justify-between items-center justify-end mb-4">
               <button className="btn btn-outline btn-secondary flex items-center mr-2">
                 <Cog6ToothIcon className="size-6" />
                 {t.translations.CUSTOMIZE}
@@ -55,14 +63,12 @@ export default function Loadingtranslations() {
                 <PlusIcon className="size-6" />
                 {t.translations.WIDGET}
               </button>
-            </div>
-            <div className="flex">
-              <div className="w-full md:w-1/2 px-4">
-                <div className="card bg-base-200/20 border border-base-300 p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-base-content text-lg font-semibold">
-                      {t.translations.YOUR_PROJECTS}
-                    </h3>
+            </div> */}
+               <div className="card card-border p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-info-content text-lg font-semibold">
+                    {t.translations.YOUR_PROJECTS}
+                  </h3>
 
                     <div className="flex gap-2">
                       <button className="btn btn-outline btn-secondary flex items-center gap-1">
@@ -98,23 +104,31 @@ export default function Loadingtranslations() {
                             <React.Fragment key={globalIndex}>
                               <tr className="bg-base-200/30 hover:bg-base-200/50 rounded-lg overflow-hidden">
                                 {columns.map((col, i) => (
-                                  <td key={i} className="text-base-content">
+                                  
+                                    <React.Fragment key={i}><td key={i} className="text-base-content">
                                     <Skeleton
-                                      width={200}
+                                      width={100}
                                       baseColor="var(--color-base-200)"
-                                      highlightColor="var(--color-base-300)"
-                                    />
-                                    <Skeleton
-                                      baseColor="var(--color-base-200)"
-                                      highlightColor="var(--color-base-300)"
-                                    />
-                                    <Skeleton
-                                      width={500}
-                                      baseColor="var(--color-base-200)"
-                                      highlightColor="var(--color-base-300)"
-                                    />
-                                  </td>
-                                ))}
+                                      highlightColor="var(--color-base-300)" />
+                                  </td><td key={i + 1} className="text-base-content">
+                                      <Skeleton
+                                        width={350}
+                                        baseColor="var(--color-base-200)"
+                                        highlightColor="var(--color-base-300)" />
+                                    </td><td key={i + 2} className="text-base-content">
+                                      <Skeleton
+                                        width={75}
+                                        baseColor="var(--color-base-200)"
+                                        highlightColor="var(--color-base-300)" />
+                                    </td><td key={i + 3} className="text-base-content">
+                                      <Skeleton
+                                        width={50}
+                                        baseColor="var(--color-base-200)"
+                                        highlightColor="var(--color-base-300)" />
+                                    </td></React.Fragment>
+                              
+                                )
+                                )}
                               </tr>
                             </React.Fragment>
                           );
@@ -141,8 +155,8 @@ export default function Loadingtranslations() {
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="w-full md:w-1/2">
+
+              {/* <div className="w-full md:w-1/2">
                 <div className="card bg-base-200/20 border border-base-300">
                   <div className="card-body">
                     <div className="flex justify-between items-center">
@@ -244,8 +258,8 @@ export default function Loadingtranslations() {
                     </div>
                   </div>
                 </div>
+              </div> */}
               </div>
-            </div>
           </div>
         </div>
       )}
