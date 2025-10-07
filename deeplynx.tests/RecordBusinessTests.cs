@@ -19,6 +19,7 @@ public class RecordBusinessTests : IntegrationTestBase
     private RecordBusiness _recordBusiness;
     private EventBusiness _eventBusiness;
     public long pid;
+    public long pid2;
     public long did;
     public long cid;
     public long rid;
@@ -270,6 +271,31 @@ public class RecordBusinessTests : IntegrationTestBase
         // Ensure that no record create event was logged
         var eventList = Context.Events.ToList();
         eventList.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateRecord_WithInvalidDataSource_ThrowsException()
+    {
+        var dataSourceInWrongProject = new DataSource
+        {
+            Name = "Test Data Source",
+            Description = "Test data source for unit tests",
+            ProjectId = pid2,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
+        Context.DataSources.Add(dataSourceInWrongProject);
+        await Context.SaveChangesAsync(); 
+        
+        var dto = new CreateRecordRequestDto
+        {
+            Name = "Invalid Record",
+            Description = "Invalid Record Description",
+            OriginalId = "original-12334532",
+            Properties = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new { TestProp = "TestValue" }))!
+        };
+        
+        var result = () => _recordBusiness.CreateRecord(pid, dataSourceInWrongProject.Id, dto);
+        await result.Should().ThrowAsync<KeyNotFoundException>();
     }
     
     #endregion
@@ -1060,9 +1086,17 @@ public class RecordBusinessTests : IntegrationTestBase
             Description = "Test project for unit tests",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
+        var project2 = new Project
+        {
+            Name = "Test Project 2",
+            Description = "Test project 2 for unit tests",
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+        };
         Context.Projects.Add(project);
+        Context.Projects.Add(project2);
         await Context.SaveChangesAsync();
         pid = project.Id;
+        pid2 = project2.Id;
         
         var dataSource = new DataSource
         {
