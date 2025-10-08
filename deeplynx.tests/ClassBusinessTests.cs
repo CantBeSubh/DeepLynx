@@ -4,7 +4,6 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Microsoft.Extensions.Logging;
@@ -63,22 +62,22 @@ namespace deeplynx.tests
             };
 
             var result = await _classBusiness.CreateClass(pid, dto);
-            result.Id.Should().BeGreaterThan(0);
-            result.LastUpdatedAt.Should().BeOnOrAfter(now);
-            result.Name.Should().Be(dto.Name);
-            result.Description.Should().Be(dto.Description);
-            result.ProjectId.Should().Be(pid);
+            Assert.True(result.Id > 0);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(dto.Name, result.Name);
+            Assert.Equal(dto.Description, result.Description);
+            Assert.Equal(pid, result.ProjectId);
             
             // Ensure the create event is logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result.Id,
-            });
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -102,63 +101,58 @@ namespace deeplynx.tests
             };
         
             var result = await _classBusiness.BulkCreateClasses(pid, bulkDto);
-            result.Should().HaveCount(2);
-            result.First().Name.Should().Be("Test Class 1");
-            result.Last().Name.Should().Be("Test Class 2");
+            Assert.Equal(2, result.Count);
+            Assert.Equal("Test Class 1", result.First().Name);
+            Assert.Equal("Test Class 2", result.Last().Name);
             
             // Ensure the create event is logged for each class create
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(2);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result[0].Id,
-            });
-            eventList[1].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result[1].Id,
-            });
+            Assert.Equal(2, eventList.Count);
+            var firstEvent = eventList[0];
+            var secondEvent = eventList[1];
+            
+            Assert.Equal(pid, firstEvent.ProjectId);
+            Assert.Equal("create", firstEvent.Operation);
+            Assert.Equal("class", firstEvent.EntityType);
+            Assert.Equal(result[0].Id, firstEvent.EntityId);
+            
+            Assert.Equal(pid, secondEvent.ProjectId);
+            Assert.Equal("create", secondEvent.Operation);
+            Assert.Equal("class", secondEvent.EntityType);
+            Assert.Equal(result[1].Id, secondEvent.EntityId);
         }
 
         [Fact]
         public async Task CreateClass_Fails_IfNoName()
         {
             var dto = new CreateClassRequestDto { Name = null, Description = "Test Description" };
-            var result = () => _classBusiness.CreateClass(pid, dto);
-            await result.Should().ThrowAsync<ValidationException>();
+            await Assert.ThrowsAsync<ValidationException>(() => _classBusiness.CreateClass(pid, dto));
             
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
         public async Task CreateClass_Fails_IfEmptyName()
         {
             var dto = new CreateClassRequestDto { Name = "", Description = "Test Description" };
-            var result = () => _classBusiness.CreateClass(pid, dto);
-            await result.Should().ThrowAsync<ValidationException>();
+            await Assert.ThrowsAsync<ValidationException>(() => _classBusiness.CreateClass(pid, dto));
             
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
         public async Task CreateClass_Fails_IfNoProjectId()
         {
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
-            var result = () => _classBusiness.CreateClass(pid + 99, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.CreateClass(pid + 99, dto));
             
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -169,12 +163,11 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
-            var result = () => _classBusiness.CreateClass(pid, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.CreateClass(pid, dto));
             
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -187,14 +180,13 @@ namespace deeplynx.tests
             var firstClass = await _classBusiness.CreateClass(pid, dto);
 
             // Try to create duplicate
-            var result = () => _classBusiness.CreateClass(pid, dto);
-            await result.Should().ThrowAsync<Exception>();
+            await Assert.ThrowsAsync<DbUpdateException>(() => _classBusiness.CreateClass(pid, dto));
             
-            // Ensure that only one event was logged (not the duplicate)
+            // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
-        
-            eventList.Count.Should().Be(1);
-            eventList[0].Operation.Should().Be("create");
+            var firstAndOnlyEvent = eventList[0];
+            Assert.Single(eventList);
+            Assert.Equal("create", firstAndOnlyEvent.Operation);
         }
 
         [Fact]
@@ -208,6 +200,7 @@ namespace deeplynx.tests
             await _classBusiness.CreateClass(p2.Id, new CreateClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
             
             var list = await _classBusiness.GetAllClasses(pid,true);
+            Assert.Single(list);
             Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
         }
 
@@ -267,9 +260,8 @@ namespace deeplynx.tests
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-
-            var result = () => _classBusiness.GetClass(pid + 999, testClass.Id,true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClass(pid + 999, testClass.Id, true));
         }
 
         [Fact]
@@ -286,8 +278,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var result = () => _classBusiness.GetClass(pid, testClass.Id,true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClass(pid, testClass.Id, true));
         }
 
         [Fact]
@@ -309,18 +300,19 @@ namespace deeplynx.tests
             var dto = new UpdateClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
             
-            Assert.NotNull(updatedResult.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
             Assert.Equal("Updated Description", updatedResult.Description);
             
-            // ensure that an event was logged for the update
-            var eventList = Context.Events.ToList();
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "update",
-                EntityType = "class",
-                EntityId = updatedResult.Id,
-            });
+            // Ensure that no events were created on failed class creation
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(updatedResult.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -352,46 +344,42 @@ namespace deeplynx.tests
             Assert.NotNull(updatedResult);
             Assert.Equal("Updated Description", updatedResult.Description);
             Assert.Equal(testClass.Name, updatedResult.Name);
-            Assert.NotNull(updatedResult.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
 
             // Verify class was actually updated in database
             var updatedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(updatedClass);
             Assert.Equal("Updated Description", updatedClass.Description);
             Assert.Equal(testClass.Name, updatedClass.Name);
-            Assert.NotNull(updatedClass.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, updatedClass.LastUpdatedAt);
 
             // Verify that get function gets updated version
             var getResult = await _classBusiness.GetClass(pid, testClass.Id, true);
             Assert.NotNull(getResult);
             Assert.Equal("Updated Description", getResult.Description);
             Assert.Equal(testClass.Name, getResult.Name);
-            Assert.NotNull(getResult.LastUpdatedAt);
-
+            Assert.NotEqual(DateTime.MinValue, getResult.LastUpdatedAt);
             
-            // Ensure that Update Event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "update",
-                EntityType = "class",
-                EntityId = updatedResult.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(updatedResult.Id, actualEvent.EntityId);
         }
 
         [Fact]
         public async Task UpdateClass_Fails_IfNotFound()
         {
             var dto = new UpdateClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
-            var updatedResult = () => _classBusiness.UpdateClass(pid, 99, dto);
-
-            await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UpdateClass(pid, 99, dto));
             
             // Ensure No Event was logged if update fails
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -419,24 +407,23 @@ namespace deeplynx.tests
             Assert.NotNull(archivedClass);
             Assert.True(archivedClass.IsArchived);
             Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
+            
             // Ensure that class soft delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "archive",
-                EntityType = "class",
-                EntityId = archivedClass.Id,
-            });
-
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(testClass.Id, actualEvent.EntityId);
         }
 
         [Fact]
         public async Task ArchiveClass_Fails_IfNotFound()
         {
-            var result = () => _classBusiness.ArchiveClass(pid, 99);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.ArchiveClass(pid, 99));
         }
 
         [Fact]
@@ -458,8 +445,8 @@ namespace deeplynx.tests
             Assert.Null(deletedClass);
             
             // Ensure that class soft delete event was NOT logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -755,8 +742,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveClass_Throws_IfClassNotFound()
         {
-            var act = () => _classBusiness.UnarchiveClass(pid, 99999);
-            await act.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UnarchiveClass(pid, 99999));
         }
 
         [Fact]
@@ -775,8 +761,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var act = () => _classBusiness.UnarchiveClass(pid, testClass.Id);
-            await act.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UnarchiveClass(pid, testClass.Id));
         }
 
         [Fact]
@@ -791,8 +776,7 @@ namespace deeplynx.tests
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
-            var act = () => _classBusiness.UnarchiveClass(pid, testClass.Id);
-            await act.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UnarchiveClass(pid, testClass.Id));
         }
         
         # endregion
@@ -818,7 +802,7 @@ public async Task GetClassesByName_ValidClassNames_ReturnsMatchingClasses()
     var result = await _classBusiness.GetClassesByName(pid, classNames);
 
     // Assert
-    Assert.Equal(1, result.Count);
+    Assert.Single(result);
     Assert.Equal("TestValidationClass", result.First().Name);
     Assert.Equal(pid, result.First().ProjectId);
 }
@@ -830,9 +814,7 @@ public async Task GetClassesByName_MissingClassNames_ThrowsKeyNotFoundException(
     var classNames = new List<string> { "NonExistentClass" };
 
     // Act & Assert
-    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _classBusiness.GetClassesByName(pid, classNames));
-
+    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClassesByName(pid, classNames));
     Assert.Contains("Classes not found with names", exception.Message);
 }
 
