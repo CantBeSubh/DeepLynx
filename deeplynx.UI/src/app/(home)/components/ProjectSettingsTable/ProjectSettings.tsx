@@ -7,22 +7,18 @@ import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
-// import DataSourceTable from '././ProjectTables/DataSourceTable';
-// import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
-// import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import ProjectDropdown from '../ProjectDropdown';
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
-import { getAllUsers } from '@/app/lib/user_services.client';
+import { ProjectMembersTable, UserResponseDto } from '../../types/types';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
-import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
+import ProjectSettingsMemberSkeleton from '../Skeletons/projectsettingsmemberskeleton';
+import { ProjectDTO } from '../../types/responseDTOs/projectResponseDto';
 
 interface ProjectSettingsProps {
-  projects: ProjectsList[];
-  initialProject: ProjectsList | null;
+  projects: ProjectDTO[];
+  initialProject: ProjectDTO | null;
 }
 
 const ProjectSettings = ({
@@ -37,9 +33,9 @@ const ProjectSettings = ({
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [project, setProject] = useState<ProjectDTO | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    initialProject?.id || null
+    initialProject?.id.toString() || null
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
 
@@ -150,7 +146,7 @@ const ProjectSettings = ({
               <ProjectDropdownSingleSelect
                 projects={projects}
                 onSelectionChange={handleProjectChange}
-                defaultSelectedId={initialProject?.id || ""}
+                defaultSelectedId={initialProject?.id.toString() || ""}
               />
             </div>
           </div>

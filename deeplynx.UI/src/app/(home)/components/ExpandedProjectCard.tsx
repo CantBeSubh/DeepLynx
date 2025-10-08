@@ -15,9 +15,10 @@ import { peopleData } from "../dummy_data/data";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
 import { format } from "date-fns";
+import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
 
 interface Props {
-  project: ProjectsList;
+  project: ProjectDTO;
   onClose: () => void;
 }
 
@@ -37,7 +38,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(project.id!);
+        const data = await getProjectStats(project.id.toString()!);
         setStats({
           classes: data.classes,
           records: data.records,

@@ -5,7 +5,6 @@ import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import { WidgetType } from "@/app/(home)/components/Widgets";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -18,8 +17,9 @@ import { format } from "date-fns";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
+import { ProjectDTO } from "./types/responseDTOs/projectResponseDto";
 
-type Props = { initialProjects: ProjectsList[] };
+type Props = { initialProjects: ProjectDTO[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
@@ -29,7 +29,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  const [projects, setProjects] = useState<ProjectsList[]>(initialProjects);
+  const [projects, setProjects] = useState<ProjectDTO[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
   const [canCustomize, setCanCustomize] = useState(false);
   const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
@@ -61,14 +61,14 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     }
   };
 
-  const onExplore = (row: ProjectsList) => {
+  const onExplore = (row: ProjectDTO) => {
     router.push(`/project/${row.id}`);
   };
 
   const columns = [
     {
       header: t.translations.PROJECT_NAME,
-      data: (row: ProjectsList) => (
+      data: (row: ProjectDTO) => (
         <Link
           href={`/project/${row.id}`}
           className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
@@ -79,13 +79,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     },
     {
       header: t.translations.DESCRIPTION,
-      data: (row: ProjectsList) => (
+      data: (row: ProjectDTO) => (
         <span className="text-base-content/80">{row.description || "—"}</span>
       ),
     },
     {
       header: t.translations.LAST_UPDATED_AT,
-      data: (row: ProjectsList) => (
+      data: (row: ProjectDTO) => (
         <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
       ),
     },

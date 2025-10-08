@@ -3,7 +3,7 @@
 import "server-only";
 import { auth } from "../../../auth";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
-
+import type { ProjectDTO } from "../(home)/types/responseDTOs/projectResponseDto";
 /** ----- Strict env handling (lazy) ----- */
 let _BASE: string | null = null;
 
@@ -22,15 +22,6 @@ function getBase(): string {
 
 // Optional: use a machine/service token in SSR when the user token isn't available
 const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
-
-/** ----- Types ----- */
-export type ProjectDTO = {
-  id: number | string;
-  name: string;
-  description?: string | null;
-  lastUpdatedAt?: Date;
-  createdAt?: string | null;
-};
 
 export type ProjectStatsDTO = Record<string, unknown>;
 

@@ -1,19 +1,21 @@
 // app/(home)/(routes)/project/[id]/page.tsx
 import { notFound } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
-import {
-  getProjectServer,
-  type ProjectDTO,
-} from "@/app/lib/projects_services.server";
 import type { ProjectsList } from "@/app/(home)/types/types";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-function toProjectsList(p: ProjectDTO): ProjectsList {
+import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
+
+function toProjectDTOs(p: ProjectDTO): ProjectDTO {
   return {
-    id: String(p.id), // <- normalize to string
-    name: p.name ?? "",
-    description: p.description ?? "",
-    lastUpdatedAt: p.lastUpdatedAt,
-  };
+  id: String(p.id),
+  name: p.name ?? "",
+  description: p.description ?? "", // fallback to empty string
+  abbreviation:p.abbreviation ?? "",
+  lastUpdatedAt: p.lastUpdatedAt,
+  lastUpdatedBy: p.lastUpdatedBy ?? "",
+  isArchived: p.isArchived,
+  organizationId: p.organizationId
+};
 }
 
 type Props = {
@@ -25,7 +27,8 @@ export default async function ProjectPage({ params }: Props) {
   if (!id) return notFound();
 
   const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projectDTOs.map((p) => toProjectsList(p));
+  console.log(projectDTOs);
+  const initialProjects = projectDTOs.map((p) => toProjectDTOs(p));
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();

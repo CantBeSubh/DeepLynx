@@ -1,10 +1,9 @@
 import React from "react";
 import { FileViewerTableRow } from "../types/types";
-import MemberMangementClient from "./MemberManagementClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import MemberManagementClient from "./MemberManagementClient";
+import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
 
-type ProjectDTO = { id: number | string; name: string };
 
 export default async function Page({
   searchParams,

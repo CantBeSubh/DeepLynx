@@ -3,10 +3,10 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ProjectsList } from "@/app/(home)/types/types";
+import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
 
 interface ProjectDropdownSingleSelectProps {
-  projects: ProjectsList[];
+  projects: ProjectDTO[];
   onSelectionChange?: (selected: string) => void;
   defaultSelectedId?: string;
 }
@@ -112,7 +112,7 @@ const ProjectDropdownSingleSelect: React.FC<
                     checked={selectedId === project.id}
                     onChange={() => {
                       if (project.id) {
-                        toggleProject(project.id);
+                        toggleProject(project.id.toString());
                       }
                     }}
                   />

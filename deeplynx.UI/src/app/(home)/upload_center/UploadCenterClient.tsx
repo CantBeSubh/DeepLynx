@@ -13,7 +13,6 @@ import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
 import { getAllProjects } from "@/app/lib/projects_services.client";
-import type { ProjectDTO } from "@/app/lib/projects_services.server";
 import {
   DataSourceDTO,
   getAllDataSources,
@@ -27,6 +26,7 @@ import {
   uploadFilesBatch,
 } from "@/app/lib/file_upload_services.client";
 import toast from "react-hot-toast";
+import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
