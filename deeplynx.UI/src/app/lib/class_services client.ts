@@ -1,6 +1,6 @@
 'use client';
 
-import { ClassResponseDto } from '../(home)/types/types';
+import { ClassResponseDto } from '../(home)/types/responseDTOs/classResponseDto';
 import api from './api';
 
 export const getClass = async (projectId: number, classId: number) => {

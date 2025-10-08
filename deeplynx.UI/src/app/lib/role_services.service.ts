@@ -1,6 +1,6 @@
 import "server-only";
 import { auth } from "../../../auth";
-import { RoleResponseDTO } from "../(home)/types/responseDTOs/roleDto";
+import { RoleResponseDTO } from "../(home)/types/responseDTOs/roleResponseDto";
 /** ----- Strict env handling (lazy) ----- */
 let _BASE: string | null = null;
 
