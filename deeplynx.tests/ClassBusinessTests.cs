@@ -50,6 +50,8 @@ namespace deeplynx.tests
                 _objectStorageBusiness.Object, _eventBusiness);
         }
 
+        #region CreateClass Tests
+
         [Fact]
         public async Task CreateClass_Success_ReturnsIdAndCreatedAt()
         {
@@ -182,12 +184,16 @@ namespace deeplynx.tests
             // Try to create duplicate
             await Assert.ThrowsAsync<DbUpdateException>(() => _classBusiness.CreateClass(pid, dto));
             
-            // Ensure that no events were created on failed class creation
+            // Ensure that only one event was logged (not the duplicate)
             var eventList = await Context.Events.ToListAsync();
             var firstAndOnlyEvent = eventList[0];
             Assert.Single(eventList);
             Assert.Equal("create", firstAndOnlyEvent.Operation);
         }
+        
+        #endregion
+        
+        #region GetAllClasses Tests
 
         [Fact]
         public async Task GetAllClasses_ReturnsOnlyForProjects()
@@ -230,6 +236,9 @@ namespace deeplynx.tests
             var list = await _classBusiness.GetAllClasses(pid,true);
             Assert.DoesNotContain(list, c => c.Id == archivedClass.Id);
         }
+        #endregion
+        
+        #region GetClass Tests
 
         [Fact]
         public async Task GetClass_Success_WhenExists()
@@ -280,6 +289,9 @@ namespace deeplynx.tests
 
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClass(pid, testClass.Id, true));
         }
+        #endregion
+        
+        #region UpdateClass Tests
 
         [Fact]
         public async Task UpdateClass_Success_ReturnsModifiedAt()
@@ -303,7 +315,7 @@ namespace deeplynx.tests
             Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
             Assert.Equal("Updated Description", updatedResult.Description);
             
-            // Ensure that no events were created on failed class creation
+            // Ensure that an event was logged for the update
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
             
@@ -381,6 +393,9 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
+        #endregion
+        
+        #region ArchiveClass Tests
 
         [Fact]
         public async Task ArchiveClass_Success_WhenExists()
@@ -425,30 +440,7 @@ namespace deeplynx.tests
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.ArchiveClass(pid, 99));
         }
-
-        [Fact]
-        public async Task DeleteClass_Success_WhenExists()
-        {
-            var testClass = new Class
-            {
-                Name = $"Class to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Classes.Add(testClass);
-            await Context.SaveChangesAsync();
-
-            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-            Assert.True(deletedResult);
-
-            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
-            Assert.Null(deletedClass);
-            
-            // Ensure that class soft delete event was NOT logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-
+        
         [Fact]
         public async Task ClassArchived_WhenProjectArchived()
         {
@@ -473,6 +465,32 @@ namespace deeplynx.tests
             Assert.True(archivedClass.IsArchived);
             Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
 
+        }
+        #endregion
+        
+        #region DeleteClass Tests
+
+        [Fact]
+        public async Task DeleteClass_Success_WhenExists()
+        {
+            var testClass = new Class
+            {
+                Name = $"Class to Delete {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
+            Assert.True(deletedResult);
+
+            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.Null(deletedClass);
+            
+            // Ensure that class soft delete event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -712,9 +730,9 @@ namespace deeplynx.tests
                 .ToList();
             Assert.Empty(remainingRecords);
         }
+        #endregion
         
         #region UnarchiveClass Tests
-        
         [Fact]
         public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
         {
@@ -780,89 +798,90 @@ namespace deeplynx.tests
         }
         
         # endregion
+        
         #region GetClassesByName Tests
 
-[Fact]
-public async Task GetClassesByName_ValidClassNames_ReturnsMatchingClasses()
-{
-    // Arrange  
-    var testClass = new Class
-    {
-        Name = "TestValidationClass",
-        ProjectId = pid,
-        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-    };
+        [Fact]
+        public async Task GetClassesByName_ValidClassNames_ReturnsMatchingClasses()
+        {
+            // Arrange  
+            var testClass = new Class
+            {
+                Name = "TestValidationClass",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
 
-    Context.Classes.Add(testClass);
-    await Context.SaveChangesAsync();
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
 
-    var classNames = new List<string> { "TestValidationClass" };
+            var classNames = new List<string> { "TestValidationClass" };
 
-    // Act
-    var result = await _classBusiness.GetClassesByName(pid, classNames);
+            // Act
+            var result = await _classBusiness.GetClassesByName(pid, classNames);
 
-    // Assert
-    Assert.Single(result);
-    Assert.Equal("TestValidationClass", result.First().Name);
-    Assert.Equal(pid, result.First().ProjectId);
-}
+            // Assert
+            Assert.Single(result);
+            Assert.Equal("TestValidationClass", result.First().Name);
+            Assert.Equal(pid, result.First().ProjectId);
+        }
 
-[Fact]
-public async Task GetClassesByName_MissingClassNames_ThrowsKeyNotFoundException()
-{
-    // Arrange
-    var classNames = new List<string> { "NonExistentClass" };
+        [Fact]
+        public async Task GetClassesByName_MissingClassNames_ThrowsKeyNotFoundException()
+        {
+            // Arrange
+            var classNames = new List<string> { "NonExistentClass" };
 
-    // Act & Assert
-    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClassesByName(pid, classNames));
-    Assert.Contains("Classes not found with names", exception.Message);
-}
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClassesByName(pid, classNames));
+            Assert.Contains("Classes not found with names", exception.Message);
+        }
 
-[Fact]
-public async Task GetClassesByName_NullClassNames_ThrowsArgumentException()
-{
-    // Act & Assert
-    await Assert.ThrowsAsync<ArgumentException>(
-        () => _classBusiness.GetClassesByName(pid, null));
-}
+        [Fact]
+        public async Task GetClassesByName_NullClassNames_ThrowsArgumentException()
+        {
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(
+                () => _classBusiness.GetClassesByName(pid, null));
+        }
 
-[Fact]
-public async Task GetClassesByName_ExcludesArchivedClasses()
-{
-    // Arrange
-    var archivedClass = new Class
-    {
-        Name = "ArchivedClass",
-        ProjectId = pid,
-        LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-        IsArchived = true
-    };
+        [Fact]
+        public async Task GetClassesByName_ExcludesArchivedClasses()
+        {
+            // Arrange
+            var archivedClass = new Class
+            {
+                Name = "ArchivedClass",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = true
+            };
 
-    Context.Classes.Add(archivedClass);
-    await Context.SaveChangesAsync();
+            Context.Classes.Add(archivedClass);
+            await Context.SaveChangesAsync();
 
-    var classNames = new List<string> { "ArchivedClass" };
+            var classNames = new List<string> { "ArchivedClass" };
 
-    // Act & Assert
-    var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _classBusiness.GetClassesByName(pid, classNames));
-    
-    Assert.Contains("ArchivedClass", exception.Message);
-}
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _classBusiness.GetClassesByName(pid, classNames));
+            
+            Assert.Contains("ArchivedClass", exception.Message);
+        }
 
-[Fact]
-public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
-{
-    // Arrange
-    var classNames = new List<string> { "SomeClass" };
-    var invalidProjectId = 999L;
+        [Fact]
+        public async Task GetClassesByName_InvalidProjectId_ThrowsKeyNotFoundException()
+        {
+            // Arrange
+            var classNames = new List<string> { "SomeClass" };
+            var invalidProjectId = 999L;
 
-    // Act & Assert
-    await Assert.ThrowsAsync<KeyNotFoundException>(
-        () => _classBusiness.GetClassesByName(invalidProjectId, classNames));
-}
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _classBusiness.GetClassesByName(invalidProjectId, classNames));
+        }
 
-#endregion
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
