@@ -43,7 +43,7 @@ export const fetchRoleId = async (
 //Create a Role
 export const createRole = async (
     name: string,
-    description: string | null,
+    description?: string | null,
     projectId?: number,
     organizationId?: number,
 ) => {

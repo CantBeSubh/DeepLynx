@@ -4,7 +4,7 @@ import { useLanguage } from "@/app/contexts/Language";
 import { Column, RoleResponseDto } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { useRouter } from "next/navigation";
-import { getAllRoles } from "@/app/lib/role_services.client";
+import { getAllRoles, deleteRole } from "@/app/lib/role_services.client";
 
 interface RolesTableProps {
   data: RoleResponseDto[];
@@ -57,7 +57,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
         }
       } catch (e) {
         if (!cancelled) setError("Failed to load roles.");
-        // (optional) console.error(e);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -68,10 +67,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
       cancelled = true;
     };
   }, [id]);
-
-  React.useEffect(() => {
-  console.log("Updated table data:", data);
-}, [data]);
 
   //Function for selecting members
   const handleSelectAll = () => {
@@ -94,22 +89,59 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   };
 
   //Function for deleting roles
-  const handleDelete = (index: number) => {
-    const newData = data.filter((_, i) => i !== index);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+  // const handleDelete = (index: number) => {
+  //   const newData = data.filter((_, i) => i !== index);
+  //   setData(newData);
+  //   setSelectedMembers(new Array(newData.length).fill(false));
+  //   setSelectAll(false);
+  // };
+
+  // //Function for deleting roles
+  // const handleDeleteSelected = () => {
+  //   const newData = data.filter((_, index) => !selectedMembers[index]);
+  //   setData(newData);
+  //   setSelectedMembers(new Array(newData.length).fill(false));
+  //   setSelectAll(false);
+  // };
+
+  // Function for deleting a single role
+  const handleDelete = async (roleToDelete: RoleResponseDto, index: number) => {
+    try {
+      await deleteRole(roleToDelete.id);
+      const newData = data.filter((_, i) => i !== index);
+      setData(newData);
+      setSelectedMembers(new Array(newData.length).fill(false));
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to delete role:', error);
+    }
   };
 
-  //Function for deleting roles
-  const handleDeleteSelected = () => {
-    const newData = data.filter((_, index) => !selectedMembers[index]);
-    setData(newData);
-    setSelectedMembers(new Array(newData.length).fill(false));
-    setSelectAll(false);
+  // Function for deleting selected roles
+  const handleDeleteSelected = async () => {
+    const rolesToDelete = data.filter((_, index) => selectedMembers[index]);
+
+    try {
+      // Delete all selected roles
+      await Promise.all(
+        rolesToDelete.map(role =>
+          deleteRole(role.id)
+        )
+      );
+
+      const newData = data.filter((_, index) => !selectedMembers[index]);
+      setData(newData);
+      setSelectedMembers(new Array(newData.length).fill(false));
+      setSelectAll(false);
+    } catch (error) {
+      console.error('Failed to delete selected roles:', error);
+      // Optionally, you can show a notification to the user here
+    }
   };
 
-  //Function for deleting multiple roles
+
+
+  //Function for selecting multiple roles
   const multipleSelected = () => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
@@ -167,7 +199,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
       ),
       cell: (row: RoleResponseDto, index: number) => (
         <div className="flex">
-          <button onClick={() => handleDelete(index)}>
+          <button onClick={() => handleDelete(row, index)}>
             <TrashIcon className="size-6 text-red-500" />
           </button>
         </div>

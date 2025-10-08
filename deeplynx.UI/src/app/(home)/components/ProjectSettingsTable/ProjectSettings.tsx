@@ -21,11 +21,13 @@ import { getAllRoles } from '@/app/lib/role_services.client';
 interface ProjectSettingsProps {
   projects: ProjectsList[];
   initialProject: ProjectsList | null;
+  id: string | null | undefined;
 }
 
 const ProjectSettings = ({
   projects,
   initialProject,
+  id
 }: ProjectSettingsProps) => {
   // const [selectedProjects, setSelectedProjects] = useState<string[]>(
   //   initialSelectedProjects
@@ -123,7 +125,7 @@ const ProjectSettings = ({
   const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (activeTab === "Roles") {
-      router.push("/project_settings/project_roles");
+      router.push(`/project/${id}/project_settings/project_roles`);
     } else if (activeTab === "Members") {
       setAddProjectMemberModal(true);
     }
