@@ -1,8 +1,11 @@
 // src/app/lib/query_services.client.ts
 "use client";
-
-import { ClassResponseDto, CustomQueryRequestDto, DataSourceResponseDto, FileViewerTableRow, TagResponseDto } from "../(home)/types/types";
+import { ClassResponseDto } from '../(home)/types/responseDTOs/classResponseDto';
+import { CustomQueryRequestDto } from '../(home)/types/requestDTOs/customRequestDTO';
 import api from "./api";
+import { FileViewerTableRow } from '../(home)/types/types';
+import { DataSourceResponseDto } from '../(home)/types/responseDTOs/dataSourceResponseDto';
+import { TagResponseDto } from '../(home)/types/responseDTOs/tagResponseDto';
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
 

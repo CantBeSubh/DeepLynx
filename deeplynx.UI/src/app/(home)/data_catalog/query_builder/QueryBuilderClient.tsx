@@ -1,7 +1,9 @@
 "use client";
 import { TagResponseDto } from "../../types/responseDTOs/tagResponseDto";
 import React, { useEffect, useMemo, useState } from "react";
-import { CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
+import { CustomQueryRequestDto } from "../../types/requestDTOs/customRequestDTO";
+import { HistoricalRecordResponseDto } from "../../types/responseDTOs/historicalRecordResponseDto";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";

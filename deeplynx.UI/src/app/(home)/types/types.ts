@@ -132,24 +132,6 @@ export type TeamMember = {
   lastLogin: string;
 };
 
-export type CustomQueryRequestDto = {
-  connector?: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: string;
-  jsonKey?: string;
-  jsonValue?: string;
-};
-
-export type CustomQueryRequestDtoJson = {
-  connector: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: JSON;
-};
-
 export type HistoricalRecordResponseDto = {
   Id?: number;
   Uri?: string;
