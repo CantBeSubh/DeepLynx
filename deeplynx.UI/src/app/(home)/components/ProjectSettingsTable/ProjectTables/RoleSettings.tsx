@@ -145,7 +145,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import RoleDetails from './RoleDetails';
 import { useRouter, useSearchParams } from "next/navigation";
-import { getAllRoles } from "@/app/lib/role_services.client"; // Adjust the import path as necessary
+import { getAllRoles, updateRole } from "@/app/lib/role_services.client";
 import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
 
 interface RoleSettingsProps {
@@ -161,13 +161,24 @@ const RoleSettings = ({ id }: RoleSettingsProps) => {
   const [permissions, setPermissions] = useState<PermissionResponseDto[]>([]);
 
   const onCancel = () => {
-    router.push(`/project_settings?tab=Roles`);
+    router.push(`/project/${id}/project_settings?tab=Roles`);
   };
 
-  const onSave = () => {
-    // TODO Add logic to save role changes
-    router.push(`/project_settings?tab=Roles`);
-  };
+  const onSave = async () => {
+  if (role) {
+    try {
+      await updateRole(role.id, {
+        name: role.name,
+        description: role.description,
+      });
+      const updatedRoles = await getAllRoles();
+      setRole(updatedRoles.find((updatedRole: { id: number; }) => updatedRole.id === role.id) || null);
+      router.push(`/project/${id}/project_settings?tab=Roles`);
+    } catch (error) {
+      console.error("Error updating role:", error);
+    }
+  }
+};
 
   // Fetch role and permissions data on component mount
   useEffect(() => {

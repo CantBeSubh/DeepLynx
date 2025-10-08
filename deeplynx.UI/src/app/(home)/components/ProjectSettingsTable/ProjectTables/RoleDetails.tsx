@@ -54,10 +54,8 @@
 
 import React from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { projectPermissions, userPermissions } from "../../../dummy_data/data";
 import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
 import RoleManagementTable from './ProjectManagementTable';
-import { getAllRoles } from "@/app/lib/role_services.client";
 import { getAllPermissions } from '@/app/lib/permission_services.client';
 // import UserManagementTable from './UserManagementTable';
 
