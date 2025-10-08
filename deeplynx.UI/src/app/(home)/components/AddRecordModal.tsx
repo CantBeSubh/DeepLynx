@@ -7,7 +7,6 @@ import {
   createRecord,
   type CreateRecordPayload,
 } from "@/app/lib/record_services.client";
-import type { ProjectsList } from "@/app/(home)/types/types";
 import {
   getAllDataSources,
   type DataSourceDTO,

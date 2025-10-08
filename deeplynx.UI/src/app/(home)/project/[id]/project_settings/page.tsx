@@ -1,6 +1,4 @@
 import React from "react";
-import { FileViewerTableRow, ProjectsList } from "../../../types/types";
-import ProjectSettingsClient from "./ProjectSettingsClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import ProjectSettings from "../../../components/ProjectSettingsTable/ProjectSettings";
 import { notFound } from "next/navigation";

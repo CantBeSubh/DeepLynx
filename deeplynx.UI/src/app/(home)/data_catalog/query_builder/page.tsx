@@ -1,8 +1,8 @@
 // app/(home)/(routes)/data_catalog/page.tsx
+import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
 import QueryBuilderClient from "./QueryBuilderClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 
-type ProjectDTO = { id: number | string; name: string };
 
 export default async function Page({
   searchParams,

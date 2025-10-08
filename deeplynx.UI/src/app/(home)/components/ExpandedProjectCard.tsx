@@ -1,5 +1,4 @@
 "use client";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { getProjectStats } from "@/app/lib/projects_services.client";
 import {

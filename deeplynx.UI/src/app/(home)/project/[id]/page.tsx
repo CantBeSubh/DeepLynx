@@ -1,7 +1,6 @@
 // app/(home)/(routes)/project/[id]/page.tsx
 import { notFound } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
-import type { ProjectsList } from "@/app/(home)/types/types";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
 
