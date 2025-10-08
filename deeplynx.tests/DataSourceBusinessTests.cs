@@ -347,12 +347,16 @@ namespace deeplynx.tests
                 Config = config
             };
 
+            var beforeUpdate = DateTime.UtcNow;
+
             // Act
             var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(did, result.Id);
+            Assert.True(result.LastUpdatedAt >= beforeUpdate);
+            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
             Assert.Equal("Updated Test Data Source", result.Name);
             Assert.Equal("Updated description", result.Description);
             Assert.Equal("UPD_TEST", result.Abbreviation);
@@ -363,7 +367,6 @@ namespace deeplynx.tests
             // Verify it was actually updated in database
             var updatedDataSource = await Context.DataSources.FindAsync(did);
             Assert.Equal("Updated Test Data Source", updatedDataSource?.Name);
-            Assert.NotNull(updatedDataSource?.LastUpdatedAt);
             
             // Ensure that datasource update event was logged
             var eventList = await Context.Events.ToListAsync();
@@ -672,7 +675,7 @@ namespace deeplynx.tests
                 Type = "Test2"
             };
 
-            // As noted above, DbContext is thread-safe so there's not a great way to truly simulate concurrent operations
+            // As noted above, DbContext is not thread-safe so there's not a great way to truly simulate concurrent operations
             // so for now we take the sequential approach
             // Act
             await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
