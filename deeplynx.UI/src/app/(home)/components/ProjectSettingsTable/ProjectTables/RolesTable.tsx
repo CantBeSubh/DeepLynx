@@ -1,29 +1,86 @@
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, MyRolesTable } from '../../../types/types';
+import { Column, RoleResponseDto } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { useRouter } from "next/navigation";
+import { getAllRoles } from "@/app/lib/role_services.client";
 
 interface RolesTableProps {
-  data: MyRolesTable[];
+  data: RoleResponseDto[];
   id: string | null | undefined;
 }
 
 const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<MyRolesTable[]>(initialData);
-  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
+  const [data, setData] = useState<RoleResponseDto[]>(initialData);
+  const [selectedMembers, setSelectedMembers] = useState<boolean[]>(
+    new Array(initialData.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [handleEdit, setHandleEdit] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
+  console.log("Initial data passed to RolesTable:", initialData);
+
+  //Keeping selection array in sync
+  useEffect(() => {
+    setSelectedMembers((prev) => {
+      if (prev.length !== data.length) {
+        return new Array(data.length).fill(false);
+      }
+      return prev;
+    });
+  }, [data.length]);
+
+  //Fetching roles when component mounts or Id changes
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchRoles = async () => {
+      // parse project id from string prop, if present
+      const projectId = id ? Number(id) : undefined;
+      if (id && Number.isNaN(projectId)) {
+        setError("Invalid project id.");
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+      try {
+        const roles: RoleResponseDto[] = await getAllRoles(projectId, undefined, true);
+        if (!cancelled) {
+          setData(roles ?? []);
+          setSelectAll(false);
+          setSelectedMembers(new Array((roles ?? []).length).fill(false));
+        }
+      } catch (e) {
+        if (!cancelled) setError("Failed to load roles.");
+        // (optional) console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchRoles();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  React.useEffect(() => {
+  console.log("Updated table data:", data);
+}, [data]);
+
+  //Function for selecting members
   const handleSelectAll = () => {
     const newSelection = !selectAll;
     setSelectAll(newSelection);
     setSelectedMembers(new Array(data.length).fill(newSelection));
   };
 
+  //Function for checkboxes
   const handleCheckboxChange = (index: number) => {
     const newSelection = [...selectedMembers];
     newSelection[index] = !newSelection[index];
@@ -36,6 +93,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     }
   };
 
+  //Function for deleting roles
   const handleDelete = (index: number) => {
     const newData = data.filter((_, i) => i !== index);
     setData(newData);
@@ -43,6 +101,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     setSelectAll(false);
   };
 
+  //Function for deleting roles
   const handleDeleteSelected = () => {
     const newData = data.filter((_, index) => !selectedMembers[index]);
     setData(newData);
@@ -50,11 +109,13 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     setSelectAll(false);
   };
 
+  //Function for deleting multiple roles
   const multipleSelected = () => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-  const columns: Column<MyRolesTable>[] = [
+  //Table for displaying project roles
+  const columns: Column<RoleResponseDto>[] = [
     {
       header: (
         <input
@@ -64,7 +125,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
           onChange={handleSelectAll}
         />
       ),
-      cell: (row: MyRolesTable, index: number) => (
+      cell: (row: RoleResponseDto, index: number) => (
         <input
           type="checkbox"
           className="checkbox"
@@ -76,7 +137,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     },
     {
       header: "Role",
-      data: "role",
+      data: "name",
     },
     {
       header: "Description",
@@ -85,7 +146,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     },
     {
       header: "",
-      cell: (row: MyRolesTable) => (
+      cell: (row: RoleResponseDto) => (
         <div className="flex">
           <button onClick={() => router.push(`/project/${id}/project_settings/project_roles?roleId=${row.id}`)}>
             <PencilIcon className="size-6 text-secondary" />
@@ -104,7 +165,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
           )}
         </div>
       ),
-      cell: (row: MyRolesTable, index: number) => (
+      cell: (row: RoleResponseDto, index: number) => (
         <div className="flex">
           <button onClick={() => handleDelete(index)}>
             <TrashIcon className="size-6 text-red-500" />

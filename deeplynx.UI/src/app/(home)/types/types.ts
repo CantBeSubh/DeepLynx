@@ -223,19 +223,70 @@ export type HistoricalRecordResponseDto = {
 
 export type UserResponseDto =
   {
-    Id: number;
-    Name: string;
-    Email: string;
-    Username: string;
-    SsoId: string;
-    IsSysAdmin: boolean;
-    IsArchined: boolean;
-    isActive: boolean;
+    id: number;
+    name?: string;
+    email?: string;
+    username?: string;
+    ssoId?: string;
+    isSysAdmin?: boolean;
+    isArchined?: boolean;
+    isActive?: boolean;
+    projectId?: number;
   }
 
-  export type RoleDTO =
+  export type UserRequestDto =
   {
-    roleId: number;
     name: string;
-    description?: string;
+    username: string;
+    ssoId: string;
+    isArchived: boolean | null;
+    projectId: number;
+    isActive: boolean | null;
   }
+
+  export type RoleResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+  }
+
+  export type ProjectResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    abbreviation?: string | null;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+    userId?: number;
+  }
+
+  export type PermissionResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    action?: string;
+    resource?: string | null;
+    isHardcoded?: boolean;
+    labelId?: number;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+    userId?: number;
+  }
+
