@@ -1,8 +1,7 @@
 "use client";
-
+import { TagResponseDto } from "../../types/responseDTOs/tagResponseDto";
 import React, { useEffect, useMemo, useState } from "react";
-
-import { ClassResponseDto, DataSourceResponseDto, TagResponseDto, CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
+import { CustomQueryRequestDto, HistoricalRecordResponseDto, FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
@@ -12,7 +11,8 @@ import { DatePicker } from "../../components/DatePicker";
 import { fullTextSearch, getClassesForProjects, getDataSourcesForProjects, getTagsForProjects } from "@/app/lib/query_services.client";
 import { queryBuilder } from "@/app/lib/query_services.client";
 import ListView from "../../components/ListView";
-
+import { ClassResponseDto } from "../../types/responseDTOs/classResponseDto";
+import { DataSourceResponseDto } from "../../types/responseDTOs/dataSourceResponseDto";
 type Props = {
   initialProjects: { id: string; name: string }[];
   initialSelectedProjects: string[];
