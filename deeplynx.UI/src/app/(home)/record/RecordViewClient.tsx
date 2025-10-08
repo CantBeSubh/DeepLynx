@@ -178,9 +178,13 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
         }
 
         // Transform DTO to ViewModel with actions
+        // ONLY include records where isOrigin is false
         const viewModels: RelatedRecordViewModel[] = edges
           .filter(
-            (edge) => edge.relatedRecordId != null && edge.relatedRecordId > 0
+            (edge) =>
+              edge.relatedRecordId != null &&
+              edge.relatedRecordId > 0 &&
+              edge.isOrigin === true // Only show non-origin records
           )
           .map((edge) => ({
             ...edge,
@@ -204,6 +208,9 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
             ),
           }));
 
+        console.log(
+          `Filtered ${edges.length} edges to ${viewModels.length} non-origin records`
+        );
         setParsedRelatedRecords(viewModels);
         setIsLoadingRelatedRecords(false);
       } catch (error) {
