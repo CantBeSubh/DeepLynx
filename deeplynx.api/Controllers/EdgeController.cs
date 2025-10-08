@@ -61,11 +61,14 @@ namespace deeplynx.api.Controllers
         [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
         public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
             long recordId,
-            bool hideArchived = true)
+            bool isOrigin,
+            int page,
+            bool hideArchived = true,
+            int pageSize = 20)
         {
             try
             {
-                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, hideArchived); 
+                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize); 
                 return Ok(edges);
             }
             catch (Exception exc)
