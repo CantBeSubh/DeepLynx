@@ -37,6 +37,7 @@ import {
 import { FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
+import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -44,12 +45,7 @@ interface Props {
   recordId: number;
 }
 
-interface ParsedRecord {
-  relationship: string;
-  id: string;
-  class: string;
-  name: string;
-  recordId: number;
+interface RelatedRecordViewModel extends RelatedRecordsResponseDto {
   actions: React.JSX.Element;
 }
 
@@ -91,7 +87,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
 
   // Related Records State
   const [parsedRelatedRecords, setParsedRelatedRecords] = useState<
-    ParsedRecord[]
+    RelatedRecordViewModel[]
   >([]);
 
   // Modal State
@@ -169,56 +165,51 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
       try {
         setIsLoadingRelatedRecords(true);
         setParsedRelatedRecords([]);
-        const edges = await getEdgesByRecord(
+
+        const edges: RelatedRecordsResponseDto[] = await getEdgesByRecord(
           projectId.toString(),
           recordId,
           true
         );
 
-        const promises = edges.map(async (edge: Edge) => {
-          try {
-            const isOrigin = edge.originId === recordId;
-            const relatedRecordId = isOrigin
-              ? edge.destinationId
-              : edge.originId;
-            const relatedRecord = await getRecord(projectId, relatedRecordId);
+        if (!edges || edges.length === 0) {
+          setIsLoadingRelatedRecords(false);
+          return;
+        }
 
-            return {
-              relationship: `Relationship ${edge.relationshipId}`,
-              id: relatedRecordId.toString(),
-              class: relatedRecord.className || "Record",
-              name: relatedRecord.name || `Record ${relatedRecordId}`,
-              recordId: relatedRecordId,
-              actions: (
-                <XMarkIcon
-                  className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
-                  onClick={() =>
-                    handleOpenModal(
-                      edge.id.toString(),
-                      `Edge ${edge.id}`,
-                      record?.name,
-                      "relatedRecord",
-                      edge.originId,
-                      edge.destinationId
-                    )
-                  }
-                />
-              ),
-            };
-          } catch (error) {
-            console.error(`Error fetching edge ${edge.id}:`, error);
-            return null;
-          }
-        });
+        // Transform DTO to ViewModel with actions
+        const viewModels: RelatedRecordViewModel[] = edges
+          .filter(
+            (edge) => edge.relatedRecordId != null && edge.relatedRecordId > 0
+          )
+          .map((edge) => ({
+            ...edge,
+            actions: (
+              <XMarkIcon
+                className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
+                onClick={() => {
+                  setModal({
+                    isOpen: true,
+                    type: "relatedRecord",
+                    nameToRemove: edge.relationshipName || "Edge",
+                    recordNameToRemove: record?.name,
+                    idToRemove: edge.relatedRecordId!.toString(),
+                    originId: edge.isOrigin ? recordId : edge.relatedRecordId!,
+                    destinationId: edge.isOrigin
+                      ? edge.relatedRecordId!
+                      : recordId,
+                  });
+                }}
+              />
+            ),
+          }));
 
-        const results = await Promise.all(promises);
-        setParsedRelatedRecords(
-          results.filter((r): r is ParsedRecord => r !== null)
-        );
+        setParsedRelatedRecords(viewModels);
         setIsLoadingRelatedRecords(false);
       } catch (error) {
         console.error("Error fetching related records:", error);
-        toast.error("Failed to fetch related records");
+        setParsedRelatedRecords([]);
+        setIsLoadingRelatedRecords(false);
       }
     };
 
@@ -314,7 +305,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
             String(destinationId)
           );
           setParsedRelatedRecords((prev) =>
-            prev.filter((r) => r.id !== idToRemove)
+            prev.filter((r) => r.relatedRecordId !== idToRemove)
           );
           toast.success("Link removed successfully");
         }
@@ -389,20 +380,26 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
     })
   );
 
-  const relatedRecordsColumns: CardColumn<ParsedRecord>[] = [
-    { key: "id", label: "Record ID" },
-    { key: "class", label: "Relationship" },
+  const relatedRecordsColumns: CardColumn<RelatedRecordViewModel>[] = [
     {
-      key: "name",
+      key: "relationshipName",
+      label: "Relationship",
+      render: (row) => <span>{row.relationshipName || "-"}</span>,
+    },
+    {
+      key: "relatedRecordName",
       label: "Record Name",
-      render: (row: ParsedRecord) => (
-        <Link
-          href={`/record?recordId=${row.recordId}&projectId=${projectId}`}
-          className="text-primary hover:text-primary-content hover:underline"
-        >
-          {row.name}
-        </Link>
-      ),
+      render: (row) =>
+        row.relatedRecordId ? (
+          <Link
+            href={`/record?recordId=${row.relatedRecordId}&projectId=${projectId}`}
+            className="text-primary hover:text-primary-content hover:underline"
+          >
+            {row.relatedRecordName || `Record ${row.relatedRecordId}`}
+          </Link>
+        ) : (
+          <span>{row.relatedRecordName || "Unknown"}</span>
+        ),
     },
     { key: "actions", label: "Actions" },
   ];

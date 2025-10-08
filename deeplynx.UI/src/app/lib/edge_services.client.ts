@@ -40,14 +40,13 @@ export const getEdgesByRecord = async (
     hideArchived: boolean = true
 ) => {
     try {
-        const queryParams = new URLSearchParams();
-        if (recordId !== undefined) queryParams.append('recordId', recordId.toString());
-        queryParams.append('hideArchived', hideArchived.toString());
-
-        const res = await api.get(`/projects/${projectId}/edges/GetAllEdgesByRecord`, {
-            params: queryParams
-        });
-        return res.data;
+       const { data } = await api.get(`/projects/${projectId}/edges/GetAllEdgesByRecord`, {
+        params: {
+        recordId: recordId,
+        hideArchived: hideArchived
+        }
+    });
+    return data;
     } catch (error) {
         console.error("API call failed:", error);
         throw error;
