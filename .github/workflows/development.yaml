@@ -36,6 +36,8 @@ jobs:
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
           DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
+          NEXT_PUBLIC_DOCS_PATH : ${{ vars.NEXT_PUBLIC_DOCS_PATH }}
+          HOSTED_LINK: ${{ vars.HOSTED_LINK }}
         run: |
           cd $GITHUB_WORKSPACE
           az cloud set --name AzureUSGovernment
@@ -55,6 +57,7 @@ jobs:
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
+            --build-arg NEXT_PUBLIC_DOCS_PATH=${{ vars.NEXT_PUBLIC_DOCS_PATH }} \
             .
           
           az acr build --registry $ACR_REGISTRY \
@@ -76,6 +79,8 @@ jobs:
           az acr build --registry $ACR_REGISTRY \
             --image $ACR_PATH:deeplynxv3-docs-$GITHUB_RUN_NUMBER \
             --file Dockerfiles/docs/Dockerfile.public \
+            --build-arg NEXT_PUBLIC_DOCS_PATH=${{ vars.NEXT_PUBLIC_DOCS_PATH }} \
+            --build-arg HOSTED_LINK=${{ vars.HOSTED_LINK }} \
             .
 
   kubernetes:
@@ -120,6 +125,7 @@ jobs:
             --from-literal=redirect-link="${{ vars.NEXT_PUBLIC_REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
             --from-literal=disabled-front-auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
+            --from-literal=hosted-link="${{ vars.HOSTED_LINK }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Overwrites ${VARIABLES} in the kube manifest with secrets
@@ -149,6 +155,7 @@ jobs:
           INVITE_URL: ${{ vars.INVITE_URL }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
           DISABLE_BACKEND_AUTHENTICATION: ${{ vars.DISABLE_BACKEND_AUTHENTICATION }}
+          HOSTED_LINK: ${{ vars.HOSTED_LINK }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
