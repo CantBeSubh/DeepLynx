@@ -120,8 +120,6 @@ public class EventBusiness : IEventBusiness
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
         
-        // Send notification if there are users subscribed to this event
-        // Fire and forget - don't wait for notification to complete
         await _notificationBusiness.SendEventNotification(response);
 
         return response;
