@@ -120,7 +120,10 @@ public class EventBusiness : IEventBusiness
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
         
-        await _notificationBusiness.SendEventNotification(response);
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendEventNotification(response);
+        }
 
         return response;
     }
@@ -168,11 +171,12 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = e.LastUpdatedBy,
             LastUpdatedAt = e.LastUpdatedAt
         }).ToList();
-        
-        // Send notification if there are users subscribed to this event
-        // Fire and forget - don't wait for notification to complete
-        await _notificationBusiness.SendBulkEventNotifications(response);
-        
+
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendBulkEventNotifications(response);
+        }
+
         return response;
     }
 }
