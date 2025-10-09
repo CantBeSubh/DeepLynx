@@ -10,7 +10,7 @@ ENV NEXT_PUBLIC_DOCS_PATH=${NEXT_PUBLIC_DOCS_PATH}
 ENV HOSTED_LINK=${HOSTED_LINK}
 
 # Print out the value of the environment variables
-RUN echo "HOSTED_LINK=${HOSTED_LINK}}" \
+RUN echo "HOSTED_LINK=${HOSTED_LINK}" \
     && echo "NEXT_PUBLIC_DOCS_PATH=${NEXT_PUBLIC_DOCS_PATH}"
 
 # Set working directory
