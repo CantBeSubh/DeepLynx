@@ -1,11 +1,22 @@
-*/node_modules
-*/package-lock.json
+.git
+.gitignore
+.gitattributes
+README.md
+markdown-assets
+documentation
+
+Dockerfiles
+docker-compose.yaml
+
 *.bak
 *.env
 *.log
 *.zip
+*.log
 dist
+
 **/.next
+**/node_modules
 **/_pagefind/
 
 ## Mac OS ##
