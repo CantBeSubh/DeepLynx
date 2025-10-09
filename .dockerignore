@@ -1,11 +1,7 @@
-.git
-.gitignore
-.gitattributes
 README.md
 markdown-assets
 documentation
 
-Dockerfiles
 docker-compose.yaml
 
 *.bak
