@@ -45,5 +45,8 @@ RUN npm install --omit=dev
 # Expose the port the app runs on
 EXPOSE 3001
 
+# Set runtime env
+ENV NEXT_PUBLIC_DOCS_PATH=${NEXT_PUBLIC_DOCS_PATH}
+
 # Set the command to run the application
 CMD ["npm", "start"]
