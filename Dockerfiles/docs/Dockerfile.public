@@ -2,7 +2,7 @@
 FROM node:lts-alpine3.20 AS frontend-build
 
 # Define build arguments
-ARG NEXT_PUBLIC_DOCS_PATH
+ARG NEXT_PUBLIC_DOCS_PATH=/docs
 ARG HOSTED_LINK
 
 # Set environment variables
