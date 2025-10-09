@@ -125,7 +125,7 @@ const ProjectSettings = ({
   const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (activeTab === "Roles") {
-      router.push(`/project/${id}/project_settings/project_roles`);
+      router.push(`/project/${id}/project_settings/project_roles/new_role`);
     } else if (activeTab === "Members") {
       setAddProjectMemberModal(true);
     }
@@ -149,7 +149,7 @@ const ProjectSettings = ({
       <div className="">
         <div className="">
           <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
-            <div>
+            <div className="">
               <h1 className="text-2xl font-bold text-info-content">
                 {t.translations.PROJECT_SETTINGS}
               </h1>
