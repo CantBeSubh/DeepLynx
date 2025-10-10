@@ -217,12 +217,29 @@ public class EdgeBusiness : IEdgeBusiness
         long dataSourceId, 
         CreateEdgeRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context,dataSourceId, projectId);
-
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
         {
             throw new ValidationException("Origin and/or Destination IDs are missing or invalid.");
+        }
+        
+        if (dto.OriginId == dto.DestinationId)
+        {
+            throw new ValidationException("Destination and origin IDs cannot be the same");
+        }
+        
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context,dataSourceId, projectId);
+        
+        var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId); 
+        if (!originRecordExists)
+        {
+            throw new KeyNotFoundException($"Origin record with id {dto.OriginId} not found");
+        }
+        
+        var destinationRecordExists = _context.Records.Any(r => r.Id == dto.DestinationId);
+        if (!destinationRecordExists)
+        {
+            throw new KeyNotFoundException($"Destination record with id {dto.DestinationId} not found");
         }
         
         var edge = new Edge
@@ -298,11 +315,36 @@ public class EdgeBusiness : IEdgeBusiness
         };
        
         // establish "dynamic" parameters (new for each dto in the list)
-        parameters.AddRange(edges.SelectMany((dto, i) => new[]
+        parameters.AddRange(edges.SelectMany((dto, i) =>
         {
-            new NpgsqlParameter($"@p{i}_orig", dto.OriginId),
-            new NpgsqlParameter($"@p{i}_dest", dto.DestinationId),
-            new NpgsqlParameter($"@p{i}_rel", (object?)dto.RelationshipId ?? DBNull.Value),
+            if (!dto.DestinationId.HasValue || !dto.OriginId.HasValue)
+            {
+                throw new ValidationException("Destination and origin IDs are missing or invalid.");
+            }
+
+            if (dto.DestinationId == dto.OriginId)
+            {
+                throw new ValidationException("Destination and origin IDs cannot be the same");
+            }
+            
+            var originRecordExists = _context.Records.Any(r => r.Id == dto.OriginId); 
+            if (!originRecordExists)
+            {
+                throw new KeyNotFoundException($"Origin record with id {dto.OriginId} not found");
+            }
+        
+            var destinationRecordExists = _context.Records.Any(r => r.Id == dto.DestinationId);
+            if (!destinationRecordExists)
+            {
+                throw new KeyNotFoundException($"Destination record with id {dto.DestinationId} not found");
+            }
+            
+            return new[]
+            {
+                new NpgsqlParameter($"@p{i}_orig", dto.OriginId),
+                new NpgsqlParameter($"@p{i}_dest", dto.DestinationId),
+                new NpgsqlParameter($"@p{i}_rel", (object?)dto.RelationshipId ?? DBNull.Value),
+            };
         }));
         
         // stringify the params and comma separate them

@@ -412,6 +412,75 @@ namespace deeplynx.tests
                     OriginalId = "test-1",
                     Description = "Test Description",
                     Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
+                },
+                new CreateRecordRequestDto
+                {
+                    Name = "Test Record 2",
+                    OriginalId = "test-2",
+                    Description = "Test Description",
+                    Properties = JsonObject.Parse("{\"test2\": \"value 2\"}") as JsonObject
+                }
+            };
+
+            var edgeDtos = new List<CreateEdgeRequestDto>
+            {
+                new CreateEdgeRequestDto
+                {
+                    RelationshipName = "Test Relationship",
+                    OriginOid = "test-1",
+                    DestinationOid = "test-2"
+                }
+            };
+
+            var dto = new CreateMetadataRequestDto
+            {
+                Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray,
+                Relationships = JsonSerializer.SerializeToNode(relationshipDtos) as JsonArray,
+                Tags = JsonSerializer.SerializeToNode(tagDtos) as JsonArray,
+                Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray,
+                Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
+            };
+
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+
+            result.Classes.Should().HaveCount(1);
+            result.Relationships.Should().HaveCount(1);
+            result.Tags.Should().HaveCount(1);
+            result.Records.Should().HaveCount(2);
+            result.Edges.Should().HaveCount(1);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_WhenEdgeHasSameOriginAndDestination()
+        {
+            var classDtos = new List<CreateClassRequestDto>
+            {
+                new CreateClassRequestDto { Name = "New Class" }
+            };
+
+            var relationshipDtos = new List<CreateRelationshipRequestDto>
+            {
+                new CreateRelationshipRequestDto
+                {
+                    Name = "Test Relationship",
+                    OriginId = originClassId,
+                    DestinationId = destClassId
+                }
+            };
+
+            var tagDtos = new List<CreateTagRequestDto>
+            {
+                new CreateTagRequestDto { Name = "Test Tag" }
+            };
+
+            var recordDtos = new List<CreateRecordRequestDto>
+            {
+                new CreateRecordRequestDto
+                {
+                    Name = "Test Record",
+                    OriginalId = "test-1",
+                    Description = "Test Description",
+                    Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
                 }
             };
 
@@ -434,13 +503,7 @@ namespace deeplynx.tests
                 Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
             };
 
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
-            result.Classes.Should().HaveCount(1);
-            result.Relationships.Should().HaveCount(1);
-            result.Tags.Should().HaveCount(1);
-            result.Records.Should().HaveCount(1);
-            result.Edges.Should().HaveCount(1);
+            await Assert.ThrowsAsync<ValidationException>(() =>  _metadataBusiness.CreateMetadata(pid, did, dto));
         }
 
         [Fact]

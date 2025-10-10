@@ -99,7 +99,7 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -115,7 +115,23 @@ namespace deeplynx.tests
                 DestinationId = 0, // Invalid destination
                 RelationshipId = (int)relationshipId
             };
-            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateEdge_Fails_IfSameDestinationIdAndOriginId()
+        {
+            var dto = new CreateEdgeRequestDto
+            {
+                OriginId = (int)originRecordId,
+                DestinationId = (int)originRecordId,
+                RelationshipId = (int)relationshipId
+            };
+            await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
