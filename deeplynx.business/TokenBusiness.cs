@@ -37,8 +37,8 @@ public class TokenBusiness : ITokenBusiness
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, UserContextStorage.Email),
-                new Claim(JwtRegisteredClaimNames.Name, UserContextStorage.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, UserContextStorage.Email.ToLower()),
+                new Claim(JwtRegisteredClaimNames.Name, UserContextStorage.Email.ToLower()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat,
                     DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
