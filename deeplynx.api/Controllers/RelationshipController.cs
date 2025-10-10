@@ -2,12 +2,13 @@ using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/relationships")]
-    [NexusAuthorize]
+    [Authorize]
     public class RelationshipController : ControllerBase
     {
         private readonly IRelationshipBusiness _business;
