@@ -78,8 +78,8 @@ try
     });
 
     // ----------------------------------
-// Authentication
-// ----------------------------------
+    // Authentication
+    // ----------------------------------
     var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
     var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
     var localDevelopment = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
@@ -199,9 +199,7 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
-
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, "deeplynx.api.xml");
-
+    
     builder.Services.AddOpenApi(options =>
     {
         options.OpenApiVersion = OpenApiSpecVersion.OpenApi3_0;

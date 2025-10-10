@@ -36,7 +36,6 @@ public class NexusAuthenticationHandler : JwtBearerHandler
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        Log.Information("=== NexusAuthenticationHandler START ===");
 
         // Check for local development bypass
         var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
@@ -53,10 +52,7 @@ public class NexusAuthenticationHandler : JwtBearerHandler
             Log.Warning("No token found in request");
             return AuthenticateResult.NoResult();
         }
-
-        Log.Information($"Token extracted (length: {token.Length})");
-
-        // Read token to determine algorithm
+        
         var handler = new JwtSecurityTokenHandler();
         if (!handler.CanReadToken(token))
         {
@@ -67,29 +63,24 @@ public class NexusAuthenticationHandler : JwtBearerHandler
         var jwtToken = handler.ReadJwtToken(token);
         var algorithm = jwtToken.Header.Alg;
 
-        Log.Information($"Token algorithm detected: {algorithm}");
-        Log.Information($"Token claims: {string.Join(", ", jwtToken.Claims.Select(c => $"{c.Type}={c.Value}"))}");
-
-        // Handle HS256 (API key) tokens
+        // Handle HS256
         if (algorithm.StartsWith("HS", StringComparison.OrdinalIgnoreCase))
         {
-            Log.Information("Attempting HS256 validation for API key token");
             return await HandleHS256Token(token, jwtToken);
         }
 
-        // Handle RS256 (Okta) tokens - use built-in validation
+        // Handle RS256 (Okta)
         if (algorithm.StartsWith("RS", StringComparison.OrdinalIgnoreCase))
         {
-            Log.Information("Attempting RS256 validation for Okta token");
             return await HandleRS256Token(token);
         }
-
-        Log.Warning($"Unsupported token algorithm: {algorithm}");
+        
         return AuthenticateResult.Fail($"Unsupported token algorithm: {algorithm}");
     }
 
     private async Task<AuthenticateResult> HandleLocalDevelopmentBypass()
     {
+        //TODO: Make mock token sys-admin
         var mockClaims = new[]
         {
             new Claim(ClaimTypes.Name, "LocalDeveloper"),
@@ -181,8 +172,7 @@ public class NexusAuthenticationHandler : JwtBearerHandler
                 Log.Error("JWT_ISSUER or JWT_AUDIENCE not configured");
                 return AuthenticateResult.Fail("JWT configuration error");
             }
-
-            // Get or create configuration manager
+            
             var metadataAddress = $"{issuer.TrimEnd('/')}/.well-known/openid-configuration";
             if (_configManager == null)
             {
