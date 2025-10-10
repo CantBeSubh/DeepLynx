@@ -157,7 +157,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         Assert.NotNull(historicalEdges);
         Assert.Equal(2, historicalEdges.Count());
         Assert.DoesNotContain(historicalEdges, e => e.Id == edgeLate.Id);
-        Assert.DoesNotContain(historicalEdges, e => e.Id == edgeLate.Id);
     }
     
     #endregion
