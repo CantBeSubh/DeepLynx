@@ -1,7 +1,6 @@
 import "server-only";
 import { auth } from "../../../auth";
-import { RoleResponseDTO } from "../(home)/types/responseDTOs/roleResponseDto";
-/** ----- Strict env handling (lazy) ----- */
+import { RoleResponseDto } from "../(home)/types/responseDTOs";
 let _BASE: string | null = null;
 
 function getBase(): string {
@@ -93,7 +92,7 @@ async function asJson<T>(res: Response): Promise<T> {
 
 /** ===== Server-safe calls ===== */
 
-export async function getAllRolesServer(projectId: number): Promise<RoleResponseDTO[]> {
+export async function getAllRolesServer(projectId: number): Promise<RoleResponseDto[]> {
   const res = await apiFetch(`/roles/GetAllRoles?projectId=${projectId}`);
-  return asJson<RoleResponseDTO[]>(res);
+  return asJson<RoleResponseDto[]>(res);
 }

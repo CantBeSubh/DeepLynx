@@ -14,10 +14,10 @@ import { peopleData } from "../dummy_data/data";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
 import { format } from "date-fns";
-import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface Props {
-  project: ProjectDTO;
+  project: ProjectResponseDto;
   onClose: () => void;
 }
 

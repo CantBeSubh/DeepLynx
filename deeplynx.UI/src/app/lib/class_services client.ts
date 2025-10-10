@@ -1,8 +1,7 @@
 'use client';
 
-import { ClassResponseDto } from '../(home)/types/responseDTOs/classResponseDto';
 import api from './api';
-
+import { ClassResponseDto } from '../(home)/types/responseDTOs';
 export const getClass = async (projectId: number, classId: number) => {
     try {
         const res = await api.get(`/projects/${projectId}/classes/GetClass/${classId}`);

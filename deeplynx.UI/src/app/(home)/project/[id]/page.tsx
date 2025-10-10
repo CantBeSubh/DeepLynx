@@ -2,9 +2,9 @@
 import { notFound } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
-function toProjectDTOs(p: ProjectDTO): ProjectDTO {
+function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
   id: String(p.id),
   name: p.name ?? "",
@@ -25,9 +25,9 @@ export default async function ProjectPage({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  console.log(projectDTOs);
-  const initialProjects = projectDTOs.map((p) => toProjectDTOs(p));
+  const ProjectResponseDtos = (await getAllProjectsServer()) as ProjectResponseDto[];
+  console.log(ProjectResponseDtos);
+  const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();

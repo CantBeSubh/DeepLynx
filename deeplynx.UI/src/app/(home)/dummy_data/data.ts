@@ -1258,13 +1258,13 @@ export const projectMembers = [
 
 export const defaultRoles = [
   {
-    id: 1,
-    role: "Admin",
+    roleId: 1,
+    name: "Admin",
     description: "Administrator with full access to all project resources and settings."
   },
   {
-    id: 2,
-    role: "User",
+    roleId: 2,
+    name: "User",
     description: "Standard user with limited access to project resources."
   }
 ];

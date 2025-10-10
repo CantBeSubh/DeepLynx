@@ -2,9 +2,8 @@ import React from "react";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import ProjectSettings from "../../../components/ProjectSettingsTable/ProjectSettings";
 import { notFound } from "next/navigation";
-import { ProjectDTO } from "@/app/(home)/types/responseDTOs/projectResponseDto";
-
-function toProjectDTOs(p: ProjectDTO): ProjectDTO {
+import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
+function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
   id: String(p.id),
   name: p.name ?? "",
@@ -25,8 +24,8 @@ export default async function Page({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projectDTOs.map((p) => toProjectDTOs(p));
+  const ProjectResponseDtos = (await getAllProjectsServer()) as ProjectResponseDto[];
+  const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();

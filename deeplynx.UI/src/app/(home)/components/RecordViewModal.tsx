@@ -4,7 +4,7 @@ import React from 'react';
 import PropertyTable from './PropertyTable';
 import { Column, FileViewerTableRow } from '../types/types';
 import GenericTable from './GenericTable';
-import { TagResponseDto } from '../types/responseDTOs/tagResponseDto';
+import { TagResponseDto } from '../types/responseDTOs';
 
 interface RecordViewModalProps {
   isOpen: boolean;

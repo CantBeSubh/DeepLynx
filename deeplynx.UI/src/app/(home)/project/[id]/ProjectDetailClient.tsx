@@ -12,11 +12,11 @@ import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { format } from "date-fns";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
-import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
 type Props = {
-  projects: ProjectDTO[];
-  initialProject: ProjectDTO | null;
+  projects: ProjectResponseDto[];
+  initialProject: ProjectResponseDto | null;
   projectId: string;
 };
 
@@ -27,7 +27,7 @@ export default function ProjectDetailClient({
   const { t } = useLanguage();
   const router = useRouter();
 
-  const [project, setProject] = useState<ProjectDTO | null>(initialProject);
+  const [project, setProject] = useState<ProjectResponseDto | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState(
     initialProject ? initialProject.id : null
   );

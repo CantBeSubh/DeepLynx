@@ -1,5 +1,5 @@
 // app/(home)/(routes)/data_catalog/page.tsx
-import { ProjectDTO } from "../../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 import { FileViewerTableRow } from "../../types/types";
 import AllRecordsClient from "./AllRecordsClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
@@ -15,7 +15,7 @@ export default async function Page({
   const initialSearch = typeof params.search === "string" ? params.search : "";
 
   // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer()) as ProjectDTO[];
+  const projects = (await getAllProjectsServer()) as ProjectResponseDto[];
   const initialProjects = projects.map((p) => ({
     id: String(p.id),
     name: p.name,

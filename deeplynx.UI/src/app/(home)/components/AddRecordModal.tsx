@@ -13,14 +13,13 @@ import {
 } from "@/app/lib/data_source_services.client";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
-import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
-
+import { ProjectResponseDto } from "../types/responseDTOs";
 type JsonValue = Record<string, unknown>;
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  initialProjects: ProjectDTO[] | { id: string; name: string }[];
+  initialProjects: ProjectResponseDto[] | { id: string; name: string }[];
 };
 
 const AddRecordModal: React.FC<Props> = ({

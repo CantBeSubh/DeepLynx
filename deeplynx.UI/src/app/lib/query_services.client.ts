@@ -1,12 +1,11 @@
 // src/app/lib/query_services.client.ts
 "use client";
-import { ClassResponseDto } from '../(home)/types/responseDTOs/classResponseDto';
-import { CustomQueryRequestDto } from '../(home)/types/requestDTOs/customRequestDTO';
+import { CustomQueryRequestDto } from '../(home)/types/requestDTOs';
 import api from "./api";
 import { FileViewerTableRow } from '../(home)/types/types';
-import { DataSourceResponseDto } from '../(home)/types/responseDTOs/dataSourceResponseDto';
-import { TagResponseDto } from '../(home)/types/responseDTOs/tagResponseDto';
-
+import { DataSourceResponseDto } from '../(home)/types/responseDTOs';
+import { TagResponseDto } from '../(home)/types/responseDTOs';
+import { ClassResponseDto } from '../(home)/types/responseDTOs';
 /** ===== Client calls (browser; cookie/session-based) ===== */
 
 export async function queryBuilder(

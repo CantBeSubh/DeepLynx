@@ -2,7 +2,7 @@ import React from "react";
 import { FileViewerTableRow } from "../types/types";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import MemberManagementClient from "./MemberManagementClient";
-import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 
 export default async function Page({
@@ -16,7 +16,7 @@ export default async function Page({
   const initialSearch = typeof params.search === "string" ? params.search : "";
 
   // Keep SSR for projects (fast initial render, no client flash)
-  const projects = (await getAllProjectsServer()) as ProjectDTO[];
+  const projects = (await getAllProjectsServer()) as ProjectResponseDto[];
   const initialProjects = projects.map((p) => ({
     id: String(p.id),
     name: p.name,

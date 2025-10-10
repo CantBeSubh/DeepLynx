@@ -10,16 +10,15 @@ import RolesTable from '././ProjectTables/RolesTable';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { UserResponseDto } from '../../types/responseDTOs/userResponseDto';
-import { ProjectMembersTable } from '../../types/types';
+import { UserResponseDto } from '../../types/responseDTOs';
+import { ProjectMembersDto } from '../../types/responseDTOs';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
 import ProjectSettingsMemberSkeleton from '../Skeletons/projectsettingsmemberskeleton';
-import { ProjectDTO } from '../../types/responseDTOs/projectResponseDto';
-
+import { ProjectResponseDto } from '../../types/responseDTOs';
 interface ProjectSettingsProps {
-  projects: ProjectDTO[];
-  initialProject: ProjectDTO | null;
+  projects: ProjectResponseDto[];
+  initialProject: ProjectResponseDto | null;
 }
 
 const ProjectSettings = ({
@@ -34,11 +33,11 @@ const ProjectSettings = ({
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [project, setProject] = useState<ProjectDTO | null>(initialProject);
+  const [project, setProject] = useState<ProjectResponseDto | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     initialProject?.id.toString() || null
   );
-  const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
+  const [projectMembers, setProjectMembers] = useState<ProjectMembersDto[]>([]);
 
   const [roles, setRoles] = useState([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);

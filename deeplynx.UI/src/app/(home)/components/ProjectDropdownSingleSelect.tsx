@@ -3,10 +3,10 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ProjectDTO } from "../types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface ProjectDropdownSingleSelectProps {
-  projects: ProjectDTO[];
+  projects: ProjectResponseDto[];
   onSelectionChange?: (selected: string) => void;
   defaultSelectedId?: string;
 }

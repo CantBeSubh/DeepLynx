@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import GenericTable from "../../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, SystemUsersTable } from "../../../types/types";
+import { Column } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "../MemberModals/EditSysUser";
 import MemberManagementUserSkeleton from "../../Skeletons/membermanagementusersskeleton";
-
+import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
 const UsersTable = () => {
   const { t } = useLanguage();
-  const [data, setData] = useState<SystemUsersTable[]>([]);
+  const [data, setData] = useState<UserResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);
@@ -82,7 +82,7 @@ const UsersTable = () => {
     setEditSysUserModal(true);
   };
 
-  const columns: Column<SystemUsersTable>[] = [
+  const columns: Column<UserResponseDto>[] = [
     {
       header: (
         <input

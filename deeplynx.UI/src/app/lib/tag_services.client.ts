@@ -1,5 +1,5 @@
 import { Tag } from '../(home)/types/types';
-import { TagResponseDto } from '../(home)/types/responseDTOs/tagResponseDto';
+import { TagResponseDto } from '../(home)/types/responseDTOs';
 import api from './api';
 
 export const getTag = async (projectId: number, tagId: number) => {

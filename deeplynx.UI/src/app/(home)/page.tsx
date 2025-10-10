@@ -1,10 +1,11 @@
 // app/(home)/page.tsx
 import HomeDashboardClient from "./HomeDashboardClient";
 import { getAllProjectsServer} from "../lib/projects_services.server";
-import { ProjectDTO } from "./types/responseDTOs/projectResponseDto";
+import { ProjectResponseDto } from "./types/responseDTOs";
+
 export const dynamic = "force-dynamic"; // if behind auth
 
-function mapToProjectDTOs(p: ProjectDTO): ProjectDTO {
+function mapToProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
   id: String(p.id),
   name: p.name ?? "",
@@ -18,10 +19,10 @@ function mapToProjectDTOs(p: ProjectDTO): ProjectDTO {
 }
 
 export default async function Page() {
-  let projects: ProjectDTO[] = [];
+  let projects: ProjectResponseDto[] = [];
   try {
     const apiProjects = await getAllProjectsServer();
-    projects = apiProjects.map(mapToProjectDTOs);
+    projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
   }

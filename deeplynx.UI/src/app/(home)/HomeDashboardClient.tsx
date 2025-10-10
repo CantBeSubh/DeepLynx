@@ -17,9 +17,8 @@ import { format } from "date-fns";
 
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
-import { ProjectDTO } from "./types/responseDTOs/projectResponseDto";
-
-type Props = { initialProjects: ProjectDTO[] };
+import { ProjectResponseDto } from "./types/responseDTOs";
+type Props = { initialProjects: ProjectResponseDto[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
@@ -29,7 +28,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  const [projects, setProjects] = useState<ProjectDTO[]>(initialProjects);
+  const [projects, setProjects] = useState<ProjectResponseDto[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
   const [canCustomize, setCanCustomize] = useState(false);
   const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
@@ -61,14 +60,14 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     }
   };
 
-  const onExplore = (row: ProjectDTO) => {
+  const onExplore = (row: ProjectResponseDto) => {
     router.push(`/project/${row.id}`);
   };
 
   const columns = [
     {
       header: t.translations.PROJECT_NAME,
-      data: (row: ProjectDTO) => (
+      data: (row: ProjectResponseDto) => (
         <Link
           href={`/project/${row.id}`}
           className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
@@ -79,13 +78,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     },
     {
       header: t.translations.DESCRIPTION,
-      data: (row: ProjectDTO) => (
+      data: (row: ProjectResponseDto) => (
         <span className="text-base-content/80">{row.description || "—"}</span>
       ),
     },
     {
       header: t.translations.LAST_UPDATED_AT,
-      data: (row: ProjectDTO) => (
+      data: (row: ProjectResponseDto) => (
         <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
       ),
     },

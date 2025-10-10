@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react';
-
+//For dummy data
 export type DataSourceTableRow = {
   name: string;
   country: string;
@@ -69,45 +69,10 @@ export type MySearchsTable = {
   sortable?: boolean;
 }
 
-export type ProjectMembersTable = {
-  projectId: number;
-  name: string;
-  email: string;
-  role: string;
-  memberId?: number | null;
-  groupId?: number | null;
-  roleId?: number | null;
-}
-
-export type SystemUsersTable = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-
-export type SystemGroupsTable = {
-  id: number | null;
-  name: string;
-  description?: string | null;
-}
-
 export interface Group {
   id: number;
   name: string;
   description?: string;
-}
-
-export type SystemOrgsTable = {
-  id: number;
-  name: string;
-  description: string;
-}
-
-export type MyRolesTable = {
-  id: number;
-  role: string;
-  description: string;
 }
 
 export type ProjectPermissionsTable = {
@@ -131,46 +96,3 @@ export type TeamMember = {
   role: string;
   lastLogin: string;
 };
-
-export type HistoricalRecordResponseDto = {
-  Id?: number;
-  Uri?: string;
-  Properties: string;
-  OriginalId?: string;
-  Name?: string;
-  Description?: string;
-  ClassId?: number;
-  ClassName?: string;
-  DataSourceId?: number;
-  DataSourceName?: string;
-  ObjectStorageId?: number;
-  ObjectStorageName?: string;
-  ProjectId: number;
-  ProjectName: string;
-  Tags?: string;
-  CreatedBy?: string;
-  CreatedAt?: Date;
-  ModifiedBy?: string;
-  ModifiedAt?: Date;
-  ArchivedAt?: Date;
-  LastUpdatedAt?: Date;
-}
-
-export type UserResponseDto =
-  {
-    Id: number;
-    Name: string;
-    Email: string;
-    Username: string;
-    SsoId: string;
-    IsSysAdmin: boolean;
-    IsArchined: boolean;
-    isActive: boolean;
-  }
-
-  export type RoleDTO =
-  {
-    roleId: number;
-    name: string;
-    description?: string;
-  }
