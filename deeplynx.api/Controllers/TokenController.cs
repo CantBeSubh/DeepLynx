@@ -14,12 +14,12 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Authorize]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+[Route("api/token")]
+public class TokenController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;
     private readonly ITokenBusiness _tokenBusiness;
-    public AuthController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness)
+    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness)
     {
         _eventBusiness = eventBusiness;
         _tokenBusiness = tokenBusiness;

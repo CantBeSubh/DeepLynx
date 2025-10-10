@@ -18,13 +18,13 @@ using Serilog;
 
 namespace deeplynx.helpers;
 
-public class NexusAuthenticationHandler : JwtBearerHandler
+public class NexusAuthenticationMiddleware : JwtBearerHandler
 {
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private static IConfigurationManager<OpenIdConnectConfiguration>? _configManager;
     private static readonly object _configManagerLock = new();
 
-    public NexusAuthenticationHandler(
+    public NexusAuthenticationMiddleware(
         IOptionsMonitor<JwtBearerOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,

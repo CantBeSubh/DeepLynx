@@ -91,7 +91,7 @@ try
 
     builder.Services
         .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-        .AddScheme<JwtBearerOptions, NexusAuthenticationHandler>(
+        .AddScheme<JwtBearerOptions, NexusAuthenticationMiddleware>(
             JwtBearerDefaults.AuthenticationScheme,
             options =>
             {
