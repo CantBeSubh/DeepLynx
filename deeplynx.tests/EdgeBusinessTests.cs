@@ -3,7 +3,6 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -59,6 +58,7 @@ namespace deeplynx.tests
                 _mockObjectStorageBusiness.Object, _eventBusiness);
         }
 
+        #region CreateEdge Tests
         [Fact]
         public async Task CreateEdge_Success_ReturnsIdAndCreatedAt()
         {
@@ -71,23 +71,23 @@ namespace deeplynx.tests
             };
 
             var result = await _edgeBusiness.CreateEdge(pid, dsid, dto);
-            result.Id.Should().BeGreaterThan(0);
-            result.LastUpdatedAt.Should().BeOnOrAfter(now);
-            result.OriginId.Should().Be(originRecordId);
-            result.DestinationId.Should().Be(destinationRecordId);
-            result.ProjectId.Should().Be(pid);
-            result.DataSourceId.Should().Be(dsid);
+            Assert.True(result.Id > 0);
+            Assert.True(result.LastUpdatedAt >= now);
+            Assert.Equal(originRecordId, result.OriginId);
+            Assert.Equal(destinationRecordId, result.DestinationId);
+            Assert.Equal(pid, result.ProjectId);
+            Assert.Equal(dsid, result.DataSourceId);
             
             // Ensure that edge create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "edge",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("edge", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -99,12 +99,11 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
-            await result.Should().ThrowAsync<DbUpdateException>();
+            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
-            // Ensure that edge create event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -116,12 +115,11 @@ namespace deeplynx.tests
                 DestinationId = 0, // Invalid destination
                 RelationshipId = (int)relationshipId
             };
-            var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
-            await result.Should().ThrowAsync<DbUpdateException>();
+            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
-            // Ensure that edge create event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -133,12 +131,11 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            var result = () => _edgeBusiness.CreateEdge(pid + 99, dsid, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid + 99, dsid, dto));
             
-            // Ensure that edge create event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -150,17 +147,17 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            var result = () => _edgeBusiness.CreateEdge(pid, dsid + 99, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid + 99, dto));
             
-            // Ensure that edge create event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
         public async Task CreateEdge_Fails_IfDeletedProjectId()
         {
+            // Update project to be archived
             var project = await Context.Projects.FindAsync(pid);
             project.IsArchived = true;
             Context.Projects.Update(project);
@@ -172,13 +169,16 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            var result = () => _edgeBusiness.CreateEdge(pid, dsid, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
-            // Ensure that edge create event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
+        
+        #endregion
+        
+        #region BulkCreateEdge Tests
 
         [Fact]
         public async Task BulkCreateEdges_Success_ReturnsMultipleEdges()
@@ -202,44 +202,45 @@ namespace deeplynx.tests
             };
 
             var result = await _edgeBusiness.BulkCreateEdges(pid, dsid, edges);
-            result.Should().HaveCount(2);
-            result.Should().OnlyContain(e => e.Id > 0);
-            result.Should().OnlyContain(e => e.LastUpdatedAt >= now);
+            Assert.Equal(2, result.Count);
+            Assert.All(result, e => Assert.True(e.Id > 0));
+            Assert.All(result, e => Assert.True(e.LastUpdatedAt >= now));
 
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(2);
-            eventList[0].Should().BeEquivalentTo(new {
-               ProjectId = result[0].ProjectId, 
-               EntityId = result[0].Id,
-               EntityType = "edge",
-               Operation = "create",
-            });
-            eventList[1].Should().BeEquivalentTo(new {
-                ProjectId = result[0].ProjectId, 
-                EntityId = result[1].Id,
-                EntityType = "edge",
-                Operation = "create",
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(2, eventList.Count);
+
+            var actualEvent0 = eventList[0];
+            Assert.Equal(result[0].ProjectId, actualEvent0.ProjectId);
+            Assert.Equal(result[0].Id, actualEvent0.EntityId);
+            Assert.Equal("edge", actualEvent0.EntityType);
+            Assert.Equal("create", actualEvent0.Operation);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(result[0].ProjectId, actualEvent1.ProjectId);
+            Assert.Equal(result[1].Id, actualEvent1.EntityId);
+            Assert.Equal("edge", actualEvent1.EntityType);
+            Assert.Equal("create", actualEvent1.Operation);
         }
+        
+        [Fact]
+        public async Task BulkCreateEdges_Fails_IfNullDto()
+        {
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _edgeBusiness.BulkCreateEdges(pid, dsid, null));
+            
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        #endregion
 
+        #region GetAllEdges Tests
+        
         [Fact]
         public async Task GetAllEdges_ReturnsOnlyForProject()
         {
-            var p2 = new Project { Name = "ExtraProj" };
-            Context.Projects.Add(p2);
-            await Context.SaveChangesAsync();
-
-            var ds2 = new DataSource
-            {
-                Name = "Extra DataSource",
-                ProjectId = p2.Id,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.DataSources.Add(ds2);
-            await Context.SaveChangesAsync();
-
             await _edgeBusiness.CreateEdge(pid, dsid, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
-            await _edgeBusiness.CreateEdge(p2.Id, ds2.Id, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
+            await _edgeBusiness.CreateEdge(pid2, dsid2, new CreateEdgeRequestDto { OriginId = (int)originRecordId, DestinationId = (int)destinationRecordId });
 
             var list = await _edgeBusiness.GetAllEdges(pid, null, true);
             Assert.All(list, e => Assert.Equal(pid, e.ProjectId));
@@ -275,10 +276,13 @@ namespace deeplynx.tests
             var listWithArchived = await _edgeBusiness.GetAllEdges(pid, null, false);
             var listWithoutArchived = await _edgeBusiness.GetAllEdges(pid, null, true);
 
-            listWithArchived.Should().Contain(e => e.Id == archivedEdge.Id);
-            listWithoutArchived.Should().NotContain(e => e.Id == archivedEdge.Id);
+            Assert.Contains(listWithArchived, e => e.Id == archivedEdge.Id);
+            Assert.DoesNotContain(listWithoutArchived, e => e.Id == archivedEdge.Id);
         }
         
+        #endregion
+        
+        #region GetEdgesByRecord Tests
         // Todo: Add test back in when we filter record edges by user access
         
         // [Fact]
@@ -355,7 +359,7 @@ namespace deeplynx.tests
         // }
         
         [Fact]
-        public async Task GetEdgesByRecord_ReturnsCorrectRelatedInfo()
+        public async Task GetEdgesByRecord_FiltersByOriginRecord()
         {
             var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
             Assert.True(userAdded);
@@ -372,8 +376,8 @@ namespace deeplynx.tests
         
             var edge2 = new Edge
             {
-                OriginId = destinationRecordId2,
-                DestinationId = originRecordId,
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
                 DataSourceId = dsid,
                 ProjectId = pid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -383,7 +387,7 @@ namespace deeplynx.tests
             var edge3 = new Edge
             {
                 OriginId = destinationRecordId,
-                DestinationId = originRecordId2,
+                DestinationId = originRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -393,7 +397,17 @@ namespace deeplynx.tests
             var edge4 = new Edge
             {
                 OriginId = destinationRecordId3,
-                DestinationId = originRecordId2,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge5 = new Edge
+            {
+                OriginId = originRecordId2,
+                DestinationId = originRecordId,
                 DataSourceId = dsid,
                 ProjectId = pid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -404,27 +418,207 @@ namespace deeplynx.tests
             Context.Edges.Add(edge2);
             Context.Edges.Add(edge3);
             Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
             
             await Context.SaveChangesAsync();
         
-            var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, true);
-            edges.Count.Should().Be(2);
-            edges.Should().Contain(r => r.RelatedRecordName == "Destination 1" &&
+            var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, true, 1, true, 20);
+            Assert.Equal(2, edges.Count);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 1" &&
                                         r.RelationshipName == null && r.RelatedRecordId == destinationRecordId &&
-                                        r.RelatedRecordProjectId == pid && r.IsOrigin == true);
-            edges.Should().Contain(r => r.RelatedRecordName == "Destination 2" &&
+                                        r.RelatedRecordProjectId == pid);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 2" &&
                                         r.RelationshipName == null && r.RelatedRecordId == destinationRecordId2 &&
-                                        r.RelatedRecordProjectId == pid && r.IsOrigin == false);
-            edges.Should().NotContain(r => r.RelatedRecordName == "Destination 3");
-            edges.Should().NotContain(r => r.RelatedRecordName == "Origin 2");
+                                        r.RelatedRecordProjectId == pid);
+            Assert.DoesNotContain(edges, r => r.RelatedRecordName == "Destination 3");
+            Assert.DoesNotContain(edges, r => r.RelatedRecordName == "Origin 2");
         }
+        
+        [Fact]
+        public async Task GetEdgesByRecord_FiltersByDestinationRecord()
+        {
+            var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            Assert.True(userAdded);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge5 = new Edge
+            {
+                OriginId = originRecordId2,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
+            
+            await Context.SaveChangesAsync();
+        
+            var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 1, true, 20);
+            Assert.Equal(3, edges.Count);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 3" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId3 &&
+                                        r.RelatedRecordProjectId == pid2);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Origin 2" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == originRecordId2 &&
+                                        r.RelatedRecordProjectId == pid2);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 1" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId &&
+                                        r.RelatedRecordProjectId == pid);
+        }
+        
+        [Fact]
+        public async Task GetEdgesByRecord_FiltersByPage()
+        {
+            var userAdded = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            Assert.True(userAdded);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge5 = new Edge
+            {
+                OriginId = originRecordId2,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
+            
+            await Context.SaveChangesAsync();
+        
+            var edges = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 1, true, 2);
+            Assert.Equal(2, edges.Count);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 1" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId &&
+                                        r.RelatedRecordProjectId == pid);
+            Assert.Contains(edges, r => r.RelatedRecordName == "Destination 3" &&
+                                        r.RelationshipName == null && r.RelatedRecordId == destinationRecordId3 &&
+                                        r.RelatedRecordProjectId == pid2);
+            Assert.DoesNotContain(edges, r => r.RelatedRecordName == "Origin 2");
 
+
+            var edges2 = await _edgeBusiness.GetEdgesByRecord(originRecordId, false, 2, true, 2);
+            Assert.Single(edges2);
+            Assert.Contains(edges2, r => r.RelatedRecordName == "Origin 2" && 
+                                         r.RelationshipName == null && r.RelatedRecordId == originRecordId2 &&
+                                         r.RelatedRecordProjectId == pid2);
+        }
+        
         [Fact]
         public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
         {
-            var result = () => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true, 1, true, 20));
         }
+        
+        [Fact]
+        public async Task GetEdgesByRecord_Fails_IfPageis0()
+        { 
+            await Assert.ThrowsAsync<ArgumentException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId, true, 0, true, 20));
+        }
+        
+        [Fact]
+        public async Task GetEdgesByRecord_Fails_IfPageSizeIsO()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId, true, 1, true, 0));
+        }
+        [Fact]
+        public async Task GetEdgesByRecord_Fails_IfPageSizeIsOver10O()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId, true, 1, true, 101));
+        }
+        
+        #endregion
+
+        #region GetEdge Tests
         
         [Fact]
         public async Task GetEdge_Success_WhenExistsById()
@@ -482,9 +676,8 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
-            var result = () => _edgeBusiness.GetEdge(pid + 999, testEdge.Id, null, null, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdge(pid + 999, testEdge.Id, null, null, true));
         }
 
         [Fact]
@@ -502,18 +695,21 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
-
-            var result = () => _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdge(pid, testEdge.Id, null, null, true));
         }
 
         [Fact]
         public async Task GetEdge_Fails_IfMissingIds()
         {
-            var result = () => _edgeBusiness.GetEdge(pid, null, null, null, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>()
-                .WithMessage("*Please supply either an edgeID or an originID and destinationID*");
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _edgeBusiness.GetEdge(pid, null, null, null, true));
+            Assert.Contains("Please supply either an edgeID or an originID and destinationID", exception.Message);        
         }
+        
+        #endregion
+        
+        #region UpdateEdge Tests
 
         [Fact]
         public async Task UpdateEdge_Success_ReturnsModifiedAt()
@@ -529,6 +725,9 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(testEdge);
             await Context.SaveChangesAsync();
+            
+            // Store the original timestamp for comparison
+            var originalLastUpdatedAt = testEdge.LastUpdatedAt;
 
             // Create another destination record for update
             var newDestinationRecord = new Record
@@ -552,18 +751,18 @@ namespace deeplynx.tests
             };
             var updatedResult = await _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null);
 
-            updatedResult.LastUpdatedAt.Should().BeOnOrAfter(updatedResult.LastUpdatedAt);
-            updatedResult.DestinationId.Should().Be(destinationRecordId2);
+            Assert.True(updatedResult.LastUpdatedAt >= originalLastUpdatedAt);
+            Assert.Equal(destinationRecordId2, updatedResult.DestinationId);
             
             // Ensure that update edge event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                EntityId = testEdge.Id,
-                EntityType = "edge",
-                Operation = "update"
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(testEdge.Id, actualEvent.EntityId);
+            Assert.Equal("edge", actualEvent.EntityType);
+            Assert.Equal("update", actualEvent.Operation);
         }
 
         [Fact]
@@ -611,7 +810,7 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, result.RelationshipId);
             Assert.Equal(oid, result.OriginId);
             Assert.Equal(did, result.DestinationId);
-            Assert.NotNull(result.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, result.LastUpdatedAt);
 
             // Verify edge was actually updated in database
             var updatedEdge = await Context.Edges.FindAsync(testEdge.Id);
@@ -619,7 +818,7 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, updatedEdge.RelationshipId);
             Assert.Equal(oid, updatedEdge.OriginId);
             Assert.Equal(did, updatedEdge.DestinationId);
-            Assert.NotNull(updatedEdge.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, updatedEdge.LastUpdatedAt);
 
             // Verify that get function gets updated version
             var getResult = await _edgeBusiness.GetEdge(pid, testEdge.Id, oid, did, true);
@@ -627,16 +826,17 @@ namespace deeplynx.tests
             Assert.Equal((int)relationshipId, getResult.RelationshipId);
             Assert.Equal(oid, getResult.OriginId);
             Assert.Equal(did, getResult.DestinationId);
-            Assert.NotNull(getResult.LastUpdatedAt);
+            Assert.NotEqual(DateTime.MinValue, getResult.LastUpdatedAt);
+            
             // Ensure that update edge event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                EntityId = testEdge.Id,
-                EntityType = "edge",
-                Operation = "update"
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(testEdge.Id, actualEvent.EntityId);
+            Assert.Equal("edge", actualEvent.EntityType);
+            Assert.Equal("update", actualEvent.Operation);
         }
 
         [Fact]
@@ -648,13 +848,17 @@ namespace deeplynx.tests
                 DestinationId = (int)destinationRecordId,
                 RelationshipId = (int)relationshipId
             };
-            var updatedResult = () => _edgeBusiness.UpdateEdge(pid, dto, 99, null, null);
-            await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
             
-            // Ensure that update edge event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UpdateEdge(pid, dto, 99, null, null));
+            
+            // Ensure that update edge event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
+        
+        #endregion
+        
+        #region ArchiveEdge Tests
 
         [Fact]
         public async Task ArchiveEdge_Success_WhenExists()
@@ -679,64 +883,28 @@ namespace deeplynx.tests
             var archivedEdge = await Context.Edges.FindAsync(testEdge.Id);
             Assert.NotNull(archivedEdge);
             Assert.True(archivedEdge.IsArchived);
+            
             // Ensure that soft delete edge event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                EntityId = testEdge.Id,
-                EntityType = "edge",
-                Operation = "delete"
-            });
-
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(testEdge.Id, actualEvent.EntityId);
+            Assert.Equal("edge", actualEvent.EntityType);
+            Assert.Equal("delete", actualEvent.Operation);
         }
-
+        
         [Fact]
-        public async Task UnarchiveEdge_Success_WhenArchived()
+        public async Task ArchiveEdge_Fails_IfNotFound()
         {
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null,
-                IsArchived = true
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.ArchiveEdge(pid, 999, null, null));
 
-            var unarchivedResult = await _edgeBusiness.UnarchiveEdge(pid, testEdge.Id, null, null);
-            Assert.Equal(testEdge.Id, unarchivedResult);
-
-            var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
-            Assert.NotNull(unarchivedEdge);
-            Assert.False(unarchivedEdge.IsArchived);
+            // Ensure that create edge event is NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
-
-        [Fact]
-        public async Task DeleteEdge_Success_WhenExists()
-        {
-            var testEdge = new Edge
-            {
-                OriginId = originRecordId,
-                DestinationId = destinationRecordId,
-                DataSourceId = dsid,
-                ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
-            };
-            Context.Edges.Add(testEdge);
-            await Context.SaveChangesAsync();
-
-            var deletedResult = await _edgeBusiness.DeleteEdge(pid, testEdge.Id, null, null);
-            Assert.Equal(testEdge.Id, deletedResult);
-
-            var deletedEdge = await Context.Edges.FindAsync(testEdge.Id);
-            Assert.Null(deletedEdge);
-        }
-
+        
         [Fact]
         public async Task EdgeArchived_WhenProjectArchived()
         {
@@ -772,45 +940,44 @@ namespace deeplynx.tests
             }
         }
 
-        [Fact]
-        public async Task BulkCreateEdges_Fails_IfNullDto()
-        {
-            var result = () => _edgeBusiness.BulkCreateEdges(pid, dsid, null);
-            await result.Should().ThrowAsync<ArgumentNullException>();
-            
-            // Ensure that create edge event is not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
-        }
+        #endregion
+
+        #region  UnarchiveEdge Tests
 
         [Fact]
-        public async Task ArchiveEdge_Fails_IfNotFound()
+        public async Task UnarchiveEdge_Success_WhenArchived()
         {
-            var result = () => _edgeBusiness.ArchiveEdge(pid, 999, null, null);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
-            // Ensure that create edge event is not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
-        }
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = true
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
 
-        [Fact]
-        public async Task DeleteEdge_Fails_IfNotFound()
-        {
-            var result = () => _edgeBusiness.DeleteEdge(pid, 999, null, null);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
-        }
+            var unarchivedResult = await _edgeBusiness.UnarchiveEdge(pid, testEdge.Id, null, null);
+            Assert.Equal(testEdge.Id, unarchivedResult);
 
+            var unarchivedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.NotNull(unarchivedEdge);
+            Assert.False(unarchivedEdge.IsArchived);
+        }
+        
         [Fact]
         public async Task UnarchiveEdge_Fails_IfNotFound()
         {
-            var result = () => _edgeBusiness.UnarchiveEdge(pid, 999, null, null);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UnarchiveEdge(pid, 999, null, null));
             
-            // Ensure that create edge event is not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that create edge event is NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
-
+        
         [Fact]
         public async Task UnarchiveEdge_Fails_IfNotArchived()
         {
@@ -825,15 +992,49 @@ namespace deeplynx.tests
             };
             Context.Edges.Add(activeEdge);
             await Context.SaveChangesAsync();
-
-            var result = () => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
             
-            // Ensure that create edge event is not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.UnarchiveEdge(pid, activeEdge.Id, null, null));
+            
+            // Ensure that create edge event is NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        #endregion
+
+        #region  DeleteEdge Tests
+        
+        [Fact]
+        public async Task DeleteEdge_Success_WhenExists()
+        {
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+
+            var deletedResult = await _edgeBusiness.DeleteEdge(pid, testEdge.Id, null, null);
+            Assert.Equal(testEdge.Id, deletedResult);
+
+            var deletedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.Null(deletedEdge);
+        }
+        
+        [Fact]
+        public async Task DeleteEdge_Fails_IfNotFound()
+        {
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.DeleteEdge(pid, 999, null, null));
         }
 
+        #endregion
+
+        #region EdgeDTO Tests
         [Fact]
         public void EdgeRequestDto_AllProperties_CanBeSetAndRetrieved()
         {
@@ -877,6 +1078,9 @@ namespace deeplynx.tests
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
         }
+        
+        #endregion
+        
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
