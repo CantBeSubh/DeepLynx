@@ -213,7 +213,7 @@ try
             {
                 new()
                 {
-                    Name = "Auth",
+                    Name = "Token",
                     Description =
                         "Provides endpoints to create tokens and api keys"
                 },
