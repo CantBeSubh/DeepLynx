@@ -48,8 +48,7 @@ const navbar = (
 
 const footer = <Footer>{new Date().getFullYear()} © Idaho National Laboratory.</Footer>
 
-//const basePath = process.env.NEXT_PUBLIC_DOCS_PATH || ''
-const basePath = '/docs'
+const basePath = process.env.NEXT_PUBLIC_DOCS_PATH || ''
 const faviconPath = `${basePath}/cropped-lynx-white.png` 
 
 export default async function RootLayout({ children }: { children: ReactNode }) { 
