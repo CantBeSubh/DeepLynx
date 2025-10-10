@@ -150,7 +150,7 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
+            - name: API_URL
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -160,7 +160,7 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: auth-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
+            - name: REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -279,7 +279,7 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
+            - name: API_URL
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -289,7 +289,7 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: auth-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
+            - name: REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
                   name: app-config
