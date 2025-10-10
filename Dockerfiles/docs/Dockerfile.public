@@ -7,8 +7,8 @@ ARG HOSTED_LINK
 # Set environment variables
 ENV HOSTED_LINK=${HOSTED_LINK}
 
-# Print out the value of the environment variables
-RUN echo "HOSTED_LINK=${HOSTED_LINK}"
+# # Print out the value of the environment variables
+# RUN echo "HOSTED_LINK=${HOSTED_LINK}"
 
 # Set working directory
 WORKDIR /usr/src/app

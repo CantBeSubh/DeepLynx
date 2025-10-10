@@ -71,8 +71,6 @@ spec:
               value: ${AWS_S3_CONNECTION_STRING}
             - name: AZURE_OBJECT_CONNECTION_STRING
               value: ${AZURE_OBJECT_CONNECTION_STRING}
-            - name: ConnectionStrings__DefaultConnection
-              value: "${DATABASE_CONNECTION_STRING}"
             - name: FILE_STORAGE_METHOD
               value: ${FILE_STORAGE_METHOD}
             - name: STORAGE_DIRECTORY
@@ -203,8 +201,6 @@ spec:
               value: ${AWS_S3_CONNECTION_STRING}
             - name: AZURE_OBJECT_CONNECTION_STRING
               value: ${AZURE_OBJECT_CONNECTION_STRING}
-            - name: ConnectionStrings__DefaultConnection
-              value: ${DATABASE_CONNECTION_STRING}
             - name: FILE_STORAGE_METHOD
               value: ${FILE_STORAGE_METHOD}
             - name: STORAGE_DIRECTORY
