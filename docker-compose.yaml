@@ -4,7 +4,7 @@ services:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
-        DOCS_PATH: "#"
+        NEXT_PUBLIC_DOCS_PATH: "#"
     environment:
       NODE_ENV: production
       BACKEND_BASE_URL: "http://server:5000/api"
@@ -16,7 +16,7 @@ services:
     depends_on:
       - server
 
-# If you decide to uncomment this you need to delete the '"DOCS_PATH: "#"' line from ui args above, or ask Ed Ramos.
+# If you decide to uncomment this you need to delete the '"NEXT_PUBLIC_DOCS_PATH: "#"' line from ui args above, or ask Ed Ramos.
 #  docs:
     #build:
       #context: ./

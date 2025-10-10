@@ -216,8 +216,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             <li className="mt-2">
               <Link
                 href={
-                  process.env.DOCS_PATH
-                    ? `${process.env.DOCS_PATH}`
+                  process.env.NEXT_PUBLIC_DOCS_PATH
+                    ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
                     : "/docs"
                 }
                 /*
