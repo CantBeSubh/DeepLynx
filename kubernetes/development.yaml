@@ -107,8 +107,8 @@ spec:
               value: ${SUPPORT_EMAIL}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
-            - name: NEXT_PUBLIC_DOCS_PATH
-              value: ${NEXT_PUBLIC_DOCS_PATH}
+            - name: DOCS_PATH
+              value: ${DOCS_PATH}
             - name: TENANT_MODE
               value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
@@ -335,8 +335,8 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-docs-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: NEXT_PUBLIC_DOCS_PATH
-              value: ${NEXT_PUBLIC_DOCS_PATH}
+            - name: DOCS_PATH
+              value: ${DOCS_PATH}
             - name: HOSTED_LINK
               valueFrom:
                 configMapKeyRef:

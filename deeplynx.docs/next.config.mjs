@@ -5,7 +5,7 @@ const withNextra = nextra({
 })
 
 //TODO: switch to env var
-//const basePath = process.env.NEXT_PUBLIC_DOCS_PATH || '';
+//const basePath = process.env.DOCS_PATH || '';
 
 export default withNextra({
 // Add regular Next.js options here
