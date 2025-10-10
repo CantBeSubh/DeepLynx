@@ -3,7 +3,7 @@ import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
 const api = axios.create({
-  baseURL: process.env.API_URL,
+  baseURL: "/api",
 });
 
 // Request interceptor to add token

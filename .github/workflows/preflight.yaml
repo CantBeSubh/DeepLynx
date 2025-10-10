@@ -31,7 +31,6 @@ jobs:
             --file Dockerfiles/ui/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
-            --build-arg API_URL=${{ vars.API_URL }} \
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
@@ -47,7 +46,6 @@ jobs:
             --file Dockerfiles/server/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
-            --build-arg API_URL=${{ vars.API_URL }} \
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \

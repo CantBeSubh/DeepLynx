@@ -1,3 +1,4 @@
+# kubernetes yaml file for development
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -150,11 +151,6 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
             - name: NEXTAUTH_URL
               valueFrom:
                 configMapKeyRef:
@@ -279,11 +275,6 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
             - name: NEXTAUTH_URL
               valueFrom:
                 configMapKeyRef:

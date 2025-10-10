@@ -1,3 +1,4 @@
+# github development workflow
 name: Build Development
 on:
   workflow_dispatch:
@@ -30,7 +31,6 @@ jobs:
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          API_URL: ${{ vars.API_URL }}
           NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
           REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
@@ -48,7 +48,6 @@ jobs:
             --file Dockerfiles/ui/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
-            --build-arg API_URL=${{ vars.API_URL }} \
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
@@ -65,7 +64,6 @@ jobs:
             --file Dockerfiles/server/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID=${{ vars.OKTA_CLIENT_ID }} \
             --build-arg OKTA_ISSUER=${{ vars.OKTA_ISSUER }} \
-            --build-arg API_URL=${{ vars.API_URL }} \
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
@@ -120,7 +118,6 @@ jobs:
           kubectl create configmap app-config \
             --from-literal=okta-client-id="${{ vars.OKTA_CLIENT_ID }}" \
             --from-literal=okta-issuer="${{ vars.OKTA_ISSUER }}" \
-            --from-literal=api-url="${{ vars.API_URL }}" \
             --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \

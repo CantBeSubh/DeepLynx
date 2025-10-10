@@ -4,7 +4,6 @@ services:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
-        API_URL: "http://localhost:5000/api"
         DOCS_PATH: "#"
     environment:
       NODE_ENV: production
