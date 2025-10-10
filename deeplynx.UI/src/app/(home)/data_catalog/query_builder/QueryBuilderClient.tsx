@@ -1,7 +1,7 @@
 "use client";
 import { TagResponseDto } from "../../types/responseDTOs";
 import React, { useEffect, useMemo, useState } from "react";
-import { CustomQueryRequestDto } from "../../types/requestDTOs/customRequestDTO";
+import { CustomQueryRequestDto } from "../../types/requestDTOs";
 import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
 import { FileViewerTableRow } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
