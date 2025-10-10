@@ -4,10 +4,8 @@ const withNextra = nextra({
   search: { codeblocks: true }
 })
 
-//const basePath = process.env.NEXT_PUBLIC_DOCS_PATH || '';
-
 export default withNextra({
 // Add regular Next.js options here
-  basePath: '/docs',
+  basePath: process.env.NEXT_PUBLIC_DOCS_PATH || '',
   reactStrictMode: true,
 })
