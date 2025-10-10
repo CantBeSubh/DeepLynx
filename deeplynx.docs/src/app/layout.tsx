@@ -48,8 +48,6 @@ const navbar = (
 
 const footer = <Footer>{new Date().getFullYear()} © Idaho National Laboratory.</Footer>
 
-//TODO: switch to env var
-//const basePath = process.env.DOCS_PATH || ''
 const basePath = '/docs'
 const faviconPath = `${basePath}/cropped-lynx-white.png` 
 

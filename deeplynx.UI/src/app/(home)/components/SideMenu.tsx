@@ -218,7 +218,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 href={
                   process.env.DOCS_PATH
                     ? `${process.env.DOCS_PATH}`
-                    : "http://localhost:3001"
+                    : "/docs"
                 }
                 /*
                 href="#"

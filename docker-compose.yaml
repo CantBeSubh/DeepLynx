@@ -16,7 +16,7 @@ services:
     depends_on:
       - server
 
-# If you decide to uncomment this you need to delete the '"DOCS_PATH: "#"' line from ui args above, or ask ER.
+# If you decide to uncomment this you need to delete the '"DOCS_PATH: "#"' line from ui args above, or ask Ed Ramos.
 #  docs:
     #build:
       #context: ./

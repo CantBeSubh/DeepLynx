@@ -2,16 +2,13 @@
 FROM node:lts-alpine3.20 AS frontend-build
 
 # Define build arguments
-ARG DOCS_PATH
 ARG HOSTED_LINK
 
 # Set environment variables
-ENV DOCS_PATH=${DOCS_PATH}
 ENV HOSTED_LINK=${HOSTED_LINK}
 
 # Print out the value of the environment variables
-RUN echo "HOSTED_LINK=${HOSTED_LINK}" \
-    && echo "DOCS_PATH=${DOCS_PATH}"
+RUN echo "HOSTED_LINK=${HOSTED_LINK}"
 
 # Set working directory
 WORKDIR /usr/src/app
