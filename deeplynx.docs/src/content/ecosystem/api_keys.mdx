@@ -39,13 +39,13 @@ Use the temporary Bearer token to generate your permanent API credentials by cal
 #### Endpoint
 
 ```
-POST /api/auth/CreateApiKey
+POST /api/token/CreateApiKey
 ```
 
 #### Example Request
 
 ```bash copy
-curl /api/auth/CreateApiKey \
+curl /api/token/CreateApiKey \
   --request POST \
   --header 'Content-Type: application/json' \
   --header 'Authorization: Bearer [temporary-token-from-step-2]'
@@ -69,7 +69,7 @@ Now use your API Key, Secret, and the temporary Bearer token to generate access 
 #### Endpoint
 
 ```
-POST /api/auth/CreateToken
+POST /api/token/CreateToken
 ```
 
 #### Request Body
@@ -87,7 +87,7 @@ The `expirationMinutes` parameter is optional and sets the token lifetime in min
 #### Example Request
 
 ```bash copy
-curl /api/auth/CreateToken \
+curl /api/token/CreateToken \
   --request POST \
   --header 'Content-Type: application/json' \
   --header 'Authorization: Bearer [temporary-token-from-step-2]' \
@@ -124,7 +124,7 @@ curl /api/projects/GetAllProjects \
 When your access token expires, generate a new one by calling CreateToken again with your saved API Key and Secret. You no longer need the temporary Bearer token from Step 2 - just your API credentials.
 
 ```bash copy
-curl /api/auth/CreateToken \
+curl /api/token/CreateToken \
   --request POST \
   --header 'Content-Type: application/json' \
   --header 'Authorization: Bearer [your-current-valid-token]' \

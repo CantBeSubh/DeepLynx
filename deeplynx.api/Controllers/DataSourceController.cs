@@ -3,12 +3,13 @@ using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.business;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("api/projects/{projectId}/datasources")]
-    [NexusAuthorize]
+    [Authorize]
     public class DataSourceController : ControllerBase
     {
         private readonly IDataSourceBusiness _dataSourceBusiness;
