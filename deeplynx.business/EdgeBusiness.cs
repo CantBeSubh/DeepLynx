@@ -409,6 +409,11 @@ public class EdgeBusiness : IEdgeBusiness
         edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
+
+        if (edge.OriginId == edge.DestinationId)
+        {
+            throw new ValidationException("Destination and origin Ids can not be the same.");
+        }
         
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
