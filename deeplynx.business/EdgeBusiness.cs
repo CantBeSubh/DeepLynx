@@ -72,21 +72,47 @@ public class EdgeBusiness : IEdgeBusiness
     /// Retrieves all edges for a specific project and (optionally) datasource
     /// </summary>
     /// <param name="recordId">The ID of the record by which to filter edges</param>
+    /// <param name="isOrigin">Indicates whether to find where recordId is origin or not</param>
+    /// <param name="page">The ID of the record by which to filter edges</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
+    /// <param name="pageSize">Max size of list to return</param>
     /// <returns>A list of edges based on the applied filters.</returns>
-    public async Task<List<EdgeResponseDto>> GetEdgesByRecord(
+    public async Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(
         long recordId,
-        bool hideArchived)
+        bool isOrigin,
+        int page,
+        bool hideArchived,
+        int pageSize)
     {
+        if (page < 1)
+        {
+            throw new ArgumentException("Page must be greater than 0");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            throw new ArgumentException("Page size must be between 1 and 100");
+        }
         
         var recordExists = await _context.Records.AnyAsync(record => record.Id == recordId);
         if (!recordExists)
         {
             throw new KeyNotFoundException($"Record with id {recordId} not found");
         }
-        
-        var edgeQuery = _context.Edges
-            .Where(e => e.DestinationId == recordId || e.OriginId == recordId);
+
+        IQueryable<Edge> edgeQuery = _context.Edges
+            .Include(e => e.Destination)
+            .Include(e => e.Origin)
+            .Include(e => e.Relationship);
+
+        if (isOrigin)
+        {
+            edgeQuery = edgeQuery.Where(e => e.OriginId == recordId);
+        }
+        else
+        {
+            edgeQuery = edgeQuery.Where(e => e.DestinationId == recordId);
+        }
         
         // Todo: Add this query back when we want to filter all record edges by user access
         
@@ -116,17 +142,20 @@ public class EdgeBusiness : IEdgeBusiness
         }
 
         return await edgeQuery
-            .Select(e => new EdgeResponseDto()
+            .OrderBy(e => e.Id) // Important: Add consistent ordering for predictable pagination
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select( e => new
+                {
+                    Edge = e,
+                    RelatedRecord = isOrigin ? e.Destination : e.Origin
+                })
+            .Select(x => new RelatedRecordsResponseDto()
             {
-                Id = e.Id,
-                OriginId = e.OriginId,
-                DestinationId = e.DestinationId,
-                RelationshipId = e.RelationshipId,
-                DataSourceId = e.DataSourceId,
-                ProjectId = e.ProjectId,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy,
-                IsArchived = e.IsArchived,
+                RelatedRecordName = x.RelatedRecord.Name,
+                RelatedRecordId = x.RelatedRecord.Id,
+                RelatedRecordProjectId = x.RelatedRecord.ProjectId,
+                RelationshipName = x.Edge.Relationship != null ? x.Edge.Relationship.Name : null,
             }).ToListAsync();
     }
 

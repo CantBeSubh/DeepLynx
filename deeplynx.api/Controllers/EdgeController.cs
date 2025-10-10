@@ -55,18 +55,20 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get edges by record
         /// </summary>
-        /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
         /// <param name="recordId">The ID of the datasource by which to filter edges</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
-        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetEdgesByRecord(
+        public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
             long recordId,
-            bool hideArchived = true)
+            bool isOrigin,
+            int page,
+            bool hideArchived = true,
+            int pageSize = 20)
         {
             try
             {
-                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, hideArchived); 
+                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize); 
                 return Ok(edges);
             }
             catch (Exception exc)

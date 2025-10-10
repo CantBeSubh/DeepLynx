@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { defaultRoles } from "../../dummy_data/data";
+// import { defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
@@ -80,15 +80,15 @@ const ProjectSettings = ({
         memberConent
       ),
     },
-    {
-      label: "Roles",
-      content: (
-        <RolesTable
-          id={selectedProjectId}
-          data={defaultRoles}
-        />
-      ),
-    },
+    // {
+    //   label: "Roles",
+    //   content: (
+    //     <RolesTable
+    //       id={selectedProjectId}
+    //       data={defaultRoles}
+    //     />
+    //   ),
+    // },
     //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
     // {
     //   label: "Data Source",
