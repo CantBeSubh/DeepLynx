@@ -5,7 +5,7 @@ import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
-import CatalogViewSkeleton from "./Skeletons/catalogviewskeleton";
+import CatalogViewSkeleton from "./skeletons/catalogviewskeleton";
 // import CatalogViewSkeleton from "@/app/(wherever)/CatalogViewSkeleton"; // ensure this import
 
 export type RecentRecord = {

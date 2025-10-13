@@ -5,7 +5,7 @@ import { Column } from "../../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "../MemberModals/EditSysUser";
-import MemberManagementUserSkeleton from "../../Skeletons/membermanagementuserskeleton";
+import MemberManagementUserSkeleton from "../../skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
 const UsersTable = () => {
   const { t } = useLanguage();

@@ -14,7 +14,7 @@ import { UserResponseDto } from '../../types/responseDTOs';
 import { ProjectMembersDto } from '../../types/responseDTOs';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
-import ProjectSettingsMemberSkeleton from '../Skeletons/projectsettingsmemberskeleton';
+import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
 import { ProjectResponseDto } from '../../types/responseDTOs';
 interface ProjectSettingsProps {
   projects: ProjectResponseDto[];
