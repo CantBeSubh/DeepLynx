@@ -3,6 +3,20 @@
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import TagButton from "@/app/(home)/components/TagButton";
+import {
+  updateRecord,
+  unAttachTagFromRecord,
+  getRecord,
+} from "@/app/lib/record_services.client";
+import { getTagsForProjects } from "@/app/lib/query_services.client";
+import PropertyTable from "../components/PropertyTable";
+import Tabs from "@/app/(home)/components/Tabs";
+import { TagResponseDto } from "../types/responseDTOs";
+import {
+  Column,
+  FileViewerTableRow,
+} from "@/app/(home)/types/types";
 import {
   XMarkIcon,
   PencilIcon,

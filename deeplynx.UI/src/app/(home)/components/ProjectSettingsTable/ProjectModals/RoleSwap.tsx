@@ -1,8 +1,7 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { useState, useEffect } from "react";
 import { getAllRoles } from "@/app/lib/role_services.client";
-import { ProjectMembersTable } from "@/app/(home)/types/types";
-
+import { ProjectMembersDto } from "@/app/(home)/types/responseDTOs";
 interface Role {
   id: number;
   name: string;
@@ -18,9 +17,9 @@ interface RoleSwapProps {
   isOpen: boolean;
   onClose: () => void;
   onRoleUpdate: (newRoleId: number, newRoleName: string) => Promise<void>;
-  currentMember: ProjectMembersTable | null;
+  currentMember: ProjectMembersDto | null;
   projectId: string | null;
-  selectedMembers?: ProjectMembersTable[];
+  selectedMembers?: ProjectMembersDto[];
   roles?: Role[]; // Optional: can be passed from parent or fetched here
 }
 

@@ -4,7 +4,7 @@ import {
   attachTagToRecord,
   unAttachTagFromRecord,
 } from "@/app/lib/record_services.client";
-import { TagResponseDto } from "../types/types";
+import { TagResponseDto } from "../types/responseDTOs";
 import AddTagModal from "./AddTagModal";
 import { useLanguage } from "@/app/contexts/Language";
 
