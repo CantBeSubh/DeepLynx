@@ -64,7 +64,7 @@ try
         {
             policy
                 .WithOrigins(
-                    "http://localhos:5095",
+                    "http://localhost:5095",
                     "http://localhost:3000",
                     "http://localhost:3001",
                     "http://ui:3000",
