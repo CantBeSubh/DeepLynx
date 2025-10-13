@@ -85,7 +85,7 @@ public class NotificationBusiness : INotificationBusiness
             <tr>
                 <td style=""background-color: #07519e; padding: 40px 30px; text-align: center; border-radius: 8px 8px 0 0;"">
                     <h1 style=""color: #ffffff; font-size: 24px; font-weight: bold; margin: 0;"">
-                        <img src=""https://deeplynx.dev.inl.gov/images/lynx-white.png""
+                        <img src=""""
                              alt=""DeepLynx Nexus""
                              style=""width: 50%; height: auto;""/>
                     </h1>

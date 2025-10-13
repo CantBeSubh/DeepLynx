@@ -64,13 +64,17 @@ try
         {
             policy
                 .WithOrigins(
+                    "http://localhos:5095",
                     "http://localhost:3000",
+                    "http://localhost:3001",
                     "http://ui:3000",
-                    "https://deeplynx.dev.inl.gov",
-                    "https://deeplynx.acc.inl.gov",
-                    "https://deeplynx.scan.inl.gov",
-                    "https://deeplynx.test.inl.gov",
+                    "https://*.cluster.local",
+                    "http://*.cluster.local",
+                    "https://*.svc.cluster.local",
+                    "http://*.svc.cluster.local",
+                    "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
                     "https://deeplynx.inl.gov")
+                .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
