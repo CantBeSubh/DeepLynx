@@ -2,7 +2,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useRef, useEffect } from "react";
 
 export interface CardColumn<T extends object> {
   key: keyof T;
@@ -17,6 +17,12 @@ interface RelatedRecordsCardProps<T extends object> {
   rows: T[];
   /** Show leading index column like your original table */
   showIndex?: boolean;
+  /** Callback when scrolled near bottom */
+  onLoadMore?: () => void;
+  /** Whether more data is currently loading */
+  isLoading?: boolean;
+  /** Whether there's more data to load */
+  hasMore?: boolean;
 }
 
 function RelatedRecordsCard<T extends object>({
@@ -24,16 +30,42 @@ function RelatedRecordsCard<T extends object>({
   columns,
   rows,
   showIndex = true,
+  onLoadMore,
+  isLoading = false,
+  hasMore = false,
 }: RelatedRecordsCardProps<T>) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || !onLoadMore || !hasMore) return;
+
+    const handleScroll = () => {
+      if (isLoading) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+      // Trigger when user scrolls to within 100px of the bottom
+      if (scrollHeight - scrollTop <= clientHeight + 100) {
+        onLoadMore();
+      }
+    };
+
+    scrollContainer.addEventListener("scroll", handleScroll);
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
+  }, [onLoadMore, isLoading, hasMore]);
+
   return (
-    <div className="card bg-base-100 shadow-md p-2">
+    <div className="card bg-base-100 shadow-md mt-4 p-2">
       <h2 className="text-xl font-bold md-4 text-base-content">{title}</h2>
       <div className="card-body p-4">
-        <div className="overflow-x-auto rounded-box border border-base-300 bg-base-100">
+        <div
+          ref={scrollContainerRef}
+          className="overflow-auto rounded-box border border-base-300 bg-base-100"
+          style={{ maxHeight: "320px" }} // ~6 rows with headers
+        >
           <table className="table">
-            <thead>
+            <thead className="sticky top-0 bg-base-200 z-10">
               <tr className="bg-base-200 text-base-content">
-                {showIndex && <th></th>}
                 {columns.map((col) => (
                   <th key={String(col.key)}>{col.label}</th>
                 ))}
@@ -42,7 +74,6 @@ function RelatedRecordsCard<T extends object>({
             <tbody>
               {rows.map((row, i) => (
                 <tr key={i}>
-                  {showIndex && <th>{i + 1}</th>}
                   {columns.map((col) => {
                     const raw = row[col.key];
                     const content = col.render
@@ -52,8 +83,34 @@ function RelatedRecordsCard<T extends object>({
                   })}
                 </tr>
               ))}
+              {/* Loading indicator row */}
+              {isLoading && (
+                <tr>
+                  <td colSpan={columns.length} className="text-center py-4">
+                    <span className="loading loading-spinner loading-sm"></span>
+                    <span className="ml-2">Loading more...</span>
+                  </td>
+                </tr>
+              )}
+              {/* No more data indicator */}
+              {!hasMore && rows.length > 0 && (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="text-center py-2 text-base-content/50"
+                  >
+                    No more records
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+          {/* Empty state */}
+          {rows.length === 0 && !isLoading && (
+            <div className="text-center text-base-content/60 py-8">
+              No relations found
+            </div>
+          )}
         </div>
       </div>
     </div>
