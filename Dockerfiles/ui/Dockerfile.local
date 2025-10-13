@@ -1,0 +1,80 @@
+# Stage 1: Build the frontend
+FROM node:lts-alpine3.20 AS frontend-build
+
+# Define build arguments
+ARG OKTA_CLIENT_ID
+ARG OKTA_ISSUER
+ARG REDIRECT_LINK
+ARG BACKEND_BASE_URL
+ARG OKTA_CLIENT_SECRET
+ARG AUTH_SECRET
+ARG SERVICE_TOKEN
+ARG NEXTAUTH_URL
+ARG DISABLE_FRONTEND_AUTHENTICATION
+
+# Set environment variables
+ENV OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
+ENV OKTA_ISSUER=${OKTA_ISSUER}
+ENV REDIRECT_LINK=${REDIRECT_LINK}
+ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
+ENV OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}
+ENV AUTH_SECRET=${AUTH_SECRET}
+ENV SERVICE_TOKEN=${SERVICE_TOKEN}
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
+ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Copy package.json and package-lock.json first
+COPY deeplynx.UI/package*.json ./
+
+# Configure INL certs and environment variables
+RUN apk --no-check-certificate add wget ca-certificates
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+# Install Node.js and npm
+RUN apk add --no-cache nodejs npm
+
+# Install frontend dependencies
+RUN npm install
+
+# Copy the rest of the frontend source code
+COPY deeplynx.UI .
+
+# Build the frontend
+RUN npm run build
+
+# Stage 2: Create the final image
+FROM node:lts-alpine3.20 AS final
+
+# Set working directory
+WORKDIR /usr/src/app
+
+# Configure INL certs and environment variables
+RUN apk --no-check-certificate add wget ca-certificates
+RUN wget -q -P /usr/local/share/ca-certificates/ http://certstore.inl.gov/pki/CAINLROOT_B64.crt
+RUN /usr/sbin/update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_DIR=/etc/ssl/certs/
+
+# Copy the built frontend code from the previous stage
+COPY --from=frontend-build /usr/src/app .
+
+# Install production dependencies
+RUN npm install --omit=dev
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Set the command to run the application
+CMD ["npm", "start"]

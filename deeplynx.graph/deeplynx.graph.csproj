@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\deeplynx.datalayer\deeplynx.datalayer.csproj" />
+      <ProjectReference Include="..\deeplynx.helpers\deeplynx.helpers.csproj" />
+      <ProjectReference Include="..\deeplynx.interfaces\deeplynx.interfaces.csproj" />
+      <ProjectReference Include="..\deeplynx.models\deeplynx.models.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+    <None Update="libkuzunet.dylib">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="libkuzu.dylib">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Serilog" Version="4.3.0" />
+    </ItemGroup>
+
+</Project>

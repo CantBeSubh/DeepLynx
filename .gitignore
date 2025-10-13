@@ -1,0 +1,34 @@
+*.bak
+*.env
+*.log
+*.zip
+dist
+
+
+## Mac OS ##
+.DS_Store
+.idea
+
+## VS Code ##
+.vscode
+
+## Web ##
+/deeplynx.api/.DS_Store
+/deeplynx.api/.idea
+
+
+## Web ##
+/**/obj/
+/**/bin/
+
+
+package-lock.json
+
+deeplynx.sln.DotSettings.user
+
+duckdb
+deeplynx.graph/kuzu_db
+
+- global.json
+
+/storage

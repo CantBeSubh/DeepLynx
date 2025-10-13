@@ -1,0 +1,13 @@
+namespace deeplynx.models;
+
+public class SensitivityLabelResponseDto
+{
+    public long Id { get; set; }
+    public string Name { get; set; }
+    public string? Description { get; set; }
+    public DateTime LastUpdatedAt { get; set; }
+    public string? LastUpdatedBy { get; set; }
+    public bool IsArchived { get; set; }
+    public long? ProjectId { get; set; }
+    public long? OrganizationId { get; set; }
+}

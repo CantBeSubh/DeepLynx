@@ -1,0 +1,27 @@
+README.md
+markdown-assets
+documentation
+
+docker-compose.yaml
+
+*.bak
+*.env
+*.log
+*.zip
+*.log
+dist
+
+**/.next
+**/node_modules
+**/_pagefind/
+
+## Mac OS ##
+*.DS_Store
+*.idea
+
+## VS Code ##
+.vscode
+
+## Web ##
+/**/obj/
+/**/bin/

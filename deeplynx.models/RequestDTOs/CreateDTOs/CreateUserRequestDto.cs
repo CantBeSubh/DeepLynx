@@ -1,0 +1,11 @@
+namespace deeplynx.models;
+
+public class CreateUserRequestDto
+{
+    public string Name { get; set; }
+    public string Email { get; set; }
+    public string? Username { get; set; }
+    public string? SsoId { get; set; }
+    public bool? IsArchived { get; set; } = false;
+    public bool? IsActive { get; set; } = false;
+}

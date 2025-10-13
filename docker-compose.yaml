@@ -1,0 +1,91 @@
+services:
+  ui:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/ui/Dockerfile.local
+      args:
+        NEXT_PUBLIC_DOCS_PATH: "#"
+    environment:
+      NODE_ENV: production
+      BACKEND_BASE_URL: "http://server:5000/api"
+      DISABLE_FRONTEND_AUTHENTICATION: true
+    ports:
+      - "3000:3000"
+    networks:
+      - nexus-network
+    depends_on:
+      - server
+
+# If you decide to uncomment this you need to delete the '"NEXT_PUBLIC_DOCS_PATH: "#"' line from ui args above, or ask Ed Ramos.
+#  docs:
+    #build:
+      #context: ./
+      #dockerfile: Dockerfiles/docs/Dockerfile.local
+    #environment:
+      #NODE_ENV: production
+    #ports:
+      #- "3001:3001"
+    #networks:
+      #- nexus-network
+    #depends_on:
+      #- server
+
+  server:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/server/Dockerfile.local
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: nexuscore
+      POSTGRES_DB_NAME: deeplynx
+      POSTGRES_DB_HOST: nx-postgres
+      POSTGRES_PORT: 5432
+      FILE_STORAGE_METHOD: filesystem # values can be filesystem, azure_object, and aws_s3
+      STORAGE_DIRECTORY: /data
+      AZURE_OBJECT_CONNECTION_STRING: azure-example-connection-string
+      AWS_S3_CONNECTION_STRING: aws-example-connection-string
+      JWT_SECRET_KEY: demo_ZGDcnDdkRjLcx1kty9lXzlZ9L2ywFv3rC/91I3Z6fLQ= # for your local backend and can be changed
+      JWT_ISSUER: https://identity-preview.inl.gov
+      JWT_AUDIENCE: https://identity-preview.inl.gov
+      SMTP_SERVER: mailhost.inl.gov
+      SMTP_PORT: 25
+      SMTP_ENABLE_SSL: false
+      FROM_EMAIL: no-reply@inl.gov
+      FROM_NAME: DeepLynx Nexus
+      INVITE_URL: http://localhost:3000
+      SUPPORT_EMAIL: jaren.brownlee@inl.gov
+      DISABLE_BACKEND_AUTHENTICATION: true
+
+    entrypoint: /usr/local/bin/entrypoint.sh
+    ports:
+      - "5000:5000"
+    networks:
+      - nexus-network
+    volumes:
+      - object_storage:/data
+    depends_on:
+        - nx-postgres
+
+  nx-postgres:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/database/Dockerfile.local
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=nexuscore
+    ports:
+      - "5432"
+    networks:
+      - nexus-network
+    volumes:
+      - nx_postgres_data:/var/lib/postgresql/data
+    
+networks:
+  nexus-network:
+    driver: bridge
+  
+volumes:
+  object_storage:
+    driver: local
+  nx_postgres_data:
+    driver: local
