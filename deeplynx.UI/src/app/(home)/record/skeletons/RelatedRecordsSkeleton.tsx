@@ -38,15 +38,14 @@ function RelatedRecordsCardSkeleton({
                   {Array.from({ length: columns }).map((_, colIndex) => (
                     <td key={colIndex}>
                       <div className="space-y-2">
-                        {/* Vary widths for more realistic appearance */}
                         <div
                           className="h-4 bg-base-300 rounded animate-pulse"
                           style={{
                             width:
                               colIndex === 0
-                                ? "2rem"
+                                ? "4rem"
                                 : colIndex === columns - 1
-                                ? "2rem"
+                                ? "4rem"
                                 : `${Math.floor(Math.random() * 40) + 60}%`,
                           }}
                         />
