@@ -17,6 +17,7 @@ import { ProjectMembersTable, ProjectsList, UserResponseDto, RoleResponseDto, My
 import { getAllUsers } from '@/app/lib/user_services.client';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
+import NewRoleClient from "../../project/[id]/project_settings/project_roles/new_role/NewRoleClient";
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -77,6 +78,14 @@ const ProjectSettings = ({
     }
   };
 
+  //Refreshing Roles Table
+  const refreshRoles = async () => {
+    if (selectedProjectId) {
+        const rolesData = await getAllRoles(Number(selectedProjectId));
+        setRoles(rolesData);
+    }
+};
+
   //Tab Data for Project Settings Tables
   const tabData = [
     {
@@ -125,7 +134,8 @@ const ProjectSettings = ({
   const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (activeTab === "Roles") {
-      router.push(`/project/${id}/project_settings/project_roles/new_role`);
+      console.log("Navigating to roles with ID:", selectedProjectId);
+      router.push(`/project/${selectedProjectId}/project_settings/project_roles/new_role`);
     } else if (activeTab === "Members") {
       setAddProjectMemberModal(true);
     }

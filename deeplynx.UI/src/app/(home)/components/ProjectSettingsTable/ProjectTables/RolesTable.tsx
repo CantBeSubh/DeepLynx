@@ -22,8 +22,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  console.log("Initial data passed to RolesTable:", initialData);
-
   //Keeping selection array in sync
   useEffect(() => {
     setSelectedMembers((prev) => {

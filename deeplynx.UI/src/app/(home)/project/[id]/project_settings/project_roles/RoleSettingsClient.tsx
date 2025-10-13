@@ -2,7 +2,10 @@
 
 import React from "react";
 import { useLanguage } from "@/app/contexts/Language";
+import { useRouter } from "next/navigation";
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import RoleSettings from "../../../../components/ProjectSettingsTable/ProjectTables/RoleSettings";
+import { RoleResponseDto, PermissionResponseDto, ProjectResponseDto } from "../../../../types/types";
 
 type Props = {
     projectId: string | string[];
@@ -10,6 +13,12 @@ type Props = {
 
 export default function RoleSettingsClient({ projectId }: Props) {
     const { t } = useLanguage();
+    const router = useRouter();
+
+    const handleReturnToRoles = () => {
+        console.log("Navigating to roles with ID:", projectId);
+        router.push(`/project/${projectId}/project_settings?tab=Roles`);
+    };
 
     return (
         <div>
@@ -18,6 +27,14 @@ export default function RoleSettingsClient({ projectId }: Props) {
                     <h1 className="text-2xl font-bold text-info-content">
                         {t.translations.ROLE_SETTINGS}
                     </h1>
+                    <div className="flex justify-start items-center">
+                        <button
+                            className="flex items-center justify-start space-x-2"
+                            onClick={handleReturnToRoles}>
+                                <ArrowLeftIcon className="size-4 text-secondary"/>
+                            <span>{t.translations.RETURN_TO_ROLES}</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -1,4 +1,17 @@
 import api from './api';
+import { AxiosError } from "axios";
+
+interface ApiErrorResponse {
+  message: string;
+  code?: string;
+}
+interface RoleResponseDto {
+  id: number;
+  name: string;
+  description?: string | null;
+  projectId?: number | null;
+  organizationId?: number | null;
+}
 
 //Get All Roles
 export const getAllRoles = async (
@@ -40,27 +53,35 @@ export const fetchRoleId = async (
     }
 }
 
-//Create a Role
 export const createRole = async (
-    name: string,
-    description?: string | null,
-    projectId?: number,
-    organizationId?: number,
-) => {
-    try {
-        const res = await api.post(`/roles/CreateRole`, {
-            params: {
-                name,
-                description,
-                projectId,
-                organizationId,
-            }
-        });
-        return res.data;
-    } catch (error) {
-        console.error("Error fetching role by Id:", error);
-        throw error;
-    }
+  name: string,
+  description?: string | null,
+  projectId?: number,
+  organizationId?: number
+): Promise<RoleResponseDto> => {
+  const count = Number(!!projectId) + Number(!!organizationId);
+  if (count < 1) {
+    throw new Error("Provide either projectId or organizationId.");
+  }
+
+  try {
+    const res = await api.post<RoleResponseDto>(
+      `/roles/CreateRole`,
+      { name, description },
+      { params: { projectId, organizationId } }
+    );
+    return res.data;
+  } catch (err) {
+    const e = err as AxiosError<ApiErrorResponse>;
+    console.error("Error creating role", {
+      url: e.config?.url,
+      method: e.config?.method,
+      status: e.response?.status,
+      data: e.response?.data,
+      payload: { name, description, projectId, organizationId },
+    });
+    throw e;
+  }
 }
 
 //Update a Role
