@@ -71,6 +71,8 @@ spec:
               value: ${AWS_S3_CONNECTION_STRING}
             - name: AZURE_OBJECT_CONNECTION_STRING
               value: ${AZURE_OBJECT_CONNECTION_STRING}
+            - name: ConnectionStrings__DefaultConnection
+              value: "${DATABASE_CONNECTION_STRING}"
             - name: FILE_STORAGE_METHOD
               value: ${FILE_STORAGE_METHOD}
             - name: STORAGE_DIRECTORY
@@ -201,6 +203,8 @@ spec:
               value: ${AWS_S3_CONNECTION_STRING}
             - name: AZURE_OBJECT_CONNECTION_STRING
               value: ${AZURE_OBJECT_CONNECTION_STRING}
+            - name: ConnectionStrings__DefaultConnection
+              value: "${DATABASE_CONNECTION_STRING}"
             - name: FILE_STORAGE_METHOD
               value: ${FILE_STORAGE_METHOD}
             - name: STORAGE_DIRECTORY
@@ -320,11 +324,11 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-docs-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: HOSTED_LINK
+            - name: NEXTAUTH_URL
               valueFrom:
                 configMapKeyRef:
                   name: app-config
-                  key: hosted-link
+                  key: auth-url
           resources:
             limits:
               memory: "4Gi"

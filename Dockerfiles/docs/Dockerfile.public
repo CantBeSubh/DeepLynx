@@ -2,13 +2,10 @@
 FROM node:lts-alpine3.20 AS frontend-build
 
 # Define build arguments
-ARG HOSTED_LINK
+ARG NEXTAUTH_URL
 
 # Set environment variables
-ENV HOSTED_LINK=${HOSTED_LINK}
-
-# # Print out the value of the environment variables
-# RUN echo "HOSTED_LINK=${HOSTED_LINK}"
+ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 
 # Set working directory
 WORKDIR /usr/src/app
