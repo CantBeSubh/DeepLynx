@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.tests

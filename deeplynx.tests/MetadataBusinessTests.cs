@@ -5,7 +5,6 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Microsoft.Extensions.Logging;
