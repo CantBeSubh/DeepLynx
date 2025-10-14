@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.business;
@@ -5,6 +6,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -516,7 +518,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task CreateMetadata_Fails_WhenEdgeHasSameOriginAndDestination()
+        public async Task CreateMetadata_Success_ReturnsCorrectMetadata()
         {
             // Arrange
             var classDtos = new List<CreateClassRequestDto>
@@ -583,6 +585,47 @@ namespace deeplynx.tests
             result.Tags.Should().HaveCount(1);
             result.Records.Should().HaveCount(2);
             result.Edges.Should().HaveCount(1);
+            
+            // Assert
+            Assert.Single(result.Classes);
+            Assert.Single(result.Relationships);
+            Assert.Single(result.Tags);
+            Assert.Equal(2, result.Records.Count);
+            Assert.Single(result.Edges);
+            
+            // Ensure all complex data events are created and logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(6, eventList.Count);
+            
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("relationship", actualEvent1.EntityType);
+            Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
+            
+            var actualEvent2 = eventList[2];
+            Assert.Equal(pid, actualEvent2.ProjectId);
+            Assert.Equal("create", actualEvent2.Operation);
+            Assert.Equal("tag", actualEvent2.EntityType);
+            Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
+            
+            var actualEvent3 = eventList[3];
+            Assert.Equal(pid, actualEvent3.ProjectId);
+            Assert.Equal("create", actualEvent3.Operation);
+            Assert.Equal("record", actualEvent3.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
+            
+            var actualEvent4 = eventList[4];
+            Assert.Equal(pid, actualEvent4.ProjectId);
+            Assert.Equal("create", actualEvent4.Operation);
+            Assert.Equal("edge", actualEvent4.EntityType);
+            Assert.Equal(result.Edges[0].Id, actualEvent4.EntityId);
         }
         
         [Fact]
@@ -639,48 +682,7 @@ namespace deeplynx.tests
             };
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
-            // Assert
-            Assert.Single(result.Classes);
-            Assert.Single(result.Relationships);
-            Assert.Single(result.Tags);
-            Assert.Single(result.Records);
-            Assert.Single(result.Edges);
-            
-            // Ensure all complex data events are created and logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Equal(5, eventList.Count);
-            
-            var actualEvent0 = eventList[0];
-            Assert.Equal(pid, actualEvent0.ProjectId);
-            Assert.Equal("create", actualEvent0.Operation);
-            Assert.Equal("class", actualEvent0.EntityType);
-            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
-
-            var actualEvent1 = eventList[1];
-            Assert.Equal(pid, actualEvent1.ProjectId);
-            Assert.Equal("create", actualEvent1.Operation);
-            Assert.Equal("relationship", actualEvent1.EntityType);
-            Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
-            
-            var actualEvent2 = eventList[2];
-            Assert.Equal(pid, actualEvent2.ProjectId);
-            Assert.Equal("create", actualEvent2.Operation);
-            Assert.Equal("tag", actualEvent2.EntityType);
-            Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
-            
-            var actualEvent3 = eventList[3];
-            Assert.Equal(pid, actualEvent3.ProjectId);
-            Assert.Equal("create", actualEvent3.Operation);
-            Assert.Equal("record", actualEvent3.EntityType);
-            Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
-            
-            var actualEvent4 = eventList[4];
-            Assert.Equal(pid, actualEvent4.ProjectId);
-            Assert.Equal("create", actualEvent4.Operation);
-            Assert.Equal("edge", actualEvent4.EntityType);
-            Assert.Equal(result.Edges[0].Id, actualEvent4.EntityId);
+            await Assert.ThrowsAsync<ValidationException> (() => _metadataBusiness.CreateMetadata(pid, did, dto));
         }
 
         [Fact]

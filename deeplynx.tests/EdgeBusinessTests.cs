@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
