@@ -30,7 +30,7 @@ const RoleSwap = ({
   currentMember,
   projectId,
   selectedMembers,
-  roles: rolesFromParent
+  roles: rolesFromParent,
 }: RoleSwapProps) => {
   const { t } = useLanguage();
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
@@ -70,8 +70,8 @@ const RoleSwap = ({
     }
 
     // Get the role name for the selected role ID
-    const selectedRole = roles.find(role => role.id === selectedRoleId);
-    const roleName = selectedRole?.name || 'Unknown';
+    const selectedRole = roles.find((role) => role.id === selectedRoleId);
+    const roleName = selectedRole?.name || "Unknown";
 
     setLoading(true);
     try {
@@ -104,7 +104,10 @@ const RoleSwap = ({
             {currentMember && !selectedMembers && (
               <div className="mb-4 p-3 bg-base-200 rounded">
                 <p className="text-sm">
-                  <span className="font-semibold">{t.translations.MEMBER}:</span> {currentMember.name}
+                  <span className="font-semibold">
+                    {t.translations.MEMBER}:
+                  </span>{" "}
+                  {currentMember.name}
                 </p>
                 {currentMember.email && (
                   <p className="text-sm text-gray-500">{currentMember.email}</p>
@@ -116,16 +119,17 @@ const RoleSwap = ({
             {selectedMembers && selectedMembers.length > 0 && (
               <div className="mb-4 p-3 bg-base-200 rounded">
                 <p className="text-sm">
-                  <span className="font-semibold">
-                    {"Updating role for"}:
-                  </span>{" "}
+                  <span className="font-semibold">{"Updating role for"}:</span>{" "}
                   {selectedMembers.length} {t.translations.MEMBERS || "members"}
                 </p>
               </div>
             )}
 
             {/* Role Selection Form */}
-            <form onSubmit={(e) => e.preventDefault()} className="flex flex-col gap-4">
+            <form
+              onSubmit={(e) => e.preventDefault()}
+              className="flex flex-col gap-4"
+            >
               <select
                 value={selectedRoleId || ""}
                 onChange={(e) => setSelectedRoleId(Number(e.target.value))}
@@ -135,7 +139,11 @@ const RoleSwap = ({
                   {t.translations.SELECT_A_ROLE}
                 </option>
                 {roles.map((role) => (
-                  <option key={role.id} value={role.id} className="text-neutral">
+                  <option
+                    key={role.id}
+                    value={role.id}
+                    className="text-neutral"
+                  >
                     {role.name}
                   </option>
                 ))}
@@ -144,11 +152,7 @@ const RoleSwap = ({
 
             {/* Modal Action Buttons */}
             <div className="modal-action">
-              <button
-                className="btn"
-                onClick={handleClose}
-                disabled={loading}
-              >
+              <button className="btn" onClick={handleClose} disabled={loading}>
                 {t.translations.CANCEL}
               </button>
               <button
@@ -156,7 +160,9 @@ const RoleSwap = ({
                 onClick={handleSave}
                 disabled={loading || !selectedRoleId}
               >
-                {loading ? t.translations.SAVING || "Saving..." : t.translations.SAVE}
+                {loading
+                  ? t.translations.SAVING || "Saving..."
+                  : t.translations.SAVE}
               </button>
             </div>
           </div>

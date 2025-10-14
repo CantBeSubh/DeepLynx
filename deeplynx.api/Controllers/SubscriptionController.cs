@@ -2,6 +2,7 @@ using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
@@ -13,7 +14,7 @@ namespace deeplynx.api.Controllers
     /// </remarks>
     [ApiController]
     [Route("api/projects/{projectId}/users/{userId}/subscriptions")] //TODO: remove userID from route when JWT are implemented
-    [NexusAuthorize]
+    [Authorize]
     public class SubscriptionController : ControllerBase
     {
         private readonly ISubscriptionBusiness _subscriptionBusiness;

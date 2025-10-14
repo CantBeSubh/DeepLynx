@@ -6,6 +6,7 @@ using deeplynx.helpers.Context;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Text.Json;
 
 namespace deeplynx.business;
 
@@ -38,7 +39,7 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result</param>
     /// <returns>A list of edges based on the applied filters.</returns>
     public async Task<List<EdgeResponseDto>> GetAllEdges(
-        long projectId, 
+        long projectId,
         long? dataSourceId,
         bool hideArchived)
     {
@@ -50,7 +51,7 @@ public class EdgeBusiness : IEdgeBusiness
         {
             edgeQuery = edgeQuery.Where(e => e.IsArchived == false);
         }
-        
+
         var edges = await edgeQuery.ToListAsync();
 
         return edges
@@ -67,7 +68,7 @@ public class EdgeBusiness : IEdgeBusiness
                 IsArchived = e.IsArchived,
             }).ToList();
     }
-    
+
     /// <summary>
     /// Retrieves all edges for a specific project and (optionally) datasource
     /// </summary>
@@ -93,7 +94,7 @@ public class EdgeBusiness : IEdgeBusiness
         {
             throw new ArgumentException("Page size must be between 1 and 100");
         }
-        
+
         var recordExists = await _context.Records.AnyAsync(record => record.Id == recordId);
         if (!recordExists)
         {
@@ -113,9 +114,9 @@ public class EdgeBusiness : IEdgeBusiness
         {
             edgeQuery = edgeQuery.Where(e => e.DestinationId == recordId);
         }
-        
+
         // Todo: Add this query back when we want to filter all record edges by user access
-        
+
         // var userProjectIds = await _context.Projects.Where(p => 
         //     p.ProjectMembers.Any(pm => 
         //         pm.UserId == userId ||
@@ -145,11 +146,11 @@ public class EdgeBusiness : IEdgeBusiness
             .OrderBy(e => e.Id) // Important: Add consistent ordering for predictable pagination
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select( e => new
-                {
-                    Edge = e,
-                    RelatedRecord = isOrigin ? e.Destination : e.Origin
-                })
+            .Select(e => new
+            {
+                Edge = e,
+                RelatedRecord = isOrigin ? e.Destination : e.Origin
+            })
             .Select(x => new RelatedRecordsResponseDto()
             {
                 RelatedRecordName = x.RelatedRecord.Name,
@@ -171,16 +172,16 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or is archived</exception>
     public async Task<EdgeResponseDto> GetEdge(
-        long projectId, 
-        long? edgeId, 
-        long? originId, 
-        long? destinationId, 
+        long projectId,
+        long? edgeId,
+        long? originId,
+        long? destinationId,
         bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
-        
+
         var edge = await FindEdge(edgeId, originId, destinationId);
-        
+
         if (edge == null)
         {
             throw new KeyNotFoundException($"Edge with id {edgeId} not found");
@@ -213,18 +214,18 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="dto">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<EdgeResponseDto> CreateEdge(
-        long projectId, 
-        long dataSourceId, 
+        long projectId,
+        long dataSourceId,
         CreateEdgeRequestDto dto)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context,dataSourceId, projectId);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
         if (!dto.OriginId.HasValue || !dto.DestinationId.HasValue)
         {
             throw new ValidationException("Origin and/or Destination IDs are missing or invalid.");
         }
-        
+
         var edge = new Edge
         {
             OriginId = dto.OriginId.Value,
@@ -235,10 +236,10 @@ public class EdgeBusiness : IEdgeBusiness
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
         };
-        
+
         _context.Edges.Add(edge);
         await _context.SaveChangesAsync();
-        
+
         // log edge create event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -247,10 +248,14 @@ public class EdgeBusiness : IEdgeBusiness
             EntityType = "edge",
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
-            Properties = "{}", // TODO: Determine the extent of data edge properties need
+            Properties = JsonSerializer.Serialize(new 
+            { 
+                origin = edge.OriginId,
+                destination = edge.DestinationId
+            }), // TODO: Determine the extent of data edge properties need
             LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
-        
+
         return new EdgeResponseDto
         {
             Id = edge.Id,
@@ -263,7 +268,7 @@ public class EdgeBusiness : IEdgeBusiness
             LastUpdatedBy = edge.LastUpdatedBy
         };
     }
-    
+
     /// <summary>
     /// Asynchronously creates new edges for a specified project.
     /// </summary>
@@ -272,13 +277,13 @@ public class EdgeBusiness : IEdgeBusiness
     /// <param name="edges">The edge request data transfer object containing edge details</param>
     /// <returns>The created edge response DTO with saved details.</returns>
     public async Task<List<EdgeResponseDto>> BulkCreateEdges(
-        long projectId, 
-        long dataSourceId, 
+        long projectId,
+        long dataSourceId,
         List<CreateEdgeRequestDto> edges)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
-        
+
         // Bulk insert into edges; if there is an origin/destination collision, update relationship ID
         var sql = @"
             INSERT INTO deeplynx.edges (project_id, data_source_id, origin_id, destination_id, relationship_id, last_updated_at,is_archived)
@@ -288,7 +293,7 @@ public class EdgeBusiness : IEdgeBusiness
                 last_updated_at = @now
             RETURNING *;
         ";
-        
+
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
@@ -296,7 +301,7 @@ public class EdgeBusiness : IEdgeBusiness
             new NpgsqlParameter("@dataSourceId", dataSourceId),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
-       
+
         // establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(edges.SelectMany((dto, i) => new[]
         {
@@ -304,11 +309,11 @@ public class EdgeBusiness : IEdgeBusiness
             new NpgsqlParameter($"@p{i}_dest", dto.DestinationId),
             new NpgsqlParameter($"@p{i}_rel", (object?)dto.RelationshipId ?? DBNull.Value),
         }));
-        
+
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", edges.Select((dto, i) =>
             $"(@projectId, @dataSourceId, @p{i}_orig, @p{i}_dest, @p{i}_rel, @now, false)"));
-        
+
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
 
@@ -316,24 +321,24 @@ public class EdgeBusiness : IEdgeBusiness
         var result = await _context.Database
             .SqlQueryRaw<EdgeResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
-        
+
         // log edge create event for each create
         var events = new List<CreateEventRequestDto> { };
         foreach (var newEdge in result)
         {
             events.Add(new CreateEventRequestDto
-                {
-                    ProjectId = projectId,
-                    Operation = "create",
-                    EntityType = "edge",
-                    EntityId = newEdge.Id,
-                    DataSourceId = newEdge.DataSourceId,
-                    Properties = "{}", // TODO: Determine the extent of data edge properties need
-                    LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
-                });
+            {
+                ProjectId = projectId,
+                Operation = "create",
+                EntityType = "edge",
+                EntityId = newEdge.Id,
+                DataSourceId = newEdge.DataSourceId,
+                Properties = "{}", // TODO: Determine the extent of data edge properties need
+                LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
+            });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
-        
+
         return result;
     }
 
@@ -351,26 +356,26 @@ public class EdgeBusiness : IEdgeBusiness
         long projectId,
         UpdateEdgeRequestDto dto,
         long? edgeId,
-        long? originId, 
+        long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.IsArchived )
+        if (edge == null || edge.ProjectId != projectId || edge.IsArchived)
         {
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
         }
-        
+
         edge.OriginId = dto.OriginId ?? edge.OriginId;
         edge.DestinationId = dto.DestinationId ?? edge.DestinationId;
         edge.RelationshipId = dto.RelationshipId ?? edge.RelationshipId;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         edge.LastUpdatedBy = null;  // TODO: Implement user ID here when JWT tokens are ready
-        
+
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
-        
+
         // log edge update event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -382,7 +387,7 @@ public class EdgeBusiness : IEdgeBusiness
             Properties = "{}", // TODO: Determine the extent of data edge properties need
             LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
-        
+
         return new EdgeResponseDto
         {
             Id = edge.Id,
@@ -407,23 +412,23 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     /// TODO: return warning that historical data will be entirely wiped with this action
     public async Task<long> DeleteEdge(
-        long projectId, 
+        long projectId,
         long? edgeId,
-        long? originId, 
+        long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId) 
+        if (edge == null || edge.ProjectId != projectId)
             throw new KeyNotFoundException("Edge may have been moved or deleted.");
 
         _context.Edges.Remove(edge);
         await _context.SaveChangesAsync();
-        
+
         return edge.Id;
     }
-    
+
     /// <summary>
     /// Archives a specific edge by its ID or origin/destination.
     /// </summary>
@@ -434,21 +439,21 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The ID of the edge that was archived.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<long> ArchiveEdge(
-        long projectId, 
+        long projectId,
         long? edgeId,
-        long? originId, 
+        long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || edge.IsArchived) 
+        if (edge == null || edge.ProjectId != projectId || edge.IsArchived)
             throw new KeyNotFoundException("Edge may have been moved, archived or deleted.");
 
         edge.IsArchived = true;
         edge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-        _context.Edges.Update(edge);
-      
+        await _context.SaveChangesAsync();
+
         // Log Edge soft Delete Event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -460,10 +465,10 @@ public class EdgeBusiness : IEdgeBusiness
             Properties = "{}", // TODO: Determine the extent of data edge properties need
             LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
-        
+
         return edge.Id;
     }
-    
+
     /// <summary>
     /// Unarchives a specific edge by its ID or origin/destination.
     /// </summary>
@@ -474,24 +479,24 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The ID of the edge that was unarchived.</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     public async Task<long> UnarchiveEdge(
-        long projectId, 
+        long projectId,
         long? edgeId,
-        long? originId, 
+        long? originId,
         long? destinationId)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         // find edge and perform error handling if not found
         Edge edge = await FindEdge(edgeId, originId, destinationId);
-        if (edge == null || edge.ProjectId != projectId || !edge.IsArchived) 
+        if (edge == null || edge.ProjectId != projectId || !edge.IsArchived)
             throw new KeyNotFoundException("Edge to unarchive not found or is not archived.");
 
         edge.IsArchived = false;
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
-        
+
         return edge.Id;
     }
-    
+
     /// <summary>
     /// Private method to facilitate boilerplate code for finding edges by ID or origin/destination
     /// </summary>
@@ -501,8 +506,8 @@ public class EdgeBusiness : IEdgeBusiness
     /// <returns>The edge associated with the given id or origin/destination combo</returns>
     /// <exception cref="KeyNotFoundException">Returned if edge not found or if ids missing</exception>
     private async Task<Edge> FindEdge(
-        long? edgeId, 
-        long? originId, 
+        long? edgeId,
+        long? originId,
         long? destinationId
         )
     {
@@ -510,7 +515,7 @@ public class EdgeBusiness : IEdgeBusiness
         {
             throw new KeyNotFoundException("Please supply either an edgeID or an originID and destinationID");
         }
-        
+
         Edge edge = null;
 
         // search for edge either by id or origin + destination
@@ -539,10 +544,10 @@ public class EdgeBusiness : IEdgeBusiness
                 throw new KeyNotFoundException($"Edge with origin {originId} and destination {destinationId} not found");
             }
         }
-        
-        return edge;  
+
+        return edge;
     }
-    
+
     /// <summary>
     /// Determine if datasource exists
     /// </summary>
