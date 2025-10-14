@@ -1,18 +1,19 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, MyRolesTable } from '../../../types/types';
+import { Column } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { useRouter } from "next/navigation";
+import { RoleResponseDto } from '@/app/(home)/types/responseDTOs';
 
 interface RolesTableProps {
-  data: MyRolesTable[];
+  data: RoleResponseDto[];
   id: string | null | undefined;
 }
 
 const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<MyRolesTable[]>(initialData);
+  const [data, setData] = useState<RoleResponseDto[]>(initialData);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
   const [handleEdit, setHandleEdit] = useState<boolean>(false);
@@ -54,7 +55,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-  const columns: Column<MyRolesTable>[] = [
+  const columns: Column<RoleResponseDto>[] = [
     {
       header: (
         <input
@@ -64,7 +65,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
           onChange={handleSelectAll}
         />
       ),
-      cell: (row: MyRolesTable, index: number) => (
+      cell: (row: RoleResponseDto, index: number) => (
         <input
           type="checkbox"
           className="checkbox"
@@ -76,7 +77,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     },
     {
       header: "Role",
-      data: "role",
+      data: "name",
     },
     {
       header: "Description",
@@ -85,9 +86,9 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     },
     {
       header: "",
-      cell: (row: MyRolesTable) => (
+      cell: (row: RoleResponseDto) => (
         <div className="flex">
-          <button onClick={() => router.push(`/project/${id}/project_settings/project_roles?roleId=${row.id}`)}>
+          <button onClick={() => router.push(`/project/${id}/project_settings/project_roles?roleId=${row.roleId}`)}>
             <PencilIcon className="size-6 text-secondary" />
           </button>
         </div>
@@ -104,7 +105,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
           )}
         </div>
       ),
-      cell: (row: MyRolesTable, index: number) => (
+      cell: (row: RoleResponseDto, index: number) => (
         <div className="flex">
           <button onClick={() => handleDelete(index)}>
             <TrashIcon className="size-6 text-red-500" />

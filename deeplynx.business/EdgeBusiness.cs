@@ -5,6 +5,7 @@ using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using System.Text.Json;
 
 namespace deeplynx.business;
 
@@ -424,7 +425,11 @@ public class EdgeBusiness : IEdgeBusiness
             EntityType = "edge",
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
-            Properties = "{}", // TODO: Determine the extent of data edge properties need
+            Properties = JsonSerializer.Serialize(new 
+            { 
+                origin = edge.OriginId,
+                destination = edge.DestinationId
+            }), // TODO: Determine the extent of data edge properties need
             LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
 

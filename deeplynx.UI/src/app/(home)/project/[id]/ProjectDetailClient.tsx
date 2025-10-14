@@ -7,16 +7,16 @@ import { useEffect, useState } from "react";
 import LargeSearchBar from "@/app/(home)/components/SearchBar";
 import SavedSearches from "@/app/(home)/components/SavedSearches";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { format } from "date-fns";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
 type Props = {
-  projects: ProjectsList[];
-  initialProject: ProjectsList | null;
+  projects: ProjectResponseDto[];
+  initialProject: ProjectResponseDto | null;
   projectId: string;
 };
 
@@ -27,7 +27,7 @@ export default function ProjectDetailClient({
   const { t } = useLanguage();
   const router = useRouter();
 
-  const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [project, setProject] = useState<ProjectResponseDto | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState(
     initialProject ? initialProject.id : null
   );
@@ -49,7 +49,7 @@ export default function ProjectDetailClient({
     if (selectedProject) {
       setProject(selectedProject);
       setProjectSession({
-        projectId: selectedProject.id!,
+        projectId: selectedProject.id.toString()!,
         projectName: selectedProject.name,
       });
     }
@@ -65,7 +65,7 @@ export default function ProjectDetailClient({
 
   const handleSearchEnter = (searchTerm: string) => {
     const query = new URLSearchParams({
-      fromProject: selectedProjectId ? selectedProjectId : "",
+      fromProject: selectedProjectId? selectedProjectId.toString() : "",
       search: searchTerm,
     }).toString();
     router.push(`/data_catalog?${query}`);
@@ -88,7 +88,7 @@ export default function ProjectDetailClient({
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={setSelectedProjectId}
-          defaultSelectedId={initialProject?.id || ""}
+          defaultSelectedId={initialProject?.id.toString() || ""}
         />
       </div>
 
@@ -126,7 +126,7 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[selectedProjectId ? selectedProjectId : ""]}
+                selectedProjects={[selectedProjectId ? selectedProjectId.toString() : ""]}
               />
             </div>
           </div>

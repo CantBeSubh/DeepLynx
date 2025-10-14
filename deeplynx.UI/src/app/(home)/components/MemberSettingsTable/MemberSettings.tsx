@@ -6,14 +6,7 @@ import Tabs from "../Tabs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import UsersTable from "./MemberTables/UsersTable";
-// import GroupsTable from "./MemberTables/GroupsTable";
-// import OrganizationsTable from "./MemberTables/OrganizationsTable";
 import AddSysUser from "./MemberModals/AddSysUser";
-// import AddGroup from "./MemberModals/AddGroup";
-// import AddOrg from "./MemberModals/AddOrg";
-// import { SystemGroupsTable } from "@/app/(home)/types/types";
-// import { systemOrgs, systemGroups } from "../../dummy_data/data";
-// import { createGroup, Group } from "@/app/lib/group_services.client"; TODO: POST FY API FOR GROUPS
 
 interface ProjectSettingsProps {
   className?: string;
