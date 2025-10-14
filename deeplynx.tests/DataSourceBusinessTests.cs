@@ -1,9 +1,11 @@
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -14,6 +16,9 @@ namespace deeplynx.tests
         private DataSourceBusiness _dataSourceBusiness;
         private Mock<IEdgeBusiness> _mockEdgeBusiness;
         private Mock<IRecordBusiness> _mockRecordBusiness;
+        private INotificationBusiness _notificationBusiness = null!;
+        private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+        private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private EventBusiness _eventBusiness;
         public long pid;
         public long pid2;
@@ -25,7 +30,10 @@ namespace deeplynx.tests
         {
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+            _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         }
 
         public override async Task InitializeAsync()
@@ -70,8 +78,10 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
         {
+            // Arrange
             Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = pid2 });
             await Context.SaveChangesAsync();
+            
             // Act
             var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
             var dataSources = result.ToList();
@@ -383,6 +393,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateDataSource_PartialUpdate_UpdatesDataSource()
         {
+            // Arrange
             var updateDto = new UpdateDataSourceRequestDto
             {
                 Description = "Updated Description"
@@ -663,6 +674,7 @@ namespace deeplynx.tests
             // This test simulates concurrent operations on the same data source
             // In a real scenario, you might want to test with actual concurrent tasks
             
+            // Arrange
             var dto1 = new UpdateDataSourceRequestDto
             {
                 Name = "Concurrent Update 1",
@@ -677,6 +689,7 @@ namespace deeplynx.tests
 
             // As noted above, DbContext is not thread-safe so there's not a great way to truly simulate concurrent operations
             // so for now we take the sequential approach
+            
             // Act
             await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
             await _dataSourceBusiness.UpdateDataSource(pid, did, dto2);
@@ -816,8 +829,10 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
         {
+            // Act
             var result = await _dataSourceBusiness.UnarchiveDataSource(pid, did3);
 
+            // Assert
             Assert.True(result);
 
             Context.ChangeTracker.Clear();
@@ -829,6 +844,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_NonExistent_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid, 99999));
             
@@ -840,6 +856,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_WrongProject_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid2, did3));  // did3 is archived and belongs to pid
             
@@ -852,6 +869,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_NotArchived_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid, did)); // did is not archived
             

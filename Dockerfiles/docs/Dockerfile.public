@@ -3,11 +3,12 @@ FROM node:lts-alpine3.20 AS frontend-build
 
 # Define build arguments
 ARG HOSTED_LINK
-ARG NEXT_PUBLIC_BASE_PATH
 
 # Set environment variables
-ENV NEXTAUTH_URL=${HOSTED_LINK}
-ENV NEXT_PUBLIC_BASE_PATH=${NEXT_PUBLIC_BASE_PATH}
+ENV HOSTED_LINK=${HOSTED_LINK}
+
+# # Print out the value of the environment variables
+# RUN echo "HOSTED_LINK=${HOSTED_LINK}"
 
 # Set working directory
 WORKDIR /usr/src/app

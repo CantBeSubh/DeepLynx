@@ -8,6 +8,7 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
@@ -64,13 +65,17 @@ try
         {
             policy
                 .WithOrigins(
+                    "http://localhost:5095",
                     "http://localhost:3000",
+                    "http://localhost:3001",
                     "http://ui:3000",
-                    "https://deeplynx.dev.inl.gov",
-                    "https://deeplynx.acc.inl.gov",
-                    "https://deeplynx.scan.inl.gov",
-                    "https://deeplynx.test.inl.gov",
+                    "https://*.cluster.local",
+                    "http://*.cluster.local",
+                    "https://*.svc.cluster.local",
+                    "http://*.svc.cluster.local",
+                    "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
                     "https://deeplynx.inl.gov")
+                .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
@@ -136,6 +141,8 @@ try
         ServiceLifetime.Transient
     );
 
+    // Used for event system pub/sub and notifications
+    builder.Services.AddSignalR();
 
     // Register Cache Service as a singleton
     var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
@@ -365,6 +372,7 @@ try
 
     app.UseStaticFiles();
 
+    
     // We're always using scalar for now.
     //if (app.Environment.IsDevelopment()) { ...
     app.MapOpenApi();
@@ -389,11 +397,13 @@ try
                 </div>
             </header>
         </div>"));
-
-    app.UseCors("AllowAll");
+    
+    app.UseRouting();
+    app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseMiddleware<UserContextMiddleware>();
+    app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
     app.MapControllers();
     app.Run();
 }
