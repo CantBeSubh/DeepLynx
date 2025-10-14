@@ -7,20 +7,19 @@ import {
   createRecord,
   type CreateRecordPayload,
 } from "@/app/lib/record_services.client";
-import type { ProjectsList } from "@/app/(home)/types/types";
 import {
   getAllDataSources,
   type DataSourceDTO,
 } from "@/app/lib/data_source_services.client";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
-
+import { ProjectResponseDto } from "../types/responseDTOs";
 type JsonValue = Record<string, unknown>;
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  initialProjects: ProjectsList[] | { id: string; name: string }[];
+  initialProjects: ProjectResponseDto[] | { id: string; name: string }[];
 };
 
 const AddRecordModal: React.FC<Props> = ({

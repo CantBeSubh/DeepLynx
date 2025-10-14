@@ -9,13 +9,13 @@ import SearchBar from "@/app/(home)/components/SearchBar";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
 type Props = {
-  projects: ProjectsList[];
-  initialProject: ProjectsList | null;
+  projects: ProjectResponseDto[];
+  initialProject: ProjectResponseDto | null;
   projectId: string;
 };
 
@@ -29,7 +29,9 @@ export default function ProjectDetailClient({
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
 
   // State
-  const [project, setProject] = useState<ProjectsList | null>(initialProject);
+  const [project, setProject] = useState<ProjectResponseDto | null>(
+    initialProject
+  );
   const [selectedProjectId, setSelectedProjectId] = useState(
     initialProject?.id || projectId || null
   );
@@ -51,7 +53,7 @@ export default function ProjectDetailClient({
     if (selectedProject) {
       setProject(selectedProject);
       setProjectSession({
-        projectId: selectedProject.id!,
+        projectId: selectedProject.id.toString()!,
         projectName: selectedProject.name,
       });
     }
@@ -95,7 +97,7 @@ export default function ProjectDetailClient({
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={setSelectedProjectId}
-          defaultSelectedId={initialProject?.id || projectId || ""}
+          defaultSelectedId={initialProject?.id.toString() || projectId || ""}
         />
       </div>
 
