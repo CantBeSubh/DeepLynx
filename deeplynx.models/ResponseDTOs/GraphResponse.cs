@@ -2,8 +2,8 @@ namespace deeplynx.models;
 
 public class GraphResponse
 {
-    public List<GraphNode> Nodes { get; set; }
-    public List<GraphLink> Links { get; set; }
+    public List<GraphNode>? Nodes { get; set; }
+    public List<GraphLink>? Links { get; set; }
 }
 
 public class GraphNode

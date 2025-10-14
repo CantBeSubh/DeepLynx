@@ -84,7 +84,7 @@ namespace deeplynx.api.Controllers
         /// Get Graph Data
         /// </summary>
         /// <param name="recordId">The ID of the datasource by which to filter edges</param>
-        /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
+        /// <param name="depth">The number of levels you want to search through</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetGraphDataForRecord", Name = "api_get_graph_data_for_record")]
         public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
@@ -93,7 +93,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, depth); 
+                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth); 
                 return Ok(edges);
             }
             catch (Exception exc)

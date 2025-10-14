@@ -9,7 +9,7 @@ public interface IEdgeBusiness
     Task<List<EdgeResponseDto>> GetAllEdges(
         long projectId, long? dataSourceId, bool hideArchived);
     Task<List<RelatedRecordsResponseDto>> GetEdgesByRecord(long recordId, bool isOrigin, int page, bool hideArchived, int pageSize);
-    Task<GraphResponse> GetGraphDataForRecord(long recordId, int depth);
+    Task<GraphResponse> GetGraphDataForRecord(long recordId, long userId, int depth);
     Task<EdgeResponseDto> GetEdge(
         long projectId, long? edgeId, long? originId, long? destinationId, bool hideArchived);
     Task<EdgeResponseDto> CreateEdge(
