@@ -5,7 +5,6 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useRouter } from "next/navigation";
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import RoleSettings from "../../../../components/ProjectSettingsTable/ProjectTables/RoleSettings";
-import { RoleResponseDto, PermissionResponseDto, ProjectResponseDto } from "../../../../types/types";
 
 type Props = {
     projectId: string | string[];
@@ -16,7 +15,6 @@ export default function RoleSettingsClient({ projectId }: Props) {
     const router = useRouter();
 
     const handleReturnToRoles = () => {
-        console.log("Navigating to roles with ID:", projectId);
         router.push(`/project/${projectId}/project_settings?tab=Roles`);
     };
 

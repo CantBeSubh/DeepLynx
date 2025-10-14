@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import Tabs from "../Tabs";
 import AddProjectMember from "../../components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
@@ -11,13 +11,10 @@ import RolesTable from '././ProjectTables/RolesTable';
 // import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import ProjectDropdown from '../ProjectDropdown';
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { ProjectMembersTable, ProjectsList, UserResponseDto, RoleResponseDto, MyRolesTable } from '../../types/types';
-import { getAllUsers } from '@/app/lib/user_services.client';
+import { ProjectMembersTable, ProjectsList, MyRolesTable } from '../../types/types';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
-import NewRoleClient from "../../project/[id]/project_settings/project_roles/new_role/NewRoleClient";
 
 interface ProjectSettingsProps {
   projects: ProjectsList[];
@@ -30,9 +27,6 @@ const ProjectSettings = ({
   initialProject,
   id
 }: ProjectSettingsProps) => {
-  // const [selectedProjects, setSelectedProjects] = useState<string[]>(
-  //   initialSelectedProjects
-  // );
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
@@ -44,7 +38,7 @@ const ProjectSettings = ({
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
   const [projectRoles, setProjectRoles] = useState<MyRolesTable[]>([]);
-  //changes to ProjectResponseDto DTO && RoleResponseDto
+  //TODO: change to ProjectResponseDto DTO && RoleResponseDto
 
   const [roles, setRoles] = useState([]);
 
@@ -103,7 +97,7 @@ const ProjectSettings = ({
       content: (
         <RolesTable
           id={selectedProjectId}
-          data={projectRoles}
+          data={roles}
         />
       ),
     },
@@ -134,7 +128,6 @@ const ProjectSettings = ({
   const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (activeTab === "Roles") {
-      console.log("Navigating to roles with ID:", selectedProjectId);
       router.push(`/project/${selectedProjectId}/project_settings/project_roles/new_role`);
     } else if (activeTab === "Members") {
       setAddProjectMemberModal(true);
@@ -147,12 +140,12 @@ const ProjectSettings = ({
   }, []);
 
   // Effect to set the active tab from the query parameter
+  const tab = searchParams.get('tab');
   useEffect(() => {
-    const tab = searchParams.get('tab');
     if (tab) {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }, [tab]);
 
   return (
     <div className="">

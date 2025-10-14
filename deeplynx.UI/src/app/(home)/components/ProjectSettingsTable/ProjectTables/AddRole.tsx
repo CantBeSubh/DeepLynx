@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { useRouter } from "next/navigation";
-import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
-import RoleManagementTable from '@/app/(home)/components/ProjectSettingsTable/ProjectTables/ProjectManagementTable';
-
+import { CreateRoleRequestDto, PermissionRequestDto } from "../../../types/types";
 interface AddRoleProps {
-  role: RoleResponseDto;
-  setRole: (role: RoleResponseDto) => void;
-  permissions: PermissionResponseDto[];
-  setPermissions: (permissions: PermissionResponseDto[]) => void;
+  role: CreateRoleRequestDto;
+  setRole: (role: CreateRoleRequestDto) => void;
+  permissions: PermissionRequestDto[];
+  setPermissions: (permissions: PermissionRequestDto[]) => void;
   onCancel: () => void;
   onSave: () => void;
 }
@@ -52,10 +49,11 @@ const AddRole: React.FC<AddRoleProps> = ({
         />
         <div className="mt-6">
           <h2 className="card-title">{t.translations.ROLE_PERMISSIONS}</h2>
-          <RoleManagementTable
+          {/* Add back in with permissions */}
+          {/* <RoleManagementTable
             projectData={permissions.filter(p => p.resource === 'project')}
-            // userData={permissions.filter(p => p.resource === 'user')}
-          />
+            userData={permissions.filter(p => p.resource === 'user')}
+          /> */}
         </div>
         <div className="modal-action">
           <button className="btn" onClick={onCancel}>

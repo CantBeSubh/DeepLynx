@@ -86,22 +86,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
     }
   };
 
-  //Function for deleting roles
-  // const handleDelete = (index: number) => {
-  //   const newData = data.filter((_, i) => i !== index);
-  //   setData(newData);
-  //   setSelectedMembers(new Array(newData.length).fill(false));
-  //   setSelectAll(false);
-  // };
-
-  // //Function for deleting roles
-  // const handleDeleteSelected = () => {
-  //   const newData = data.filter((_, index) => !selectedMembers[index]);
-  //   setData(newData);
-  //   setSelectedMembers(new Array(newData.length).fill(false));
-  //   setSelectAll(false);
-  // };
-
   // Function for deleting a single role
   const handleDelete = async (roleToDelete: RoleResponseDto, index: number) => {
     try {
@@ -133,11 +117,8 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
       setSelectAll(false);
     } catch (error) {
       console.error('Failed to delete selected roles:', error);
-      // Optionally, you can show a notification to the user here
     }
   };
-
-
 
   //Function for selecting multiple roles
   const multipleSelected = () => {

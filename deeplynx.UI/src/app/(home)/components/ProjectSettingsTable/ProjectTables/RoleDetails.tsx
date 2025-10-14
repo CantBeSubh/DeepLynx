@@ -2,9 +2,6 @@ import React from 'react';
 import { useLanguage } from "@/app/contexts/Language";
 import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
 import RoleManagementTable from './ProjectManagementTable';
-import { getAllPermissions } from '@/app/lib/permission_services.client';
-// import UserManagementTable from './UserManagementTable';
-
 interface RoleDetailsProps {
   role: RoleResponseDto;
   setRole: (role: RoleResponseDto) => void;
@@ -53,6 +50,7 @@ const RoleDetails: React.FC<RoleDetailsProps> = ({
           <h2 className="card-title">{t.translations.ROLE_PERMISSIONS}</h2>
           <RoleManagementTable
             projectData={permissions.filter(p => p.resource === 'project')}
+            //Add back when enabling permissions
             // userData={permissions.filter(p => p.resource === 'user')}
           />
         </div>
