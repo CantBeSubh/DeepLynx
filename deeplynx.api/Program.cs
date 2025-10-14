@@ -141,6 +141,7 @@ try
         ServiceLifetime.Transient
     );
 
+    // Used for event system pub/sub and notifications
     builder.Services.AddSignalR();
 
     // Register Cache Service as a singleton
