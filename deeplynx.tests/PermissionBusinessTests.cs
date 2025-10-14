@@ -9,6 +9,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 using System.Text.Json.Nodes;
+using deeplynx.helpers.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace deeplynx.tests
 {
@@ -16,6 +18,9 @@ namespace deeplynx.tests
     public class PermissionBusinessTests : IntegrationTestBase
     {
         private EventBusiness _eventBusiness;
+        private INotificationBusiness _notificationBusiness = null!;
+        private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+        private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private PermissionBusiness _permissionBusiness;
 
         public long oid;        // organization ID
@@ -36,7 +41,10 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+            _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _permissionBusiness = new PermissionBusiness(Context, _eventBusiness, _cacheBusiness);
         }
         

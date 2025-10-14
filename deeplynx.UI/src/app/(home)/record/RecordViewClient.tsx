@@ -3,7 +3,6 @@
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
-import TagButton from "@/app/(home)/components/TagButton";
 import {
   updateRecord,
   unAttachTagFromRecord,
@@ -15,7 +14,6 @@ import Tabs from "@/app/(home)/components/Tabs";
 import { TagResponseDto } from "../types/responseDTOs";
 import {
   Column,
-  FileViewerTableRow,
 } from "@/app/(home)/types/types";
 import {
   XMarkIcon,
@@ -26,8 +24,6 @@ import {
 
 // Components
 import TagButton from "@/app/(home)/components/TagButton";
-import PropertyTable from "../components/PropertyTable";
-import Tabs from "@/app/(home)/components/Tabs";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
 import RelatedRecordsCard, {
   CardColumn,
@@ -35,19 +31,13 @@ import RelatedRecordsCard, {
 
 // Services
 import {
-  updateRecord,
-  unAttachTagFromRecord,
-  getRecord,
-} from "@/app/lib/record_services.client";
-import { getTagsForProjects } from "@/app/lib/query_services.client";
-import {
   archiveEdge,
   getEdge,
   getEdgesByRecord,
 } from "@/app/lib/edge_services.client";
 
 // Types & Context
-import { FileViewerTableRow, TagResponseDto } from "@/app/(home)/types/types";
+import { FileViewerTableRow} from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
 import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
