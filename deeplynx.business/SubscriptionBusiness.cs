@@ -25,6 +25,7 @@ public class SubscriptionBusiness : ISubscriptionBusiness {
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived classes from the result</param>
     /// <returns>A list of subscriptions</returns>
+    /// TODO: CACHE ALL SUBSCRIPTIONS TO MAKE THE NOTIFICATION SERVICE MORE EFFICIENT
     public async Task<List<SubscriptionResponseDto>> GetAllSubscriptions(long userId, long projectId, bool hideArchived)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);

@@ -2,20 +2,20 @@
 
 import React, { useState, useEffect, use, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-import { defaultRoles } from "../../dummy_data/data";
+// import { defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
-import RolesTable from '././ProjectTables/RolesTable';
+// import RolesTable from '././ProjectTables/RolesTable';
 // import DataSourceTable from '././ProjectTables/DataSourceTable';
 // import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
 // import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import ProjectDropdown from '../ProjectDropdown';
+// import ProjectDropdown from '../ProjectDropdown';
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
 import { ProjectMembersTable, ProjectsList, UserResponseDto } from '../../types/types';
-import { getAllUsers } from '@/app/lib/user_services.client';
+// import { getAllUsers } from '@/app/lib/user_services.client';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
 import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
@@ -84,15 +84,15 @@ const ProjectSettings = ({
         memberConent
       ),
     },
-    {
-      label: "Roles",
-      content: (
-        <RolesTable
-          id={selectedProjectId}
-          data={defaultRoles}
-        />
-      ),
-    },
+    // {
+    //   label: "Roles",
+    //   content: (
+    //     <RolesTable
+    //       id={selectedProjectId}
+    //       data={defaultRoles}
+    //     />
+    //   ),
+    // },
     //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
     // {
     //   label: "Data Source",

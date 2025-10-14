@@ -2,8 +2,10 @@ using System.Text.Json.Nodes;
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Microsoft.Extensions.Logging;
@@ -17,6 +19,9 @@ namespace deeplynx.tests
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
         private EventBusiness _eventBusiness = null!;
+        private INotificationBusiness _notificationBusiness = null!;
+        private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+        private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private Mock<IDataSourceBusiness> _dataSourceBusiness = null!;
         private Mock<IRecordBusiness> _recordBusiness = null!;
         private Mock<IRelationshipBusiness> _relationshipBusiness = null!;
@@ -36,7 +41,10 @@ namespace deeplynx.tests
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+            _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _roleBusiness = new Mock<IRoleBusiness>();
 
