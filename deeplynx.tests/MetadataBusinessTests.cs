@@ -509,82 +509,6 @@ namespace deeplynx.tests
             };
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
-            result.Classes.Should().HaveCount(1);
-            result.Relationships.Should().HaveCount(1);
-            result.Tags.Should().HaveCount(1);
-            result.Records.Should().HaveCount(2);
-            result.Edges.Should().HaveCount(1);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Success_ReturnsCorrectMetadata()
-        {
-            // Arrange
-            var classDtos = new List<CreateClassRequestDto>
-            {
-                new CreateClassRequestDto { Name = "New Class" }
-            };
-
-            var relationshipDtos = new List<CreateRelationshipRequestDto>
-            {
-                new CreateRelationshipRequestDto
-                {
-                    Name = "Test Relationship",
-                    OriginId = originClassId,
-                    DestinationId = destClassId
-                }
-            };
-
-            var tagDtos = new List<CreateTagRequestDto>
-            {
-                new CreateTagRequestDto { Name = "Test Tag" }
-            };
-
-            var recordDtos = new List<CreateRecordRequestDto>
-            {
-                new CreateRecordRequestDto
-                {
-                    Name = "Test Record",
-                    OriginalId = "test-1",
-                    Description = "Test Description",
-                    Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
-                },
-                new CreateRecordRequestDto
-                {
-                    Name = "Test Record 2",
-                    OriginalId = "test-2",
-                    Description = "Test Description",
-                    Properties = JsonObject.Parse("{\"test2\": \"value 2\"}") as JsonObject
-                }
-            };
-
-            var edgeDtos = new List<CreateEdgeRequestDto>
-            {
-                new CreateEdgeRequestDto
-                {
-                    RelationshipName = "Test Relationship",
-                    OriginOid = "test-1",
-                    DestinationOid = "test-2"
-                }
-            };
-
-            var dto = new CreateMetadataRequestDto
-            {
-                Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray,
-                Relationships = JsonSerializer.SerializeToNode(relationshipDtos) as JsonArray,
-                Tags = JsonSerializer.SerializeToNode(tagDtos) as JsonArray,
-                Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray,
-                Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
-            };
-
-            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
-            result.Classes.Should().HaveCount(1);
-            result.Relationships.Should().HaveCount(1);
-            result.Tags.Should().HaveCount(1);
-            result.Records.Should().HaveCount(2);
-            result.Edges.Should().HaveCount(1);
             
             // Assert
             Assert.Single(result.Classes);
@@ -624,8 +548,14 @@ namespace deeplynx.tests
             var actualEvent4 = eventList[4];
             Assert.Equal(pid, actualEvent4.ProjectId);
             Assert.Equal("create", actualEvent4.Operation);
-            Assert.Equal("edge", actualEvent4.EntityType);
-            Assert.Equal(result.Edges[0].Id, actualEvent4.EntityId);
+            Assert.Equal("record", actualEvent4.EntityType);
+            Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
+            
+            var actualEvent5 = eventList[5];
+            Assert.Equal(pid, actualEvent5.ProjectId);
+            Assert.Equal("create", actualEvent5.Operation);
+            Assert.Equal("edge", actualEvent5.EntityType);
+            Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
         }
         
         [Fact]
