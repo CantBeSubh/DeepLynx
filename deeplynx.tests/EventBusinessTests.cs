@@ -171,7 +171,6 @@ namespace deeplynx.tests
         public async Task GetEventsByUserProjectSubscriptions_Fails_NonMatchingSubscriptions()
         {
             
-            // Collection of subscriptions with incorrect UserId and ProjectId pair
             var subscriptions = new List<Subscription>
             {
                 new Subscription

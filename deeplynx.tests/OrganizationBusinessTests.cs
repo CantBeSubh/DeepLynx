@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -149,14 +148,14 @@ namespace deeplynx.tests
             Assert.Equal("Event Test Organization", result.Name);
             
             // Ensure that the Organization create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "create",
-                EntityType = "organization",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("organization", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -173,8 +172,8 @@ namespace deeplynx.tests
                 () => _organizationBusiness.CreateOrganization(dto));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -192,8 +191,8 @@ namespace deeplynx.tests
                 () => _organizationBusiness.CreateOrganization(dto));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -224,6 +223,16 @@ namespace deeplynx.tests
             Assert.NotNull(savedOrg);
             Assert.Equal("Updated Organization", savedOrg.Name);
             Assert.Equal("Updated description", savedOrg.Description);
+            
+            // Ensure that the Organization update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("organization", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -243,14 +252,14 @@ namespace deeplynx.tests
             Assert.Equal("Event Updated Organization", result.Name);
             
             // Ensure that the Organization update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "organization",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("organization", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -269,8 +278,8 @@ namespace deeplynx.tests
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -289,8 +298,8 @@ namespace deeplynx.tests
             Assert.Contains($"Organization with id {oid2} does not exist", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -312,14 +321,14 @@ namespace deeplynx.tests
             Assert.True(savedOrg.IsArchived);
             
             // Ensure that the Organization archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "archive",
-                EntityType = "organization",
-                EntityId = oid,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("organization", actualEvent.EntityType);
+            Assert.Equal(oid, actualEvent.EntityId);
         }
         
         [Fact]
@@ -332,8 +341,8 @@ namespace deeplynx.tests
             Assert.Contains($"Organization with id {oid2} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -346,8 +355,8 @@ namespace deeplynx.tests
             Assert.Contains("Organization with id 99999 not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -369,14 +378,14 @@ namespace deeplynx.tests
             Assert.False(savedOrg.IsArchived);
             
             // Ensure that the Organization unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "unarchive",
-                EntityType = "organization",
-                EntityId = oid2,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("unarchive", actualEvent.Operation);
+            Assert.Equal("organization", actualEvent.EntityType);
+            Assert.Equal(oid2, actualEvent.EntityId);
         }
         
         [Fact]
@@ -389,8 +398,8 @@ namespace deeplynx.tests
             Assert.Contains($"Organization with id {oid} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -403,8 +412,8 @@ namespace deeplynx.tests
             Assert.Contains("Organization with id 99999 not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion

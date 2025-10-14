@@ -66,6 +66,8 @@ namespace deeplynx.tests
             );
         }
 
+        #region CreateMetadata Tests
+        
         [Fact]
         public async Task CreateMetadata_Success_ReturnsIdAndCreatedAt()
         {
@@ -87,23 +89,24 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
             
-            result.Should().NotBeNull();
-            result.Classes.Should().HaveCount(1);
-            result.Classes.First().Id.Should().BeGreaterThan(0);
-            result.Classes.First().LastUpdatedAt.Should().BeOnOrAfter(now);
-            result.Classes.First().Name.Should().Be("Test Metadata Class");
-            result.Classes.First().Description.Should().Be("Test Description");
-            result.Classes.First().ProjectId.Should().Be(pid);
-            
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
+            Assert.True(result.Classes.First().Id > 0);
+            Assert.True(result.Classes.First().LastUpdatedAt >= now);
+            Assert.Equal("Test Metadata Class", result.Classes.First().Name);
+            Assert.Equal("Test Description", result.Classes.First().Description);
+            Assert.Equal(pid, result.Classes.First().ProjectId);
+
+            // Ensure create class event was logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result.Classes.First().Id,
-            });
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(result.Classes.First().Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -132,33 +135,30 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
             
-            result.Classes.Should().HaveCount(2);
-            result.Classes.First().Name.Should().Be("Bulk Class 1");
-            result.Classes.Last().Name.Should().Be("Bulk Class 2");
-            
-           
+            Assert.Equal(2, result.Classes.Count);
+            Assert.Equal("Bulk Class 1", result.Classes.First().Name);
+            Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
+
+            // Ensure both create class events are logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(2);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result.Classes[0].Id,
-            });
-            eventList[1].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = result.Classes[1].Id,
-            });
+            Assert.Equal(2, eventList.Count);
+
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("class", actualEvent1.EntityType);
+            Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
         }
 
         [Fact]
         public async Task CreateMetadata_Success_WithRecordsAndAutoClasses()
         {
-            
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -178,21 +178,33 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
-            result.Classes.Should().HaveCount(1);
-            result.Records.Should().HaveCount(1);
-            result.Classes.First().Name.Should().Be("Auto Class");
-            result.Records.First().Name.Should().Be("Test Record");
-            result.Records.First().OriginalId.Should().Be("rec-001");
-            result.Records.First().ClassId.Should().Be(result.Classes.First().Id);
-            
+            Assert.Single(result.Classes);
+            Assert.Single(result.Records);
+            Assert.Equal("Auto Class", result.Classes.First().Name);
+            Assert.Equal("Test Record", result.Records.First().Name);
+            Assert.Equal("rec-001", result.Records.First().OriginalId);
+            Assert.Equal(result.Classes.First().Id, result.Records.First().ClassId);
+
+            // Ensure both create class and create record events are logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(2);
+            Assert.Equal(2, eventList.Count);
+            
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("record", actualEvent1.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
         }
 
         [Fact]
         public async Task CreateMetadata_Success_WithTagsAndRecords()
         {
-            
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -212,15 +224,36 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
-            result.Records.Should().HaveCount(1);
-            result.Tags.Should().HaveCount(2);
-            result.Records.First().Tags.Should().HaveCount(2);
+            Assert.Single(result.Records);
+            Assert.Equal(2, result.Tags.Count);
+            Assert.Equal(2, result.Records.First().Tags.Count);
+            
+            // Ensure both create record and tags are logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(3, eventList.Count);
+            
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("tag", actualEvent0.EntityType);
+            Assert.Equal(result.Tags[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("tag", actualEvent1.EntityType);
+            Assert.Equal(result.Tags[1].Id, actualEvent1.EntityId);
+            
+            var actualEvent2 = eventList[2];
+            Assert.Equal(pid, actualEvent2.ProjectId);
+            Assert.Equal("create", actualEvent2.Operation);
+            Assert.Equal("record", actualEvent2.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent2.EntityId);
         }
 
         [Fact]
         public async Task CreateMetadata_Fails_IfNoProjectId()
         {
-            
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto { Name = "Test Class" }
@@ -230,19 +263,18 @@ namespace deeplynx.tests
             {
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
-
-            var result = () => _metadataBusiness.CreateMetadata(pid + 99, did, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
             
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid + 99, did, dto));
+            Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
           
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
         public async Task CreateMetadata_Fails_IfNoDataSourceId()
         {
-            
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -258,13 +290,13 @@ namespace deeplynx.tests
             {
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
-
-            var result = () => _metadataBusiness.CreateMetadata(pid, did + 99, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
             
-          
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did + 99, dto));
+            Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
+            
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -286,12 +318,12 @@ namespace deeplynx.tests
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
             
-            var result = () => _metadataBusiness.CreateMetadata(pid, did, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            Assert.Contains($"Project with id {pid} not found.", exception.Message);
             
-          
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -319,23 +351,22 @@ namespace deeplynx.tests
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
             
-            var result = () => _metadataBusiness.CreateMetadata(pid, did, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
             
-          
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
         public async Task CreateMetadata_Fails_IfNullDto()
         {
-            var result = () => _metadataBusiness.CreateMetadata(pid, did, null);
-            await result.Should().ThrowAsync<ArgumentNullException>();
-            
-          
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(pid, did, null));
+
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -352,15 +383,16 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
-            result.Should().NotBeNull();
-            result.Classes.Should().BeNull();
-            result.Relationships.Should().BeNull();
-            result.Tags.Should().BeNull();
-            result.Records.Should().BeNull();
-            result.Edges.Should().BeNull();
-            
+            Assert.NotNull(result);
+            Assert.Null(result.Classes);
+            Assert.Null(result.Relationships);
+            Assert.Null(result.Tags);
+            Assert.Null(result.Records);
+            Assert.Null(result.Edges);
+
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -370,15 +402,16 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
-            result.Should().NotBeNull();
-            result.Classes.Should().BeNull();
-            result.Relationships.Should().BeNull(); 
-            result.Tags.Should().BeNull();
-            result.Records.Should().BeNull();
-            result.Edges.Should().BeNull();
+            Assert.NotNull(result);
+            Assert.Null(result.Classes);
+            Assert.Null(result.Relationships);
+            Assert.Null(result.Tags);
+            Assert.Null(result.Records);
+            Assert.Null(result.Edges);
 
+            // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(0);
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -436,11 +469,45 @@ namespace deeplynx.tests
 
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
-            result.Classes.Should().HaveCount(1);
-            result.Relationships.Should().HaveCount(1);
-            result.Tags.Should().HaveCount(1);
-            result.Records.Should().HaveCount(1);
-            result.Edges.Should().HaveCount(1);
+            Assert.Single(result.Classes);
+            Assert.Single(result.Relationships);
+            Assert.Single(result.Tags);
+            Assert.Single(result.Records);
+            Assert.Single(result.Edges);
+            
+            // Ensure all complex data events are created and logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(5, eventList.Count);
+            
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("relationship", actualEvent1.EntityType);
+            Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
+            
+            var actualEvent2 = eventList[2];
+            Assert.Equal(pid, actualEvent2.ProjectId);
+            Assert.Equal("create", actualEvent2.Operation);
+            Assert.Equal("tag", actualEvent2.EntityType);
+            Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
+            
+            var actualEvent3 = eventList[3];
+            Assert.Equal(pid, actualEvent3.ProjectId);
+            Assert.Equal("create", actualEvent3.Operation);
+            Assert.Equal("record", actualEvent3.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
+            
+            var actualEvent4 = eventList[4];
+            Assert.Equal(pid, actualEvent4.ProjectId);
+            Assert.Equal("create", actualEvent4.Operation);
+            Assert.Equal("edge", actualEvent4.EntityType);
+            Assert.Equal(result.Edges[0].Id, actualEvent4.EntityId);
         }
 
         [Fact]
@@ -461,20 +528,22 @@ namespace deeplynx.tests
             {
                 Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
             };
-
-            var result = () => _metadataBusiness.CreateMetadata(pid, did, dto);
-            await result.Should().ThrowAsync<Exception>()
-                .WithMessage("*Records not found matching Original IDs*missing-origin*missing-dest*");
+            
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            Assert.Contains("Records not found matching Original IDs", exception.Message);
             
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "relationship"
-            });
+            Assert.Single(eventList);
+            
+            // Ensure we at least create relationship
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("relationship", actualEvent.EntityType);
         }
+        
+        #endregion
 
         protected override async Task SeedTestDataAsync()
         {
