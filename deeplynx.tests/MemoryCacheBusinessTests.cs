@@ -1,10 +1,5 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using deeplynx.business;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 namespace deeplynx.tests
 {

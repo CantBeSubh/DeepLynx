@@ -6,8 +6,6 @@ using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Record = deeplynx.datalayer.Models.Record;
-using System.Text.Json.Nodes;
 using deeplynx.helpers.Hubs;
 using Microsoft.AspNetCore.SignalR;
 

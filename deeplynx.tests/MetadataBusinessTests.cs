@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
@@ -77,8 +76,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_ReturnsIdAndCreatedAt()
         {
+            // Arrange
             var now = DateTime.UtcNow;
-            
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto
@@ -93,8 +92,11 @@ namespace deeplynx.tests
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
             
+            
+            // Assert
             Assert.NotNull(result);
             Assert.Single(result.Classes);
             Assert.True(result.Classes.First().Id > 0);
@@ -118,8 +120,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_OnBulkCreate()
         {
+            // Arrange
             var now = DateTime.UtcNow;
-            
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto
@@ -139,8 +141,10 @@ namespace deeplynx.tests
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
             
+            // Assert
             Assert.Equal(2, result.Classes.Count);
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
             Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
@@ -165,6 +169,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_WithRecordsAndAutoClasses()
         {
+            // Arrange
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -182,8 +187,10 @@ namespace deeplynx.tests
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
+            
+            // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Records);
             Assert.Equal("Auto Class", result.Classes.First().Name);
@@ -211,6 +218,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_WithTagsAndRecords()
         {
+            // Arrange
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -228,8 +236,11 @@ namespace deeplynx.tests
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
+            
+            // Assert
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
@@ -260,6 +271,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfNoProjectId()
         {
+            // Arrange
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto { Name = "Test Class" }
@@ -270,6 +282,7 @@ namespace deeplynx.tests
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
             
+            // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid + 99, did, dto));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
           
@@ -281,6 +294,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfNoDataSourceId()
         {
+            // Arrange
             var recordDtos = new List<CreateRecordRequestDto>
             {
                 new CreateRecordRequestDto
@@ -297,6 +311,7 @@ namespace deeplynx.tests
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
             
+            // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did + 99, dto));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
             
@@ -308,6 +323,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfDeletedProjectId()
         {
+            // Arrange
             var project = await Context.Projects.FindAsync(pid);
             project.IsArchived = true;
             Context.Projects.Update(project);
@@ -324,6 +340,7 @@ namespace deeplynx.tests
                 Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray
             };
             
+            // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
             
@@ -335,11 +352,11 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfDeletedDataSourceId()
         {
+            // Arrange
             var dataSource = await Context.DataSources.FindAsync(did);
             dataSource.IsArchived = true;
             Context.DataSources.Update(dataSource);
             await Context.SaveChangesAsync();
-            
             
             var recordDtos = new List<CreateRecordRequestDto>
             {
@@ -357,6 +374,7 @@ namespace deeplynx.tests
                 Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray
             };
             
+            // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
             
@@ -368,6 +386,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfNullDto()
         {
+            // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(pid, did, null));
 
             // Ensure create event was NOT logged
@@ -378,6 +397,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_WithEmptyArrays()
         {
+            // Arrange
             var dto = new CreateMetadataRequestDto
             {
                 Classes = JsonSerializer.SerializeToNode(new List<CreateClassRequestDto>()) as JsonArray,
@@ -387,8 +407,10 @@ namespace deeplynx.tests
                 Edges = JsonSerializer.SerializeToNode(new List<CreateEdgeRequestDto>()) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
+            
+            // Assert
             Assert.NotNull(result);
             Assert.Null(result.Classes);
             Assert.Null(result.Relationships);
@@ -404,10 +426,13 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_WithNullArrays()
         {
+            // Arrange
             var dto = new CreateMetadataRequestDto(); // All arrays are null by default
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
+            // Assert
             Assert.NotNull(result);
             Assert.Null(result.Classes);
             Assert.Null(result.Relationships);
@@ -423,6 +448,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Success_WithComplexMetadata()
         {
+            // Arrange
             var classDtos = new List<CreateClassRequestDto>
             {
                 new CreateClassRequestDto { Name = "New Class" }
@@ -473,8 +499,10 @@ namespace deeplynx.tests
                 Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
             };
 
+            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
+            // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Relationships);
             Assert.Single(result.Tags);
@@ -519,7 +547,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_IfMissingRecordsForEdges()
         {
-            
+            // Arrange
             var edgeDtos = new List<CreateEdgeRequestDto>
             {
                 new CreateEdgeRequestDto
@@ -535,6 +563,7 @@ namespace deeplynx.tests
                 Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
             };
             
+            // Act & Assert
             var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
             

@@ -526,13 +526,16 @@ namespace deeplynx.tests
         [Fact]
         public async Task AddUser_Succeeds_IfGroupAndUserExists()
         {
+            // Arrange
             var newGroup = new Group { Name = "Test Group", OrganizationId = oid };
             Context.Groups.Add(newGroup);
             await Context.SaveChangesAsync();
             var newGroupId = newGroup.Id;
             
+            // Act
             var added = await _groupBusiness.AddUserToGroup(newGroupId, uid);
             
+            // Assert
             Assert.True(added);
             var group = await Context.Groups.FirstOrDefaultAsync(g => g.Id == newGroupId);
             Assert.NotNull(group);
