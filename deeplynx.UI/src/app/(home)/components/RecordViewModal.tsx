@@ -2,9 +2,10 @@
 
 import React from "react";
 import PropertyTable from "./PropertyTable";
-import { Column, FileViewerTableRow, TagResponseDto } from "../types/types";
+import { Column, FileViewerTableRow } from "../types/types";
 import GenericTable from "./GenericTable";
 import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
+import { TagResponseDto } from '../types/responseDTOs';
 
 interface RecordViewModalProps {
   isOpen: boolean;

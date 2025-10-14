@@ -13,7 +13,6 @@ import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
 import { getAllProjects } from "@/app/lib/projects_services.client";
-import type { ProjectDTO } from "@/app/lib/projects_services.server";
 import {
   DataSourceDTO,
   getAllDataSources,
@@ -27,6 +26,7 @@ import {
   uploadFilesBatch,
 } from "@/app/lib/file_upload_services.client";
 import toast from "react-hot-toast";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 type Props = {
   initialAvailableFiles: ExistingFile[];
@@ -47,7 +47,7 @@ export default function UploadCenterClient({
   const [destination, setDestination] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const showRightPanel = selectedFiles.length > 0;
-  const [projects, setProjects] = useState<ProjectDTO[]>([]);
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [objectStorage, setObjectstorage] = useState<ObjectStorageDTO[]>([]);
   const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
   const [projectId, setProjectId] = useState<string>("");

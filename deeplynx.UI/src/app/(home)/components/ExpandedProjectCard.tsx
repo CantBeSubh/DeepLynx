@@ -1,5 +1,4 @@
 "use client";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { getProjectStats } from "@/app/lib/projects_services.client";
 import {
@@ -15,9 +14,10 @@ import { peopleData } from "../dummy_data/data";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
 import { format } from "date-fns";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface Props {
-  project: ProjectsList;
+  project: ProjectResponseDto;
   onClose: () => void;
 }
 
@@ -37,7 +37,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(project.id!);
+        const data = await getProjectStats(project.id.toString()!);
         setStats({
           classes: data.classes,
           records: data.records,

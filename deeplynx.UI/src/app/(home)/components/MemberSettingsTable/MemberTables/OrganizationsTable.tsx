@@ -1,16 +1,16 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, SystemOrgsTable } from '../../../types/types';
+import { Column } from '../../../types/types';
 import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
-
+import { OrganizationResponseDto } from '@/app/(home)/types/responseDTOs';
 interface MembersTableProps {
-  data: SystemOrgsTable[];
+  data: OrganizationResponseDto[];
 }
 
 const OrganizationsTable: FC<MembersTableProps> = ({ data: initialData }) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<SystemOrgsTable[]>(initialData);
+  const [data, setData] = useState<OrganizationResponseDto[]>(initialData);
   const [addRoleSwap, setAddRoleSwap] = useState<boolean>(false);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
@@ -51,7 +51,7 @@ const OrganizationsTable: FC<MembersTableProps> = ({ data: initialData }) => {
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-    const columns: Column<SystemOrgsTable>[] = [
+    const columns: Column<OrganizationResponseDto>[] = [
     {
       header: (
         <input
@@ -61,7 +61,7 @@ const OrganizationsTable: FC<MembersTableProps> = ({ data: initialData }) => {
           onChange={handleSelectAll}
         />
       ),
-      cell: (row: SystemOrgsTable, index: number) => (
+      cell: (row: OrganizationResponseDto, index: number) => (
             <input
             type="checkbox"
             className="checkbox"
@@ -81,7 +81,7 @@ const OrganizationsTable: FC<MembersTableProps> = ({ data: initialData }) => {
     },
     {
           header: "",
-      cell: (row: SystemOrgsTable) => (
+      cell: (row: OrganizationResponseDto) => (
         <div className="flex">
           <button>
             <PencilIcon className="size-6 text-secondary" />
@@ -100,7 +100,7 @@ const OrganizationsTable: FC<MembersTableProps> = ({ data: initialData }) => {
           )}
         </div>
       ),
-      cell: (row: SystemOrgsTable, index: number) => (
+      cell: (row: OrganizationResponseDto, index: number) => (
         <div className="flex">
           <button onClick={() => handleDelete(index)}>
             <TrashIcon className="size-6 text-red-500" />
