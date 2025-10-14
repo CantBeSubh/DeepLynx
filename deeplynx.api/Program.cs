@@ -8,6 +8,7 @@ using deeplynx.datalayer.MigrationRunner;
 using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
@@ -369,6 +370,7 @@ try
 
     app.UseStaticFiles();
 
+    
     // We're always using scalar for now.
     //if (app.Environment.IsDevelopment()) { ...
     app.MapOpenApi();
@@ -393,11 +395,13 @@ try
                 </div>
             </header>
         </div>"));
-
-    app.UseCors("AllowAll");
+    
+    app.UseRouting();
+    app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseMiddleware<UserContextMiddleware>();
+    app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
     app.MapControllers();
     app.Run();
 }
