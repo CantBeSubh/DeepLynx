@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 
-import LargeSearchBar from "@/app/(home)/components/SearchBar";
-import SavedSearches from "@/app/(home)/components/SavedSearches";
+import SearchBar from "@/app/(home)/components/SearchBar";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
+import RecentRecordsCard from "../../components/RecentRecordsCard";
+import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { format } from "date-fns";
-import RecentRecordsCard from "../../components/RecentRecordsCard";
-import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 
 type Props = {
   projects: ProjectsList[];
@@ -22,30 +21,33 @@ type Props = {
 
 export default function ProjectDetailClient({
   projects,
-  initialProject
+  initialProject,
+  projectId,
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
+  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
 
+  // State
   const [project, setProject] = useState<ProjectsList | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState(
-    initialProject ? initialProject.id : null
+    initialProject?.id || projectId || null
   );
   const [canCustomize, setCanCustomize] = useState(false);
-
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
     "RecentActivity",
     "ProjectOverview",
     "TeamMembers",
   ]);
 
-  // Sync project session from initial server data
-  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
+  // Sync project session with selected project
   useEffect(() => {
     if (!selectedProjectId) return;
+
     const selectedProject = projects.find(
       (proj) => proj.id === selectedProjectId
     );
+
     if (selectedProject) {
       setProject(selectedProject);
       setProjectSession({
@@ -55,22 +57,27 @@ export default function ProjectDetailClient({
     }
   }, [selectedProjectId, projects, setProjectSession]);
 
+  // Save widget configuration to localStorage
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-      `projectWidgets-${selectedProjectId ? selectedProjectId : ""}`,
+      `projectWidgets-${selectedProjectId || ""}`,
       JSON.stringify(newWidgets)
     );
   };
 
+  // Navigate to data catalog with search term
   const handleSearchEnter = (searchTerm: string) => {
+    const projectIdToUse = selectedProjectId || projectId || "";
     const query = new URLSearchParams({
-      fromProject: selectedProjectId ? selectedProjectId : "",
+      fromProject: projectIdToUse,
       search: searchTerm,
     }).toString();
+
     router.push(`/data_catalog?${query}`);
   };
 
+  // Loading states
   if (!hasLoaded) return <p className="p-4">{t.translations.LOADING}</p>;
   if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
 
@@ -88,7 +95,7 @@ export default function ProjectDetailClient({
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={setSelectedProjectId}
-          defaultSelectedId={initialProject?.id || ""}
+          defaultSelectedId={initialProject?.id || projectId || ""}
         />
       </div>
 
@@ -102,7 +109,7 @@ export default function ProjectDetailClient({
         >
           {/* Search Bar */}
           <div className="mb-6">
-            <LargeSearchBar className="w-full" onEnter={handleSearchEnter} />
+            <SearchBar className="w-full" onEnter={handleSearchEnter} />
           </div>
 
           {/* Data Catalog Card */}
@@ -117,7 +124,7 @@ export default function ProjectDetailClient({
                   href={{
                     pathname: "/data_catalog",
                     query: {
-                      fromProject: selectedProjectId ? selectedProjectId : "",
+                      fromProject: selectedProjectId || projectId || "",
                     },
                   }}
                 >
@@ -126,16 +133,13 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[selectedProjectId ? selectedProjectId : ""]}
+                selectedProjects={[selectedProjectId || projectId || ""]}
               />
             </div>
           </div>
-
-          {/* Saved Searches */}
-          {/* <SavedSearches /> */}
         </div>
 
-        {/* Right Column */}
+        {/* Right Column - Widgets */}
         <aside className="lg:w-2/5">
           <div className="sticky top-6">
             <WidgetCard
