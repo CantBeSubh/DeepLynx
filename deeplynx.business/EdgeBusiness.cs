@@ -158,6 +158,334 @@ public class EdgeBusiness : IEdgeBusiness
                 RelationshipName = x.Edge.Relationship != null ? x.Edge.Relationship.Name : null,
             }).ToListAsync();
     }
+    
+    // public async Task<GraphResponse> GetGraphDataForRecord(long recordId, int depth)
+    // {
+    //     var nodes = new Dictionary<long, GraphNode>();
+    //     var links = new List<GraphLink>();
+    //     var visitedEdges = new HashSet<long>();
+    //
+    //     if (depth > 3)
+    //     {
+    //         throw new ArgumentException("Depth must be no more than 3");
+    //     }
+    //     
+    //     // Check if the root record exists
+    //     var rootRecord = await _context.Records.FindAsync(recordId);
+    //     if (rootRecord == null)
+    //     {
+    //         return new GraphResponse { Nodes = new List<GraphNode>(), Links = new List<GraphLink>() };
+    //     }
+    //
+    //     // Add root node
+    //     nodes[recordId] = new GraphNode
+    //     {
+    //         Id = recordId,
+    //         Label = rootRecord.Name ?? $"Record {recordId}",
+    //         Depth = 0,
+    //         Type = "root"
+    //     };
+    //
+    //     // Traverse the graph
+    //     await TraverseGraphAsync(recordId, 0, depth, nodes, links, visitedEdges);
+    //
+    //     return new GraphResponse
+    //     {
+    //         Nodes = nodes.Values.ToList(),
+    //         Links = links
+    //     };
+    // }
+    //
+    // private async Task TraverseGraphAsync(
+    //     long recordId,
+    //     int currentDepth,
+    //     int maxDepth,
+    //     Dictionary<long, GraphNode> nodes,
+    //     List<GraphLink> links,
+    //     HashSet<long> visitedEdges)
+    // {
+    //     if (currentDepth >= maxDepth)
+    //     {
+    //         return;
+    //     }
+    //
+    //     // Get all edges where this record is the origin (outgoing edges)
+    //     var outgoingEdges = await _context.Edges
+    //         .Include(e => e.Destination)
+    //         .Include(e => e.Relationship)
+    //         .Where(e => e.OriginId == recordId && !e.IsArchived)
+    //         .ToListAsync();
+    //
+    //     // Get all edges where this record is the destination (incoming edges)
+    //     var incomingEdges = await _context.Edges
+    //         .Include(e => e.Origin)
+    //         .Include(e => e.Relationship)
+    //         .Where(e => e.DestinationId == recordId && !e.IsArchived)
+    //         .ToListAsync();
+    //
+    //     // Process outgoing edges
+    //     foreach (var edge in outgoingEdges)
+    //     {
+    //         if (visitedEdges.Contains(edge.Id))
+    //         {
+    //             continue;
+    //         }
+    //
+    //         visitedEdges.Add(edge.Id);
+    //
+    //         // Add destination node if not already present
+    //         if (!nodes.ContainsKey(edge.DestinationId))
+    //         {
+    //             nodes[edge.DestinationId] = new GraphNode
+    //             {
+    //                 Id = edge.DestinationId,
+    //                 Label = edge.Destination.Name ?? $"Record {edge.DestinationId}",
+    //                 Depth = currentDepth + 1,
+    //                 Type = "node"
+    //             };
+    //
+    //             // Recursively traverse from this node
+    //             await TraverseGraphAsync(
+    //                 edge.DestinationId,
+    //                 currentDepth + 1,
+    //                 maxDepth,
+    //                 nodes,
+    //                 links,
+    //                 visitedEdges);
+    //         }
+    //
+    //         // Add link
+    //         links.Add(new GraphLink
+    //         {
+    //             Source = edge.OriginId,
+    //             Target = edge.DestinationId,
+    //             RelationshipId = edge.RelationshipId,
+    //             RelationshipName = edge.Relationship?.Name,
+    //             EdgeId = edge.Id,
+    //             Direction = "outgoing"
+    //         });
+    //     }
+    //
+    //     // Process incoming edges
+    //     foreach (var edge in incomingEdges)
+    //     {
+    //         if (visitedEdges.Contains(edge.Id))
+    //         {
+    //             continue;
+    //         }
+    //
+    //         visitedEdges.Add(edge.Id);
+    //
+    //         // Add origin node if not already present
+    //         if (!nodes.ContainsKey(edge.OriginId))
+    //         {
+    //             nodes[edge.OriginId] = new GraphNode
+    //             {
+    //                 Id = edge.OriginId,
+    //                 Label = edge.Origin.Name ?? $"Record {edge.OriginId}",
+    //                 Depth = currentDepth + 1,
+    //                 Type = "node"
+    //             };
+    //
+    //             // Recursively traverse from this node
+    //             await TraverseGraphAsync(
+    //                 edge.OriginId,
+    //                 currentDepth + 1,
+    //                 maxDepth,
+    //                 nodes,
+    //                 links,
+    //                 visitedEdges);
+    //         }
+    //
+    //         // Add link
+    //         links.Add(new GraphLink
+    //         {
+    //             Source = edge.OriginId,
+    //             Target = edge.DestinationId,
+    //             RelationshipId = edge.RelationshipId,
+    //             RelationshipName = edge.Relationship?.Name,
+    //             EdgeId = edge.Id,
+    //             Direction = "incoming"
+    //         });
+    //     }
+    // }
+    
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="recordId"></param>
+    /// <param name="depth"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<GraphResponse> GetGraphDataForRecord(long recordId, int depth)
+    {
+        var nodes = new Dictionary<long, GraphNode>();  // Stores all unique nodes we discover
+        var links = new List<GraphLink>();              // Stores all connections between nodes
+        var visitedEdges = new HashSet<long>();         // Tracks which edges we've already processed (prevents duplicates)
+        var visitedNodes = new HashSet<long>();         // Tracks which nodes we've already explored (prevents reprocessing)
+        
+        if (depth > 3)
+        {
+            throw new ArgumentException("Depth must be no more than 3");
+        }
+        
+        var rootRecord = await _context.Records.FindAsync(recordId);
+        if (rootRecord == null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
+
+        // Add the starting record as our root node
+        nodes[recordId] = new GraphNode
+        {
+            Id = recordId,
+            Label = rootRecord.Name,
+            Type = "root"  // Mark this as the starting point of our graph
+        };
+
+        // Start with just the root node to process
+        var currentLevelNodes = new List<long> { recordId };
+        
+        for (int currentDepth = 0; currentDepth < depth; currentDepth++)
+        {
+            //Holds all the nodes we discover at the next level
+            var nextLevelNodes = new List<long>();
+
+            // Process each node at the current level
+            foreach (var nodeId in currentLevelNodes)
+            {
+                // Skip if we've already explored this node
+                if (visitedNodes.Contains(nodeId))
+                {
+                    continue;
+                }
+                
+                visitedNodes.Add(nodeId);
+
+                // Get all connections FROM this node (outgoing edges)
+                var outgoingEdges = await GetGraphEdges(nodeId, true);
+                
+                // Get all connections TO this node (incoming edges)
+                var incomingEdges = await GetGraphEdges(nodeId, false);
+
+                // Process outgoing edges: add new nodes and links to our graph
+                ProcessEdges(outgoingEdges, nodes, links, visitedEdges, nextLevelNodes, true);
+                
+                // Process incoming edges: add new nodes and links to our graph
+                ProcessEdges(incomingEdges, nodes, links, visitedEdges, nextLevelNodes, false);
+            }
+
+            // Move to the next level: the nodes we just discovered become the current level
+            currentLevelNodes = nextLevelNodes;
+        }
+
+        // Convert our data structures to the response format and return
+        return new GraphResponse
+        {
+            Nodes = nodes.Values.ToList(),
+            Links = links
+        };
+    }
+
+    /// <summary>
+    /// Fetches all edges connected to a specific record from the database
+    /// </summary>
+    /// <param name="recordId">The ID of the record to get edges for</param>
+    /// <param name="isOutgoing">True for edges going OUT from this record, False for edges coming IN to this record</param>
+    /// <returns>A list of edges with their related data (origin, destination, relationship) loaded</returns>
+    private async Task<List<Edge>> GetGraphEdges(long recordId, bool isOutgoing)
+    {
+        // var userProjectIds = await _context.Projects.Where(p => 
+        //     p.ProjectMembers.Any(pm => 
+        //         pm.UserId == userId ||
+        //         (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+        //     ))
+        //     .Select(p => p.Id)
+        //     .ToListAsync();
+        //
+        // if (!userProjectIds.Any())
+        // {
+        //     return new List<EdgeResponseDto>();
+        // }
+        
+        // Start building our database query
+        var query = _context.Edges
+            .Include(e => e.Origin)      
+            .Include(e => e.Destination)  
+            .Include(e => e.Relationship)
+            .Where(e => !e.IsArchived);    // Only get non-archived edges
+
+        // Filter based on direction
+        if (isOutgoing)
+        {
+            query = query.Where(e => e.OriginId == recordId);
+        }
+        else
+        {
+            query = query.Where(e => e.DestinationId == recordId);
+        }
+
+        return await query.ToListAsync();
+    }
+
+    /// <summary>
+    /// Processes a list of edges, adding new nodes and links to our graph data structures
+    /// </summary>
+    /// <param name="edges">The edges to process</param>
+    /// <param name="nodes">Dictionary of all nodes in the graph (we add to this)</param>
+    /// <param name="links">List of all links in the graph (we add to this)</param>
+    /// <param name="visitedEdges">Set of edge IDs we've already processed (prevents duplicates)</param>
+    /// <param name="nextLevelNodes">List to add newly discovered node IDs to (for next depth level)</param>
+    /// <param name="isOutgoing">True if these are outgoing edges, False if incoming</param>
+    private void ProcessEdges(
+        List<Edge> edges,
+        Dictionary<long, GraphNode> nodes,
+        List<GraphLink> links,
+        HashSet<long> visitedEdges,
+        List<long> nextLevelNodes,
+        bool isOutgoing)
+    {
+        foreach (var edge in edges)
+        {
+            // Skip if we've already processed this edge
+            if (visitedEdges.Contains(edge.Id))
+            {
+                continue;
+            }
+
+            // Mark this edge as processed
+            visitedEdges.Add(edge.Id);
+
+            // Figure out which node is on the other end of this edge
+            var connectedNodeId = isOutgoing ? edge.DestinationId : edge.OriginId;
+            var connectedRecord = isOutgoing ? edge.Destination : edge.Origin;
+
+            // If this is a new node we haven't seen before, add it to our graph
+            if (!nodes.ContainsKey(connectedNodeId))
+            {
+                nodes[connectedNodeId] = new GraphNode
+                {
+                    Id = connectedNodeId,
+                    Label = connectedRecord.Name ?? $"Record {connectedNodeId}",
+                    Type = "node"
+                };
+
+                // Add this node to the list of nodes to explore in the next depth level
+                nextLevelNodes.Add(connectedNodeId);
+            }
+
+            // Add the connection (link) between nodes to our graph
+            // Note: we always store Source -> Target in the original edge direction
+            links.Add(new GraphLink
+            {
+                Source = edge.OriginId,   
+                Target = edge.DestinationId,   
+                RelationshipId = edge.RelationshipId,
+                RelationshipName = edge.Relationship?.Name,
+                EdgeId = edge.Id
+            });
+        }
+    }
 
     /// <summary>
     /// Retrieves a specific edge by its origin and destination IDs
