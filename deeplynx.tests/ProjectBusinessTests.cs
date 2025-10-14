@@ -279,50 +279,98 @@ namespace deeplynx.tests
             Assert.Single(listForLonely);
             Assert.Contains(listForLonely, p => p.Name == "Lone Project");
         }
-        
+
         [Fact]
-        public async Task GetAllProjects_IncludesArchivedWhenSpecified()
+        public async Task GetAllProjects_SysAdmin_ReturnsAllProjects()
         {
+            // Arrange - Mark TestUser as sys admin
+            var user = await Context.Users.FindAsync(TestUserId);
+            user!.IsSysAdmin = true;
+            await Context.SaveChangesAsync();
+
+            // Act
+            var listForSysAdmin = (await _projectBusiness.GetAllProjects(TestUserId, null)).ToList();
+
+            // Assert
+            Assert.NotNull(listForSysAdmin);
+            Assert.NotEmpty(listForSysAdmin);
+            Assert.Equal(3, listForSysAdmin.Count); // Should see all non-archived projects
+            Assert.Contains(listForSysAdmin, p => p.Name == "Test Project");
+            Assert.Contains(listForSysAdmin, p => p.Name == "Other Project");
+            Assert.Contains(listForSysAdmin, p => p.Name == "Lone Project");
+        }
+
+        [Fact]
+        public async Task GetAllProjects_SysAdmin_IncludesArchivedWhenSpecified()
+        {
+            // Arrange - Mark TestUser as sys admin
+            var user = await Context.Users.FindAsync(TestUserId);
+            user!.IsSysAdmin = true;
+            await Context.SaveChangesAsync();
+
+            // Act
             var listWithArchived = (await _projectBusiness.GetAllProjects(TestUserId, null, false)).ToList();
 
             // Assert
             Assert.NotNull(listWithArchived);
             Assert.NotEmpty(listWithArchived);
-            Assert.Equal(3, listWithArchived.Count);
+            Assert.Equal(4, listWithArchived.Count); // Should see all projects including archived
+            Assert.Contains(listWithArchived, p => p.Name == "Test Project");
+            Assert.Contains(listWithArchived, p => p.Name == "Other Project");
+            Assert.Contains(listWithArchived, p => p.Name == "Lone Project");
             Assert.Contains(listWithArchived, p => p.Name == "Archived Project");
         }
 
         [Fact]
-        public async Task GetProject_Success_WhenExists()
+        public async Task GetAllProjects_NonSysAdmin_OnlySeesTheirProjects()
         {
-           
-            var result = await _projectBusiness.GetProject(TestProjectId, true);
+            // Arrange - Ensure TestUser is NOT sys admin
+            var user = await Context.Users.FindAsync(TestUserId);
+            user!.IsSysAdmin = false;
+            await Context.SaveChangesAsync();
 
-          
-            result.Should().NotBeNull();
-            result.Id.Should().Be(TestProjectId);
-            result.Name.Should().Be("Test Project");
+            // Act
+            var listForRegularUser = (await _projectBusiness.GetAllProjects(TestUserId, null)).ToList();
+
+            // Assert
+            Assert.NotNull(listForRegularUser);
+            Assert.NotEmpty(listForRegularUser);
+            Assert.Equal(2, listForRegularUser.Count); // Should only see projects they're members of
+            Assert.Contains(listForRegularUser, p => p.Name == "Test Project");
+            Assert.Contains(listForRegularUser, p => p.Name == "Other Project");
+            Assert.DoesNotContain(listForRegularUser, p => p.Name == "Lone Project");
         }
 
         [Fact]
-        public async Task GetProject_Fails_IfNotFound()
+        public async Task GetAllProjects_Fails_IfUserDoesNotExist()
         {
-            
-            const long nonExistentId = 999999;
+            // Arrange
+            const long nonExistentUserId = 999999;
 
-           
-            var result = () => _projectBusiness.GetProject(nonExistentId, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            // Act & Assert
+            var result = () => _projectBusiness.GetAllProjects(nonExistentUserId, null);
+            await result.Should().ThrowAsync<ArgumentException>()
+                .WithMessage($"User with id {nonExistentUserId} not found.");
         }
 
         [Fact]
-        public async Task GetProject_Fails_IfDeletedProject()
+        public async Task GetAllProjects_FiltersByOrganizationId()
         {
-            Func<Task> act = async () => { await _projectBusiness.GetProject(ArchivedProjectId, true); };
+            // Arrange
+            var user = await Context.Users.FindAsync(TestUserId);
+            user!.IsSysAdmin = true;
+            await Context.SaveChangesAsync();
 
-            await act.Should().ThrowAsync<KeyNotFoundException>();
+            // Act
+            var projectsForOrganization = (await _projectBusiness.GetAllProjects(TestUserId, TestOrgId)).ToList();
+
+            // Assert
+            Assert.NotNull(projectsForOrganization);
+            Assert.NotEmpty(projectsForOrganization);
+            Assert.Equal(2, projectsForOrganization.Count);
+            Assert.All(projectsForOrganization, p => Assert.Equal(TestOrgId, p.OrganizationId));
         }
-
+        
         [Fact]
         public async Task UpdateProject_Success_ReturnsModifiedAt()
         {
@@ -1186,7 +1234,8 @@ namespace deeplynx.tests
                 Description = "Secondary project for unit tests",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = TestOrgId
             };
             var loneProj = new Project
             {
@@ -1194,7 +1243,8 @@ namespace deeplynx.tests
                 Description = "Project with just the lonely user",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = TestOrgId
             };
             var arcProj = new Project
             {
@@ -1253,16 +1303,19 @@ namespace deeplynx.tests
             {
                 Email = "test@example.com",
                 Name = "Test User",
+                IsSysAdmin = false,
             };
             var missingUser = new User
             {
                 Email = "ope@example.com",
                 Name = "Missing User",
+                IsSysAdmin = false,
             };
             var lonelyUser = new User
             {
                 Email = "lonely@example.com",
                 Name = "Lonely User",
+                IsSysAdmin = false,
             };
             Context.Users.AddRange(testUser, missingUser, lonelyUser);
             await Context.SaveChangesAsync();
