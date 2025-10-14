@@ -3,12 +3,9 @@ using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Record = deeplynx.datalayer.Models.Record;
-using System.Text.Json.Nodes;
 using deeplynx.helpers.Hubs;
 using Microsoft.AspNetCore.SignalR;
 
@@ -240,6 +237,17 @@ namespace deeplynx.tests
             var savedPermission = await Context.Permissions.FindAsync(result.Id);
             Assert.NotNull(savedPermission);
             Assert.Equal("New Project Permission", savedPermission.Name);
+            
+            // Ensure that the Permission create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -269,6 +277,16 @@ namespace deeplynx.tests
             var savedPermission = await Context.Permissions.FindAsync(result.Id);
             Assert.NotNull(savedPermission);
             Assert.Equal("New Org Permission", savedPermission.Name);
+            
+            // Ensure that the Permission create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -291,15 +309,15 @@ namespace deeplynx.tests
             Assert.Equal("Event Permission", result.Name);
             
             // Ensure that the Permission create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "permission",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -319,8 +337,8 @@ namespace deeplynx.tests
             Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -340,8 +358,8 @@ namespace deeplynx.tests
             Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -359,8 +377,8 @@ namespace deeplynx.tests
                 () => _permissionBusiness.CreatePermission(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -378,8 +396,8 @@ namespace deeplynx.tests
                 () => _permissionBusiness.CreatePermission(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -397,8 +415,8 @@ namespace deeplynx.tests
                 () => _permissionBusiness.CreatePermission(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -431,6 +449,16 @@ namespace deeplynx.tests
             Assert.NotNull(savedPermission);
             Assert.Equal("Updated Permission", savedPermission.Name);
             Assert.Equal("Now with a description", savedPermission.Description);
+            
+            // Ensure that the Permission create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -450,14 +478,14 @@ namespace deeplynx.tests
             Assert.Equal("Event Updated Permission", result.Name);
             
             // Ensure that the Permission update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "permission",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -476,8 +504,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {permid4} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -498,6 +526,16 @@ namespace deeplynx.tests
             // Verify in DB
             var savedPermission = await Context.Permissions.FindAsync(permid1);
             Assert.Null(savedPermission.Resource);
+                        
+            // Ensure that the Permission update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -518,6 +556,16 @@ namespace deeplynx.tests
             // Verify in DB
             var savedPermission = await Context.Permissions.FindAsync(permid1);
             Assert.False(savedPermission.IsHardcoded);
+            
+            // Ensure that the Permission update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -541,8 +589,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {hardcoded.Id} cannot be updated", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -564,14 +612,14 @@ namespace deeplynx.tests
             Assert.True(savedPermission.IsArchived);
             
             // Ensure that the Permission archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "archive",
-                EntityType = "permission",
-                EntityId = permid1,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(permid1, actualEvent.EntityId);
         }
         
         [Fact]
@@ -584,8 +632,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {permid2} not found or is already archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -604,8 +652,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {hardcoded.Id} cannot be updated", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -627,14 +675,14 @@ namespace deeplynx.tests
             Assert.False(savedPermission.IsArchived);
             
             // Ensure that the Permission unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "unarchive",
-                EntityType = "permission",
-                EntityId = permid2,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("unarchive", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(permid2, actualEvent.EntityId);
         }
         
         [Fact]
@@ -647,8 +695,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {permid1} not found or is not archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -667,8 +715,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {hardcoded.Id} cannot be updated", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -689,14 +737,14 @@ namespace deeplynx.tests
             Assert.Null(deletedPermission);
             
             // Ensure that the Permission delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "delete",
-                EntityType = "permission",
-                EntityId = permid1,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("delete", actualEvent.Operation);
+            Assert.Equal("permission", actualEvent.EntityType);
+            Assert.Equal(permid1, actualEvent.EntityId);
         }
         
         [Fact]
@@ -709,8 +757,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {permid4} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -729,8 +777,8 @@ namespace deeplynx.tests
             Assert.Contains($"Permission with id {hardcoded.Id} cannot be deleted", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
