@@ -1,8 +1,10 @@
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -18,6 +20,9 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     private Mock<IDataSourceBusiness> _mockDataSourceBusiness = null!;
     private Mock<IRoleBusiness> _mockRoleBusiness = null!;
     private EventBusiness _eventBusiness = null!;
+    private INotificationBusiness _notificationBusiness = null!;
+    private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+    private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     private ProjectBusiness _projectBusiness;
     public long pid;
     public long pid2;
@@ -32,7 +37,10 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _objectStorageBusiness = new ObjectStorageBusiness(Context, _cacheBusiness);
-        _eventBusiness = new EventBusiness(Context,  _cacheBusiness);
+        _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+        _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+        _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         _mockLogger = new Mock<ILogger<ProjectBusiness>>();
         _mockClassBusiness = new Mock<IClassBusiness>();
         _mockDataSourceBusiness = new Mock<IDataSourceBusiness>();

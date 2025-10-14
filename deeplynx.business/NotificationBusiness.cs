@@ -3,31 +3,273 @@ using System.Net.Mail;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
 using Microsoft.Extensions.Logging;
-
+using deeplynx.helpers.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.business;
-
-
-/// Initializes a new instance of the <see cref="NotificationBusiness"/> class.
+/// <summary>
+/// Handles all notification operations including SignalR real-time notifications
+/// </summary>
 public class NotificationBusiness : INotificationBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ILogger<NotificationBusiness> _logger;
-
+    private readonly IHubContext<EventNotificationHub> _hubContext;
+    
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
-    /// /// <param name="logger">Logging</param>
+    /// <param name="logger">Logging</param>
+    /// <param name="hubContext">SignalR hub context for sending notifications</param>
     public NotificationBusiness(
-        DeeplynxContext context, ILogger<NotificationBusiness> logger
+        DeeplynxContext context, 
+        ILogger<NotificationBusiness> logger,
+        IHubContext<EventNotificationHub> hubContext
     )
     {
         _logger = logger;
         _context = context;
+        _hubContext = hubContext;
     }
 
-  /// <summary>
+    /// <summary>
+    /// Sends event notification to all users subscribed to this specific event
+    /// </summary>
+    /// <param name="eventDto">The event to send notifications for</param>
+    public async Task SendEventNotification(EventResponseDto eventDto)
+    {
+        if (eventDto == null)
+        {
+            _logger.LogWarning("Attempted to send notification for null event");
+            return;
+        }
+
+        try
+        {
+            // Get all users subscribed to this event
+            var subscribedUserIds = await GetSubscribedUserIdsForEvent(eventDto);
+            
+            if (!subscribedUserIds.Any())
+            {
+                _logger.LogDebug("No users subscribed to event {EventId} for project {ProjectId}", 
+                    eventDto.Id, eventDto.ProjectId);
+                return;
+            }
+
+            // Serialize the event to JSON
+            var jsonResponse = System.Text.Json.JsonSerializer.Serialize(eventDto);
+
+            // Send notification to each subscribed user's group
+            var notificationTasks = subscribedUserIds.Select(userId => 
+                SendToUserGroup(userId, jsonResponse, eventDto.Id)
+            );
+
+            await Task.WhenAll(notificationTasks);
+            
+            _logger.LogInformation(
+                "Successfully sent notifications for event {EventId} to {UserCount} users", 
+                eventDto.Id, 
+                subscribedUserIds.Count
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending event notification for event {EventId}", eventDto.Id);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Sends bulk event notifications to subscribed users
+    /// </summary>
+    /// <param name="eventDtos">List of events to send notifications for</param>
+    public async Task SendBulkEventNotifications(List<EventResponseDto> eventDtos)
+    {
+        if (eventDtos == null || !eventDtos.Any())
+        {
+            _logger.LogWarning("Attempted to send bulk notifications for empty or null event list");
+            return;
+        }
+
+        try
+        {
+            // Serialize each event ONCE
+            var eventJsonCache = eventDtos.ToDictionary(
+                e => e,
+                e => System.Text.Json.JsonSerializer.Serialize(e)
+            );
+
+            // Single database query for all subscriptions
+            var eventSubscriptionsMap = await GetSubscribedUserIdsForManyEvents(eventDtos);
+
+            // Group events by subscribed users
+            var userEventMap = new Dictionary<long, List<EventResponseDto>>();
+
+            foreach (var eventDto in eventDtos)
+            {
+                var subscribedUserIds = eventSubscriptionsMap[eventDto.Id];
+            
+                foreach (var userId in subscribedUserIds)
+                {
+                    if (!userEventMap.ContainsKey(userId))
+                    {
+                        userEventMap[userId] = new List<EventResponseDto>();
+                    }
+                    userEventMap[userId].Add(eventDto);
+                }
+            }
+
+            if (!userEventMap.Any())
+            {
+                _logger.LogDebug("No users subscribed to any of the {EventCount} events", eventDtos.Count);
+                return;
+            }
+
+            // Send all notifications
+            var notificationTasks = userEventMap.Select(kvp => 
+                SendEventsToUser(kvp.Key, kvp.Value, eventJsonCache)
+            );
+
+            await Task.WhenAll(notificationTasks);
+        
+            _logger.LogInformation(
+                "Successfully sent bulk notifications for {EventCount} events to {UserCount} users", 
+                eventDtos.Count, 
+                userEventMap.Count
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending bulk event notifications");
+            throw;
+        }
+    }
+
+    private async Task SendEventsToUser(
+        long userId, 
+        List<EventResponseDto> events, 
+        Dictionary<EventResponseDto, string> eventJsonCache)
+    {
+        try
+        {
+            // Send all events to this user in parallel using cached JSON
+            var notificationTasks = events.Select(eventDto =>
+                SendToUserGroup(userId, eventJsonCache[eventDto], eventDto.Id)
+            );
+
+            await Task.WhenAll(notificationTasks);
+            
+            _logger.LogDebug("Sent {EventCount} notifications to user {UserId}", events.Count, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending events to user {UserId}", userId);
+        }
+    }
+
+    /// <summary>
+    /// Sends a notification message to a specific user's SignalR group
+    /// </summary>
+    /// <param name="userId">The user ID to send to</param>
+    /// <param name="message">The serialized JSON message</param>
+    /// <param name="eventId">The event ID for logging purposes</param>
+    private async Task SendToUserGroup(long userId, string message, long eventId)
+    {
+        try
+        {
+            await _hubContext.Clients
+                .Group($"user_{userId}")
+                .SendAsync("ReceiveNotification", message);
+            
+            _logger.LogTrace("Sent notification for event {EventId} to user {UserId}", eventId, userId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Failed to send notification for event {EventId} to user {UserId}", 
+                eventId, userId);
+            // Don't throw - allow other notifications to continue
+        }
+    }
+
+    /// <summary>
+    /// Gets all user IDs that are subscribed to a specific event based on subscription rules
+    /// </summary>
+    /// <param name="eventDto">The event to check subscriptions for</param>
+    /// <returns>List of user IDs subscribed to this event</returns>
+    private async Task<List<long>> GetSubscribedUserIdsForEvent(EventResponseDto eventDto)
+    {
+        try
+        {
+            var subscribedUserIds = await _context.Set<Subscription>()
+                .Where(s => s.ProjectId == eventDto.ProjectId)
+                .Where(s => 
+                    (s.EntityId == eventDto.EntityId || s.EntityId == null) &&
+                    (s.EntityType == eventDto.EntityType || s.EntityType == null) &&
+                    (s.DataSourceId == eventDto.DataSourceId || s.DataSourceId == null) &&
+                    (s.Operation == eventDto.Operation || s.Operation == null)
+                )
+                .Select(s => s.UserId)
+                .Distinct()
+                .ToListAsync();
+
+            return subscribedUserIds;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, 
+                "Error retrieving subscribed users for event {EventId} in project {ProjectId}", 
+                eventDto.Id, eventDto.ProjectId);
+            return new List<long>();
+        }
+    }
+    
+    /// <summary>
+    /// Gets all user IDs subscribed to any of the provided events (optimized for bulk)
+    /// </summary>
+    /// <param name="eventDtos">Events to check subscriptions for</param>
+    /// <returns>Dictionary mapping each event ID to its list of subscribed user IDs</returns>
+    private async Task<Dictionary<long, List<long>>> GetSubscribedUserIdsForManyEvents(
+        List<EventResponseDto> eventDtos)
+    {
+        if (!eventDtos.Any())
+        {
+            return new Dictionary<long, List<long>>();
+        }
+
+        var projectIds = eventDtos.Select(e => e.ProjectId).Distinct().ToList();
+
+        // Fetch ALL relevant subscriptions in ONE query
+        var allSubscriptions = await _context.Set<Subscription>()
+            .Where(s => projectIds.Contains(s.ProjectId))
+            .ToListAsync();
+
+        // Match subscriptions to events in memory
+        var result = new Dictionary<long, List<long>>();
+
+        foreach (var eventDto in eventDtos)
+        {
+            var matchingUserIds = allSubscriptions
+                .Where(s => s.ProjectId == eventDto.ProjectId)
+                .Where(s => 
+                    (s.EntityId == eventDto.EntityId || s.EntityId == null) &&
+                    (s.EntityType == eventDto.EntityType || s.EntityType == null) &&
+                    (s.DataSourceId == eventDto.DataSourceId || s.DataSourceId == null) &&
+                    (s.Operation == eventDto.Operation || s.Operation == null)
+                )
+                .Select(s => s.UserId)
+                .Distinct()
+                .ToList();
+
+            result[eventDto.Id] = matchingUserIds;
+        }
+
+        return result;
+    }
+
+    /// <summary>
     /// Sends an email notification
     /// </summary>
     /// <param name="toEmail">Recipient email address</param>

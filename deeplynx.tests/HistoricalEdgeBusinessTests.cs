@@ -2,9 +2,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 
@@ -16,6 +19,9 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public HistoricalEdgeBusiness _historicalEdgeBusiness = null!;
     public EdgeBusiness _edgeBusiness = null!;
     public EventBusiness _eventBusiness = null!;
+    private INotificationBusiness _notificationBusiness = null!;
+    private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+    private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     public long pid;
     public long pid2;
     public long eid;
@@ -35,7 +41,10 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+        _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+        _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+        _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         _historicalEdgeBusiness = new HistoricalEdgeBusiness(Context);
         _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
     }

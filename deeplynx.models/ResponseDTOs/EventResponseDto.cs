@@ -27,5 +27,4 @@ public class EventResponseDto
     public string Properties { get; set; }
     public DateTime LastUpdatedAt { get; set; }
     public string? LastUpdatedBy { get; set; }
-    
 }

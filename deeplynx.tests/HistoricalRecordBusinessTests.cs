@@ -4,9 +4,12 @@ using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 
@@ -26,6 +29,9 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     private EventBusiness _eventBusiness;
+    private INotificationBusiness _notificationBusiness = null!;
+    private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+    private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
     
     public HistoricalRecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -33,7 +39,10 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     {
         await base.InitializeAsync();
         _historicalRecordBusiness = new HistoricalRecordBusiness(Context);
-        _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+        _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+        _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+        _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
     }
 

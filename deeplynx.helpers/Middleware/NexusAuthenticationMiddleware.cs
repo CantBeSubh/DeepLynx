@@ -52,7 +52,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             Log.Warning("No token found in request");
             return AuthenticateResult.NoResult();
         }
-        
+
         var handler = new JwtSecurityTokenHandler();
         if (!handler.CanReadToken(token))
         {
@@ -74,26 +74,29 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         {
             return await HandleRS256Token(token);
         }
-        
+
         return AuthenticateResult.Fail($"Unsupported token algorithm: {algorithm}");
     }
 
     private async Task<AuthenticateResult> HandleLocalDevelopmentBypass()
     {
-        //TODO: Make mock token sys-admin
+        const string localDevEmail = "developer@localhost";
+        const string localDevUserId = "local-dev-user";
+
         var mockClaims = new[]
         {
             new Claim(ClaimTypes.Name, "LocalDeveloper"),
-            new Claim(ClaimTypes.NameIdentifier, "local-dev-user"),
-            new Claim("sub", "local-dev-user"),
-            new Claim("email", "developer@localhost"),
+            new Claim(ClaimTypes.NameIdentifier, localDevUserId),
+            new Claim("sub", localDevUserId),
+            new Claim("email", localDevEmail),
+            new Claim(ClaimTypes.Email, localDevEmail),
             new Claim(ClaimTypes.Role, "Developer")
         };
 
         var mockIdentity = new ClaimsIdentity(mockClaims, "LocalDevelopment");
         var mockPrincipal = new ClaimsPrincipal(mockIdentity);
 
-        await EnsureUserExistsAsync(mockPrincipal);
+        await EnsureLocalDevUserExistsAsync(localDevEmail, localDevUserId);
 
         var ticket = new AuthenticationTicket(mockPrincipal, Scheme.Name);
         Log.Information("Local development authentication successful");
@@ -172,7 +175,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 Log.Error("JWT_ISSUER or JWT_AUDIENCE not configured");
                 return AuthenticateResult.Fail("JWT configuration error");
             }
-            
+
             var metadataAddress = $"{issuer.TrimEnd('/')}/.well-known/openid-configuration";
             if (_configManager == null)
             {
@@ -272,7 +275,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
         using var scope = _serviceScopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
-        
+
         var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == username.ToLower());
         if (user == null)
         {
@@ -345,6 +348,48 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         catch (Exception ex)
         {
             Log.Error(ex, "Error during user provisioning");
+        }
+    }
+
+    private async Task EnsureLocalDevUserExistsAsync(string email, string ssoId)
+    {
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
+
+            var existingUser = await dbContext.Users
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+            if (existingUser == null)
+            {
+                var newUser = new User
+                {
+                    Name = "Local Developer",
+                    Email = email,
+                    Username = "local-dev",
+                    SsoId = ssoId,
+                    IsActive = true,
+                    IsArchived = false,
+                    IsSysAdmin = true
+                };
+
+                dbContext.Users.Add(newUser);
+                await dbContext.SaveChangesAsync();
+                Log.Information($"Local development sys admin created: {email}");
+            }
+            else if (!existingUser.IsSysAdmin)
+            {
+                // if user exists but is not sysadmin, make them admin
+                existingUser.IsSysAdmin = true;
+                existingUser.IsActive = true;
+                existingUser.IsArchived = false;
+                await dbContext.SaveChangesAsync();
+                Log.Information($"Existing user {email} promoted to sys admin for local development");
+            }
+        } catch (Exception ex)
+        {
+            Log.Error(ex, "Error during local dev user provisioning");
         }
     }
 }
