@@ -19,16 +19,8 @@ export default async function Page({ searchParams }: PageProps) {
     return <div className="p-4">Missing recordId or projectId</div>;
   }
 
-  let initialRecord = null;
-  try {
-    initialRecord = await getRecordServer(projectId, recordId);
-  } catch (e) {
-    console.error("getRecordServer failed:", e);
-  }
-
   return (
     <RecordViewClient
-      initialRecord={initialRecord}
       projectId={Number(projectId)}
       recordId={Number(recordId)}
     />
