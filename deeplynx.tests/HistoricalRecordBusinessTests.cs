@@ -6,8 +6,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
-using FluentAssertions.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
@@ -39,18 +37,18 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         _recordBusiness = new RecordBusiness(Context, _cacheBusiness, _eventBusiness);
     }
 
+    #region GetHistoricalRecords Tests
+    
     [Fact]
     public async Task GetHistoricalRecords_ReturnsListOfCurrentHistoricalRecordsForProject()
     {
-        await SeedTestDataAsync();
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(2);
-        historicalRecords.First().Name.Should().Be("Test Record");
-        historicalRecords.Last().Name.Should().Be("Test Record 2");
-        historicalRecords.Should().NotContain(x => x.Name == "Test Record 3");
-        historicalRecords.Should().NotContain(x => x.Name == "Test Record 4");
-
+        Assert.NotNull(historicalRecords);
+        Assert.Equal(2, historicalRecords.Count());
+        Assert.Equal("Test Record", historicalRecords.First().Name);
+        Assert.Equal("Test Record 2", historicalRecords.Last().Name);
+        Assert.DoesNotContain(historicalRecords, x => x.Name == "Test Record 3");
+        Assert.DoesNotContain(historicalRecords, x => x.Name == "Test Record 4");
     }
     
     [Fact]
@@ -81,10 +79,10 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid2, dto2);
 
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(2);
-        historicalRecords.First().Name.Should().Be("Updated Test Record");
-        historicalRecords.Last().Name.Should().Be("Updated Test Record 2");
+        Assert.NotNull(historicalRecords);
+        Assert.Equal(2, historicalRecords.Count());
+        Assert.Equal("Updated Test Record", historicalRecords.First().Name);
+        Assert.Equal("Updated Test Record 2", historicalRecords.Last().Name);
     }
     
     [Fact]
@@ -93,26 +91,26 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.ArchiveRecord(pid, rid);
         
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, null, false);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(2);
-        historicalRecords.Should().Contain(x => x.Name == "Test Record");
-        historicalRecords.Should().Contain(x => x.Name == "Test Record 2");
+        Assert.NotNull(historicalRecords);
+        Assert.Equal(2, historicalRecords.Count());
+        Assert.Contains(historicalRecords, x => x.Name == "Test Record");
+        Assert.Contains(historicalRecords, x => x.Name == "Test Record 2");
     }
     
     [Fact]
     public async Task GetHistoricalRecords_DoesNotContainArchivedHistoricalRecords()
     {
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(2);
+        Assert.NotNull(historicalRecords);
+        Assert.Equal(2, historicalRecords.Count());
         
         await _recordBusiness.ArchiveRecord(pid, rid);
         
         var arcHistoricalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
-        arcHistoricalRecords.Should().NotBeNull();
-        arcHistoricalRecords.Should().HaveCount(1);
-        arcHistoricalRecords.Should().NotContain(x => x.Name == "Test Record");
-        arcHistoricalRecords.Should().Contain(x => x.Name == "Test Record 2");
+        Assert.NotNull(arcHistoricalRecords);
+        Assert.Single(arcHistoricalRecords);
+        Assert.DoesNotContain(arcHistoricalRecords, x => x.Name == "Test Record");
+        Assert.Contains(arcHistoricalRecords, x => x.Name == "Test Record 2");
     }
     
     [Fact]
@@ -122,18 +120,18 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.DeleteRecord(pid, rid2);
         
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(0);
+        Assert.NotNull(historicalRecords);
+        Assert.Empty(historicalRecords);
     }
     
     [Fact]
     public async Task GetHistoricalRecords_FiltersByDataSource()
     {
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid2, did2);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(1);
-        historicalRecords.Should().Contain(x => x.Name == "Test Record 3");
-        historicalRecords.Should().NotContain(x => x.Name == "Test Record 4");
+        Assert.NotNull(historicalRecords);
+        Assert.Single(historicalRecords);
+        Assert.Contains(historicalRecords, x => x.Name == "Test Record 3");
+        Assert.DoesNotContain(historicalRecords, x => x.Name == "Test Record 4");
     }
     
     [Fact]
@@ -158,11 +156,15 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await Context.SaveChangesAsync();
         
         var historicalRecords = await _historicalRecordBusiness.GetAllHistoricalRecords(pid, null, pointInTime, false);
-        historicalRecords.Should().NotBeNull();
-        historicalRecords.Should().HaveCount(2);
-        historicalRecords.Should().Contain(x => x.Name == "Test Record");
-        historicalRecords.Should().Contain(x => x.Name == "Test Record 2");
+        Assert.NotNull(historicalRecords);
+        Assert.Equal(2, historicalRecords.Count());
+        Assert.Contains(historicalRecords, x => x.Name == "Test Record");
+        Assert.Contains(historicalRecords, x => x.Name == "Test Record 2");
     }
+    
+    #endregion
+    
+    #region GetHistoryForRecord Tests
 
     [Fact]
     public async Task GetHistoryForRecord_ReturnsFullHistory()
@@ -182,44 +184,47 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
 
         var recordHistory = await _historicalRecordBusiness.GetHistoryForRecord(rid);
         
-        recordHistory.Should().NotBeNull();
-        recordHistory.Should().HaveCount(4);
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags == null);
-        recordHistory.Should().Contain(x => x.Name == "Test Record" && x.Tags != null);
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && !x.IsArchived );
-        recordHistory.Should().Contain(x => x.Name == "Updated Test Record" && x.IsArchived);
+        Assert.NotNull(recordHistory);
+        Assert.Equal(4, recordHistory.Count());
+        Assert.Contains(recordHistory, x => x.Name == "Test Record" && x.Tags == null);
+        Assert.Contains(recordHistory, x => x.Name == "Test Record" && x.Tags != null);
+        Assert.Contains(recordHistory, x => x.Name == "Updated Test Record" && !x.IsArchived);
+        Assert.Contains(recordHistory, x => x.Name == "Updated Test Record" && x.IsArchived);
     }
 
     [Fact]
     public async Task GetHistoryForRecord_ThrowsError_WhenRecordDoesNotExist()
     {
-        var historicalRecords = () => _historicalRecordBusiness.GetHistoryForRecord(rid + 100000);
-        await historicalRecords.Should().ThrowAsync<KeyNotFoundException>();
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _historicalRecordBusiness.GetHistoryForRecord(rid + 100000));
     }
+    
+    #endregion
+    
+    #region GetHistoricalRecord Tests
     
     [Fact]
     public async Task GetHistoricalRecord_ReturnsAllCorrectFields()
     {
         // TODO: insert tags after record to avoid race condition
         var record = await Context.Records.Where(r => r.ProjectId == pid && r.Id == rid).FirstOrDefaultAsync();
-        record.Should().NotBeNull();
+        Assert.NotNull(record);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be(record.Name);
-        historicalRecord.Id.Should().Be(record.Id);
-        historicalRecord.Tags.Should().NotBeNull();
-        historicalRecord.ClassId.Should().Be(record.ClassId);
-        historicalRecord.ClassName.Should().Be("Test Class");
-        historicalRecord.Description.Should().Be(record.Description);
-        historicalRecord.OriginalId.Should().Be(record.OriginalId);
-        historicalRecord.Uri.Should().Be(record.Uri);
-        historicalRecord.ObjectStorageId.Should().Be(record.ObjectStorageId);
-        historicalRecord.ObjectStorageName.Should().Be("Object Storage 1");
-        historicalRecord.ProjectId.Should().Be(record.ProjectId);
-        historicalRecord.ProjectName.Should().Be("Test Project");
-        historicalRecord.DataSourceId.Should().Be(record.DataSourceId);
-        historicalRecord.DataSourceName.Should().Be("Test Data Source");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal(record.Name, historicalRecord.Name);
+        Assert.Equal(record.Id, historicalRecord.Id);
+        Assert.NotNull(historicalRecord.Tags);
+        Assert.Equal(record.ClassId, historicalRecord.ClassId);
+        Assert.Equal("Test Class", historicalRecord.ClassName);
+        Assert.Equal(record.Description, historicalRecord.Description);
+        Assert.Equal(record.OriginalId, historicalRecord.OriginalId);
+        Assert.Equal(record.Uri, historicalRecord.Uri);
+        Assert.Equal(record.ObjectStorageId, historicalRecord.ObjectStorageId);
+        Assert.Equal("Object Storage 1", historicalRecord.ObjectStorageName);
+        Assert.Equal(record.ProjectId, historicalRecord.ProjectId);
+        Assert.Equal("Test Project", historicalRecord.ProjectName);
+        Assert.Equal(record.DataSourceId, historicalRecord.DataSourceId);
+        Assert.Equal("Test Data Source", historicalRecord.DataSourceName);
     }
     
     [Fact]
@@ -236,51 +241,51 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         };
         
         var updatedRecord = await _recordBusiness.UpdateRecord(pid, rid, dto);
-        updatedRecord.Should().NotBeNull();
+        Assert.NotNull(updatedRecord);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be(updatedRecord.Name);
-        historicalRecord.Id.Should().Be(updatedRecord.Id);
-        historicalRecord.Tags.Should().NotBeNull();
-        historicalRecord.ClassId.Should().Be(updatedRecord.ClassId);
-        historicalRecord.ClassName.Should().Be("Test Class");
-        historicalRecord.Description.Should().Be(updatedRecord.Description);
-        historicalRecord.OriginalId.Should().Be(updatedRecord.OriginalId);
-        historicalRecord.Uri.Should().Be(updatedRecord.Uri);
-        historicalRecord.ObjectStorageId.Should().Be(updatedRecord.ObjectStorageId);
-        historicalRecord.ObjectStorageName.Should().Be("Object Storage 1");
-        historicalRecord.ProjectId.Should().Be(updatedRecord.ProjectId);
-        historicalRecord.ProjectName.Should().Be("Test Project");
-        historicalRecord.DataSourceId.Should().Be(updatedRecord.DataSourceId);
-        historicalRecord.DataSourceName.Should().Be("Test Data Source");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal(updatedRecord.Name, historicalRecord.Name);
+        Assert.Equal(updatedRecord.Id, historicalRecord.Id);
+        Assert.NotNull(historicalRecord.Tags);
+        Assert.Equal(updatedRecord.ClassId, historicalRecord.ClassId);
+        Assert.Equal("Test Class", historicalRecord.ClassName);
+        Assert.Equal(updatedRecord.Description, historicalRecord.Description);
+        Assert.Equal(updatedRecord.OriginalId, historicalRecord.OriginalId);
+        Assert.Equal(updatedRecord.Uri, historicalRecord.Uri);
+        Assert.Equal(updatedRecord.ObjectStorageId, historicalRecord.ObjectStorageId);
+        Assert.Equal("Object Storage 1", historicalRecord.ObjectStorageName);
+        Assert.Equal(updatedRecord.ProjectId, historicalRecord.ProjectId);
+        Assert.Equal("Test Project", historicalRecord.ProjectName);
+        Assert.Equal(updatedRecord.DataSourceId, historicalRecord.DataSourceId);
+        Assert.Equal("Test Data Source", historicalRecord.DataSourceName);
     }
     
     [Fact]
     public async Task GetHistoricalRecord_ReturnsAllCorrectFields_AfterArchive()
     {
         var archived = await _recordBusiness.ArchiveRecord(pid, rid);
-        archived.Should().BeTrue();
-
+        Assert.True(archived);
+        
         var archivedRecord = await _recordBusiness.GetRecord(pid, rid, false);
-        archivedRecord.Should().NotBeNull();
+        Assert.NotNull(archivedRecord);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be(archivedRecord.Name);
-        historicalRecord.Id.Should().Be(archivedRecord.Id);
-        historicalRecord.Tags.Should().NotBeNull();
-        historicalRecord.ClassId.Should().Be(archivedRecord.ClassId);
-        historicalRecord.ClassName.Should().Be("Test Class");
-        historicalRecord.Description.Should().Be(archivedRecord.Description);
-        historicalRecord.OriginalId.Should().Be(archivedRecord.OriginalId);
-        historicalRecord.Uri.Should().Be(archivedRecord.Uri);
-        historicalRecord.ObjectStorageId.Should().Be(archivedRecord.ObjectStorageId);
-        historicalRecord.ObjectStorageName.Should().Be("Object Storage 1");
-        historicalRecord.ProjectId.Should().Be(archivedRecord.ProjectId);
-        historicalRecord.ProjectName.Should().Be("Test Project");
-        historicalRecord.DataSourceId.Should().Be(archivedRecord.DataSourceId);
-        historicalRecord.DataSourceName.Should().Be("Test Data Source");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal(archivedRecord.Name, historicalRecord.Name);
+        Assert.Equal(archivedRecord.Id, historicalRecord.Id);
+        Assert.NotNull(historicalRecord.Tags);
+        Assert.Equal(archivedRecord.ClassId, historicalRecord.ClassId);
+        Assert.Equal("Test Class", historicalRecord.ClassName);
+        Assert.Equal(archivedRecord.Description, historicalRecord.Description);
+        Assert.Equal(archivedRecord.OriginalId, historicalRecord.OriginalId);
+        Assert.Equal(archivedRecord.Uri, historicalRecord.Uri);
+        Assert.Equal(archivedRecord.ObjectStorageId, historicalRecord.ObjectStorageId);
+        Assert.Equal("Object Storage 1", historicalRecord.ObjectStorageName);
+        Assert.Equal(archivedRecord.ProjectId, historicalRecord.ProjectId);
+        Assert.Equal("Test Project", historicalRecord.ProjectName);
+        Assert.Equal(archivedRecord.DataSourceId, historicalRecord.DataSourceId);
+        Assert.Equal("Test Data Source", historicalRecord.DataSourceName);
     }
 
     [Fact]
@@ -299,8 +304,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal("Updated Test Record", historicalRecord.Name);
     }
     
     [Fact]
@@ -319,8 +324,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal("Updated Test Record", historicalRecord.Name);
     }
     
     [Fact]
@@ -340,9 +345,9 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.ArchiveRecord(pid, rid);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, null, false);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Updated Test Record");
-        historicalRecord.IsArchived.Should().BeTrue();
+        Assert.NotNull(historicalRecord);
+        Assert.Equal("Updated Test Record", historicalRecord.Name);
+        Assert.True(historicalRecord.IsArchived);
     }
     
     // Ask if this should be good behavior
@@ -362,8 +367,8 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         await _recordBusiness.ArchiveRecord(pid, rid);
         
-        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid, null);
-        await result.Should().ThrowAsync<KeyNotFoundException>();
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _historicalRecordBusiness.GetHistoricalRecord(rid, null));
+        Assert.Contains($"Historical record with id {rid} not found or is archived", exception.Message);
     }
     
     
@@ -384,21 +389,21 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
         await _recordBusiness.UpdateRecord(pid, rid, dto);
         
         var historicalRecord = await _historicalRecordBusiness.GetHistoricalRecord(rid, pointInTime);
-        historicalRecord.Should().NotBeNull();
-        historicalRecord.Name.Should().Be("Test Record");
+        Assert.NotNull(historicalRecord);
+        Assert.Equal("Test Record", historicalRecord.Name);
     }
     
     [Fact]
     public async Task GetHistoricalRecord_ThrowsError_WhenRecordDoesNotExist()
     {
-        var result = () => _historicalRecordBusiness.GetHistoricalRecord(rid+ 100000, null);
-        await result.Should().ThrowAsync<KeyNotFoundException>();
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _historicalRecordBusiness.GetHistoricalRecord(rid + 100000, null));
+        Assert.Contains($"Historical record with id {rid + 100000} not found", exception.Message);
     }
+    
+    #endregion
     
     protected override async Task SeedTestDataAsync()
     {
-        await base.SeedTestDataAsync();
-
         var project = new Project
         {
             Name = "Test Project",
