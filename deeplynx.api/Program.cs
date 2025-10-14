@@ -141,6 +141,7 @@ try
         ServiceLifetime.Transient
     );
 
+    builder.Services.AddSignalR();
 
     // Register Cache Service as a singleton
     var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
