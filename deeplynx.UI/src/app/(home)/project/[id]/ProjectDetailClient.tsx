@@ -9,9 +9,9 @@ import SearchBar from "@/app/(home)/components/SearchBar";
 import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
+import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
-import { ProjectResponseDto } from "../../types/responseDTOs";
 
 type Props = {
   projects: ProjectResponseDto[];
@@ -28,12 +28,12 @@ export default function ProjectDetailClient({
   const router = useRouter();
   const { setProject: setProjectSession, hasLoaded } = useProjectSession();
 
-  // State
+  // State - ensure IDs are always strings
   const [project, setProject] = useState<ProjectResponseDto | null>(
     initialProject
   );
-  const [selectedProjectId, setSelectedProjectId] = useState(
-    initialProject?.id || projectId || null
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(
+    initialProject?.id?.toString() || projectId || ""
   );
   const [canCustomize, setCanCustomize] = useState(false);
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
@@ -47,13 +47,13 @@ export default function ProjectDetailClient({
     if (!selectedProjectId) return;
 
     const selectedProject = projects.find(
-      (proj) => proj.id === selectedProjectId
+      (proj) => proj.id.toString() === selectedProjectId
     );
 
     if (selectedProject) {
       setProject(selectedProject);
       setProjectSession({
-        projectId: selectedProject.id.toString()!,
+        projectId: selectedProject.id.toString(),
         projectName: selectedProject.name,
       });
     }
@@ -96,8 +96,8 @@ export default function ProjectDetailClient({
         </p>
         <ProjectDropdownSingleSelect
           projects={projects}
-          onSelectionChange={setSelectedProjectId}
-          defaultSelectedId={initialProject?.id.toString() || projectId || ""}
+          onSelectionChange={(id) => setSelectedProjectId(id.toString())}
+          defaultSelectedId={initialProject?.id?.toString() || projectId || ""}
         />
       </div>
 
