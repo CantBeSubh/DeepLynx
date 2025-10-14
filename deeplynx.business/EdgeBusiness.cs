@@ -169,22 +169,22 @@ public class EdgeBusiness : IEdgeBusiness
     /// <exception cref="ArgumentException"></exception>
     public async Task<GraphResponse> GetGraphDataForRecord(long recordId, long userId, int depth)
     {
-        var nodes = new Dictionary<long, GraphNode>();  // Stores all unique nodes we discover
-        var links = new List<GraphLink>();              // Stores all connections between nodes
-        var visitedEdges = new HashSet<long>();         // Tracks which edges we've already processed (prevents duplicates)
-        var visitedRecords = new HashSet<long>();         // Tracks which records we've already explored (prevents reprocessing)
-        
         if (depth > 3)
         {
             throw new ArgumentException("Depth must be no more than 3");
         }
+        var rootRecord = await _context.Records.FindAsync(recordId);
+        if (rootRecord == null)
+        {
+            throw new KeyNotFoundException($"Record with id {recordId} not found");
+        }
         
         // find projects the user has access to
         var userProjectIds = await _context.Projects.Where(p => 
-            p.ProjectMembers.Any(pm => 
-                pm.UserId == userId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
-            ))
+                p.ProjectMembers.Any(pm => 
+                    pm.UserId == userId ||
+                    (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+                ))
             .Select(p => p.Id)
             .ToListAsync();
         
@@ -193,11 +193,10 @@ public class EdgeBusiness : IEdgeBusiness
             return new GraphResponse();
         }
         
-        var rootRecord = await _context.Records.FindAsync(recordId);
-        if (rootRecord == null)
-        {
-            throw new KeyNotFoundException($"Record with id {recordId} not found");
-        }
+        var nodes = new Dictionary<long, GraphNode>();  // Stores all unique nodes we discover
+        var links = new List<GraphLink>();              // Stores all connections between nodes
+        var visitedEdges = new HashSet<long>();         // Tracks which edges we've already processed (prevents duplicates)
+        var visitedRecords = new HashSet<long>();         // Tracks which records we've already explored (prevents reprocessing)
 
         // Add the starting record as our root node
         nodes[recordId] = new GraphNode

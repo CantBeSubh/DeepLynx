@@ -884,6 +884,14 @@ namespace deeplynx.tests
         }
         
         [Fact]
+        public async Task GetGraphData_Fails_IfRecordDoesNotExist()
+        {
+            var graphData = () => _edgeBusiness.GetGraphDataForRecord(originRecordId + 1000, uid1, 1);
+            await Assert.ThrowsAsync<KeyNotFoundException>(graphData);
+
+        }
+        
+        [Fact]
         public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
         {
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.GetEdgesByRecord(originRecordId + 1000, true, 1, true, 20));
