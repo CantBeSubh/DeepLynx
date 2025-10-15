@@ -38,23 +38,24 @@ const ProjectOverviewWidget = () => {
   return (
     <div className="card-body">
       <h2 className="card-title">{t.translations.PROJECT_OVERVIEW}</h2>
-      <div className="stats shadow">
-        <div className="stat">
-          <div className="stat-title text-base-content">
+      {/* Option 1: Use grid instead of stats (no divider by default) */}
+      <div className="grid grid-cols-2 gap-4 p-4 bg-base-200/10 rounded-lg">
+        <div>
+          <div className="text-base-content opacity-70 text-sm">
             {t.translations.LINKED_SOURCES}
           </div>
-          <div className="stat-value text-secondary flex items-center">
-            <LinkIcon className="size-7 mr-2" />
+          <div className="text-secondary flex items-center text-3xl font-bold mt-1">
+            <LinkIcon className="size-8 mr-2" />
             <div className="text-base-content">
               {stats?.linkedSources ? stats.linkedSources : 0}
             </div>
           </div>
         </div>
-        <div className="stat">
-          <div className="stat-title text-base-content">
+        <div>
+          <div className="text-base-content opacity-70 text-sm">
             {t.translations.DATA_RECORD}
           </div>
-          <div className="stat-value text-secondary flex items-center">
+          <div className="text-secondary flex items-center text-3xl font-bold mt-1">
             <CircleStackIcon className="size-8 mr-2" />
             <div className="text-base-content">
               {stats?.records ? stats.records : 0}
@@ -62,23 +63,23 @@ const ProjectOverviewWidget = () => {
           </div>
         </div>
       </div>
-      <div className="stats shadow">
-        <div className="stat">
-          <div className="stat-title text-base-content">
+      <div className="grid grid-cols-2 gap-4 p-4 bg-base-200/10 rounded-lg mt-2">
+        <div>
+          <div className="text-base-content opacity-70 text-sm">
             {t.translations.CLASSES}
           </div>
-          <div className="stat-value text-secondary flex items-center">
+          <div className="text-secondary flex items-center text-3xl font-bold mt-1">
             <RectangleGroupIcon className="size-8 mr-2" />
             <div className="text-base-content">
               {stats?.classes ? stats.classes : 0}
             </div>
           </div>
         </div>
-        <div className="stat">
-          <div className="stat-title text-base-content">
+        <div>
+          <div className="text-base-content opacity-70 text-sm">
             {t.translations.CONNECTIONS}
           </div>
-          <div className="stat-value text-secondary flex items-center">
+          <div className="text-secondary flex items-center text-3xl font-bold mt-1">
             <ArrowsRightLeftIcon className="size-8 mr-2" />
             <div className="text-base-content">
               {stats?.connections ? stats.connections : 0}
