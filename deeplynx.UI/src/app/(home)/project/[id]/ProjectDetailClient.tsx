@@ -23,7 +23,7 @@ type Props = {
 export default function ProjectDetailClient({
   projects,
   initialProject,
-  projectId,,
+  projectId,
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
@@ -31,9 +31,7 @@ export default function ProjectDetailClient({
 
   // State - ensure IDs are always strings
   const [project, setProject] = useState<ProjectResponseDto | null>(
-    
     initialProject
-  
   );
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     initialProject?.id?.toString() || projectId || ""
@@ -138,9 +136,7 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[
-                  selectedProjectId || projectId || "",
-                ]}
+                selectedProjects={[selectedProjectId || projectId || ""]}
                 border={false}
               />
             </div>
