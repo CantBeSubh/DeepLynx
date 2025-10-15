@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
@@ -112,7 +113,7 @@ namespace deeplynx.tests
                 RelationshipId = (int)relationshipId
             };
             // Act & Assert
-            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -129,8 +130,23 @@ namespace deeplynx.tests
                 DestinationId = 0, // Invalid destination
                 RelationshipId = (int)relationshipId
             };
-            // Act & Assert
-            await Assert.ThrowsAsync<DbUpdateException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
+            
+            // Ensure that edge create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateEdge_Fails_IfSameDestinationIdAndOriginId()
+        {
+            var dto = new CreateEdgeRequestDto
+            {
+                OriginId = (int)originRecordId,
+                DestinationId = (int)originRecordId,
+                RelationshipId = (int)relationshipId
+            };
+            await Assert.ThrowsAsync<ValidationException>(() => _edgeBusiness.CreateEdge(pid, dsid, dto));
             
             // Ensure that edge create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -833,6 +849,50 @@ namespace deeplynx.tests
             Assert.Equal(testEdge.Id, actualEvent.EntityId);
             Assert.Equal("edge", actualEvent.EntityType);
             Assert.Equal("update", actualEvent.Operation);
+        }
+        
+        [Fact]
+        public async Task UpdateEdge_Fails_WhenSameOriginAndDestinationId()
+        {
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+            
+            // Store the original timestamp for comparison
+            var originalLastUpdatedAt = testEdge.LastUpdatedAt;
+
+            // Create another destination record for update
+            var newDestinationRecord = new Record
+            {
+                ProjectId = pid,
+                DataSourceId = dsid,
+                Properties = "{\"test\": \"Updated destination_value\"}",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                Name = "New Destination",
+                Description = "New Destination Description",
+                OriginalId = "new",
+            };
+            Context.Records.Add(newDestinationRecord);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateEdgeRequestDto
+            {
+                OriginId = (int)originRecordId,
+                DestinationId = (int)originRecordId,
+                RelationshipId = (int)relationshipId
+            };
+            await Assert.ThrowsAsync<ValidationException>( () => _edgeBusiness.UpdateEdge(pid, dto, testEdge.Id, null, null));
+            // Ensure that update edge event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.business;
@@ -5,6 +6,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -477,6 +479,13 @@ namespace deeplynx.tests
                     OriginalId = "test-1",
                     Description = "Test Description",
                     Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
+                },
+                new CreateRecordRequestDto
+                {
+                    Name = "Test Record 2",
+                    OriginalId = "test-2",
+                    Description = "Test Description",
+                    Properties = JsonObject.Parse("{\"test2\": \"value 2\"}") as JsonObject
                 }
             };
 
@@ -486,7 +495,7 @@ namespace deeplynx.tests
                 {
                     RelationshipName = "Test Relationship",
                     OriginOid = "test-1",
-                    DestinationOid = "test-1"
+                    DestinationOid = "test-2"
                 }
             };
 
@@ -499,19 +508,18 @@ namespace deeplynx.tests
                 Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
             };
 
-            // Act
             var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
-
+            
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Relationships);
             Assert.Single(result.Tags);
-            Assert.Single(result.Records);
+            Assert.Equal(2, result.Records.Count);
             Assert.Single(result.Edges);
             
             // Ensure all complex data events are created and logged
             var eventList = await Context.Events.ToListAsync();
-            Assert.Equal(5, eventList.Count);
+            Assert.Equal(6, eventList.Count);
             
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
@@ -540,8 +548,71 @@ namespace deeplynx.tests
             var actualEvent4 = eventList[4];
             Assert.Equal(pid, actualEvent4.ProjectId);
             Assert.Equal("create", actualEvent4.Operation);
-            Assert.Equal("edge", actualEvent4.EntityType);
-            Assert.Equal(result.Edges[0].Id, actualEvent4.EntityId);
+            Assert.Equal("record", actualEvent4.EntityType);
+            Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
+            
+            var actualEvent5 = eventList[5];
+            Assert.Equal(pid, actualEvent5.ProjectId);
+            Assert.Equal("create", actualEvent5.Operation);
+            Assert.Equal("edge", actualEvent5.EntityType);
+            Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_WhenEdgeHasSameOriginAndDestination()
+        {
+            var classDtos = new List<CreateClassRequestDto>
+            {
+                new CreateClassRequestDto { Name = "New Class" }
+            };
+
+            var relationshipDtos = new List<CreateRelationshipRequestDto>
+            {
+                new CreateRelationshipRequestDto
+                {
+                    Name = "Test Relationship",
+                    OriginId = originClassId,
+                    DestinationId = destClassId
+                }
+            };
+
+            var tagDtos = new List<CreateTagRequestDto>
+            {
+                new CreateTagRequestDto { Name = "Test Tag" }
+            };
+
+            var recordDtos = new List<CreateRecordRequestDto>
+            {
+                new CreateRecordRequestDto
+                {
+                    Name = "Test Record",
+                    OriginalId = "test-1",
+                    Description = "Test Description",
+                    Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
+                }
+            };
+
+            var edgeDtos = new List<CreateEdgeRequestDto>
+            {
+                new CreateEdgeRequestDto
+                {
+                    RelationshipName = "Test Relationship",
+                    OriginOid = "test-1",
+                    DestinationOid = "test-1"
+                }
+            };
+
+            var dto = new CreateMetadataRequestDto
+            {
+                Classes = JsonSerializer.SerializeToNode(classDtos) as JsonArray,
+                Relationships = JsonSerializer.SerializeToNode(relationshipDtos) as JsonArray,
+                Tags = JsonSerializer.SerializeToNode(tagDtos) as JsonArray,
+                Records = JsonSerializer.SerializeToNode(recordDtos) as JsonArray,
+                Edges = JsonSerializer.SerializeToNode(edgeDtos) as JsonArray
+            };
+
+            // Act
+            await Assert.ThrowsAsync<ValidationException> (() => _metadataBusiness.CreateMetadata(pid, did, dto));
         }
 
         [Fact]
