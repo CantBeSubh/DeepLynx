@@ -949,6 +949,15 @@ namespace deeplynx.tests
         }
         
         [Fact]
+        public async Task GetGraphData_Fails_IfUserIsRestricted()
+        {
+            var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
+            Assert.True(userAddedProject2);
+            var graphData = () => _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 1);
+            await Assert.ThrowsAsync<AccessViolationException>(graphData); 
+        }
+        
+        [Fact]
         public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
         {
             // Act & Assert

@@ -199,7 +199,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_InvalidProjectId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var invalidProjectId = 999L;
+        var invalidProjectId = 1000999L;
         var dataSourceId = did;
         var dto = new CreateRecordRequestDto
         {

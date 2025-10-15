@@ -188,9 +188,9 @@ public class EdgeBusiness : IEdgeBusiness
             .Select(p => p.Id)
             .ToListAsync();
         
-        if (userProjectIds.Count == 0)
+        if (userProjectIds.Count == 0 || !userProjectIds.Contains(rootRecord.ProjectId))
         {
-            return new GraphResponse();
+            throw new AccessViolationException($"You do not have access to view record with id {recordId}");
         }
         
         var nodes = new Dictionary<long, GraphNode>();  // Stores all unique nodes we discover
