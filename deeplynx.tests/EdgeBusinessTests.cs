@@ -659,6 +659,305 @@ namespace deeplynx.tests
         }
         
         [Fact]
+        public async Task GetGraphData_GetsCorrectNodesAndLinks()
+        {
+            var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
+            Assert.True(userAddedProject1 && userAddedProject2);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId2,
+                DestinationId = destinationRecordId3,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge5 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
+            
+            await Context.SaveChangesAsync();
+
+            var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 3);
+            Assert.Equal(5, graphData.Nodes?.Count);
+            Assert.Equal(5, graphData.Links?.Count);
+            
+            // Create expected node IDs set
+            var expectedNodeIds = new HashSet<long> 
+            { 
+                originRecordId, 
+                destinationRecordId, 
+                destinationRecordId2, 
+                destinationRecordId3, 
+                originRecordId2 
+            };
+
+            var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
+            Assert.Equal(expectedNodeIds, actualNodeIds);
+
+            // Create expected links (Source, Target pairs)
+            var expectedLinks = new HashSet<(long source, long target)>
+            {
+                (originRecordId, destinationRecordId),
+                (originRecordId, destinationRecordId2),
+                (destinationRecordId, originRecordId),
+                (destinationRecordId2, destinationRecordId3),
+                (destinationRecordId3, originRecordId2),
+            };
+
+            var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
+            Assert.Equal(expectedLinks, actualLinks);
+        }
+        
+        
+        [Fact]
+        public async Task GetGraphData_FiltersByUserProject()
+        {
+            var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            Assert.True(userAddedProject1);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // edge in restricted project
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // destination is in restricted project
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId2,
+                DestinationId = destinationRecordId3,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // origin is in restricted project
+            var edge5 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
+            
+            await Context.SaveChangesAsync();
+
+            var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 3);
+            Assert.Equal(3, graphData.Nodes?.Count);
+            Assert.Equal(2, graphData.Links?.Count);
+            
+            // Create expected node IDs set
+            var expectedNodeIds = new HashSet<long> 
+            { 
+                originRecordId, 
+                destinationRecordId, 
+                destinationRecordId2, 
+            };
+
+            var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
+            Assert.Equal(expectedNodeIds, actualNodeIds);
+
+            // Create expected links (Source, Target pairs)
+            var expectedLinks = new HashSet<(long source, long target)>
+            {
+                (originRecordId, destinationRecordId),
+                (originRecordId, destinationRecordId2),
+            };
+
+            var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
+            Assert.Equal(expectedLinks, actualLinks);
+        }
+        
+        [Fact]
+        public async Task GetGraphData_FiltersByDepth()
+        {
+            var userAddedProject1 = await _projectBusiness.AddMemberToProject(pid, null, uid1, null);
+            var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
+            Assert.True(userAddedProject1 && userAddedProject2);
+            
+            var edge1 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+        
+            var edge2 = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge3 = new Edge
+            {
+                OriginId = destinationRecordId,
+                DestinationId = originRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge4 = new Edge
+            {
+                OriginId = destinationRecordId2,
+                DestinationId = destinationRecordId3,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            var edge5 = new Edge
+            {
+                OriginId = destinationRecordId3,
+                DestinationId = originRecordId2,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            Context.Edges.Add(edge1);
+            Context.Edges.Add(edge2);
+            Context.Edges.Add(edge3);
+            Context.Edges.Add(edge4);
+            Context.Edges.Add(edge5);
+            
+            await Context.SaveChangesAsync();
+
+            var graphData = await _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 1);
+            Assert.Equal(3, graphData.Nodes?.Count);
+            Assert.Equal(3, graphData.Links?.Count);
+            
+            // Create expected node IDs set
+            var expectedNodeIds = new HashSet<long> 
+            { 
+                originRecordId, 
+                destinationRecordId, 
+                destinationRecordId2, 
+            };
+
+            var actualNodeIds = graphData.Nodes?.Select(n => n.Id).ToHashSet();
+            Assert.Equal(expectedNodeIds, actualNodeIds);
+
+            // Create expected links (source, target pairs)
+            var expectedLinks = new HashSet<(long source, long target)>
+            {
+                (originRecordId, destinationRecordId),
+                (originRecordId, destinationRecordId2),
+                (destinationRecordId, originRecordId),
+            };
+
+            var actualLinks = graphData.Links?.Select(l => (l.Source, l.Target)).ToHashSet();
+            Assert.Equal(expectedLinks, actualLinks);
+        }
+        
+        [Fact]
+        public async Task GetGraphData_Fails_IfRecordDoesNotExist()
+        {
+            var graphData = () => _edgeBusiness.GetGraphDataForRecord(originRecordId + 1000, uid1, 1);
+            await Assert.ThrowsAsync<KeyNotFoundException>(graphData);
+
+        }
+        
+        [Fact]
+        public async Task GetGraphData_Fails_IfUserIsRestricted()
+        {
+            var userAddedProject2 = await _projectBusiness.AddMemberToProject(pid2, null, uid1, null);
+            Assert.True(userAddedProject2);
+            var graphData = () => _edgeBusiness.GetGraphDataForRecord(originRecordId, uid1, 1);
+            await Assert.ThrowsAsync<AccessViolationException>(graphData); 
+        }
+        
+        [Fact]
         public async Task GetEdgesByRecord_Fails_IfRecordDoesNotExist()
         {
             // Act & Assert
@@ -1258,7 +1557,7 @@ namespace deeplynx.tests
             Context.Projects.Add(project2);
             await Context.SaveChangesAsync();
             pid2 = project2.Id;
-
+            
             var dataSource = new DataSource
             {
                 Name = "DataSource 1",
