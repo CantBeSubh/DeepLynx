@@ -93,27 +93,6 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Refresh stored user info
-        /// </summary>
-        /// <param name="dto">User request DTO</param>
-        /// <returns>User response DTO</returns>
-        [HttpPost("RefreshUser", Name = "api_refresh_user")]
-        public async Task<ActionResult<UserResponseDto>> RefreshUser([FromBody] CreateUserRequestDto dto)
-        {
-            try
-            {
-                var user = await _userBusiness.RefreshUser(dto);
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating or updating this user: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-
-        /// <summary>
         /// Update a user
         /// </summary>
         /// /// <param name="userId">ID of user</param>

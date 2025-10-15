@@ -87,7 +87,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         {
             new Claim(ClaimTypes.Name, "LocalDeveloper"),
             new Claim(ClaimTypes.NameIdentifier, localDevUserId),
-            new Claim("sub", localDevUserId),
+            new Claim("uid", localDevUserId),
             new Claim("email", localDevEmail),
             new Claim(ClaimTypes.Email, localDevEmail),
             new Claim(ClaimTypes.Role, "Developer")
@@ -303,9 +303,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 return;
             }
 
-            var ssoId = principal.FindFirst("sub")?.Value
-                        ?? principal.FindFirst("cid")?.Value
-                        ?? principal.FindFirst("uid")?.Value;
+            var ssoId = principal.FindFirst("uid")?.Value;
             var username = principal.FindFirst("preferred_username")?.Value ?? email;
             var name = principal.FindFirst(ClaimTypes.Name)?.Value
                        ?? principal.FindFirst("name")?.Value
@@ -318,7 +316,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
             if (existingUser != null)
             {
-                if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId))
+                if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId) 
+                    || existingUser.SsoId != principal.FindFirst("uid")?.Value)
                 {
                     existingUser.SsoId = ssoId;
                     existingUser.Username = username;
