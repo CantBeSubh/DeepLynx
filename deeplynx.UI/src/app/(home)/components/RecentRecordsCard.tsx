@@ -1,9 +1,13 @@
 "use client";
-import { BarsArrowDownIcon, ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import {
+  BarsArrowDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@heroicons/react/24/outline";
 import { useLanguage } from "@/app/contexts/Language";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import CatalogViewSkeleton from "./skeletons/catalogviewskeleton";
 
 export type RecentRecord = {
@@ -17,9 +21,17 @@ export type RecentRecord = {
   projectId: number;
 };
 
+interface Props {
+  selectedProjects: string[];
+  border: boolean;
+}
+
 const RECORDS_PER_PAGE = 5;
 
-const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] }) => {
+const RecentRecordsCard: React.FC<Props> = ({
+  selectedProjects,
+  border = true,
+}) => {
   const { t } = useLanguage();
   const router = useRouter();
 
@@ -70,12 +82,16 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
 
       switch (sortOption) {
         case "nameAZ":
-          return a.name.localeCompare(b.name, undefined, { sensitivity: "base" });
+          return a.name.localeCompare(b.name, undefined, {
+            sensitivity: "base",
+          });
         case "nameZA":
-          return b.name.localeCompare(a.name, undefined, { sensitivity: "base" });
-        case "dateNew": 
+          return b.name.localeCompare(a.name, undefined, {
+            sensitivity: "base",
+          });
+        case "dateNew":
           return dateB - dateA;
-        case "dateOld": 
+        case "dateOld":
           return dateA - dateB;
         default:
           return 0;
@@ -86,7 +102,10 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / RECORDS_PER_PAGE));
   const startIndex = (currentPage - 1) * RECORDS_PER_PAGE;
-  const paginatedRecords = sorted.slice(startIndex, startIndex + RECORDS_PER_PAGE);
+  const paginatedRecords = sorted.slice(
+    startIndex,
+    startIndex + RECORDS_PER_PAGE
+  );
 
   const handleSortChange = (val: SortOption) => setSortOption(val);
 
@@ -107,14 +126,16 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
   if (isLoading) return <CatalogViewSkeleton />;
 
   return (
-    <div className="shadow shadow-md rounded-xl">
+    <div className={border ? "shadow shadow-md rounded-xl" : ""}>
       {/* Header + Sort */}
       <div className="flex items-center justify-between p-4">
         <h2 className="text-lg font-semibold text-base-content">
           {t.translations.RECENTLY_ADDED_RECORDS}
         </h2>
         <div className="flex items=cemter gap-1">
-          <div className="px-3 py-2 text-md font-semibold text-base-content/50">Sort By</div>
+          <div className="px-3 py-2 text-md font-semibold text-base-content/50">
+            Sort By
+          </div>
           <div className="relative inline-block">
             <BarsArrowDownIcon
               className={`pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors
@@ -135,7 +156,6 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
             </select>
           </div>
         </div>
-
       </div>
 
       <div className="divider m-0"></div>
@@ -144,7 +164,10 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
       {error && (
         <div className="p-4 text-error flex items-center justify-between">
           <span>{error}</span>
-          <button className="btn btn-sm btn-outline" onClick={fetchRecentRecords}>
+          <button
+            className="btn btn-sm btn-outline"
+            onClick={fetchRecentRecords}
+          >
             Retry
           </button>
         </div>
@@ -157,29 +180,41 @@ const RecentRecordsCard = ({ selectedProjects }: { selectedProjects: string[] })
             key={record.id}
             className="border-b border-base-300/30 cursor-pointer hover:bg-base-200/40 p-3 -mx-1 transition-colors"
             onClick={() =>
-              router.push(`/record?recordId=${record.id}&projectId=${record.projectId}`)
+              router.push(
+                `/record?recordId=${record.id}&projectId=${record.projectId}`
+              )
             }
           >
-            <div className="font-medium text-base-content mb-2">{record.name}</div>
+            <div className="font-medium text-base-content mb-2">
+              {record.name}
+            </div>
 
             <div className="text-sm text-base-content/60 flex flex-wrap gap-x-4 gap-y-1">
               <span className="flex items-center gap-1">
                 <span>{t.translations.CLASS}:</span>
-                <span className="badge badge-sm badge-secondary">{record.className}</span>
+                <span className="badge badge-sm badge-secondary">
+                  {record.className}
+                </span>
               </span>
 
               <span>
-                <span className="text-base-content/50">{t.translations.LAST_EDIT}:</span>{" "}
+                <span className="text-base-content/50">
+                  {t.translations.LAST_EDIT}:
+                </span>{" "}
                 {formatDate(record.lastUpdatedAt ?? record.createdAt)}
               </span>
 
               <span>
-                <span className="text-base-content/50">{t.translations.PROJECT}:</span>{" "}
+                <span className="text-base-content/50">
+                  {t.translations.PROJECT}:
+                </span>{" "}
                 {record.projectName}
               </span>
 
               <span>
-                <span className="text-base-content/50">{t.translations.DATA_SOURCE}:</span>{" "}
+                <span className="text-base-content/50">
+                  {t.translations.DATA_SOURCE}:
+                </span>{" "}
                 {record.dataSourceName}
               </span>
             </div>

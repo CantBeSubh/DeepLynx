@@ -22,12 +22,14 @@ type Props = {
 
 export default function ProjectDetailClient({
   projects,
-  initialProject
+  initialProject,
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
 
-  const [project, setProject] = useState<ProjectResponseDto | null>(initialProject);
+  const [project, setProject] = useState<ProjectResponseDto | null>(
+    initialProject
+  );
   const [selectedProjectId, setSelectedProjectId] = useState(
     initialProject ? initialProject.id : null
   );
@@ -65,7 +67,7 @@ export default function ProjectDetailClient({
 
   const handleSearchEnter = (searchTerm: string) => {
     const query = new URLSearchParams({
-      fromProject: selectedProjectId? selectedProjectId.toString() : "",
+      fromProject: selectedProjectId ? selectedProjectId.toString() : "",
       search: searchTerm,
     }).toString();
     router.push(`/data_catalog?${query}`);
@@ -126,7 +128,10 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[selectedProjectId ? selectedProjectId.toString() : ""]}
+                selectedProjects={[
+                  selectedProjectId ? selectedProjectId.toString() : "",
+                ]}
+                border={false}
               />
             </div>
           </div>
