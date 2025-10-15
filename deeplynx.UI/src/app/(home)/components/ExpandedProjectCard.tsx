@@ -1,3 +1,4 @@
+// src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
 import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
@@ -63,7 +64,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
-
   return (
     <div>
       {/* Header Section */}
@@ -76,7 +76,8 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+            {t.translations.LAST_EDIT}{" "}
+            {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
           </p>
         </div>
         <button

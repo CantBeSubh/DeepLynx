@@ -1,4 +1,4 @@
-// app/(home)/HomeDashboardClient.tsx  — Client Component
+// app/(home)/HomeDashboardClient.tsx
 "use client";
 
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
@@ -113,7 +113,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         cancelIcon: {
           enabled: true,
         },
-        scrollTo: true,
+        scrollTo: false, // Disable automatic scrolling
         modalOverlayOpeningPadding: 4,
       },
     });
@@ -144,6 +144,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         element: "[data-tour='search-input']",
         on: "bottom",
       },
+      scrollTo: false, // Explicitly disable scrolling for this step
       buttons: [
         {
           text: "Back",
@@ -164,6 +165,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       attachTo: {
         element: "[data-tour='projects-section']",
         on: "top",
+      },
+      scrollTo: {
+        behavior: "smooth",
+        block: "center", // Center the element in the viewport
       },
       buttons: [
         {
@@ -186,6 +191,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         element: "[data-tour='add-record']",
         on: "bottom",
       },
+      scrollTo: false, // Buttons are likely visible already
       buttons: [
         {
           text: "Back",
@@ -207,6 +213,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         element: "[data-tour='create-project']",
         on: "bottom",
       },
+      scrollTo: false, // Buttons are likely visible already
       buttons: [
         {
           text: "Back",
