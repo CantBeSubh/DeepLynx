@@ -32,6 +32,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("user_id");
 
+                    b.Property<long>("2")
+                        .HasColumnType("bigint");
+
                     b.HasKey("GroupId", "UserId")
                         .HasName("group_users_pkey");
 
@@ -1224,52 +1227,6 @@ namespace deeplynx.datalayer.Migrations
                     b.ToTable("roles", "deeplynx");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.SavedSearch", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Id"));
-
-                    b.Property<int?>("FavoriteOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("favorite_order");
-
-                    b.Property<bool>("IsFavorite")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false)
-                        .HasColumnName("is_favorite");
-
-                    b.Property<DateTime>("LastUpdatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("last_updated_at")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Search")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("search");
-
-                    b.Property<long>("UserId")
-                        .HasColumnType("bigint");
-
-                    b.HasKey("Id")
-                        .HasName("saved_searches_pkey");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("saved_searches", "deeplynx");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.SensitivityLabel", b =>
                 {
                     b.Property<long>("Id")
@@ -1899,18 +1856,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("deeplynx.datalayer.Models.SavedSearch", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.User", "User")
-                        .WithMany("SavedSearches")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("saved_searches_user_id_fkey");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("deeplynx.datalayer.Models.SensitivityLabel", b =>
                 {
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
@@ -2093,8 +2038,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("OrganizationUsers");
 
                     b.Navigation("ProjectMembers");
-
-                    b.Navigation("SavedSearches");
 
                     b.Navigation("Subscriptions");
                 });
