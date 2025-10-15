@@ -24,7 +24,7 @@ export type RecentRecord = {
 
 interface Props {
   selectedProjects: string[];
-  border: boolean;
+  border?: boolean;
 }
 
 const RECORDS_PER_PAGE = 5;
