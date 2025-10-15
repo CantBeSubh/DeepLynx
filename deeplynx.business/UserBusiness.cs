@@ -52,7 +52,6 @@ public class UserBusiness : IUserBusiness
         return users.Select(p => new UserResponseDto()
         {
             Id = p.Id,
-            SsoId = p.SsoId,
             Name = p.Name,
             Username = p.Username,
             Email = p.Email,
@@ -82,7 +81,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -111,7 +109,6 @@ public class UserBusiness : IUserBusiness
             Name = dto.Name,
             Email = dto.Email,
             Username = dto.Username,
-            SsoId = dto.SsoId,
             IsActive = dto.IsActive ?? false,
             IsArchived = dto.IsArchived ?? false,
         };
@@ -122,7 +119,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -149,7 +145,6 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.Name = dto.Name ?? user.Name;
-        user.SsoId = dto.SsoId ?? user.SsoId;
         user.Username = dto.Username ?? user.Username;
         user.IsArchived = dto.IsArchived ?? user.IsArchived;
         user.IsActive = dto.IsActive ?? user.IsActive;
@@ -160,7 +155,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,

@@ -61,7 +61,6 @@ namespace deeplynx.tests
                 Name = "New User",
                 Email = "newuser@test.com",
                 Username = "newuser",
-                SsoId = "sso123",
                 IsActive = true
             };
             
@@ -74,7 +73,6 @@ namespace deeplynx.tests
             Assert.Equal("New User", result.Name);
             Assert.Equal("newuser@test.com", result.Email);
             Assert.Equal("newuser", result.Username);
-            Assert.Equal("sso123", result.SsoId);
             Assert.True(result.IsActive);
             Assert.False(result.IsArchived);
             
@@ -276,7 +274,6 @@ namespace deeplynx.tests
             {
                 Name = "Updated User Name",
                 Username = "updatedusername",
-                SsoId = "updatedsso",
                 IsActive = true
             };
             
@@ -288,7 +285,6 @@ namespace deeplynx.tests
             Assert.Equal(uid1, result.Id);
             Assert.Equal("Updated User Name", result.Name);
             Assert.Equal("updatedusername", result.Username);
-            Assert.Equal("updatedsso", result.SsoId);
             Assert.True(result.IsActive);
             
             // Verify it was actually saved to DB
@@ -645,7 +641,6 @@ namespace deeplynx.tests
                 Name = "User 1", 
                 Email = "user1@test.com",
                 Username = "user1",
-                SsoId = "sso1",
                 IsActive = true
             };
             var user2 = new User 
