@@ -31,7 +31,9 @@ public class UserBusiness : IUserBusiness
     /// <returns>A list of users, optionally filtered by project or organization</returns>
     public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId, long? organizationId)
     {
-        var users = _context.Users.Where(p => !p.IsArchived);
+        var users = _context.Users
+            .Where(p => !p.IsArchived)
+            .Where(p => p.Email != "developer@localhost");
 
         if (projectId != null)
         {
@@ -76,6 +78,41 @@ public class UserBusiness : IUserBusiness
         if (user == null)
         {
             throw new KeyNotFoundException($"User with id {userId} not found");
+        }
+
+        return new UserResponseDto()
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Username = user.Username,
+            Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive,
+        };
+    }
+
+    /// <summary>
+    /// Retrieves the local dev user
+    /// </summary>
+    /// <returns>Information for the local dev user</returns>
+    /// <exception cref="InvalidOperationException">Returned if DISABLE_BACKEND_AUTHENTICATION != true</exception>
+    /// <exception cref="KeyNotFoundException">Returned if user not found</exception>
+    public async Task<UserResponseDto> GetLocalDevUser()
+    {
+        var auth_disabled = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
+        if (auth_disabled != "true")
+        {
+            throw new InvalidOperationException("Local Dev User cannot be used unless backend authentication is disabled");
+        }
+
+        var user = await _context.Users
+            .Where(p => p.Email == "developer@localhost")
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"Local Dev User not found");
         }
 
         return new UserResponseDto()

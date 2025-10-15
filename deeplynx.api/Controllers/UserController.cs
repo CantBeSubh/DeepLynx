@@ -49,6 +49,7 @@ namespace deeplynx.api.Controllers
             }
 
         }
+
         /// <summary>
         /// Get a user
         /// </summary>
@@ -65,6 +66,27 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+
+        }
+
+        /// <summary>
+        /// Get the local development user
+        /// </summary>
+        /// <returns>User response DTO with the local dev user info</returns>
+        [HttpGet("GetLocalDevUser", Name = "api_get_local_dev_user")]
+        public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
+        {
+            try
+            {
+                var user = await _userBusiness.GetLocalDevUser();
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while fetching local dev user: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
