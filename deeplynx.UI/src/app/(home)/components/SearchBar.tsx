@@ -173,19 +173,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
         </div> */}
 
       {/* Results Message */}
-      {shouldShowResults && (
-        <div className="mt-4 ml-1">
-          {activeFilters.length > 0 && resultCount === 0 ? (
-            <p>{t.translations.NO_RESULTS_FOUND}</p>
-          ) : resultCount !== undefined && resultCount >= 0 ? (
-            <div className="border-b border-base-200">
-              <h2>
-                {t.translations.FOUND} {resultCount} {t.translations.MATCHES}
-              </h2>
-            </div>
-          ) : null}
-        </div>
-      )}
     </div>
   );
 };
