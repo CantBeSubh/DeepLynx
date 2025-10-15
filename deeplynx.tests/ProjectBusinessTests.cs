@@ -35,18 +35,17 @@ namespace deeplynx.tests
         private long pid2;
         private long pid3;
         private long pid4;
+        private long pid5;
         private long cid; // class ID
         private long did; // datasource ID
         private long uid; // user ID
         private long uid2;
         private long uid3;
         private long rid; // role ID
-        private long gid; // group ID
         private long rid2;
+        private long gid; // group ID
         private long gid2;
         private long oid; // org ID
-
-   
 
         public ProjectBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -308,7 +307,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(listForSysAdmin);
             Assert.NotEmpty(listForSysAdmin);
-            Assert.Equal(3, listForSysAdmin.Count); // Should see all non-archived projects
+            Assert.Equal(4, listForSysAdmin.Count); // Should see all non-archived projects
             Assert.Contains(listForSysAdmin, p => p.Name == "Test Project");
             Assert.Contains(listForSysAdmin, p => p.Name == "Other Project");
             Assert.Contains(listForSysAdmin, p => p.Name == "Lone Project");
@@ -328,7 +327,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(listWithArchived);
             Assert.NotEmpty(listWithArchived);
-            Assert.Equal(4, listWithArchived.Count); // Should see all projects including archived
+            Assert.Equal(5, listWithArchived.Count); // Should see all projects including archived
             Assert.Contains(listWithArchived, p => p.Name == "Test Project");
             Assert.Contains(listWithArchived, p => p.Name == "Other Project");
             Assert.Contains(listWithArchived, p => p.Name == "Lone Project");
@@ -382,7 +381,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(projectsForOrganization);
             Assert.NotEmpty(projectsForOrganization);
-            Assert.Equal(2, projectsForOrganization.Count);
+            Assert.Equal(3, projectsForOrganization.Count);
             Assert.All(projectsForOrganization, p => Assert.Equal(oid, p.OrganizationId));
         }
         
@@ -782,30 +781,10 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProjectMembers_WithOnlyUsers_ReturnsUserMembers()
         {
-            // Arrange - Create project with only user members
-            var projectWithUsers = new Project
-            {
-                Name = "Users Only Project",
-                Description = "Test project with only users",
-                Abbreviation = "USR1",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Projects.Add(projectWithUsers);
-            await Context.SaveChangesAsync();
-            
-            var userProjectMember = new ProjectMember
-            {
-                ProjectId = projectWithUsers.Id,
-                UserId = uid,
-                RoleId = rid
-            };
-            Context.ProjectMembers.Add(userProjectMember);
-            await Context.SaveChangesAsync();
-            
             // Act
-            var result = await _projectBusiness.GetProjectMembers(projectWithUsers.Id);
+            var result = await _projectBusiness.GetProjectMembers(pid); // proj with only users
             var members = result.ToList();
-                
+            
             // Assert
             Assert.NotEmpty(members);
             Assert.Single(members);
@@ -815,28 +794,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProjectMembers_WithOnlyGroups_ReturnsGroupMembers()
         {
-            // Arrange - Create project with only group members
-            var projectWithGroups = new Project
-            {
-                Name = "Groups Only Project",
-                Description = "Test project with only groups",
-                Abbreviation = "GRP1",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Projects.Add(projectWithGroups);
-            await Context.SaveChangesAsync();
-            
-            var groupProjectMember = new ProjectMember
-            {
-                ProjectId = projectWithGroups.Id,
-                GroupId = gid,
-                RoleId = rid
-            };
-            Context.ProjectMembers.Add(groupProjectMember);
-            await Context.SaveChangesAsync();
-            
             // Act
-            var result = await _projectBusiness.GetProjectMembers(projectWithGroups.Id);
+            var result = await _projectBusiness.GetProjectMembers(pid5); // proj with only groups
             var members = result.ToList();
             
             // Assert
@@ -849,34 +808,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetProjectMembers_WithUsersAndGroups_ReturnsBothTypes()
         {
-            // Arrange - Create project with both users and groups
-            var projectWithBoth = new Project
-            {
-                Name = "Mixed Project",
-                Description = "Test project with users and groups",
-                Abbreviation = "MIX1",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-            };
-            Context.Projects.Add(projectWithBoth);
-            await Context.SaveChangesAsync();
-            
-            var userProjectMember = new ProjectMember
-            {
-                ProjectId = projectWithBoth.Id,
-                UserId = uid,
-                RoleId = rid
-            };
-            var groupProjectMember = new ProjectMember
-            {
-                ProjectId = projectWithBoth.Id,
-                GroupId = gid,
-                RoleId = rid
-            };
-            Context.ProjectMembers.AddRange(userProjectMember, groupProjectMember);
-            await Context.SaveChangesAsync();
-            
             // Act
-            var result = await _projectBusiness.GetProjectMembers(projectWithBoth.Id);
+            var result = await _projectBusiness.GetProjectMembers(pid2);
             var members = result.ToList();
             
             // Assert
@@ -1309,12 +1242,22 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 IsArchived = true
             };
-            Context.Projects.AddRange(testProj, testProj2, loneProj, arcProj);
+            var groupProj = new Project
+            {
+                Name = "Other Project 2",
+                Description = "Another secondary project for unit tests",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                IsArchived = false,
+                OrganizationId = oid
+            };
+            Context.Projects.AddRange(testProj, testProj2, loneProj, arcProj, groupProj);
             await Context.SaveChangesAsync();
             pid = testProj.Id;
             pid2 = testProj2.Id;
             pid3 = loneProj.Id;
             pid4 = arcProj.Id;
+            pid5 = groupProj.Id;
             
             // Add classes
             var testClass = new Class
@@ -1409,11 +1352,13 @@ namespace deeplynx.tests
                 {
                     ProjectId = pid,
                     UserId = uid,
+                    RoleId = rid
                 },
                 new ProjectMember
                 {
                     ProjectId = pid2,
                     UserId = uid,
+                    RoleId = rid
                 },
                 new ProjectMember
                 {
@@ -1424,7 +1369,19 @@ namespace deeplynx.tests
                 {
                     ProjectId = pid4,
                     UserId = uid,
-                }
+                },
+                new ProjectMember()
+                {
+                    ProjectId = pid5,
+                    GroupId = gid,
+                    RoleId = rid
+                },
+                new ProjectMember
+                {
+                    ProjectId = pid2,
+                    GroupId = gid,
+                    RoleId = rid
+                },
             };
             Context.ProjectMembers.AddRange(projectMembers);
             await Context.SaveChangesAsync();
