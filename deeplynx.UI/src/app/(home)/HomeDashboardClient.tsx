@@ -201,6 +201,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     const firstRowId = filteredProjects[0]?.id ?? 0; // if no id, we’ll match the index fallback (0)
     const toggleSel = `[data-tour="project-row-${firstRowId}-toggle"]`;
     const expandedSel = `[data-tour="project-row-${firstRowId}-expanded"]`;
+    const closeSel = `[data-tour="project-row-${firstRowId}-close"]`;
 
     // 1) Point at the CLOSED arrow
     tour.addStep({
@@ -223,32 +224,35 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     });
 
     // 2) Open the row before we show the next step, then point at the EXPANDED panel
+    const closeExpandedRow = () => {
+      const closeBtn = document.querySelector<HTMLElement>(closeSel);
+      if (closeBtn && document.querySelector(expandedSel)) {
+        closeBtn.click();
+      }
+    };
+
     tour.addStep({
       id: "project-row-expanded",
       title: "Project details",
       text: "Here’s the expanded panel with quick actions and recent info.",
-      // We attach AFTER we ensure it’s open:
       attachTo: { element: expandedSel, on: "top" },
       scrollTo: { behavior: "smooth", block: "center" },
-      // Click the toggle and wait until the expanded panel is present
       beforeShowPromise: () =>
         new Promise<void>(async (resolve) => {
           try {
-            // If already expanded, skip clicking
             if (!document.querySelector(expandedSel)) {
               const btn = document.querySelector<HTMLElement>(toggleSel);
-              // If the button isn't found (e.g., pagination/filter), just skip forward gracefully
-              if (!btn) return resolve();
-              btn.click();
-              await waitForEl(expandedSel, 2500);
+              if (btn) {
+                btn.click();
+                await waitForEl(expandedSel, 2500);
+              }
             }
-          } catch {
-            // If waiting times out, continue so the tour doesn't stall
-          } finally {
-            // Give the panel a tick to render/animate
-            requestAnimationFrame(() => resolve());
-          }
+          } catch {}
+          requestAnimationFrame(() => resolve());
         }),
+      when: {
+        hide: closeExpandedRow, // <-- collapse on step exit via X button
+      },
       buttons: [
         {
           text: "Back",
@@ -257,6 +261,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         },
         { text: "Next", action: () => tour.next() },
       ],
+    });
+
+    // Also collapse if the user cancels or completes the tour
+    tour.on("cancel", closeExpandedRow);
+    tour.on("complete", () => {
+      closeExpandedRow();
+      localStorage.setItem("dashboard-tour-completed", "true");
     });
 
     tour.addStep({

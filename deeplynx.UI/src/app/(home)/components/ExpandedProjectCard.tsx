@@ -84,6 +84,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
           onClick={onClose}
           aria-label="Close details"
           className="p-1 rounded-lg hover:bg-base-300/30 transition-colors"
+          data-tour={`project-row-${project.id ?? 0}-close`}
         >
           <XMarkIcon className="size-6 text-base-content/60 hover:text-base-content" />
         </button>
