@@ -126,69 +126,6 @@ namespace deeplynx.tests
         
         #endregion
         
-        #region RefreshUser Tests
-        
-        [Fact]
-        public async Task RefreshUser_CreatesUser_IfNotExists()
-        {
-            // Arrange
-            var dto = new CreateUserRequestDto
-            {
-                Name = "Refresh New User",
-                Email = "refreshnew@test.com",
-                Username = "refreshnew",
-                SsoId = "refresh123",
-                IsActive = true
-            };
-            
-            // Act
-            var result = await _userBusiness.RefreshUser(dto);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal("Refresh New User", result.Name);
-            Assert.Equal("refreshnew@test.com", result.Email);
-            
-            // Verify it was saved to DB
-            var savedUser = await Context.Users
-                .FirstOrDefaultAsync(u => u.Email == "refreshnew@test.com");
-            Assert.NotNull(savedUser);
-        }
-        
-        [Fact]
-        public async Task RefreshUser_UpdatesUser_IfExists()
-        {
-            // Arrange
-            var dto = new CreateUserRequestDto
-            {
-                Name = "Updated Name",
-                Email = "user1@test.com", // Existing user's email
-                Username = "updatedusername",
-                SsoId = "newsso123",
-                IsActive = true
-            };
-            
-            // Act
-            var result = await _userBusiness.RefreshUser(dto);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(uid1, result.Id); // Same ID as existing user
-            Assert.Equal("Updated Name", result.Name);
-            Assert.Equal("updatedusername", result.Username);
-            Assert.Equal("newsso123", result.SsoId);
-            Assert.True(result.IsActive);
-            
-            // Verify it was updated in DB
-            var updatedUser = await Context.Users.FindAsync(uid1);
-            Assert.NotNull(updatedUser);
-            Assert.Equal("Updated Name", updatedUser.Name);
-            Assert.Equal("updatedusername", updatedUser.Username);
-        }
-        
-        #endregion
-        
         #region GetAllUsers Tests
 
         [Fact]

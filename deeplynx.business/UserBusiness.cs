@@ -133,38 +133,6 @@ public class UserBusiness : IUserBusiness
     }
 
     /// <summary>
-    /// Insert user if email not exists, else update user
-    /// </summary>
-    /// <param name="dto">The user information supplied</param>
-    /// <returns>The user which was just updated</returns>
-    public async Task<UserResponseDto> RefreshUser(CreateUserRequestDto dto)
-    {
-        var existingUser = await _context.Users
-            .Where(u => u.Email == dto.Email)
-            .FirstOrDefaultAsync();
-    
-        if (existingUser != null)
-        {
-            // If user exists, update using UpdateUser logic
-            var updateDto = new UpdateUserRequestDto
-            {
-                Name = dto.Name,
-                SsoId = dto.SsoId,
-                Username = dto.Username,
-                IsArchived = dto.IsArchived,
-                IsActive = dto.IsActive
-            };
-        
-            return await UpdateUser(existingUser.Id, updateDto);
-        }
-        else
-        {
-            // If user does not exist, create
-            return await CreateUser(dto);
-        }
-    }
-
-    /// <summary>
     /// Updates an existing user by ID
     /// </summary>
     /// <param name="userId">The ID of the user to update</param>
