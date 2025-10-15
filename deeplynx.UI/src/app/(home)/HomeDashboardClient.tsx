@@ -183,6 +183,82 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       ],
     });
 
+    // Helper: wait until an element exists (or timeout)
+    const waitForEl = (selector: string, timeout = 2000) =>
+      new Promise<HTMLElement>((resolve, reject) => {
+        const start = performance.now();
+        const check = () => {
+          const el = document.querySelector<HTMLElement>(selector);
+          if (el) return resolve(el);
+          if (performance.now() - start > timeout)
+            return reject(new Error(`Timeout waiting for ${selector}`));
+          requestAnimationFrame(check);
+        };
+        check();
+      });
+
+    // Pick the first visible row's id (matches your ExpandableTable data-tour)
+    const firstRowId = filteredProjects[0]?.id ?? 0; // if no id, we’ll match the index fallback (0)
+    const toggleSel = `[data-tour="project-row-${firstRowId}-toggle"]`;
+    const expandedSel = `[data-tour="project-row-${firstRowId}-expanded"]`;
+
+    // 1) Point at the CLOSED arrow
+    tour.addStep({
+      id: "project-row-toggle",
+      title: "Expand a project",
+      text: "Click this arrow to see more details about a project.",
+      attachTo: { element: toggleSel, on: "left" },
+      scrollTo: { behavior: "smooth", block: "center" },
+      buttons: [
+        {
+          text: "Back",
+          classes: "shepherd-button-secondary",
+          action: () => tour.back(),
+        },
+        {
+          text: "Next",
+          action: () => tour.next(),
+        },
+      ],
+    });
+
+    // 2) Open the row before we show the next step, then point at the EXPANDED panel
+    tour.addStep({
+      id: "project-row-expanded",
+      title: "Project details",
+      text: "Here’s the expanded panel with quick actions and recent info.",
+      // We attach AFTER we ensure it’s open:
+      attachTo: { element: expandedSel, on: "top" },
+      scrollTo: { behavior: "smooth", block: "center" },
+      // Click the toggle and wait until the expanded panel is present
+      beforeShowPromise: () =>
+        new Promise<void>(async (resolve) => {
+          try {
+            // If already expanded, skip clicking
+            if (!document.querySelector(expandedSel)) {
+              const btn = document.querySelector<HTMLElement>(toggleSel);
+              // If the button isn't found (e.g., pagination/filter), just skip forward gracefully
+              if (!btn) return resolve();
+              btn.click();
+              await waitForEl(expandedSel, 2500);
+            }
+          } catch {
+            // If waiting times out, continue so the tour doesn't stall
+          } finally {
+            // Give the panel a tick to render/animate
+            requestAnimationFrame(() => resolve());
+          }
+        }),
+      buttons: [
+        {
+          text: "Back",
+          classes: "shepherd-button-secondary",
+          action: () => tour.back(),
+        },
+        { text: "Next", action: () => tour.next() },
+      ],
+    });
+
     tour.addStep({
       id: "add-record",
       title: "Add Records",
@@ -329,6 +405,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <ExpandedProjectCard project={project} onClose={onClose} />
               )}
               onExplore={onExplore}
+              getRowId={(p) => p.id}
             />
           </div>
         </div>
