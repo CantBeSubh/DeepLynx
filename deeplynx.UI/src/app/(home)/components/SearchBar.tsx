@@ -171,8 +171,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
             ))}
           </ul>
         </div> */}
-
-      {/* Results Message */}
     </div>
   );
 };
