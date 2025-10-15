@@ -1,3 +1,4 @@
+// src/app/(home)/project/[id]/ProjectDetailClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -72,7 +73,7 @@ export default function ProjectDetailClient({
   const handleSearchEnter = (searchTerm: string) => {
     const projectIdToUse = selectedProjectId || projectId || "";
     const query = new URLSearchParams({
-      fromProject: projectIdToUse,
+      fromProject: selectedProjectId ? selectedProjectId.toString() : "",
       search: searchTerm,
     }).toString();
 
@@ -136,6 +137,7 @@ export default function ProjectDetailClient({
 
               <RecentRecordsCard
                 selectedProjects={[selectedProjectId || projectId || ""]}
+                border={false}
               />
             </div>
           </div>
