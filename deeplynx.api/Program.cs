@@ -1,7 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Serialization;
 using deeplynx.business;
 using deeplynx.datalayer.MigrationRunner;
@@ -13,8 +9,6 @@ using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -365,28 +359,34 @@ try
     await MigrationRunner.ApplyMigrations(connectionString);
     
 /* ╔════════════════════════════╗
-   ║     App Configurations     ║
+   ║      App Configurations    ║
    ╚════════════════════════════╝ */
     var app = builder.Build();
     
 /* ╔════════════════════════════╗
-   ║       App Base Path        ║
+   ║      App Base Path         ║
    ╚════════════════════════════╝ */
-    //app.UsePathBase("/api");
-
-    app.UseOpenApi();
-
-    var customcss = File.ReadAllText("moon.css");
-
-    app.UseStaticFiles();
-
+    PathString basePath = "/api";
+    app.UsePathBase(basePath);
     
+    app.UseStaticFiles();
+    app.UseRouting();
+    app.UseCors("AllowAll"); 
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.UseMiddleware<UserContextMiddleware>();
+    app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
+    app.MapControllers();
+
  /* ╔════════════════════════════╗
     ║   Scalar Configuration     ║
     ╚════════════════════════════╝ */
     // Always using scalar:
     //if (app.Environment.IsDevelopment()) { ...
+    app.UseOpenApi();
+    app.MapOpenApi();
     
+    var customcss = File.ReadAllText("moon.css");
     var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK"); 
     // Conditional image hosting
     var imageSrc = "/images/lynx-white.png";
@@ -411,10 +411,10 @@ try
         </div>
       </header>
     </div>";
-    
-    app.MapOpenApi();
-    app.MapScalarApiReference(options => {
+
+    app.MapScalarApiReference( options => {
         options.WithDarkMode(true)
+            .WithBaseServerUrl(basePath)
             .WithTheme(ScalarTheme.Kepler)
             .WithTitle("DeepLynx Nexus API")
             .WithCustomCss(customcss)
@@ -425,14 +425,7 @@ try
             options.Servers = [new ScalarServer(hostedLink)];
         }
     });
-    
-    app.UseRouting();
-    app.UseCors("AllowAll"); 
-    app.UseAuthentication();
-    app.UseAuthorization();
-    app.UseMiddleware<UserContextMiddleware>();
-    app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
-    app.MapControllers();
+
     app.Run();
 }
 // ignore entity framework aborting in design. See https://github.com/dotnet/efcore/issues/29923
