@@ -30,6 +30,13 @@ export type DataSourceResponseDto = {
   archivedat: string | null;  // RFC 3339 or null
 };
 
+export type RelatedRecordsResponseDto = {
+    relatedRecordName: string;
+    relatedRecordId: number;
+    relatedRecordProjectId: number;
+    relationshipName: string | null;
+}
+
 export type GroupResponseDto = {
   id: number|string;
   name: string;
