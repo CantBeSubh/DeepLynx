@@ -5,7 +5,7 @@ using deeplynx.models;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("organizations")]
+    [Route("api/organizations")]
     public class OrganizationController : ControllerBase
     {
         private readonly IOrganizationBusiness _organizationBusiness;

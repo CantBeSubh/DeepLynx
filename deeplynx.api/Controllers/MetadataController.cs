@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("projects/{projectId}/datasources/{dataSourceId}/metadata")]
+[Route("api/projects/{projectId}/datasources/{dataSourceId}/metadata")]
 [ApiController]
 [Authorize]
 public class MetadataController : ControllerBase
