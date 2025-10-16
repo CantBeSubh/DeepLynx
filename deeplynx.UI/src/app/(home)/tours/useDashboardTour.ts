@@ -2,11 +2,11 @@
 import { useEffect, useRef } from "react";
 import Shepherd from "shepherd.js";
 import type { Tour, Step, StepOptions, PopperPlacement } from "shepherd.js";
-import { ProjectsList } from "../types/types";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface UseDashboardTourProps {
-  filteredProjects: ProjectsList[];
-  initialProjects: ProjectsList[];
+  filteredProjects: ProjectResponseDto[];
+  initialProjects: ProjectResponseDto[];
 }
 
 export function useDashboardTour({ 
@@ -266,7 +266,7 @@ export function useDashboardTour({
       } catch {}
       document.body.classList.remove("dlx-shepherd");
     };
-  }, [initialProjects.length]);
+  }, [initialProjects.length, filteredProjects]);
 
   const startTour = () => {
     if (tourRef.current) {
