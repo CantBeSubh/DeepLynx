@@ -1,10 +1,6 @@
 import React from "react";
-import { FileViewerTableRow } from "../../../../types/types";
 import RoleSettingsClient from "./RoleSettingsClient";
-import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import { notFound } from "next/navigation";
-
-type ProjectDTO = { id: number | string; name: string };
 
 export default async function Page({
   params,

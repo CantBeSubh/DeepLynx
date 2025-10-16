@@ -1258,13 +1258,13 @@ export const projectMembers = [
 
 export const defaultRoles = [
   {
-    id: 1,
-    role: "Admin",
+    roleId: 1,
+    name: "Admin",
     description: "Administrator with full access to all project resources and settings."
   },
   {
-    id: 2,
-    role: "User",
+    roleId: 2,
+    name: "User",
     description: "Standard user with limited access to project resources."
   }
 ];
@@ -1272,136 +1272,214 @@ export const defaultRoles = [
 export const projectPermissions = [
   {
     id: 1,
-    role: "Write Project",
+    name: "Write Project",
     description: "Create and modify project details.",
+    action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 2,
-    role: "Read Project",
+    name: "Read Project",
     description: "View project details.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 3,
-    role: "Write Object Storage",
+    name: "Write Object Storage",
     description: "Create, modify, and delete objects in storage.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 4,
-    role: "Read Object Storage",
+    name: "Read Object Storage",
     description: "View objects stored in storage.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 5,
-    role: "Write Data Source",
+    name: "Write Data Source",
     description: "Create and modify data source configurations.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 6,
-    role: "Read Data Source",
+    name: "Read Data Source",
     description: "View data source information.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 7,
-    role: "Write Record",
+    name: "Write Record",
     description: "Add and modify records in the database.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 8,
-    role: "Read Record",
+    name: "Read Record",
     description: "View records in the database.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 9,
-    role: "Write Edge",
+    name: "Write Edge",
     description: "Create and modify edges in the graph database.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 10,
-    role: "Read Edge",
+    name: "Read Edge",
     description: "View edges in the graph database.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 11,
-    role: "Write File",
+    name: "Write File",
     description: "Upload and modify files.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 12,
-    role: "Read File",
+    name: "Read File",
     description: "View files.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 13,
-    role: "Write Tag",
+    name: "Write Tag",
     description: "Add and modify tags for categorizing resources.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 14,
-    role: "Read Tag",
+    name: "Read Tag",
     description: "View tags associated with resources.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 15,
-    role: "Write Class",
+    name: "Write Class",
     description: "Create and modify class definitions.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 16,
-    role: "Read Class",
+    name: "Read Class",
     description: "View class definitions.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 17,
-    role: "Write Relationship",
+    name: "Write Relationship",
     description: "Create and modify relationships between entities.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 18,
-    role: "Read Relationship",
+    name: "Read Relationship",
     description: "View relationships between entities.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
 ];
 
 export const userPermissions = [
   {
     id: 1,
-    role: "Write User",
+    name: "Write User",
     description: "Create and modify user accounts.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 2,
-    role: "Read User",
+    name: "Read User",
     description: "View user account details.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 3,
-    role: "Write Group",
+    name: "Write Group",
     description: "Create and modify user groups.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 4,
-    role: "Read Group",
+    name: "Read Group",
     description: "View user group details.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 5,
-    role: "Write Organization",
+    name: "Write Organization",
     description: "Create and modify organization information.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 6,
-    role: "Read Organization",
+    name: "Read Organization",
     description: "View organization details.",
+        action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 7,
-    role: "Write Role",
+    name: "Write Role",
     description: "Create and modify role definitions.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
   {
     id: 8,
-    role: "Read Role",
+    name: "Read Role",
     description: "View role definitions.",
+      action:"write",
+    isHardcoded:true,
+    isArchived:false
   },
 ];
 

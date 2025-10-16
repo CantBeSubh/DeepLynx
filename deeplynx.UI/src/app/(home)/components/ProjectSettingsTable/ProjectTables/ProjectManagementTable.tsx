@@ -1,15 +1,15 @@
 import React, { FC, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, ProjectPermissionsTable } from '../../../types/types';
-
+import { Column } from '../../../types/types';
+import { PermissionResponseDto } from '@/app/(home)/types/responseDTOs';
 interface PermissionTableProps {
-  data: ProjectPermissionsTable[];
+  data: PermissionResponseDto[];
 }
 
 const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData }) => {
     const { t } = useLanguage();
-    const [data, setData] = useState<ProjectPermissionsTable[]>(initialData);
+    const [data, setData] = useState<PermissionResponseDto[]>(initialData);
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
     const [selectAll, setSelectAll] = useState<boolean>(false);
 
@@ -35,10 +35,10 @@ const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData })
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-    const columns: Column<ProjectPermissionsTable>[] = [
+    const columns: Column<PermissionResponseDto>[] = [
         {
           header: "Project Management",
-          data: "role",
+          data: "action",
         },
         {
           header: "Description",
@@ -54,7 +54,7 @@ const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData })
               onChange={handleSelectAll}
             />
           ),
-          cell: (row: ProjectPermissionsTable, index: number) => (
+          cell: (row: PermissionResponseDto, index: number) => (
                 <input
                 type="checkbox"
                 className="checkbox"

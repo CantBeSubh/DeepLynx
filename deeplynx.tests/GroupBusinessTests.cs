@@ -1,9 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers.Hubs;
+using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace deeplynx.tests
 {
@@ -11,6 +15,9 @@ namespace deeplynx.tests
     public class GroupBusinessTests : IntegrationTestBase
     {
         private EventBusiness _eventBusiness;
+        private INotificationBusiness _notificationBusiness = null!;
+        private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+        private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private GroupBusiness _groupBusiness;
 
         public long oid;    // organization ID
@@ -24,7 +31,10 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+            _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _groupBusiness = new GroupBusiness(Context, _eventBusiness);
         }
         
@@ -134,6 +144,16 @@ namespace deeplynx.tests
             var createdGroup = await Context.Groups.FindAsync(result.Id);
             Assert.NotNull(createdGroup);
             Assert.Equal(dto.Name, createdGroup.Name);
+            
+            // Ensure that the Group create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -154,14 +174,14 @@ namespace deeplynx.tests
             Assert.Equal("Event Test Group", result.Name);
             
             // Ensure that the Group create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "create",
-                EntityType = "group",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -178,8 +198,8 @@ namespace deeplynx.tests
                 () => _groupBusiness.CreateGroup(oid, dto));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -197,8 +217,8 @@ namespace deeplynx.tests
                 () => _groupBusiness.CreateGroup(oid, dto));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -218,8 +238,8 @@ namespace deeplynx.tests
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -250,6 +270,16 @@ namespace deeplynx.tests
             Assert.NotNull(savedGroup);
             Assert.Equal("Updated Group", savedGroup.Name);
             Assert.Equal("Updated description", savedGroup.Description);
+            
+            // Ensure that the Group update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -269,14 +299,14 @@ namespace deeplynx.tests
             Assert.Equal("Event Updated Group", result.Name);
             
             // Ensure that the Group update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "group",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -295,8 +325,8 @@ namespace deeplynx.tests
             Assert.Contains("Group with id 99999 not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -315,8 +345,8 @@ namespace deeplynx.tests
             Assert.Contains($"Group with id {gid2} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -338,14 +368,14 @@ namespace deeplynx.tests
             Assert.True(savedGroup.IsArchived);
             
             // Ensure that the Group archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "archive",
-                EntityType = "group",
-                EntityId = gid,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(gid, actualEvent.EntityId);
         }
         
         [Fact]
@@ -358,8 +388,8 @@ namespace deeplynx.tests
             Assert.Contains($"Group with id {gid2} not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -372,8 +402,8 @@ namespace deeplynx.tests
             Assert.Contains("Group with id 99999 not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -395,14 +425,14 @@ namespace deeplynx.tests
             Assert.False(savedGroup.IsArchived);
             
             // Ensure that the Group unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "unarchive",
-                EntityType = "group",
-                EntityId = gid2,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("unarchive", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(gid2, actualEvent.EntityId);
         }
         
         [Fact]
@@ -415,8 +445,8 @@ namespace deeplynx.tests
             Assert.Contains($"Group with id {gid} not found or is not archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -429,8 +459,8 @@ namespace deeplynx.tests
             Assert.Contains("Group with id 99999 not found or is not archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -451,14 +481,14 @@ namespace deeplynx.tests
             Assert.Null(deletedGroup);
             
             // Ensure that the Group delete event was logged
-            var eventList = Context.Events.Where(e => e.Operation == "delete").ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "delete",
-                EntityType = "group",
-                EntityId = gid,
-            });
+            var eventList = await Context.Events.Where(e => e.Operation == "delete").ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("delete", actualEvent.Operation);
+            Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(gid, actualEvent.EntityId);
         }
         
         [Fact]
@@ -471,8 +501,8 @@ namespace deeplynx.tests
             Assert.Contains("Group with id 99999 not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -483,6 +513,10 @@ namespace deeplynx.tests
                 () => _groupBusiness.DeleteGroup(gid2)); // archived
             
             Assert.Contains($"Group with id {gid2} not found", exception.Message);
+            
+            // Ensure that no event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -492,13 +526,16 @@ namespace deeplynx.tests
         [Fact]
         public async Task AddUser_Succeeds_IfGroupAndUserExists()
         {
+            // Arrange
             var newGroup = new Group { Name = "Test Group", OrganizationId = oid };
             Context.Groups.Add(newGroup);
             await Context.SaveChangesAsync();
             var newGroupId = newGroup.Id;
             
+            // Act
             var added = await _groupBusiness.AddUserToGroup(newGroupId, uid);
             
+            // Assert
             Assert.True(added);
             var group = await Context.Groups.FirstOrDefaultAsync(g => g.Id == newGroupId);
             Assert.NotNull(group);

@@ -52,7 +52,6 @@ public class UserBusiness : IUserBusiness
         return users.Select(p => new UserResponseDto()
         {
             Id = p.Id,
-            SsoId = p.SsoId,
             Name = p.Name,
             Username = p.Username,
             Email = p.Email,
@@ -82,7 +81,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -111,7 +109,6 @@ public class UserBusiness : IUserBusiness
             Name = dto.Name,
             Email = dto.Email,
             Username = dto.Username,
-            SsoId = dto.SsoId,
             IsActive = dto.IsActive ?? false,
             IsArchived = dto.IsArchived ?? false,
         };
@@ -122,7 +119,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -130,38 +126,6 @@ public class UserBusiness : IUserBusiness
             IsArchived = user.IsArchived,
             IsActive = user.IsActive,
         };
-    }
-
-    /// <summary>
-    /// Insert user if email not exists, else update user
-    /// </summary>
-    /// <param name="dto">The user information supplied</param>
-    /// <returns>The user which was just updated</returns>
-    public async Task<UserResponseDto> RefreshUser(CreateUserRequestDto dto)
-    {
-        var existingUser = await _context.Users
-            .Where(u => u.Email == dto.Email)
-            .FirstOrDefaultAsync();
-    
-        if (existingUser != null)
-        {
-            // If user exists, update using UpdateUser logic
-            var updateDto = new UpdateUserRequestDto
-            {
-                Name = dto.Name,
-                SsoId = dto.SsoId,
-                Username = dto.Username,
-                IsArchived = dto.IsArchived,
-                IsActive = dto.IsActive
-            };
-        
-            return await UpdateUser(existingUser.Id, updateDto);
-        }
-        else
-        {
-            // If user does not exist, create
-            return await CreateUser(dto);
-        }
     }
 
     /// <summary>
@@ -181,7 +145,6 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.Name = dto.Name ?? user.Name;
-        user.SsoId = dto.SsoId ?? user.SsoId;
         user.Username = dto.Username ?? user.Username;
         user.IsArchived = dto.IsArchived ?? user.IsArchived;
         user.IsActive = dto.IsActive ?? user.IsActive;
@@ -192,7 +155,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,

@@ -5,24 +5,30 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
-    
+    private readonly INotificationBusiness _notificationBusiness;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
-    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
+    public EventBusiness(
+        DeeplynxContext context, 
+        ICacheBusiness cacheBusiness,
+        INotificationBusiness notificationBusiness
+        )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
+        _notificationBusiness = notificationBusiness;
     }
-
     /// <summary>
     /// Retrieves all project events that the user is subscribed to.
     /// </summary>
@@ -30,7 +36,7 @@ public class EventBusiness : IEventBusiness
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
     public async Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId)
     {
-        
+
         var subscriptions = await _context.Set<Subscription>()
             .Where(s => s.UserId == userId && s.ProjectId == projectId)
             .ToListAsync();
@@ -72,7 +78,7 @@ public class EventBusiness : IEventBusiness
                 LastUpdatedAt = e.LastUpdatedAt,
             }).ToList();
     }
-    
+
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
@@ -85,7 +91,7 @@ public class EventBusiness : IEventBusiness
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-        
+
         var newEvent = new Event
         {
             Operation = dto.Operation,
@@ -101,7 +107,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
 
-        return new EventResponseDto
+        var response = new EventResponseDto
         {
             Id = newEvent.Id,
             ProjectId = newEvent.ProjectId,
@@ -113,6 +119,13 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = newEvent.LastUpdatedBy,
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
+        
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendEventNotification(response);
+        }
+
+        return response;
     }
 
     /// <summary>
@@ -130,6 +143,7 @@ public class EventBusiness : IEventBusiness
             ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         }
+
         var eventEntities = events.Select(dto => new Event
         {
             ProjectId = projectId,
@@ -145,7 +159,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.AddRange(eventEntities);
         await _context.SaveChangesAsync();
 
-        return eventEntities.Select(e => new EventResponseDto
+        var response = eventEntities.Select(e => new EventResponseDto
         {
             Id = e.Id,
             ProjectId = e.ProjectId,
@@ -157,6 +171,12 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = e.LastUpdatedBy,
             LastUpdatedAt = e.LastUpdatedAt
         }).ToList();
-        
+
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendBulkEventNotifications(response);
+        }
+
+        return response;
     }
 }

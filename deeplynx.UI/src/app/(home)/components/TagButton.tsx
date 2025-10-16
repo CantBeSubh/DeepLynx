@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import {
-  attachTagToRecord,
-  unAttachTagFromRecord,
-} from "@/app/lib/record_services.client";
-import { TagResponseDto } from "../types/types";
+import { attachTagToRecord, unAttachTagFromRecord } from "@/app/lib/record_services.client";
+import { TagResponseDto } from "../types/responseDTOs";
 import AddTagModal from "./AddTagModal";
 import { useLanguage } from "@/app/contexts/Language";
 
