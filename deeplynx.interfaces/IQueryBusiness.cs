@@ -15,5 +15,5 @@ public interface IQueryBusiness
 
     Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived);
 
-    bool SaveSearch(long userId, string alias, string textSearch, CustomQueryRequestDto[] filters, bool favorite);
+    Task<bool> SaveSearch(long userId, string alias, string textSearch, CustomQueryRequestDto[] filters, bool favorite);
 }

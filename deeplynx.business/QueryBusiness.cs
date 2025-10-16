@@ -445,7 +445,7 @@ public class QueryBusiness : IQueryBusiness
     /// <param name="textSearch">Full text search string</param>
     /// <param name="filters">Query filter object array</param>
     /// <returns>void</returns>
-    public bool SaveSearch(long userId, string alias, string textSearch, CustomQueryRequestDto[] filters, bool favorite)
+    public async Task<bool> SaveSearch(long userId, string alias, string textSearch, CustomQueryRequestDto[] filters, bool favorite)
     {
         if (filters == null)
             throw new ArgumentNullException(nameof(filters), "Query filters cannot be null");
@@ -453,11 +453,13 @@ public class QueryBusiness : IQueryBusiness
         var savedSearch = new SavedSearch
         {
             Name = alias,
-            Search = filters.ToString()!,
+            Search = filters.ToString()!, // this no gonna work
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             IsFavorite = favorite,
             UserId = userId
         };
+        _context.SavedSearches.Add(savedSearch);
+        await _context.SaveChangesAsync();
         return true;
     }
 
