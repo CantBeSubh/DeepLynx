@@ -91,6 +91,32 @@
   font-size: 0.875rem;
 }
 
+/* Add offset spacing for tour tooltips */
+.dlx-shepherd .shepherd-offset-bottom {
+  transform: translateY(16px);
+}
+
+.dlx-shepherd .shepherd-offset-top {
+  transform: translateY(-16px);
+}
+
+.dlx-shepherd .shepherd-offset-left {
+  transform: translateX(-16px);
+}
+
+.dlx-shepherd .shepherd-offset-right {
+  transform: translateX(16px);
+}
+
+/* You can also add diagonal offsets if needed */
+.dlx-shepherd .shepherd-offset-bottom-left {
+  transform: translate(-12px, 12px);
+}
+
+.dlx-shepherd .shepherd-offset-bottom-right {
+  transform: translate(12px, 12px);
+}
+
 @keyframes shepherd-fade-in {
   from {
     opacity: 0;

@@ -26,8 +26,8 @@ export function useDashboardTour({
       defaultStepOptions: {
         cancelIcon: { enabled: true },
         scrollTo: false,
-        modalOverlayOpeningPadding: 4,
-        modalOverlayOpeningRadius: 12
+        modalOverlayOpeningPadding: 8, // Increased padding around the highlighted element
+        modalOverlayOpeningRadius: 8, // This creates rounded corners on the spotlight
       },
     });
 
@@ -88,6 +88,7 @@ export function useDashboardTour({
           on: "bottom" as PopperPlacement 
         },
         scrollTo: false,
+        classes: "shepherd-offset-bottom", 
         buttons: [
           {
             text: "Back",
@@ -106,6 +107,7 @@ export function useDashboardTour({
           on: "top" as PopperPlacement 
         },
         scrollTo: { behavior: "smooth" as ScrollBehavior, block: "center" as ScrollLogicalPosition },
+        classes: "shepherd-offset-top",
         buttons: [
           {
             text: "Back",
@@ -124,6 +126,7 @@ export function useDashboardTour({
           on: "left" as PopperPlacement 
         },
         scrollTo: { behavior: "smooth" as ScrollBehavior, block: "center" as ScrollLogicalPosition },
+        classes: "shepherd-offset-left", 
         buttons: [
           {
             text: "Back",
@@ -142,6 +145,7 @@ export function useDashboardTour({
           on: "bottom" as PopperPlacement 
         },
         scrollTo: false,
+        classes: "shepherd-offset-bottom", 
         buttons: [
           {
             text: "Back",
@@ -160,6 +164,7 @@ export function useDashboardTour({
           on: "bottom" as PopperPlacement 
         },
         scrollTo: false,
+        classes: "shepherd-offset-bottom",
         buttons: [
           {
             text: "Back",
