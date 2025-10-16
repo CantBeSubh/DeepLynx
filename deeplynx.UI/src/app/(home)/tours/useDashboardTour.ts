@@ -20,40 +20,24 @@ export function useDashboardTour({
     if (builtRef.current) return;
     builtRef.current = true;
 
-    // Create tour instance
+    // Initialize tour with configuration
     const tour = new Shepherd.Tour({
       useModalOverlay: true,
       defaultStepOptions: {
         cancelIcon: { enabled: true },
         scrollTo: false,
-        modalOverlayOpeningPadding: 8, // Increased padding around the highlighted element
-        modalOverlayOpeningRadius: 8, // This creates rounded corners on the spotlight
+        modalOverlayOpeningPadding: 8, 
+        modalOverlayOpeningRadius: 8, 
       },
     });
 
-    // Theme scoping class
+    // Theme scoping
     const addScope = () => document.body.classList.add("dlx-shepherd");
     const removeScope = () => document.body.classList.remove("dlx-shepherd");
-
     tour.on("start", addScope);
     tour.on("show", addScope);
 
-    // Helper: wait until an element exists (or timeout)
-    const waitForEl = (selector: string, timeout = 2000) =>
-      new Promise<HTMLElement>((resolve, reject) => {
-        const start = performance.now();
-        const check = () => {
-          const el = document.querySelector<HTMLElement>(selector);
-          if (el) return resolve(el);
-          if (performance.now() - start > timeout) {
-            return reject(new Error(`Timeout waiting for ${selector}`));
-          }
-          requestAnimationFrame(check);
-        };
-        check();
-      });
-
-    // Build selectors for the first visible row
+    // Build selectors for first project row
     const firstRowId = filteredProjects[0]?.id ?? 0;
     const toggleSel = `[data-tour="project-row-${firstRowId}-toggle"]`;
     const expandedSel = `[data-tour="project-row-${firstRowId}-expanded"]`;
@@ -64,7 +48,7 @@ export function useDashboardTour({
       if (closeBtn && document.querySelector(expandedSel)) closeBtn.click();
     };
 
-    // Define tour steps with proper types
+    // Define tour steps
     const steps: StepOptions[] = [
       {
         id: "intro",
@@ -107,7 +91,7 @@ export function useDashboardTour({
           on: "top" as PopperPlacement 
         },
         scrollTo: { behavior: "smooth" as ScrollBehavior, block: "center" as ScrollLogicalPosition },
-        classes: "shepherd-offset-top",
+        classes: "shepherd-offset-bottom",
         buttons: [
           {
             text: "Back",
@@ -190,7 +174,7 @@ export function useDashboardTour({
       },
     ];
 
-    // Add the first 4 steps (intro, search, projects-section, project-row-toggle)
+    // Add steps in sequence with expanded row step inserted after toggle
     steps.slice(0, 4).forEach(step => tour.addStep(step));
 
     // Add expanded project step if projects exist - this goes right after project-row-toggle
@@ -204,7 +188,7 @@ export function useDashboardTour({
           on: "top" as PopperPlacement 
         },
         scrollTo: { behavior: "smooth" as ScrollBehavior, block: "center" as ScrollLogicalPosition },
-        // IMPORTANT: use function() { ... } to get the step via `this`
+        classes: "shepherd-offset-top",
         beforeShowPromise: function () {
           const step = this as unknown as Step;
           return new Promise<void>(async (resolve) => {
@@ -215,7 +199,6 @@ export function useDashboardTour({
                 const btn = document.querySelector<HTMLElement>(toggleSel);
                 btn?.click();
 
-                // wait up to 3000ms for the expanded panel
                 const waitForEl = (selector: string, timeout = 3000) =>
                   new Promise<HTMLElement>((res, rej) => {
                     const start = performance.now();
@@ -235,7 +218,6 @@ export function useDashboardTour({
             } catch {
               expandedFound = false;
             } finally {
-              // If we still don't have the element, detach so Shepherd won't cancel
               if (!expandedFound) {
                 step.updateStepOptions({ attachTo: undefined });
               }
@@ -257,10 +239,9 @@ export function useDashboardTour({
       });
     }
 
-    // Add the remaining steps (add-record, create-project, complete)
     steps.slice(4).forEach(step => tour.addStep(step));
 
-    // Event handlers for cleanup
+    // Cleanup handlers
     tour.on("cancel", () => {
       closeExpandedRow();
       removeScope();
@@ -271,15 +252,14 @@ export function useDashboardTour({
       removeScope();
     });
 
-    // Store ref & maybe autostart
     tourRef.current = tour;
 
+    // Auto-start for new users
     const hasSeenTour = localStorage.getItem("dashboard-tour-completed");
     if (!hasSeenTour && initialProjects.length === 0) {
       setTimeout(() => tour.start(), 500);
     }
 
-    // Cleanup
     return () => {
       try {
         tour.cancel();
