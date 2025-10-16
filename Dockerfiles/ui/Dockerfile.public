@@ -72,7 +72,7 @@ RUN npm install --production
 # NOW copy the built application (including .next folder)
 COPY --from=frontend-build /usr/src/app/.next ./.next
 COPY --from=frontend-build /usr/src/app/public ./public
-COPY --from=frontend-build /usr/src/app/next.config.js ./next.config.js
+COPY --from=frontend-build /usr/src/app/next.config.js 
 
 # Expose the port the app runs on
 EXPOSE 3000
