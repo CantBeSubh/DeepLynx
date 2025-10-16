@@ -18,13 +18,5 @@ else
 EOSQL
 fi
 
-# Deprecated. Requires the use of the dotnet ef migrations dump file
-#echo "PostgreSQL is ready. Applying migrations..."
-##for file in ../database/*.sql; do
-#  echo "Applying migration: $file"
-#  psql -h "$POSTGRES_DB_HOST" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f "$file"
-#done
-#echo "Migrations complete."
-
 # Execute the dotnet application
 dotnet deeplynx.api.dll --urls http://*:5000

@@ -68,6 +68,12 @@ public class ProjectBusiness : IProjectBusiness
         long? organizationId,
         bool hideArchived = true)
     {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+        if (user == null)
+        {
+            throw new ArgumentException($"User with id {userId} not found.");
+        }
+
         var projectQuery = _context.Projects.AsQueryable();
         
         if (hideArchived)
@@ -79,13 +85,16 @@ public class ProjectBusiness : IProjectBusiness
         {
             projectQuery = projectQuery.Where(p => p.OrganizationId == organizationId);
         }
-        
-        projectQuery = projectQuery.Where(p => 
-            p.ProjectMembers.Any(pm => 
-                pm.UserId == userId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
-            )
-        );
+
+        if (!user.IsSysAdmin)
+        {
+            projectQuery = projectQuery.Where(p => 
+                p.ProjectMembers.Any(pm => 
+                    pm.UserId == userId ||
+                    (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+                )
+            );
+        }
         
         var projects = await projectQuery.ToListAsync();
         return projects
@@ -98,6 +107,7 @@ public class ProjectBusiness : IProjectBusiness
                 LastUpdatedAt = p.LastUpdatedAt,
                 LastUpdatedBy = p.LastUpdatedBy,
                 IsArchived = p.IsArchived,
+                OrganizationId = p.OrganizationId,
             });
     }
 

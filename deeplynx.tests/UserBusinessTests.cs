@@ -61,7 +61,6 @@ namespace deeplynx.tests
                 Name = "New User",
                 Email = "newuser@test.com",
                 Username = "newuser",
-                SsoId = "sso123",
                 IsActive = true
             };
             
@@ -74,7 +73,6 @@ namespace deeplynx.tests
             Assert.Equal("New User", result.Name);
             Assert.Equal("newuser@test.com", result.Email);
             Assert.Equal("newuser", result.Username);
-            Assert.Equal("sso123", result.SsoId);
             Assert.True(result.IsActive);
             Assert.False(result.IsArchived);
             
@@ -122,69 +120,6 @@ namespace deeplynx.tests
                 () => _userBusiness.CreateUser(dto));
             
             Assert.Contains("User with email already exists", exception.Message);
-        }
-        
-        #endregion
-        
-        #region RefreshUser Tests
-        
-        [Fact]
-        public async Task RefreshUser_CreatesUser_IfNotExists()
-        {
-            // Arrange
-            var dto = new CreateUserRequestDto
-            {
-                Name = "Refresh New User",
-                Email = "refreshnew@test.com",
-                Username = "refreshnew",
-                SsoId = "refresh123",
-                IsActive = true
-            };
-            
-            // Act
-            var result = await _userBusiness.RefreshUser(dto);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.True(result.Id > 0);
-            Assert.Equal("Refresh New User", result.Name);
-            Assert.Equal("refreshnew@test.com", result.Email);
-            
-            // Verify it was saved to DB
-            var savedUser = await Context.Users
-                .FirstOrDefaultAsync(u => u.Email == "refreshnew@test.com");
-            Assert.NotNull(savedUser);
-        }
-        
-        [Fact]
-        public async Task RefreshUser_UpdatesUser_IfExists()
-        {
-            // Arrange
-            var dto = new CreateUserRequestDto
-            {
-                Name = "Updated Name",
-                Email = "user1@test.com", // Existing user's email
-                Username = "updatedusername",
-                SsoId = "newsso123",
-                IsActive = true
-            };
-            
-            // Act
-            var result = await _userBusiness.RefreshUser(dto);
-            
-            // Assert
-            Assert.NotNull(result);
-            Assert.Equal(uid1, result.Id); // Same ID as existing user
-            Assert.Equal("Updated Name", result.Name);
-            Assert.Equal("updatedusername", result.Username);
-            Assert.Equal("newsso123", result.SsoId);
-            Assert.True(result.IsActive);
-            
-            // Verify it was updated in DB
-            var updatedUser = await Context.Users.FindAsync(uid1);
-            Assert.NotNull(updatedUser);
-            Assert.Equal("Updated Name", updatedUser.Name);
-            Assert.Equal("updatedusername", updatedUser.Username);
         }
         
         #endregion
@@ -281,10 +216,34 @@ namespace deeplynx.tests
             // Act
             var result = await _userBusiness.GetAllUsers(pid2, null);
             var users = result.ToList();
-            
+
             // Assert
             Assert.All(users, u => Assert.False(u.IsArchived));
             Assert.DoesNotContain(users, u => u.Id == uid2); // archived user excluded
+        }
+        
+        [Fact]
+        public async Task GetAllUsers_Excludes_LocalDevUser_IfPresent()
+        {
+            // Arrange - Create a local dev user
+            var localDevUser = new User
+            {
+                Name = "Local Developer",
+                Email = "developer@localhost",
+                Username = "localdev",
+                IsActive = true
+            };
+            Context.Users.Add(localDevUser);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _userBusiness.GetAllUsers(null, null);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.DoesNotContain(users, u => u.Email == "developer@localhost");
+            // Verify other users are still returned
+            Assert.Contains(users, u => u.Id == uid1);
         }
 
         #endregion
@@ -315,19 +274,100 @@ namespace deeplynx.tests
             // Assert
             Assert.Contains($"User with id {uid2} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task GetUser_Fails_IfDeleted()
         {
             // Act
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _userBusiness.GetUser(uid3));
-            
+
             // Assert
             Assert.Contains($"User with id {uid3} not found", exception.Message);
         }
         
         #endregion
+        
+        # region GetLocalDevUser Tests
+        [Fact]
+        public async Task GetLocalDevUser_Succeeds_IfExists()
+        {
+            // Arrange - Create local dev user and set environment variable
+            var localDevUser = new User
+            {
+                Name = "Local Developer",
+                Email = "developer@localhost",
+                Username = "localdev",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.Add(localDevUser);
+            await Context.SaveChangesAsync();
+            
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act
+                var result = await _userBusiness.GetLocalDevUser();
+                
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal("developer@localhost", result.Email);
+                Assert.Equal("Local Developer", result.Name);
+                Assert.Equal("localdev", result.Username);
+                Assert.True(result.IsSysAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfEnvNullOrFalse()
+        {
+            // Arrange - Ensure environment variable is not set
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            
+            // Act & Assert
+            var nullException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", nullException.Message);
+            
+            // Arrange - Ensure environment variable is set to false
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+            
+            // Act & Assert
+            var falseException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+            
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", falseException.Message);
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfNotExists()
+        {
+            // Arrange - Set environment variable but don't create the user
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act & Assert
+                var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                    () => _userBusiness.GetLocalDevUser());
+                
+                Assert.Contains("Local Dev User not found", exception.Message);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+        # endregion
         
         #region UpdateUser Tests
         
@@ -339,7 +379,6 @@ namespace deeplynx.tests
             {
                 Name = "Updated User Name",
                 Username = "updatedusername",
-                SsoId = "updatedsso",
                 IsActive = true
             };
             
@@ -351,7 +390,6 @@ namespace deeplynx.tests
             Assert.Equal(uid1, result.Id);
             Assert.Equal("Updated User Name", result.Name);
             Assert.Equal("updatedusername", result.Username);
-            Assert.Equal("updatedsso", result.SsoId);
             Assert.True(result.IsActive);
             
             // Verify it was actually saved to DB
@@ -708,7 +746,6 @@ namespace deeplynx.tests
                 Name = "User 1", 
                 Email = "user1@test.com",
                 Username = "user1",
-                SsoId = "sso1",
                 IsActive = true
             };
             var user2 = new User 

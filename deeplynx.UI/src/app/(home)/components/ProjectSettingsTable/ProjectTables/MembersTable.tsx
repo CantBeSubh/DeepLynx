@@ -2,10 +2,11 @@
 import React, { FC, useEffect, useState } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
-import { Column, ProjectMembersTable } from '../../../types/types';
+import { Column } from '../../../types/types';
 import RoleSwap from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/RoleSwap";
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { removeProjectMemberRole, updateProjectMemberRole } from '@/app/lib/projects_services.client';
+import { ProjectMembersDto } from '@/app/(home)/types/responseDTOs';
 
 interface Role {
   id: number;
@@ -19,20 +20,20 @@ interface Role {
 }
 
 interface MembersTableProps {
-  data: ProjectMembersTable[];
+  data: ProjectMembersDto[];
   projectId: string | null;
   roles?: Role[]; // Add roles prop
 }
 
 const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, roles }) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<ProjectMembersTable[]>(initialData);
+  const [data, setData] = useState<ProjectMembersDto[]>(initialData);
   const [addRoleSwap, setAddRoleSwap] = useState<boolean>(false);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>(
     new Array(initialData?.length || 0).fill(false)
   );
   const [selectAll, setSelectAll] = useState<boolean>(false);
-  const [selectedMemberForRoleSwap, setSelectedMemberForRoleSwap] = useState<ProjectMembersTable | null>(null);
+  const [selectedMemberForRoleSwap, setSelectedMemberForRoleSwap] = useState<ProjectMembersDto | null>(null);
 
   // Helper function to get role name from role ID
   const getRoleName = (roleId: number): string => {
@@ -64,7 +65,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
     }
   };
 
-  const handleDelete = async (row: ProjectMembersTable, index: number) => {
+  const handleDelete = async (row: ProjectMembersDto, index: number) => {
     const memberToDelete = data[index];
     try {
       await removeProjectMemberRole(
@@ -106,7 +107,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
     }
   };
 
-  const handleRoleSwapOpen = (member: ProjectMembersTable) => {
+  const handleRoleSwapOpen = (member: ProjectMembersDto) => {
     setSelectedMemberForRoleSwap(member);
     setAddRoleSwap(true);
   };
@@ -192,7 +193,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
     return selectedMembers.filter(selected => selected).length > 1;
   };
 
-  const columns: Column<ProjectMembersTable>[] = [
+  const columns: Column<ProjectMembersDto>[] = [
     {
       header: (
         <input
@@ -202,7 +203,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
           onChange={handleSelectAll}
         />
       ),
-      cell: (row: ProjectMembersTable, index: number) => (
+      cell: (row: ProjectMembersDto, index: number) => (
         <input
           type="checkbox"
           className="checkbox"
@@ -234,7 +235,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
           )}
         </div>
       ),
-      cell: (row: ProjectMembersTable) => (
+      cell: (row: ProjectMembersDto) => (
         <div className="flex">
           <button
             className="btn"
@@ -256,7 +257,7 @@ const MembersTable: FC<MembersTableProps> = ({ data: initialData, projectId, rol
           )}
         </div>
       ),
-      cell: (row: ProjectMembersTable, index: number) => (
+      cell: (row: ProjectMembersDto, index: number) => (
         <div className="flex">
           <button onClick={() => handleDelete(row, index)}>
             <TrashIcon className="size-6 text-red-500" />

@@ -1,3 +1,4 @@
+# kubernetes yaml file for development
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -107,8 +108,6 @@ spec:
               value: ${SUPPORT_EMAIL}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
-            - name: NEXT_PUBLIC_DOCS_PATH
-              value: "/docs"
             - name: TENANT_MODE
               value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
@@ -150,17 +149,12 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
             - name: NEXTAUTH_URL
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: auth-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
+            - name: REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -279,17 +273,12 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: okta-issuer
-            - name: NEXT_PUBLIC_API_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: app-config
-                  key: api-url
             - name: NEXTAUTH_URL
               valueFrom:
                 configMapKeyRef:
                   name: app-config
                   key: auth-url
-            - name: NEXT_PUBLIC_REDIRECT_LINK
+            - name: REDIRECT_LINK
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -340,13 +329,11 @@ spec:
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynxv3-docs-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
-            - name: NEXT_PUBLIC_BASE_PATH
-              value: "/docs"
-            - name: HOSTED_LINK 
+            - name: HOSTED_LINK
               valueFrom:
                 configMapKeyRef:
                   name: app-config
-                  key: auth-url
+                  key: hosted-link
           resources:
             limits:
               memory: "4Gi"
@@ -419,17 +406,6 @@ metadata:
       more_set_headers "cache-Control: no-cache, no-store";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
-    nginx.ingress.kubernetes.io/server-snippets: |
-      location / {
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-        proxy_set_header   X-Forwarded-Host $host;
-        proxy_set_header   X-Cluster-Client-Ip $remote_addr;
-        }
 spec:
   rules:
     - host: deeplynx.dev.inl.gov

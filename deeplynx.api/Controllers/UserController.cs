@@ -2,12 +2,13 @@ using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("user")]
-    [NexusAuthorize]
+    [Route("api/user")]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
@@ -48,6 +49,7 @@ namespace deeplynx.api.Controllers
             }
 
         }
+
         /// <summary>
         /// Get a user
         /// </summary>
@@ -71,6 +73,27 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
+        /// Get the local development user
+        /// </summary>
+        /// <returns>User response DTO with the local dev user info</returns>
+        [HttpGet("GetLocalDevUser", Name = "api_get_local_dev_user")]
+        public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
+        {
+            try
+            {
+                var user = await _userBusiness.GetLocalDevUser();
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while fetching local dev user: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+
+        }
+
+        /// <summary>
         /// Create a user
         /// </summary>
         /// <param name="dto">User request DTO</param>
@@ -86,27 +109,6 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while creating this user.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-
-        /// <summary>
-        /// Refresh stored user info
-        /// </summary>
-        /// <param name="dto">User request DTO</param>
-        /// <returns>User response DTO</returns>
-        [HttpPost("RefreshUser", Name = "api_refresh_user")]
-        public async Task<ActionResult<UserResponseDto>> RefreshUser([FromBody] CreateUserRequestDto dto)
-        {
-            try
-            {
-                var user = await _userBusiness.RefreshUser(dto);
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating or updating this user: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

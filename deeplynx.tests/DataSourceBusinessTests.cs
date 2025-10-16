@@ -1,10 +1,12 @@
 using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
-using deeplynx.helpers.exceptions;
+using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace deeplynx.tests
@@ -14,6 +16,9 @@ namespace deeplynx.tests
         private DataSourceBusiness _dataSourceBusiness;
         private Mock<IEdgeBusiness> _mockEdgeBusiness;
         private Mock<IRecordBusiness> _mockRecordBusiness;
+        private INotificationBusiness _notificationBusiness = null!;
+        private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
+        private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private EventBusiness _eventBusiness;
         public long pid;
         public long pid2;
@@ -25,7 +30,10 @@ namespace deeplynx.tests
         {
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness);
+            _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
+            _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         }
 
         public override async Task InitializeAsync()
@@ -65,19 +73,15 @@ namespace deeplynx.tests
                 () => _dataSourceBusiness.GetAllDataSources(999, false)); 
             
             Assert.Contains("Project with id 999 not found", exception.Message);
-           
         }
 
         [Fact]
         public async Task GetAllDataSources_DifferentProject_ReturnsCorrectDataSources()
         {
-            var newProject = new Project { Name = "Project2" };
-            Context.Projects.Add(newProject);
+            // Arrange
+            Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = pid2 });
             await Context.SaveChangesAsync();
-            var newProjectId = newProject.Id;
             
-            Context.DataSources.Add(new DataSource { Name = "Project 2 Data Source", ProjectId = newProjectId });
-            await Context.SaveChangesAsync();
             // Act
             var result = await _dataSourceBusiness.GetAllDataSources(pid, true);
             var dataSources = result.ToList();
@@ -138,7 +142,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetDataSource_ValidIds_ReturnsDataSource()
         {
-            
             // Act
             var result = await _dataSourceBusiness.GetDataSource(pid, did, false);
 
@@ -243,15 +246,15 @@ namespace deeplynx.tests
             Assert.Equal("New Test Data Source", savedDataSource.Name);
             
             // Ensure that datasource create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "data_source",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -260,6 +263,10 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentNullException>(
                 () => _dataSourceBusiness.CreateDataSource(pid, null));
+            
+            // Ensure that datasource create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -282,15 +289,15 @@ namespace deeplynx.tests
             Assert.Empty(result.Config);
             
             // Ensure that datasource create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "data_source",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -314,15 +321,15 @@ namespace deeplynx.tests
             // CreatedBy is null in current implementation (TODO: JWT implementation)
             Assert.Null(result.LastUpdatedBy);
             // Ensure that datasource create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "data_source",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         #endregion
@@ -350,12 +357,16 @@ namespace deeplynx.tests
                 Config = config
             };
 
+            var beforeUpdate = DateTime.UtcNow;
+
             // Act
             var result = await _dataSourceBusiness.UpdateDataSource(pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
             Assert.Equal(did, result.Id);
+            Assert.True(result.LastUpdatedAt >= beforeUpdate);
+            Assert.True(result.LastUpdatedAt <= DateTime.UtcNow);
             Assert.Equal("Updated Test Data Source", result.Name);
             Assert.Equal("Updated description", result.Description);
             Assert.Equal("UPD_TEST", result.Abbreviation);
@@ -364,71 +375,54 @@ namespace deeplynx.tests
             Assert.Equal("mysql", result?.Config?["driver"]?.ToString());
 
             // Verify it was actually updated in database
-            var updatedDataSource = await Context.DataSources.FindAsync((long)did);
+            var updatedDataSource = await Context.DataSources.FindAsync(did);
             Assert.Equal("Updated Test Data Source", updatedDataSource?.Name);
-            Assert.NotNull(updatedDataSource?.LastUpdatedAt);
             
             // Ensure that datasource update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "update",
-                EntityType = "data_source",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
         public async Task UpdateDataSource_PartialUpdate_UpdatesDataSource()
         {
             // Arrange
-            var dataSource = new DataSource
-            {
-                Name = "Original Data Source",
-                Description = "Original Description",
-                Abbreviation = "ORIG",
-                Type = "SQL Server",
-                BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
-                ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com"
-            };
-
-            Context.DataSources.Add(dataSource);
-            await Context.SaveChangesAsync();
-
             var updateDto = new UpdateDataSourceRequestDto
             {
                 Description = "Updated Description"
             };
 
             // Act
-            var result = await _dataSourceBusiness.UpdateDataSource(pid, dataSource.Id, updateDto);
+            var result = await _dataSourceBusiness.UpdateDataSource(pid, did, updateDto);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(dataSource.Id, result.Id);
+            Assert.Equal(did, result.Id);
             Assert.Equal("Updated Description", result.Description);
-            Assert.Equal(dataSource.Name, result.Name);
 
             // Verify it was actually updated in database
-            var updatedDataSource = await Context.DataSources.FindAsync(dataSource.Id);
+            var updatedDataSource = await Context.DataSources.FindAsync(did);
             Assert.NotNull(updatedDataSource);
             Assert.Equal("Updated Description", updatedDataSource.Description);
-            Assert.Equal(dataSource.Name, updatedDataSource.Name);
-            Assert.NotNull(updatedDataSource.LastUpdatedAt);
+            Assert.NotNull(updatedDataSource?.LastUpdatedAt);
             
             // Ensure that datasource update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "update",
-                EntityType = "data_source",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -447,9 +441,9 @@ namespace deeplynx.tests
             
             Assert.Contains("Data Source with id 999 not found", exception.Message);
             
-            // Ensure that datasource update event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that datasource update event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -468,9 +462,9 @@ namespace deeplynx.tests
             
             Assert.Contains($"Data Source with id {did} not found", exception.Message);
             
-            // Ensure that datasource update event was not logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Ensure that datasource update event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -488,6 +482,10 @@ namespace deeplynx.tests
                 () => _dataSourceBusiness.UpdateDataSource(pid, did3, dto)); // DataSource 3 is archived
             
             Assert.Contains($"Data Source with id {did3} not found", exception.Message);
+            
+            // Ensure that datasource update event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -507,6 +505,17 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(result.Config);
             Assert.Empty(result.Config);
+            
+            // Ensure that datasource update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         #endregion
@@ -564,9 +573,6 @@ namespace deeplynx.tests
         [Fact]
         public async Task ArchiveDataSource_ValidDataSource_ArchivesSuccessfully()
         {
-            // Arrange
-            var beforeArchive = DateTime.UtcNow;
-
             // Act
             var result = await _dataSourceBusiness.ArchiveDataSource(pid, did);
 
@@ -580,15 +586,15 @@ namespace deeplynx.tests
             Assert.NotNull(archivedDataSource);
             Assert.True(archivedDataSource.IsArchived);
             // Ensure that data source soft delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "archive",
-                EntityType = "data_source",
-                EntityId = did,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(did, actualEvent.EntityId);
         }
 
         [Fact]
@@ -601,8 +607,8 @@ namespace deeplynx.tests
             Assert.Contains("Data Source with id 999 not found", exception.Message);
             
             // Ensure that data source soft delete event was NOT logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -615,8 +621,8 @@ namespace deeplynx.tests
             Assert.Contains("Project with id 2 not found", exception.Message);
             
             // Ensure that data source soft delete event was NOT logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -629,8 +635,8 @@ namespace deeplynx.tests
             Assert.Contains("Data Source with id 3 not found", exception.Message);
             
             // Ensure that data source soft delete event was NOT logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
 
         [Fact]
@@ -646,16 +652,16 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(initialCount - 1, finalCount);
             
-            // Ensure that data source soft delete event was NOT logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "archive",
-                EntityType = "data_source",
-                EntityId = did,
-            });
+            // Ensure that data source soft delete event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+                        
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("data_source", actualEvent.EntityType);
+            Assert.Equal(did, actualEvent.EntityId);
         }
 
         #endregion
@@ -667,26 +673,8 @@ namespace deeplynx.tests
         {
             // This test simulates concurrent operations on the same data source
             // In a real scenario, you might want to test with actual concurrent tasks
-
-            // Arrange
-            var newDataSource = new DataSource
-            {
-                Name = "E-commerce Transaction API",
-                Description = "Real-time API for accessing e-commerce transaction data",
-                Abbreviation = "ECOM_API",
-                Type = "REST API",
-                BaseUri = "https://api.ecommerce.company.com/v2/",
-                Config =
-                    @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
-                ProjectId = pid,
-                LastUpdatedBy = "sarah.johnson@company.com",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), 
-                IsArchived = false
-            };
-            await Context.AddAsync(newDataSource);
-            await Context.SaveChangesAsync();
-            var newDataSourceId = newDataSource.Id;
             
+            // Arrange
             var dto1 = new UpdateDataSourceRequestDto
             {
                 Name = "Concurrent Update 1",
@@ -699,17 +687,18 @@ namespace deeplynx.tests
                 Type = "Test2"
             };
 
+            // As noted above, DbContext is not thread-safe so there's not a great way to truly simulate concurrent operations
+            // so for now we take the sequential approach
+            
             // Act
-            var task1 = await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
-            var task2 = await _dataSourceBusiness.UpdateDataSource(pid, newDataSourceId, dto2);
+            await _dataSourceBusiness.UpdateDataSource(pid, did, dto1);
+            await _dataSourceBusiness.UpdateDataSource(pid, did, dto2);
             
             // Assert
-            var result1 = task1;
-            var result2 = task2;
-
-            Assert.Equal("Concurrent Update 1", result1.Name);
-            Assert.Equal("Concurrent Update 2", result2.Name);
-            
+            // Verify it was actually updated in database
+            var updatedDataSource = await Context.DataSources.FindAsync(did);
+            Assert.NotNull(updatedDataSource);
+            Assert.Equal("Concurrent Update 2", updatedDataSource.Name);
         }
 
         [Fact]
@@ -774,6 +763,7 @@ namespace deeplynx.tests
 
         #endregion
         
+        #region DataSourceDTO Tests
         [Fact]
         public void DataSourceRequestDto_AllProperties_CanBeSetAndRetrieved()
         {
@@ -832,30 +822,21 @@ namespace deeplynx.tests
             Assert.Equal("test@example.com", dto.LastUpdatedBy);
             Assert.False(dto.IsArchived);
         }
+        #endregion
         
         #region UnarchiveDataSource Tests
         
         [Fact]
         public async Task UnarchiveDataSource_ValidArchivedDataSource_UnarchivesSuccessfully()
         {
-            var archivedDataSource = new DataSource
-            {
-                Name = "Archived Test DataSource",
-                Description = "Previously archived",
-                Type = "Test",
-                ProjectId = pid,
-                IsArchived = true
-            };
-            Context.DataSources.Add(archivedDataSource);
-            await Context.SaveChangesAsync();
-            var archivedId = archivedDataSource.Id;
+            // Act
+            var result = await _dataSourceBusiness.UnarchiveDataSource(pid, did3);
 
-            var result = await _dataSourceBusiness.UnarchiveDataSource(pid, archivedId);
-
+            // Assert
             Assert.True(result);
 
             Context.ChangeTracker.Clear();
-            var reloaded = await Context.DataSources.FindAsync(archivedId);
+            var reloaded = await Context.DataSources.FindAsync(did3);
             Assert.NotNull(reloaded);
             Assert.False(reloaded.IsArchived);
         }
@@ -863,28 +844,39 @@ namespace deeplynx.tests
         [Fact]
         public async Task UnarchiveDataSource_NonExistent_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid, 99999));
             
             Assert.Contains("Data Source with id 99999 not found", ex.Message);
-        }
+            // Ensure that data source unarchive event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);        }
 
         [Fact]
         public async Task UnarchiveDataSource_WrongProject_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid2, did3));  // did3 is archived and belongs to pid
             
             Assert.Contains($"Data Source with id {did3} not found", ex.Message);
+            // Ensure that data source unarchive event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);      
         }
 
         [Fact]
         public async Task UnarchiveDataSource_NotArchived_ThrowsKeyNotFoundException()
         {
+            // Act & Assert
             var ex = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _dataSourceBusiness.UnarchiveDataSource(pid, did)); // did is not archived
             
             Assert.Contains($"Data Source with id {did} not found", ex.Message);
+            // Ensure that data source unarchive event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);      
         }
         
         #endregion

@@ -2,6 +2,7 @@ using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
@@ -14,8 +15,8 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("records")]
-    [NexusAuthorize]
+    [Route("api/records")]
+    [Authorize]
     public class QueryController : ControllerBase
     {
         private readonly IQueryBusiness _queryBusiness;

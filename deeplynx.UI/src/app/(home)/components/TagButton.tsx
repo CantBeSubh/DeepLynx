@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { attachTagToRecord, unAttachTagFromRecord } from "@/app/lib/record_services.client";
-import { TagResponseDto } from "../types/types";
+import { TagResponseDto } from "../types/responseDTOs";
 import AddTagModal from "./AddTagModal";
 import { useLanguage } from "@/app/contexts/Language";
 
@@ -29,7 +29,6 @@ const TagButton: React.FC<TagButtonProps> = ({
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const { t } = useLanguage();
 
-
   useEffect(() => {
     setTempSelectedIds(selectedIds);
   }, [selectedIds]);
@@ -45,7 +44,10 @@ const TagButton: React.FC<TagButtonProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -57,7 +59,9 @@ const TagButton: React.FC<TagButtonProps> = ({
     let newSelectionIds: string[];
 
     if (tempSelectedIds.map(String).includes(id)) {
-      newSelectionIds = tempSelectedIds.map(String).filter((selectedId) => selectedId !== id);
+      newSelectionIds = tempSelectedIds
+        .map(String)
+        .filter((selectedId) => selectedId !== id);
       await unAttachTagFromRecord(projectId, recordId, Number(id));
     } else {
       newSelectionIds = [...tempSelectedIds.map(String), id];
@@ -89,26 +93,35 @@ const TagButton: React.FC<TagButtonProps> = ({
 
       {isOpen && (
         <div
-          className="absolute z-10 mt-2 bg-base-100 shadow rounded-box p-4 max-h-80"
+          className="absolute z-50 mt-2 right-0 bg-base-100 shadow-lg rounded-box p-4 max-h-80"
           ref={dropdownRef}
+          style={{ minWidth: "200px" }}
         >
           <input
             type="text"
             placeholder="Search"
-            className="input input-bordered w-full mb-4 "
+            className="input input-bordered w-full mb-4"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <div className="flex flex-col gap-2 overflow-y-auto max-h-48">
             {filteredTags.map((tag) => (
-              <label key={tag.id} className="label cursor-pointer justify-start gap-2">
+              <label
+                key={tag.id}
+                className="label cursor-pointer justify-start gap-2"
+              >
                 <input
                   type="checkbox"
                   className="checkbox checkbox-primary"
-                  checked={tempSelectedIds.map(String).includes(tag.id.toString())}
+                  checked={tempSelectedIds
+                    .map(String)
+                    .includes(tag.id.toString())}
                   onChange={() => toggleTag(tag.id.toString())}
                 />
-                <span className="label-text" ref={tag.id === filteredTags[0]?.id ? longestNameRef : null}>
+                <span
+                  className="label-text whitespace-nowrap"
+                  ref={tag.id === filteredTags[0]?.id ? longestNameRef : null}
+                >
                   {tag.name}
                 </span>
               </label>
@@ -122,16 +135,14 @@ const TagButton: React.FC<TagButtonProps> = ({
               <PlusIcon className="size-5" />
               <span>{t.translations.TAG}</span>
             </button>
-
           </div>
         </div>
-
       )}
       <AddTagModal
         projectId={projectId}
         isOpen={isTagModalOpen}
         onClose={() => {
-          setIsTagModalOpen(false)
+          setIsTagModalOpen(false);
         }}
       />
     </div>
