@@ -15,7 +15,7 @@ interface translationsProps<T> {
   }[];
   renderExpandedContent: (row: T, onClose: () => void) => ReactNode;
   onExplore: (row: T) => void;
-  getRowId: (row: T) => string | number | undefined; // <-- NEW
+  getRowId: (row: T) => string | number | undefined;
 }
 
 const RECORDS_PER_PAGE = 5;
