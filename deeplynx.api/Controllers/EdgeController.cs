@@ -79,6 +79,30 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        /// <summary>
+        /// Get Graph Data
+        /// </summary>
+        /// <param name="recordId">The ID of the datasource by which to filter edges</param>
+        /// <param name="depth">The number of levels you want to search through</param>
+        /// <returns>A list of edges based on the applied filters.</returns>
+        [HttpGet("GetGraphDataForRecord", Name = "api_get_graph_data_for_record")]
+        public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
+            long recordId,
+            int depth)
+        {
+            try
+            {
+                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth); 
+                return Ok(edges);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing all edges: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Get edge 

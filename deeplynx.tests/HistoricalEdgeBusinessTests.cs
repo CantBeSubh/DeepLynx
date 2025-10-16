@@ -1,13 +1,9 @@
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
@@ -50,21 +46,27 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
     }
 
+    #region GetAllHistoricalEdges Tests
+    
     [Fact]
     public async Task GetAllHistoricalEdges_ReturnsListOfCurrentHistoricalRecordsForProject()
     {
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(2);
-        historicalEdges.Should().Contain(e => e.Id == eid);
-        historicalEdges.Should().Contain(e => e.Id == eid2);
-        historicalEdges.Should().NotContain(e => e.Id == eid3);
-        historicalEdges.Should().NotContain(e => e.Id == eid4);
+        
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Equal(2, historicalEdges.Count());
+        Assert.Contains(historicalEdges, e => e.Id == eid);
+        Assert.Contains(historicalEdges, e => e.Id == eid2);
+        Assert.DoesNotContain(historicalEdges, e => e.Id == eid3);
+        Assert.DoesNotContain(historicalEdges, e => e.Id == eid4);
     }
     
     [Fact]
      public async Task GetAllHistoricalEdges_ReturnsListOfUpdatedHistoricalEdges()
      {
+         // Arrange
          var dto = new UpdateEdgeRequestDto()
          {
              OriginId = (int)destinationRecordId,
@@ -79,72 +81,94 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
              RelationshipId = (int)relationshipId
          };
 
-         // Act
          await _edgeBusiness.UpdateEdge(pid, dto, eid, null, null);
          await _edgeBusiness.UpdateEdge(pid, dto2, eid2, null, null);
          
-
+         // Act
          var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
-         historicalEdges.Should().NotBeNull();
-         historicalEdges.Should().HaveCount(2);
+         
+         // Assert
+         Assert.NotNull(historicalEdges);
+         Assert.Equal(2, historicalEdges.Count());
          var edge1 = historicalEdges.First(e => e.Id == eid);
          var edge2 = historicalEdges.First(e => e.Id == eid2);
-         edge1.DestinationId.Should().Be(destinationRecordId2);  
-         edge1.OriginId.Should().Be(destinationRecordId);           
-         edge2.DestinationId.Should().Be(destinationRecordId);     
-         edge2.OriginId.Should().Be(destinationRecordId2);  
+         Assert.Equal(destinationRecordId2, edge1.DestinationId);
+         Assert.Equal(destinationRecordId, edge1.OriginId);
+         Assert.Equal(destinationRecordId, edge2.DestinationId);
+         Assert.Equal(destinationRecordId2, edge2.OriginId);
      }
     [Fact]
     public async Task GetAllHistoricalEdges_FiltersByDataSource()
     {
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid, dsid);
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(1);
-        historicalEdges.Should().Contain(e => e.Id == eid && e.DataSourceId == dsid);
-        historicalEdges.Should().NotContain(e => e.Id == eid2);
+        
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Single(historicalEdges);
+        Assert.Contains(historicalEdges, e => e.Id == eid && e.DataSourceId == dsid);
+        Assert.DoesNotContain(historicalEdges, e => e.Id == eid2);
     }
      
     [Fact]
     public async Task GetAllHistoricalEdges_ExcludesArchivedHistoricalEdgesByDefault()
     {
+        // Arrange
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
         Context.ChangeTracker.Clear();
+        
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
        
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Where(e => !e.IsArchived).Should().HaveCount(1);
-        historicalEdges.Should().Contain(e => e.Id == eid2);
-        historicalEdges.Should().NotContain(e => e.Id == eid);
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Single(historicalEdges, e => !e.IsArchived);
+        Assert.Contains(historicalEdges, e => e.Id == eid2);
+        Assert.DoesNotContain(historicalEdges, e => e.Id == eid);
     }
 
     [Fact]
     public async Task GetAllHistoricalEdges_InlcudesArchivedHistoricalEdges()
     {
+        // Arrange
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
     
         // Add this line to force EF to reload from database
         Context.ChangeTracker.Clear();
     
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(1);
-        historicalEdges.Should().NotContain(e => e.Id == eid && e.IsArchived);
-        historicalEdges.Should().Contain(e => e.Id == eid2 && !e.IsArchived);
+        
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Single(historicalEdges);
+        Assert.DoesNotContain(historicalEdges, e => e.Id == eid && e.IsArchived);
+        Assert.Contains(historicalEdges, e => e.Id == eid2 && !e.IsArchived);
     }
+    
+    #endregion
+    
+    #region GetHistoricalEdges Tests
 
     [Fact]
     public async Task GetHistoricalEdges_ReturnsEmptyListWhenNoEdges()
     {
+        // Arrange
         await _edgeBusiness.DeleteEdge(pid, eid, null, null);
         await _edgeBusiness.DeleteEdge(pid, eid2, null, null);
+        
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid);
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(0);
+        
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Empty(historicalEdges);
     }
 
     [Fact]
     public async Task GetHistoricalEdges_FiltersByTime()
     {
+        // Arrange
         var pointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         var edgeLate = new Edge()
         {
@@ -158,16 +182,23 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         Context.Edges.Add(edgeLate);
         await Context.SaveChangesAsync();
         
+        // Act
         var historicalEdges = await _historicalEdgeBusiness.GetAllHistoricalEdges(pid, null, pointInTime);
-        historicalEdges.Should().NotBeNull();
-        historicalEdges.Should().HaveCount(2);
-        historicalEdges.Should().NotContain(e => e.Id == edgeLate.Id);
         
+        // Assert
+        Assert.NotNull(historicalEdges);
+        Assert.Equal(2, historicalEdges.Count());
+        Assert.DoesNotContain(historicalEdges, e => e.Id == edgeLate.Id);
     }
+    
+    #endregion
+    
+    #region GetHistoryForEdge Tests
 
     [Fact]
     public async Task GetHistoryForEdge_ReturnsFullHistory()
     {
+        // Arrange
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -177,30 +208,40 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         await _edgeBusiness.UpdateEdge(pid, dto, eid, null, null);
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
 
+        // Act
         var edgeHistory = await _historicalEdgeBusiness.GetHistoryForEdge(eid, null, null);
-        edgeHistory.Should().NotBeNull();
-        edgeHistory.Should().HaveCount(4);
-        edgeHistory.Should().OnlyContain(e => e.Id == eid);
-        edgeHistory.First().IsArchived.Should().BeTrue();
+        
+        // Assert
+        Assert.NotNull(edgeHistory);
+        Assert.Equal(4, edgeHistory.Count());
+        Assert.All(edgeHistory, e => Assert.Equal(eid, e.Id));
+        Assert.True(edgeHistory.First().IsArchived);
     }
     
     [Fact]
     public async Task GetHistoryForEdge_ThrowsError_WhenEdgeDoesNotExist()
     {
-        var historicalEdges = () => _historicalEdgeBusiness.GetHistoryForEdge(eid4 + 100000, null, null);
-        await historicalEdges.Should().ThrowAsync<KeyNotFoundException>();
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _historicalEdgeBusiness.GetHistoryForEdge(eid4 + 100000, null, null));
     }
+    
+    #endregion
+    
+    #region GetHistoricalEdge Tests
 
     [Fact]
     public async Task GetHistoricalEdge_ThrowsError_WhenEdgeDoesNotExist()
     {
-        var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid4 + 100000, null, null, null);
-        await historicalEdge.Should().ThrowAsync<KeyNotFoundException>();
+        // Act & Assert
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _historicalEdgeBusiness.GetHistoricalEdge(eid4 + 100000, null, null, null));
     }
     
     [Fact]
     public async Task GetHistoricalEdge_ReturnsMostCurrentEdge()
     {
+        // Arrange
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -208,16 +249,21 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         await _edgeBusiness.UpdateEdge(pid, dto, eid, null, null);
+        
+        // Act
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
-        historicalEdge.Should().NotBeNull();
-        historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
+        
+        // Assert
+        Assert.NotNull(historicalEdge);
+        Assert.Equal(eid, historicalEdge.Id);
+        Assert.Equal(destinationRecordId, historicalEdge.OriginId);
+        Assert.Equal(destinationRecordId2, historicalEdge.DestinationId);
     }
     
     [Fact]
     public async Task GetHistoricalEdge_CanIncludeArchivedHistoricalEdges()
     {
+        // Arrange
         var dto = new UpdateEdgeRequestDto
         {
             OriginId = (int)destinationRecordId,
@@ -226,17 +272,22 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         };
         await _edgeBusiness.UpdateEdge(pid, dto, eid, null, null);
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
+        
+        // Act
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null, false);
-        historicalEdge.Should().NotBeNull();
-        historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(destinationRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId2);
-        historicalEdge.IsArchived.Should().BeTrue();
+        
+        // Assert
+        Assert.NotNull(historicalEdge);
+        Assert.Equal(eid, historicalEdge.Id);
+        Assert.Equal(destinationRecordId, historicalEdge.OriginId);
+        Assert.Equal(destinationRecordId2, historicalEdge.DestinationId);
+        Assert.True(historicalEdge.IsArchived);
     }
 
     [Fact]
     public async Task GetHistoricalEdge_FiltersByTime()
     {
+        // Arrange
         var pointInTime = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         var dto = new UpdateEdgeRequestDto
         {
@@ -245,20 +296,31 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             RelationshipId = (int)relationshipId
         };
         await _edgeBusiness.UpdateEdge(pid, dto, eid, null, null);
+        
+        // Act
         var historicalEdge = await _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, pointInTime);
-        historicalEdge.Should().NotBeNull();
-        historicalEdge.Id.Should().Be(eid);
-        historicalEdge.OriginId.Should().Be(originRecordId);
-        historicalEdge.DestinationId.Should().Be(destinationRecordId);
+        
+        // Assert
+        Assert.NotNull(historicalEdge);
+        Assert.Equal(eid, historicalEdge.Id);
+        Assert.Equal(originRecordId, historicalEdge.OriginId);
+        Assert.Equal(destinationRecordId, historicalEdge.DestinationId);
     }
 
     [Fact]
     public async Task GetHistoricalEdge_ReturnsArchivedHistoricalEdge_WhenEdgeIsArchived()
     {
+        // Arrange
         await _edgeBusiness.ArchiveEdge(pid, eid, null, null);
+        
+        // Act
         var historicalEdge = () => _historicalEdgeBusiness.GetHistoricalEdge(eid, null, null, null);
-        historicalEdge.Should().NotBeNull();
+        
+        // Assert
+        Assert.NotNull(historicalEdge);
     }
+    
+    #endregion
     
     protected override async Task SeedTestDataAsync()
     {

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
@@ -42,6 +41,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetEventsByUserProjectSubscriptions_Success_NoFilters()
         {
+            
+            // Arrange
             var subscription = new Subscription
             {
                 UserId = mockUserId,
@@ -55,7 +56,10 @@ namespace deeplynx.tests
             Context.Subscriptions.Add(subscription);
             await Context.SaveChangesAsync();
             
+            // Act
             var result = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(mockUserId, pid);
+            
+            // Assert
             Assert.Equal(6, result.Count);
             Assert.All(result, e => Assert.Equal(pid, e.ProjectId));
         }
@@ -63,6 +67,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetEventsByUserProjectSubscriptions_Success_MatchingSubscriptionsByEntity()
         {
+            
+            // Arrange
             var subscription = new Subscription
             {
                 // Get Event with specific Entity
@@ -78,7 +84,10 @@ namespace deeplynx.tests
             Context.Subscriptions.Add(subscription);
             await Context.SaveChangesAsync();
 
+            // Act
             var result = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(mockUserId, pid);
+            
+            // Assert
             Assert.Single(result);
             
             var actualEvent = result[0];
@@ -93,6 +102,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetEventsByUserProjectSubscriptions_Success_MatchingSubscriptionsByOperation()
         {
+            // Arrange
             var subscriptions = new List<Subscription>
             {
                 new Subscription
@@ -129,7 +139,10 @@ namespace deeplynx.tests
             Context.Subscriptions.AddRange(subscriptions);
             await Context.SaveChangesAsync();
 
+            // Act
             var result = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(mockUserId, pid);
+            
+            // Assert
             Assert.Equal(6, result.Count);
 
             var actualEvent0 = result[0];
@@ -178,8 +191,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetEventsByUserProjectSubscriptions_Fails_NonMatchingSubscriptions()
         {
-            
-            // Collection of subscriptions with incorrect UserId and ProjectId pair
+            // Arrange
             var subscriptions = new List<Subscription>
             {
                 new Subscription
@@ -236,7 +248,10 @@ namespace deeplynx.tests
             Context.Subscriptions.AddRange(subscriptions);
             await Context.SaveChangesAsync();
             
+            // Act
             var result = await _eventBusiness.GetAllEventsByUserProjectSubscriptions(mockUser2Id, pid2);
+            
+            // Assert
             Assert.Empty(result);
         }
         
@@ -247,6 +262,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEvent_Success_ReturnsIdAndCreatedAt()
         {
+            // Arrange
             var dto = new CreateEventRequestDto
             {
                 Operation = "create",
@@ -258,8 +274,10 @@ namespace deeplynx.tests
                 LastUpdatedBy = "user123"
             };
 
+            // Act
             var result = await _eventBusiness.CreateEvent(dto);
 
+            // Assert
             Assert.NotNull(result);
             Assert.NotEqual(0, result.Id);
             Assert.Equal(dto.Operation, result.Operation);
@@ -274,6 +292,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateEvent_Fails_IfBadEntityType()
         {
+            // Arrange
             var dto = new CreateEventRequestDto
             {
                 Operation = "create",
@@ -285,12 +304,14 @@ namespace deeplynx.tests
                 LastUpdatedBy = "user123"
             };
             
+            // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(dto));
         }
         
         [Fact]
         public async Task CreateEvent_Fails_IfBadOperationType()
         {
+            // Arrange
             var dto = new CreateEventRequestDto
             {
                 Operation = "BadType",
@@ -301,6 +322,8 @@ namespace deeplynx.tests
                 Properties = "{}",
                 LastUpdatedBy = "user123"
             };
+            
+            // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _eventBusiness.CreateEvent(dto));
         }
         
@@ -311,7 +334,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task BulkCreateEvents_Success_ReturnsIdAndCreatedAt()
         {
-
+            // Arrange
             var events = new List<CreateEventRequestDto> { };
             
             var dto1 = new CreateEventRequestDto
@@ -339,7 +362,10 @@ namespace deeplynx.tests
             events.Add(dto1);
             events.Add(dto2);
 
+            // Act
             var results = await _eventBusiness.BulkCreateEvents(pid, events);
+            
+            // Assert
             Assert.NotNull(results);
 
             var actualEvent0 = results[0];

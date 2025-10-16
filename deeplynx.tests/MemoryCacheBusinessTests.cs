@@ -1,11 +1,5 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using deeplynx.business;
-using deeplynx.datalayer.Models;
 using deeplynx.models;
-using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Xunit;
 
 namespace deeplynx.tests
 {
@@ -35,7 +29,7 @@ namespace deeplynx.tests
             var cachedValue = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
 
             // Assert
-            value.Should().BeEquivalentTo(cachedValue);
+            Assert.Equivalent(value, cachedValue);
         }
 
         [Fact]
@@ -56,7 +50,7 @@ namespace deeplynx.tests
             var cachedValue = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
 
             // Assert
-            cachedValue.Should().BeNull();
+            Assert.Null(cachedValue);
         }
 
         [Fact]
@@ -80,8 +74,8 @@ namespace deeplynx.tests
             var cachedValue2 = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key2);
 
             // Assert
-            cachedValue1.Should().BeNull();
-            cachedValue2.Should().BeNull();
+            Assert.Null(cachedValue1);
+            Assert.Null(cachedValue2);
         }
     }
 }
