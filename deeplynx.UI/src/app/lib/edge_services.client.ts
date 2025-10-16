@@ -1,5 +1,5 @@
-import { RelatedRecordsRequestDto } from '../(home)/types/RelatedRecordsRequestDto';
-import { RelatedRecordsResponseDto } from '../(home)/types/RelatedRecordsResponseDto';
+import { RelatedRecordsRequestDto } from '../(home)/types/requestDTOs';
+import { RelatedRecordsResponseDto } from '../(home)/types/responseDTOs';
 import api from './api';
 
 export const deleteEdge = async (projectId: number, edgeId: string | null, originId: string, destinationId: string) => {
