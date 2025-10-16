@@ -63,11 +63,16 @@ RUN apk add --no-cache openssl=3.3.5-r0
 # Set working directory
 WORKDIR /usr/src/app
 
-# Copy the built frontend code from the previous stage
-COPY --from=frontend-build /usr/src/app .
+# Copy package files first
+COPY --from=frontend-build /usr/src/app/package*.json ./
 
-# Install production dependencies
+# Install production dependencies BEFORE copying build artifacts
 RUN npm install --production
+
+# NOW copy the built application (including .next folder)
+COPY --from=frontend-build /usr/src/app/.next ./.next
+COPY --from=frontend-build /usr/src/app/public ./public
+COPY --from=frontend-build /usr/src/app/next.config.js ./next.config.js
 
 # Expose the port the app runs on
 EXPOSE 3000
