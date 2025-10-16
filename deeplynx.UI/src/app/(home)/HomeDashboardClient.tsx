@@ -9,7 +9,7 @@ import { ProjectsList } from "@/app/(home)/types/types";
 import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
@@ -17,8 +17,7 @@ import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
-import Shepherd from "shepherd.js";
-import "shepherd.js/dist/css/shepherd.css";
+import { useDashboardTour } from "./tours/useDashboardTour";
 
 type Props = { initialProjects: ProjectsList[] };
 
@@ -26,7 +25,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const tourRef = useRef<any>(null);
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -53,6 +51,12 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       const dateB = new Date(b.lastUpdatedAt!).getTime();
       return dateB - dateA;
     });
+
+  // Use the custom hook for tour functionality
+  const { startTour } = useDashboardTour({
+    filteredProjects,
+    initialProjects,
+  });
 
   const refreshProjects = async () => {
     try {
@@ -102,256 +106,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
 
   const handleCancel = () => {
     setCanCustomize(false);
-  };
-
-  // Initialize Shepherd Tour
-  useEffect(() => {
-    // Create tour instance
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: {
-          enabled: true,
-        },
-        scrollTo: false, // Disable automatic scrolling
-        modalOverlayOpeningPadding: 4,
-      },
-    });
-
-    // Add tour steps
-    tour.addStep({
-      id: "intro",
-      title: "Welcome to Your Dashboard! 👋",
-      text: "Let's take a quick tour to help you get started with managing your projects and records.",
-      buttons: [
-        {
-          text: "Skip",
-          classes: "shepherd-button-secondary",
-          action: () => tour.cancel(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    tour.addStep({
-      id: "search",
-      title: "Search Your Projects",
-      text: "Use this search bar to quickly find projects by name or description.",
-      attachTo: {
-        element: "[data-tour='search-input']",
-        on: "bottom",
-      },
-      scrollTo: false, // Explicitly disable scrolling for this step
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    tour.addStep({
-      id: "projects-section",
-      title: "Your Projects",
-      text: "This is where all your projects are displayed. You can see project names, descriptions, and when they were last updated.",
-      attachTo: {
-        element: "[data-tour='projects-section']",
-        on: "top",
-      },
-      scrollTo: {
-        behavior: "smooth",
-        block: "center", // Center the element in the viewport
-      },
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    // Helper: wait until an element exists (or timeout)
-    const waitForEl = (selector: string, timeout = 2000) =>
-      new Promise<HTMLElement>((resolve, reject) => {
-        const start = performance.now();
-        const check = () => {
-          const el = document.querySelector<HTMLElement>(selector);
-          if (el) return resolve(el);
-          if (performance.now() - start > timeout)
-            return reject(new Error(`Timeout waiting for ${selector}`));
-          requestAnimationFrame(check);
-        };
-        check();
-      });
-
-    // Pick the first visible row's id (matches your ExpandableTable data-tour)
-    const firstRowId = filteredProjects[0]?.id ?? 0; // if no id, we’ll match the index fallback (0)
-    const toggleSel = `[data-tour="project-row-${firstRowId}-toggle"]`;
-    const expandedSel = `[data-tour="project-row-${firstRowId}-expanded"]`;
-    const closeSel = `[data-tour="project-row-${firstRowId}-close"]`;
-
-    // 1) Point at the CLOSED arrow
-    tour.addStep({
-      id: "project-row-toggle",
-      title: "Expand a project",
-      text: "Click this arrow to see more details about a project.",
-      attachTo: { element: toggleSel, on: "left" },
-      scrollTo: { behavior: "smooth", block: "center" },
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    // 2) Open the row before we show the next step, then point at the EXPANDED panel
-    const closeExpandedRow = () => {
-      const closeBtn = document.querySelector<HTMLElement>(closeSel);
-      if (closeBtn && document.querySelector(expandedSel)) {
-        closeBtn.click();
-      }
-    };
-
-    tour.addStep({
-      id: "project-row-expanded",
-      title: "Project details",
-      text: "Here’s the expanded panel with quick actions and recent info.",
-      attachTo: { element: expandedSel, on: "top" },
-      scrollTo: { behavior: "smooth", block: "center" },
-      beforeShowPromise: () =>
-        new Promise<void>(async (resolve) => {
-          try {
-            if (!document.querySelector(expandedSel)) {
-              const btn = document.querySelector<HTMLElement>(toggleSel);
-              if (btn) {
-                btn.click();
-                await waitForEl(expandedSel, 2500);
-              }
-            }
-          } catch {}
-          requestAnimationFrame(() => resolve());
-        }),
-      when: {
-        hide: closeExpandedRow, // <-- collapse on step exit via X button
-      },
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        { text: "Next", action: () => tour.next() },
-      ],
-    });
-
-    // Also collapse if the user cancels or completes the tour
-    tour.on("cancel", closeExpandedRow);
-    tour.on("complete", () => {
-      closeExpandedRow();
-      localStorage.setItem("dashboard-tour-completed", "true");
-    });
-
-    tour.addStep({
-      id: "add-record",
-      title: "Add Records",
-      text: "Click here to add new records to your existing projects. This helps you track progress and updates.",
-      attachTo: {
-        element: "[data-tour='add-record']",
-        on: "bottom",
-      },
-      scrollTo: false, // Buttons are likely visible already
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    tour.addStep({
-      id: "create-project",
-      title: "Create New Projects",
-      text: "Start a new project by clicking this button. You can set up all the project details and begin tracking immediately.",
-      attachTo: {
-        element: "[data-tour='create-project']",
-        on: "bottom",
-      },
-      scrollTo: false, // Buttons are likely visible already
-      buttons: [
-        {
-          text: "Back",
-          classes: "shepherd-button-secondary",
-          action: () => tour.back(),
-        },
-        {
-          text: "Next",
-          action: () => tour.next(),
-        },
-      ],
-    });
-
-    tour.addStep({
-      id: "complete",
-      title: "You're All Set! 🎉",
-      text: "That's it! You now know the basics. You can always restart this tour by clicking the help button in the header.",
-      buttons: [
-        {
-          text: "Finish",
-          action: () => {
-            tour.complete();
-            localStorage.setItem("dashboard-tour-completed", "true");
-          },
-        },
-      ],
-    });
-
-    // Store tour reference
-    tourRef.current = tour;
-
-    // Auto-start for first-time users
-    const hasSeenTour = localStorage.getItem("dashboard-tour-completed");
-    if (!hasSeenTour && initialProjects.length === 0) {
-      setTimeout(() => {
-        tour.start();
-      }, 500);
-    }
-
-    // Cleanup
-    return () => {
-      if (tourRef.current) {
-        tourRef.current.complete();
-      }
-    };
-  }, [initialProjects.length]);
-
-  const startTour = () => {
-    if (tourRef.current) {
-      tourRef.current.start();
-    }
   };
 
   return (
@@ -451,125 +205,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         isOpen={widgetModal}
         onClose={() => setWidgetModal(false)}
       />
-
-      {/* Custom Shepherd Styles */}
-      <style jsx global>{`
-        .shepherd-element {
-          background: oklch(86% 0.022 252.894); /* base-200 */
-          border-radius: 1rem; /* radius-box */
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-          max-width: 400px;
-        }
-
-        .shepherd-header {
-          padding: 1rem 1.25rem;
-          background: oklch(86% 0.022 252.894); /* base-200 */
-          border-radius: 1rem 1rem 0 0;
-        }
-
-        .shepherd-title {
-          font-size: 1.125rem;
-          font-weight: 600;
-          color: oklch(13.454% 0.033 35.791); /* base-content */
-        }
-
-        .shepherd-text {
-          padding: 1.25rem;
-          color: oklch(13.454% 0.033 35.791); /* base-content */
-          line-height: 1.6;
-          background: oklch(86% 0.022 252.894); /* base-200 */
-          font-size: 0.95rem;
-        }
-
-        .shepherd-footer {
-          padding: 1rem 1.25rem 1.25rem;
-          display: flex;
-          justify-content: flex-end;
-          gap: 0.75rem;
-          background: oklch(86% 0.022 252.894); /* base-200 */
-          border-radius: 0 0 1rem 1rem;
-        }
-
-        .shepherd-button {
-          padding: 0.5rem 1.25rem;
-          border-radius: 0.5rem; /* radius-field */
-          font-weight: 500;
-          background: oklch(33.78% 0.1 254.3); /* primary */
-          color: oklch(88.34% 0.019 251.473); /* primary-content */
-          border: none;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          font-size: 0.9rem;
-        }
-
-        .shepherd-button:hover {
-          background: oklch(33.78% 0.12 254.3); /* primary hover */
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px oklch(33.78% 0.1 254.3 / 0.3);
-        }
-
-        .shepherd-button-secondary {
-          background: oklch(98% 0.003 247.858); /* base-100 */
-          color: oklch(13.454% 0.033 35.791); /* base-content */
-          border: 1.5px solid oklch(55% 0.046 257.417); /* base-300 */
-        }
-
-        .shepherd-button-secondary:hover {
-          background: oklch(
-            55% 0.046 257.417 / 0.2
-          ); /* base-300 with opacity */
-          transform: translateY(-1px);
-          box-shadow: none;
-        }
-
-        .shepherd-modal-overlay-container {
-          background: oklch(
-            13.454% 0.033 35.791 / 0.5
-          ); /* base-content with opacity */
-          backdrop-filter: blur(4px);
-        }
-
-        .shepherd-arrow:before {
-          background: oklch(86% 0.022 252.894); /* base-200 */
-          border: 1.5px solid oklch(55% 0.046 257.417); /* base-300 */
-        }
-
-        .shepherd-modal-is-visible .shepherd-element {
-          opacity: 1 !important;
-        }
-
-        .shepherd-cancel-icon {
-          color: oklch(13.454% 0.033 35.791); /* base-content */
-        }
-
-        .shepherd-cancel-icon:hover {
-          color: oklch(70.61% 0.146 29.674); /* error color for cancel */
-        }
-
-        /* Add smooth entrance animation */
-        .shepherd-element {
-          animation: shepherd-fade-in 0.3s ease-out;
-        }
-
-        @keyframes shepherd-fade-in {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        /* Ensure good contrast for step counter if it appears */
-        .shepherd-progress {
-          color: oklch(
-            13.454% 0.033 35.791 / 0.7
-          ); /* base-content with reduced opacity */
-          font-size: 0.875rem;
-        }
-      `}</style>
     </div>
   );
 }

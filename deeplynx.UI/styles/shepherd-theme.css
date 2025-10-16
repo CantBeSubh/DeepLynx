@@ -1,0 +1,103 @@
+/* /styles/shepherd-theme.css */
+
+.dlx-shepherd .shepherd-element {
+  background: oklch(86% 0.022 252.894);
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  animation: shepherd-fade-in 0.3s ease-out;
+}
+
+.dlx-shepherd .shepherd-header {
+  padding: 1rem 1.25rem;
+  background: oklch(86% 0.022 252.894);
+  border-radius: 1rem 1rem 0 0;
+}
+
+.dlx-shepherd .shepherd-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: oklch(13.454% 0.033 35.791);
+}
+
+.dlx-shepherd .shepherd-text {
+  padding: 1.25rem;
+  color: oklch(13.454% 0.033 35.791);
+  line-height: 1.6;
+  background: oklch(86% 0.022 252.894);
+  font-size: 0.95rem;
+}
+
+.dlx-shepherd .shepherd-footer {
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  background: oklch(86% 0.022 252.894);
+  border-radius: 0 0 1rem 1rem;
+}
+
+.dlx-shepherd .shepherd-button {
+  padding: 0.5rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  background: oklch(33.78% 0.1 254.3);
+  color: oklch(88.34% 0.019 251.473);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+.dlx-shepherd .shepherd-button:hover {
+  background: oklch(33.78% 0.12 254.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px oklch(33.78% 0.1 254.3 / 0.3);
+}
+
+.dlx-shepherd .shepherd-button-secondary {
+  background: oklch(98% 0.003 247.858);
+  color: oklch(13.454% 0.033 35.791);
+  border: 1.5px solid oklch(55% 0.046 257.417);
+}
+.dlx-shepherd .shepherd-button-secondary:hover {
+  background: oklch(55% 0.046 257.417 / 0.2);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+/* .dlx-shepherd .shepherd-modal-overlay-container {
+  background: oklch(13.454% 0.033 35.791 / 0.5);
+  backdrop-filter: blur(4px);
+} */
+
+.dlx-shepherd .shepherd-arrow:before {
+  background: oklch(86% 0.022 252.894);
+  border: 1.5px solid oklch(55% 0.046 257.417);
+}
+
+.dlx-shepherd .shepherd-modal-is-visible .shepherd-element {
+  opacity: 1 !important;
+}
+
+.dlx-shepherd .shepherd-cancel-icon {
+  color: oklch(13.454% 0.033 35.791);
+}
+.dlx-shepherd .shepherd-cancel-icon:hover {
+  color: oklch(70.61% 0.146 29.674);
+}
+
+.dlx-shepherd .shepherd-progress {
+  color: oklch(13.454% 0.033 35.791 / 0.7);
+  font-size: 0.875rem;
+}
+
+@keyframes shepherd-fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
