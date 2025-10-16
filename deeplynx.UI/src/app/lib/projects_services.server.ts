@@ -3,7 +3,7 @@ import { ProjectResponseDto } from "../(home)/types/responseDTOs";
 import "server-only";
 import { auth } from "../../../auth";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
-
+import { ProjectStatResponseDto } from "../(home)/types/responseDTOs";
 /** ----- Strict env handling (lazy) ----- */
 let _BASE: string | null = null;
 
@@ -23,7 +23,6 @@ function getBase(): string {
 // Optional: use a machine/service token in SSR when the user token isn't available
 const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
 
-export type ProjectStatsDTO = Record<string, unknown>;
 
 /** ----- Session helpers ----- */
 type SessionShapeA = { tokens?: { access_token?: unknown } };
@@ -126,9 +125,9 @@ export async function getProjectServer(
 
 export async function getProjectStatsServer(
   projectId: string | number
-): Promise<ProjectStatsDTO> {
+): Promise<ProjectStatResponseDto> {
   const res = await apiFetch(`/projects/ProjectStats/${projectId}`);
-  return asJson<ProjectStatsDTO>(res);
+  return asJson<ProjectStatResponseDto>(res);
 }
 
 export async function createProjectServer(data: {

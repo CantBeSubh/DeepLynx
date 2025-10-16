@@ -6,17 +6,17 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
-import NewFileUploadCard, {
-  FileMetadata,
-} from "../components/NewFileUploadCard";
+import NewFileUploadCard from "../components/NewFileUploadCard";
+import { ExistingFile, FileMetadata } from "../types/types";
 import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
-import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
+import { RecentUpload } from "../types/types";
+import { UploadType } from "../types/types";
 import { getAllProjects } from "@/app/lib/projects_services.client";
 import {
-  DataSourceDTO,
   getAllDataSources,
 } from "@/app/lib/data_source_services.client";
+import { DataSourceResponseDto } from "../types/responseDTOs";
 import {
   getAllObjectStorages,
   ObjectStorageDTO,
@@ -49,7 +49,7 @@ export default function UploadCenterClient({
   const showRightPanel = selectedFiles.length > 0;
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [objectStorage, setObjectstorage] = useState<ObjectStorageDTO[]>([]);
-  const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
+  const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [dataSourceId, setDataSourceId] = useState<string>("");
   const [objectStorageId, setObjectstorageId] = useState<string>("");

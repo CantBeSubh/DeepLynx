@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import { RecentUpload } from "@/app/(home)/types/upload";
+import { RecentUpload } from "../types/types";
 import {
   ArrowsRightLeftIcon,
   LinkIcon,
