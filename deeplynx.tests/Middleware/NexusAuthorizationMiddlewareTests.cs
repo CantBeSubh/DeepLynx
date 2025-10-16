@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace deeplynx.tests.Middleware
 {
@@ -202,6 +201,193 @@ namespace deeplynx.tests.Middleware
             // Assert
             Assert.False(result.Succeeded);
             Assert.Contains("Invalid token format", result.Failure?.Message ?? "");
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        #endregion
+        
+        #region DISABLE_BACKEND_AUTHENTICATION with Token Tests
+
+        [Fact]
+        public async Task HandleAuthenticate_UsesLocalDevBypass_WhenDisabledAndNoToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            var context = CreateHttpContext(); // No token
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_UsesTokenUser_WhenDisabledAndValidToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret);
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            Assert.NotNull(result.Principal);
+            
+            // Should use the token user, not local dev user
+            var nameClaim = result.Principal.FindFirst("name");
+            Assert.NotNull(nameClaim);
+            Assert.Equal(user.Email, nameClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var context = CreateHttpContext("invalid-token-format");
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndExpiredToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create expired token
+            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret, expiresInMinutes: -60);
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidSignature()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create token with wrong secret
+            var token = GenerateHS256Token(user.Email, apiKey.Key, "wrong-secret");
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidApiKey()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            Assert.NotNull(user);
+
+            // Create token with invalid API key
+            var token = GenerateHS256Token(user.Email, "invalid-api-key", "some-secret");
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndTokenThrowsException()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            // Create a malformed token that will throw during validation
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.malformed.signature";
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
 
             // Cleanup
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
@@ -693,8 +879,6 @@ namespace deeplynx.tests.Middleware
         }
 
         #endregion
-
-
 
         #region EnsureUserExistsAsync Email Fallback Tests
 

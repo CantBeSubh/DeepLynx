@@ -216,10 +216,34 @@ namespace deeplynx.tests
             // Act
             var result = await _userBusiness.GetAllUsers(pid2, null);
             var users = result.ToList();
-            
+
             // Assert
             Assert.All(users, u => Assert.False(u.IsArchived));
             Assert.DoesNotContain(users, u => u.Id == uid2); // archived user excluded
+        }
+        
+        [Fact]
+        public async Task GetAllUsers_Excludes_LocalDevUser_IfPresent()
+        {
+            // Arrange - Create a local dev user
+            var localDevUser = new User
+            {
+                Name = "Local Developer",
+                Email = "developer@localhost",
+                Username = "localdev",
+                IsActive = true
+            };
+            Context.Users.Add(localDevUser);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _userBusiness.GetAllUsers(null, null);
+            var users = result.ToList();
+            
+            // Assert
+            Assert.DoesNotContain(users, u => u.Email == "developer@localhost");
+            // Verify other users are still returned
+            Assert.Contains(users, u => u.Id == uid1);
         }
 
         #endregion
@@ -250,19 +274,100 @@ namespace deeplynx.tests
             // Assert
             Assert.Contains($"User with id {uid2} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task GetUser_Fails_IfDeleted()
         {
             // Act
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _userBusiness.GetUser(uid3));
-            
+
             // Assert
             Assert.Contains($"User with id {uid3} not found", exception.Message);
         }
         
         #endregion
+        
+        # region GetLocalDevUser Tests
+        [Fact]
+        public async Task GetLocalDevUser_Succeeds_IfExists()
+        {
+            // Arrange - Create local dev user and set environment variable
+            var localDevUser = new User
+            {
+                Name = "Local Developer",
+                Email = "developer@localhost",
+                Username = "localdev",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.Add(localDevUser);
+            await Context.SaveChangesAsync();
+            
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act
+                var result = await _userBusiness.GetLocalDevUser();
+                
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal("developer@localhost", result.Email);
+                Assert.Equal("Local Developer", result.Name);
+                Assert.Equal("localdev", result.Username);
+                Assert.True(result.IsSysAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfEnvNullOrFalse()
+        {
+            // Arrange - Ensure environment variable is not set
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            
+            // Act & Assert
+            var nullException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", nullException.Message);
+            
+            // Arrange - Ensure environment variable is set to false
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+            
+            // Act & Assert
+            var falseException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+            
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", falseException.Message);
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfNotExists()
+        {
+            // Arrange - Set environment variable but don't create the user
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act & Assert
+                var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                    () => _userBusiness.GetLocalDevUser());
+                
+                Assert.Contains("Local Dev User not found", exception.Message);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+        # endregion
         
         #region UpdateUser Tests
         
