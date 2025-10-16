@@ -195,7 +195,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <li className="mt-2">
             <div className="flex items-center">
               <Link
-                href="/project_settings"
+                href="/project/${project?.projectId}/project_settings"
                 onClick={(e) =>
                   handleItemClick(
                     `/project/${project?.projectId}/project_settings`,
