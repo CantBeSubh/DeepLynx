@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useCallback, useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -40,8 +39,8 @@ import {
 import { FileViewerTableRow} from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
-import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
-import { RelatedRecordsRequestDto } from "../types/RelatedRecordsRequestDto";
+import { RelatedRecordsResponseDto } from "../types/responseDTOs";
+import { RelatedRecordsRequestDto } from "../types/requestDTOs";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
