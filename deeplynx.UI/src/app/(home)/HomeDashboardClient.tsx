@@ -4,7 +4,7 @@
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
-import { WidgetType } from "@/app/(home)/components/Widgets";
+import { WidgetType } from "./types/types";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";

@@ -19,8 +19,8 @@ import {
 import { DataSourceResponseDto } from "../types/responseDTOs";
 import {
   getAllObjectStorages,
-  ObjectStorageDTO,
 } from "@/app/lib/object_storage_services.client";
+import { ObjectStorageResponseDto } from "../types/responseDTOs";
 import {
   uploadFile,
   uploadFilesBatch,
@@ -48,7 +48,7 @@ export default function UploadCenterClient({
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const showRightPanel = selectedFiles.length > 0;
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
-  const [objectStorage, setObjectstorage] = useState<ObjectStorageDTO[]>([]);
+  const [objectStorage, setObjectstorage] = useState<ObjectStorageResponseDto[]>([]);
   const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [dataSourceId, setDataSourceId] = useState<string>("");
