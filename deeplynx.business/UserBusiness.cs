@@ -31,9 +31,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>A list of users, optionally filtered by project or organization</returns>
     public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId, long? organizationId)
     {
-        var users = _context.Users
-            .Where(p => !p.IsArchived)
-            .Where(p => p.Email != "developer@localhost");
+        var users = _context.Users.Where(p => !p.IsArchived);
 
         if (projectId != null)
         {

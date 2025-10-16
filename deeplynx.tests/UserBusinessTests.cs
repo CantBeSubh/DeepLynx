@@ -221,30 +221,6 @@ namespace deeplynx.tests
             Assert.All(users, u => Assert.False(u.IsArchived));
             Assert.DoesNotContain(users, u => u.Id == uid2); // archived user excluded
         }
-        
-        [Fact]
-        public async Task GetAllUsers_Excludes_LocalDevUser_IfPresent()
-        {
-            // Arrange - Create a local dev user
-            var localDevUser = new User
-            {
-                Name = "Local Developer",
-                Email = "developer@localhost",
-                Username = "localdev",
-                IsActive = true
-            };
-            Context.Users.Add(localDevUser);
-            await Context.SaveChangesAsync();
-            
-            // Act
-            var result = await _userBusiness.GetAllUsers(null, null);
-            var users = result.ToList();
-            
-            // Assert
-            Assert.DoesNotContain(users, u => u.Email == "developer@localhost");
-            // Verify other users are still returned
-            Assert.Contains(users, u => u.Id == uid1);
-        }
 
         #endregion
 
