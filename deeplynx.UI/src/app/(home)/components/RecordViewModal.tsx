@@ -4,7 +4,7 @@ import React from "react";
 import PropertyTable from "./PropertyTable";
 import { Column, FileViewerTableRow } from "../types/types";
 import GenericTable from "./GenericTable";
-import { RelatedRecordsResponseDto } from "../types/RelatedRecordsResponseDto";
+import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import { TagResponseDto } from '../types/responseDTOs';
 
 interface RecordViewModalProps {
