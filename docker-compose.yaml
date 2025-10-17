@@ -65,6 +65,7 @@ services:
       INVITE_URL: http://localhost:3000
       SUPPORT_EMAIL: jaren.brownlee@inl.gov
       DISABLE_BACKEND_AUTHENTICATION: true
+      SUPERUSER_EMAIL: admin@admin.com
 
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:
