@@ -402,6 +402,12 @@ metadata:
       more_clear_headers "x-content-type-options";
       more_clear_headers "x-frame-options";
       more_clear_headers "content-security-policy";
+       location ~* \.js$ {
+        add_header Content-Type application/javascript;
+      }
+      location ~* \.css$ {
+        add_header Content-Type text/css;
+      }
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
