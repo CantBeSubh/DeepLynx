@@ -69,7 +69,7 @@ public class EventBusiness : IEventBusiness
     /// <summary>
     /// Retrieves all project events for projects that the user is a member of.
     /// </summary>
-    public async Task<List<EventResponseDto>> GetAllEventsByUserProjectMembership()
+    public async Task<List<EventResponseDto>> GetAllEventsByUser()
     {
         var userId = UserContextStorage.UserId;
     

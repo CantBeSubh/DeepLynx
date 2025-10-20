@@ -11,5 +11,5 @@ public interface IEventBusiness
     
     Task<List<EventResponseDto>> BulkCreateEvents(long projectId,  List<CreateEventRequestDto> events);
 
-    Task<List<EventResponseDto>> GetAllEventsByUserProjectMembership();
+    Task<List<EventResponseDto>> GetAllEventsByUser();
 }

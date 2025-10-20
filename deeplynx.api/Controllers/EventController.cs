@@ -53,12 +53,12 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all events by user project membership.
         /// </summary>
-        [HttpGet("GetAllEventsByUserProjectMembership", Name = "api_get_all_events_by_user_project_membership")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectMembership()
+        [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUser()
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUserProjectMembership();
+                var events = await _eventBusiness.GetAllEventsByUser();
                 return Ok(events);
             }
             catch (Exception e)
