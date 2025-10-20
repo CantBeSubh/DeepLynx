@@ -220,8 +220,14 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
         <div className="mt-auto">
           <ul>
-            <li className="mt-2"><button><a href={process.env.NEXT_PUBLIC_DOCS_PATH}><QuestionMarkCircleIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}</a></button></li>
+            <li className="mt-2">
+              <button className={getItemClass("/help")} >
+                <a href={process.env.NEXT_PUBLIC_DOCS_PATH} className="flex items-center">
+                  <QuestionMarkCircleIcon className="size-6" />
+                  {!isCollapsed && <div className="ml-2">{t.translations.HELP}</div>}
+                </a>
+              </button>
+            </li>
             {/* <li className="mt-2">
               <Link
                 href="#"
@@ -258,19 +264,20 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li> */}
           </ul>
         </div>
-      </aside>
+      </aside >
       {/* Toggle tab (sticking out to the right) */}
-      <div
+      < div
         className="h-8 w-4 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
         onClick={toggleMenu}
       >
-        {isCollapsed ? (
-          <ChevronRightIcon className="size-6" />
-        ) : (
-          <ChevronLeftIcon className="size-6" />
-        )}
-      </div>
-    </div>
+        {
+          isCollapsed ? (
+            <ChevronRightIcon className="size-6" />
+          ) : (
+            <ChevronLeftIcon className="size-6" />
+          )}
+      </div >
+    </div >
   );
 };
 
