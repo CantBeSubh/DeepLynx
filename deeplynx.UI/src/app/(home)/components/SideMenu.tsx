@@ -220,28 +220,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
         <div className="mt-auto">
           <ul>
-            {/* <li className="mt-2">
-              <Link
-                href={
-                  process.env.NEXT_PUBLIC_DOCS_PATH
-                    ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
-                    : "/docs"
-                }
-                
-              
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/help", e)}
-               
-                className={getItemClass("/help")}
-              >
-                <QuestionMarkCircleIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}
-              </Link>
-            </li> */}
+            <li className="mt-2"><a href={process.env.NEXT_PUBLIC_DOCS_PATH}><QuestionMarkCircleIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}</a></li>
             {/* <li className="mt-2">
               <Link
                 href="#"
