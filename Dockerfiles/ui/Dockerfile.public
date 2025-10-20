@@ -25,17 +25,6 @@ ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
 
-# # Print out the value of the environment variables
-# RUN echo "OKTA_CLIENT_ID=${OKTA_CLIENT_ID}" \
-#     && echo "OKTA_ISSUER=${OKTA_ISSUER}" \
-#     && echo "REDIRECT_LINK=${REDIRECT_LINK}" \
-#     && echo "OKTA_CLIENT_SECRET=${OKTA_CLIENT_SECRET}" \
-#     && echo "AUTH_SECRET=${AUTH_SECRET}" \
-#     && echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}" \
-#     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}" \
-#     && echo "DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}" \
-#     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
-
 # Set working directory
 WORKDIR /usr/src/app
 
@@ -72,7 +61,7 @@ RUN npm install --production
 # NOW copy the built application (including .next folder)
 COPY --from=frontend-build /usr/src/app/.next ./.next
 COPY --from=frontend-build /usr/src/app/public ./public
-# COPY --from=frontend-build /usr/src/app/next.config.js ./next.config.js
+COPY --from=frontend-build /usr/src/app/next.config.* ./
 
 # Expose the port the app runs on
 EXPOSE 3000
