@@ -20,7 +20,6 @@ namespace deeplynx.tests
         private long pid4;
         private long[] pids => [pid, pid2, pid3, pid4];
         private long rid; // record ID
-        private long rid2;
         private long did;
         private long cid;
 
@@ -409,6 +408,7 @@ namespace deeplynx.tests
             Assert.Equal(5, records.Count);
             Assert.All(records, r => Assert.True(r.LastUpdatedAt > DateTime.Now.AddMinutes(-30)));
         }
+        
         [Fact]
         public async Task QueryBuilder_Success_FiltersRecordsByDateRangeRetry()
         {
@@ -675,7 +675,6 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(8, records.Count);
         }
-                
         
         [Fact]
         public async Task QueryBuilder_Success_FiltersRecordsInProjectWithCrossProjectResources()
@@ -782,7 +781,6 @@ namespace deeplynx.tests
             // Assert
             Assert.Equal(8, records.Count);
         }
-        
         
         [Fact]
         public async Task QueryBuilder_Success_FiltersRecordsByKeyValueSearch()
@@ -1162,7 +1160,6 @@ namespace deeplynx.tests
             };
             await Context.Records.AddAsync(hunter);
             await Context.SaveChangesAsync();
-            rid2 = hunter.Id;
 
             var tech = new Record
             {
