@@ -8,7 +8,6 @@ import FileDetailsCard from "../components/FileDetailCard";
 import NewFileUploadCard, {
   FileMetadata,
 } from "../components/NewFileUploadCard";
-import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
 import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
 import { getAllProjects } from "@/app/lib/projects_services.client";
@@ -20,10 +19,7 @@ import {
   getAllObjectStorages,
   ObjectStorageDTO,
 } from "@/app/lib/object_storage_services.client";
-import {
-  uploadFile,
-  uploadFilesBatch,
-} from "@/app/lib/file_upload_services.client";
+import { uploadFile } from "@/app/lib/file_upload_services.client";
 import toast from "react-hot-toast";
 import { ProjectResponseDto } from "../types/responseDTOs";
 
@@ -33,11 +29,7 @@ type Props = {
   uploadText: string;
 };
 
-export default function UploadCenterClient({
-  initialAvailableFiles,
-  initialRecentUploads,
-  uploadText,
-}: Props) {
+export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const { t } = useLanguage();
   const [multi, setMulti] = useState(false);
   const [showMultiFileWarning, setShowMultiFileWarning] = useState(false);
