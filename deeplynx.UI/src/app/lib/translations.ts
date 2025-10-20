@@ -102,7 +102,7 @@ export const translations = {
             SEE_MORE: "See more",
             TAGS: "Tags:",
             CLASS: "Class: ",
-            DATA_SOURCE: "Data source: ",
+            DATA_SOURCE: "Data source ",
             ALL_YOUR_PROJECTS: "All your Projects",
             RECENTLY_ADDED_RECORDS: "Recently Added Records",
             TIMESERIES: "Timeseries",
@@ -227,7 +227,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-
+            STORAGE_DESTINATION: "Storage Destination",
         }
     },
     es: {
@@ -468,7 +468,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            
+            STORAGE_DESTINATION: "Storage Destination",
         }
     }
 }
