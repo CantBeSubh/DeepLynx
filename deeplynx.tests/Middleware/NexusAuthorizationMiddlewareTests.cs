@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Xunit;
 
 namespace deeplynx.tests.Middleware
 {
@@ -202,6 +201,193 @@ namespace deeplynx.tests.Middleware
             // Assert
             Assert.False(result.Succeeded);
             Assert.Contains("Invalid token format", result.Failure?.Message ?? "");
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        #endregion
+        
+        #region DISABLE_BACKEND_AUTHENTICATION with Token Tests
+
+        [Fact]
+        public async Task HandleAuthenticate_UsesLocalDevBypass_WhenDisabledAndNoToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            var context = CreateHttpContext(); // No token
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_UsesTokenUser_WhenDisabledAndValidToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret);
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            Assert.NotNull(result.Principal);
+            
+            // Should use the token user, not local dev user
+            var nameClaim = result.Principal.FindFirst("name");
+            Assert.NotNull(nameClaim);
+            Assert.Equal(user.Email, nameClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var context = CreateHttpContext("invalid-token-format");
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndExpiredToken()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create expired token
+            var token = GenerateHS256Token(user.Email, apiKey.Key, apiKey.Secret, expiresInMinutes: -60);
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidSignature()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            var apiKey = await Context.ApiKeys.FindAsync(akid1);
+            Assert.NotNull(user);
+            Assert.NotNull(apiKey);
+
+            // Create token with wrong secret
+            var token = GenerateHS256Token(user.Email, apiKey.Key, "wrong-secret");
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndInvalidApiKey()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            var user = await Context.Users.FindAsync(uid1);
+            Assert.NotNull(user);
+
+            // Create token with invalid API key
+            var token = GenerateHS256Token(user.Email, "invalid-api-key", "some-secret");
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+        }
+
+        [Fact]
+        public async Task HandleAuthenticate_FallsBackToLocalDev_WhenDisabledAndTokenThrowsException()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            // Create a malformed token that will throw during validation
+            var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.malformed.signature";
+            var context = CreateHttpContext(token);
+            var middleware = await CreateAndInitializeMiddleware(context);
+
+            // Act
+            var result = await middleware.AuthenticateAsync();
+
+            // Assert
+            Assert.True(result.Succeeded);
+            var emailClaim = result.Principal?.FindFirst(ClaimTypes.Email);
+            Assert.NotNull(emailClaim);
+            Assert.Equal("developer@localhost", emailClaim.Value);
 
             // Cleanup
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
@@ -693,8 +879,158 @@ namespace deeplynx.tests.Middleware
         }
 
         #endregion
+        
+        #region EnsureUserExistsAsync DefaultSuperUser Tests
 
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WithExactMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"),
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
 
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin);
+            Assert.Equal("Admin User", user.Name);
+            Assert.Equal("adminuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        [Fact]
+        public async Task EnsureUserExistsAsync_DoesNotSetAdmin_WhenNoMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "regularuser@test.com"),
+                new Claim("uid", "regular-sso-id"),
+                new Claim(ClaimTypes.Name, "Regular User"),
+                new Claim("preferred_username", "regularuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "regularuser@test.com");
+
+            Assert.NotNull(user);
+            Assert.False(user.IsSysAdmin);
+            Assert.Equal("Regular User", user.Name);
+            Assert.Equal("regularuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WhenCaseInsensitiveMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "Admin@Test.COM");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"),
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin);
+            Assert.Equal("Admin User", user.Name);
+            Assert.Equal("adminuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+        
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WhenUserExists_WithMatchingSsoId()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+    
+            // Create existing user with SSO ID (not admin yet)
+            var existingUser = new User
+            {
+                Email = "admin@test.com",
+                Name = "Original Name",
+                Username = "originalusername",
+                SsoId = "admin-sso-id",
+                IsActive = true,
+                IsArchived = false,
+                IsSysAdmin = false
+            };
+            Context.Users.Add(existingUser);
+            await Context.SaveChangesAsync();
+            var userId = existingUser.Id;
+    
+            // Verify user is not admin initially
+            Assert.False(existingUser.IsSysAdmin);
+    
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"), // Same SSO ID
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+
+            // Assert
+            var user = await Context.Users.FindAsync(userId);
+    
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin); // Should be promoted to admin
+            Assert.Equal(userId, user.Id); // Same user
+            Assert.Equal("admin-sso-id", user.SsoId); // SSO ID unchanged
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        #endregion
 
         #region EnsureUserExistsAsync Email Fallback Tests
 
