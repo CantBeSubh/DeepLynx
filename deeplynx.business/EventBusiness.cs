@@ -5,6 +5,7 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
@@ -29,6 +30,88 @@ public class EventBusiness : IEventBusiness
         _cacheBusiness = cacheBusiness;
         _notificationBusiness = notificationBusiness;
     }
+
+    /// <summary>
+    /// Retrieves all project events that the user is subscribed to.
+    /// </summary>
+    /// <param name="userId">The ID of the user to which the subscription belongs</param>
+    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+    public async Task<List<EventResponseDto>> GetAllEvents(long? projectId, long? organizationId)
+    {
+        var eventQuery = _context.Events.AsQueryable();
+        
+        if (projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);   
+        }
+
+        if (organizationId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
+        }
+
+        return await eventQuery.Select(e => new EventResponseDto()
+            {
+                Id = e.Id,
+                Operation = e.Operation,
+                EntityType = e.EntityType,
+                EntityId = e.EntityId,
+                ProjectId = e.ProjectId,
+                OrganizationId = e.OrganizationId,
+                DataSourceId = e.DataSourceId,
+                Properties = e.Properties,
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Retrieves all project events for projects that the user is a member of.
+    /// </summary>
+    public async Task<List<EventResponseDto>> GetAllEventsByUserProjectMembership()
+    {
+        var userId = UserContextStorage.UserId;
+    
+        if (userId == 0)
+        {
+            return new List<EventResponseDto>();
+        }
+    
+        var userProjectIds = await _context.Projects
+            .Where(p => p.ProjectMembers.Any(pm =>
+                pm.UserId == userId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+            ))
+            .Select(p => p.Id)
+            .ToListAsync();
+        
+        if (!userProjectIds.Any())
+        {
+            return new List<EventResponseDto>();
+        }
+    
+        var events = await _context.Events
+            .Where(e => e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
+            .OrderByDescending(e => e.LastUpdatedAt)
+            .ToListAsync();
+    
+        var response = events.Select(e => new EventResponseDto
+        {
+            Id = e.Id,
+            ProjectId = e.ProjectId,
+            Operation = e.Operation,
+            EntityType = e.EntityType,
+            EntityId = e.EntityId,
+            DataSourceId = e.DataSourceId,
+            Properties = e.Properties,
+            LastUpdatedBy = e.LastUpdatedBy,
+            LastUpdatedAt = e.LastUpdatedAt,
+        }).ToList();
+    
+        return response;
+    }
+    
     /// <summary>
     /// Retrieves all project events that the user is subscribed to.
     /// </summary>
