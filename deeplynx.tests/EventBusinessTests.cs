@@ -94,7 +94,7 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUserProjectMembership();
+                var result = await _eventBusiness.GetAllEventsByUser();
 
                 // Assert
                 Assert.Equal(6, result.Count);
@@ -137,7 +137,7 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUserProjectMembership();
+                var result = await _eventBusiness.GetAllEventsByUser();
 
                 // Assert
                 Assert.Equal(8, result.Count); // All events from both projects
@@ -160,7 +160,7 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUserProjectMembership();
+                var result = await _eventBusiness.GetAllEventsByUser();
 
                 // Assert
                 Assert.Empty(result);
@@ -183,7 +183,7 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUserProjectMembership();
+                var result = await _eventBusiness.GetAllEventsByUser();
 
                 // Assert
                 Assert.Empty(result);
