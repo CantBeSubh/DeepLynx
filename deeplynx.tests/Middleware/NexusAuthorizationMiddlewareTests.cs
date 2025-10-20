@@ -879,6 +879,158 @@ namespace deeplynx.tests.Middleware
         }
 
         #endregion
+        
+        #region EnsureUserExistsAsync DefaultSuperUser Tests
+
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WithExactMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"),
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin);
+            Assert.Equal("Admin User", user.Name);
+            Assert.Equal("adminuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        [Fact]
+        public async Task EnsureUserExistsAsync_DoesNotSetAdmin_WhenNoMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "regularuser@test.com"),
+                new Claim("uid", "regular-sso-id"),
+                new Claim(ClaimTypes.Name, "Regular User"),
+                new Claim("preferred_username", "regularuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "regularuser@test.com");
+
+            Assert.NotNull(user);
+            Assert.False(user.IsSysAdmin);
+            Assert.Equal("Regular User", user.Name);
+            Assert.Equal("regularuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WhenCaseInsensitiveMatch()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "Admin@Test.COM");
+            
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"),
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Assert
+            var user = await Context.Users
+                .FirstOrDefaultAsync(u => u.Email == "admin@test.com");
+
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin);
+            Assert.Equal("Admin User", user.Name);
+            Assert.Equal("adminuser", user.Username);
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+        
+        [Fact]
+        public async Task EnsureUserExistsAsync_SetsAdmin_WhenUserExists_WithMatchingSsoId()
+        {
+            // Arrange
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", "admin@test.com");
+    
+            // Create existing user with SSO ID (not admin yet)
+            var existingUser = new User
+            {
+                Email = "admin@test.com",
+                Name = "Original Name",
+                Username = "originalusername",
+                SsoId = "admin-sso-id",
+                IsActive = true,
+                IsArchived = false,
+                IsSysAdmin = false
+            };
+            Context.Users.Add(existingUser);
+            await Context.SaveChangesAsync();
+            var userId = existingUser.Id;
+    
+            // Verify user is not admin initially
+            Assert.False(existingUser.IsSysAdmin);
+    
+            var claims = new[]
+            {
+                new Claim(ClaimTypes.Email, "admin@test.com"),
+                new Claim("uid", "admin-sso-id"), // Same SSO ID
+                new Claim(ClaimTypes.Name, "Admin User"),
+                new Claim("preferred_username", "adminuser")
+            };
+            var identity = new ClaimsIdentity(claims, "Test");
+            var principal = new ClaimsPrincipal(identity);
+
+            // Act
+            await InvokePrivateMethodAsync("EnsureUserExistsAsync", principal);
+
+            // Force EF to sync with database
+            Context.ChangeTracker.Clear();
+
+            // Assert
+            var user = await Context.Users.FindAsync(userId);
+    
+            Assert.NotNull(user);
+            Assert.True(user.IsSysAdmin); // Should be promoted to admin
+            Assert.Equal(userId, user.Id); // Same user
+            Assert.Equal("admin-sso-id", user.SsoId); // SSO ID unchanged
+
+            // Cleanup
+            Environment.SetEnvironmentVariable("SUPERUSER_EMAIL", null);
+        }
+
+        #endregion
 
         #region EnsureUserExistsAsync Email Fallback Tests
 
