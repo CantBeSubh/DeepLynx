@@ -468,7 +468,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            STORAGE_DESTINATION: "Storage Destination",
+            STORAGE_DESTINATION: "Destino de almacenamiento"
         }
     }
 }
