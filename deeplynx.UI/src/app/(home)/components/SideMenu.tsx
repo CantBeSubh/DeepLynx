@@ -17,6 +17,7 @@ import {
   PresentationChartLineIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
+  BellIcon
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -208,6 +209,29 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
+          
+        <li className="mt-2">
+          <div className="flex items-center">
+            <Link 
+              href="/project/${project?.projectId}/project_settings"
+              onClick={(e) =>
+                  handleItemClick(
+                      `/event_management`,
+                      e
+                  )
+            }
+              className={getItemClass(
+                  `/project/${project?.projectId}/project_settings`
+              )}>
+              
+              <BellIcon className="size-6" />
+              {!isCollapsed && (
+                  <p className="ml-2">Event Management</p>
+              )}
+            </Link>
+          </div>
+        </li>
+          
         </ul>
 
         <div className="divider divider-secondary" />
