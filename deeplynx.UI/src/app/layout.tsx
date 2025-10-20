@@ -4,6 +4,8 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { LanguageProvider } from "./contexts/Language";
 import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
+import "shepherd.js/dist/css/shepherd.css";
+import "../../styles/shepherd-theme.css";
 
 export default function RootLayout({
   children,

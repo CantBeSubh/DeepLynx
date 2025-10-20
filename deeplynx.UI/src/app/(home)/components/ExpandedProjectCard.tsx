@@ -1,3 +1,4 @@
+// src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { getProjectStats } from "@/app/lib/projects_services.client";
@@ -63,7 +64,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
-
   return (
     <div>
       {/* Header Section */}
@@ -76,13 +76,15 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+            {t.translations.LAST_EDIT}{" "}
+            {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
           </p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close details"
           className="p-1 rounded-lg hover:bg-base-300/30 transition-colors"
+          data-tour={`project-row-${project.id ?? 0}-close`}
         >
           <XMarkIcon className="size-6 text-base-content/60 hover:text-base-content" />
         </button>
