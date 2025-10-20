@@ -222,7 +222,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           <ul>
             <li className="mt-2">
               <button className={getItemClass("/help")} >
-                <a href={process.env.NEXT_PUBLIC_DOCS_PATH} className="flex items-center">
+                <a
+                  href={
+                    process.env.NEXT_PUBLIC_DOCS_PATH
+                      ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
+                      : "/docs"
+                  }
+                  className="flex items-center">
                   <QuestionMarkCircleIcon className="size-6" />
                   {!isCollapsed && <div className="ml-2">{t.translations.HELP}</div>}
                 </a>
