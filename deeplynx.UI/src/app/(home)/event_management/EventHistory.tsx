@@ -229,12 +229,12 @@ const EventHistory = () => {
       sortable: true,
       cell: (row) => row.lastUpdatedAt.toLocaleString(),
     },
-    {
-      header: "Summary",
-      data: "summary",
-      sortable: true,
-      cell: (row) => row.summary,
-    },
+    // {
+    //   header: "Summary",
+    //   data: "summary",
+    //   sortable: true,
+    //   cell: (row) => row.summary,
+    // },
     {
       header: "Last Updated By",
       data: "lastUpdatedBy",
@@ -288,7 +288,7 @@ const EventHistory = () => {
         filterPlaceholder="Search events..."
         enablePagination={true}
         rowsPerPage={10}
-        bordered={true}
+        bordered={false}
         searchBar={true}
         gridView={true}
       />
