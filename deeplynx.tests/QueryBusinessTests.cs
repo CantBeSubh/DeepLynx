@@ -1,9 +1,7 @@
 using System.Text.Json;
 using deeplynx.business;
-using FluentAssertions;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using Microsoft.EntityFrameworkCore;
 using Record = deeplynx.datalayer.Models.Record;
 
 namespace deeplynx.tests
