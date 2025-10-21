@@ -2,18 +2,17 @@ using Microsoft.EntityFrameworkCore;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using deeplynx.interfaces;
-using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
 using deeplynx.helpers.Context;
-using Microsoft.AspNetCore.SignalR;
-using Newtonsoft.Json;
+using deeplynx.helpers.Mappers;
 
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
     private readonly INotificationBusiness _notificationBusiness;
+    private readonly EventMapper _eventMapper;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
@@ -23,12 +22,14 @@ public class EventBusiness : IEventBusiness
     public EventBusiness(
         DeeplynxContext context, 
         ICacheBusiness cacheBusiness,
-        INotificationBusiness notificationBusiness
+        INotificationBusiness notificationBusiness,
+        EventMapper eventMapper
         )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
         _notificationBusiness = notificationBusiness;
+        _eventMapper = eventMapper;
     }
 
     /// <summary>
@@ -50,20 +51,9 @@ public class EventBusiness : IEventBusiness
             eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
         }
 
-        return await eventQuery.Select(e => new EventResponseDto()
-            {
-                Id = e.Id,
-                Operation = e.Operation,
-                EntityType = e.EntityType,
-                EntityId = e.EntityId,
-                ProjectId = e.ProjectId,
-                OrganizationId = e.OrganizationId,
-                DataSourceId = e.DataSourceId,
-                Properties = e.Properties,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy
-            })
-            .ToListAsync();
+        var events = await eventQuery.ToListAsync();
+        
+        return events.Select(e => _eventMapper.MapToDto(e)).ToList();
     }
 
     /// <summary>
@@ -96,20 +86,7 @@ public class EventBusiness : IEventBusiness
             .OrderByDescending(e => e.LastUpdatedAt)
             .ToListAsync();
     
-        var response = events.Select(e => new EventResponseDto
-        {
-            Id = e.Id,
-            ProjectId = e.ProjectId,
-            Operation = e.Operation,
-            EntityType = e.EntityType,
-            EntityId = e.EntityId,
-            DataSourceId = e.DataSourceId,
-            Properties = e.Properties,
-            LastUpdatedBy = e.LastUpdatedBy,
-            LastUpdatedAt = e.LastUpdatedAt,
-        }).ToList();
-    
-        return response;
+        return events.Select(e => _eventMapper.MapToDto(e)).ToList();
     }
     
     /// <summary>
@@ -146,20 +123,8 @@ public class EventBusiness : IEventBusiness
         var projectIdParam = new NpgsqlParameter("projectId", projectId);
 
         var events = await _context.Events.FromSqlRaw(sql, userIdParam, projectIdParam).ToListAsync();
-
-        return events
-            .Select(e => new EventResponseDto()
-            {
-                Id = e.Id,
-                ProjectId = e.ProjectId,
-                Operation = e.Operation,
-                DataSourceId = e.DataSourceId,
-                EntityId = e.EntityId,
-                EntityType = e.EntityType,
-                Properties = e.Properties,
-                LastUpdatedBy = e.LastUpdatedBy,
-                LastUpdatedAt = e.LastUpdatedAt,
-            }).ToList();
+            
+        return events.Select(e => _eventMapper.MapToDto(e)).ToList();
     }
 
     /// <summary>
@@ -190,18 +155,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
 
-        var response = new EventResponseDto
-        {
-            Id = newEvent.Id,
-            ProjectId = newEvent.ProjectId,
-            Operation = newEvent.Operation,
-            EntityType = newEvent.EntityType,
-            EntityId = newEvent.EntityId,
-            DataSourceId = newEvent.DataSourceId,
-            Properties = newEvent.Properties,
-            LastUpdatedBy = newEvent.LastUpdatedBy,
-            LastUpdatedAt = newEvent.LastUpdatedAt,
-        };
+        var response = _eventMapper.MapToDto(newEvent);
         
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
         {
@@ -242,18 +196,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.AddRange(eventEntities);
         await _context.SaveChangesAsync();
 
-        var response = eventEntities.Select(e => new EventResponseDto
-        {
-            Id = e.Id,
-            ProjectId = e.ProjectId,
-            Operation = e.Operation,
-            EntityType = e.EntityType,
-            EntityId = e.EntityId,
-            Properties = e.Properties,
-            DataSourceId = e.DataSourceId,
-            LastUpdatedBy = e.LastUpdatedBy,
-            LastUpdatedAt = e.LastUpdatedAt
-        }).ToList();
+        var response = eventEntities.Select(e => _eventMapper.MapToDto(e)).ToList();
 
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
         {
