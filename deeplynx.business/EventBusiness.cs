@@ -132,14 +132,13 @@ public class EventBusiness : IEventBusiness
     /// </summary>
     /// <param name="dto">A data transfer object with details on the new event to be created.</param>
     /// <returns>The new Event which was just created.</returns>
-    public async Task<EventResponseDto> CreateEvent(CreateEventRequestDto dto)
+    public async Task<EventResponseDto> CreateEvent(
+        CreateEventRequestDto dto,
+        string? projectName = null,
+        string? entityName = null,
+        string? dataSourceName = null
+    )
     {
-        // TODO: since project may be absent, determine if this check is still needed here
-        // await ExistenceHelper.EnsureProjectExistsAsync(_context, dto.ProjectId, _cacheBusiness, false);
-        ValidationHelper.ValidateModel(dto);
-        ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
-        ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-
         var newEvent = new Event
         {
             Operation = dto.Operation,
@@ -155,8 +154,14 @@ public class EventBusiness : IEventBusiness
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
 
-        var response = _eventMapper.MapToDto(newEvent);
-        
+        // Use the mapper with the optional enrichment data
+        var response = _eventMapper.MapToDto(
+            newEvent,
+            projectName: projectName,
+            entityName: entityName,
+            dataSourceName: dataSourceName
+        );
+    
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
         {
             await _notificationBusiness.SendEventNotification(response);
@@ -171,7 +176,13 @@ public class EventBusiness : IEventBusiness
     /// <param name="projectId">The ID of the project to which the event belongs</param>
     /// <param name="events">A List of data transfer objects with details on the new event to be created.</param>
     /// <returns>The list of new Events which were created.</returns>
-    public async Task<List<EventResponseDto>> BulkCreateEvents(long projectId, List<CreateEventRequestDto> events)
+    public async Task<List<EventResponseDto>> BulkCreateEvents(
+        long projectId, 
+        List<CreateEventRequestDto> events,
+        string? projectName = null,
+        string? entityName = null,
+        string? dataSourceName = null
+    )
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, false);
 
@@ -196,7 +207,12 @@ public class EventBusiness : IEventBusiness
         _context.Events.AddRange(eventEntities);
         await _context.SaveChangesAsync();
 
-        var response = eventEntities.Select(e => _eventMapper.MapToDto(e)).ToList();
+        var response = _eventMapper.MapToDtoList(
+            eventEntities,
+            projectName: projectName,
+            entityName: entityName,
+            dataSourceName: dataSourceName
+        );
 
         if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
         {

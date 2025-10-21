@@ -133,8 +133,6 @@ public class ClassBusiness : IClassBusiness
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
             IsArchived = false
-
-
         };
 
         _context.Classes.Add(newClass);

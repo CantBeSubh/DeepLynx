@@ -5,29 +5,43 @@ namespace deeplynx.helpers.Mappers;
 public class EventMapper
 {
     public EventResponseDto MapToDto(
-        Event eventEntity,
+        Event newEvent
+    )
+    {
+        if (newEvent == null) return null;
+
+        return new EventResponseDto
+        {
+            Id = newEvent.Id,
+            Operation = newEvent.Operation,
+            EntityType = newEvent.EntityType,
+            EntityId = newEvent.EntityId,
+            ProjectId = newEvent.ProjectId,
+            OrganizationId = newEvent.OrganizationId,
+            DataSourceId = newEvent.DataSourceId,
+            Properties = newEvent.Properties,
+            ProjectName = projectName,
+            EntityName = entityName,
+            DataSourceName = dataSourceName,
+            LastUpdatedAt = newEvent.LastUpdatedAt,
+            LastUpdatedBy = newEvent.LastUpdatedBy
+        };
+    }
+
+    public List<EventResponseDto> MapToDtoList(
+        List<Event> eventEntities,
         string? projectName = null,
         string? entityName = null,
         string? dataSourceName = null
     )
     {
-        if (eventEntity == null) return null;
+        if (eventEntities == null) return new List<EventResponseDto>();
 
-        return new EventResponseDto
-        {
-            Id = eventEntity.Id,
-            Operation = eventEntity.Operation,
-            EntityType = eventEntity.EntityType,
-            EntityId = eventEntity.EntityId,
-            ProjectId = eventEntity.ProjectId,
-            OrganizationId = eventEntity.OrganizationId,
-            DataSourceId = eventEntity.DataSourceId,
-            Properties = eventEntity.Properties,
-            ProjectName = projectName,
-            EntityName = entityName,
-            DataSourceName = dataSourceName,
-            LastUpdatedAt = eventEntity.LastUpdatedAt,
-            LastUpdatedBy = eventEntity.LastUpdatedBy
-        };
+        return eventEntities.Select(e => MapToDto(
+            e,
+            projectName: projectName,
+            entityName: entityName,
+            dataSourceName: dataSourceName
+        )).ToList();
     }
 }
