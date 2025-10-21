@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using deeplynx.helpers;
 using Npgsql;
 using System.Text.Json;
-using deeplynx.helpers.Context;
 
 namespace deeplynx.business;
 
@@ -122,7 +121,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<ClassResponseDto> CreateClass(long projectId, CreateClassRequestDto dto)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness);
         ValidationHelper.ValidateModel(dto);
 
         var newClass = new Class
@@ -134,30 +133,24 @@ public class ClassBusiness : IClassBusiness
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
             IsArchived = false
+
+
         };
 
         _context.Classes.Add(newClass);
         await _context.SaveChangesAsync();
-    
-        // Get project name
-        var project = await _context.Projects.FindAsync(projectId);
-    
-        // Log event with enriched data
-        await _eventBusiness.CreateEvent(
-            new CreateEventRequestDto
-            {
-                ProjectId = projectId,
-                Operation = "create",
-                EntityType = "class",
-                EntityId = newClass.Id,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new {newClass.Name}),
-                LastUpdatedBy = UserContextStorage.Email
-            },
-            projectName: project?.Name,
-            entityName: newClass.Name,
-            dataSourceName: null
-        );
+        
+        // log event with class create details
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "create",
+            EntityType = "class",
+            EntityId = newClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {newClass.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new ClassResponseDto
         {
@@ -169,6 +162,7 @@ public class ClassBusiness : IClassBusiness
             LastUpdatedAt = newClass.LastUpdatedAt,
             LastUpdatedBy = newClass.LastUpdatedBy,
             IsArchived = newClass.IsArchived
+
         };
     }
     
@@ -181,7 +175,7 @@ public class ClassBusiness : IClassBusiness
     /// <exception cref="Exception">Returned if class already exists</exception>
     public async Task<List<ClassResponseDto>> BulkCreateClasses(long projectId, List<CreateClassRequestDto> classes)
     {
-        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId,  _cacheBusiness);
         
         // Bulk insert into classes; if there is a name collision, update the description and uuid if present
         var sql = @"
@@ -221,11 +215,8 @@ public class ClassBusiness : IClassBusiness
             .SqlQueryRaw<ClassResponseDto>(sql, parameters.ToArray())
             .ToListAsync();
 
-        // Get project
-        var project = await _context.Projects.FindAsync(projectId);
-
-        // For each created class, bulk log events
-        var events = new List<CreateEventRequestDto>();
+        // for each created class Bulk log events
+        var events = new List<CreateEventRequestDto> { };
         foreach (var item in result)
         {
             events.Add(new CreateEventRequestDto
@@ -236,18 +227,10 @@ public class ClassBusiness : IClassBusiness
                 EntityId = item.Id,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                LastUpdatedBy = UserContextStorage.Email
+                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
-        
-        // Bulk create events with enrichment data
-        await _eventBusiness.BulkCreateEvents(
-            projectId, 
-            events,
-            projectName: project?.Name,
-            entityName: "class",
-            dataSourceName: null
-        );
+        await _eventBusiness.BulkCreateEvents(projectId, events);
         
         return result;
     }
@@ -279,25 +262,17 @@ public class ClassBusiness : IClassBusiness
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
         
-        // Get project name
-        var project = await _context.Projects.FindAsync(projectId);
-        
-        // Log event with class update details and enrichment data
-        await _eventBusiness.CreateEvent(
-            new CreateEventRequestDto
-            {
-                ProjectId = projectId,
-                Operation = "update",
-                EntityType = "class",
-                EntityId = updatedClass.Id,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
-                LastUpdatedBy = UserContextStorage.Email
-            },
-            projectName: project?.Name,
-            entityName: updatedClass.Name,
-            dataSourceName: null
-        );
+        // log event with class update details
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "update",
+            EntityType = "class",
+            EntityId = updatedClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
 
         return new ClassResponseDto
         {
@@ -381,28 +356,22 @@ public class ClassBusiness : IClassBusiness
                     $"unable to archive class {classId} or its downstream dependents: {exc}");
             }
         }
-        
-        // Get project name
-        var project = await _context.Projects.FindAsync(projectId);
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
-            {
-                ProjectId = projectId,
-                Operation = "archive",
-                EntityType = "class",
-                EntityId = dbClass.Id,
-                DataSourceId = null,
-                Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-                LastUpdatedBy = UserContextStorage.Email
-            },
-            projectName: project?.Name,
-            entityName: dbClass.Name,
-            dataSourceName: null
-        );
+        {
+            ProjectId = projectId,
+            Operation = "archive",
+            EntityType = "class",
+            EntityId = dbClass.Id,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
         
         return true;
     }
-    
+        
+        
     /// <summary>
     /// Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>
@@ -449,9 +418,6 @@ public class ClassBusiness : IClassBusiness
                     $"unable to unarchive class {classId} or its downstream dependents: {exc}");
             }
         }
-        
-        // Get project name
-        var project = await _context.Projects.FindAsync(projectId);
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -461,12 +427,8 @@ public class ClassBusiness : IClassBusiness
             EntityId = dbClass.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-            LastUpdatedBy = UserContextStorage.Email
-        },
-        projectName: project?.Name,
-        entityName: dbClass.Name,
-        dataSourceName: null
-        );
+            LastUpdatedBy = "" // TODO: add username when JWT are implemented
+        });
         
         return true;
     }
