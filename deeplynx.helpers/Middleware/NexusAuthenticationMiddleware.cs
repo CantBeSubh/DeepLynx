@@ -344,11 +344,13 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
+            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
             {
-                if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId) 
+                // update if admin needs to be set or if SSO ID is improperly configured
+                if ((isDefaultSuperUser && !existingUser.IsSysAdmin) 
                     || existingUser.SsoId != principal.FindFirst("uid")?.Value)
                 {
                     existingUser.SsoId = ssoId;
@@ -356,6 +358,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     existingUser.Name = name;
                     existingUser.IsActive = true;
                     existingUser.IsArchived = false;
+                    existingUser.IsSysAdmin = isDefaultSuperUser;
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }
@@ -369,7 +372,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     Username = username,
                     SsoId = ssoId,
                     IsActive = true,
-                    IsArchived = false
+                    IsArchived = false,
+                    IsSysAdmin = isDefaultSuperUser,
                 };
                 dbContext.Users.Add(newUser);
                 await dbContext.SaveChangesAsync();

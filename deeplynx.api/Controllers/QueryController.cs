@@ -69,7 +69,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var records = _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
+                var records = await _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
                 return Ok(records);
             }
             catch (Exception exc)

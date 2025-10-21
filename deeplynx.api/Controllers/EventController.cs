@@ -12,7 +12,7 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("events/{projectId}")]
+    [Route("events")]
     [Authorize]
     public class EventController : ControllerBase // Inherit from ControllerBase
     {
@@ -23,6 +23,50 @@ namespace deeplynx.api.Controllers
             _eventBusiness = eventBusiness;
             _logger = logger;
         }
+
+        /// <summary>
+        /// Get All Events
+        /// </summary>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="organizationId">The ID of the origanization to which the events belong</param>
+        /// <returns></returns>
+        [HttpGet("GetAllEvents", Name = "api_get_all_events")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEvents(
+            [FromQuery] long? projectId = null,
+            [FromQuery] long? organizationId = null)
+        {
+            try
+            {
+                var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get all events by user project membership.
+        /// </summary>
+        [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUser()
+        {
+            try
+            {
+                var events = await _eventBusiness.GetAllEventsByUser();
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
         /// <summary>
         /// Get project Events based on user subscriptions 
         /// </summary>
@@ -30,7 +74,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the events belong</param>
         /// <returns></returns>
 
-        [HttpGet("GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
+        [HttpGet("{projectId}/GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectSubscriptions(
             long projectId,
             [FromQuery] long userId)

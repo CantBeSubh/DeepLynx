@@ -16,6 +16,7 @@ public interface IUserBusiness
     Task<bool> ArchiveUser(long userId);
     Task<DataOverviewDto> GetUserOverview(long userId);
     Task<bool> UnarchiveUser(long userId);
+    Task<bool> SetSysAdmin(long authorizerId, long candidateId);
     Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
         long[] projectId);
 }

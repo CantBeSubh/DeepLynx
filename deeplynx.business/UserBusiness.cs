@@ -31,9 +31,7 @@ public class UserBusiness : IUserBusiness
     /// <returns>A list of users, optionally filtered by project or organization</returns>
     public async Task<IEnumerable<UserResponseDto>> GetAllUsers(long? projectId, long? organizationId)
     {
-        var users = _context.Users
-            .Where(p => !p.IsArchived)
-            .Where(p => p.Email != "developer@localhost");
+        var users = _context.Users.Where(p => !p.IsArchived);
 
         if (projectId != null)
         {
@@ -263,7 +261,33 @@ public class UserBusiness : IUserBusiness
         return true;
     }
     
-    // TODO: set IsSysAdmin with a business function. Should only be executable by SysAdmins
+    /// <summary>
+    /// Set a user to sysAdmin. Only works if the user granting admin privilege is also a sysAdmin.
+    /// </summary>
+    /// <param name="authorizerId">ID of the user who is granting admin privileges</param>
+    /// <param name="candidateId">ID of the user who is being granted admin privileges</param>
+    /// <returns>Boolean true if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if authorizer or candidate is not found or lacks privileges</exception>
+    public async Task<bool> SetSysAdmin(long authorizerId, long candidateId)
+    {
+        var authorizer = await _context.Users
+            .Where(a => a.Id == authorizerId && !a.IsArchived && a.IsSysAdmin)
+            .FirstOrDefaultAsync();
+        if (authorizer == null)
+            throw new KeyNotFoundException($"User with ID {authorizerId} not found or cannot grant admin privileges.");
+        
+        var candidate = await _context.Users
+            .Where(c => c.Id == candidateId && !c.IsArchived)
+            .FirstOrDefaultAsync();
+        if (candidate == null)
+            throw new KeyNotFoundException($"User with ID {candidateId} not found.");
+
+        candidate.IsSysAdmin = true;
+        
+        _context.Users.Update(candidate);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 
     /// <summary>
     /// Retrieves data overview counts for a user

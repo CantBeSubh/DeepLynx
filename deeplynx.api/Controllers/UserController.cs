@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -68,7 +69,6 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-
         }
 
         /// <summary>
@@ -172,6 +172,29 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving user {userId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Grant System Admin Rights
+        /// </summary>
+        /// <param name="candidateId">ID of user to grant the sysadmin rights to </param>
+        /// <returns>User response DTO</returns>
+        [HttpGet("SetSysAdmin/{candidateID}", Name = "api_set_sys_admin")]
+        public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long candidateId)
+        {
+            try
+            {
+                // get the authorizer ID from the middleware context
+                var authorizerId = UserContextStorage.UserId;
+                var granted = await _userBusiness.SetSysAdmin(authorizerId, candidateId);
+                return Ok(new { message = $"Granted sysadmin rights to user {candidateId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while setting user {candidateId} as admin: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
