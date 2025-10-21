@@ -33,6 +33,7 @@
     "react-router-dom": "^7.6.1",
     "react-select": "^5.10.2",
     "react-slick": "^0.30.3",
+    "shepherd.js": "^14.5.1",
     "slick-carousel": "^1.8.1",
     "usehooks-ts": "^3.1.1"
   },

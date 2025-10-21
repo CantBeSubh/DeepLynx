@@ -221,26 +221,18 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         <div className="mt-auto">
           <ul>
             <li className="mt-2">
-              <Link
-                href={
-                  process.env.NEXT_PUBLIC_DOCS_PATH
-                    ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
-                    : "/docs"
-                }
-                /*
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/help", e)}
-                */
-                className={getItemClass("/help")}
-              >
-                <QuestionMarkCircleIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}
-              </Link>
+              <button className={getItemClass("/help")} >
+                <a
+                  href={
+                    process.env.NEXT_PUBLIC_DOCS_PATH
+                      ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
+                      : "/docs"
+                  }
+                  className="flex items-center">
+                  <QuestionMarkCircleIcon className="size-6" />
+                  {!isCollapsed && <div className="ml-2">{t.translations.HELP}</div>}
+                </a>
+              </button>
             </li>
             {/* <li className="mt-2">
               <Link
@@ -278,19 +270,20 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </li> */}
           </ul>
         </div>
-      </aside>
+      </aside >
       {/* Toggle tab (sticking out to the right) */}
-      <div
+      < div
         className="h-8 w-4 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
         onClick={toggleMenu}
       >
-        {isCollapsed ? (
-          <ChevronRightIcon className="size-6" />
-        ) : (
-          <ChevronLeftIcon className="size-6" />
-        )}
-      </div>
-    </div>
+        {
+          isCollapsed ? (
+            <ChevronRightIcon className="size-6" />
+          ) : (
+            <ChevronLeftIcon className="size-6" />
+          )}
+      </div >
+    </div >
   );
 };
 
