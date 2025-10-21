@@ -392,7 +392,8 @@ try
     app.MapOpenApi();
     
     var customcss = File.ReadAllText("moon.css");
-    var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK"); 
+    var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK");
+
     // Conditional image hosting
     var imageSrc = "/images/lynx-white.png";
     if (!string.IsNullOrEmpty(hostedLink))
@@ -427,7 +428,8 @@ try
 
         if (!string.IsNullOrEmpty(hostedLink))
         {
-            options.Servers = [new ScalarServer(hostedLink)];
+            var hostedLinkWithApi = string.Concat(hostedLink + "/api");
+            options.Servers = [new ScalarServer(hostedLinkWithApi)];
         }
     });
 
