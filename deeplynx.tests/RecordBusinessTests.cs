@@ -807,33 +807,21 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task UnarchiveRecord_ValidArchivedRecord_UnarchivesSuccessfully()
     {
         // Arrange
-        var archivedRecord = new Record
-        {
-            Name = "Archived Record",
-            Description = "Archived Record Description",
-            OriginalId = "Archived Record OriginalId",
-            ObjectStorageId = osid,
-            Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
-            ProjectId = pid,
-            DataSourceId = did,
-            ClassId = cid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true,
-            FileType = "pdf"
-        };
-        Context.Records.Add(archivedRecord);
+        var record = await Context.Records.FindAsync(rid);
+        record.IsArchived = true;
         await Context.SaveChangesAsync();
 
         // Act
-        var result = await _recordBusiness.UnarchiveRecord(pid, archivedRecord.Id);
+        var result = await _recordBusiness.UnarchiveRecord(pid, rid);
     
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
         // Assert
         Assert.True(result);
-        var reloaded = await Context.Records.FindAsync(archivedRecord.Id);
+        var reloaded = await Context.Records.FindAsync(rid);
         Assert.NotNull(reloaded);
+        Assert.Equal("Test Record", reloaded.Name);
         Assert.False(reloaded.IsArchived); 
         
         // Ensure that the record unarchive event was logged
@@ -844,7 +832,7 @@ public class RecordBusinessTests : IntegrationTestBase
             
         Assert.Equal("unarchive", actualEvent.Operation);
         Assert.Equal("record", actualEvent.EntityType);
-        Assert.Equal(archivedRecord.Id, actualEvent.EntityId);
+        Assert.Equal(rid, actualEvent.EntityId);
     }
 
     [Fact]
