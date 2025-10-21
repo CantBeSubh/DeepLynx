@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/edges")]
+    [Route("projects/{projectId}/edges")]
     [Authorize]
     public class EdgeController : ControllerBase
     {

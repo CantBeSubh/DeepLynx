@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -14,7 +13,7 @@ namespace deeplynx.api.Controllers;
 /// </remarks>
 [ApiController]
 [Authorize]
-[Route("api/token")]
+[Route("token")]
 public class TokenController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;

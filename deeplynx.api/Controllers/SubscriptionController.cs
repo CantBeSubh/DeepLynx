@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -13,7 +12,7 @@ namespace deeplynx.api.Controllers
     /// This controller provides endpoints to create, update, delete, and retrieve subscription information.
     /// </remarks>
     [ApiController]
-    [Route("api/projects/{projectId}/users/{userId}/subscriptions")] //TODO: remove userID from route when JWT are implemented
+    [Route("projects/{projectId}/users/{userId}/subscriptions")] //TODO: remove userID from route when JWT are implemented
     [Authorize]
     public class SubscriptionController : ControllerBase
     {

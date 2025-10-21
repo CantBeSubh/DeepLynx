@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -14,7 +13,7 @@ namespace deeplynx.api.Controllers
     /// This controller provides endpoints to create, update, delete, and retrieve class information.
     /// </remarks>
     [ApiController]
-    [Route("api/projects/{projectId}/classes")]
+    [Route("projects/{projectId}/classes")]
     [Authorize]
     public class ClassController : ControllerBase
     {
