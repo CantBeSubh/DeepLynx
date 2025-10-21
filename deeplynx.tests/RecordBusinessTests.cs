@@ -95,7 +95,7 @@ public class RecordBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.GetAllRecords(999L, null, true));
 
-        Assert.Contains($"Project with id 999 not found.", exception.Message);
+        Assert.Contains("Project with id 999 not found.", exception.Message);
     }
 
     #endregion
@@ -121,7 +121,7 @@ public class RecordBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.GetRecord(999L, rid, true));
         
-        Assert.Contains($"Project with id 999 not found.", exception.Message);
+        Assert.Contains("Project with id 999 not found.", exception.Message);
     }
 
     #endregion
@@ -190,8 +190,7 @@ public class RecordBusinessTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
             _recordBusiness.CreateRecord(1000999L, did, dto));
         
-        Assert.Contains($"Project with id 999 not found.", exception.Message);
-
+        Assert.Contains("Project with id 1000999 not found.", exception.Message);
         
         // Ensure that no record create event was logged
         var eventList = await Context.Events.ToListAsync();
@@ -356,25 +355,23 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task BulkCreateRecords_EmptyList_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>();
         
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() =>
-            _recordBusiness.BulkCreateRecords(projectId, dataSourceId, records));
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _recordBusiness.BulkCreateRecords(pid, did, records));
+
+        Assert.Contains("Unable to bulk create records: no records selected for creation", exception.Message);
         
         // Ensure that no record create event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task BulkCreateRecords_InvalidProjectId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var invalidProjectId = 999L;
-        var dataSourceId = 1L;
         List<CreateRecordRequestDto> records = new List<CreateRecordRequestDto>
         {
             new CreateRecordRequestDto
@@ -387,12 +384,14 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.BulkCreateRecords(invalidProjectId, dataSourceId, records));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.BulkCreateRecords(999L, 1L, records));
+        
+        Assert.Contains("Project with id 999 not found.",  exception.Message);
         
         // Ensure that no record create event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     #endregion
@@ -403,8 +402,6 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task UpdateRecord_ValidData_UpdatesRecord()
     {
         // Arrange
-        var projectId = pid;
-        var recordId = rid;
         var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Test Record",
@@ -417,7 +414,7 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
+        var result = await _recordBusiness.UpdateRecord(pid, rid, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -428,12 +425,12 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("png", result.FileType);
 
         // Verify record was actually updated in database
-        var updatedRecord = await Context.Records.FindAsync(recordId);
+        var updatedRecord = await Context.Records.FindAsync(rid);
         Assert.NotNull(updatedRecord);
         Assert.Equal("Updated Test Record", updatedRecord.Name);
         
         // Verify that get function gets updated version
-        var getResult = await _recordBusiness.GetRecord(projectId, recordId, true);
+        var getResult = await _recordBusiness.GetRecord(pid, rid, true);
         Assert.NotNull(getResult);
         Assert.Equal("Updated Test Record", getResult.Name);
         Assert.Equal("Updated Description", getResult.Description);
@@ -441,31 +438,29 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(1);
-        eventList[0].Should().BeEquivalentTo(new
-        {
-            ProjectId = projectId,
-            EntityId = result.Id,
-            EntityType = "record",
-            Operation = "update",
-            DataSourceId = result.DataSourceId,
-        });
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
+
+        var actualEvent = eventList[0];
+        
+        Assert.Equal(pid, actualEvent.ProjectId);
+        Assert.Equal(result.Id, actualEvent.EntityId);
+        Assert.Equal("record", actualEvent.EntityType);
+        Assert.Equal("update", actualEvent.Operation);
+        Assert.Equal(result.DataSourceId, actualEvent.DataSourceId);
     }
 
     [Fact]
     public async Task UpdateRecord_PartialUpdate_UpdatesRecord()
     {
         // Arrange
-        var projectId = pid;
-        var recordId = rid;
         var dto = new UpdateRecordRequestDto
         {
             Name = "New-ish Test Record"
         };
 
         // Act
-        var result = await _recordBusiness.UpdateRecord(projectId, recordId, dto);
+        var result = await _recordBusiness.UpdateRecord(pid, rid, dto);
 
         // Assert
         Assert.NotNull(result);
@@ -477,37 +472,34 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal(rfiletype, result.FileType);
 
         // Verify record was actually updated in database
-        var updatedRecord = await Context.Records.FindAsync(recordId);
+        var updatedRecord = await Context.Records.FindAsync(rid);
         Assert.NotNull(updatedRecord);
         Assert.Equal("New-ish Test Record", updatedRecord.Name);
         Assert.Equal(rdesc, updatedRecord.Description);
         
         // Verify that get function gets updated version
-        var getResult = await _recordBusiness.GetRecord(projectId, recordId, true);
+        var getResult = await _recordBusiness.GetRecord(pid, rid, true);
         Assert.NotNull(getResult);
         Assert.Equal("New-ish Test Record", getResult.Name);
         Assert.Equal(rdesc, getResult.Description);
         Assert.NotNull(getResult.LastUpdatedAt);
         
         // Ensure that a record update event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(1);
-        eventList[0].Should().BeEquivalentTo(new
-        {
-            ProjectId = projectId,
-            EntityId = result.Id,
-            EntityType = "record",
-            Operation = "update",
-            DataSourceId = result.DataSourceId,
-        });
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
+
+        var actualEvent = eventList[0];
+        Assert.Equal(pid, actualEvent.ProjectId);
+        Assert.Equal(result.Id, actualEvent.EntityId);
+        Assert.Equal("record", actualEvent.EntityType);
+        Assert.Equal("update", actualEvent.Operation);
+        Assert.Equal(result.DataSourceId, actualEvent.DataSourceId);
     }
     
     [Fact]
     public async Task UpdateRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var projectId = pid;
-        var invalidRecordId = 999L;
         var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
@@ -515,20 +507,20 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.UpdateRecord(projectId, invalidRecordId, dto));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.UpdateRecord(pid, 999L, dto));
+        
+        Assert.Contains("Record with id 999 not found", exception.Message);
         
         // Ensure that no record create event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task UpdateRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
     {
         // Arrange
-        var wrongProjectId = 999L;
-        var recordId = rid;
         var dto = new UpdateRecordRequestDto
         {
             Name = "Updated Record",
@@ -536,16 +528,20 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.UpdateRecord(wrongProjectId, recordId, dto));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.UpdateRecord(999L, rid, dto));
+
+        Assert.Contains("Project with id 999 not found.", exception.Message);
+        
+        // Ensure that no record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task UpdateRecord_TooDeepJson_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var recordId = rid;
         var deepJson = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new 
         { 
             Level1 = new 
@@ -571,12 +567,12 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<Exception>(() => 
-            _recordBusiness.UpdateRecord(projectId, recordId, dto));
+            _recordBusiness.UpdateRecord(pid, rid, dto));
         Assert.Contains("depth of the JSON structure exceeds", exception.Message);
         
         // Ensure that no record create event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     #endregion
@@ -586,47 +582,39 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task DeleteRecord_ValidData_DeletesRecord()
     {
-        // Arrange
-        var projectId = pid;
-        var recordId = rid;
-
-        // Verify record exists before deletion
-        var recordExists = await Context.Records.AnyAsync(r => r.Id == recordId);
+        // Arrange - Verify record exists before deletion
+        var recordExists = await Context.Records.AnyAsync(r => r.Id == rid);
         Assert.True(recordExists);
 
         // Act
-        var result = await _recordBusiness.DeleteRecord(projectId, recordId);
+        var result = await _recordBusiness.DeleteRecord(pid, rid);
 
         // Assert
         Assert.True(result);
 
         // Verify record was actually deleted from database
-        var deletedRecord = await Context.Records.FindAsync(recordId);
+        var deletedRecord = await Context.Records.FindAsync(rid);
         Assert.Null(deletedRecord);
     }
 
     [Fact]
     public async Task DeleteRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var projectId = pid;
-        var invalidRecordId = 999L;
-
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.DeleteRecord(projectId, invalidRecordId));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.DeleteRecord(pid, 999L));
+        
+        Assert.Contains("Record with id 999 not found", exception.Message);
     }
 
     [Fact]
     public async Task DeleteRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var wrongProjectId = 999L;
-        var recordId = rid;
-
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.DeleteRecord(wrongProjectId, recordId));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.DeleteRecord(999L, rid));
+        
+        Assert.Contains("Project with id 999 not found.", exception.Message);
     }
 
     #endregion
@@ -636,54 +624,48 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task ArchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var projectId = 1L;
-        var invalidRecordId = 999L;
-
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.ArchiveRecord(projectId, invalidRecordId));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.ArchiveRecord(pid, 999L));
+        
+        Assert.Contains("Record with id 999 not found", exception.Message);
         
         // Ensure that no record soft delete event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task ArchiveRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var wrongProjectId = 999L;
-        var recordId = rid;
-
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.ArchiveRecord(wrongProjectId, recordId));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.ArchiveRecord(999L, rid));
+        
+        Assert.Contains("Project with id 999 not found.", exception.Message);
         
         // Ensure that no record soft delete event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task ArchiveRecord_AlreadyArchivedRecord_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var projectId = pid;
-        var recordId = rid;
-
-        // First archive the record
-        var record = await Context.Records.FindAsync(recordId);
+        // Arrange - First archive the record
+        var record = await Context.Records.FindAsync(rid);
         record.IsArchived = true;
         await Context.SaveChangesAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => 
-            _recordBusiness.ArchiveRecord(projectId, recordId));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.ArchiveRecord(pid, rid));
+        
+        Assert.Contains($"Record with id {rid} not found", exception.Message);
         
         // Ensure that no record soft delete event was logged
-        var eventList = Context.Events.ToList();
-        eventList.Count.Should().Be(0);
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     #endregion
@@ -694,8 +676,6 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task CreateRecord_ValidJsonDepthThree_Success()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         var validDepthJson = (JsonObject)JsonNode.Parse(JsonSerializer.Serialize(new 
         { 
             Level1 = new 
@@ -717,19 +697,28 @@ public class RecordBusinessTests : IntegrationTestBase
         };
 
         // Act
-        var result = await _recordBusiness.CreateRecord(projectId, dataSourceId, dto);
+        var result = await _recordBusiness.CreateRecord(pid, did, dto);
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal("Valid Depth Record", result.Name);
+        
+        // Ensure that record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
+
+        var actualEvent = eventList[0];
+        
+        Assert.Equal(result.ProjectId, actualEvent.ProjectId);
+        Assert.Equal("create", actualEvent.Operation);
+        Assert.Equal("record", actualEvent.EntityType);
+        Assert.Equal(result.Id, actualEvent.EntityId);
     }
 
     [Fact]
     public async Task CreateRecord_NullProperties_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         var dto = new CreateRecordRequestDto
         {
             Name = "No Properties Record",
@@ -740,15 +729,17 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => 
-            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+            _recordBusiness.CreateRecord(pid, did, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
     
     [Fact]
     public async Task CreateRecord_NoName_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         var dto = new CreateRecordRequestDto
         {
             Name = null,
@@ -759,15 +750,17 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => 
-            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+            _recordBusiness.CreateRecord(pid, did, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task CreateRecord_NoDescription_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         var dto = new CreateRecordRequestDto
         {
             Name = "No Description Record",
@@ -778,15 +771,17 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => 
-            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+            _recordBusiness.CreateRecord(pid, did, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task CreateRecord_NoOriginalId_ThrowsException()
     {
         // Arrange
-        var projectId = pid;
-        var dataSourceId = did;
         var dto = new CreateRecordRequestDto
         {
             Name = "No Original ID Record",
@@ -797,7 +792,11 @@ public class RecordBusinessTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ValidationException>(() => 
-            _recordBusiness.CreateRecord(projectId, dataSourceId, dto));
+            _recordBusiness.CreateRecord(pid, did, dto));
+        
+        // Ensure that no record create event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     #endregion
@@ -807,7 +806,7 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task UnarchiveRecord_ValidArchivedRecord_UnarchivesSuccessfully()
     {
-        var projectId = pid;
+        // Arrange
         var archivedRecord = new Record
         {
             Name = "Archived Record",
@@ -815,7 +814,7 @@ public class RecordBusinessTests : IntegrationTestBase
             OriginalId = "Archived Record OriginalId",
             ObjectStorageId = osid,
             Properties = JsonSerializer.Serialize(new { Foo = "Bar" }),
-            ProjectId = projectId,
+            ProjectId = pid,
             DataSourceId = did,
             ClassId = cid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
@@ -825,50 +824,72 @@ public class RecordBusinessTests : IntegrationTestBase
         Context.Records.Add(archivedRecord);
         await Context.SaveChangesAsync();
 
-        var result = await _recordBusiness.UnarchiveRecord(projectId, archivedRecord.Id);
+        // Act
+        var result = await _recordBusiness.UnarchiveRecord(pid, archivedRecord.Id);
     
         //this forces EF to sync to db on next query
         Context.ChangeTracker.Clear();
 
+        // Assert
         Assert.True(result);
         var reloaded = await Context.Records.FindAsync(archivedRecord.Id);
         Assert.NotNull(reloaded);
         Assert.False(reloaded.IsArchived); 
+        
+        // Ensure that the record unarchive event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Single(eventList);
+            
+        var actualEvent = eventList[0];
+            
+        Assert.Equal("unarchive", actualEvent.Operation);
+        Assert.Equal("record", actualEvent.EntityType);
+        Assert.Equal(archivedRecord.Id, actualEvent.EntityId);
     }
 
     [Fact]
     public async Task UnarchiveRecord_InvalidRecordId_ThrowsKeyNotFoundException()
     {
-        var projectId = pid;
-        var invalidRecordId = 999L;
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnarchiveRecord(pid, 999L));
+        
+        Assert.Contains("Record with id 999 not found", exception.Message);
 
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.UnarchiveRecord(projectId, invalidRecordId));
+        // Ensure that no event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task UnarchiveRecord_RecordFromDifferentProject_ThrowsKeyNotFoundException()
     {
-        var differentProjectId = 999L;
-        var recordId = rid;
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.UnarchiveRecord(differentProjectId, recordId));
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnarchiveRecord(999L, rid));
+        
+        Assert.Contains("Project with id 999 not found.", exception.Message);
+        
+        // Ensure that no event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     [Fact]
     public async Task UnarchiveRecord_AlreadyUnarchived_ThrowsKeyNotFoundException()
     {
-        var projectId = pid;
-        var recordId = rid;
-
-        // Confirm record is not archived
-        var existing = await Context.Records.FindAsync(recordId);
+        // Arrange - Confirm record is not archived
+        var existing = await Context.Records.FindAsync(rid);
         existing.IsArchived = false;
         await Context.SaveChangesAsync();
 
+        // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.UnarchiveRecord(projectId, recordId));
+            _recordBusiness.UnarchiveRecord(pid, rid));
+        
+        // Ensure that no event was logged
+        var eventList = await Context.Events.ToListAsync();
+        Assert.Empty(eventList);
     }
 
     #endregion
@@ -878,12 +899,11 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_SuccessfullyAttachesTagToRecord()
     {
-        var projectId = pid;
-
+        // Arrange
         var newTag = new Tag
         {
             Name = "Tag to Attach",
-            ProjectId = projectId,
+            ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Tags.Add(newTag);
@@ -892,8 +912,10 @@ public class RecordBusinessTests : IntegrationTestBase
         record.Tags.Clear(); // ensure tag not already attached
         await Context.SaveChangesAsync();
 
-        var result = await _recordBusiness.AttachTag(projectId, record.Id, newTag.Id);
+        // Act
+        var result = await _recordBusiness.AttachTag(pid, record.Id, newTag.Id);
 
+        // Assert
         Assert.True(result);
         var updatedRecord = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
         Assert.Contains(updatedRecord.Tags, t => t.Id == newTag.Id);
@@ -902,67 +924,67 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task AttachTag_RecordNotFound_ThrowsKeyNotFound()
     {
-        var projectId = pid;
-        var validTagId = tid;
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.AttachTag(projectId, 9999L, validTagId));
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.AttachTag(pid, 9999L, tid));
+        
+        Assert.Contains("Record with id 9999 not found", exception.Message);
     }
 
     [Fact]
     public async Task AttachTag_TagNotFound_ThrowsKeyNotFound()
     {
-        var projectId = pid;
-        var validRecordId = rid;
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.AttachTag(projectId, validRecordId, 9999L));
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.AttachTag(pid, rid, 9999L));
+        
+        Assert.Contains("Tag with id 9999 not found or is archived.", exception.Message);
     }
 
     [Fact]
     public async Task AttachTag_AlreadyAttached_ThrowsException()
     {
-        var projectId = pid;
-        var recordId = rid;
-        var tagId = tid;
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<Exception>(() =>
+            _recordBusiness.AttachTag(pid, rid, tid));
 
-        await Assert.ThrowsAsync<Exception>(() =>
-            _recordBusiness.AttachTag(projectId, recordId, tagId));
+        Assert.Contains($"Tag with id {tid} is already attached to record {rid}", exception.Message);
     }
 
     [Fact]
     public async Task UnattachTag_SuccessfullyDetachesTagFromRecord()
     {
-        var projectId = pid;
+        // Arrange
         var record = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == rid);
-        var tagId = tid;
-        Assert.Contains(record.Tags, t => t.Id == tagId);
+        Assert.Contains(record.Tags, t => t.Id == tid);
 
-        var result = await _recordBusiness.UnattachTag(projectId, record.Id, tagId);
+        // Act
+        var result = await _recordBusiness.UnattachTag(pid, record.Id, tid);
 
+        // Assert
         Assert.True(result);
         var refreshed = await Context.Records.Include(r => r.Tags).FirstAsync(r => r.Id == record.Id);
-        Assert.DoesNotContain(refreshed.Tags, t => t.Id == tagId);
+        Assert.DoesNotContain(refreshed.Tags, t => t.Id == tid);
     }
 
     [Fact]
     public async Task UnattachTag_RecordNotFound_ThrowsKeyNotFound()
     {
-        var projectId = pid;
-        var tagId = tid;
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.UnattachTag(projectId, 9999L, tagId));
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnattachTag(pid, 9999L, tid));
+        
+        Assert.Contains("Record with id 9999 not found or is archived.", exception.Message);
     }
 
     [Fact]
     public async Task UnattachTag_TagNotFound_ThrowsKeyNotFound()
     {
-        var projectId = pid;
-        var recordId = rid;
-
-        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-            _recordBusiness.UnattachTag(projectId, recordId, 9999L));
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            _recordBusiness.UnattachTag(pid, rid, 9999L));
+        
+        Assert.Contains("Tag with id 9999 not found or is archived.", exception.Message);
     }
 
     #endregion
@@ -972,43 +994,21 @@ public class RecordBusinessTests : IntegrationTestBase
     [Fact]
     public async Task GetRecordsByOriginalId_ValidOriginalIds_ReturnsMatchingRecords()
     {
-        // Arrange
-        var record1 = new Record
-        {
-            Name = "Test Record 1",
-            ProjectId = pid,
-            DataSourceId = did,
-            ObjectStorageId = osid,
-            ClassId = cid,
-            Properties = "{}",
-            OriginalId = "original-id-1",
-            Description = "Test record 1",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
-        };
-
-        Context.Records.Add(record1);
-        await Context.SaveChangesAsync();
-
-        var originalIds = new List<string> { "original-id-1" };
-
         // Act
-        var result = await _recordBusiness.GetRecordsByOriginalId(pid, originalIds);
+        var result = await _recordBusiness.GetRecordsByOriginalId(pid, ["og_id"]);
 
         // Assert
         Assert.Equal(1, result.Count);
-        Assert.Equal("original-id-1", result.First().OriginalId);
+        Assert.Equal("og_id", result.First().OriginalId);
         Assert.Equal(pid, result.First().ProjectId);
     }
 
     [Fact]
     public async Task GetRecordsByOriginalId_MissingOriginalIds_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var originalIds = new List<string> { "non-existent-id" };
-
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+            () => _recordBusiness.GetRecordsByOriginalId(pid, ["non-existent-id"]));
         
         Assert.Contains("Records not found with original IDs", exception.Message);
     }
@@ -1025,42 +1025,25 @@ public class RecordBusinessTests : IntegrationTestBase
     public async Task GetRecordsByOriginalId_ExcludesArchivedRecords()
     {
         // Arrange
-        var archivedRecord = new Record
-        {
-            Name = "Archived Record",
-            ProjectId = pid,
-            DataSourceId = did,
-            ObjectStorageId = osid,
-            ClassId = cid,
-            Properties = "{}",
-            OriginalId = "archived-id",
-            Description = "Archived record",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            IsArchived = true
-        };
-
-        Context.Records.Add(archivedRecord);
+        var record = await Context.Records.FindAsync(rid);
+        record.IsArchived = true;
         await Context.SaveChangesAsync();
-
-        var originalIds = new List<string> { "archived-id" };
-
+        
         // Act & Assert
         var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _recordBusiness.GetRecordsByOriginalId(pid, originalIds));
+            () => _recordBusiness.GetRecordsByOriginalId(pid, ["og_id"]));
         
-        Assert.Contains("archived-id", exception.Message);
+        Assert.Contains("og_id", exception.Message);
     }
 
     [Fact]
     public async Task GetRecordsByOriginalId_InvalidProjectId_ThrowsKeyNotFoundException()
     {
-        // Arrange
-        var originalIds = new List<string> { "some-id" };
-        var invalidProjectId = 999L;
-
         // Act & Assert
-        await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => _recordBusiness.GetRecordsByOriginalId(invalidProjectId, originalIds));
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => _recordBusiness.GetRecordsByOriginalId(999L, ["some-id"]));
+        
+        Assert.Contains("Project with id 999 not found.",  exception.Message);
     }
 
     #endregion
@@ -1093,7 +1076,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
-            ProjectId = project.Id,
+            ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.DataSources.Add(dataSource);
@@ -1106,7 +1089,7 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Class",
             Description = "Test class for unit tests",
-            ProjectId = project.Id,
+            ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         Context.Classes.Add(testClass);
@@ -1131,7 +1114,7 @@ public class RecordBusinessTests : IntegrationTestBase
         var testTag = new Tag
         {
             Name = "Test Tag",
-            ProjectId = project.Id,
+            ProjectId = pid,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         };
         
@@ -1142,7 +1125,7 @@ public class RecordBusinessTests : IntegrationTestBase
             Description = "Test record for unit tests",
             OriginalId = "og_id",
             Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
-            ProjectId = project.Id,
+            ProjectId = pid,
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
