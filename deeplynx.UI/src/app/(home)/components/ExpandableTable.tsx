@@ -49,8 +49,8 @@ export function ExpandableTable<T>({
   }, [currentPage]);
 
   return (
-    <div>
-      <table className="table w-full border-separate p-2 border-spacing-y-2">
+    <div className="overflow-x-auto">
+      <table className="table w-full">
         {expandedIndex === null && (
           <thead>
             <tr>
@@ -84,13 +84,16 @@ export function ExpandableTable<T>({
                     </td>
                   </tr>
                 ) : (
-                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors rounded-lg overflow-hidden">
+                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors">
                     {columns.map((col, i) => (
-                      <td key={i} className="text-base-content">
+                      <td
+                        key={i}
+                        className="text-base-content first:rounded-l-lg last:rounded-r-lg border-b-4 border-base-100"
+                      >
                         {col.data(row)}
                       </td>
                     ))}
-                    <td>
+                    <td className="border-b-4 border-base-100">
                       <button
                         className="btn btn-sm btn-outline btn-secondary hover:btn-secondary mr-3"
                         onClick={() => onExplore(row)}
@@ -98,7 +101,7 @@ export function ExpandableTable<T>({
                         {t.translations.EXPLORE}
                       </button>
                     </td>
-                    <td>
+                    <td className="rounded-r-lg border-b-4 border-base-100 text-right">
                       <button
                         onClick={() => toggleRow(globalIndex)}
                         aria-label="Expand row"
