@@ -236,7 +236,7 @@ public class ClassBusiness : IClassBusiness
                 EntityId = item.Id,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
+                LastUpdatedBy = UserContextStorage.Email
             });
         }
         
@@ -245,7 +245,7 @@ public class ClassBusiness : IClassBusiness
             projectId, 
             events,
             projectName: project?.Name,
-            entityName: "Class",
+            entityName: "class",
             dataSourceName: null
         );
         
@@ -279,17 +279,25 @@ public class ClassBusiness : IClassBusiness
         _context.Classes.Update(updatedClass);
         await _context.SaveChangesAsync();
         
-        // log event with class update details
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            Operation = "update",
-            EntityType = "class",
-            EntityId = updatedClass.Id,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
-        });
+        // Get project name
+        var project = await _context.Projects.FindAsync(projectId);
+        
+        // Log event with class update details and enrichment data
+        await _eventBusiness.CreateEvent(
+            new CreateEventRequestDto
+            {
+                ProjectId = projectId,
+                Operation = "update",
+                EntityType = "class",
+                EntityId = updatedClass.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
+                LastUpdatedBy = UserContextStorage.Email
+            },
+            projectName: project?.Name,
+            entityName: updatedClass.Name,
+            dataSourceName: null
+        );
 
         return new ClassResponseDto
         {
@@ -373,22 +381,28 @@ public class ClassBusiness : IClassBusiness
                     $"unable to archive class {classId} or its downstream dependents: {exc}");
             }
         }
+        
+        // Get project name
+        var project = await _context.Projects.FindAsync(projectId);
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            Operation = "archive",
-            EntityType = "class",
-            EntityId = dbClass.Id,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
-        });
+            {
+                ProjectId = projectId,
+                Operation = "archive",
+                EntityType = "class",
+                EntityId = dbClass.Id,
+                DataSourceId = null,
+                Properties = JsonSerializer.Serialize(new { dbClass.Name }),
+                LastUpdatedBy = UserContextStorage.Email
+            },
+            projectName: project?.Name,
+            entityName: dbClass.Name,
+            dataSourceName: null
+        );
         
         return true;
     }
-        
-        
+    
     /// <summary>
     /// Unarchive a class by id. This also unarchives downstream dependents.
     /// </summary>
@@ -435,6 +449,9 @@ public class ClassBusiness : IClassBusiness
                     $"unable to unarchive class {classId} or its downstream dependents: {exc}");
             }
         }
+        
+        // Get project name
+        var project = await _context.Projects.FindAsync(projectId);
 
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -444,8 +461,12 @@ public class ClassBusiness : IClassBusiness
             EntityId = dbClass.Id,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
-        });
+            LastUpdatedBy = UserContextStorage.Email
+        },
+        projectName: project?.Name,
+        entityName: dbClass.Name,
+        dataSourceName: null
+        );
         
         return true;
     }

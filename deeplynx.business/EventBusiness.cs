@@ -180,6 +180,10 @@ public class EventBusiness : IEventBusiness
         string? dataSourceName = null
     )
     {
+        ValidationHelper.ValidateModel(dto);
+        ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
+        ValidationHelper.ValidateTypes(dto.Operation, "Operation");
+        
         var newEvent = new Event
         {
             Operation = dto.Operation,

@@ -26,9 +26,7 @@ namespace deeplynx.tests
         private long mockDataSourceId;
         private long mockDataSource2Id;
 
-        public EventBusinessTests(TestSuiteFixture fixture) : base(fixture)
-        {
-        }
+        public EventBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
