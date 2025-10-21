@@ -30,17 +30,19 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
+        /// <param name="fileType">File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will be removed</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords", Name = "api_get_all_records")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
+            [FromQuery] string? fileType,
             [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived);
+                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived, fileType);
                 return Ok(records);
             }
             catch (Exception exc)
