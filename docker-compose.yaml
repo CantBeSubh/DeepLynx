@@ -4,22 +4,30 @@ services:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
-        BACKEND_BASE_URL: "http://server:5000/api"
-        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
         OKTA_ISSUER: "https://identity-preview.inl.gov"
         NEXTAUTH_URL: "http://localhost:3000"
         REDIRECT_LINK: "http://localhost:3000/api/auth/callback/okta"
         NEXT_PUBLIC_DOCS_PATH: "http://localhost:3001/docs"
-        DISABLE_FRONTEND_AUTHENTICATION: true
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+        OKTA_CLIENT_ID: ""
+        OKTA_CLIENT_SECRET: ""
+        NEXTAUTH_SECRET: ""
+        BACKEND_BASE_URL: "http://server:5000/api"
+        AUTH_TRUST_HOST: true
+        DISABLE_FRONTEND_AUTHENTICATION: false
     environment:
       NODE_ENV: production
-      BACKEND_BASE_URL: "http://server:5000/api"
-      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
       OKTA_ISSUER: "https://identity-preview.inl.gov"
       NEXTAUTH_URL: "http://localhost:3000"
       REDIRECT_LINK: "http://localhost:3000/api/auth/callback/okta"
       NEXT_PUBLIC_DOCS_PATH: "http://localhost:3001/docs"
-      DISABLE_FRONTEND_AUTHENTICATION: true
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+      OKTA_CLIENT_ID: ""
+      OKTA_CLIENT_SECRET: ""
+      NEXTAUTH_SECRET: ""
+      BACKEND_BASE_URL: "http://server:5000/api"
+      AUTH_TRUST_HOST: true
+      DISABLE_FRONTEND_AUTHENTICATION: false
     ports:
       - "3000:3000"
     networks:
