@@ -373,6 +373,7 @@ try
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
     
     // Check if the notification service is enabled (defaults to false if not set)
@@ -380,8 +381,6 @@ try
     {
         app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
     }
-    
-    app.MapControllers();
 
  /* ╔════════════════════════════╗
     ║   Scalar Configuration     ║
@@ -420,7 +419,7 @@ try
 
     app.MapScalarApiReference( options => {
         options.WithDarkMode(true)
-            .WithBaseServerUrl(basePath)
+            .WithBaseServerUrl(basePath.ToString())
             .WithTheme(ScalarTheme.Kepler)
             .WithTitle("DeepLynx Nexus API")
             .WithCustomCss(customcss)
@@ -429,7 +428,7 @@ try
         if (!string.IsNullOrEmpty(hostedLink))
         {
             var hostedLinkWithApi = string.Concat(hostedLink + "/api");
-            options.Servers = [new ScalarServer(hostedLinkWithApi)];
+            options.Servers = new List<ScalarServer> { new ScalarServer(hostedLinkWithApi) };
         }
     });
 
