@@ -5,20 +5,17 @@ import { useLanguage } from "@/app/contexts/Language";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DropUpload from "../components/DropUpload";
 import FileDetailsCard from "../components/FileDetailCard";
-import NewFileUploadCard, {
-  FileMetadata,
-} from "../components/NewFileUploadCard";
+import NewFileUploadCard from "../components/NewFileUploadCard";
+import { ExistingFile, FileMetadata } from "../types/types";
+import RecentUploadsCard from "../components/RecentUploadsCard";
 import SelectedFilesCard from "../components/SelectedFilesCard";
-import { ExistingFile, RecentUpload, UploadType } from "../types/upload";
+import { RecentUpload } from "../types/types";
+import { UploadType } from "../types/types";
 import { getAllProjects } from "@/app/lib/projects_services.client";
-import {
-  DataSourceDTO,
-  getAllDataSources,
-} from "@/app/lib/data_source_services.client";
-import {
-  getAllObjectStorages,
-  ObjectStorageDTO,
-} from "@/app/lib/object_storage_services.client";
+import { getAllDataSources } from "@/app/lib/data_source_services.client";
+import { DataSourceResponseDto } from "../types/responseDTOs";
+import { getAllObjectStorages } from "@/app/lib/object_storage_services.client";
+import { ObjectStorageResponseDto } from "../types/responseDTOs";
 import { uploadFile } from "@/app/lib/file_upload_services.client";
 import toast from "react-hot-toast";
 import { ProjectResponseDto } from "../types/responseDTOs";
@@ -39,8 +36,10 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const showRightPanel = selectedFiles.length > 0;
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
-  const [objectStorage, setObjectstorage] = useState<ObjectStorageDTO[]>([]);
-  const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
+  const [objectStorage, setObjectstorage] = useState<
+    ObjectStorageResponseDto[]
+  >([]);
+  const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [projectId, setProjectId] = useState<string>("");
   const [dataSourceId, setDataSourceId] = useState<string>("");
   const [objectStorageId, setObjectstorageId] = useState<string>("");

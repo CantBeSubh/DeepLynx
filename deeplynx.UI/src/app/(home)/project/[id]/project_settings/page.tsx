@@ -1,19 +1,19 @@
 import React from "react";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
-import ProjectSettings from "../../../components/ProjectSettingsTable/ProjectSettings";
+import ProjectSettingsClient from "./ProjectSettingsClient";
 import { notFound } from "next/navigation";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
-  id: String(p.id),
-  name: p.name ?? "",
-  description: p.description ?? "", // fallback to empty string
-  abbreviation:p.abbreviation ?? "",
-  lastUpdatedAt: p.lastUpdatedAt,
-  lastUpdatedBy: p.lastUpdatedBy ?? "",
-  isArchived: p.isArchived,
-  organizationId: p.organizationId
-};
+    id: String(p.id),
+    name: p.name ?? "",
+    description: p.description ?? "", // fallback to empty string
+    abbreviation: p.abbreviation ?? "",
+    lastUpdatedAt: p.lastUpdatedAt,
+    lastUpdatedBy: p.lastUpdatedBy ?? "",
+    isArchived: p.isArchived,
+    organizationId: p.organizationId
+  };
 }
 
 type Props = {
@@ -31,7 +31,7 @@ export default async function Page({ params }: Props) {
   if (initialProject == undefined) return notFound();
 
   return (
-    <ProjectSettings
+    <ProjectSettingsClient
       projects={initialProjects}
       initialProject={initialProject}
     />

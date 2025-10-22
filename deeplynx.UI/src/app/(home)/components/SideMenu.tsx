@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-
-// Importing Hero-UI icons
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import {
@@ -21,16 +19,14 @@ import {
   RectangleGroupIcon,
 } from "@heroicons/react/24/outline";
 
-// Define the props for the SideMenu component
 interface SideMenuProps {
   onToggle: (isCollapsed: boolean) => void;
 }
 
-// Main translations component
 const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const { t } = useLanguage();
-  const router = useRouter(); // Router hook for navigation
-  const pathname = usePathname(); // Hook to get the current pathname
+  const router = useRouter();
+  const pathname = usePathname();
   const { project } = useProjectSession();
 
   // State variables for selected item and menu collapse state
@@ -150,7 +146,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
         </ul>
 
-        <div className="divider" />
+        <div className="divider divider-secondary" />
 
         <ul className="flex-grow">
           <li>
@@ -194,56 +190,49 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li> */}
           <li className="mt-2">
-            <div className="flex items-center">
-              <Link
-                href="/project_settings"
-                onClick={(e) =>
-                  handleItemClick(
-                    `/project/${project?.projectId}/project_settings`,
-                    e
-                  )
-                }
-                className={getItemClass(
-                  `/project/${project?.projectId}/project_settings`
-                )}
-              >
-                <AdjustmentsHorizontalIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
-                )}
-              </Link>
-            </div>
+            <Link
+              href="/project/${project?.projectId}/project_settings"
+              onClick={(e) =>
+                handleItemClick(
+                  `/project/${project?.projectId}/project_settings`,
+                  e
+                )
+              }
+              className={getItemClass(
+                `/project/${project?.projectId}/project_settings`
+              )}
+            >
+              <AdjustmentsHorizontalIcon className="size-6" />
+              {!isCollapsed && (
+                <p className="ml-2">{t.translations.PROJECT_SETINGS}</p>
+              )}
+            </Link>
           </li>
         </ul>
 
-        <div className="divider" />
+        <div className="divider divider-secondary" />
         {/* Last 4 Menu Items */}
         {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
         <div className="mt-auto">
           <ul>
             <li className="mt-2">
-              <Link
-                href={
-                  process.env.NEXT_PUBLIC_DOCS_PATH
-                    ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
-                    : "/docs"
-                }
-                /*
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/help", e)}
-                */
-                className={getItemClass("/help")}
-              >
-                <QuestionMarkCircleIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">{t.translations.HELP}</p>}
-              </Link>
+              <button className={getItemClass("/help")}>
+                <a
+                  href={
+                    process.env.NEXT_PUBLIC_DOCS_PATH
+                      ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
+                      : "/docs"
+                  }
+                  className="flex items-center"
+                >
+                  <QuestionMarkCircleIcon className="size-6" />
+                  {!isCollapsed && (
+                    <div className="ml-2">{t.translations.HELP}</div>
+                  )}
+                </a>
+              </button>
             </li>
-            <li className="mt-2">
+            {/* <li className="mt-2">
               <Link
                 href="#"
                 prefetch={false}
@@ -276,7 +265,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                   <p className="ml-2">{t.translations.FILE_A_BUG}</p>
                 )}
               </Link>
-            </li>
+            </li> */}
           </ul>
         </div>
       </aside>
