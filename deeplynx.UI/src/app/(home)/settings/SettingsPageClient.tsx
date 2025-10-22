@@ -10,6 +10,7 @@ import toast from "react-hot-toast";
 import { createApiKey, deleteApiKey, getAllKeysByUser } from "@/app/lib/settings_services.client";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import UserSettingsSkeleton from "../components/skeletons/usersettingsskeleton";
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage();
   const { data: session } = useSession();
@@ -19,7 +20,9 @@ const SettingsPageClient = () => {
   const image = session?.user?.image ?? undefined;
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  
   const apiKeyGen = async () => {
     try {
       setCreating(true);
@@ -77,6 +80,7 @@ const SettingsPageClient = () => {
         try {
           const keys = await getAllKeysByUser();
           setUserKeys(keys);
+          setIsLoading(false);
         } catch (error) {
           console.error(error);
         }
@@ -194,22 +198,26 @@ const SettingsPageClient = () => {
             </button>
           </div>
 
-          <div className="bg-base-200 rounded-box p-6">
-            {userKeys.length > 0 ?(
-              <ul>
-               {userKeys.map((k,i)=>(
-                    <li key={k} className="flex items-center font-mono text-sm pb-3">
-                      {i+1}:  {k} 
-                      <button className="ml-auto" type="button" onClick={apiKeyDelete(k)} disabled={deleting}>
-                        <TrashIcon className="text-red-400 hover:text-red-700 hover:cursor-pointer w-5 h-5"/>
-                      </button>
-                    </li>
-                  ))}
-               </ul>
-            ):(
-            <p className="text-base-content/60">No API keypairs configured</p>
-            )}
-          </div>
+          {isLoading ? (
+            <UserSettingsSkeleton/>
+          ):(
+            <div className="bg-base-200 rounded-box p-6">
+              {userKeys.length > 0 ?(
+                <ul>
+                {userKeys.map((k,i)=>(
+                      <li key={k} className="flex items-center font-mono text-sm pb-3">
+                        {i+1}:  {k} 
+                        <button className="ml-auto" type="button" onClick={apiKeyDelete(k)} disabled={deleting}>
+                          <TrashIcon className="text-red-400 hover:text-red-700 hover:cursor-pointer size-5"/>
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              ):(
+              <p className="text-base-content/60">No API keypairs configured</p>
+              )}
+            </div>
+          )}
         </section>
       </div>
     </div>
