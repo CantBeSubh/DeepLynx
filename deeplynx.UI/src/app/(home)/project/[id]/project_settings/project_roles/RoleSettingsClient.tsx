@@ -6,9 +6,6 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import RoleSettings from "../../../../components/ProjectSettingsTable/ProjectTables/RoleSettings";
 import { useRouter } from "next/router";
 import { useSearchParams } from "next/navigation";
-import SettingsTab from "@/app/(home)/components/ProjectSettingsTable/ProjectTables/RoleName";
-import PermissionsTab from "@/app/(home)/components/ProjectSettingsTable/ProjectTables/RolePermissions";
-import Tabs from "@/app/(home)/components/Tabs";
 
 type Props = {
     projectId: string | string[];
@@ -49,10 +46,10 @@ export default function RoleSettingsClient({ projectId }: Props) {
         }
     }, [searchParams]);
 
-    const tabData = [
-        { label: "Settings", content: <SettingsTab toPermissionsTab={toPermissionsTab} onCancel={onCancel} /> },
-        { label: "Permissions", content: <PermissionsTab onCancel={onCancel} onSave={onSave} /> },
-    ];
+    // const tabData = [
+    //     { label: "Settings", content: <SettingsTab toPermissionsTab={toPermissionsTab} onCancel={onCancel} /> },
+    //     { label: "Permissions", content: <PermissionsTab onCancel={onCancel} onSave={onSave} /> },
+    // ];
 
     return (
         <div>
@@ -81,11 +78,14 @@ export default function RoleSettingsClient({ projectId }: Props) {
                                 {/* TODO Differentiate the name of the role instead of just role settings */}
                             </div>
                             <div className="w-full">
-                                <Tabs
+                                {/* <Tabs
                                     tabs={tabData}
                                     className="tabs tabs-border"
                                     onTabChange={handleTabChange}
                                     activeTab={activeTab}
+                                /> */}
+                                <RoleSettings
+                                    id={projectId}
                                 />
                             </div>
                         </div>

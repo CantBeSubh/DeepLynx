@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, use, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-// import { defaultRoles } from "../../dummy_data/data";
 import Tabs from '@/app/(home)/components/Tabs';
 import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '@/app/(home)/components/ProjectSettingsTable/ProjectTables/MembersTable';
@@ -10,12 +9,10 @@ import RolesTable from '@/app/(home)/components/ProjectSettingsTable/ProjectTabl
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '@/app/(home)/components/ProjectDropdownSingleSelect';
-import { UserResponseDto } from '@/app/(home)/types/responseDTOs';
-import { ProjectMembersDto } from '@/app/(home)/types/responseDTOs';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
 import ProjectSettingsMemberSkeleton from '@/app/(home)/components/skeletons/projectsettingsmemberskeleton';
-import { ProjectResponseDto } from '@/app/(home)/types/responseDTOs';
+import { ProjectResponseDto, ProjectMembersDto } from '@/app/(home)/types/responseDTOs';
 interface ProjectSettingsProps {
     projects: ProjectResponseDto[];
     initialProject: ProjectResponseDto | null;
@@ -25,9 +22,6 @@ export default function ProjectSettingsClient({
     projects,
     initialProject,
 }: ProjectSettingsProps) {
-    // const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    //   initialSelectedProjects
-    // );
     const { t } = useLanguage();
     const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
     const [activeTab, setActiveTab] = useState("Members");
@@ -80,15 +74,15 @@ export default function ProjectSettingsClient({
                 memberConent
             ),
         },
-        // {
-        //   label: "Roles",
-        //   content: (
-        //     <RolesTable
-        //       id={selectedProjectId}
-        //       data={defaultRoles}
-        //     />
-        //   ),
-        // },
+        {
+          label: "Roles",
+          content: (
+            <RolesTable
+              id={selectedProjectId}
+              data={roles}
+            />
+          ),
+        },
         //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
         // {
         //   label: "Data Source",
@@ -160,7 +154,7 @@ export default function ProjectSettingsClient({
                         </button>
                         <div className="flex flex-col">
                             {/* TODO POST FY
-    {activeTab === "Members" && <MemberSearchBar />} */}
+                            {activeTab === "Members" && <MemberSearchBar />} */}
                         </div>
                     </div>
                 </div>

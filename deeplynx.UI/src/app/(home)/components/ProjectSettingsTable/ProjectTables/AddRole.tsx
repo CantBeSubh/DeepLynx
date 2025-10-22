@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { CreateRoleRequestDto, PermissionRequestDto } from "../../../types/types";
+import { CreateRoleRequestDto, PermissionRequestDto } from "../../../types/requestDTOs";
 interface AddRoleProps {
   role: CreateRoleRequestDto;
   setRole: (role: CreateRoleRequestDto) => void;

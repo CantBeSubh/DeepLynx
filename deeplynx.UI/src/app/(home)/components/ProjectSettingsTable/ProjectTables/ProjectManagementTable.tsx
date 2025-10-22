@@ -2,24 +2,20 @@ import React, { FC, useState, useEffect } from 'react';
 import GenericTable from '../../GenericTable';
 import { useLanguage } from "@/app/contexts/Language";
 import { Column } from '../../../types/types';
-import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
+import { PermissionResponseDto, RoleResponseDto } from '@/app/(home)/types/responseDTOs';
 
 interface RoleManagementTableProps {
   projectData: PermissionResponseDto[];
-  className?: string;
+  initialData: PermissionResponseDto[];
 }
+// interface PermissionTableProps {
+//   data: PermissionResponseDto[];
+// }
 
 const RoleManagementTable: FC<RoleManagementTableProps> = ({
+  initialData,
   projectData,
-  className,
 }) => {
-  const { t } = useLanguage();
-import { PermissionResponseDto } from '@/app/(home)/types/responseDTOs';
-interface PermissionTableProps {
-  data: PermissionResponseDto[];
-}
-
-const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData }) => {
     const { t } = useLanguage();
     const [data, setData] = useState<PermissionResponseDto[]>(initialData);
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
@@ -38,13 +34,13 @@ const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData })
     setProjSelectAll(false);
   }, [projectData]);
 
-  const handleProjSelectAll = () => {
+  const handleSelectAll = () => {
     const next = !projSelectAll;
     setProjSelectAll(next);
     setProjSelected(new Array(projRows.length).fill(next));
   };
 
-  const handleProjCheckbox = (index: number) => {
+  const handleCheckbox = (index: number) => {
     const next = [...projSelected];
     next[index] = !next[index];
     setProjSelected(next);
@@ -67,7 +63,7 @@ const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData })
           type="checkbox"
           className="checkbox"
           checked={projSelectAll}
-          onChange={handleProjSelectAll}
+          onChange={handleSelectAll}
         />
       ),
       cell: (_row, i) => (
@@ -75,55 +71,52 @@ const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData })
           type="checkbox"
           className="checkbox"
           checked={projSelected[i]}
-          onChange={() => handleProjCheckbox(i)}
+          onChange={() => handleCheckbox(i)}
         />
       ),
       sortable: false,
     },
   ];
 
-    const columns: Column<PermissionResponseDto>[] = [
-        {
-          header: "Project Management",
-          data: "action",
-        },
-        {
-          header: "Description",
-          data: "description",
-          sortable: false,
-        },
-        {
-          header: (
-            <input
+  const columns: Column<PermissionResponseDto>[] = [
+      {
+        header: "Project Management",
+        data: "action",
+      },
+      {
+        header: "Description",
+        data: "description",
+        sortable: false,
+      },
+      {
+        header: (
+          <input
+            type="checkbox"
+            className="checkbox"
+            checked={selectAll}
+            onChange={handleSelectAll}
+          />
+        ),
+        cell: (row: PermissionResponseDto, index: number) => (
+              <input
               type="checkbox"
               className="checkbox"
-              checked={selectAll}
-              onChange={handleProjSelectAll}
-            />
-          ),
-          cell: (row: PermissionResponseDto, index: number) => (
-                <input
-                type="checkbox"
-                className="checkbox"
-                checked={selectedMembers[index]}
-                onChange={() => handleCheckboxChange(index)}
-                />
-          ),
-          sortable: false,
-        },
-      ];
+              checked={selectedMembers[index]}
+              onChange={() => handleCheckbox(index)}
+              />
+        ),
+        sortable: false,
+      },
+    ];
 
-    return (
-        <div>
-            <GenericTable
-                columns={columns}
-                data={data}
-                // enablePagination
-                // rowsPerPage={5}
-            />
-        </div>
-    );
-  };
+  return (
+      <div>
+          <GenericTable
+              columns={columns}
+              data={initialData}
+          />
+      </div>
+  );
 };
 
 export default RoleManagementTable;
