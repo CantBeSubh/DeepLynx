@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/storages")]
+    [Route("projects/{projectId}/storages")]
     [Authorize]
     public class ObjectStorageController : ControllerBase
     {
