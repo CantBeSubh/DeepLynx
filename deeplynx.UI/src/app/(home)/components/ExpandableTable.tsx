@@ -1,3 +1,4 @@
+// src/app/(home)/components/ExpandedProjectCard.tsx
 import { useLanguage } from "@/app/contexts/Language";
 import {
   ChevronDownIcon,
@@ -14,6 +15,7 @@ interface translationsProps<T> {
   }[];
   renderExpandedContent: (row: T, onClose: () => void) => ReactNode;
   onExplore: (row: T) => void;
+  getRowId: (row: T) => string | number | undefined;
 }
 
 const RECORDS_PER_PAGE = 5;
@@ -23,6 +25,7 @@ export function ExpandableTable<T>({
   columns,
   renderExpandedContent,
   onExplore,
+  getRowId,
 }: translationsProps<T>) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,8 +49,8 @@ export function ExpandableTable<T>({
   }, [currentPage]);
 
   return (
-    <div>
-      <table className="table w-full border-separate p-2 border-spacing-y-2">
+    <div className="overflow-x-auto">
+      <table className="table w-full">
         {expandedIndex === null && (
           <thead>
             <tr>
@@ -64,26 +67,33 @@ export function ExpandableTable<T>({
         <tbody>
           {paginatedRecords.map((row, index) => {
             const globalIndex = startIndex + index;
+            const rowid = getRowId(row) ?? globalIndex;
             return (
               <React.Fragment key={globalIndex}>
                 {expandedIndex === globalIndex ? (
                   <tr>
                     <td colSpan={columns.length + 2} className="p-0">
                       <div className="overflow-hidden transition-all duration-500 ease-in-out max-h-[1000px] opacity-100">
-                        <div className="card bg-base-200 border border-base-300/30 p-6 rounded-box shadow-lg">
+                        <div
+                          className="card bg-base-200 border border-base-300/30 p-6 rounded-box shadow-lg"
+                          data-tour={`project-row-${rowid}-expanded`}
+                        >
                           {renderExpandedContent(row, closeExpanded)}
                         </div>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors rounded-lg overflow-hidden">
+                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors">
                     {columns.map((col, i) => (
-                      <td key={i} className="text-base-content">
+                      <td
+                        key={i}
+                        className="text-base-content first:rounded-l-lg last:rounded-r-lg border-b-4 border-base-100"
+                      >
                         {col.data(row)}
                       </td>
                     ))}
-                    <td>
+                    <td className="border-b-4 border-base-100">
                       <button
                         className="btn btn-sm btn-outline btn-secondary hover:btn-secondary mr-3"
                         onClick={() => onExplore(row)}
@@ -91,11 +101,13 @@ export function ExpandableTable<T>({
                         {t.translations.EXPLORE}
                       </button>
                     </td>
-                    <td>
+                    <td className="rounded-r-lg border-b-4 border-base-100 text-right">
                       <button
                         onClick={() => toggleRow(globalIndex)}
                         aria-label="Expand row"
+                        aria-expanded={expandedIndex === globalIndex}
                         className="p-1 rounded-lg hover:bg-base-300/50 transition-colors"
+                        data-tour={`project-row-${rowid}-toggle`}
                       >
                         <ChevronDownIcon className="size-6 text-base-content/60 hover:text-base-content transition-colors" />
                       </button>

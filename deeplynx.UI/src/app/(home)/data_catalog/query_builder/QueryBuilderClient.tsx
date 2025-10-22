@@ -3,7 +3,7 @@ import { TagResponseDto } from "../../types/responseDTOs";
 import React, { useEffect, useMemo, useState } from "react";
 import { CustomQueryRequestDto } from "../../types/requestDTOs";
 import { HistoricalRecordResponseDto } from "../../types/responseDTOs";
-import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { FileViewerTableRow, QueryBuilderQuery } from "@/app/(home)/types/types";
 import ProjectDropdown from "../../components/ProjectDropdown";
 import { translations } from "@/app/lib/translations";
 import AdvancedSearchBar from "../../components/AdvancedSearchBar";
@@ -26,13 +26,10 @@ type Props = {
   queriedRecords: FileViewerTableRow[];
 };
 
-export type Query = {
-  id: string;
-  query: CustomQueryRequestDto;
-};
+
 
 const newId = () => Math.random().toString(36).slice(2, 10);
-const emptyRow = (): Query => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
+const emptyRow = (): QueryBuilderQuery => ({ id: newId(), query: { connector: "", filter: "", operator: "", value: "", jsonKey: "", jsonValue: "" } });
 
 export default function QueryBuilderClient({
   initialProjects,
@@ -60,7 +57,7 @@ export default function QueryBuilderClient({
   const [records, setQueriedRecords] = useState<FileViewerTableRow[] | null>(queriedRecords);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm ?? "");
   const [activeFilters, setActiveFilters] = useState<Array<{ id: number; term: string }>>([]);
-  const [rows, setRows] = useState<Query[]>([emptyRow()]);
+  const [rows, setRows] = useState<QueryBuilderQuery[]>([emptyRow()]);
   const { project, hasLoaded } = useProjectSession();
 
 
@@ -78,7 +75,7 @@ export default function QueryBuilderClient({
 
   const addRow = () => setRows((r) => [...r, emptyRow()]);
   const removeRow = (id: string) => setRows((r) => (r.length > 1 ? r.filter((x) => x.id !== id) : r));
-  const updateRow = (id: string, patch: Partial<Query>) =>
+  const updateRow = (id: string, patch: Partial<QueryBuilderQuery>) =>
     setRows((r) => r.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   const reset = () => {
     setRows([emptyRow()]);

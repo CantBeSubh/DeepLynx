@@ -22,9 +22,7 @@ public class QueryBusiness : IQueryBusiness
     ///     Filter record request
     /// </summary>
     /// <param name="context">The database context to be used for filter operations.</param>
-    public QueryBusiness(
-        DeeplynxContext context, ICacheBusiness? cacheBusiness
-    )
+    public QueryBusiness(DeeplynxContext context, ICacheBusiness? cacheBusiness)
     {
         _context = context;
         _cache = cacheBusiness;
@@ -38,32 +36,34 @@ public class QueryBusiness : IQueryBusiness
     /// ///
     /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public IEnumerable<HistoricalRecordResponseDto> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds,
-        string? textSearch = null)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
-        if (request == null) throw new ArgumentException("Custom query request dto cannot be null");
+        if (request == null)
+        {
+            throw new ArgumentException("Custom query request dto cannot be null");
+        }
 
         try
         {
             var sql = @"
-            SELECT DISTINCT ON (hr.record_id)
-                hr.*,
-                hr.class_id as ClassId,
-                hr.class_name as ClassName,
-                hr.original_id as OriginalId,
-                hr.data_source_name as DataSourceName,
-                hr.data_source_id as DataSourceId,
-                hr.project_name as ProjectName,
-                hr.project_id as ProjectId,
-                hr.last_updated_at as LastUpdatedAt,
-                hr.last_updated_by as LastUpdatedBy,
-                hr.object_storage_name as ObjectStorageName,
-                hr.object_storage_id as ObjectStorageId,
-                hr.record_id as RecordId,
-                hr.is_archived as IsArchived
-            FROM deeplynx.historical_records hr
-            WHERE hr.is_archived = false
-            AND hr.project_id = ANY(@projectIds)";
+                SELECT DISTINCT ON (hr.record_id)
+                    hr.*,
+                    hr.class_id as ClassId,
+                    hr.class_name as ClassName,
+                    hr.original_id as OriginalId,
+                    hr.data_source_name as DataSourceName,
+                    hr.data_source_id as DataSourceId,
+                    hr.project_name as ProjectName,
+                    hr.project_id as ProjectId,
+                    hr.last_updated_at as LastUpdatedAt,
+                    hr.last_updated_by as LastUpdatedBy,
+                    hr.object_storage_name as ObjectStorageName,
+                    hr.object_storage_id as ObjectStorageId,
+                    hr.record_id as RecordId,
+                    hr.is_archived as IsArchived
+                FROM deeplynx.historical_records hr
+                WHERE hr.is_archived = false
+                AND hr.project_id = ANY(@projectIds)";
 
             var parameters = new List<NpgsqlParameter>();
             var conditions = new List<string>();
@@ -75,13 +75,16 @@ public class QueryBusiness : IQueryBusiness
 
             // Build individual conditions
             if (request?.Length > 0)
-                for (var i = 0; i < request.Length; i++)
+            {
+                for (int i = 0; i < request.Length; i++)
                 {
                     var query = request[i];
-                    if (string.IsNullOrWhiteSpace(query.Value) && query.Operator != "KEY_VALUE")
+                    if (String.IsNullOrWhiteSpace(query.Value) && (query.Operator != "KEY_VALUE"))
+                    {
                         throw new ArgumentException("Value cannot be null or empty.");
-                    var condition = "";
-                    var paramName = $"param{i}";
+                    }
+                    string condition = "";
+                    string paramName = $"param{i}";
 
                     // Build the individual condition
                     if (query.Operator == "KEY_VALUE")
@@ -95,10 +98,14 @@ public class QueryBusiness : IQueryBusiness
                         var jsonbColumns = new[] { "properties", "tags" };
 
                         if (jsonbColumns.Contains(query.Filter.ToLower()))
+                        {
                             // For JSONB columns, convert to text and search
                             condition = $"jsonb_pretty(hr.{query.Filter}) ILIKE @{paramName}";
+                        }
                         else
+                        {
                             condition = $"hr.{query.Filter} ILIKE @{paramName}";
+                        }
                         parameters.Add(new NpgsqlParameter(paramName, $"%{query.Value}%"));
                     }
                     else if (query.Operator == "=")
@@ -115,63 +122,81 @@ public class QueryBusiness : IQueryBusiness
                         else
                         {
                             condition = $"hr.{query.Filter} = @{paramName}";
-
+        
                             if (int.TryParse(query.Value, out var intVal))
+                            {
                                 parameters.Add(new NpgsqlParameter(paramName, intVal));
+                            }
                             else if (DateTime.TryParse(query.Value, out var dateVal))
+                            {
                                 parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                            }
                             else
+                            {
                                 parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                            }
                         }
                     }
                     else if (query.Operator == ">")
                     {
                         condition = $"hr.{query.Filter} > @{paramName}";
-
+                        
                         if (DateTime.TryParse(query.Value, out var dateVal))
+                        {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        }
                         else
+                        {
                             parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                        }
                     }
                     else if (query.Operator == "<")
                     {
                         condition = $"hr.{query.Filter} < @{paramName}";
-
+                        
                         if (DateTime.TryParse(query.Value, out var dateVal))
+                        {
                             parameters.Add(new NpgsqlParameter(paramName, dateVal));
+                        }
                         else
+                        {
                             parameters.Add(new NpgsqlParameter(paramName, query.Value));
+                        }
                     }
                     else
                     {
-                        throw new ArgumentException("Invalid operator in query.");
+                        throw new ArgumentException($"Invalid operator in query.");
                     }
 
-                    if (!string.IsNullOrEmpty(condition)) conditions.Add(condition);
+                    if (!string.IsNullOrEmpty(condition))
+                    {
+                        conditions.Add(condition);
+                    }
                 }
+            }
 
             if (conditions.Any())
             {
                 sql += " AND (";
-
-                for (var i = 0; i < conditions.Count; i++)
+                
+                for (int i = 0; i < conditions.Count; i++)
                 {
                     if (i > 0)
                     {
                         var connector = request[i].Connector?.ToUpper() == "OR" ? " OR " : " AND ";
                         sql += connector;
                     }
-
+                    
                     sql += conditions[i];
                 }
-
+                
                 sql += ")";
             }
 
             if (!string.IsNullOrWhiteSpace(textSearch))
             {
                 // Split query into words and add :* to each for prefix matching
-                var processedQuery = string.Join(" & ",
+                var processedQuery = string.Join(" & ", 
                     textSearch.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                         .Select(word => word.Trim() + ":*"));
                 var processedQueryParam = new NpgsqlParameter("processedQuery", processedQuery);
@@ -180,25 +205,25 @@ public class QueryBusiness : IQueryBusiness
                 parameters.Add(originalQueryParam);
 
                 var textSearchCondition = @"
-                AND (
-                    to_tsvector('english',
-                            coalesce(name, '') || ' ' ||
-                            coalesce(description, '') || ' ' ||
-                            coalesce(class_name, '') || ' ' ||
-                            coalesce(uri, '') || ' ' ||
-                            coalesce(original_id, '') || ' ' ||
-                            coalesce(data_source_name, '') || ' ' ||
-                            coalesce(project_name, '') || ' ' ||
-                            coalesce(properties::text, '') || ' ' ||
-                            coalesce(tags::text, '')
-                        )@@ to_tsquery('english', @processedQuery)
-                    OR hr.name ILIKE '%' || @originalQuery || '%'
-                    OR hr.description ILIKE '%' || @originalQuery || '%'
-                    OR hr.original_id ILIKE '%' || @originalQuery || '%'
-                    OR hr.data_source_name ILIKE '%' || @originalQuery || '%'
-                    OR hr.project_name ILIKE '%' || @originalQuery || '%'
-                    OR hr.class_name ILIKE '%' || @originalQuery || '%'
-                )";
+                    AND (
+                        to_tsvector('english',
+                                coalesce(name, '') || ' ' ||
+                                coalesce(description, '') || ' ' ||
+                                coalesce(class_name, '') || ' ' ||
+                                coalesce(uri, '') || ' ' ||
+                                coalesce(original_id, '') || ' ' ||
+                                coalesce(data_source_name, '') || ' ' ||
+                                coalesce(project_name, '') || ' ' ||
+                                coalesce(properties::text, '') || ' ' ||
+                                coalesce(tags::text, '')
+                            )@@ to_tsquery('english', @processedQuery)
+                        OR hr.name ILIKE '%' || @originalQuery || '%'
+                        OR hr.description ILIKE '%' || @originalQuery || '%'
+                        OR hr.original_id ILIKE '%' || @originalQuery || '%'
+                        OR hr.data_source_name ILIKE '%' || @originalQuery || '%'
+                        OR hr.project_name ILIKE '%' || @originalQuery || '%'
+                        OR hr.class_name ILIKE '%' || @originalQuery || '%'
+                    )";
 
                 sql += textSearchCondition;
             }
@@ -209,7 +234,7 @@ public class QueryBusiness : IQueryBusiness
             // Execute the query with parameters
             var historicalRecords = _context.HistoricalRecords.FromSqlRaw(sql, parameters.ToArray());
 
-            return historicalRecords
+            return await historicalRecords
                 .Select(r => new HistoricalRecordResponseDto
                 {
                     Id = r.RecordId,
@@ -229,22 +254,19 @@ public class QueryBusiness : IQueryBusiness
                     Tags = r.Tags,
                     LastUpdatedBy = r.LastUpdatedBy,
                     LastUpdatedAt = r.LastUpdatedAt
-                }).ToList();
+                }).ToListAsync();
         }
         catch (PostgresException ex) when (ex.SqlState == "42703") // undefined_column
         {
-            throw new ArgumentException(
-                "Invalid column name in query. Please check your filter fields against the historical_records table structure.",
-                ex);
+            throw new ArgumentException($"Invalid column name in query. Please check your filter fields against the historical_records table structure.", ex);
         }
         catch (PostgresException ex) when (ex.SqlState == "42601") // syntax_error
         {
-            throw new ArgumentException("Invalid query syntax. Please check your operators and values.", ex);
+            throw new ArgumentException($"Invalid query syntax. Please check your operators and values.", ex);
         }
-        catch (PostgresException ex) when (ex.SqlState == "22P02")
+        catch (PostgresException ex) when (ex.SqlState == "22P02") 
         {
-            throw new ArgumentException(
-                "Invalid data type in query. Please check that your values match the expected column data types.", ex);
+            throw new ArgumentException($"Invalid data type in query. Please check that your values match the expected column data types.", ex);
         }
         catch (JsonException ex)
         {
@@ -255,8 +277,7 @@ public class QueryBusiness : IQueryBusiness
             throw new ArgumentException($"Error executing query: {ex.Message}", ex);
         }
     }
-
-
+    
     /// <summary>
     ///     Full text records search
     /// </summary>
@@ -267,51 +288,51 @@ public class QueryBusiness : IQueryBusiness
     {
         if (string.IsNullOrWhiteSpace(userQuery))
             throw new Exception("Search query is required.");
-
+        
         // Process query for full-text search (prefix matching)
-        var processedQuery = string.Join(" & ",
+        var processedQuery = string.Join(" & ", 
             userQuery.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                .Select(word => word.Trim() + ":*"));
-
+                     .Select(word => word.Trim() + ":*"));
+        
         var sql = @"
-        SELECT DISTINCT ON (hr.record_id)
-        hr.*,
-        hr.class_id as ClassId,
-        hr.class_name as ClassName,
-        hr.original_id as OriginalId,
-        hr.data_source_name as DataSourceName,
-        hr.data_source_id as DataSourceId,
-        hr.project_name as ProjectName,
-        hr.project_id as ProjectId,
-        hr.last_updated_at as LastUpdatedAt,
-        hr.last_updated_by as LastUpdatedBy,
-        hr.object_storage_name as ObjectStorageName,
-        hr.object_storage_id as ObjectStorageId,
-        hr.record_id as RecordId,
-        hr.is_archived as IsArchived
-    FROM deeplynx.historical_records hr
-    WHERE hr.is_archived = false
-    AND hr.project_id = ANY(@project_ids)
-    AND (
-        to_tsvector('english',
-                coalesce(name, '') || ' ' ||
-                coalesce(description, '') || ' ' ||
-                coalesce(class_name, '') || ' ' ||
-                coalesce(uri, '') || ' ' ||
-                coalesce(original_id, '') || ' ' ||
-                coalesce(data_source_name, '') || ' ' ||
-                coalesce(project_name, '') || ' ' ||
-                coalesce(properties::text, '') || ' ' ||
-                coalesce(tags::text, '')
-            )@@ to_tsquery('english', @processed_query)
-        OR hr.name ILIKE '%' || @original_query || '%'
-        OR hr.description ILIKE '%' || @original_query || '%'
-        OR hr.original_id ILIKE '%' || @original_query || '%'
-        OR hr.data_source_name ILIKE '%' || @original_query || '%'
-        OR hr.project_name ILIKE '%' || @original_query || '%'
-        OR hr.class_name ILIKE '%' || @original_query || '%'
-    )
-    ORDER BY hr.record_id, hr.last_updated_at DESC";
+            SELECT DISTINCT ON (hr.record_id)
+            hr.*,
+            hr.class_id as ClassId,
+            hr.class_name as ClassName,
+            hr.original_id as OriginalId,
+            hr.data_source_name as DataSourceName,
+            hr.data_source_id as DataSourceId,
+            hr.project_name as ProjectName,
+            hr.project_id as ProjectId,
+            hr.last_updated_at as LastUpdatedAt,
+            hr.last_updated_by as LastUpdatedBy,
+            hr.object_storage_name as ObjectStorageName,
+            hr.object_storage_id as ObjectStorageId,
+            hr.record_id as RecordId,
+            hr.is_archived as IsArchived
+        FROM deeplynx.historical_records hr
+        WHERE hr.is_archived = false
+        AND hr.project_id = ANY(@project_ids)
+        AND (
+            to_tsvector('english',
+                    coalesce(name, '') || ' ' ||
+                    coalesce(description, '') || ' ' ||
+                    coalesce(class_name, '') || ' ' ||
+                    coalesce(uri, '') || ' ' ||
+                    coalesce(original_id, '') || ' ' ||
+                    coalesce(data_source_name, '') || ' ' ||
+                    coalesce(project_name, '') || ' ' ||
+                    coalesce(properties::text, '') || ' ' ||
+                    coalesce(tags::text, '')
+                )@@ to_tsquery('english', @processed_query)
+            OR hr.name ILIKE '%' || @original_query || '%'
+            OR hr.description ILIKE '%' || @original_query || '%'
+            OR hr.original_id ILIKE '%' || @original_query || '%'
+            OR hr.data_source_name ILIKE '%' || @original_query || '%'
+            OR hr.project_name ILIKE '%' || @original_query || '%'
+            OR hr.class_name ILIKE '%' || @original_query || '%'
+        )
+        ORDER BY hr.record_id, hr.last_updated_at DESC";
 
         var param1 = new NpgsqlParameter("processed_query", processedQuery);
         var param2 = new NpgsqlParameter("original_query", userQuery);
@@ -319,10 +340,10 @@ public class QueryBusiness : IQueryBusiness
         {
             Value = projectIds
         };
-
+        
         var results = _context.HistoricalRecords.FromSqlRaw(sql, param1, param2, param3);
-
-        return results
+        
+        return await results
             .Select(r => new HistoricalRecordResponseDto
             {
                 Id = r.RecordId,
@@ -342,10 +363,9 @@ public class QueryBusiness : IQueryBusiness
                 Tags = r.Tags,
                 LastUpdatedBy = r.LastUpdatedBy,
                 LastUpdatedAt = r.LastUpdatedAt
-            }).ToList();
+            }).ToListAsync();
     }
-
-
+    
     /// <summary>
     ///     Retrieves all classes for specific projects.
     /// </summary>
@@ -462,5 +482,4 @@ public class QueryBusiness : IQueryBusiness
         await _context.SaveChangesAsync();
         return true;
     }
-
 }

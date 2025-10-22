@@ -1,3 +1,4 @@
+// src/app/(home)/project/[id]/ProjectDetailClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -6,7 +7,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import SearchBar from "@/app/(home)/components/SearchBar";
-import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
+import WidgetCard from "@/app/(home)/components/Widgets";
+import { WidgetType } from "../../types/types";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
@@ -72,7 +74,7 @@ export default function ProjectDetailClient({
   const handleSearchEnter = (searchTerm: string) => {
     const projectIdToUse = selectedProjectId || projectId || "";
     const query = new URLSearchParams({
-      fromProject: projectIdToUse,
+      fromProject: selectedProjectId ? selectedProjectId.toString() : "",
       search: searchTerm,
     }).toString();
 
@@ -136,6 +138,7 @@ export default function ProjectDetailClient({
 
               <RecentRecordsCard
                 selectedProjects={[selectedProjectId || projectId || ""]}
+                border={false}
               />
             </div>
           </div>

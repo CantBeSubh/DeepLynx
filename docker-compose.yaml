@@ -4,10 +4,29 @@ services:
       context: ./
       dockerfile: Dockerfiles/ui/Dockerfile.local
       args:
-        NEXT_PUBLIC_DOCS_PATH: "#"
+        OKTA_ISSUER: "https://identity-preview.inl.gov"
+        NEXTAUTH_URL: "http://localhost:3000"
+        REDIRECT_LINK: "http://localhost:3000/api/auth/callback/okta"
+        NEXT_PUBLIC_DOCS_PATH: "http://localhost:3001/docs"
+        NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+        OKTA_CLIENT_ID: ""
+        OKTA_CLIENT_SECRET: ""
+        NEXTAUTH_SECRET: ""
+        BACKEND_BASE_URL: "http://server:5000/api"
+        AUTH_TRUST_HOST: true
+        DISABLE_FRONTEND_AUTHENTICATION: true
     environment:
       NODE_ENV: production
+      OKTA_ISSUER: "https://identity-preview.inl.gov"
+      NEXTAUTH_URL: "http://localhost:3000"
+      REDIRECT_LINK: "http://localhost:3000/api/auth/callback/okta"
+      NEXT_PUBLIC_DOCS_PATH: "http://localhost:3001/docs"
+      NEXT_PUBLIC_API_URL: "http://localhost:5000/api"
+      OKTA_CLIENT_ID: ""
+      OKTA_CLIENT_SECRET: ""
+      NEXTAUTH_SECRET: ""
       BACKEND_BASE_URL: "http://server:5000/api"
+      AUTH_TRUST_HOST: true
       DISABLE_FRONTEND_AUTHENTICATION: true
     ports:
       - "3000:3000"
@@ -16,19 +35,18 @@ services:
     depends_on:
       - server
 
-# If you decide to uncomment this you need to delete the '"NEXT_PUBLIC_DOCS_PATH: "#"' line from ui args above, or ask Ed Ramos.
-#  docs:
-    #build:
-      #context: ./
-      #dockerfile: Dockerfiles/docs/Dockerfile.local
-    #environment:
-      #NODE_ENV: production
-    #ports:
-      #- "3001:3001"
-    #networks:
-      #- nexus-network
-    #depends_on:
-      #- server
+  docs:
+    build:
+      context: ./
+      dockerfile: Dockerfiles/docs/Dockerfile.local
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    networks:
+      - nexus-network
+    depends_on:
+      - server
 
   server:
     build:
@@ -55,6 +73,7 @@ services:
       INVITE_URL: http://localhost:3000
       SUPPORT_EMAIL: jaren.brownlee@inl.gov
       DISABLE_BACKEND_AUTHENTICATION: true
+      SUPERUSER_EMAIL: admin@admin.com
 
     entrypoint: /usr/local/bin/entrypoint.sh
     ports:

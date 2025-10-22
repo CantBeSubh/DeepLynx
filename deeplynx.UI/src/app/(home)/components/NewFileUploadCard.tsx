@@ -1,18 +1,12 @@
 // src/app/(home)/components/NewFileUploadCard.tsx
 
 "use client";
-
+import { FileMetadata } from "../types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { useEffect, useState } from "react";
 
 type UploadType = "new" | "version" | "properties" | "";
 
-export type FileMetadata = {
-  name: string;
-  description: string;
-  isTimeSeries: boolean;
-  updateAction?: "merge" | "overwrite";
-};
 
 interface NewFileUploadCardProps {
   defaultName?: string;
