@@ -12,6 +12,11 @@ export type ClassResponseDto = {
   createdat: string;
 };
 
+export type TokenResponseDto={
+  apiKey:string;
+  apiSecret:string;
+}
+
 export type DataSourceResponseDto = {
   id: number;
   name: string;
