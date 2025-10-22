@@ -140,9 +140,8 @@ try
         options => options.UseNpgsql(connectionString),
         ServiceLifetime.Transient
     );
-
-    // Used for event system pub/sub and notifications
-    builder.Services.AddSignalR();
+    
+    builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
     // Register Cache Service as a singleton
     var cacheProviderType = Environment.GetEnvironmentVariable("CACHE_PROVIDER_TYPE");
@@ -403,7 +402,13 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.UseMiddleware<UserContextMiddleware>();
-    app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
+    
+    // Check if the notification service is enabled (defaults to false if not set)
+    if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+    {
+        app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
+    }
+    
     app.MapControllers();
     app.Run();
 }
