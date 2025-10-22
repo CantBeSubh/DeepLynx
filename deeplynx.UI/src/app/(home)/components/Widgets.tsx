@@ -14,14 +14,8 @@ import GraphWidget from "./WidgetCards/GraphWidget";
 import LinksWidget from "./WidgetCards/LinksWidget";
 import ProjectOverviewWidget from "./WidgetCards/ProjectOverview";
 import TeamMembersWidget from "./WidgetCards/TeamMembers";
+import { WidgetType } from "../types/types";
 
-export type WidgetType =
-  | "DataOverview"
-  | "Links"
-  | "Graph"
-  | "RecentActivity"
-  | "ProjectOverview"
-  | "TeamMembers";
 
 interface WidgetCardProps {
   widgets: WidgetType[];

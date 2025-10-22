@@ -1,5 +1,5 @@
 import "server-only";
-
+import { SendEmailResponse } from "../(home)/types/types";
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
 
@@ -14,10 +14,7 @@ async function asJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** ---- Types ---- */
-export type SendEmailResponse = {
-  message: string;
-};
+
 
 /** ---- Server-safe calls (no browser cookies; safe in prerender/SSR) ---- */
 

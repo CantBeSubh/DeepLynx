@@ -1,15 +1,9 @@
 "use client";
 import { useState } from "react";
+import { DatePickerQuery } from "../types/types";
 
-export type Query = {
-    id: string;
-    connector?: string;
-    filter?: string;
-    operator?: string;
-    value?: string; // you can store the combined timestamp here if you want
-};
 interface DatePickerProps {
-    row: Query;
+    row: DatePickerQuery;
     onChange: (value: string) => void;
 }
 
