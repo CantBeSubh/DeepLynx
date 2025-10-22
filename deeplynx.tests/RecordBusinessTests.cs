@@ -100,6 +100,26 @@ public class RecordBusinessTests : IntegrationTestBase
     }
     
     [Fact]
+    public async Task GetAllRecords_WithFileType_ReturnsFilteredRecords()
+    {
+        // Arrange
+        var projectId = pid;
+        var dataSourceId = did;
+
+        // Act
+        var incorrectFileTypeResponse = await _recordBusiness.GetAllRecords(projectId, dataSourceId, true, "png");
+        
+        Assert.Empty(incorrectFileTypeResponse);
+        
+        var correctFileTypeResponse = await _recordBusiness.GetAllRecords(projectId, dataSourceId, true, "pdf");
+        
+        // Assert
+        Assert.NotNull(correctFileTypeResponse);
+        Assert.Single(correctFileTypeResponse);
+        Assert.Equal("pdf", correctFileTypeResponse.First().FileType);
+    }
+    
+    [Fact]
     public async Task GetAllRecords_InvalidProjectId_ThrowsKeyNotFoundException()
     {
         // Arrange
