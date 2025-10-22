@@ -11,6 +11,7 @@ import { createApiKey, deleteApiKey, getAllKeysByUser } from "@/app/lib/settings
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import UserSettingsSkeleton from "../components/skeletons/usersettingsskeleton";
+import ToastInfoModal from "../components/ToastInfoModal";
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage();
   const { data: session } = useSession();
@@ -27,23 +28,31 @@ const SettingsPageClient = () => {
     try {
       setCreating(true);
       const res = await createApiKey();
+      const keyStr = "Key: "+res.apiKey;
+      const secretStr = "Secret: "+res.apiSecret;
       setUserKeys(prev=>[res.apiKey,...prev])
       toast.success((t)=>(
-        <div className="relative">
-          <div className="space-y-1 pb-5">
-            <div className="flex justify-center w-full">
-              <span>API Keypair created successfully! Keep these somewhere safe:</span>
-            </div>
-            <code className="block">Key: {res.apiKey}</code>
-            <code className="block">Secret: {res.apiSecret}</code>
-          </div>
-          <div className="flex justify-center w-full">
-            <button className="btn btn-primary btn-outline btn-xs" onClick={()=>{toast.dismiss(t.id); router.refresh()}}>
-            Dismiss
-            </button>
-          </div>
+        <ToastInfoModal 
+          title={"API Keypair created successfully! Keep these somewhere safe:"} 
+          toastId={t.id} 
+          infoDisplay={[keyStr,secretStr]} 
+          onClose={() => test()}
+        />
+        // <div className="relative">
+        //   <div className="space-y-1 pb-5">
+        //     <div className="flex justify-center w-full">
+        //       <span>API Keypair created successfully! Keep these somewhere safe:</span>
+        //     </div>
+        //     <code className="block">Key: {res.apiKey}</code>
+        //     <code className="block">Secret: {res.apiSecret}</code>
+        //   </div>
+        //   <div className="flex justify-center w-full">
+        //     <button className="btn btn-primary btn-outline btn-xs" onClick={()=>{toast.dismiss(t.id); router.refresh()}}>
+        //     Dismiss
+        //     </button>
+        //   </div>
 
-        </div>
+        // </div>
 
       ),{
         duration:Infinity,
@@ -61,6 +70,9 @@ const SettingsPageClient = () => {
     }
   };
 
+  const test = ()=>{
+    console.log("on close test works")
+  }
   const apiKeyDelete = (key:string) => async (e:React.MouseEvent)  => {
     try {
       setDeleting(true);
