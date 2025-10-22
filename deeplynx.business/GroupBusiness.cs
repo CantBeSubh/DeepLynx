@@ -113,8 +113,8 @@ public class GroupBusiness : IGroupBusiness
             Operation = "create",
             EntityType = "group",
             EntityId = group.Id,
+            EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new GroupResponseDto
@@ -157,8 +157,8 @@ public class GroupBusiness : IGroupBusiness
             Operation = "update",
             EntityType = "group",
             EntityId = group.Id,
+            EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new GroupResponseDto
@@ -198,8 +198,8 @@ public class GroupBusiness : IGroupBusiness
             Operation = "archive",
             EntityType = "group",
             EntityId = group.Id,
+            EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
@@ -232,8 +232,8 @@ public class GroupBusiness : IGroupBusiness
             Operation = "unarchive",
             EntityType = "group",
             EntityId = group.Id,
+            EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
@@ -261,8 +261,8 @@ public class GroupBusiness : IGroupBusiness
             Operation = "delete",
             EntityType = "group",
             EntityId = group.Id,
+            EntityName = group.Name,
             Properties = JsonSerializer.Serialize(new { group.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;

@@ -90,6 +90,7 @@ namespace deeplynx.tests
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(result.Name, actualEvent.EntityName);
             Assert.Equal(result.Id, actualEvent.EntityId);
         }
 

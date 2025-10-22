@@ -133,8 +133,6 @@ public class ClassBusiness : IClassBusiness
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
             IsArchived = false
-
-
         };
 
         _context.Classes.Add(newClass);
@@ -147,9 +145,9 @@ public class ClassBusiness : IClassBusiness
             Operation = "create",
             EntityType = "class",
             EntityId = newClass.Id,
+            EntityName = newClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {newClass.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ClassResponseDto
@@ -225,9 +223,9 @@ public class ClassBusiness : IClassBusiness
                 Operation = "create",
                 EntityType = "class",
                 EntityId = item.Id,
+                EntityName = item.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -269,9 +267,9 @@ public class ClassBusiness : IClassBusiness
             Operation = "update",
             EntityType = "class",
             EntityId = updatedClass.Id,
+            EntityName = updatedClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {updatedClass.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new ClassResponseDto
@@ -363,9 +361,9 @@ public class ClassBusiness : IClassBusiness
             Operation = "archive",
             EntityType = "class",
             EntityId = dbClass.Id,
+            EntityName = dbClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -425,9 +423,9 @@ public class ClassBusiness : IClassBusiness
             Operation = "unarchive",
             EntityType = "class",
             EntityId = dbClass.Id,
+            EntityName = dbClass.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { dbClass.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

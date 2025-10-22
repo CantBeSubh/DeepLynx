@@ -25,9 +25,9 @@ public class EventResponseDto
 
     [Column("properties")]
     public string Properties { get; set; }
-    public string ProjectName { get; set; }
-    public string EntityName { get; set; }
-    public string DataSourceName { get; set; }
+    public string? ProjectName { get; set; }
+    public string? EntityName { get; set; }
+    public string? DataSourceName { get; set; }
     public DateTime LastUpdatedAt { get; set; }
     public string? LastUpdatedBy { get; set; }
 }
