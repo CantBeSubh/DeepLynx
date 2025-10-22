@@ -20,7 +20,7 @@ public class TokenController : ControllerBase
     private readonly IEventBusiness _eventBusiness;
     private readonly ITokenBusiness _tokenBusiness;
     private readonly ILogger<RecordController> _logger;
-    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness,ILogger<RecordController> logger)
+    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness, ILogger<RecordController> logger)
     {
         _eventBusiness = eventBusiness;
         _tokenBusiness = tokenBusiness;
@@ -32,6 +32,7 @@ public class TokenController : ControllerBase
     /// </summary>
     /// <param name="tokenDto"></param>
     /// <returns>Jwt token</returns>
+    [AllowAnonymous]
     [HttpPost("CreateToken", Name = "api_create_token")]
     public IActionResult CreateToken([FromBody] CreateTokenDto tokenDto)
     {
