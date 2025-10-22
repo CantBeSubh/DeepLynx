@@ -344,8 +344,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
-            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower()
-                                    || email.ToLower() == "developer@localhost";
+            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
@@ -359,7 +358,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     existingUser.Name = name;
                     existingUser.IsActive = true;
                     existingUser.IsArchived = false;
-                    existingUser.IsSysAdmin = isDefaultSuperUser;
+                    existingUser.IsSysAdmin = isDefaultSuperUser || existingUser.IsSysAdmin;
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }
