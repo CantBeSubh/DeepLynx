@@ -88,6 +88,22 @@ public class RecordBusinessTests : IntegrationTestBase
     }
     
     [Fact]
+    public async Task GetAllRecords_WithFileType_ReturnsFilteredRecords()
+    {
+        // Arrange - Make sure incorrect fileType filter results in no results (we only have 1 record seeded and its of pdf type)
+        var incorrectFileTypeResponse = await _recordBusiness.GetAllRecords(pid, did, true, "png");
+        Assert.Empty(incorrectFileTypeResponse);
+        
+        // Act
+        var correctFileTypeResponse = await _recordBusiness.GetAllRecords(pid, did, true, "pdf");
+        
+        // Assert
+        Assert.NotNull(correctFileTypeResponse);
+        Assert.Single(correctFileTypeResponse);
+        Assert.Equal("pdf", correctFileTypeResponse.First().FileType);
+    }
+    
+    [Fact]
     public async Task GetAllRecords_InvalidProjectId_ThrowsKeyNotFoundException()
     {
         // Act & Assert
