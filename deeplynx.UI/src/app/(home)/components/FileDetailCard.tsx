@@ -1,5 +1,5 @@
 "use client";
-import { ExistingFile } from "@/app/(home)/types/upload";
+import { ExistingFile } from "../types/types";
 import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
