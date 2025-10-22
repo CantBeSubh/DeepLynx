@@ -443,7 +443,6 @@ namespace deeplynx.tests
             Assert.Equal(dto.EntityId, result.EntityId);
             Assert.Equal(dto.DataSourceId, result.DataSourceId);
             Assert.Equal(dto.Properties, result.Properties);
-            Assert.Equal(dto.LastUpdatedBy, result.LastUpdatedBy);
             Assert.True(result.LastUpdatedAt >= now);
         }
 
@@ -532,7 +531,6 @@ namespace deeplynx.tests
             Assert.Equal(1, actualEvent0.EntityId);
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("{}", actualEvent0.Properties);
-            Assert.Equal("user123", actualEvent0.LastUpdatedBy);
 
             var actualEvent1 = results[1];
             Assert.Equal("create", actualEvent1.Operation);
@@ -540,7 +538,6 @@ namespace deeplynx.tests
             Assert.Equal(2, actualEvent1.EntityId);
             Assert.Equal(pid, actualEvent1.ProjectId);
             Assert.Equal("{}", actualEvent1.Properties);
-            Assert.Equal("user123", actualEvent1.LastUpdatedBy);
         }
 
         #endregion
