@@ -150,14 +150,14 @@ public class QueryController : ControllerBase
             }
         }
 
-        /// <summary>
-    ///     Build a query for records
+    /// <summary>
+    /// Saved searches
     /// </summary>
     /// <param name="filterArray">Array of QueryComponent dtos</param>
     /// <param name="textSearch">Full text search phrase</param>
-    /// ///
-    /// <param name="projectIds">Project ids that a user has access to</param>
-    /// <returns>List of historical record response DTOs</returns>
+    /// <param name="alias">Name for saved search</param>
+    /// <param name="favorite">Boolean for if favorite search or not</param>
+    /// <returns>True if successfully saved</returns>
     [HttpPost("SavedSearch", Name = "api_save_search")]
     public async Task<ActionResult<bool>> SaveSearch(
         [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
@@ -178,5 +178,4 @@ public class QueryController : ControllerBase
         }
     }
         
-    }
 }
