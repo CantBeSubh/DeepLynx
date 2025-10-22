@@ -344,7 +344,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
-            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
+            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower()
+                                    || email.ToLower() == "developer@localhost";
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
