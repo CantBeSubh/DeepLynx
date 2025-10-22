@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 
 import SearchBar from "@/app/(home)/components/SearchBar";
-import WidgetCard, { WidgetType } from "@/app/(home)/components/Widgets";
+import WidgetCard from "@/app/(home)/components/Widgets";
+import { WidgetType } from "../../types/types";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
 import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";

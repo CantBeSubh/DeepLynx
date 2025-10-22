@@ -5,12 +5,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import {
   createRecord,
-  type CreateRecordPayload,
 } from "@/app/lib/record_services.client";
+import { CreateRecordPayload } from "../types/types";
 import {
   getAllDataSources,
-  type DataSourceDTO,
 } from "@/app/lib/data_source_services.client";
+import { DataSourceResponseDto } from "../types/responseDTOs";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
 import { ProjectResponseDto } from "../types/responseDTOs";
@@ -38,7 +38,7 @@ const AddRecordModal: React.FC<Props> = ({
     number | undefined
   >(initialProjectId);
 
-  const [dataSources, setDataSources] = useState<DataSourceDTO[]>([]);
+  const [dataSources, setDataSources] = useState<DataSourceResponseDto[]>([]);
   const [selectedDataSourceId, setSelectedDataSourceId] = useState<
     number | undefined
   >();

@@ -16,12 +16,7 @@ async function asJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** ----- Types (optional: replace with your shared types) ----- */
-export type FilterResponse = unknown;
-export type QueryResponse = unknown;
-
-
-export async function filterRecordsServer<T = FilterResponse>(
+export async function filterRecordsServer<T = unknown>(
   filter: string
 ): Promise<T> {
   const res = await fetch(`${BASE}/records/Filter`, {
@@ -33,7 +28,7 @@ export async function filterRecordsServer<T = FilterResponse>(
   return asJson<T>(res);
 }
 
-export async function queryRecordsServer<T = QueryResponse>(
+export async function queryRecordsServer<T = unknown>(
   query: string
 ): Promise<T> {
   const sp = new URLSearchParams({ userQuery: query });

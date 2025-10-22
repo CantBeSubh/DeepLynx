@@ -71,6 +71,35 @@ export type HistoricalRecordResponseDto = {
   ArchivedAt?: Date;
 }
 
+export type RecordResponseDto = {
+  id: number | null;
+  name: string;
+  description?: string | null;
+  uri?: string | null;
+  properties?: unknown;
+  objectStorageId?: number | null;
+  originalId?: string | null;
+  classId?: number | null;
+  dataSourceId?: number | null;
+  projectId?: number | null;
+  lastUpdatedAt?: string;
+  lastUpdatedBy?: string | null;
+  isArchived?: boolean;
+  fileType?: string|null;
+  tags?: { id: number | null; name: string }[];
+};
+
+export type ObjectStorageResponseDto = {
+    id: number | string;
+    name: string;
+    type: string;
+    projectId: number | string;
+    default: boolean;
+    lastUpdatedAt: string;
+    lastUpdatedBy: string;
+    isArchived: boolean;
+}
+
 export type OrganizationResponseDto = {
   id: number|string;
   name: string;
@@ -115,6 +144,12 @@ export type ProjectResponseDto = {
   isArchived:boolean;
   organizationId: number | string;
 };
+
+export type ProjectStatResponseDto = {
+  classes: number;
+  records: number;
+  datasources: number;
+}
 
 export type RoleResponseDto =
 {

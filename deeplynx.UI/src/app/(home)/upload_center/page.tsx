@@ -1,7 +1,7 @@
 // SERVER COMPONENT
 import UploadCenterClient from "./UploadCenterClient";
-import { ExistingFile, RecentUpload } from "@/app/(home)/types/upload";
-
+import { ExistingFile } from "../types/types";
+import { RecentUpload } from "../types/types";
 export const metadata = { title: "Upload Center" };
 
 export default async function Page() {
