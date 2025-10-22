@@ -109,7 +109,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440101",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), // Most recent was ModifiedAt
-                LastUpdatedBy = "sarah.johnson@company.com", // Most recent modifier
+                LastUpdatedBy = 11, // Most recent modifier
                 IsArchived = false
             },
             new Class
@@ -120,7 +120,7 @@ public static class SeedData
                 ProjectId = 1,
                
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "data.analyst@company.com",
+                LastUpdatedBy = 1,
                 IsArchived = false
             },
             new Class
@@ -130,7 +130,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440103",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "Segment.analyst@company.com",
+                LastUpdatedBy = 2,
                 IsArchived = false
             },
             new Class
@@ -140,7 +140,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440104",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "Product@company.com",
+                LastUpdatedBy = 2,
                 IsArchived = false
             },
 
@@ -152,7 +152,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440201",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "supply@company.com",
+                LastUpdatedBy = 3,
                 IsArchived = false
             },
             new Class
@@ -162,7 +162,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440202",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "warehouse.admin@company.com",
+                LastUpdatedBy = 4,
                 IsArchived = false
                
             },
@@ -173,7 +173,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440203",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "facility.admin@company.com",
+                LastUpdatedBy = 5,
                 IsArchived = false
                
             },
@@ -184,7 +184,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440204",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "shipping.admin@company.com",
+                LastUpdatedBy = 5,
                 IsArchived = false
             },
 
@@ -196,7 +196,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440301",
                 ProjectId = 3,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "system.architect@company.com",
+                LastUpdatedBy =6,
                 IsArchived = false
             },
             new Class
@@ -206,7 +206,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440302",
                 ProjectId = 3,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = "data.migration@legacy.com",
+                LastUpdatedBy = 7,
                 IsArchived = false
               
             }
