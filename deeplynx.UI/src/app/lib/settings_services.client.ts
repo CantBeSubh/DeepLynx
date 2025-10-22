@@ -18,7 +18,6 @@ export async function createApiKey(
 }
 export async function deleteApiKey(key:string ) {
   try {
-    console.log("Key to delete: " +key)
     const res = await api.delete(
       `/token/DeleteApiKey/${key}`,
     {
@@ -41,7 +40,6 @@ export async function getAllKeysByUser() {
         headers: { "Content-Type": "application/json" }
       }
     );
-    console.log(res.data)
     return res.data;
   } catch (error) {
     console.error("Error getting api keys for user: ", error);
