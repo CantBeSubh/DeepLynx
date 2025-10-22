@@ -112,9 +112,11 @@ namespace deeplynx.tests
         {
             // Arrange
             var email = $"tester-{Guid.NewGuid():N}@example.com";
+            var name = "tester";
+            var username = "tester";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email };
+            var user = new User { Email = email, Name=name, Username = username };
             Context.Users.Add(user);
             Context.SaveChanges();
 
@@ -193,10 +195,12 @@ namespace deeplynx.tests
         public async Task DeleteApiKey_RemovesRow_And_ReturnsTrue()
         {
             // Arrange
-            var email = $"deleter-{Guid.NewGuid():N}@example.com";
+            var email = $"deleter2-{Guid.NewGuid():N}@example.com";
+            var name = "deleter2";
+            var username = "deleter2";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email };
+            var user = new User { Email = email, Name=name, Username = username };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();
 
@@ -217,9 +221,11 @@ namespace deeplynx.tests
         {
             // Arrange
             var email = $"deleter-{Guid.NewGuid():N}@example.com";
+            var name = "deleter";
+            var username = "deleter";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email };
+            var user = new User { Email = email, Name=name, Username = username };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();
 
@@ -257,10 +263,12 @@ namespace deeplynx.tests
         {
             // Arrange
             var email = $"keys-{Guid.NewGuid():N}@example.com";
+            var name = "keysName";
+            var username = "keysUsername";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email };
-            var other = new User { Email = $"other-{Guid.NewGuid():N}@example.com" };
+            var user = new User { Email = email, Name=name, Username = username };
+            var other = new User { Email = $"other-{Guid.NewGuid():N}@example.com", Name="otherName", Username="otherUsername" };
 
             Context.Users.AddRange(user, other);
             await Context.SaveChangesAsync();
