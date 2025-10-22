@@ -1,3 +1,5 @@
 export default {
-    requirements: '',
+    project: '',
+    user_management: '',
+    metadata_management: ''
 }

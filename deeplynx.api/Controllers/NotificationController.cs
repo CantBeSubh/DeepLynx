@@ -1,8 +1,6 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
-using deeplynx.models;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
@@ -11,8 +9,8 @@ namespace deeplynx.api.Controllers
     /// Controller for managing notifications.
     /// </summary>
     [ApiController]
-    [Route("api/notification")]
-    [NexusAuthorize]
+    [Route("notification")]
+    [Authorize]
     public class NotificationController : ControllerBase
     {
         private readonly INotificationBusiness _notificationBusiness;

@@ -1,13 +1,14 @@
 using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers;
 
-[Route("api/projects/{projectId}/tags")]
+[Route("projects/{projectId}/tags")]
 [ApiController]
-[NexusAuthorize]
+[Authorize]
 public class TagController : ControllerBase
 {
     private readonly ITagBusiness _tagBusiness;

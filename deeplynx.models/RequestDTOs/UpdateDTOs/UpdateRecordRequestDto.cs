@@ -29,4 +29,7 @@ public class UpdateRecordRequestDto
     
     [JsonPropertyName("object_storage_id")]
     public long? ObjectStorageId { get; set; }
+    
+    [JsonPropertyName("file_type")]
+    public string? FileType { get; set; }
 }

@@ -1,9 +1,9 @@
 // src/app/lib/projects_services.server.ts
-
+import { ProjectResponseDto } from "../(home)/types/responseDTOs";
 import "server-only";
 import { auth } from "../../../auth";
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
-
+import { ProjectStatResponseDto } from "../(home)/types/responseDTOs";
 /** ----- Strict env handling (lazy) ----- */
 let _BASE: string | null = null;
 
@@ -23,16 +23,6 @@ function getBase(): string {
 // Optional: use a machine/service token in SSR when the user token isn't available
 const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
 
-/** ----- Types ----- */
-export type ProjectDTO = {
-  id: number | string;
-  name: string;
-  description?: string | null;
-  lastUpdatedAt?: Date;
-  createdAt?: string | null;
-};
-
-export type ProjectStatsDTO = Record<string, unknown>;
 
 /** ----- Session helpers ----- */
 type SessionShapeA = { tokens?: { access_token?: unknown } };
@@ -110,9 +100,9 @@ async function asJson<T>(res: Response): Promise<T> {
 
 /** ===== Server-safe calls ===== */
 
-export async function getAllProjectsServer(): Promise<ProjectDTO[]> {
+export async function getAllProjectsServer(): Promise<ProjectResponseDto[]> {
   const res = await apiFetch("/projects/GetAllProjects");
-  return asJson<ProjectDTO[]>(res);
+  return asJson<ProjectResponseDto[]>(res);
 }
 
 export async function getAllRecordsForMultipleProjectsServer(
@@ -128,28 +118,28 @@ export async function getAllRecordsForMultipleProjectsServer(
 
 export async function getProjectServer(
   projectId: string | number
-): Promise<ProjectDTO> {
+): Promise<ProjectResponseDto> {
   const res = await apiFetch(`/projects/GetProject/${projectId}`);
-  return asJson<ProjectDTO>(res);
+  return asJson<ProjectResponseDto>(res);
 }
 
 export async function getProjectStatsServer(
   projectId: string | number
-): Promise<ProjectStatsDTO> {
+): Promise<ProjectStatResponseDto> {
   const res = await apiFetch(`/projects/ProjectStats/${projectId}`);
-  return asJson<ProjectStatsDTO>(res);
+  return asJson<ProjectStatResponseDto>(res);
 }
 
 export async function createProjectServer(data: {
   name: string;
   abbreviation: string | null;
   description: string | null;
-}): Promise<ProjectDTO> {
+}): Promise<ProjectResponseDto> {
   const res = await apiFetch(`/projects/CreateProject`, {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return asJson<ProjectDTO>(res);
+  return asJson<ProjectResponseDto>(res);
 }
 
 //Function for when roles are not optional
@@ -158,12 +148,12 @@ export async function createProjectServer(data: {
 //   userId: number;
 //   roleId?: number;
 //   groupId?: number;
-// }): Promise<ProjectDTO> {
+// }): Promise<ProjectResponseDto> {
 //   const res = await apiFetch(`/projects/AddMemberToProject?projectId=${data.projectId}&userId=${data.userId}&roleId=${data.roleId}`, {
 //     method: "POST",
 //     body: JSON.stringify(data),
 //   });
-//   return asJson<ProjectDTO>(res);
+//   return asJson<ProjectResponseDto>(res);
 // }
 
 export async function addMemberServer(data: {
@@ -171,7 +161,7 @@ export async function addMemberServer(data: {
   userId: number;
   roleId?: number;
   groupId?: number;
-}): Promise<ProjectDTO> {
+}): Promise<ProjectResponseDto> {
   // Construct the base URL with required parameters
   const url = `/projects/AddMemberToProject?projectId=${data.projectId}&userId=${data.userId}` +
               (data.roleId !== undefined ? `&roleId=${data.roleId}` : '');
@@ -180,5 +170,5 @@ export async function addMemberServer(data: {
     method: "POST",
     body: JSON.stringify(data),
   });
-  return asJson<ProjectDTO>(res);
+  return asJson<ProjectResponseDto>(res);
 }

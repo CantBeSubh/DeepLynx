@@ -1,13 +1,13 @@
-using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/graph")]
-    [NexusAuthorize]
+    [Route("projects/{projectId}/graph")]
+    [Authorize]
     public class KuzuDatabaseManagerController : ControllerBase
     {
         private readonly IKuzuDatabaseManager _kuzuDatabaseManager;

@@ -1,11 +1,7 @@
-// src/app/(home)/record/RecordViewClient.tsx
-
 "use client";
-
-import { useCallback, useState } from "react";
-import React, { useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
+import Link from "next/link";
 import toast from "react-hot-toast";
-import TagButton from "@/app/(home)/components/TagButton";
 import {
   updateRecord,
   unAttachTagFromRecord,
@@ -14,265 +10,352 @@ import {
 import { getTagsForProjects } from "@/app/lib/query_services.client";
 import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
-import {
-  Column,
-  FileViewerTableRow,
-  TagResponseDto,
-} from "@/app/(home)/types/types";
+import { TagResponseDto } from "../types/responseDTOs";
 import {
   XMarkIcon,
   PencilIcon,
   CheckCircleIcon,
   XCircleIcon,
-  EyeIcon,
 } from "@heroicons/react/24/outline";
-import GenericTable from "@/app/(home)/components/GenericTable";
-// import { getNodesWithinDepth, queryKuzu } from "@/app/lib/kuzu_services";
+import RecordLoading from "./loading";
+
+// Components
+import TagButton from "@/app/(home)/components/TagButton";
 import ConfirmationModal from "@/app/(home)/components/ConfirmationModal";
-import RecordViewModal from "@/app/(home)/components/RecordViewModal";
-import { deleteEdge, getEdge } from "@/app/lib/edge_services.client";
 import RelatedRecordsCard, {
   CardColumn,
 } from "./components/RelatedRecordsCard";
-import { useLanguage } from "@/app/contexts/Language";
 
-type Props = {
-  initialRecord: FileViewerTableRow | null;
+// Services
+import {
+  archiveEdge,
+  getEdge,
+  getEdgesByRecord,
+} from "@/app/lib/edge_services.client";
+
+// Types & Context
+import { FileViewerTableRow } from "@/app/(home)/types/types";
+import { useLanguage } from "@/app/contexts/Language";
+import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
+import { RelatedRecordsResponseDto } from "../types/responseDTOs";
+import { RelatedRecordsRequestDto } from "../types/requestDTOs";
+
+// ============= TYPE DEFINITIONS =============
+interface Props {
   projectId: number;
   recordId: number;
-};
+}
 
-interface ParsedRecord {
-  relationship: string;
-  id: string;
-  class: string;
-  name: string;
+interface RelatedRecordViewModel extends RelatedRecordsResponseDto {
   actions: React.JSX.Element;
 }
 
-type Record = {
-  recordId: number;
-  internalId: string;
-  label: string;
-  id: number;
-  projectId: number;
-  className: string;
-  projectName: string;
-  name: string;
-  uri: string;
-  dataSourceId: number;
-  originalId: string;
-  classId: number;
-  properties: string;
-  tags: string;
-  createdBy: string;
-  createdAt: string;
-  modifiedAt: string;
-  modifiedBy: string;
-  archivedAt: string | null;
-  lastUpdatedAt: string;
-};
+interface ModalState {
+  isOpen: boolean;
+  type: "tag" | "relatedRecord" | null;
+  nameToRemove: string;
+  recordNameToRemove?: string;
+  idToRemove: string | null;
+  originId: number | null;
+  destinationId: number | null;
+}
 
-type Relationship = {
-  relationshipName: string;
-  sourceId: string;
-  destId: string;
-};
-
-type RelatedRecord = Relationship | Record;
-
-export default function RecordViewClient({
-  initialRecord,
-  projectId,
-  recordId,
-}: Props) {
+// ============= MAIN COMPONENT =============
+export default function RecordViewClient({ projectId, recordId }: Props) {
   const { t } = useLanguage();
-  const [record, setRecord] = useState<FileViewerTableRow | null>(
-    initialRecord
-  );
+
+  // ============= STATE MANAGEMENT =============
+  // Record & Tags State
+  const [record, setRecord] = useState<FileViewerTableRow | null>(null);
   const [tags, setTags] = useState<TagResponseDto[]>([]);
   const [selectedTags, setSelectedTags] = useState<TagResponseDto[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
   const [tagsToRemove, setTagsToRemove] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState(0);
-  const [relatedRecords, setRelatedRecords] = useState<RelatedRecord[]>();
-  const [hasFetchedRelatedRecords, setHasFetchedRelatedRecords] =
-    useState(false);
-  const [parsedRelatedRecords, setParsedRelatedRecords] = useState<
-    ParsedRecord[]
-  >([]);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [selectedNameToRemove, setSelectedNameToRemove] = useState<string>("");
-  const [selectedRecordNameToRemove, setSelectedRecordNameToRemove] = useState<
-    string | undefined
-  >("");
-  const [selectedRecord, setSelectedRecord] =
-    useState<FileViewerTableRow | null>(null);
-  const [idToRemove, setIdToRemove] = useState<string | null>(null);
-  const [isRecordViewModalOpen, setRecordViewModalOpen] = useState(false);
-  const [selectedOriginId, setSelectedOriginId] = useState<number | null>(null);
-  const [selectedDestinationId, setSelectedDestinationId] = useState<
-    number | null
-  >(null);
-  const [confirmationType, setConfirmationType] = useState<
-    "tag" | "relatedRecord" | null
-  >(null);
-  const [relationship, setRelationship] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleToggleToRemove = useCallback(
+  // Pagination State
+  const [originPage, setOriginPage] = useState(1);
+  const [destinationPage, setDestinationPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [hasMoreOrigins, setHasMoreOrigins] = useState(true);
+  const [hasMoreDestinations, setHasMoreDestinations] = useState(true);
+
+  // Related Records State
+  const [originRecords, setOriginRecords] = useState<RelatedRecordViewModel[]>(
+    []
+  );
+  const [destinationRecords, setDestinationRecords] = useState<
+    RelatedRecordViewModel[]
+  >([]);
+  const [isLoadingOrigins, setIsLoadingOrigins] = useState(false);
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
+
+  // Modal State
+  const [modal, setModal] = useState<ModalState>({
+    isOpen: false,
+    type: null,
+    nameToRemove: "",
+    recordNameToRemove: "",
+    idToRemove: null,
+    originId: null,
+    destinationId: null,
+  });
+
+  // UI State
+  const [activeTab, setActiveTab] = useState(0);
+
+  // ============= HANDLERS =============
+  const handleUpdateRecord = useCallback(
+    async (field: string, value: string, successMessage: string) => {
+      try {
+        const update = await updateRecord(projectId, recordId, {
+          [field]: value,
+        });
+        setRecord((prev) => (prev ? { ...prev, ...update } : update));
+        toast.success(successMessage);
+      } catch (error) {
+        toast.error(`${t.translations.FAILED_TO_UPDATE} ${field}`);
+      }
+    },
+    [projectId, recordId, t.translations.FAILED_TO_UPDATE]
+  );
+
+  const resetAllState = useCallback(() => {
+    setRecord(null);
+    setSelectedTags([]);
+    setSelectedIds([]);
+    setIsEditing(false);
+    setTagsToRemove([]);
+    setOriginPage(1);
+    setDestinationPage(1);
+    setOriginRecords([]);
+    setDestinationRecords([]);
+    setHasMoreOrigins(true);
+    setHasMoreDestinations(true);
+  }, []);
+
+  // Create a reusable fetch function
+  const fetchRelatedRecords = useCallback(
+    async (
+      isOrigin: boolean,
+      page: number,
+      setLoading: (val: boolean) => void,
+      setHasMore: (val: boolean) => void,
+      setRecords: React.Dispatch<React.SetStateAction<RelatedRecordViewModel[]>>
+    ) => {
+      if (!recordId || !projectId || !record) return;
+
+      try {
+        setLoading(true);
+
+        const params: RelatedRecordsRequestDto = {
+          recordId: recordId,
+          isOrigin: isOrigin,
+          page: page,
+          pageSize: pageSize,
+          hideArchived: true,
+        };
+
+        const edges: RelatedRecordsResponseDto[] = await getEdgesByRecord(
+          projectId.toString(),
+          params
+        );
+
+        if (!edges || edges.length === 0) {
+          setHasMore(false);
+          if (page === 1) {
+            setRecords([]);
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (edges.length < pageSize) {
+          setHasMore(false);
+        }
+
+        const viewModels: RelatedRecordViewModel[] = edges
+          .filter(
+            (edge) => edge.relatedRecordId != null && edge.relatedRecordId > 0
+          )
+          .map((edge) => ({
+            relatedRecordName: edge.relatedRecordName,
+            relatedRecordId: edge.relatedRecordId,
+            relatedRecordProjectId: edge.relatedRecordProjectId,
+            relationshipName: edge.relationshipName,
+            actions: (
+              <XMarkIcon
+                className="w-5 h-5 cursor-pointer text-error hover:text-error-content"
+                onClick={() => {
+                  setModal({
+                    isOpen: true,
+                    type: "relatedRecord",
+                    nameToRemove: edge.relationshipName || t.translations.EDGE,
+                    recordNameToRemove: record?.name,
+                    idToRemove: edge.relatedRecordId!.toString(),
+                    originId: isOrigin ? recordId : edge.relatedRecordId!,
+                    destinationId: isOrigin ? edge.relatedRecordId! : recordId,
+                  });
+                }}
+              />
+            ),
+          }));
+
+        if (page === 1) {
+          setRecords(viewModels);
+        } else {
+          setRecords((prev) => [...prev, ...viewModels]);
+        }
+
+        setLoading(false);
+      } catch (error) {
+        console.error(
+          `Error fetching ${isOrigin ? "origin" : "destination"} records:`,
+          error
+        );
+        setLoading(false);
+      }
+    },
+    [recordId, projectId, record, pageSize, t.translations.EDGE]
+  );
+
+  const handleCloseModal = () => {
+    setModal((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const handleTagSelectionChange = async (selected: string[]) => {
+    if (JSON.stringify(selected) === JSON.stringify(selectedIds)) return;
+
+    const newTags = tags.filter((tag) => selected.includes(tag.id.toString()));
+    setSelectedTags(newTags);
+    setSelectedIds(selected);
+    setRecord((prev) =>
+      prev ? { ...prev, tags: JSON.stringify(newTags) } : prev
+    );
+  };
+
+  const toggleEditMode = () => {
+    setIsEditing(!isEditing);
+    if (isEditing) setTagsToRemove([]);
+  };
+
+  const handleSaveTagChanges = async () => {
+    try {
+      for (const tagId of tagsToRemove) {
+        await unAttachTagFromRecord(projectId, recordId, Number(tagId));
+      }
+
+      setSelectedTags((prev) =>
+        prev.filter((tag) => !tagsToRemove.includes(tag.id.toString()))
+      );
+      setSelectedIds((prev) => prev.filter((id) => !tagsToRemove.includes(id)));
+      setTagsToRemove([]);
+      setIsEditing(false);
+      toast.success(t.translations.TAGS_UPDATED_SUCCESS);
+    } catch (error) {
+      console.error("Error saving tags:", error);
+      toast.error(t.translations.FAILED_TO_UPDATE_TAGS);
+    }
+  };
+
+  const handleConfirmUnlink = async () => {
+    const { type, idToRemove, nameToRemove, originId, destinationId } = modal;
+
+    if (type === "tag" && idToRemove) {
+      setTagsToRemove((prev) =>
+        prev.includes(idToRemove)
+          ? prev.filter((id) => id !== idToRemove)
+          : [...prev, idToRemove]
+      );
+      toast.success(
+        `${t.translations.TAG_} ${nameToRemove} ${t.translations._MARKED_FOR_REMOVAL}`
+      );
+    } else if (type === "relatedRecord" && originId && destinationId) {
+      try {
+        const edgeExists = await getEdge(
+          projectId,
+          null,
+          String(originId),
+          String(destinationId)
+        );
+
+        if (edgeExists) {
+          await archiveEdge(projectId, null, originId, destinationId);
+
+          if (originId === recordId) {
+            setOriginRecords((prev) =>
+              prev.filter((r) => r.relatedRecordId !== Number(idToRemove))
+            );
+          } else {
+            setDestinationRecords((prev) =>
+              prev.filter((r) => r.relatedRecordId !== Number(idToRemove))
+            );
+          }
+
+          toast.success(t.translations.LINK_ARCHIVED_SUCCESS);
+        }
+      } catch (error) {
+        console.error("Error archiving link:", error);
+        toast.error(t.translations.FAILED_TO_ARCHIVE_LINK);
+      }
+    }
+
+    handleCloseModal();
+  };
+
+  const handleOpenModal = useCallback(
     (
       id: string,
       name: string,
       recordName: string | undefined,
       type: "tag" | "relatedRecord"
     ) => {
-      setSelectedNameToRemove(name);
-      setSelectedRecordNameToRemove(recordName);
-      setModalOpen(true);
-      setIdToRemove(id);
-      setSelectedOriginId(Number(id));
-      setSelectedDestinationId(Number(record?.id));
-      setConfirmationType(type);
+      setModal({
+        isOpen: true,
+        type,
+        nameToRemove: name,
+        recordNameToRemove: recordName,
+        idToRemove: id,
+        originId: null,
+        destinationId: null,
+      });
     },
-    [record?.id]
+    []
   );
 
+  // ============= EFFECTS =============
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (recordId && projectId) {
-          const data = await getRecord(Number(projectId), Number(recordId));
-          setRecord(data);
-          if (data.tags) {
-            const tags = JSON.parse(data.tags);
+    resetAllState();
+  }, [recordId, resetAllState]);
 
-            setSelectedTags(tags);
-            setSelectedIds(tags.map((tag: { id: string }) => tag.id));
-          }
+  // Fetch main record data
+  useEffect(() => {
+    const fetchRecord = async () => {
+      if (!recordId || !projectId) return;
+
+      try {
+        const data = await getRecord(projectId, recordId);
+        setRecord(data);
+
+        if (data.tags) {
+          const parsedTags = JSON.parse(data.tags);
+          setSelectedTags(parsedTags);
+          setSelectedIds(parsedTags.map((tag: { id: string }) => tag.id));
         }
       } catch (error) {
         console.error("Error fetching record:", error);
+        toast.error(t.translations.FAILED_TO_FETCH_RECORD);
       }
     };
-    fetchData();
-  }, [recordId, projectId]);
 
-  // useEffect(() => {
-  //   const fetchRelatedRecords = async () => {
-  //     try {
-  //       if (record && !hasFetchedRelatedRecords) {
-  //         const request = {
-  //           tablename: record.className,
-  //           id: record.id,
-  //           depth: 1,
-  //         };
+    fetchRecord();
+  }, [recordId, projectId, t.translations.FAILED_TO_FETCH_RECORD]);
 
-  //         const relatedRecordsData = await getNodesWithinDepth(
-  //           Number(projectId),
-  //           request
-  //         );
-
-  //         setRelatedRecords(relatedRecordsData);
-
-  //         setHasFetchedRelatedRecords(true);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching related records:", error);
-  //     }
-  //   };
-  //   if (record?.className && record?.id) {
-  //     if (record?.className && record?.id) {
-  //       fetchRelatedRecords();
-  //     }
-  //   }
-  // }, [initialRecord, hasFetchedRelatedRecords, projectId, record]);
-
-  // useEffect(() => {
-  //   const parseRelatedRecords = (
-  //     relatedRecords: RelatedRecord[] | undefined
-  //   ) => {
-  //     if (!relatedRecords) return [];
-
-  //     const relationshipNames: string[] = [];
-  //     const classNames: string[] = [];
-  //     const names: string[] = [];
-  //     const recordIds: number[] = [];
-
-  //     relatedRecords.forEach((item) => {
-  //       if ("relationshipName" in item) {
-  //         relationshipNames.push(item.relationshipName);
-  //       } else {
-  //         if (item.recordId == recordId) {
-  //           return;
-  //         }
-  //         classNames.push(item.className);
-  //         names.push(item.name);
-  //         recordIds.push(item.recordId);
-  //       }
-  //     });
-
-  //     const relatedRecordsArray: ParsedRecord[] = [];
-  //     const relationshipIndex = 0;
-
-  //     relatedRecords.forEach((item, _) => {
-  //       if (!("relationshipName" in item)) {
-  //         if (item.recordId == recordId) {
-  //           return;
-  //         }
-  //         const relationship =
-  //           relationshipNames.length > relationshipIndex
-  //             ? relationshipNames[relationshipIndex]
-  //             : "";
-  //         relatedRecordsArray.push({
-  //           relationship: relationship,
-  //           id: item.recordId.toString(),
-  //           class: item.className,
-  //           name: item.name,
-  //           actions: (
-  //             <div className="flex items-center">
-  //               <button
-  //                 className="text-blue-500 cursor-pointer"
-  //                 onClick={async () => {
-  //                   const selectedRecord = await getRecord(
-  //                     Number(projectId),
-  //                     item.recordId
-  //                   );
-  //                   setSelectedRecord(selectedRecord);
-  //                   setRecordViewModalOpen(true);
-  //                 }}
-  //               >
-  //                 <EyeIcon className="w-4 h-4" />
-  //               </button>
-  //               <button
-  //                 className="text-red-500 ml-2 cursor-pointer border rounded px-1"
-  //                 onClick={() => {
-  //                   handleToggleToRemove(
-  //                     item.recordId.toString(),
-  //                     item.name,
-  //                     item.className,
-  //                     "relatedRecord"
-  //                   );
-  //                 }}
-  //               >
-  //                 Remove Link
-  //               </button>
-  //             </div>
-  //           ),
-  //         });
-  //       }
-  //     });
-
-  //     return relatedRecordsArray;
-  //     return relatedRecordsArray;
-  //   };
-
-  //   const parsedRecords = parseRelatedRecords(relatedRecords);
-  //   setParsedRelatedRecords(parsedRecords);
-  // }, [relatedRecords, projectId, recordId, handleToggleToRemove]);
-
+  // Fetch available tags
   useEffect(() => {
     const fetchTags = async () => {
+      if (!projectId) return;
+
       try {
         const data = await getTagsForProjects([projectId.toString()]);
         setTags(data);
@@ -280,261 +363,185 @@ export default function RecordViewClient({
         console.error("Error fetching tags:", error);
       }
     };
+
     fetchTags();
   }, [projectId]);
 
-  const handleTagSelectionChange = async (selected: string[]) => {
-    if (JSON.stringify(selected) !== JSON.stringify(selectedIds)) {
-      const newTags = tags.filter((tag) =>
-        selected.includes(tag.id.toString())
-      );
-      setSelectedTags(newTags);
-      setSelectedIds(selected);
-
-      setRecord((prevRecord) => {
-        if (!prevRecord) return prevRecord;
-        const updatedTags = JSON.stringify(newTags);
-        return { ...prevRecord, tags: updatedTags };
-      });
-    }
-  };
-
-  const toggleEditMode = () => {
-    setIsEditing(!isEditing);
-    if (isEditing) {
-      setTagsToRemove([]);
-    }
-  };
-
-  const handleSave = async () => {
-    for (const tagId of tagsToRemove) {
-      await unAttachTagFromRecord(
-        Number(projectId),
-        Number(recordId),
-        Number(tagId)
-      );
-    }
-    setSelectedTags((prevTags) =>
-      prevTags.filter((tag) => !tagsToRemove.includes(tag.id.toString()))
+  // Fetch origin records
+  useEffect(() => {
+    fetchRelatedRecords(
+      true,
+      originPage,
+      setIsLoadingOrigins,
+      setHasMoreOrigins,
+      setOriginRecords
     );
-    setSelectedIds((prevIds) =>
-      prevIds.filter((id) => !tagsToRemove.includes(id))
+  }, [fetchRelatedRecords, originPage]);
+
+  // Fetch destination records
+  useEffect(() => {
+    fetchRelatedRecords(
+      false,
+      destinationPage,
+      setIsLoadingDestinations,
+      setHasMoreDestinations,
+      setDestinationRecords
     );
-    setTagsToRemove([]);
-    setIsEditing(false);
-  };
+  }, [fetchRelatedRecords, destinationPage]);
 
-  const handleConfirmUnlink = async () => {
-    if (confirmationType === "tag") {
-      if (idToRemove) {
-        setTagsToRemove((prev) =>
-          prev.includes(idToRemove)
-            ? prev.filter((id) => id !== idToRemove)
-            : [...prev, idToRemove]
-        );
-        toast.success(`Tag ${selectedNameToRemove} removed successfully.`);
-      }
-    } else if (confirmationType === "relatedRecord") {
-      if (idToRemove && selectedOriginId && selectedDestinationId) {
-        try {
-          if (
-            await getEdge(
-              projectId,
-              null,
-              String(selectedOriginId),
-              String(selectedDestinationId)
-            )
-          ) {
-            await deleteEdge(
-              projectId,
-              null,
-              String(selectedOriginId),
-              String(selectedDestinationId)
-            );
-          }
-          // await queryKuzu(
-          //   projectId,
-          //   `MATCH (m)-[r:${relationship}]->(n) WHERE m.record_id = ${selectedOriginId} AND n.record_id = ${selectedDestinationId} DELETE r;`
-          // );
-          setParsedRelatedRecords((prevRecords) =>
-            prevRecords.filter((record) => record.id !== idToRemove)
-          );
-          toast.success("Link removed successfully");
-        } catch (error) {
-          toast.error("Failed to remove link");
-          console.error("Error removing link:", error);
-        }
-      }
-    }
-    setModalOpen(false);
-  };
+  // ============= MEMOIZED VALUES =============
+  const systemPropertiesRows = useMemo(() => {
+    if (!record) return [];
+    return [
+      {
+        label: t.translations.RECORD_NAME,
+        value: record.name,
+        editable: true,
+        onEdit: (value: string) =>
+          handleUpdateRecord("name", value, t.translations.RECORD_NAME_UPDATED),
+      },
+      {
+        label: t.translations.RECORD_DESCRIPTION,
+        value: record.description,
+        editable: true,
+        onEdit: (value: string) =>
+          handleUpdateRecord(
+            "description",
+            value,
+            t.translations.RECORD_NAME_UPDATED
+          ),
+      },
+      { label: t.translations.DATA_SOURCE_NAME, value: record.dataSourceName },
+      { label: t.translations.URI, value: record.uri },
+      {
+        label: t.translations.CLASS_NAME,
+        value: record.className,
+        onEdit: (value: string) =>
+          handleUpdateRecord(
+            "class_name",
+            value,
+            t.translations.CLASS_NAME_UPDATED
+          ),
+      },
+      { label: t.translations.ORIGINAL_ID, value: record.originalId },
+      { label: t.translations.LAST_UPDATED_AT, value: record.lastUpdatedAt },
+    ];
+  }, [record, handleUpdateRecord, t.translations]);
 
+  const additionalPropertiesRows = useMemo(() => {
+    if (!record?.properties) return [];
+    const parsedProperties = JSON.parse(record.properties);
+    return Object.entries(parsedProperties).map(([key, value]) => ({
+      label: key,
+      value: typeof value === "object" ? JSON.stringify(value) : String(value),
+    }));
+  }, [record?.properties]);
+
+  const relatedRecordsColumns: CardColumn<RelatedRecordViewModel>[] = [
+    {
+      key: "relationshipName",
+      label: t.translations.RELATIONSHIP,
+      render: (row) => <span>{row.relationshipName || "-"}</span>,
+    },
+    {
+      key: "relatedRecordName",
+      label: t.translations.RECORD_NAME,
+      render: (row) =>
+        row.relatedRecordId ? (
+          <Link
+            href={`/record?recordId=${row.relatedRecordId}&projectId=${projectId}`}
+            className="text-primary hover:text-primary-content hover:underline"
+          >
+            {row.relatedRecordName ||
+              `${t.translations.RECORD_} ${row.relatedRecordId}`}
+          </Link>
+        ) : (
+          <span>{row.relatedRecordName || t.translations.UNKOWN}</span>
+        ),
+    },
+    { key: "actions", label: t.translations.ACTIONS },
+  ];
+
+  // ============= RENDER HELPERS =============
   if (!record) {
-    return <div className="loading loading-spinner loading-xl" />;
+    return <RecordLoading />;
   }
-
-  const systemPropertiesRows = [
-    {
-      label: "Record Name",
-      value: record?.name,
-      editable: true,
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              name: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Project name updated");
-        } catch (error) {
-          toast.error("Failed to update project name");
-        }
-      },
-    },
-    {
-      label: "Record Description",
-      value: record.description,
-      editable: true,
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              description: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Record description updated");
-        } catch (error) {
-          toast.error("Failed to update Record description");
-        }
-      },
-    },
-    {
-      label: "Data Source Name",
-      value: record.dataSourceName,
-    },
-    { label: "Uri", value: record.uri },
-    {
-      label: "Class Name",
-      value: record.className,
-      onEdit: async (newValue: string) => {
-        try {
-          const update = await updateRecord(
-            Number(projectId),
-            Number(recordId),
-            {
-              class_name: newValue,
-            }
-          );
-          setRecord(update);
-          toast.success("Class Name updated");
-        } catch (error) {
-          toast.error("Failed to update Class Name");
-        }
-      },
-    },
-    { label: "Original ID", value: record.originalId },
-    { label: "Last Updated At", value: record.lastUpdatedAt },
-  ];
-
-  const relatedRecordsColumn: CardColumn<ParsedRecord>[] = [
-    { key: "relationship", label: "Relationship" },
-    { key: "id", label: "ID" },
-    { key: "class", label: "Class" },
-    { key: "name", label: "Name" },
-    { key: "actions", label: "Actions" },
-  ];
-
-  const parsedProperties = JSON.parse(record.properties!);
-  const additionalPropertiesRows = parsedProperties
-    ? Object.keys(parsedProperties).map((key) => {
-        const value = parsedProperties[key as keyof object];
-        return {
-          label: key,
-          value:
-            typeof value === "object" ? JSON.stringify(value) : String(value),
-        };
-      })
-    : [];
 
   const tabs = [
     {
-      label: "Record Information",
+      label: t.translations.RECORD_INFORMATION,
       content: (
-        <div className="flex">
-          <div className="w-full md:w-1/2 p-3">
+        <div className="flex gap-6 mt-4">
+          {/* Left Column - Properties */}
+          <div className="w-full md:w-1/2 space-y-4">
             <PropertyTable
-              className=""
-              title="System Properties"
+              title={t.translations.SYSTEM_PROPERTIES}
               rows={systemPropertiesRows}
               download={
-                !!record?.uri &&
+                !!record.uri &&
                 record.uri.trim().length > 0 &&
                 record.uri.toLowerCase() !== "null"
               }
-              recordName={record?.name}
+              recordName={record.name}
             />
             <PropertyTable
-              className="mt-4"
-              title="Additional Properties"
+              title={t.translations.ADDITIONAL_PROPERIES}
               rows={additionalPropertiesRows}
             />
           </div>
-          <div className="flex-1 mt-3 mr-6">
-            <div className="card bg-base-100 shadow-md p-4 flex">
-              <div className="flex items-center">
-                <h2 className="text-xl font-bold mb-4 p-4 text-base-content">
+
+          {/* Right Column - Tags & Relations */}
+          <div className="flex-1 space-y-4">
+            {/* Tags Card */}
+            <div className="card bg-base-100 shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-base-content">
                   {t.translations.TAGS}
                 </h2>
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
                   <TagButton
                     tags={tags}
                     onSelectionChange={handleTagSelectionChange}
-                    projectId={Number(projectId)}
-                    recordId={Number(recordId)}
+                    projectId={projectId}
+                    recordId={recordId}
                     selectedIds={selectedIds}
                     setSelectedIds={setSelectedIds}
                   />
-                  {!isEditing && (
+                  {!isEditing ? (
                     <PencilIcon
-                      className="w-6 h-6 ml-2 cursor-pointer text-primary hover:text-primary-content"
+                      className="w-6 h-6 cursor-pointer text-primary hover:text-primary-content"
                       onClick={toggleEditMode}
                     />
-                  )}
-                  {isEditing && (
+                  ) : (
                     <>
                       <CheckCircleIcon
-                        className="w-6 h-6 ml-2 cursor-pointer text-success hover:text-success-content"
-                        onClick={handleSave}
+                        className="w-6 h-6 cursor-pointer text-success hover:text-success-content"
+                        onClick={handleSaveTagChanges}
                       />
                       <XCircleIcon
-                        className="w-6 h-6 ml-2 cursor-pointer text-error hover:text-error-content"
+                        className="w-6 h-6 cursor-pointer text-error hover:text-error-content"
                         onClick={toggleEditMode}
                       />
                     </>
                   )}
                 </div>
               </div>
-              <span className="flex items-center flex-wrap mt-2">
+
+              <div className="flex flex-wrap gap-2">
                 {selectedTags.map((tag) => (
                   <span
                     key={tag.id}
-                    className="font-inter flex items-center border-2 border-primary text-primary rounded-full px-2 py-1 mr-2 mb-1 flex-shrink-0 hover:bg-primary hover:text-primary-content transition-colors"
+                    className="flex items-center border-2 border-primary text-primary rounded-full px-3 py-1 hover:bg-primary hover:text-primary-content transition-colors"
                   >
                     {tag.name}
-                    {!tagsToRemove.includes(tag.id.toString()) && isEditing && (
+                    {isEditing && !tagsToRemove.includes(tag.id.toString()) && (
                       <XMarkIcon
                         className="w-4 h-4 ml-1 cursor-pointer text-error hover:text-error-content"
                         onClick={() =>
-                          handleToggleToRemove(
+                          handleOpenModal(
                             tag.id.toString(),
                             tag.name,
-                            record?.name || "Unknown Record",
+                            record.name,
                             "tag"
                           )
                         }
@@ -542,58 +549,74 @@ export default function RecordViewClient({
                     )}
                   </span>
                 ))}
-              </span>
+              </div>
             </div>
-            {/* <RelatedRecordsCard
-              columns={relatedRecordsColumn}
-              rows={parsedRelatedRecords}
-            /> */}
+
+            {/* Related Records Card - Origins */}
+            {isLoadingOrigins && originPage === 1 ? (
+              <RelatedRecordsCardSkeleton rows={6} columns={3} />
+            ) : (
+              <RelatedRecordsCard
+                title={`${t.translations.OUTGOING}${record.name}${t.translations.OUTGOING_ARROW}`}
+                columns={relatedRecordsColumns}
+                rows={originRecords}
+                onLoadMore={() => {
+                  if (!isLoadingOrigins && hasMoreOrigins) {
+                    setOriginPage((prev) => prev + 1);
+                  }
+                }}
+                isLoading={isLoadingOrigins && originPage > 1}
+                hasMore={hasMoreOrigins}
+              />
+            )}
+
+            {/* Related Records Card - Destinations */}
+            {isLoadingDestinations && destinationPage === 1 ? (
+              <RelatedRecordsCardSkeleton rows={6} columns={3} />
+            ) : (
+              <div className="mt-4">
+                <RelatedRecordsCard
+                  title={`${t.translations.INCOMING}${record.name}${t.translations.INCOMING_ARROW}`}
+                  columns={relatedRecordsColumns}
+                  rows={destinationRecords}
+                  onLoadMore={() => {
+                    if (!isLoadingDestinations && hasMoreDestinations) {
+                      setDestinationPage((prev) => prev + 1);
+                    }
+                  }}
+                  isLoading={isLoadingDestinations && destinationPage > 1}
+                  hasMore={hasMoreDestinations}
+                />
+              </div>
+            )}
           </div>
-          <ConfirmationModal
-            isOpen={isModalOpen}
-            onClose={() => setModalOpen(false)}
-            onConfirm={handleConfirmUnlink}
-            tagName={selectedNameToRemove}
-            recordName={selectedRecordNameToRemove}
-          />
-          <RecordViewModal
-            isOpen={isRecordViewModalOpen}
-            onClose={() => setRecordViewModalOpen(false)}
-            record={selectedRecord}
-            relatedRecords={parsedRelatedRecords}
-            tags={tags}
-          />
         </div>
       ),
     },
-    // { label: "Timeseries Viewer", content: "" },
-    // { label: "Graph Viewer", content: "" },
-    // { label: "Record History", content: "" },
   ];
 
-  // Function to handle tab change
-  const handleTabChange = (label: string) => {
-    const index = tabs.findIndex((tab) => tab.label === label);
-    if (index !== -1) {
-      setActiveTab(index);
-    }
-  };
-
+  // ============= MAIN RENDER =============
   return (
     <div>
-      <div className="flex justify-between items-center bg-base-200/40 pl-12 p-2 pb-4">
-        <div>
-          <h1 className="text-2xl font-bold text-base-content p-2">
-            {record?.name}
-          </h1>
-        </div>
+      <div className="bg-base-200/40 pl-12 p-4">
+        <h1 className="text-2xl font-bold text-base-content">{record.name}</h1>
       </div>
 
       <Tabs
         tabs={tabs}
-        className={"ml-6 pt-6"}
+        className="ml-6 pt-6"
         activeTab={tabs[activeTab].label}
-        onTabChange={handleTabChange}
+        onTabChange={(label) =>
+          setActiveTab(tabs.findIndex((tab) => tab.label === label))
+        }
+      />
+
+      <ConfirmationModal
+        isOpen={modal.isOpen}
+        onClose={handleCloseModal}
+        onConfirm={handleConfirmUnlink}
+        tagName={modal.nameToRemove}
+        recordName={modal.recordNameToRemove}
       />
     </div>
   );

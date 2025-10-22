@@ -52,7 +52,6 @@ public class UserBusiness : IUserBusiness
         return users.Select(p => new UserResponseDto()
         {
             Id = p.Id,
-            SsoId = p.SsoId,
             Name = p.Name,
             Username = p.Username,
             Email = p.Email,
@@ -82,7 +81,41 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
+            Name = user.Name,
+            Username = user.Username,
+            Email = user.Email,
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive,
+        };
+    }
+
+    /// <summary>
+    /// Retrieves the local dev user
+    /// </summary>
+    /// <returns>Information for the local dev user</returns>
+    /// <exception cref="InvalidOperationException">Returned if DISABLE_BACKEND_AUTHENTICATION != true</exception>
+    /// <exception cref="KeyNotFoundException">Returned if user not found</exception>
+    public async Task<UserResponseDto> GetLocalDevUser()
+    {
+        var auth_disabled = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
+        if (auth_disabled != "true")
+        {
+            throw new InvalidOperationException("Local Dev User cannot be used unless backend authentication is disabled");
+        }
+
+        var user = await _context.Users
+            .Where(p => p.Email == "developer@localhost")
+            .FirstOrDefaultAsync();
+
+        if (user == null)
+        {
+            throw new KeyNotFoundException($"Local Dev User not found");
+        }
+
+        return new UserResponseDto()
+        {
+            Id = user.Id,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -111,7 +144,6 @@ public class UserBusiness : IUserBusiness
             Name = dto.Name,
             Email = dto.Email,
             Username = dto.Username,
-            SsoId = dto.SsoId,
             IsActive = dto.IsActive ?? false,
             IsArchived = dto.IsArchived ?? false,
         };
@@ -122,7 +154,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -130,38 +161,6 @@ public class UserBusiness : IUserBusiness
             IsArchived = user.IsArchived,
             IsActive = user.IsActive,
         };
-    }
-
-    /// <summary>
-    /// Insert user if email not exists, else update user
-    /// </summary>
-    /// <param name="dto">The user information supplied</param>
-    /// <returns>The user which was just updated</returns>
-    public async Task<UserResponseDto> RefreshUser(CreateUserRequestDto dto)
-    {
-        var existingUser = await _context.Users
-            .Where(u => u.Email == dto.Email)
-            .FirstOrDefaultAsync();
-    
-        if (existingUser != null)
-        {
-            // If user exists, update using UpdateUser logic
-            var updateDto = new UpdateUserRequestDto
-            {
-                Name = dto.Name,
-                SsoId = dto.SsoId,
-                Username = dto.Username,
-                IsArchived = dto.IsArchived,
-                IsActive = dto.IsActive
-            };
-        
-            return await UpdateUser(existingUser.Id, updateDto);
-        }
-        else
-        {
-            // If user does not exist, create
-            return await CreateUser(dto);
-        }
     }
 
     /// <summary>
@@ -181,7 +180,6 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException("User not found.");
 
         user.Name = dto.Name ?? user.Name;
-        user.SsoId = dto.SsoId ?? user.SsoId;
         user.Username = dto.Username ?? user.Username;
         user.IsArchived = dto.IsArchived ?? user.IsArchived;
         user.IsActive = dto.IsActive ?? user.IsActive;
@@ -192,7 +190,6 @@ public class UserBusiness : IUserBusiness
         return new UserResponseDto()
         {
             Id = user.Id,
-            SsoId = user.SsoId,
             Name = user.Name,
             Username = user.Username,
             Email = user.Email,
@@ -264,7 +261,33 @@ public class UserBusiness : IUserBusiness
         return true;
     }
     
-    // TODO: set IsSysAdmin with a business function. Should only be executable by SysAdmins
+    /// <summary>
+    /// Set a user to sysAdmin. Only works if the user granting admin privilege is also a sysAdmin.
+    /// </summary>
+    /// <param name="authorizerId">ID of the user who is granting admin privileges</param>
+    /// <param name="candidateId">ID of the user who is being granted admin privileges</param>
+    /// <returns>Boolean true if successful</returns>
+    /// <exception cref="KeyNotFoundException">Returned if authorizer or candidate is not found or lacks privileges</exception>
+    public async Task<bool> SetSysAdmin(long authorizerId, long candidateId)
+    {
+        var authorizer = await _context.Users
+            .Where(a => a.Id == authorizerId && !a.IsArchived && a.IsSysAdmin)
+            .FirstOrDefaultAsync();
+        if (authorizer == null)
+            throw new KeyNotFoundException($"User with ID {authorizerId} not found or cannot grant admin privileges.");
+        
+        var candidate = await _context.Users
+            .Where(c => c.Id == candidateId && !c.IsArchived)
+            .FirstOrDefaultAsync();
+        if (candidate == null)
+            throw new KeyNotFoundException($"User with ID {candidateId} not found.");
+
+        candidate.IsSysAdmin = true;
+        
+        _context.Users.Update(candidate);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 
     /// <summary>
     /// Retrieves data overview counts for a user

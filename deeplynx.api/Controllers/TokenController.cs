@@ -1,7 +1,7 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers;
 
@@ -12,13 +12,13 @@ namespace deeplynx.api.Controllers;
 /// This controller provides endpoints to create tokens and api keys.
 /// </remarks>
 [ApiController]
-[NexusAuthorize]
-[Route("api/auth")]
-public class AuthController : ControllerBase
+[Authorize]
+[Route("token")]
+public class TokenController : ControllerBase
 {
     private readonly IEventBusiness _eventBusiness;
     private readonly ITokenBusiness _tokenBusiness;
-    public AuthController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness)
+    public TokenController(IEventBusiness eventBusiness, ITokenBusiness tokenBusiness)
     {
         _eventBusiness = eventBusiness;
         _tokenBusiness = tokenBusiness;

@@ -49,6 +49,8 @@ public class TestSuiteFixture : IAsyncLifetime
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
         Env.Load(envFilePath);
+        // ensure the notification service is tested
+        Environment.SetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE", "true");
     }
     
     // Runs at the end of every test suite
@@ -130,6 +132,8 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Actions.RemoveRange(actions);
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
+        var permissions = await Context.Permissions.ToListAsync();
+        Context.Permissions.RemoveRange(permissions);
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }

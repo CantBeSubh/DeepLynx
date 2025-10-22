@@ -1,13 +1,14 @@
-using deeplynx.helpers;
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/user")]
-    [NexusAuthorize]
+    [Route("user")]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
@@ -48,6 +49,7 @@ namespace deeplynx.api.Controllers
             }
 
         }
+
         /// <summary>
         /// Get a user
         /// </summary>
@@ -64,6 +66,26 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching user {userId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get the local development user
+        /// </summary>
+        /// <returns>User response DTO with the local dev user info</returns>
+        [HttpGet("GetLocalDevUser", Name = "api_get_local_dev_user")]
+        public async Task<ActionResult<UserResponseDto>> GetLocalDevUser()
+        {
+            try
+            {
+                var user = await _userBusiness.GetLocalDevUser();
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while fetching local dev user: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -86,27 +108,6 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while creating this user.: {exc}";
-                _logger.LogError(message);
-                return StatusCode(StatusCodes.Status500InternalServerError, message);
-            }
-        }
-
-        /// <summary>
-        /// Refresh stored user info
-        /// </summary>
-        /// <param name="dto">User request DTO</param>
-        /// <returns>User response DTO</returns>
-        [HttpPost("RefreshUser", Name = "api_refresh_user")]
-        public async Task<ActionResult<UserResponseDto>> RefreshUser([FromBody] CreateUserRequestDto dto)
-        {
-            try
-            {
-                var user = await _userBusiness.RefreshUser(dto);
-                return Ok(user);
-            }
-            catch (Exception exc)
-            {
-                var message = $"An unexpected error occurred while creating or updating this user: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
@@ -171,6 +172,29 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while archiving user {userId}: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Grant System Admin Rights
+        /// </summary>
+        /// <param name="candidateId">ID of user to grant the sysadmin rights to </param>
+        /// <returns>User response DTO</returns>
+        [HttpGet("SetSysAdmin/{candidateID}", Name = "api_set_sys_admin")]
+        public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long candidateId)
+        {
+            try
+            {
+                // get the authorizer ID from the middleware context
+                var authorizerId = UserContextStorage.UserId;
+                var granted = await _userBusiness.SetSysAdmin(authorizerId, candidateId);
+                return Ok(new { message = $"Granted sysadmin rights to user {candidateId}" });
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while setting user {candidateId} as admin: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

@@ -5,7 +5,7 @@ namespace deeplynx.interfaces;
 public interface IRecordBusiness
 {
     Task<List<RecordResponseDto>> GetAllRecords(
-        long projectId, long? dataSourceId, bool hideArchived);
+        long projectId, long? dataSourceId, bool hideArchived, string? fileType);
     Task<RecordResponseDto> GetRecord(
         long projectId, long recordId, bool hideArchived);
     Task<RecordResponseDto> CreateRecord(

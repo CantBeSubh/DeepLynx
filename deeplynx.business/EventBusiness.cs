@@ -5,22 +5,30 @@ using deeplynx.interfaces;
 using System.Text.RegularExpressions;
 using Npgsql;
 using deeplynx.helpers;
+using deeplynx.helpers.Context;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 public class EventBusiness : IEventBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
-    
+    private readonly INotificationBusiness _notificationBusiness;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness"/> class.
     /// </summary>
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
-    public EventBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
+    public EventBusiness(
+        DeeplynxContext context, 
+        ICacheBusiness cacheBusiness,
+        INotificationBusiness notificationBusiness
+        )
     {
         _context = context;
         _cacheBusiness = cacheBusiness;
+        _notificationBusiness = notificationBusiness;
     }
 
     /// <summary>
@@ -28,9 +36,90 @@ public class EventBusiness : IEventBusiness
     /// </summary>
     /// <param name="userId">The ID of the user to which the subscription belongs</param>
     /// <param name="projectId">The ID of the project to which the subscription belongs</param>
+    public async Task<List<EventResponseDto>> GetAllEvents(long? projectId, long? organizationId)
+    {
+        var eventQuery = _context.Events.AsQueryable();
+        
+        if (projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == projectId.Value);   
+        }
+
+        if (organizationId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.OrganizationId == organizationId.Value);
+        }
+
+        return await eventQuery.Select(e => new EventResponseDto()
+            {
+                Id = e.Id,
+                Operation = e.Operation,
+                EntityType = e.EntityType,
+                EntityId = e.EntityId,
+                ProjectId = e.ProjectId,
+                OrganizationId = e.OrganizationId,
+                DataSourceId = e.DataSourceId,
+                Properties = e.Properties,
+                LastUpdatedAt = e.LastUpdatedAt,
+                LastUpdatedBy = e.LastUpdatedBy
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Retrieves all project events for projects that the user is a member of.
+    /// </summary>
+    public async Task<List<EventResponseDto>> GetAllEventsByUser()
+    {
+        var userId = UserContextStorage.UserId;
+    
+        if (userId == 0)
+        {
+            return new List<EventResponseDto>();
+        }
+    
+        var userProjectIds = await _context.Projects
+            .Where(p => p.ProjectMembers.Any(pm =>
+                pm.UserId == userId ||
+                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+            ))
+            .Select(p => p.Id)
+            .ToListAsync();
+        
+        if (!userProjectIds.Any())
+        {
+            return new List<EventResponseDto>();
+        }
+    
+        var events = await _context.Events
+            .Where(e => e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
+            .OrderByDescending(e => e.LastUpdatedAt)
+            .ToListAsync();
+    
+        var response = events.Select(e => new EventResponseDto
+        {
+            Id = e.Id,
+            ProjectId = e.ProjectId,
+            Operation = e.Operation,
+            EntityType = e.EntityType,
+            EntityId = e.EntityId,
+            DataSourceId = e.DataSourceId,
+            Properties = e.Properties,
+            LastUpdatedBy = e.LastUpdatedBy,
+            LastUpdatedAt = e.LastUpdatedAt,
+        }).ToList();
+    
+        return response;
+    }
+    
+    /// <summary>
+    /// Retrieves all project events that the user is subscribed to.
+    /// </summary>
+    /// <param name="userId">The ID of the user to which the subscription belongs</param>
+    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
     public async Task<List<EventResponseDto>> GetAllEventsByUserProjectSubscriptions(long userId, long projectId)
     {
-        
+
         var subscriptions = await _context.Set<Subscription>()
             .Where(s => s.UserId == userId && s.ProjectId == projectId)
             .ToListAsync();
@@ -72,7 +161,7 @@ public class EventBusiness : IEventBusiness
                 LastUpdatedAt = e.LastUpdatedAt,
             }).ToList();
     }
-    
+
     /// <summary>
     /// Creates a new Event based on the event data provided.
     /// </summary>
@@ -85,7 +174,7 @@ public class EventBusiness : IEventBusiness
         ValidationHelper.ValidateModel(dto);
         ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
         ValidationHelper.ValidateTypes(dto.Operation, "Operation");
-        
+
         var newEvent = new Event
         {
             Operation = dto.Operation,
@@ -101,7 +190,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.Add(newEvent);
         await _context.SaveChangesAsync();
 
-        return new EventResponseDto
+        var response = new EventResponseDto
         {
             Id = newEvent.Id,
             ProjectId = newEvent.ProjectId,
@@ -113,6 +202,13 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = newEvent.LastUpdatedBy,
             LastUpdatedAt = newEvent.LastUpdatedAt,
         };
+        
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendEventNotification(response);
+        }
+
+        return response;
     }
 
     /// <summary>
@@ -130,6 +226,7 @@ public class EventBusiness : IEventBusiness
             ValidationHelper.ValidateTypes(dto.EntityType, "EntityType");
             ValidationHelper.ValidateTypes(dto.Operation, "Operation");
         }
+
         var eventEntities = events.Select(dto => new Event
         {
             ProjectId = projectId,
@@ -145,7 +242,7 @@ public class EventBusiness : IEventBusiness
         _context.Events.AddRange(eventEntities);
         await _context.SaveChangesAsync();
 
-        return eventEntities.Select(e => new EventResponseDto
+        var response = eventEntities.Select(e => new EventResponseDto
         {
             Id = e.Id,
             ProjectId = e.ProjectId,
@@ -157,6 +254,12 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = e.LastUpdatedBy,
             LastUpdatedAt = e.LastUpdatedAt
         }).ToList();
-        
+
+        if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
+        {
+            await _notificationBusiness.SendBulkEventNotifications(response);
+        }
+
+        return response;
     }
 }

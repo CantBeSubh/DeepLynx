@@ -37,9 +37,10 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <param name="fileType">File extension to filter by (e.g., pdf, png, jpg)</param>
     /// <returns>A list of records based on the applied filters.</returns>
     public async Task<List<RecordResponseDto>> GetAllRecords(
-        long projectId, long? dataSourceId, bool hideArchived)
+        long projectId, long? dataSourceId, bool hideArchived, string? fileType = null)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var recordQuery = _context.Records
@@ -54,7 +55,13 @@ public class RecordBusiness : IRecordBusiness
         {
             recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
         }
-        
+
+        if (!string.IsNullOrWhiteSpace(fileType))
+        {
+            var formattedFileType = fileType.TrimStart('.').ToLower();
+            recordQuery = recordQuery.Where(r => r.FileType == formattedFileType);
+        }   
+
         var records = await recordQuery
             .Include(r => r.Tags)
             .ToListAsync();
@@ -74,6 +81,7 @@ public class RecordBusiness : IRecordBusiness
                 LastUpdatedBy = r.LastUpdatedBy,
                 LastUpdatedAt = r.LastUpdatedAt,
                 IsArchived = r.IsArchived,
+                FileType = r.FileType,
                 Tags = r.Tags.Select(t => new RecordTagDto()
                 {
                     Id = t.Id,
@@ -125,6 +133,7 @@ public class RecordBusiness : IRecordBusiness
             LastUpdatedBy = record.LastUpdatedBy,
             LastUpdatedAt = record.LastUpdatedAt,
             IsArchived = record.IsArchived,
+            FileType = record.FileType,
             Tags = record.Tags.Select(t => new RecordTagDto()
             {
                 Id = t.Id,
@@ -145,7 +154,7 @@ public class RecordBusiness : IRecordBusiness
     public async Task<RecordResponseDto> CreateRecord(long projectId, long dataSourceId, CreateRecordRequestDto dto)
     {
        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
        ValidationHelper.ValidateModel(dto);
         
         if(dto.Properties == null)
@@ -174,7 +183,8 @@ public class RecordBusiness : IRecordBusiness
             Description = dto.Description,
             ClassId = dto.ClassId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = null  // TODO: Implement user ID here when JWT tokens are ready
+            LastUpdatedBy = null,  // TODO: Implement user ID here when JWT tokens are ready
+            FileType = dto.FileType
         };
 
         _context.Records.Add(record);
@@ -207,6 +217,7 @@ public class RecordBusiness : IRecordBusiness
             LastUpdatedBy = record.LastUpdatedBy,
             LastUpdatedAt = record.LastUpdatedAt,
             IsArchived = record.IsArchived,
+            FileType = record.FileType
         };
     }
     
@@ -225,14 +236,14 @@ public class RecordBusiness : IRecordBusiness
         List<CreateRecordRequestDto> records)
     {
        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-       await ExistenceHelper.EnsureDataSourceExistsAsync(_context, dataSourceId);
+       await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
 
        if (records.Count == 0)
        {
            throw new Exception("Unable to bulk create records: no records selected for creation");
        }
        
-       // Checks to see if Object Storage Ids refertence an existing object storage in the project
+       // Checks to see if Object Storage Ids reference an existing object storage in the project
        foreach (var dto in records)
        {
            if (dto.ObjectStorageId != null)
@@ -244,7 +255,7 @@ public class RecordBusiness : IRecordBusiness
        // Bulk insert into records; if there is an original ID collision, update name, desc, uri, class, and props
        var sql = @"
             INSERT INTO deeplynx.records (project_id, data_source_id, name, description, uri,
-                              original_id, properties, class_id, object_storage_id, 
+                              original_id, properties, class_id, object_storage_id, file_type,
                               last_updated_at, is_archived, last_updated_by)
             VALUES {0}
             ON CONFLICT (project_id, data_source_id, original_id) DO UPDATE SET
@@ -253,8 +264,9 @@ public class RecordBusiness : IRecordBusiness
                 uri = COALESCE(EXCLUDED.uri, records.uri),
                 properties = COALESCE(EXCLUDED.properties, records.properties),
                 class_id = COALESCE(EXCLUDED.class_id, records.class_id),
-                object_storage_id = COALESCE(EXCLUDED.object_storage_id,  records.object_storage_id),
-                last_updated_at = @now
+                object_storage_id = COALESCE(EXCLUDED.object_storage_id, records.object_storage_id),
+                last_updated_at = @now,
+                file_type = COALESCE(EXCLUDED.file_type, records.file_type)
             RETURNING *;                                                          
         ";
        
@@ -276,12 +288,13 @@ public class RecordBusiness : IRecordBusiness
            new NpgsqlParameter($"@p{i}_orig", dto.OriginalId),
            new NpgsqlParameter($"@p{i}_class", (object?)dto.ClassId ?? DBNull.Value),
            new NpgsqlParameter($"@p{i}_object_storage", (object?)dto.ObjectStorageId ?? DBNull.Value),
+           new NpgsqlParameter($"@p{i}_file_type", (object?)dto.FileType ?? DBNull.Value)
        }));
 
        // stringify the params and comma separate them
        var valueTuples = string.Join(", ", records.Select((dto, i) =>
            $"(@projectId, @dataSourceId, @p{i}_name, @p{i}_desc, " +
-           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @now, false, NULL)"));
+           $"@p{i}_uri, @p{i}_orig, @p{i}_props::jsonb, @p{i}_class, @p{i}_object_storage, @p{i}_file_type, @now, false, NULL)"));
         
        // put everything together and execute the query
        sql = string.Format(sql, valueTuples);
@@ -348,6 +361,7 @@ public class RecordBusiness : IRecordBusiness
         record.ClassId = dto.ClassId ?? record.ClassId;
         record.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         record.LastUpdatedBy = null; // TODO: Implement user ID here when JWT tokens are ready
+        record.FileType = dto.FileType ?? record.FileType;
         
         _context.Records.Update(record);
         await _context.SaveChangesAsync();
@@ -379,6 +393,7 @@ public class RecordBusiness : IRecordBusiness
             LastUpdatedBy = record.LastUpdatedBy,
             LastUpdatedAt = record.LastUpdatedAt,
             IsArchived = record.IsArchived,
+            FileType = record.FileType
         };
         
     }
@@ -723,6 +738,7 @@ public class RecordBusiness : IRecordBusiness
             LastUpdatedBy = r.LastUpdatedBy,
             LastUpdatedAt = r.LastUpdatedAt,
             IsArchived = r.IsArchived,
+            FileType = r.FileType,
             Tags = r.Tags.Select(t => new RecordTagDto
             {
                 Id = t.Id,

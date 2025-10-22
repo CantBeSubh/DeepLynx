@@ -1,16 +1,18 @@
 import React from "react";
-import { FileViewerTableRow, ProjectsList } from "../../../types/types";
+import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import ProjectSettingsClient from "./ProjectSettingsClient";
-import { getAllProjectsServer, ProjectDTO } from "@/app/lib/projects_services.server";
-import ProjectSettings from "../../../components/ProjectSettingsTable/ProjectSettings";
 import { notFound } from "next/navigation";
-
-function toProjectsList(p: ProjectDTO): ProjectsList {
+import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
+function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
-    id: String(p.id), // <- normalize to string
+    id: String(p.id),
     name: p.name ?? "",
-    description: p.description ?? "",
+    description: p.description ?? "", // fallback to empty string
+    abbreviation: p.abbreviation ?? "",
     lastUpdatedAt: p.lastUpdatedAt,
+    lastUpdatedBy: p.lastUpdatedBy ?? "",
+    isArchived: p.isArchived,
+    organizationId: p.organizationId
   };
 }
 
@@ -22,14 +24,14 @@ export default async function Page({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const projectDTOs = (await getAllProjectsServer()) as ProjectDTO[];
-  const initialProjects = projectDTOs.map((p) => toProjectsList(p));
+  const ProjectResponseDtos = (await getAllProjectsServer()) as ProjectResponseDto[];
+  const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();
 
   return (
-    <ProjectSettings
+    <ProjectSettingsClient
       projects={initialProjects}
       initialProject={initialProject}
     />

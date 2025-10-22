@@ -374,7 +374,10 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId", "OriginId", "DestinationId" }, "unique_edge_record_ids")
                         .IsUnique();
 
-                    b.ToTable("edges", "deeplynx");
+                    b.ToTable("edges", "deeplynx", t =>
+                        {
+                            t.HasCheckConstraint("CK_edges_origin_destination_different", "origin_id <> destination_id");
+                        });
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
@@ -1018,6 +1021,10 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("text")
+                        .HasColumnName("file_type");
 
                     b.Property<bool>("IsArchived")
                         .ValueGeneratedOnAdd()

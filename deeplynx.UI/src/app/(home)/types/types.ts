@@ -1,5 +1,6 @@
 import React, { ReactNode } from 'react';
-
+import { CustomQueryRequestDto } from './requestDTOs';
+//For dummy data
 export type DataSourceTableRow = {
   name: string;
   country: string;
@@ -53,13 +54,6 @@ export type Column<T extends object> = {
   cell?: (row: T, index: number) => React.ReactNode
 };
 
-export type ProjectsList = {
-  id?: string;
-  name: string;
-  description: string;
-  lastUpdatedAt?: Date;
-};
-
 export type PopularTable = {
   id: number;
   name: string;
@@ -76,45 +70,10 @@ export type MySearchsTable = {
   sortable?: boolean;
 }
 
-export type ProjectMembersTable = {
-  projectId: number;
-  name: string;
-  email: string;
-  role: string;
-  memberId?: number | null;
-  groupId?: number | null;
-  roleId?: number | null;
-}
-
-export type SystemUsersTable = {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-
-export type SystemGroupsTable = {
-  id: number | null;
-  name: string;
-  description?: string | null;
-}
-
 export interface Group {
   id: number;
   name: string;
   description?: string;
-}
-
-export type SystemOrgsTable = {
-  id: number;
-  name: string;
-  description: string;
-}
-
-export type MyRolesTable = {
-  id: number;
-  role: string;
-  description: string;
 }
 
 export type ProjectPermissionsTable = {
@@ -139,87 +98,71 @@ export type TeamMember = {
   lastLogin: string;
 };
 
-export type ClassResponseDto = {
+//record_service 
+export type RecordRow = {
   id: number;
-  name: string;
-  description: string | null;
-  uuid: string | null;
-  projectid: number;
-  createdby: string | null;
-  createdat: string;
-  modifiedby: string | null;
-  modifiedat: string | null;
-  archivedat: string | null;
-};
-
-export type DataSourceResponseDto = {
-  id: number;
-  name: string;
-  description: string | null;
-  abbreviation: string | null;
-  type: string | null;
-  baseuri: string | null;
-  config: Record<string, unknown> | null; // object | null
-  projectid: number;
-  createdby: string | null;
-  createdat: string;          // RFC 3339 date-time
-  modifiedby: string | null;
-  modifiedat: string | null;  // RFC 3339 or null
-  archivedat: string | null;  // RFC 3339 or null
-};
-
-export type TagResponseDto = {
-  id: number;
-  name: string;
-  projectId: number;
+  uri?: string | null;
+  name?: string;
+  properties?: string;
+  originalId?: string;
+  classId?: number;
+  className?: string;
+  dataSourceId?: number;
+  dataSourceName?: string;
+  projectId?: number;
+  projectName?: string;
+  tags: string;
   createdBy?: string | null;
-  createdAt: string; // ISO date string from backend
+  createdAt?: string | null;
   modifiedBy?: string | null;
   modifiedAt?: string | null;
   archivedAt?: string | null;
+  lastUpdatedAt?: string;
+  description?: string;
+  fileType: string;
+  timeseries?: boolean;
+  fileSize?: number;
+  select?: boolean;
+  associatedRecords?: string[];
+};
+export type UpdateRecordPayload = {
+  uri?: string | null;
+  properties?: Record<string, unknown>;
+  original_id?: string | null;
+  name?: string | null;
+  class_id?: number | null;
+  class_name?: string | null;
+  description?: string | null;
 };
 
-export type CustomQueryRequestDto = {
-  connector?: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: string;
-  jsonKey?: string;
-  jsonValue?: string;
+//DatePicker
+export type DatePickerQuery = {
+    id: string;
+    connector?: string;
+    filter?: string;
+    operator?: string;
+    value?: string; // you can store the combined timestamp here if you want
 };
 
-export type CustomQueryRequestDtoJson = {
-  connector: string | null;
-  filter: string;
-  operator: string;
-  value: string;
-  json?: JSON;
+//NewFileUploadCard
+export type FileMetadata = {
+  name: string;
+  description: string;
+  isTimeSeries: boolean;
+  updateAction?: "merge" | "overwrite";
 };
 
-export type HistoricalRecordResponseDto = {
-  Id?: number;
-  Uri?: string;
-  Properties: string;
-  OriginalId?: string;
-  Name?: string;
-  Description?: string;
-  ClassId?: number;
-  ClassName?: string;
-  DataSourceId?: number;
-  DataSourceName?: string;
-  ObjectStorageId?: number;
-  ObjectStorageName?: string;
-  ProjectId: number;
-  ProjectName: string;
-  Tags?: string;
-  CreatedBy?: string;
-  CreatedAt?: Date;
-  ModifiedBy?: string;
-  ModifiedAt?: Date;
-  ArchivedAt?: Date;
-  LastUpdatedAt?: Date;
-}
+//RecentRecordsCard
+export type RecentRecord = {
+  id: number;
+  name: string;
+  className: string;
+  createdAt: string;
+  lastUpdatedAt: string;
+  dataSourceName: string;
+  projectName: string;
+  projectId: number;
+};
 
 export type UserResponseDto =
   {
@@ -305,3 +248,81 @@ export type UserResponseDto =
     projectId?: number;
     organizationId?: number;
   }
+//Widgets
+export type WidgetType =
+  | "DataOverview"
+  | "Links"
+  | "Graph"
+  | "RecentActivity"
+  | "ProjectOverview"
+  | "TeamMembers";
+
+export type QueryBuilderQuery = {
+  id: string;
+  query: CustomQueryRequestDto;
+};
+
+//Uploads
+export type UploadType = "new" | "version" | "properties" | "";
+
+export type ExistingFile = {
+  id: string;
+  name: string;
+  alias?: string;
+  description?: string;
+  lastUpdate?: string;
+  updatedBy?: string;
+  tags?: string[];
+  dataSource?: string;
+  propertiesSources?: string;
+  timeSeries?: boolean;
+  image?: string;
+};
+
+export type RecentUploadIcon = "arrows" | "link" | "stack";
+
+export type RecentUpload = {
+  id: string;
+  name: string;
+  avatar: string;
+  file: string;
+  icon: RecentUploadIcon;
+};
+
+//file_upload_services
+export type UploadFileArgs = {
+  projectId: number | string;
+  dataSourceId: number | string;
+  objectStorageId: number | string;
+  file: File;
+
+  // optional metadata
+  name?: string;
+  description?: string;
+  properties?: unknown;
+  tags?: string[];
+  originalId?: string;
+  classId?: number | string;
+};
+
+//notification_services
+/** ---- Types ---- */
+export type SendEmailResponse = {
+  message: string;
+};
+
+//record_services
+export type CreateRecordPayload = {
+  name: string;
+  original_id: string;
+  description: string;
+
+  properties: Record<string, unknown>;
+
+  class_id?: number | null;
+  object_storage_id?: number | null;
+  uri?: string | null;
+  class_name?: string | null;
+  tags?: string[] | null;
+  sensitivity_labels?: string[] | null;
+};

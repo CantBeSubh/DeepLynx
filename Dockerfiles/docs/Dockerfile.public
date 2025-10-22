@@ -1,6 +1,15 @@
 # Stage 1: Build the frontend
 FROM node:lts-alpine3.20 AS frontend-build
 
+# Define build arguments
+ARG HOSTED_LINK
+
+# Set environment variables
+ENV HOSTED_LINK=${HOSTED_LINK}
+
+# # Print out the value of the environment variables
+# RUN echo "HOSTED_LINK=${HOSTED_LINK}"
+
 # Set working directory
 WORKDIR /usr/src/app
 
@@ -16,21 +25,17 @@ RUN npm install
 # Copy the rest of the frontend source code
 COPY deeplynx.docs .
 
-# Set the environment variable for the deployed route instance and link in build phase 
-ENV NEXT_PUBLIC_BASE_PATH="/docs"
-ENV NEXUS_HOSTED_LINK="https://deeplynx.dev.inl.gov/"
-
 # Build the frontend
 RUN npm run build
 
 # Stage 2: Create the final image
 FROM node:lts-alpine3.20 AS final
 
-# Set working directory
-WORKDIR /usr/src/app
-
 # Update runtime packages to specific versions
 RUN apk add --no-cache openssl=3.3.5-r0
+
+# Set working directory
+WORKDIR /usr/src/app
 
 # Copy the built frontend code from the previous stage
 COPY --from=frontend-build /usr/src/app .

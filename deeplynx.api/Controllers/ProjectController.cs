@@ -1,14 +1,14 @@
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects")]
-    [NexusAuthorize]
+    [Route("projects")]
+    [Authorize]
     public class ProjectController : ControllerBase
     {
         private readonly IProjectBusiness _projectBusiness;

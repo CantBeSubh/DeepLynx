@@ -1,7 +1,7 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
@@ -14,8 +14,8 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("api/records")]
-    [NexusAuthorize]
+    [Route("records")]
+    [Authorize]
     public class QueryController : ControllerBase
     {
         private readonly IQueryBusiness _queryBusiness;
@@ -69,7 +69,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var records = _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
+                var records = await _queryBusiness.QueryBuilder(filterArray, projectIds, textSearch);
                 return Ok(records);
             }
             catch (Exception exc)

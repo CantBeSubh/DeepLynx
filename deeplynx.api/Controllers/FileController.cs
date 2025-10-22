@@ -1,14 +1,13 @@
 using deeplynx.business;
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
-using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/files")]
-    [NexusAuthorize]
+    [Route("projects/{projectId}/files")]
+    [Authorize]
     public class FileController : ControllerBase
         {
             private readonly FileBusiness _fileBusiness;

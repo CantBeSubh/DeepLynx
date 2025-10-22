@@ -1,5 +1,5 @@
+// src/app/(home)/components/ExpandableProjectCard.tsx
 "use client";
-import { ProjectsList } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import { getProjectStats } from "@/app/lib/projects_services.client";
 import {
@@ -15,9 +15,10 @@ import { peopleData } from "../dummy_data/data";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import AvatarCell from "./Avatar";
 import { format } from "date-fns";
+import { ProjectResponseDto } from "../types/responseDTOs";
 
 interface Props {
-  project: ProjectsList;
+  project: ProjectResponseDto;
   onClose: () => void;
 }
 
@@ -37,7 +38,7 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
 
     const fetchStats = async () => {
       try {
-        const data = await getProjectStats(project.id!);
+        const data = await getProjectStats(project.id.toString()!);
         setStats({
           classes: data.classes,
           records: data.records,
@@ -63,7 +64,6 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
     fetchAllUsers();
   }, [project]);
 
-
   return (
     <div>
       {/* Header Section */}
@@ -76,13 +76,15 @@ const ExpandedProjectCard: React.FC<Props> = ({ project, onClose }) => {
             {project.description}
           </p>
           <p className="text-xs text-base-content/50 mt-2">
-            {t.translations.LAST_EDIT} {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+            {t.translations.LAST_EDIT}{" "}
+            {format(new Date(project.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
           </p>
         </div>
         <button
           onClick={onClose}
           aria-label="Close details"
           className="p-1 rounded-lg hover:bg-base-300/30 transition-colors"
+          data-tour={`project-row-${project.id ?? 0}-close`}
         >
           <XMarkIcon className="size-6 text-base-content/60 hover:text-base-content" />
         </button>

@@ -1,28 +1,28 @@
 // app/(home)/page.tsx
 import HomeDashboardClient from "./HomeDashboardClient";
-import {
-  getAllProjectsServer,
-  type ProjectDTO, // make sure this includes optional fields below
-} from "../lib/projects_services.server";
-import type { ProjectsList } from "./types/types";
-import AuthGuard from "./components/AuthGuard";
+import { getAllProjectsServer} from "../lib/projects_services.server";
+import { ProjectResponseDto } from "./types/responseDTOs";
 
 export const dynamic = "force-dynamic"; // if behind auth
 
-function mapToProjectsList(p: ProjectDTO): ProjectsList {
+function mapToProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
-    id: String(p.id),
-    name: p.name ?? "",
-    description: p.description ?? "", // fallback to empty string
-    lastUpdatedAt: p.lastUpdatedAt, // or a formatted date if you have it
-  };
+  id: String(p.id),
+  name: p.name ?? "",
+  description: p.description ?? "", // fallback to empty string
+  abbreviation:p.abbreviation ?? "",
+  lastUpdatedAt: p.lastUpdatedAt,
+  lastUpdatedBy: p.lastUpdatedBy ?? "",
+  isArchived: p.isArchived,
+  organizationId: p.organizationId
+};
 }
 
 export default async function Page() {
-  let projects: ProjectsList[] = [];
+  let projects: ProjectResponseDto[] = [];
   try {
     const apiProjects = await getAllProjectsServer();
-    projects = apiProjects.map(mapToProjectsList);
+    projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
   }

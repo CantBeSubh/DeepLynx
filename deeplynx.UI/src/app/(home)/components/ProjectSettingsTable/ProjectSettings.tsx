@@ -12,7 +12,7 @@ import RolesTable from '././ProjectTables/RolesTable';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { ProjectMembersTable, ProjectsList, MyRolesTable } from '../../types/types';
+// import { ProjectMembersTable, ProjectsList, MyRolesTable } from '../../types/types';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
 

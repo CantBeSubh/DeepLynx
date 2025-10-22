@@ -112,6 +112,10 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
+            entity.ToTable(e => e.HasCheckConstraint(
+                "CK_edges_origin_destination_different",
+                "origin_id <> destination_id"));
+
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");

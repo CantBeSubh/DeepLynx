@@ -1,15 +1,15 @@
 using System.ComponentModel.DataAnnotations;
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/edges")]
-    [NexusAuthorize]
+    [Route("projects/{projectId}/edges")]
+    [Authorize]
     public class EdgeController : ControllerBase
     {
         private readonly IEdgeBusiness _edgeBusiness;
@@ -55,18 +55,44 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get edges by record
         /// </summary>
-        /// <param name="projectId">The ID of the project whose edges are to be retrieved</param>
         /// <param name="recordId">The ID of the datasource by which to filter edges</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
-        public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetEdgesByRecord(
+        public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
             long recordId,
-            bool hideArchived = true)
+            bool isOrigin,
+            int page,
+            bool hideArchived = true,
+            int pageSize = 20)
         {
             try
             {
-                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, hideArchived); 
+                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize); 
+                return Ok(edges);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing all edges: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Get Graph Data
+        /// </summary>
+        /// <param name="recordId">The ID of the datasource by which to filter edges</param>
+        /// <param name="depth">The number of levels you want to search through</param>
+        /// <returns>A list of edges based on the applied filters.</returns>
+        [HttpGet("GetGraphDataForRecord", Name = "api_get_graph_data_for_record")]
+        public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
+            long recordId,
+            int depth)
+        {
+            try
+            {
+                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth); 
                 return Ok(edges);
             }
             catch (Exception exc)

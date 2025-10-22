@@ -40,6 +40,9 @@ public class RecordResponseDto
     [Column("is_archived")]
     public bool IsArchived { get; set; } = false;
     
+    [Column("file_type")]
+    public string? FileType { get; set; }
+    
     [NotMapped]
     public ICollection<RecordTagDto> Tags { get; set; }
 }

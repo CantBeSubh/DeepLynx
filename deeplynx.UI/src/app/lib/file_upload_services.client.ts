@@ -1,38 +1,9 @@
 // src/app/lib/file_upload_services.client.ts
 
 import api from "./api";
+import { UploadFileArgs } from "../(home)/types/types";
+import { RecordResponseDto } from "../(home)/types/responseDTOs";
 
-export type UploadedFileDTO = {
-  id: number | null;
-  name: string;
-  description?: string | null;
-  uri?: string | null;
-  properties?: unknown;
-  objectStorageId?: number | null;
-  originalId?: string | null;
-  classId?: number | null;
-  dataSourceId?: number | null;
-  projectId?: number | null;
-  lastUpdatedAt?: string;
-  lastUpdatedBy?: string | null;
-  isArchived?: boolean;
-  tags?: { id: number | null; name: string }[];
-};
-
-type UploadFileArgs = {
-  projectId: number | string;
-  dataSourceId: number | string;
-  objectStorageId: number | string;
-  file: File;
-
-  // optional metadata
-  name?: string;
-  description?: string;
-  properties?: unknown;
-  tags?: string[];
-  originalId?: string;
-  classId?: number | string;
-};
 
 export async function uploadFile({
   projectId,
@@ -78,7 +49,7 @@ export async function uploadFile({
     form.append("classId", String(classId));
   }
 
-  const { data } = await api.post<UploadedFileDTO>(
+  const { data } = await api.post<RecordResponseDto>(
     `/projects/${projectId}/files/UploadFile`,
     form,
     {

@@ -14,6 +14,16 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
   className,
 }) => {
   const { t } = useLanguage();
+import { PermissionResponseDto } from '@/app/(home)/types/responseDTOs';
+interface PermissionTableProps {
+  data: PermissionResponseDto[];
+}
+
+const ProjectManagementTable: FC<PermissionTableProps> = ({ data: initialData }) => {
+    const { t } = useLanguage();
+    const [data, setData] = useState<PermissionResponseDto[]>(initialData);
+    const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
+    const [selectAll, setSelectAll] = useState<boolean>(false);
 
   // ===== Project Management table state =====
   const [projRows, setProjRows] = useState<PermissionResponseDto[]>(projectData);
@@ -72,14 +82,48 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
     },
   ];
 
-  return (
-    <div className={className}>
-      <GenericTable
-        columns={projectColumns}
-        data={projRows}
-      />
-    </div>
-  );
+    const columns: Column<PermissionResponseDto>[] = [
+        {
+          header: "Project Management",
+          data: "action",
+        },
+        {
+          header: "Description",
+          data: "description",
+          sortable: false,
+        },
+        {
+          header: (
+            <input
+              type="checkbox"
+              className="checkbox"
+              checked={selectAll}
+              onChange={handleProjSelectAll}
+            />
+          ),
+          cell: (row: PermissionResponseDto, index: number) => (
+                <input
+                type="checkbox"
+                className="checkbox"
+                checked={selectedMembers[index]}
+                onChange={() => handleCheckboxChange(index)}
+                />
+          ),
+          sortable: false,
+        },
+      ];
+
+    return (
+        <div>
+            <GenericTable
+                columns={columns}
+                data={data}
+                // enablePagination
+                // rowsPerPage={5}
+            />
+        </div>
+    );
+  };
 };
 
 export default RoleManagementTable;

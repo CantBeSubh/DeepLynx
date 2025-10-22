@@ -1,6 +1,7 @@
 // src/app/lib/record_services.server.ts
 import "server-only";
-
+import { RecordRow } from "../(home)/types/types";
+import { UpdateRecordPayload } from "../(home)/types/types";
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
 
@@ -15,44 +16,6 @@ async function asJson<T>(res: Response): Promise<T> {
   if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
   return (await res.json()) as T;
 }
-
-/** ===== Types (adapt to your app’s shared types if you have them) ===== */
-export type RecordRow = {
-  id: number;
-  uri?: string | null;
-  name?: string;
-  properties?: string;
-  originalId?: string;
-  classId?: number;
-  className?: string;
-  dataSourceId?: number;
-  dataSourceName?: string;
-  projectId?: number;
-  projectName?: string;
-  tags: string;
-  createdBy?: string | null;
-  createdAt?: string | null;
-  modifiedBy?: string | null;
-  modifiedAt?: string | null;
-  archivedAt?: string | null;
-  lastUpdatedAt?: string;
-  description?: string;
-  fileType: string;
-  timeseries?: boolean;
-  fileSize?: number;
-  select?: boolean;
-  associatedRecords?: string[];
-};
-
-export type UpdateRecordPayload = {
-  uri?: string | null;
-  properties?: Record<string, unknown>;
-  original_id?: string | null;
-  name?: string | null;
-  class_id?: number | null;
-  class_name?: string | null;
-  description?: string | null;
-};
 
 /** ===== Server-safe calls (no browser cookies; safe in build/prerender) ===== */
 
