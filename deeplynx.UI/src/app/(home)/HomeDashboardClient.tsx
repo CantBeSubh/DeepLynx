@@ -1,11 +1,11 @@
-// app/(home)/HomeDashboardClient.tsx  — Client Component
+// app/(home)/HomeDashboardClient.tsx
 "use client";
 
 import CreateWidget from "@/app/(home)/components/CreateWidgetsModal";
 import { ExpandableTable } from "@/app/(home)/components/ExpandableTable";
 import ExpandedProjectCard from "@/app/(home)/components/ExpandedProjectCard";
 import { WidgetType } from "@/app/(home)/components/Widgets";
-import { PlusIcon } from "@heroicons/react/24/outline";
+import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -14,21 +14,22 @@ import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
 import SearchInput from "./components/SearchInput";
 import { format } from "date-fns";
-
 import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
+import { useDashboardTour } from "./tours/useDashboardTour";
 import { ProjectResponseDto } from "./types/responseDTOs";
 type Props = { initialProjects: ProjectResponseDto[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-
   const { data: session, status } = useSession();
+
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [widgetModal, setWidgetModal] = useState(false);
-  const [projects, setProjects] = useState<ProjectResponseDto[]>(initialProjects);
+  const [projects, setProjects] =
+    useState<ProjectResponseDto[]>(initialProjects);
   const [searchTerm, setSearchTerm] = useState("");
   const [canCustomize, setCanCustomize] = useState(false);
   const [homeWidgets, setHomeWidgets] = useState<WidgetType[]>([
@@ -50,6 +51,12 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       const dateB = new Date(b.lastUpdatedAt!).getTime();
       return dateB - dateA;
     });
+
+  // Use the custom hook for tour functionality
+  const { startTour } = useDashboardTour({
+    filteredProjects,
+    initialProjects,
+  });
 
   const refreshProjects = async () => {
     try {
@@ -85,7 +92,9 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     {
       header: t.translations.LAST_UPDATED_AT,
       data: (row: ProjectResponseDto) => (
-        <span className="text-base-content/60 text-sm">{format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}</span>
+        <span className="text-base-content/60 text-sm">
+          {format(new Date(row.lastUpdatedAt!), "MM/dd/yyyy hh:mm:s")}
+        </span>
       ),
     },
   ];
@@ -104,26 +113,31 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       {/* Header Section */}
       <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
-          <h1 className="text-2xl font-bold text-base-content">
-            {t.translations.WELECOME}
-          </h1>
-          <SearchInput
-            placeholder="Search Projects"
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-base-content">
+              {t.translations.WELECOME}
+            </h1>
+            <button
+              onClick={startTour}
+              className="btn btn-ghost btn-sm btn-circle"
+              title="Start Tour"
+            >
+              <QuestionMarkCircleIcon className="w-5 h-5" />
+            </button>
+          </div>
+          <div data-tour="search-input">
+            <SearchInput
+              placeholder="Search Projects"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
       <div className="p-6">
-        <div
-          //This is commented out till we get digets
-          // className={`w-full md:w-3/5 px-4 ${
-          //   canCustomize ? "grayed-out" : ""
-          // }`}
-          className="w-4/5 mx-auto"
-        >
-          <div className="card card-border p-4">
+        <div className="w-4/5 mx-auto">
+          <div className="card card-border p-4" data-tour="projects-section">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-info-content text-lg font-semibold">
                 {t.translations.YOUR_PROJECTS}
@@ -133,6 +147,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <button
                   onClick={() => setIsRecordModalOpen(true)}
                   className="btn btn-outline btn-secondary btn-sm flex-1 sm:flex-initial"
+                  data-tour="add-record"
                 >
                   <PlusIcon className="size-5" />
                   <span>{t.translations.RECORD}</span>
@@ -140,6 +155,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <button
                   onClick={() => setIsProjectModalOpen(true)}
                   className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
+                  data-tour="create-project"
                 >
                   <PlusIcon className="size-5" />
                   <span>{t.translations.PROJECT}</span>
@@ -154,12 +170,12 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
                 <ExpandedProjectCard project={project} onClose={onClose} />
               )}
               onExplore={onExplore}
+              getRowId={(p) => p.id}
             />
           </div>
         </div>
 
-        {/*
-          This will be added later ...
+        {/* Commented out widgets section
         <div className="w-full md:w-2/5 px-4">
             <WidgetCard
               widgets={homeWidgets}
