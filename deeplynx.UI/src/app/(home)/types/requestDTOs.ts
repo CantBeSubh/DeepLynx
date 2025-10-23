@@ -15,3 +15,19 @@ export type RelatedRecordsRequestDto = {
     pageSize?: number;
     hideArchived?: boolean;
 }
+
+export type CreateRoleRequestDto =
+  {
+    name: string;
+    description?: string | null;
+    projectId?: number;
+    organizationId?: number;
+  }
+
+export type PermissionRequestDto =
+  {
+    name: string;
+    description?: string | null;
+    projectId?: number;
+    organizationId?: number;
+  }

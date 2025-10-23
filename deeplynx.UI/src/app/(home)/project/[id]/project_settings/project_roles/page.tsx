@@ -1,7 +1,6 @@
 import React from "react";
 import RoleSettingsClient from "./RoleSettingsClient";
 import { notFound } from "next/navigation";
-import { RoleResponseDto, PermissionResponseDto, ProjectResponseDto } from "../../../../types/types";
 
 export default async function Page({
   params,

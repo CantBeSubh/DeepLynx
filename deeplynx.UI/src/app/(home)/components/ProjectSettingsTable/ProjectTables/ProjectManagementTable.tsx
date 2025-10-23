@@ -5,8 +5,8 @@ import { Column } from '../../../types/types';
 import { PermissionResponseDto, RoleResponseDto } from '@/app/(home)/types/responseDTOs';
 
 interface RoleManagementTableProps {
-  projectData: PermissionResponseDto[];
   initialData: PermissionResponseDto[];
+  projectData: PermissionResponseDto[];
 }
 // interface PermissionTableProps {
 //   data: PermissionResponseDto[];
@@ -17,7 +17,7 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
   projectData,
 }) => {
     const { t } = useLanguage();
-    const [data, setData] = useState<PermissionResponseDto[]>(initialData);
+    // const [data, setData] = useState<PermissionResponseDto[]>(initialData);
     const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
     const [selectAll, setSelectAll] = useState<boolean>(false);
 
@@ -34,17 +34,29 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
     setProjSelectAll(false);
   }, [projectData]);
 
+  // const handleSelectAll = () => {
+  //   const next = !projSelectAll;
+  //   setProjSelectAll(next);
+  //   setProjSelected(new Array(projRows.length).fill(next));
+  // };
+
   const handleSelectAll = () => {
-    const next = !projSelectAll;
-    setProjSelectAll(next);
-    setProjSelected(new Array(projRows.length).fill(next));
+    const newSelection = !selectAll;
+    setSelectAll(newSelection);
+    setSelectedMembers(new Array(initialData.length).fill(newSelection));
   };
 
-  const handleCheckbox = (index: number) => {
-    const next = [...projSelected];
-    next[index] = !next[index];
-    setProjSelected(next);
-    setProjSelectAll(next.every(Boolean));
+  // const handleCheckbox = (index: number) => {
+  //   const next = [...projSelected];
+  //   next[index] = !next[index];
+  //   setProjSelected(next);
+  //   setProjSelectAll(next.every(Boolean));
+  // };
+
+  const handleCheckboxChange = (index: number) => {
+    const newSelection = [...selectedMembers];
+    newSelection[index] = !newSelection[index];
+    setSelectedMembers(newSelection);
   };
 
   const projectColumns: Column<PermissionResponseDto>[] = [
@@ -71,7 +83,7 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
           type="checkbox"
           className="checkbox"
           checked={projSelected[i]}
-          onChange={() => handleCheckbox(i)}
+          onChange={() => handleCheckboxChange(i)}
         />
       ),
       sortable: false,
@@ -102,7 +114,7 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
               type="checkbox"
               className="checkbox"
               checked={selectedMembers[index]}
-              onChange={() => handleCheckbox(index)}
+              onChange={() => handleCheckboxChange(index)}
               />
         ),
         sortable: false,
@@ -113,7 +125,7 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
       <div>
           <GenericTable
               columns={columns}
-              data={initialData}
+              data={projectData}
           />
       </div>
   );

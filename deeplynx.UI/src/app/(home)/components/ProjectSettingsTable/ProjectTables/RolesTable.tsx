@@ -6,6 +6,7 @@ import { TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { useRouter } from "next/navigation";
 import { RoleResponseDto } from '@/app/(home)/types/responseDTOs';
 import { getAllRoles, deleteRole, } from '@/app/lib/role_services.client'
+import { isAxiosError } from "axios";
 
 interface RolesTableProps {
   data: RoleResponseDto[];
@@ -17,7 +18,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   const [data, setData] = useState<RoleResponseDto[]>(initialData);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>(new Array(initialData.length).fill(false));
   const [selectAll, setSelectAll] = useState<boolean>(false);
-  const [handleEdit, setHandleEdit] = useState<boolean>(false);
+  // const [handleEdit, setHandleEdit] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -43,6 +44,12 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
         setError("Invalid project id.");
         return;
       }
+
+    //   const fetchRoles = async () => {
+    // if (typeof projectId === "undefined" || projectId === null) {
+    //     setError("Project ID is invalid.");
+    //     return;
+    // }
 
       setLoading(true);
       setError(null);
@@ -158,7 +165,7 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
       header: "",
       cell: (row: RoleResponseDto) => (
         <div className="flex">
-          <button onClick={() => router.push(`/project/${id}/project_settings/project_roles?roleId=${row.roleId}`)}>
+          <button onClick={() => router.push(`/project/${id}/project_settings/project_roles?roleId=${row.id}`)}>
             <PencilIcon className="size-6 text-secondary" />
           </button>
         </div>

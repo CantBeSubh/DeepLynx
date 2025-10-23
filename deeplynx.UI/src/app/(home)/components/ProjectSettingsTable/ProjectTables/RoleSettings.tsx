@@ -3,7 +3,7 @@ import { useLanguage } from "@/app/contexts/Language";
 import RoleDetails from './RoleDetails';
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAllRoles, updateRole } from "@/app/lib/role_services.client";
-import { RoleResponseDto, PermissionResponseDto } from "../../../types/types";
+import { RoleResponseDto, PermissionResponseDto } from "../../../types/responseDTOs";
 
 interface RoleSettingsProps {
   id?: string | string[];

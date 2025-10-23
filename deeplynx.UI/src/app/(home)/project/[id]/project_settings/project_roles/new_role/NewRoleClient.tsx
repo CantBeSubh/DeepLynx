@@ -4,10 +4,9 @@ import React, { useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { useRouter } from "next/navigation";
 import AddRole from "../../../../../components/ProjectSettingsTable/ProjectTables/AddRole";
-import { CreateRoleRequestDto, PermissionRequestDto } from "../../../../../types/types";
+import { CreateRoleRequestDto, PermissionRequestDto } from "../../../../../types/requestDTOs";
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { createRole } from "@/app/lib/role_services.client";
-
 
 type Props = { projectId: number };
 

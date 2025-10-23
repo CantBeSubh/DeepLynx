@@ -6,39 +6,36 @@ import Tabs from "../Tabs";
 import AddProjectMember from "../../components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
-// import DataSourceTable from '././ProjectTables/DataSourceTable';
-// import ObjectStorageTable from '././ProjectTables/ObjectStorageTable';
-// import MemberSearchBar from './MemberSearchBar';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-// import { ProjectMembersTable, ProjectsList, MyRolesTable } from '../../types/types';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
+import { ProjectResponseDto, RoleResponseDto, ProjectMembersDto } from '../../types/responseDTOs';
+import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
+import { Role } from '@/app/(home)/types/types';
 
 interface ProjectSettingsProps {
-  projects: ProjectsList[];
-  initialProject: ProjectsList | null;
-  id: string | null | undefined;
+  projects: ProjectResponseDto[];
+  initialProject: ProjectResponseDto | null;
 }
 
 const ProjectSettings = ({
   projects,
   initialProject,
-  id
 }: ProjectSettingsProps) => {
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [project, setProject] = useState<ProjectsList | null>(initialProject);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    initialProject?.id || null
+  // const [project, setProject] = useState<ProjectResponseDto[] | null>(initialProject);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number | null>(
+    initialProject?.id ?? null
   );
-  const [projectMembers, setProjectMembers] = useState<ProjectMembersTable[]>([]);
-  const [projectRoles, setProjectRoles] = useState<MyRolesTable[]>([]);
-  //TODO: change to ProjectResponseDto DTO && RoleResponseDto
+  const [projectMembers, setProjectMembers] = useState<ProjectMembersDto[]>([]);
+  const [projectRoles, setProjectRoles] = useState<RoleResponseDto[]>([]);
+  const [isMembersLoading, setIsMembersLoading] = useState(true);
 
   const [roles, setRoles] = useState([]);
 
@@ -72,31 +69,34 @@ const ProjectSettings = ({
     }
   };
 
-  //Refreshing Roles Table
-  const refreshRoles = async () => {
-    if (selectedProjectId) {
-        const rolesData = await getAllRoles(Number(selectedProjectId));
-        setRoles(rolesData);
-    }
-};
+//   //normalize roles
+//   const rolesForTable: Role[] = roleResponseDtos.map(r => ({
+//   ...r,
+//   description: r.description ?? null, // ensure string|null (never undefined)
+// }));
+
+const memberContent = isMembersLoading || selectedProjectId == null ? <ProjectSettingsMemberSkeleton/>:
+<MembersTable
+  data={projectMembers}
+  projectId={selectedProjectId == null
+      ? null
+      : String(selectedProjectId)}
+  roles={roles}
+/>;
 
   //Tab Data for Project Settings Tables
   const tabData = [
     {
       label: "Members",
       content: (
-        <MembersTable
-          data={projectMembers}
-          projectId={selectedProjectId}
-          roles={roles}
-        />
+        memberContent
       ),
     },
     {
       label: "Roles",
       content: (
         <RolesTable
-          id={selectedProjectId}
+          id={selectedProjectId == null ? undefined : String(selectedProjectId)}
           data={roles}
         />
       ),
@@ -160,7 +160,10 @@ const ProjectSettings = ({
               <ProjectDropdownSingleSelect
                 projects={projects}
                 onSelectionChange={handleProjectChange}
-                defaultSelectedId={initialProject?.id || ""}
+                defaultSelectedId={selectedProjectId === undefined
+                  || selectedProjectId === null
+                  ? undefined
+                  : String(selectedProjectId)}
               />
             </div>
           </div>

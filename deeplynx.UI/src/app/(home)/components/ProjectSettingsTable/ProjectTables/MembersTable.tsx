@@ -7,17 +7,18 @@ import RoleSwap from "@/app/(home)/components/ProjectSettingsTable/ProjectModals
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { removeProjectMemberRole, updateProjectMemberRole } from '@/app/lib/projects_services.client';
 import { ProjectMembersDto } from '@/app/(home)/types/responseDTOs';
+import { Role } from '@/app/(home)/types/types';
 
-interface Role {
-  id: number;
-  name: string;
-  description: string | null;
-  lastUpdatedAt: string;
-  lastUpdatedBy: string | null;
-  isArchived: boolean;
-  projectId: number;
-  organizationId: number | null;
-}
+// interface Role {
+//   id: number;
+//   name: string;
+//   description: string | null;
+//   lastUpdatedAt: string;
+//   lastUpdatedBy: string | null;
+//   isArchived: boolean;
+//   projectId: number;
+//   organizationId: number | null;
+// }
 
 interface MembersTableProps {
   data: ProjectMembersDto[];

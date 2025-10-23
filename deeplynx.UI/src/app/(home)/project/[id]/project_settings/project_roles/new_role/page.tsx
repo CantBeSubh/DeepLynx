@@ -1,5 +1,4 @@
 import React from "react";
-import { FileViewerTableRow } from "../../../../../types/types";
 import NewRoleClient from "./NewRoleClient";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import { notFound } from "next/navigation";
