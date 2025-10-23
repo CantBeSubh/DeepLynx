@@ -41,6 +41,8 @@ namespace deeplynx.business
                 return default;
             }
 
+            await SetAsync("type", "redis", (TimeSpan?)null);
+
             return JsonSerializer.Deserialize<T>(value.ToString(), _jsonOptions);
         }
 

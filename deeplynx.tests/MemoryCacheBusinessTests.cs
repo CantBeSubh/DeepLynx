@@ -6,11 +6,20 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class MemoryCacheBusinessTests : IntegrationTestBase
     {
-        private readonly MemoryCacheBusiness _memoryCacheBusiness;
-
         public MemoryCacheBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
-            _memoryCacheBusiness = new MemoryCacheBusiness();
+        }
+
+        // Override InitializeAsync to set up Memory cache before each test
+        public override async Task InitializeAsync()
+        {
+            // Set the cache provider type to memory (or null/empty for default)
+            Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", "memory");
+            
+            // Reset the cache instance to pick up the new environment variable
+            _cacheBusiness.ResetCacheInstance();
+            
+            await base.InitializeAsync();
         }
 
         [Fact]
@@ -24,9 +33,11 @@ namespace deeplynx.tests
                 new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
             };
 
-            // Act
-            await _memoryCacheBusiness.SetAsync(key, value, (TimeSpan?)null);
-            var cachedValue = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
+            // Act - use _cacheBusiness instead of _memoryCacheBusiness
+            await _cacheBusiness.SetAsync(key, value, (TimeSpan?)null);
+            var cachedValue = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
+            var type = await _cacheBusiness.GetAsync<string>("type");
+            Console.WriteLine(type);
 
             // Assert
             Assert.Equivalent(value, cachedValue);
@@ -43,11 +54,11 @@ namespace deeplynx.tests
                 new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
             };
 
-            await _memoryCacheBusiness.SetAsync(key, value, (TimeSpan?)null);
+            await _cacheBusiness.SetAsync(key, value, (TimeSpan?)null);
 
             // Act
-            await _memoryCacheBusiness.DeleteAsync(key);
-            var cachedValue = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
+            await _cacheBusiness.DeleteAsync(key);
+            var cachedValue = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
 
             // Assert
             Assert.Null(cachedValue);
@@ -65,13 +76,13 @@ namespace deeplynx.tests
                 new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
             };
 
-            await _memoryCacheBusiness.SetAsync(key1, value, (TimeSpan?)null);
-            await _memoryCacheBusiness.SetAsync(key2, value, (TimeSpan?)null);
+            await _cacheBusiness.SetAsync(key1, value, (TimeSpan?)null);
+            await _cacheBusiness.SetAsync(key2, value, (TimeSpan?)null);
 
             // Act
-            await _memoryCacheBusiness.FlushAsync();
-            var cachedValue1 = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key1);
-            var cachedValue2 = await _memoryCacheBusiness.GetAsync<List<ProjectResponseDto>>(key2);
+            await _cacheBusiness.FlushAsync();
+            var cachedValue1 = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key1);
+            var cachedValue2 = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key2);
 
             // Assert
             Assert.Null(cachedValue1);

@@ -34,6 +34,7 @@ namespace deeplynx.business
             try
             {
                 var parsed = JsonConvert.DeserializeObject<T>(value);
+                await SetAsync("type", "memory", (TimeSpan?)null);
                 return await Task.FromResult(parsed);
             }
             catch

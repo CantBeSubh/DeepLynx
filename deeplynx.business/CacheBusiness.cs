@@ -32,6 +32,21 @@ namespace deeplynx.business
         }
         
         /// <summary>
+        /// Reset the cache instance by recreating it from the factory.
+        /// Useful for testing when environment variables change.
+        /// </summary>
+        public void ResetCacheInstance()
+        {
+            // Dispose of old cache if it's a Redis connection
+            if (Cache is RedisCacheBusiness redisCache)
+            {
+                // The ConnectionMultiplexer should be disposed properly
+                // This may require adding a Dispose method to RedisCacheBusiness
+            }
+            Cache = CacheFactory.CreateCache();
+        }
+        
+        /// <summary>
         /// Wrapper method to expose Get cache operations
         /// </summary>
         /// <param name="key">The Key name of the cached data to be retrieved</param>
