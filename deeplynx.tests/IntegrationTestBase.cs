@@ -48,6 +48,10 @@ public class TestSuiteFixture : IAsyncLifetime
         // Apply migrations only once
         await Context.Database.MigrateAsync();
         
+        // Apply env variables without exposing values in tests
+        var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
+        var envFilePath = Path.Combine(projectRoot, ".env");
+        Env.Load(envFilePath);
         // ensure the notification service is tested
         Environment.SetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE", "true");
     }
