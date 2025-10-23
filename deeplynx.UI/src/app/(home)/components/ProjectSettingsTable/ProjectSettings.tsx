@@ -11,7 +11,7 @@ import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
-import { ProjectResponseDto, RoleResponseDto, ProjectMembersDto } from '../../types/responseDTOs';
+import { ProjectResponseDto, ProjectMembersDto } from '../../types/responseDTOs';
 import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
 import { Role } from '@/app/(home)/types/types';
 
@@ -29,12 +29,10 @@ const ProjectSettings = ({
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
-  // const [project, setProject] = useState<ProjectResponseDto[] | null>(initialProject);
   const [selectedProjectId, setSelectedProjectId] = useState<string | number | null>(
     initialProject?.id ?? null
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersDto[]>([]);
-  const [projectRoles, setProjectRoles] = useState<RoleResponseDto[]>([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
 
   const [roles, setRoles] = useState([]);
@@ -68,12 +66,6 @@ const ProjectSettings = ({
       setProjectMembers(users);
     }
   };
-
-//   //normalize roles
-//   const rolesForTable: Role[] = roleResponseDtos.map(r => ({
-//   ...r,
-//   description: r.description ?? null, // ensure string|null (never undefined)
-// }));
 
 const memberContent = isMembersLoading || selectedProjectId == null ? <ProjectSettingsMemberSkeleton/>:
 <MembersTable

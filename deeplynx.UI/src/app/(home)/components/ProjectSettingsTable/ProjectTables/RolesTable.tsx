@@ -50,12 +50,6 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
         return;
       }
 
-    //   const fetchRoles = async () => {
-    // if (typeof projectId === "undefined" || projectId === null) {
-    //     setError("Project ID is invalid.");
-    //     return;
-    // }
-
       setLoading(true);
       setError(null);
       try {

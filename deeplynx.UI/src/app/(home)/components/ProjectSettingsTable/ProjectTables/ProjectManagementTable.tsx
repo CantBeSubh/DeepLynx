@@ -34,24 +34,11 @@ const RoleManagementTable: FC<RoleManagementTableProps> = ({
     setProjSelectAll(false);
   }, [projectData]);
 
-  // const handleSelectAll = () => {
-  //   const next = !projSelectAll;
-  //   setProjSelectAll(next);
-  //   setProjSelected(new Array(projRows.length).fill(next));
-  // };
-
   const handleSelectAll = () => {
     const newSelection = !selectAll;
     setSelectAll(newSelection);
     setSelectedMembers(new Array(initialData.length).fill(newSelection));
   };
-
-  // const handleCheckbox = (index: number) => {
-  //   const next = [...projSelected];
-  //   next[index] = !next[index];
-  //   setProjSelected(next);
-  //   setProjSelectAll(next.every(Boolean));
-  // };
 
   const handleCheckboxChange = (index: number) => {
     const newSelection = [...selectedMembers];
