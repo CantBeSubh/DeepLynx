@@ -13,6 +13,11 @@ interface RolesTableProps {
   id: string | null | undefined;
 }
 
+export type ApiErrorResponse = {
+  message: string;
+  code?: string;
+}
+
 const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
   const { t } = useLanguage();
   const [data, setData] = useState<RoleResponseDto[]>(initialData);
@@ -101,8 +106,17 @@ const RolesTable: FC<RolesTableProps> = ({ data: initialData, id }) => {
       setData(newData);
       setSelectedMembers(new Array(newData.length).fill(false));
       setSelectAll(false);
-    } catch (error) {
-      console.error('Failed to delete role:', error);
+    } catch (e: unknown) {
+      if (isAxiosError<ApiErrorResponse>(e) && e.response) {
+        const { status, data } = e.response;
+        if (status === 500 || data?.code === "ROLE_IN_USE") {
+          const msg = data?.message ?? "Role is in use. Please reassign members before deleting.";
+          alert(msg);
+          return;
+        }
+      }
+      const msg = e instanceof Error ? e.message : "Failed to delete role. Please try again.";
+      alert(msg);
     }
   };
 

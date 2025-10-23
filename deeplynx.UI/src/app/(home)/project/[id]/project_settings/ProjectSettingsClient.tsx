@@ -109,7 +109,7 @@ export default function ProjectSettingsClient({
     const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
         if (activeTab === "Roles") {
-            router.push("/project_settings/project_roles");
+            router.push(`/project/${selectedProjectId}/project_settings/project_roles/new_role`);
         } else if (activeTab === "Members") {
             setAddProjectMemberModal(true);
         }
