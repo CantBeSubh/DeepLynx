@@ -9,17 +9,6 @@ import { removeProjectMemberRole, updateProjectMemberRole } from '@/app/lib/proj
 import { ProjectMembersDto } from '@/app/(home)/types/responseDTOs';
 import { Role } from '@/app/(home)/types/types';
 
-// interface Role {
-//   id: number;
-//   name: string;
-//   description: string | null;
-//   lastUpdatedAt: string;
-//   lastUpdatedBy: string | null;
-//   isArchived: boolean;
-//   projectId: number;
-//   organizationId: number | null;
-// }
-
 interface MembersTableProps {
   data: ProjectMembersDto[];
   projectId: string | null;
