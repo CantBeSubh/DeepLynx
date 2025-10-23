@@ -1,7 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json.Serialization;
 using deeplynx.business;
 using deeplynx.datalayer.MigrationRunner;
@@ -13,8 +9,6 @@ using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Protocols;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
@@ -358,49 +352,28 @@ try
         });
     });
 
-    /* ╔════════════════════════════╗
-       ║      Apply Migrations      ║
-       ╚════════════════════════════╝ */
+/* ╔════════════════════════════╗
+   ║      Apply Migrations      ║
+   ╚════════════════════════════╝ */
     await MigrationRunner.ApplyMigrations(connectionString);
-
+    
+/* ╔════════════════════════════╗
+   ║      App Configurations    ║
+   ╚════════════════════════════╝ */
     var app = builder.Build();
-
-    app.UseOpenApi();
-
-    var customcss = File.ReadAllText("moon.css");
-
+    
+/* ╔════════════════════════════╗
+   ║      App Base Path         ║
+   ╚════════════════════════════╝ */
+    PathString basePath = "/api";
+    app.UsePathBase(basePath);
+    
     app.UseStaticFiles();
-
-    
-    // We're always using scalar for now.
-    //if (app.Environment.IsDevelopment()) { ...
-    app.MapOpenApi();
-    app.MapScalarApiReference(o => o
-        .WithDarkMode()
-        .WithTheme(ScalarTheme.Kepler)
-        .WithTitle("DeepLynx Nexus API")
-        .WithCustomCss(customcss)
-        .AddHeaderContent(@"
-        <div class='references-header'>
-            <header class='header t-doc__header'>
-                <div class='header-container'>
-                    <div class='header-item header-item-meta'>
-                        <a class='header-item-logo'>
-                            <img
-                                alt='lynx'
-                                class='header-item-logo-image'
-                                src='/images/lynx-white.png'
-                                style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;'/>
-                        </a>
-                    </div>
-                </div>
-            </header>
-        </div>"));
-    
     app.UseRouting();
     app.UseCors("AllowAll"); 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
     
     // Check if the notification service is enabled (defaults to false if not set)
@@ -408,8 +381,57 @@ try
     {
         app.MapHub<EventNotificationHub>("/eventNotificationHub"); // endpoint for real-time notifications with SignalR
     }
+
+ /* ╔════════════════════════════╗
+    ║   Scalar Configuration     ║
+    ╚════════════════════════════╝ */
+    // Always using scalar:
+    //if (app.Environment.IsDevelopment()) { ...
+    app.UseOpenApi();
+    app.MapOpenApi();
     
-    app.MapControllers();
+    var customcss = File.ReadAllText("moon.css");
+    var hostedLink = Environment.GetEnvironmentVariable("HOSTED_LINK");
+
+    // Conditional image hosting
+    var imageSrc = "/images/lynx-white.png";
+    if (!string.IsNullOrEmpty(hostedLink))
+    {
+        imageSrc = $"{hostedLink}/api/{imageSrc}";
+    }
+    // Build the HTML content with our image src string interpolation
+    var scalarHeaderContent = $@"
+    <div class='references-header'>
+      <header class='header t-doc__header'>
+        <div class='header-container'>
+          <div class='header-item header-item-meta'>
+            <a class='header-item-logo'>
+              <img
+                alt='lynx'
+                class='header-item-logo-image'
+                src='{imageSrc}'
+                style='height: 50px; position: sticky; z-index: 1000; padding-left: 20px;' />
+            </a>
+          </div>
+        </div>
+      </header>
+    </div>";
+
+    app.MapScalarApiReference( options => {
+        options.WithDarkMode(true)
+            .WithBaseServerUrl(basePath.ToString())
+            .WithTheme(ScalarTheme.Kepler)
+            .WithTitle("DeepLynx Nexus API")
+            .WithCustomCss(customcss)
+            .AddHeaderContent(scalarHeaderContent);
+
+        if (!string.IsNullOrEmpty(hostedLink))
+        {
+            var hostedLinkWithApi = string.Concat(hostedLink + "/api");
+            options.Servers = new List<ScalarServer> { new ScalarServer(hostedLinkWithApi) };
+        }
+    });
+
     app.Run();
 }
 // ignore entity framework aborting in design. See https://github.com/dotnet/efcore/issues/29923

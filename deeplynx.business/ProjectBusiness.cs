@@ -214,9 +214,9 @@ public class ProjectBusiness : IProjectBusiness
             Operation = "create",
             EntityType = "project",
             EntityId = projectId,
+            EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         await SetProjectDefaults(projectId, userId);
@@ -256,9 +256,9 @@ public class ProjectBusiness : IProjectBusiness
             Operation = "update",
             EntityType = "project",
             EntityId = project.Id,
+            EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {project.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         var updatedProject = new ProjectResponseDto
@@ -384,9 +384,9 @@ public class ProjectBusiness : IProjectBusiness
             Operation = "archive",
             EntityType = "project",
             EntityId = project.Id,
+            EntityName = project.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new { project.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         var projectResponse = new ProjectResponseDto
@@ -491,6 +491,18 @@ public class ProjectBusiness : IProjectBusiness
                 // Set the updated list back to the cache
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
                 
+                // Log the event
+                await _eventBusiness.CreateEvent(new CreateEventRequestDto
+                {
+                    ProjectId = projectId,
+                    Operation = "unarchive",
+                    EntityType = "project",
+                    EntityId = project.Id,
+                    EntityName = project.Name,
+                    DataSourceId = null,
+                    Properties = JsonSerializer.Serialize(new { project.Name }),
+                });
+                
                 return true;
             }
             catch (Exception exc)
@@ -500,19 +512,6 @@ public class ProjectBusiness : IProjectBusiness
                     $"unable to unarchive project {projectId} or its downstream dependents: {exc}");
             }
         }
-
-        await _eventBusiness.CreateEvent(new CreateEventRequestDto
-        {
-            ProjectId = projectId,
-            Operation = "unarchive",
-            EntityType = "project",
-            EntityId = project.Id,
-            DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new { project.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
-        });
-        
-        return true;
     }
 
     /// <summary>

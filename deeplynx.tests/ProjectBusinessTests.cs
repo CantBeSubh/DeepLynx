@@ -1271,6 +1271,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             cid = testClass.Id;
             
+            // Add datasource
             var testDataSource = new DataSource
             {
                 Name = "Test DataSource",

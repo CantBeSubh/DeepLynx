@@ -13,29 +13,34 @@ export default function RecordLoading() {
   const rid = params.get("recordId");
 
   return (
-    <div className="px-6">
+    <div className="">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-info-content">
-          {rid ? <Skeleton width={280} /> : <Skeleton width={220} />}
+      <div className="text-base-content bg-base-200/40 py-3 p-12">
+        <h1 className="text-2xl font-bold">
+          <Skeleton
+            baseColor="var(--color-base-200)"
+            highlightColor="var(--color-base-300)"
+            width={350}
+            className="animate-pulse"
+          />
         </h1>
       </div>
 
       <div className="divider" />
 
       {/* Tabs header skeleton */}
-      <div className="tabs tabs-bordered mb-4">
-        <a className="tab tab-active">
-          <Skeleton width={160} height={20} />
+      <div className="tabs tabs-bordered mb-4 px-6">
+        <a className="tab tab-active mr-4">
+          <Skeleton width={140} height={20} className="animate-pulse" />
+        </a>
+        <a className="tab mr-4">
+          <Skeleton width={80} height={20} className="animate-pulse" />
+        </a>
+        <a className="tab mr-4">
+          <Skeleton width={120} height={20} className="animate-pulse" />
         </a>
         <a className="tab">
-          <Skeleton width={140} height={20} />
-        </a>
-        <a className="tab">
-          <Skeleton width={120} height={20} />
-        </a>
-        <a className="tab">
-          <Skeleton width={140} height={20} />
+          <Skeleton width={100} height={20} className="animate-pulse" />
         </a>
       </div>
 

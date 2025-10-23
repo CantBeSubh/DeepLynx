@@ -102,7 +102,7 @@ export const translations = {
             SEE_MORE: "See more",
             TAGS: "Tags:",
             CLASS: "Class: ",
-            DATA_SOURCE: "Data source: ",
+            DATA_SOURCE: "Data source ",
             ALL_YOUR_PROJECTS: "All your Projects",
             RECENTLY_ADDED_RECORDS: "Recently Added Records",
             TIMESERIES: "Timeseries",
@@ -177,7 +177,7 @@ export const translations = {
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
             LAST_UPDATED_AT: "Last Updated At",
-            API_KEYPAIRS: "API Keypairs",
+            API_KEYPAIRS: "API Keys",
             NO_RECENT_RECORDS: "No recent records found",
             ORIGINAL_ID: "Original ID",
             PROPERTIES_EXAMPLE: `Properties.\nExample:\n  { "key1": "value1" },\n OR \n { "key2": { "subKey2": "subValue2" } } \n(single JSON object only)`,
@@ -227,7 +227,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-
+            STORAGE_DESTINATION: "Storage Destination",
         }
     },
     es: {
@@ -468,7 +468,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            
+            STORAGE_DESTINATION: "Destino de almacenamiento"
         }
     }
 }

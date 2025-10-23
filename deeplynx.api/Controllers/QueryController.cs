@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -15,7 +14,7 @@ namespace deeplynx.api.Controllers
     /// </remarks>
 
     [ApiController]
-    [Route("api/records")]
+    [Route("records")]
     [Authorize]
     public class QueryController : ControllerBase
     {

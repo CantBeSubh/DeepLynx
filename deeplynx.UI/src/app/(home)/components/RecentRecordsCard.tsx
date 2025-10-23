@@ -10,17 +10,7 @@ import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback, useMemo } from "react";
 import CatalogViewSkeleton from "./skeletons/catalogviewskeleton";
-
-export type RecentRecord = {
-  id: number;
-  name: string;
-  className: string;
-  createdAt: string;
-  lastUpdatedAt: string;
-  dataSourceName: string;
-  projectName: string;
-  projectId: number;
-};
+import { RecentRecord } from "../types/types";
 
 interface Props {
   selectedProjects: string[];

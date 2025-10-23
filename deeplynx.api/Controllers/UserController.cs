@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
@@ -8,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/user")]
+    [Route("user")]
     [Authorize]
     public class UserController : ControllerBase
     {

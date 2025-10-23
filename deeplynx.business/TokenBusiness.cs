@@ -6,6 +6,8 @@ using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 namespace deeplynx.business;
@@ -105,7 +107,18 @@ public class TokenBusiness : ITokenBusiness
             apiSecret = hashedKey
         };
     }
+    public async Task<bool> DeleteApiKey(long userId, string key)
+    {
+        var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k=>k.Key == key && k.UserId == userId);
 
+        if (keyToRemove == null)
+            throw new KeyNotFoundException($"Key {key} not found.");
+
+        _context.ApiKeys.Remove(keyToRemove);
+        await _context.SaveChangesAsync();
+        
+        return true;
+    }
     public string HashApiKey(string apiKey)
     {
         return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
@@ -114,5 +127,16 @@ public class TokenBusiness : ITokenBusiness
     public bool VerifyApiKey(string providedKey, string storedHash)
     {
         return BCrypt.Net.BCrypt.Verify(providedKey, storedHash);
+    }
+
+    async Task<List<string>> ITokenBusiness.GetAllUserKeys(long userId)
+    {
+        // Query for existing records (excluding archived)
+        var userApiKeys = await _context.ApiKeys
+            .Where(r => r.UserId == userId)
+            .ToListAsync();
+        // Send just the key, not the secret
+        var keys = userApiKeys.Select(c => c.Key).ToList();
+        return keys;
     }
 }

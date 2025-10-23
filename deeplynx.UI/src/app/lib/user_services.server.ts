@@ -1,5 +1,6 @@
 // src/app/lib/user_services.server.ts
 import "server-only";
+import { UserResponseDto } from "../(home)/types/responseDTOs";
 
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
@@ -14,19 +15,9 @@ async function asJson<T>(res: Response): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** ---- Types (adjust to your real shapes) ---- */
-export type UserDTO = {
-  id: string;
-  name?: string;
-  email?: string;
-  // ...add fields you use
-};
-export type DataOverviewDTO = unknown;
-export type RecentRecordDTO = unknown[];
-
 /** ---- Server-safe calls (no browser cookies; safe in prerender/SSR) ---- */
 
-export async function getAllUsersServer<T = UserDTO[]>(
+export async function getAllUsersServer<T = UserResponseDto[]>(
   projectId: number
 ): Promise<T> {
   const qs = new URLSearchParams({ projectId: String(projectId) });
@@ -37,7 +28,7 @@ export async function getAllUsersServer<T = UserDTO[]>(
   return asJson<T>(res);
 }
 
-export async function getDataOverviewServer<T = DataOverviewDTO>(
+export async function getDataOverviewServer<T = unknown>(
   userId: string
 ): Promise<T> {
   const res = await fetch(`${BASE}/user/GetDataOverview/${encodeURIComponent(userId)}`, {
@@ -47,7 +38,7 @@ export async function getDataOverviewServer<T = DataOverviewDTO>(
   return asJson<T>(res);
 }
 
-export async function getRecentlyAddedRecordsServer<T = RecentRecordDTO>(
+export async function getRecentlyAddedRecordsServer<T = unknown[]>(
   projectIds: string[]
 ): Promise<T> {
   const qs = new URLSearchParams();
@@ -59,7 +50,7 @@ export async function getRecentlyAddedRecordsServer<T = RecentRecordDTO>(
   return asJson<T>(res);
 }
 
-export async function updateUserServer<T = UserDTO>(
+export async function updateUserServer<T = UserResponseDto>(
   userId: number,
   name?: string
 ): Promise<T> {

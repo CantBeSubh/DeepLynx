@@ -2,27 +2,19 @@
 "use client";
 
 import api from "./api";
-
-export type DataSourceDTO = {
-  id: number;
-  name: string;
-  description?: string | null;
-  is_archived?: boolean;
-  lastUpdatedAt?: string | null;
-  type?: string | null; 
-};
+import { DataSourceResponseDto } from "../(home)/types/responseDTOs";
 
 /**
  * GET /projects/{projectId}/datasources/GetAllDataSources
  * Returns all non-archived data sources for a project.
  */
-export async function getAllDataSources(projectId: number): Promise<DataSourceDTO[]> {
+export async function getAllDataSources(projectId: number): Promise<DataSourceResponseDto[]> {
   try {
     const res = await api.get(
       `/projects/${projectId}/datasources/GetAllDataSources`,
       { headers: { "Content-Type": "application/json" } }
     );
-    return res.data as DataSourceDTO[];
+    return res.data as DataSourceResponseDto[];
   } catch (error) {
     console.error("Error fetching data sources:", error);
     throw error;

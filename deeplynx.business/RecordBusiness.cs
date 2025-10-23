@@ -37,9 +37,10 @@ public class RecordBusiness : IRecordBusiness
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
     /// <param name="dataSourceId">(Optional) The ID of the datasource by which to filter records</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <param name="fileType">File extension to filter by (e.g., pdf, png, jpg)</param>
     /// <returns>A list of records based on the applied filters.</returns>
     public async Task<List<RecordResponseDto>> GetAllRecords(
-        long projectId, long? dataSourceId, bool hideArchived)
+        long projectId, long? dataSourceId, bool hideArchived, string? fileType = null)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
         var recordQuery = _context.Records
@@ -54,7 +55,13 @@ public class RecordBusiness : IRecordBusiness
         {
             recordQuery = recordQuery.Where(r => r.DataSourceId == dataSourceId);
         }
-        
+
+        if (!string.IsNullOrWhiteSpace(fileType))
+        {
+            var formattedFileType = fileType.TrimStart('.').ToLower();
+            recordQuery = recordQuery.Where(r => r.FileType == formattedFileType);
+        }   
+
         var records = await recordQuery
             .Include(r => r.Tags)
             .ToListAsync();
@@ -189,10 +196,10 @@ public class RecordBusiness : IRecordBusiness
             ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
 
         return new RecordResponseDto
@@ -306,10 +313,10 @@ public class RecordBusiness : IRecordBusiness
                       Operation = "create",
                       EntityType = "record",
                       EntityId = record.Id,
+                      EntityName = record.Name,
                       ProjectId = record.ProjectId,
                       Properties = "{}",
                       DataSourceId = record.DataSourceId,
-                      LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
                   });
        }
        await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -365,10 +372,10 @@ public class RecordBusiness : IRecordBusiness
             ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             Operation = "update",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
         
         return new RecordResponseDto
@@ -466,9 +473,9 @@ public class RecordBusiness : IRecordBusiness
             Operation = "archive",
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -527,9 +534,9 @@ public class RecordBusiness : IRecordBusiness
             Operation = "unarchive",
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
