@@ -3,6 +3,7 @@ import { useLanguage } from "@/app/contexts/Language";
 import { getAllUsers } from "@/app/lib/user_services.client";
 import { addMember } from "@/app/lib/projects_services.client";
 import { getAllRoles } from "@/app/lib/role_services.client";
+import { RoleResponseDto, UserResponseDto } from '@/app/(home)/types/types';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -11,23 +12,10 @@ interface AddMemberModalProps {
   onMemberAdded: () => void;
 }
 
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  roleId: number;
-  projectId: number;
-}
-
-interface Role {
-  id: number;
-  name: string;
-}
-
 const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemberModalProps) => {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<User[]>([]);
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [users, setUsers] = useState<UserResponseDto[]>([]);
+  const [roles, setRoles] = useState<RoleResponseDto[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
   const [selectedRole, setSelectedRole] = useState<number | null>(null);
 
@@ -35,7 +23,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
     if (isOpen) {
       // Fetch users
       getAllUsers()
-        .then((response: User[]) => {
+        .then((response: UserResponseDto[]) => {
           setUsers(response);
         })
         .catch(error => {
@@ -44,7 +32,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
 
       // Fetch roles for the specific project
       getAllRoles(projectId)
-        .then((response: Role[]) => {
+        .then((response: RoleResponseDto[]) => {
           setRoles(response);
         })
         .catch(error => {
@@ -62,18 +50,6 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
     const roleId = parseInt(event.target.value, 10);
     setSelectedRole(isNaN(roleId) ? null : roleId);
   };
-
-  // const handleSave = async () => {
-  //   if (selectedUser) {
-  //     try {
-  //       await addMember(projectId, selectedUser, selectedRole || undefined);
-  //       onMemberAdded();
-  //       onClose();
-  //     } catch (error) {
-  //       console.error('Error adding member:', error);
-  //     }
-  //   }
-  // };
 
     const handleSave = async () => {
     if (selectedUser) {
@@ -113,7 +89,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
                   </option>
                 ))}
               </select>
-              {/* <select
+              <select
                 value={selectedRole || ''}
                 onChange={handleRoleChange}
                 className="w-full select select-primary text-neutral"
@@ -126,7 +102,7 @@ const AddProjectMember = ({ isOpen, onClose, projectId, onMemberAdded }: AddMemb
                     {role.name}
                   </option>
                 ))}
-              </select> */}
+              </select>
             </form>
             <div className="modal-action">
               <button className="btn" onClick={onClose}>

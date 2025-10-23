@@ -55,7 +55,7 @@ export async function updateRecord(
 export const attachTagToRecord = async (projectId: number, recordId: number, tagId: number) => {
     try {
         const res = await api.post(
-            `/projects/${projectId}/records/AttachTag/${recordId}`, 
+            `/projects/${projectId}/records/AttachTag/${recordId}`,
             null,
             { params: { tagId: tagId } }
         );
@@ -69,7 +69,7 @@ export const attachTagToRecord = async (projectId: number, recordId: number, tag
 export const unAttachTagFromRecord = async (projectId: number, recordId: number, tagId: number) => {
     try {
         const res = await api.post(
-            `/projects/${projectId}/records/UnattachTag/${recordId}`, 
+            `/projects/${projectId}/records/UnattachTag/${recordId}`,
             null,
             { params: { tagId: tagId } }
         );
