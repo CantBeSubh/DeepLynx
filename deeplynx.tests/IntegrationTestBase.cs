@@ -29,22 +29,13 @@ public class TestSuiteFixture : IAsyncLifetime
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
-        // Apply env variables first
-        var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
-        var envFilePath = Path.Combine(projectRoot, ".env");
-        Env.Load(envFilePath);
-        
         // Start containers
         await _postgresContainer.StartAsync();
         await _redisContainer.StartAsync();
         
-        // CRITICAL: Set Redis connection string as environment variable
-        // This must happen BEFORE any CacheBusiness instance is created
-        // The Redis test container generates a connection string dynamically
+        // Set up configuration for redis cache tests
         RedisConnectionString = _redisContainer.GetConnectionString();
         Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", RedisConnectionString);
-        
-        Console.WriteLine($"Redis Connection String set: {RedisConnectionString}");
         
         PostgresConnectionString = _postgresContainer.GetConnectionString();
 

@@ -18,6 +18,11 @@ namespace deeplynx.business
         }
         
         /// <summary>
+        /// Static property that will return the cache type in use (overridden in the two cache types).
+        /// </summary>
+        public string CacheType => Cache.CacheType;
+        
+        /// <summary>
         /// Static property to provide access to the singleton instance.
         /// </summary>
         public static CacheBusiness Instance => _instance;
@@ -37,12 +42,6 @@ namespace deeplynx.business
         /// </summary>
         public void ResetCacheInstance()
         {
-            // Dispose of old cache if it's a Redis connection
-            if (Cache is RedisCacheBusiness redisCache)
-            {
-                // The ConnectionMultiplexer should be disposed properly
-                // This may require adding a Dispose method to RedisCacheBusiness
-            }
             Cache = CacheFactory.CreateCache();
         }
         

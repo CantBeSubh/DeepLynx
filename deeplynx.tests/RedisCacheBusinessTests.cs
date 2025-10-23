@@ -1,7 +1,6 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
-using FluentAssertions;
 using Moq;
 
 namespace deeplynx.tests;
@@ -11,16 +10,22 @@ public class RedisCacheBusinessTests : IntegrationTestBase
 {
     public RedisCacheBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
     
-    // Override InitializeAsync to set up Redis before each test
     public override async Task InitializeAsync()
     {
-        // Set the cache provider type BEFORE resetting the cache instance
+        // Set the cache provider
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", "redis");
         
         // Reset the cache instance to pick up the new environment variable
         _cacheBusiness.ResetCacheInstance();
         
         await base.InitializeAsync();
+    }
+
+    [Fact]
+    public async Task ConfirmTestingCorrectCacheType()
+    {
+        var type = _cacheBusiness.CacheType;
+        Assert.True(type == "redis");
     }
     
     [Fact]
@@ -42,12 +47,19 @@ public class RedisCacheBusinessTests : IntegrationTestBase
         // Act
         await _cacheBusiness.SetAsync(key, value, (TimeSpan?)null);
         var cachedValue = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
-        var type = await _cacheBusiness.GetAsync<string>("type");
         
-        Console.WriteLine(type);
         // Assert
-        value.Should().BeEquivalentTo(cachedValue);
-        type.Should().Be("redis"); // Verify we're actually using Redis
+        Assert.Equal(value.Count, cachedValue.Count);
+        for (int i = 0; i < value.Count; i++)
+        {
+            Assert.Equal(value[i].Id, cachedValue[i].Id);
+            Assert.Equal(value[i].Name, cachedValue[i].Name);
+            Assert.Equal(value[i].Description, cachedValue[i].Description);
+            Assert.Equal(value[i].Abbreviation, cachedValue[i].Abbreviation);
+            Assert.Equal(value[i].LastUpdatedAt, cachedValue[i].LastUpdatedAt);
+            Assert.Equal(value[i].LastUpdatedBy, cachedValue[i].LastUpdatedBy);
+            Assert.Equal(value[i].IsArchived, cachedValue[i].IsArchived);
+        }
     }
 
     [Fact]

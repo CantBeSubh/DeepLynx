@@ -9,11 +9,9 @@ namespace deeplynx.tests
         public MemoryCacheBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
         }
-
-        // Override InitializeAsync to set up Memory cache before each test
+        
         public override async Task InitializeAsync()
         {
-            // Set the cache provider type to memory (or null/empty for default)
             Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", "memory");
             
             // Reset the cache instance to pick up the new environment variable
@@ -21,6 +19,14 @@ namespace deeplynx.tests
             
             await base.InitializeAsync();
         }
+        
+        [Fact]
+        public async Task ConfirmTestingCorrectCacheType()
+        {
+            var type = _cacheBusiness.CacheType;
+            Assert.True(type == "memory");
+        }
+
 
         [Fact]
         public async Task SetAndGetCache_Success()
@@ -33,11 +39,9 @@ namespace deeplynx.tests
                 new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
             };
 
-            // Act - use _cacheBusiness instead of _memoryCacheBusiness
+            // Act
             await _cacheBusiness.SetAsync(key, value, (TimeSpan?)null);
             var cachedValue = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(key);
-            var type = await _cacheBusiness.GetAsync<string>("type");
-            Console.WriteLine(type);
 
             // Assert
             Assert.Equivalent(value, cachedValue);
