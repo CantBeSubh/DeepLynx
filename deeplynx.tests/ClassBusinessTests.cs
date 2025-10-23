@@ -30,6 +30,7 @@ namespace deeplynx.tests
         public long pid;
         public long did;
         public long os1;
+        public long uid;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -972,6 +973,124 @@ namespace deeplynx.tests
         }
 
         #endregion
+        #region LastUpdatedBy Tests
+        [Fact]
+        public async Task CreateClass_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Test Class with User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description with User ID",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(savedClass);
+            Assert.Equal(uid, savedClass.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateClass_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Test Class Navigation {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Navigation Property",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var classWithUser = await Context.Classes
+                .Include(c => c.LastUpdatedByUser)
+                .FirstAsync(c => c.Id == testClass.Id);
+            
+            // Assert
+            Assert.NotNull(classWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", classWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test.user@test.com", classWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, classWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateClass_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Test Class Null User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test with null LastUpdatedBy",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedClass = await Context.Classes.FindAsync(testClass.Id);
+            Assert.NotNull(savedClass);
+            Assert.Null(savedClass.LastUpdatedBy);
+            
+            var classWithUser = await Context.Classes
+                .Include(c => c.LastUpdatedByUser)
+                .FirstAsync(c => c.Id == testClass.Id);
+            
+            Assert.Null(classWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateClass_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testClass = new Class
+            {
+                Name = $"Original Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Classes.Add(testClass);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testClass.LastUpdatedBy = uid;
+            testClass.Description = "Updated Description";
+            testClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Classes.Update(testClass);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedClass = await Context.Classes
+                .Include(c => c.LastUpdatedByUser)
+                .FirstAsync(c => c.Id == testClass.Id);
+            
+            Assert.Equal(uid, updatedClass.LastUpdatedBy);
+            Assert.NotNull(updatedClass.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedClass.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Description", updatedClass.Description);
+        }
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
@@ -989,6 +1108,16 @@ namespace deeplynx.tests
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             did = dataSource.Id;
+            var testUser = new User
+            {
+                Name = "Test User",
+                Email = "test.user@test.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(testUser);
+            await Context.SaveChangesAsync();
+            uid = testUser.Id;
         }
     }
 }
