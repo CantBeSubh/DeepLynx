@@ -151,13 +151,6 @@ export type ProjectStatResponseDto = {
   datasources: number;
 }
 
-// export type RoleResponseDTO =
-// {
-// roleId: number;
-// name: string;
-// description?: string;
-// }
-
 //which one
 export type RoleResponseDto =
 {
