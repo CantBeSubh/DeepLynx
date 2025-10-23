@@ -22,6 +22,5 @@ public class ClassResponseDto
     
     [Column("is_archived")]
     public bool IsArchived { get; set; }
-    public string? LastUpdatedByEmail { get; set; }
     
 }
