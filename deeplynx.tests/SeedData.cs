@@ -99,6 +99,11 @@ public static class SeedData
     // Classes
     public static async Task SeedClasses(DeeplynxContext context)
     {
+        var js_user = await context.Users.FirstAsync(u => u.Email == "john.smith@company.com");
+        var md_user = await context.Users.FirstAsync(u => u.Email == "mike.davis@company.com");
+        var sa_user = await context.Users.FirstAsync(u => u.Email == "system.architect@legacy.com");
+        var sj_user = await context.Users.FirstAsync(u => u.Email == "sarah.johnson@company.com");
+       
         var classes = new List<Class>
         {
             // Customer Analytics Platform Classes
@@ -109,7 +114,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440101",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), // Most recent was ModifiedAt
-                LastUpdatedBy = 11, // Most recent modifier
+                LastUpdatedBy = js_user.Id, // Most recent modifier
                 IsArchived = false
             },
             new Class
@@ -118,9 +123,8 @@ public static class SeedData
                 Description = "Customer purchase transactions and order history",
                 Uuid = "550e8400-e29b-41d4-a716-446655440102",
                 ProjectId = 1,
-               
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 1,
+                LastUpdatedBy =sj_user.Id,
                 IsArchived = false
             },
             new Class
@@ -130,7 +134,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440103",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 2,
+                LastUpdatedBy = sa_user.Id,
                 IsArchived = false
             },
             new Class
@@ -140,7 +144,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440104",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 2,
+                LastUpdatedBy = sa_user.Id,
                 IsArchived = false
             },
 
@@ -152,7 +156,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440201",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 3,
+                LastUpdatedBy = md_user.Id,
                 IsArchived = false
             },
             new Class
@@ -162,7 +166,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440202",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 4,
+                LastUpdatedBy =md_user.Id,
                 IsArchived = false
                
             },
@@ -173,7 +177,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440203",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 5,
+                LastUpdatedBy = sj_user.Id,
                 IsArchived = false
                
             },
@@ -184,7 +188,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440204",
                 ProjectId = 2,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 5,
+                LastUpdatedBy = md_user.Id,
                 IsArchived = false
             },
 
@@ -196,7 +200,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440301",
                 ProjectId = 3,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy =6,
+                LastUpdatedBy =sa_user.Id,
                 IsArchived = false
             },
             new Class
@@ -206,7 +210,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440302",
                 ProjectId = 3,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
-                LastUpdatedBy = 7,
+                LastUpdatedBy = sa_user.Id,
                 IsArchived = false
               
             }

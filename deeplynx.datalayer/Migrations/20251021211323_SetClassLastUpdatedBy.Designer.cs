@@ -12,8 +12,8 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20251021211323_ConvertClassLastUpdatedByToBigintAndAddIndex")]
-    partial class ConvertClassLastUpdatedByToBigintAndAddIndex
+    [Migration("20251021211323_SetClassLastUpdatedBy")]
+    partial class SetClassLastUpdatedBy
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
