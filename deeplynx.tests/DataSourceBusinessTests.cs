@@ -25,6 +25,7 @@ namespace deeplynx.tests
         public long did;
         public long did2;
         public long did3;
+        private long uid; 
 
         public DataSourceBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
@@ -119,7 +120,7 @@ namespace deeplynx.tests
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = null,
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy =  uid,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = false
             };
@@ -805,7 +806,7 @@ namespace deeplynx.tests
                 BaseUri = "http://test.com",
                 Config = config,
                 ProjectId = 1,
-                LastUpdatedBy = "test@example.com",
+                LastUpdatedBy =  uid,
                 LastUpdatedAt = now,
                 IsArchived = false
             };
@@ -819,7 +820,7 @@ namespace deeplynx.tests
             Assert.Equal("http://test.com", dto.BaseUri);
             Assert.Equal(config, dto.Config);
             Assert.Equal(1, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.Equal( uid, dto.LastUpdatedBy);
             Assert.False(dto.IsArchived);
         }
         #endregion
@@ -884,6 +885,16 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
+            var testUser = new User
+            {
+                Name = "John Smith",
+                Email = "john.smith@company.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(testUser);
+            await Context.SaveChangesAsync();
+            uid = testUser.Id;
             var project = new Project { Name = "Project 1" };
             var project2 = new Project { Name = "Project2" };
             Context.Projects.Add(project);
@@ -903,7 +914,7 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = testUser.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = false
             };
@@ -917,7 +928,7 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = testUser.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = false
             };
@@ -931,7 +942,7 @@ namespace deeplynx.tests
                 Config =
                     @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = testUser.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = true
             };

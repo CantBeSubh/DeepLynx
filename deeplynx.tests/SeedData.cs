@@ -8,15 +8,21 @@ public static class SeedData
 {
     public static async Task SeedDatabase(DeeplynxContext context)
     {
+       
+        var js_user = await context.Users.FirstAsync(u => u.Email == "john.smith@company.com");
+        var md_user = await context.Users.FirstAsync(u => u.Email == "mike.davis@company.com");
+        var sa_user = await context.Users.FirstAsync(u => u.Email == "system.architect@legacy.com");
+        var sj_user = await context.Users.FirstAsync(u => u.Email == "sarah.johnson@company.com");
+
         // Seed all entities in proper order to maintain referential integrity
         await SeedUsers(context);
         await SeedProjects(context);
-        await SeedClasses(context);
-        await SeedDataSources(context);
+        await SeedClasses(context, js_user, md_user, sa_user);
+        await SeedDataSources(context, js_user, md_user, sa_user);
         await SeedTags(context);
         await SeedRelationships(context);
         await SeedRecords(context);
-        await SeedEdges(context);
+        await SeedEdges(context,js_user, md_user, sa_user);
     }
 
     // Users
@@ -97,12 +103,8 @@ public static class SeedData
     }
 
     // Classes
-    public static async Task SeedClasses(DeeplynxContext context)
+    public static async Task SeedClasses(DeeplynxContext context, User sj_user, User md_user, User sa_user)
     {
-        var js_user = await context.Users.FirstAsync(u => u.Email == "john.smith@company.com");
-        var md_user = await context.Users.FirstAsync(u => u.Email == "mike.davis@company.com");
-        var sa_user = await context.Users.FirstAsync(u => u.Email == "system.architect@legacy.com");
-        var sj_user = await context.Users.FirstAsync(u => u.Email == "sarah.johnson@company.com");
        
         var classes = new List<Class>
         {
@@ -114,7 +116,7 @@ public static class SeedData
                 Uuid = "550e8400-e29b-41d4-a716-446655440101",
                 ProjectId = 1,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddDays(-15), // Most recent was ModifiedAt
-                LastUpdatedBy = js_user.Id, // Most recent modifier
+                LastUpdatedBy = sa_user.Id, 
                 IsArchived = false
             },
             new Class
@@ -221,7 +223,7 @@ public static class SeedData
     }
 
     // Data Sources
-    public static async Task SeedDataSources(DeeplynxContext context)
+    public static async Task SeedDataSources(DeeplynxContext context,  User js_user, User md_user, User sa_user)
     {
         var dataSources = new List<DataSource>
         {
@@ -235,7 +237,7 @@ public static class SeedData
                 BaseUri = "Server=crm-prod.company.com;Database=CustomerData;",
                 Config = @"{""driver"":""sqlserver"",""host"":""crm-prod.company.com"",""port"":1433,""database"":""CustomerData"",""ssl_enabled"":true}",
                 ProjectId = 1,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = false
             },
@@ -248,7 +250,7 @@ public static class SeedData
                 BaseUri = "https://api.ecommerce.company.com/v2/",
                 Config = @"{""api_version"":""v2"",""authentication"":""Bearer Token"",""rate_limit"":1000,""timeout"":30}",
                 ProjectId = 1,
-                LastUpdatedBy= "sarah.johnson@company.com",
+                LastUpdatedBy= md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                 IsArchived = false
             },
@@ -263,7 +265,7 @@ public static class SeedData
                 BaseUri = "Server=erp-oracle.company.com;Database=SUPPLY_CHAIN;",
                 Config = @"{""driver"":""oracle"",""host"":""erp-oracle.company.com"",""port"":1521,""service_name"":""SUPPLY_CHAIN""}",
                 ProjectId = 2,
-                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
                 IsArchived = false
             },
@@ -276,7 +278,7 @@ public static class SeedData
                 BaseUri = "mqtt://iot-broker.warehouse.company.com:1883",
                 Config = @"{""protocol"":""MQTT"",""broker_host"":""iot-broker.warehouse.company.com"",""port"":1883,""qos"":2}",
                 ProjectId = 2,
-                LastUpdatedBy = "iot.specialist@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
                 IsArchived = false
             },
@@ -291,7 +293,7 @@ public static class SeedData
                 BaseUri = "Server=mainframe.legacy.com;Database=LEGACY_PROD;",
                 Config = @"{""driver"":""db2"",""host"":""mainframe.legacy.com"",""port"":50000,""database"":""LEGACY_PROD""}",
                 ProjectId = 3,
-                LastUpdatedBy= "system.architect@legacy.com",
+                LastUpdatedBy= sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
                 IsArchived = false
             },
@@ -304,7 +306,7 @@ public static class SeedData
                 BaseUri = "file://legacy-archive.company.com/data/",
                 Config = @"{""type"":""network_share"",""base_path"":""//legacy-archive.company.com/data/"",""compression"":""gzip""}",
                 ProjectId = 3,
-                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
                 IsArchived = false
             }
@@ -577,7 +579,7 @@ public static class SeedData
     }
 
     // Edges
-    public static async Task SeedEdges(DeeplynxContext context)
+    public static async Task SeedEdges(DeeplynxContext context, User js_user, User md_user, User sa_user)
     {
         var edges = new List<Edge>
         {
@@ -589,7 +591,7 @@ public static class SeedData
                 RelationshipId = 1,
                 DataSourceId = 1,
                 ProjectId = 1,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
                  IsArchived = false
             },
@@ -600,7 +602,7 @@ public static class SeedData
                 RelationshipId = 2,
                 DataSourceId = 2,
                 ProjectId = 1,
-                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                  IsArchived = false
             },
@@ -613,7 +615,7 @@ public static class SeedData
                 RelationshipId = 4,
                 DataSourceId = 3,
                 ProjectId = 2,
-                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
                  IsArchived = false
             },
@@ -624,7 +626,7 @@ public static class SeedData
                 RelationshipId = 5,
                 DataSourceId = 4,
                 ProjectId = 2,
-                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
                  IsArchived = false
             },
@@ -635,7 +637,7 @@ public static class SeedData
                 RelationshipId = 6,
                 DataSourceId = 4,
                 ProjectId = 2,
-                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
                  IsArchived = false
             },
@@ -648,7 +650,7 @@ public static class SeedData
                 RelationshipId = 7,
                 DataSourceId = 5,
                 ProjectId = 3,
-                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
                  IsArchived = true
             }

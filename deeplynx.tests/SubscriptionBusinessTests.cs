@@ -432,7 +432,9 @@ namespace deeplynx.tests
         }
         protected override async Task SeedTestDataAsync()
         {
+            
             await base.SeedTestDataAsync();
+            
             var project = new Project { Name = "Project 1" };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
@@ -451,7 +453,7 @@ namespace deeplynx.tests
             {
                 Name = "DataSource2",
                 ProjectId = pid,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy = uid ,
                 LastUpdatedAt = now
             };
             Context.DataSources.Add(dataSource);

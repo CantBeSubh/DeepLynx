@@ -35,7 +35,7 @@ public partial class Edge
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Key]
     [Column("id")]
@@ -66,4 +66,7 @@ public partial class Edge
     [ForeignKey("RelationshipId")]
     [InverseProperty("Edges")]
     public virtual Relationship? Relationship { get; set; }
+    
+    [InverseProperty("UpdatedEdges")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

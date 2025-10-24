@@ -583,14 +583,14 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
-                    LastUpdatedBy = "user123",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
                 new DataSource
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
-                    LastUpdatedBy = "user123",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }
             };

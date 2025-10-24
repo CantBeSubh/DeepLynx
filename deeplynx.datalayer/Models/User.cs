@@ -57,5 +57,10 @@ public partial class User
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
     [InverseProperty("LastUpdatedByUser")]
     public virtual ICollection<Class> UpdatedClasses { get; set; } = new List<Class>();
-
+     
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<DataSource> UpdatedDataSources { get; set; } = new List<DataSource>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Edge> UpdatedEdges { get; set; } = new List<Edge>();
 }

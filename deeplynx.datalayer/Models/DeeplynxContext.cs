@@ -107,7 +107,12 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
-
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_data_sources_last_updated_by");
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedDataSources)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
             entity.HasOne(d => d.Project).WithMany(p => p.DataSources).HasConstraintName("data_sources_project_id_fkey");
         });
 
@@ -123,6 +128,13 @@ public partial class DeeplynxContext : DbContext
                 "origin_id <> destination_id"));
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_edges_last_updated_by");
+
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedEdges)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
 
             entity.HasOne(d => d.DataSource).WithMany(p => p.Edges).HasConstraintName("edges_data_source_id_fkey");
 
