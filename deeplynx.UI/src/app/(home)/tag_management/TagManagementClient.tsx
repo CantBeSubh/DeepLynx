@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from "react";
 import ProjectDropdown from "../components/ProjectDropdown";
 import { useLanguage } from "@/app/contexts/Language";
-import AdvancedSearchBar from "../components/AdvancedSearchBar";
 import { getAllTags } from "@/app/lib/tag_services.client";
 import { TagResponseDto } from "../types/responseDTOs";
+import SimpleFilterInput from "../components/SimpleFilterComponent";
 
 interface Props {
   initialProjects: { id: string; name: string }[];
@@ -23,15 +23,18 @@ const TagManagementClient = ({
   );
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);
+  const [filteredTags, setFilteredTags] = useState<TagResponseDto[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
-
+  // Fetches tags when ever project changes - by default it fetches all tags from all projects
   useEffect(() => {
     const fetchTags = async () => {
       if (selectedProjects.length === 0) {
         setTags([]);
+        setFilteredTags([]);
         return;
       }
 
@@ -45,6 +48,7 @@ const TagManagementClient = ({
         const tagResults = await Promise.all(tagPromise);
         const allTags = tagResults.flat();
         setTags(allTags);
+        setFilteredTags(allTags);
       } catch (error) {
         setError("Failed to fetch tags");
         console.error("Error fetching tags:", error);
@@ -55,6 +59,20 @@ const TagManagementClient = ({
 
     fetchTags();
   }, [selectedProjects]);
+
+  // Does a client side filter for tags
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredTags(tags);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = tags.filter((tag) =>
+      tag.name?.toLowerCase().includes(query)
+    );
+    setFilteredTags(filtered);
+  }, [searchQuery, tags]);
 
   return (
     <div>
@@ -92,24 +110,31 @@ const TagManagementClient = ({
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           {selectedMenuItem === "Search Tags" && (
             <div>
-              <h3 className="font-bold">Search Tags</h3>{" "}
-              <AdvancedSearchBar placeholder="Search Tags" />
+              <h3 className="font-bold mb-4">Search Tags</h3>
+              <SimpleFilterInput
+                placeholder="Filter tags..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
               <div className="mt-4">
                 {loading && <p>Loading tags ...</p>}
                 {error && (
                   <p className="text-error flex justify-center">{error}</p>
                 )}
-                {!loading && tags.length === 0 && (
+                {!loading && filteredTags.length === 0 && tags.length === 0 && (
                   <p className="text-base-300">No Tags found</p>
                 )}
-                {!loading && tags.length > 0 && (
+                {!loading && filteredTags.length === 0 && tags.length > 0 && (
+                  <p className="text-base-300">No tags match your search</p>
+                )}
+                {!loading && filteredTags.length > 0 && (
                   <div className="space-y-2">
                     <p className="text-sm font-semibold">
-                      Tags ({tags.length}):
+                      Tags ({filteredTags.length}):
                     </p>
                     <ul className="space-y-1">
-                      {tags.map((tag, index) => (
-                        <li key={index} className="px-3 py-1">
+                      {filteredTags.map((tag, index) => (
+                        <li key={tag.id || index} className="px-3 py-1">
                           <input
                             type="checkbox"
                             className="checkbox checkbox-primary"
