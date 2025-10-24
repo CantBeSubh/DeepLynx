@@ -1,8 +1,10 @@
+using System.Text.Json;
 using deeplynx.interfaces;
 using deeplynx.datalayer.Models;
 using deeplynx.models;
 using deeplynx.helpers.json;
 using deeplynx.helpers;
+using Microsoft.AspNetCore.Http;
 
 namespace deeplynx.business;
 
@@ -44,23 +46,60 @@ public class MetadataBusiness : IMetadataBusiness
         _recordBusiness = recordBusiness;
         _edgeBusiness = edgeBusiness;
     }
-
+    
     /// <summary>
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
-    /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <param name="file">The .json file containing the metadata contents.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
-        if (metadataRequestDto == null)
-            throw new ArgumentNullException(nameof(metadataRequestDto));
+        if (file == null)
+            throw new ArgumentNullException(nameof(file), "File cannot be null");
+    
+        if (file.Length == 0)
+            throw new ArgumentException("File cannot be empty", nameof(file));
+        
+        // Only support for .json as of now
+        var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+        if (extension != ".json")
+            throw new ArgumentException("File must be a .json file", nameof(file));
+        
+        // Convert file to our DTO
+        CreateMetadataRequestDto metadataRequestDto;
+        try
+        {
+            using (var stream = file.OpenReadStream())
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+            
+                // One-time deserialization so everything is ready to use in Parse method
+                metadataRequestDto = await JsonSerializer.DeserializeAsync<CreateMetadataRequestDto>(stream, options);
+            
+                if (metadataRequestDto == null)
+                {
+                    throw new JsonException("Failed to deserialize metadata from file");
+                }
+            }
+        }
+        catch (JsonException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
+        }
         
         return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
     }
@@ -79,22 +118,12 @@ public class MetadataBusiness : IMetadataBusiness
     {
         var metadataResponseDto = new MetadataResponseDto();
         
-        // deserialize metadata subdomains
-        var classes = metadataRequestDto.Classes != null
-            ? JsonSerialization.Deserialize<CreateClassRequestDto>(metadataRequestDto.Classes)
-            : new List<CreateClassRequestDto>();
-        var relationships = metadataRequestDto.Relationships != null
-            ? JsonSerialization.Deserialize<CreateRelationshipRequestDto>(metadataRequestDto.Relationships)
-            : new List<CreateRelationshipRequestDto>();
-        var tags = metadataRequestDto.Tags != null
-            ? JsonSerialization.Deserialize<CreateTagRequestDto>(metadataRequestDto.Tags)
-            : new List<CreateTagRequestDto>();
-        var records = metadataRequestDto.Records != null
-            ? JsonSerialization.Deserialize<CreateRecordRequestDto>(metadataRequestDto.Records)
-            : new List<CreateRecordRequestDto>();
-        var edges = metadataRequestDto.Edges != null
-            ? JsonSerialization.Deserialize<CreateEdgeRequestDto>(metadataRequestDto.Edges)
-            : new List<CreateEdgeRequestDto>();
+        // Create the respective metadata lists
+        var classes = metadataRequestDto.Classes ?? new List<CreateClassRequestDto>();
+        var relationships = metadataRequestDto.Relationships ?? new List<CreateRelationshipRequestDto>();
+        var tags = metadataRequestDto.Tags ?? new List<CreateTagRequestDto>();
+        var records = metadataRequestDto.Records ?? new List<CreateRecordRequestDto>();
+        var edges = metadataRequestDto.Edges ?? new List<CreateEdgeRequestDto>();
         
         // Classes
         Dictionary<string, long> classMap = new();
