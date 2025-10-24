@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
+using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 
 namespace deeplynx.api.Controllers
@@ -31,13 +32,13 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">The ID of the origanization to which the events belong</param>
         /// <returns></returns>
         [HttpGet("GetAllEvents", Name = "api_get_all_events")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEvents(
-            [FromQuery] long? projectId = null,
-            [FromQuery] long? organizationId = null)
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEvents(
+            [FromQuery] EventFilterRequestDTO? filterDto
+        )
         {
             try
             {
-                var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
+                var events = await _eventBusiness.GetAllEvents(filterDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -47,16 +48,35 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
+        
+        // [HttpGet("GetAllEvents", Name = "api_get_all_events")]
+        // public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEvents(
+        //     [FromQuery] EventFilterRequestDTO? filterDto
+        //     )
+        // {
+        //     try
+        //     {
+        //         var events = await _eventBusiness.GetAllEvents(filterDto);
+        //         return Ok(events);
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         var message = $"An unexpected error occurred while fetching events: {e}";
+        //         _logger.LogError(message);
+        //         return StatusCode(StatusCodes.Status500InternalServerError, message);
+        //     }
+        // }
 
         /// <summary>
         /// Get all events by user project membership.
         /// </summary>
         [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUser()
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUser(
+            [FromQuery] EventFilterRequestDTO? filterDto)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUser();
+                var events = await _eventBusiness.GetAllEventsByUser(filterDto);
                 return Ok(events);
             }
             catch (Exception e)
