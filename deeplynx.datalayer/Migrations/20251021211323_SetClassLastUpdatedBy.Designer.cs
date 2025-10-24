@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251021211323_SetClassLastUpdatedBy")]
+    partial class SetClassLastUpdatedBy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -399,10 +402,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long?>("EntityId")
                         .HasColumnType("bigint")
                         .HasColumnName("entity_id");
-
-                    b.Property<string>("EntityName")
-                        .HasColumnType("text")
-                        .HasColumnName("entity_name");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -1643,21 +1642,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("Relationship");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany()
-                        .HasForeignKey("DataSourceId");
-
-                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId");
-
-                    b.Navigation("DataSource");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Group", b =>
