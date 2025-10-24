@@ -1,3 +1,4 @@
+using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace deeplynx.api.Controllers
 {
-    
+
     /// <summary>
     /// Controller for managing classes.
     /// </summary>
@@ -32,6 +33,7 @@ namespace deeplynx.api.Controllers
             _queryBusiness = queryBusiness;
             _logger = logger;
         }
+
         /// <summary>
         /// Full text search for records
         /// </summary>
@@ -53,10 +55,10 @@ namespace deeplynx.api.Controllers
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
-        
+
         }
-        
-        
+
+
         /// <summary>
         /// Build a query for records
         /// </summary>
@@ -66,7 +68,8 @@ namespace deeplynx.api.Controllers
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("QueryBuilder", Name = "api_query_builder_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
-            [FromQuery] string? textSearch, [FromQuery] long[] projectIds, [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
+            [FromQuery] string? textSearch, [FromQuery] long[] projectIds,
+            [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
         {
             try
             {
@@ -81,7 +84,7 @@ namespace deeplynx.api.Controllers
             }
 
         }
-        
+
         /// <summary>
         /// Get all classes
         /// </summary>
@@ -105,7 +108,7 @@ namespace deeplynx.api.Controllers
             }
 
         }
-        
+
         /// <summary>
         /// Get all data sources
         /// </summary>
@@ -128,7 +131,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get all tags
         /// </summary>
@@ -141,7 +144,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var tags = await _queryBusiness.GetAllTags(projectIds,  hideArchived);
+                var tags = await _queryBusiness.GetAllTags(projectIds, hideArchived);
                 return Ok(tags);
             }
             catch (Exception exception)
@@ -152,54 +155,55 @@ namespace deeplynx.api.Controllers
             }
         }
 
-    /// <summary>
-    /// Saved searches
-    /// </summary>
-    /// <param name="filterArray">Array of QueryComponent dtos</param>
-    /// <param name="textSearch">Full text search phrase</param>
-    /// <param name="alias">Name for saved search</param>
-    /// <param name="favorite">Boolean for if favorite search or not</param>
-    /// <returns>True if successfully saved</returns>
-    [HttpPost("SavedSearch", Name = "api_save_search")]
-    public async Task<ActionResult<bool>> SaveSearch(
-        [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
-        [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
-    {
-        try
+        /// <summary>
+        /// Saved searches
+        /// </summary>
+        /// <param name="filterArray">Array of QueryComponent dtos</param>
+        /// <param name="textSearch">Full text search phrase</param>
+        /// <param name="alias">Name for saved search</param>
+        /// <param name="favorite">Boolean for if favorite search or not</param>
+        /// <returns>True if successfully saved</returns>
+        [HttpPost("SavedSearch", Name = "api_save_search")]
+        public async Task<ActionResult<bool>> SaveSearch(
+            [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
+            [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
         {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            var result = await _queryBusiness.SaveSearch(currentUserId, alias, textSearch, filterArray, favorite);
-            return Ok(result);
+            try
+            {
+                // get user ID from the middleware context
+                var currentUserId = UserContextStorage.UserId;
+                var result = await _queryBusiness.SaveSearch(currentUserId, alias, textSearch, filterArray, favorite);
+                return Ok(result);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while searching for records.: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
-        catch (Exception exc)
+
+        /// <summary>
+        /// Get saved searches
+        /// </summary>
+        /// <returns>A list of saved searches belonging to the user.</returns>
+        [HttpGet("GetSavedSearches", Name = "api_query_get_saved_searches")]
+        public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetSavedSearches()
         {
-            var message = $"An unexpected error occurred while searching for records.: {exc}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
+            try
+            {
+                // get user ID from the middleware context
+                var currentUserId = UserContextStorage.UserId;
+                var savedSearches = await _queryBusiness.GetSavedSearches(currentUserId);
+                return Ok(savedSearches);
+            }
+            catch (Exception exception)
+            {
+                var message = $"An error occurred while listing all saved searches: {exception}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
         }
+
     }
-    
-    /// <summary>
-    /// Get saved searches
-    /// </summary>
-    /// <returns>A list of saved searches belonging to the user.</returns>
-    [HttpGet("GetSavedSearches", Name = "api_query_get_saved_searches")]
-    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags()
-    {
-        try
-        {
-            // get user ID from the middleware context
-            var currentUserId = UserContextStorage.UserId;
-            var savedSearches = await _queryBusiness.GetSavedSearches(currentUserId);
-            return Ok(savedSearches);
-        }
-        catch (Exception exception)
-        {
-            var message = $"An error occurred while listing all saved searches: {exception}";
-            _logger.LogError(message);
-            return StatusCode(StatusCodes.Status500InternalServerError, message);
-        }
-    }
-        
 }
