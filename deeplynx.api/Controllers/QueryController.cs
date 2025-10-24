@@ -64,7 +64,7 @@ public class QueryController : ControllerBase
         /// <returns>List of historical record response DTOs</returns>
         [HttpPost("QueryBuilder", Name = "api_query_builder_records")]
         public async Task<ActionResult<IEnumerable<HistoricalRecordResponseDto>>> QueryBuilder(
-            [FromQuery] string? textSearch, [FromQuery] long[] projectIds, [FromBody] CustomQueryRequestDto[] filterArray)
+            [FromQuery] string? textSearch, [FromQuery] long[] projectIds, [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
         {
             try
             {
@@ -161,18 +161,40 @@ public class QueryController : ControllerBase
     [HttpPost("SavedSearch", Name = "api_save_search")]
     public async Task<ActionResult<bool>> SaveSearch(
         [FromQuery] string? textSearch, [FromQuery] string? alias, [FromQuery] bool favorite,
-        [FromBody] CustomQueryRequestDto[] filterArray)
+        [FromBody] CustomQueryDtos.CustomQueryRequestDto[] filterArray)
     {
         try
         {
             // get user ID from the middleware context
             var currentUserId = UserContextStorage.UserId;
-            var result = _queryBusiness.SaveSearch(currentUserId, alias, textSearch, filterArray, favorite);
+            var result = await _queryBusiness.SaveSearch(currentUserId, alias, textSearch, filterArray, favorite);
             return Ok(result);
         }
         catch (Exception exc)
         {
             var message = $"An unexpected error occurred while searching for records.: {exc}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+    
+    /// <summary>
+    /// Get saved searches
+    /// </summary>
+    /// <returns>A list of saved searches belonging to the user.</returns>
+    [HttpGet("GetSavedSearches", Name = "api_query_get_saved_searches")]
+    public async Task<ActionResult<IEnumerable<TagResponseDto>>> GetAllTags()
+    {
+        try
+        {
+            // get user ID from the middleware context
+            var currentUserId = UserContextStorage.UserId;
+            var savedSearches = await _queryBusiness.GetSavedSearches(currentUserId);
+            return Ok(savedSearches);
+        }
+        catch (Exception exception)
+        {
+            var message = $"An error occurred while listing all saved searches: {exception}";
             _logger.LogError(message);
             return StatusCode(StatusCodes.Status500InternalServerError, message);
         }
