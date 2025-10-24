@@ -166,7 +166,7 @@ export type TagResponseDto = {
   lastUpdatedBy?: string | null;
   isArchived:boolean;
   createdBy?: string | null;
-  createdAt: string; // ISO date string from backend
+  createdAt?: string; // ISO date string from backend
   archivedAt?: string | null;
 };
 

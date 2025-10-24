@@ -12,6 +12,15 @@ export const getTag = async (projectId: number, tagId: number) => {
     }
 }
 
+export const getAllTags = async (projectId: number) => {
+    try {
+        const res = await api.get(`/projects/${projectId}/tags/GetAllTags`);
+        return res.data;
+    } catch (error) {
+        console.error("Error getting a tag:", error);
+        throw error;
+    }
+}
 
 export async function createTag(projectId: number, obj: {
     name: string;
