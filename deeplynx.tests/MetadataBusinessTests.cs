@@ -372,10 +372,15 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateMetadata_Fails_IfNullDto()
+        public async Task CreateMetadata_Fails_IfNullFile()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(pid, did, null));
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, null)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File cannot be null.", exception.Message);
 
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -411,6 +416,197 @@ namespace deeplynx.tests
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfEmptyFile()
+        {
+            // Arrange
+            var emptyStream = new MemoryStream();
+            var file = new FormFile(emptyStream, 0, 0, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File cannot be empty.", exception.Message);
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfWrongFileExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.txt"); // Wrong extension
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File must be a .json file.", exception.Message);
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfXmlExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.xml");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            Assert.Contains("File must be a .json file", exception.Message);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfNoExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            Assert.Contains("File must be a .json file", exception.Message);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfInvalidJson()
+        {
+            // Arrange
+            var invalidJson = "{ this is not valid json }";
+            var bytes = Encoding.UTF8.GetBytes(invalidJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Fails_IfMalformedJson()
+        {
+            // Arrange
+            var malformedJson = "{\"classes\": [}"; // Missing closing bracket
+            var bytes = Encoding.UTF8.GetBytes(malformedJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Fails_IfJsonIsNull()
+        {
+            // Arrange
+            var nullJson = "null";
+            var bytes = Encoding.UTF8.GetBytes(nullJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadata(pid, did, file)
+            );
+    
+            Assert.Contains("Failed to deserialize metadata from file", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_WithJsonExtensionUpperCase()
+        {
+            // Arrange - Test that .JSON (uppercase) is accepted
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test Class" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.JSON");
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
+            Assert.Equal("Test Class", result.Classes.First().Name);
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Success_WithMixedCaseExtension()
+        {
+            // Arrange - Test that .Json (mixed case) is accepted
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test Class" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.Json");
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
         }
 
         [Fact]
@@ -623,6 +819,57 @@ namespace deeplynx.tests
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("relationship", actualEvent.EntityType);
+        }
+        
+        [Fact]
+        public async Task CreateMetadata_Success_WithDeeplyNestedProperties()
+        {
+            // Arrange - Test very deep nesting
+            var metadataContent = new
+            {
+                records = new[]
+                {
+                    new
+                    {
+                        name = "Complex System",
+                        description = "Deeply nested test",
+                        original_id = "test-1",
+                        properties = new
+                        {
+                            level1 = new
+                            {
+                                level2 = new
+                                {
+                                    level3 = new
+                                    {
+                                        level4 = new
+                                        {
+                                            level5 = new
+                                            {
+                                                deep_value = "found",
+                                                deep_number = 42,
+                                                deep_array = new[] { 1, 2, 3, 4, 5 }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            metadata_version = "1.0.0"
+                        }
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Records);
+            Assert.Equal("Complex System", result.Records.First().Name);
+            Assert.NotNull(result.Records.First().Properties);
         }
         
         #endregion

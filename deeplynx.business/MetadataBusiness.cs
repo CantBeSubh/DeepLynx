@@ -62,15 +62,15 @@ public class MetadataBusiness : IMetadataBusiness
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
         
         if (file == null)
-            throw new ArgumentNullException(nameof(file), "File cannot be null");
+            throw new ArgumentNullException(nameof(file), "File cannot be null.");
     
         if (file.Length == 0)
-            throw new ArgumentException("File cannot be empty", nameof(file));
+            throw new ArgumentException("File cannot be empty.", nameof(file));
         
         // Only support for .json as of now
         var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
         if (extension != ".json")
-            throw new ArgumentException("File must be a .json file", nameof(file));
+            throw new ArgumentException("File must be a .json file.", nameof(file));
         
         // Convert file to our DTO
         CreateMetadataRequestDto metadataRequestDto;
@@ -88,7 +88,7 @@ public class MetadataBusiness : IMetadataBusiness
             
                 if (metadataRequestDto == null)
                 {
-                    throw new JsonException("Failed to deserialize metadata from file");
+                    throw new JsonException("Failed to deserialize metadata from file.");
                 }
             }
         }
