@@ -55,6 +55,9 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Class> UpdatedClasses { get; set; } = new List<Class>();
+
     
     [InverseProperty("User")]
     public virtual ICollection<SavedSearch> SavedSearches { get; set; } = new List<SavedSearch>();

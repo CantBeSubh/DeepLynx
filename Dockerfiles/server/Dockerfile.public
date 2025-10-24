@@ -12,6 +12,7 @@ ARG SERVICE_TOKEN
 ARG BACKEND_BASE_URL
 ARG NEXTAUTH_URL
 ARG DISABLE_FRONTEND_AUTHENTICATION
+ARG HOSTED_LINK
 
 # Set environment variables
 ENV OKTA_CLIENT_ID=${OKTA_CLIENT_ID}
@@ -24,7 +25,7 @@ ENV SERVICE_TOKEN=${SERVICE_TOKEN}
 ENV BACKEND_BASE_URL=${BACKEND_BASE_URL}
 ENV NEXTAUTH_URL=${NEXTAUTH_URL}
 ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
-
+ENV HOSTED_LINK=${HOSTED_LINK}
 
 # # Print out the value of the environment variables
 # RUN echo "OKTA_CLIENT_ID=${OKTA_CLIENT_ID}" \
@@ -35,7 +36,8 @@ ENV DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}
 #     && echo "NEXTAUTH_SECRET=${NEXTAUTH_SECRET}" \
 #     && echo "BACKEND_BASE_URL=${BACKEND_BASE_URL}" \
 #     && echo "DISABLE_FRONTEND_AUTHENTICATION=${DISABLE_FRONTEND_AUTHENTICATION}" \
-#     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}"
+#     && echo "NEXTAUTH_URL=${NEXTAUTH_URL}" \
+#     && echo "HOSTED_LINK=${HOSTED_LINK}"
 
 # Set working directory
 WORKDIR /usr/src/app
@@ -98,6 +100,9 @@ RUN apt-get update \
         dpkg=1.22.6ubuntu6.5 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+    
+# Run time vars
+ENV HOSTED_LINK=${HOSTED_LINK}
 
 # This will run the .NET application directly
 CMD ["dotnet", "deeplynx.api.dll", "--urls", "http://*:5000"]

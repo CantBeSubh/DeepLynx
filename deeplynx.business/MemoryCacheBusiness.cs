@@ -18,6 +18,11 @@ namespace deeplynx.business
             _cache = new MemoryCache(new MemoryCacheOptions());
             _keys = new ConcurrentDictionary<string, bool>();
         }
+        
+        /// <summary>
+        /// Static property that will return the cache type in use.
+        /// </summary>
+        public string CacheType => "memory";
 
         /// <summary>
         /// Retrieves serialized cached data matching the provided key
@@ -34,6 +39,7 @@ namespace deeplynx.business
             try
             {
                 var parsed = JsonConvert.DeserializeObject<T>(value);
+                await SetAsync("type", "memory", (TimeSpan?)null);
                 return await Task.FromResult(parsed);
             }
             catch

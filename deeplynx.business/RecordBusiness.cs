@@ -196,10 +196,10 @@ public class RecordBusiness : IRecordBusiness
             ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             Operation = "create",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
 
         return new RecordResponseDto
@@ -313,10 +313,10 @@ public class RecordBusiness : IRecordBusiness
                       Operation = "create",
                       EntityType = "record",
                       EntityId = record.Id,
+                      EntityName = record.Name,
                       ProjectId = record.ProjectId,
                       Properties = "{}",
                       DataSourceId = record.DataSourceId,
-                      LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
                   });
        }
        await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -372,10 +372,10 @@ public class RecordBusiness : IRecordBusiness
             ProjectId = record.ProjectId,
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             Operation = "update",
             Properties = "{}",
             DataSourceId = record.DataSourceId,
-            LastUpdatedBy = "" // TODO: add createdBy username when JWT are implemented
         });
         
         return new RecordResponseDto
@@ -473,9 +473,9 @@ public class RecordBusiness : IRecordBusiness
             Operation = "archive",
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -534,9 +534,9 @@ public class RecordBusiness : IRecordBusiness
             Operation = "unarchive",
             EntityType = "record",
             EntityId = record.Id,
+            EntityName = record.Name,
             DataSourceId = record.DataSourceId,
             Properties = JsonSerializer.Serialize(new {record.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

@@ -222,7 +222,7 @@ const GenericTable = <T extends object>({
       {title && (
         <h2 className="text-xl font-bold text-base-content">{title}</h2>
       )}
-      <div className="my-4 flex justify-between items-center">
+      <div className="my-2 flex justify-between items-center">
         {searchBar && (
           <SearchInput
             placeholder={filterPlaceholder}

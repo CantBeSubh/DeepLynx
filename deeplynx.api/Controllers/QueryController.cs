@@ -1,24 +1,26 @@
-using deeplynx.helpers.Context;
+using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace deeplynx.api.Controllers;
-
-/// <summary>
-///     Controller for managing classes.
-/// </summary>
-/// <remarks>
-///     This controller provides endpoints to create, update, delete, and retrieve class information.
-/// </remarks>
-[ApiController]
-[Route("api/records")]
-[Authorize]
-public class QueryController : ControllerBase
+namespace deeplynx.api.Controllers
 {
-    private readonly ILogger<QueryController> _logger;
-    private readonly IQueryBusiness _queryBusiness;
+    
+    /// <summary>
+    /// Controller for managing classes.
+    /// </summary>
+    /// <remarks>
+    /// This controller provides endpoints to create, update, delete, and retrieve class information.
+    /// </remarks>
+
+    [ApiController]
+    [Route("records")]
+    [Authorize]
+    public class QueryController : ControllerBase
+    {
+        private readonly IQueryBusiness _queryBusiness;
+        private readonly ILogger<QueryController> _logger;
 
         /// <summary>
         /// 

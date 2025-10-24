@@ -181,6 +181,7 @@ namespace deeplynx.tests
             
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("group", actualEvent.EntityType);
+            Assert.Equal(dto.Name, actualEvent.EntityName);
             Assert.Equal(result.Id, actualEvent.EntityId);
         }
         

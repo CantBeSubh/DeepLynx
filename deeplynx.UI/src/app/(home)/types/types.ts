@@ -164,6 +164,90 @@ export type RecentRecord = {
   projectId: number;
 };
 
+export type UserResponseDto =
+  {
+    id: number;
+    name?: string;
+    email?: string;
+    username?: string;
+    ssoId?: string;
+    isSysAdmin?: boolean;
+    isArchined?: boolean;
+    isActive?: boolean;
+    projectId?: number;
+  }
+
+  export type UserRequestDto =
+  {
+    name: string;
+    username: string;
+    ssoId: string;
+    isArchived: boolean | null;
+    projectId: number;
+    isActive: boolean | null;
+  }
+
+  export type RoleResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+  }
+
+  export type ProjectResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    abbreviation?: string | null;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+    userId?: number;
+  }
+
+  export type PermissionResponseDto =
+  {
+    id: number;
+    name?: string;
+    description?: string | null;
+    action?: string;
+    resource?: string | null;
+    isHardcoded?: boolean;
+    labelId?: number;
+    lastUpdatedAt?: string | Date;
+    lastUpdatedBy?: string | null;
+    isArchieved?: boolean;
+    projectId?: number;
+    organizationId?: number;
+    roleId?: number;
+    userId?: number;
+  }
+
+  export type CreateRoleRequestDto =
+  {
+    name: string;
+    description?: string | null;
+    projectId?: number;
+    organizationId?: number;
+  }
+
+  export type PermissionRequestDto =
+  {
+    name: string;
+    description?: string | null;
+    projectId?: number;
+    organizationId?: number;
+  }
 //Widgets
 export type WidgetType =
   | "DataOverview"
@@ -242,3 +326,14 @@ export type CreateRecordPayload = {
   tags?: string[] | null;
   sensitivity_labels?: string[] | null;
 };
+
+export type Role = {
+  id: number;
+  name: string;
+  description: string | null;
+  lastUpdatedAt: string;
+  lastUpdatedBy: string | null;
+  isArchived: boolean;
+  projectId: number;
+  organizationId: number | null;
+}
