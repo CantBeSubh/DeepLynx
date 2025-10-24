@@ -5,8 +5,13 @@ import api from "./api"
 
 /** ===== Client calls (browser; cookie/session-based) ===== */
 
-export async function getAllEvents() {
-    const res = await api.get("/events/GetAllEvents")
+export async function getAllEvents(pageNumber: number = 1, pageSize: number = 25) {
+    const res = await api.get("/events/GetAllEvents", {
+        params: {
+            pageNumber,
+            pageSize
+        }
+    })
     return res.data
 }
 
