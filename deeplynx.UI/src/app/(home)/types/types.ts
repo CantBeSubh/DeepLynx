@@ -222,7 +222,7 @@ export type UserResponseDto =
     description?: string | null;
     action?: string;
     resource?: string | null;
-    isHardcoded?: boolean;
+    isDefault?: boolean;
     labelId?: number;
     lastUpdatedAt?: string | Date;
     lastUpdatedBy?: string | null;

@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251027182941_RenameIsHardcodedToIsDefault")]
+    partial class RenameIsHardcodedToIsDefault
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -840,9 +843,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_archived");
 
-                    b.Property<bool>("IsDefault")
+                    b.Property<bool>("IsHardcoded")
                         .HasColumnType("boolean")
-                        .HasColumnName("is_default");
+                        .HasColumnName("is_hardcoded");
 
                     b.Property<long?>("LabelId")
                         .HasColumnType("bigint")
@@ -882,7 +885,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_permissions_id");
 
-                    b.HasIndex(new[] { "IsDefault" }, "idx_permissions_is_default");
+                    b.HasIndex(new[] { "IsHardcoded" }, "idx_permissions_is_hardcoded");
 
                     b.HasIndex(new[] { "LabelId" }, "idx_permissions_label_id");
 
