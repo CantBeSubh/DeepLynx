@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251022223646_SavedSearches")]
+    partial class SavedSearches
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -206,8 +209,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<long?>("LastUpdatedBy")
-                        .HasColumnType("bigint")
+                    b.Property<string>("LastUpdatedBy")
+                        .HasColumnType("text")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -225,9 +228,6 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("classes_pkey");
-
-                    b.HasIndex("LastUpdatedBy")
-                        .HasDatabaseName("idx_classes_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_classes_id");
 
@@ -396,10 +396,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Property<long?>("EntityId")
                         .HasColumnType("bigint")
                         .HasColumnName("entity_id");
-
-                    b.Property<string>("EntityName")
-                        .HasColumnType("text")
-                        .HasColumnName("entity_name");
 
                     b.Property<string>("EntityType")
                         .IsRequired()
@@ -1609,19 +1605,12 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Class", b =>
                 {
-                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
-                        .WithMany("UpdatedClasses")
-                        .HasForeignKey("LastUpdatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Classes")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("classes_project_id_fkey");
-
-                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("Project");
                 });
@@ -1683,21 +1672,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("Project");
 
                     b.Navigation("Relationship");
-                });
-
-            modelBuilder.Entity("deeplynx.datalayer.Models.Event", b =>
-                {
-                    b.HasOne("deeplynx.datalayer.Models.DataSource", "DataSource")
-                        .WithMany()
-                        .HasForeignKey("DataSourceId");
-
-                    b.HasOne("deeplynx.datalayer.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId");
-
-                    b.Navigation("DataSource");
-
-                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Group", b =>
@@ -2121,8 +2095,6 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("SavedSearches");
 
                     b.Navigation("Subscriptions");
-
-                    b.Navigation("UpdatedClasses");
                 });
 #pragma warning restore 612, 618
         }

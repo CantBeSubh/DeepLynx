@@ -49,7 +49,7 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
 
-    [ForeignKey("2")]
+    [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
     
@@ -58,4 +58,7 @@ public partial class User
     [InverseProperty("LastUpdatedByUser")]
     public virtual ICollection<Class> UpdatedClasses { get; set; } = new List<Class>();
 
+    
+    [InverseProperty("User")]
+    public virtual ICollection<SavedSearch> SavedSearches { get; set; } = new List<SavedSearch>();
 }
