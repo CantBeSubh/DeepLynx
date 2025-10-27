@@ -7,6 +7,7 @@ using deeplynx.models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.tests
 {
@@ -22,6 +23,8 @@ namespace deeplynx.tests
         private DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         private long mockUserId;
         private long mockUser2Id;
+        private long mockUser3Id;
+        private long mockUser4Id;
         private long mockActionId;
         private long mockDataSourceId;
         private long mockDataSource2Id;
@@ -542,6 +545,135 @@ namespace deeplynx.tests
 
         #endregion
 
+             #region LastUpdatedBy Tests
+        
+        [Fact]
+        public async Task CreateEvent_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 999,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = mockUserId,
+                LastUpdatedAt = now
+            };
+            
+            // Act
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEvent = await Context.Events.FindAsync(testEvent.Id);
+            Assert.NotNull(savedEvent);
+            Assert.Equal(mockUserId, savedEvent.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEvent_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 998,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = mockUserId,
+                LastUpdatedAt = now
+            };
+            
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var eventWithUser = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            // Assert
+            Assert.NotNull(eventWithUser.LastUpdatedByUser);
+            Assert.Equal("user1", eventWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@gmail.com", eventWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(mockUserId, eventWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEvent_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 997,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = null,
+                LastUpdatedAt = now
+            };
+            
+            // Act
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEvent = await Context.Events.FindAsync(testEvent.Id);
+            Assert.NotNull(savedEvent);
+            Assert.Null(savedEvent.LastUpdatedBy);
+            
+            var eventWithUser = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            Assert.Null(eventWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateEvent_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 996,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = null,
+                LastUpdatedAt = now
+            };
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testEvent.LastUpdatedBy = mockUser2Id;
+            testEvent.Operation = "update";
+            testEvent.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Events.Update(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedEvent = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            Assert.Equal(mockUser2Id, updatedEvent.LastUpdatedBy);
+            Assert.NotNull(updatedEvent.LastUpdatedByUser);
+            Assert.Equal("user2", updatedEvent.LastUpdatedByUser.Name);
+            Assert.Equal("update", updatedEvent.Operation);
+        }
+        
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
@@ -560,11 +692,15 @@ namespace deeplynx.tests
             {
                 new User { Name = "user1", Email = "test@gmail.com" },
                 new User { Name = "user2", Email = "test2@gmail.com" },
+                new User { Name = "user3", Email = "test3@gmail.com" },
+                new User { Name = "user4", Email = "test4@gmail.com" },
             };
             Context.Users.AddRange(users);
             await Context.SaveChangesAsync();
             mockUserId = users[0].Id;
             mockUser2Id = users[1].Id;
+            mockUser3Id = users[2].Id;
+            mockUser4Id = users[3].Id;
 
             var action = new deeplynx.datalayer.Models.Action
             {
@@ -611,7 +747,7 @@ namespace deeplynx.tests
                     EntityId = 1,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -622,7 +758,7 @@ namespace deeplynx.tests
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -633,7 +769,7 @@ namespace deeplynx.tests
                     EntityId = 3,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -644,7 +780,7 @@ namespace deeplynx.tests
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -655,7 +791,7 @@ namespace deeplynx.tests
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -666,7 +802,7 @@ namespace deeplynx.tests
                     EntityId = 5,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 // Events with 2nd Project
@@ -678,7 +814,7 @@ namespace deeplynx.tests
                     EntityId = 3,
                     DataSourceId = null,
                     Properties = "{}",
-                    LastUpdatedBy = "user3",
+                    LastUpdatedBy = mockUser3Id,
                     LastUpdatedAt = now
                 },
                 new Event
@@ -689,7 +825,7 @@ namespace deeplynx.tests
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user4",
+                    LastUpdatedBy = mockUser4Id,
                     LastUpdatedAt = now
                 }
             };

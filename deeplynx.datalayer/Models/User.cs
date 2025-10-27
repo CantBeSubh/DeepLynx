@@ -63,4 +63,13 @@ public partial class User
     
     [InverseProperty("LastUpdatedByUser")]
     public virtual ICollection<Edge> UpdatedEdges { get; set; } = new List<Edge>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<HistoricalEdge> UpdatedHistoricalEdges { get; set; } = new List<HistoricalEdge>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Event> UpdatedEvents { get; set; } = new List<Event>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Group> UpdatedGroups { get; set; } = new List<Group>();
 }

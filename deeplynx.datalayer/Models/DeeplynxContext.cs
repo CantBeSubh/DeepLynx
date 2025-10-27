@@ -154,6 +154,15 @@ public partial class DeeplynxContext : DbContext
             entity.HasKey(e => e.Id).HasName("events_pkey");
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.HasIndex(e=>e.LastUpdatedBy).HasDatabaseName("idx_events_last_updated_by");
+            
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedEvents)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
+            
         });
 
         modelBuilder.Entity<Group>(entity =>
@@ -163,6 +172,14 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_groups_last_updated_by");
+    
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedGroups)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
 
             entity.HasOne(d => d.Organization).WithMany(p => p.Groups).HasConstraintName("groups_organization_id_fkey");
 
@@ -195,6 +212,13 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_historical_edges_last_updated_by");
+    
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedHistoricalEdges)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
             entity.Property(e => e.ProjectName).HasDefaultValueSql("''::text");
 
             entity.HasOne(d => d.Edge).WithMany(p => p.HistoricalEdges).HasConstraintName("historical_edges_edge_id_fkey");

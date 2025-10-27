@@ -4,6 +4,7 @@ using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Record = deeplynx.datalayer.Models.Record;
@@ -33,6 +34,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public long destinationRecordId2;
     public long relationshipId;
     public long relationshipId2;
+    public long uid;
     public HistoricalEdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
     
     public override async Task InitializeAsync()
@@ -321,10 +323,204 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     }
     
     #endregion
-    
+   #region LastUpdatedBy Tests
+
+    [Fact]
+    public async Task CreateHistoricalEdge_Success_StoresLastUpdatedByUserId()
+    {
+        // Arrange
+        var testEdge = new Edge
+        {
+            OriginId = originRecordId,
+            DestinationId = destinationRecordId2,
+            DataSourceId = dsid,
+            ProjectId = pid,
+            RelationshipId = relationshipId,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+        
+        var testHistoricalEdge = new HistoricalEdge
+        {
+            EdgeId = testEdge.Id,
+            OriginId = testEdge.OriginId,
+            DestinationId = testEdge.DestinationId,
+            RelationshipId = testEdge.RelationshipId,
+            DataSourceId = testEdge.DataSourceId,
+            ProjectId = testEdge.ProjectId,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = testEdge.LastUpdatedAt,
+            IsArchived = false
+        };
+        
+        // Act
+        Context.HistoricalEdges.Add(testHistoricalEdge);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var savedHistoricalEdge = await Context.HistoricalEdges.FindAsync(testHistoricalEdge.Id);
+        Assert.NotNull(savedHistoricalEdge);
+        Assert.Equal(uid, savedHistoricalEdge.LastUpdatedBy);
+    }
+
+    [Fact]
+    public async Task CreateHistoricalEdge_Success_NavigationPropertyLoadsUser()
+    {
+        // Arrange
+        var testEdge = new Edge
+        {
+            OriginId = destinationRecordId2, 
+            DestinationId = originRecordId,   
+            DataSourceId = dsid,
+            ProjectId = pid,
+            RelationshipId = relationshipId,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+        
+        var testHistoricalEdge = new HistoricalEdge
+        {
+            EdgeId = testEdge.Id,
+            OriginId = testEdge.OriginId,
+            DestinationId = testEdge.DestinationId,
+            RelationshipId = testEdge.RelationshipId,
+            DataSourceId = testEdge.DataSourceId,
+            ProjectId = testEdge.ProjectId,
+            LastUpdatedBy = uid,
+            LastUpdatedAt = testEdge.LastUpdatedAt,
+            IsArchived = false
+        };
+        
+        Context.HistoricalEdges.Add(testHistoricalEdge);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var historicalEdgeWithUser = await Context.HistoricalEdges
+            .Include(he => he.LastUpdatedByUser)
+            .FirstAsync(he => he.Id == testHistoricalEdge.Id);
+        
+        // Assert
+        Assert.NotNull(historicalEdgeWithUser.LastUpdatedByUser);
+        Assert.Equal("Test User", historicalEdgeWithUser.LastUpdatedByUser.Name);
+        Assert.Equal("test.user@test.com", historicalEdgeWithUser.LastUpdatedByUser.Email);
+        Assert.Equal(uid, historicalEdgeWithUser.LastUpdatedBy);
+    }
+
+    [Fact]
+    public async Task CreateHistoricalEdge_Success_WithNullLastUpdatedBy()
+    {
+        // Arrange
+        var testEdge = new Edge
+        {
+            OriginId = destinationRecordId,
+            DestinationId = destinationRecordId2,  
+            DataSourceId = dsid,
+            ProjectId = pid,
+            RelationshipId = relationshipId,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+        
+        var testHistoricalEdge = new HistoricalEdge
+        {
+            EdgeId = testEdge.Id,
+            OriginId = testEdge.OriginId,
+            DestinationId = testEdge.DestinationId,
+            RelationshipId = testEdge.RelationshipId,
+            DataSourceId = testEdge.DataSourceId,
+            ProjectId = testEdge.ProjectId,
+            LastUpdatedBy = null,
+            LastUpdatedAt = testEdge.LastUpdatedAt,
+            IsArchived = false
+        };
+        
+        // Act
+        Context.HistoricalEdges.Add(testHistoricalEdge);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var savedHistoricalEdge = await Context.HistoricalEdges.FindAsync(testHistoricalEdge.Id);
+        Assert.NotNull(savedHistoricalEdge);
+        Assert.Null(savedHistoricalEdge.LastUpdatedBy);
+        
+        var historicalEdgeWithUser = await Context.HistoricalEdges
+            .Include(he => he.LastUpdatedByUser)
+            .FirstAsync(he => he.Id == testHistoricalEdge.Id);
+        
+        Assert.Null(historicalEdgeWithUser.LastUpdatedByUser);
+    }
+
+    [Fact]
+    public async Task UpdateHistoricalEdge_Success_UpdatesLastUpdatedByUserId()
+    {
+        // Arrange - First create edge with null LastUpdatedBy
+        var testEdge = new Edge
+        {
+            OriginId = originRecordId2,  
+            DestinationId = destinationRecordId, 
+            DataSourceId = dsid,
+            ProjectId = pid,
+            RelationshipId = relationshipId,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null
+        };
+        Context.Edges.Add(testEdge);
+        await Context.SaveChangesAsync();
+        
+        var testHistoricalEdge = new HistoricalEdge
+        {
+            EdgeId = testEdge.Id,
+            OriginId = testEdge.OriginId,
+            DestinationId = testEdge.DestinationId,
+            RelationshipId = testEdge.RelationshipId,
+            DataSourceId = testEdge.DataSourceId,
+            ProjectId = testEdge.ProjectId,
+            LastUpdatedBy = null,
+            LastUpdatedAt = testEdge.LastUpdatedAt,
+            IsArchived = false
+        };
+        Context.HistoricalEdges.Add(testHistoricalEdge);
+        await Context.SaveChangesAsync();
+
+        // Act - Update to have a user
+        testHistoricalEdge.LastUpdatedBy = uid;
+        testHistoricalEdge.DestinationId = destinationRecordId2;
+        testHistoricalEdge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        
+        Context.HistoricalEdges.Update(testHistoricalEdge);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var updatedHistoricalEdge = await Context.HistoricalEdges
+            .Include(he => he.LastUpdatedByUser)
+            .FirstAsync(he => he.Id == testHistoricalEdge.Id);
+        
+        Assert.Equal(uid, updatedHistoricalEdge.LastUpdatedBy);
+        Assert.NotNull(updatedHistoricalEdge.LastUpdatedByUser);
+        Assert.Equal("Test User", updatedHistoricalEdge.LastUpdatedByUser.Name);
+        Assert.Equal(destinationRecordId2, updatedHistoricalEdge.DestinationId);
+    }
+
+    #endregion
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
+        var testUser = new User
+        {
+            Name = "Test User",
+            Email = "test.user@test.com",
+            Password = "test_password",
+            IsArchived = false
+        };
+        Context.Users.Add(testUser);
+        await Context.SaveChangesAsync();
+        uid = testUser.Id;
         var project = new Project() { Name = "Project 1" };
         var project2 = new Project() { Name = "Project 2" };
         Context.Projects.Add(project);
@@ -337,19 +533,22 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             Name = "DataSource 1",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
         };
         var dataSource2 = new DataSource
         {
             Name = "DataSource 2",
             ProjectId = pid2,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
         };
         var dataSource3 = new DataSource
         {
             Name = "DataSource 3",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
         };
         Context.DataSources.Add(dataSource);
         Context.DataSources.Add(dataSource2);
@@ -362,13 +561,15 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         {
             Name = "Class 1",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
         };
         var testClass2 = new Class
         {
             Name = "Class 2",
             ProjectId = pid2,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid
         };
         Context.Classes.Add(testClass);
         Context.Classes.Add(testClass2);
@@ -383,7 +584,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             Name = "Origin",
             Description = "Origin Description",
             OriginalId = "orig",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
         };
         
         var originRecord2 = new Record
@@ -474,6 +675,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId,
             DestinationId = destinationRecordId,
+            LastUpdatedBy = uid 
         };
         var edge2 = new Edge()
         {
@@ -483,6 +685,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId,
             DestinationId = originRecordId,
+            LastUpdatedBy = uid 
         };
         var edge3 = new Edge()
         {
@@ -492,6 +695,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId2,
             DestinationId = destinationRecordId2,
+            LastUpdatedBy = uid 
         };
         var edge4 = new Edge()
         {
@@ -501,6 +705,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             RelationshipId = relationshipId2,
             DestinationId = originRecordId2,
+            LastUpdatedBy = uid 
         };
         Context.Edges.Add(edge);
         Context.Edges.Add(edge2);

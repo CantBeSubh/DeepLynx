@@ -22,7 +22,7 @@ public partial class Group
     public string? Description { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -43,4 +43,7 @@ public partial class Group
     [ForeignKey("GroupId")]
     [InverseProperty("Groups")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+    
+    [InverseProperty("UpdatedGroups")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

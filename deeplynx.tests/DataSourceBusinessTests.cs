@@ -881,6 +881,130 @@ namespace deeplynx.tests
         }
         
         #endregion
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateDataSource_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testDataSource = new DataSource
+            {
+                Name = $"Test DataSource with User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description with User ID",
+                Type = "Test Type",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.DataSources.Add(testDataSource);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedDataSource = await Context.DataSources.FindAsync(testDataSource.Id);
+            Assert.NotNull(savedDataSource);
+            Assert.Equal(uid, savedDataSource.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateDataSource_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testDataSource = new DataSource
+            {
+                Name = $"Test DataSource Navigation {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Navigation Property",
+                Type = "Test Type",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            Context.DataSources.Add(testDataSource);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var dataSourceWithUser = await Context.DataSources
+                .Include(ds => ds.LastUpdatedByUser)
+                .FirstAsync(ds => ds.Id == testDataSource.Id);
+            
+            // Assert
+            Assert.NotNull(dataSourceWithUser.LastUpdatedByUser);
+            Assert.Equal("John Smith", dataSourceWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("john.smith@company.com", dataSourceWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, dataSourceWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateDataSource_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testDataSource = new DataSource
+            {
+                Name = $"Test DataSource Null User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test with null LastUpdatedBy",
+                Type = "Test Type",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.DataSources.Add(testDataSource);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedDataSource = await Context.DataSources.FindAsync(testDataSource.Id);
+            Assert.NotNull(savedDataSource);
+            Assert.Null(savedDataSource.LastUpdatedBy);
+            
+            var dataSourceWithUser = await Context.DataSources
+                .Include(ds => ds.LastUpdatedByUser)
+                .FirstAsync(ds => ds.Id == testDataSource.Id);
+            
+            Assert.Null(dataSourceWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateDataSource_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testDataSource = new DataSource
+            {
+                Name = $"Original DataSource {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                Type = "Original Type",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.DataSources.Add(testDataSource);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testDataSource.LastUpdatedBy = uid;
+            testDataSource.Description = "Updated Description";
+            testDataSource.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.DataSources.Update(testDataSource);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedDataSource = await Context.DataSources
+                .Include(ds => ds.LastUpdatedByUser)
+                .FirstAsync(ds => ds.Id == testDataSource.Id);
+            
+            Assert.Equal(uid, updatedDataSource.LastUpdatedBy);
+            Assert.NotNull(updatedDataSource.LastUpdatedByUser);
+            Assert.Equal("John Smith", updatedDataSource.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Description", updatedDataSource.Description);
+        }
+
+        #endregion
         
         protected override async Task SeedTestDataAsync()
         {
