@@ -141,7 +141,7 @@ public class MetadataBusiness : IMetadataBusiness
     {
         var metadataResponseDto = new MetadataResponseDto();
         
-        // Create the respective metadata lists
+        // Create the respective entity lists
         var classes = metadataRequestDto.Classes ?? new List<CreateClassRequestDto>();
         var relationships = metadataRequestDto.Relationships ?? new List<CreateRelationshipRequestDto>();
         var tags = metadataRequestDto.Tags ?? new List<CreateTagRequestDto>();
@@ -197,6 +197,7 @@ public class MetadataBusiness : IMetadataBusiness
                 AttachTagsToRecordDtos(metadataResponseDto, recordTags, tagMap);
             }
         }
+        
         // Edges
         if (edges.Any())
         {
