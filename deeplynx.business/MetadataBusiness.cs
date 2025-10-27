@@ -410,7 +410,7 @@ public class MetadataBusiness : IMetadataBusiness
         foreach (var edge in edges)
         {
             if (!string.IsNullOrEmpty(edge.RelationshipName)
-                && recordMap.TryGetValue(edge.RelationshipName, out long relationshipId))
+                && relMap.TryGetValue(edge.RelationshipName, out long relationshipId))
             {
                 edge.RelationshipId = relationshipId;
             }
