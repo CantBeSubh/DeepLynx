@@ -10,9 +10,9 @@ namespace deeplynx.business;
 
 /// <summary>
 /// PermissionBusiness is unique from other business classes in the sense that it
-/// is partially protected. Default permissions (such as "write projects") are
-/// Default permissions in the database and should not be tampered with via standard CRUD
-/// operations via the API. As such, special checks are in place to ensure that
+/// is partially protected. Default permissions (marked with "isDefault")
+/// should not be tampered with via standard CRUD operations via the API.
+/// As such, special checks are in place to ensure that
 /// permissions being edited by the user are only those which were originally
 /// user-defined.
 /// </summary>
@@ -135,7 +135,7 @@ public class PermissionBusiness : IPermissionBusiness
 
         // Note that the CreatePermission dto only allows for the creation of permissions
         // using labelId. Any Default permissions such as "write projects" should not
-        // be manipulated by users, as they correspond with Default route permissions.
+        // be manipulated by users.
         ValidationHelper.ValidateModel(dto);
         var permission = new Permission
         {
@@ -192,7 +192,7 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<PermissionResponseDto> UpdatePermission(long permissionId, UpdatePermissionRequestDto dto)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that Default cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
         if (permission.IsDefault)
@@ -246,7 +246,7 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> ArchivePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that Default cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found or is already archived");
         if (permission.IsDefault)
@@ -282,7 +282,7 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> UnarchivePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that Default cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission != null && permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
         if (permission == null || !permission.IsArchived)
@@ -318,7 +318,7 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> DeletePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that Default cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
         if (permission.IsDefault)
