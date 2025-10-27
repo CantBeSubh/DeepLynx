@@ -120,7 +120,7 @@ export type PermissionResponseDto = {
   description?: string | null;
   action:string;
   resource?:string|null;
-  isHardcoded:boolean;
+  isDefault:boolean;
   labelId?:number|string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;

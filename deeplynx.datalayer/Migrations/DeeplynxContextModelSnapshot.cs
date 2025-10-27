@@ -840,9 +840,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("is_archived");
 
-                    b.Property<bool>("IsHardcoded")
+                    b.Property<bool>("IsDefault")
                         .HasColumnType("boolean")
-                        .HasColumnName("is_hardcoded");
+                        .HasColumnName("is_default");
 
                     b.Property<long?>("LabelId")
                         .HasColumnType("bigint")
@@ -882,7 +882,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_permissions_id");
 
-                    b.HasIndex(new[] { "IsHardcoded" }, "idx_permissions_is_hardcoded");
+                    b.HasIndex(new[] { "IsDefault" }, "idx_permissions_is_default");
 
                     b.HasIndex(new[] { "LabelId" }, "idx_permissions_label_id");
 
