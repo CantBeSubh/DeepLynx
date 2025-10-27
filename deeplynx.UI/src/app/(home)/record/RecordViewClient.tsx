@@ -39,6 +39,8 @@ import { useLanguage } from "@/app/contexts/Language";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
 import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import { RelatedRecordsRequestDto } from "../types/requestDTOs";
+import GraphPage from "../graph/page";
+import GraphClientPage from "../graph/GraphClientPage";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -591,6 +593,12 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
             )}
           </div>
         </div>
+      ),
+    },
+    {
+      label: "Graph",
+      content: (
+        <GraphClientPage projectId={String(projectId)} recordId={recordId} />
       ),
     },
   ];

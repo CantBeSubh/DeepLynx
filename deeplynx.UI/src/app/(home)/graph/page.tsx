@@ -2,8 +2,16 @@
 import React from "react";
 import GraphClientPage from "./GraphClientPage";
 
-const GraphPage = () => {
-  return <GraphClientPage projectId={"9"} recordId={245} depth={3} />;
+interface Props {
+  projectId: string;
+  recordId: number;
+  depth: number;
+}
+
+const GraphPage = ({ projectId, recordId, depth }: Props) => {
+  return (
+    <GraphClientPage projectId={projectId} recordId={recordId} depth={depth} />
+  );
 };
 
 export default GraphPage;

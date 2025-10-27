@@ -114,7 +114,7 @@ interface MyGraphProps {
 const MyGraph = ({
   projectId,
   recordId,
-  depth = 2,
+  depth = 3,
   onLoadingChange,
   onError,
 }: MyGraphProps) => {
@@ -175,10 +175,64 @@ const MyGraph = ({
           return colors[type.toLowerCase()] || colors["default"];
         };
 
+        // Find this section (around line 191) where you're adding nodes:
+
         // Add all nodes to the graph
         // First, identify the root node
         const rootNode = data.nodes.find((node) => node.type === "root");
         const otherNodes = data.nodes.filter((node) => node.type !== "root");
+
+        // Calculate depth for each node (distance from root)
+        const nodeDepths = new Map<number, number>();
+
+        // BFS to calculate depths from root
+        if (rootNode) {
+          const queue: Array<{ id: number; depth: number }> = [
+            { id: rootNode.id, depth: 0 },
+          ];
+          const visited = new Set<number>();
+
+          nodeDepths.set(rootNode.id, 0);
+          visited.add(rootNode.id);
+
+          while (queue.length > 0) {
+            const current = queue.shift();
+            if (!current) continue;
+
+            // Find all connected nodes
+            data.links.forEach((link) => {
+              let nextNodeId: number | null = null;
+
+              // Check if current node is source or target
+              if (link.source === current.id && !visited.has(link.target)) {
+                nextNodeId = link.target;
+              } else if (
+                link.target === current.id &&
+                !visited.has(link.source)
+              ) {
+                nextNodeId = link.source;
+              }
+
+              if (nextNodeId !== null) {
+                visited.add(nextNodeId);
+                nodeDepths.set(nextNodeId, current.depth + 1);
+                queue.push({ id: nextNodeId, depth: current.depth + 1 });
+              }
+            });
+          }
+        }
+
+        // Generate color based on depth from root
+        const getColorByDepth = (nodeId: number): string => {
+          const depth = nodeDepths.get(nodeId) || 0;
+          const colors = [
+            "#9b59b6", // Depth 0 (root) - Purple
+            "#3498db", // Depth 1 - Blue
+            "#f39c12", // Depth 2 - Orange
+            "#95a5a6", // Depth 3+ - Gray
+          ];
+          return colors[Math.min(depth, colors.length - 1)];
+        };
 
         data.nodes.forEach((node, index) => {
           // Convert numeric ID to string (Graphology requires string IDs)
@@ -205,7 +259,7 @@ const MyGraph = ({
             y,
             size: node.type === "root" ? 20 : 15, // Root node is larger
             label: node.label,
-            color: getColorByType(node.type),
+            color: getColorByDepth(node.id), // Use depth-based coloring
             nodeType: node.type,
           });
         });
@@ -245,8 +299,80 @@ const MyGraph = ({
           sigmaRef.current = new Sigma(graph, containerRef.current, {
             // Optional: Configure Sigma settings
             renderEdgeLabels: false, // Set to true if you want to show relationship names
+            defaultEdgeType: "arrow",
           });
         }
+
+        // ========================================
+        // ADD HOVER INTERACTIONS
+        // ========================================
+
+        const sigma = sigmaRef.current;
+
+        // Store original edge colors
+        const originalEdgeColors = new Map<string, string>();
+        graph.forEachEdge((edge, attributes) => {
+          originalEdgeColors.set(edge, attributes.color || "#999");
+        });
+
+        // Mouse enter event on node
+        sigma?.on("enterNode", ({ node }) => {
+          // Get all edges connected to this node
+          const incomingEdges = new Set<string>();
+          const outgoingEdges = new Set<string>();
+
+          // Separate incoming and outgoing edges
+          graph.forEachEdge(node, (edge, attributes, source, target) => {
+            if (target === node) {
+              // Edge is incoming (pointing TO this node)
+              incomingEdges.add(edge);
+            } else {
+              // Edge is outgoing (pointing FROM this node)
+              outgoingEdges.add(edge);
+            }
+          });
+
+          // Update edge colors - highlight connected edges
+          graph.forEachEdge((edge) => {
+            if (incomingEdges.has(edge)) {
+              // Highlight incoming edges (red and thicker)
+              graph.setEdgeAttribute(edge, "color", "#ff6b6b");
+              graph.setEdgeAttribute(edge, "size", 4);
+            } else if (outgoingEdges.has(edge)) {
+              // Highlight outgoing edges (blue and thicker)
+              graph.setEdgeAttribute(edge, "color", "#3498db");
+              graph.setEdgeAttribute(edge, "size", 4);
+            } else {
+              // Dim other edges (light gray and thinner)
+              graph.setEdgeAttribute(edge, "color", "#ddd");
+              graph.setEdgeAttribute(edge, "size", 1);
+            }
+          });
+
+          // Refresh the display
+          sigma.refresh();
+        });
+
+        // Mouse leave event on node
+        sigma?.on("leaveNode", () => {
+          // Restore original edge colors and sizes
+          graph.forEachEdge((edge) => {
+            graph.setEdgeAttribute(
+              edge,
+              "color",
+              originalEdgeColors.get(edge) || "#999"
+            );
+            graph.setEdgeAttribute(edge, "size", 2);
+          });
+
+          // Refresh the display
+          sigma.refresh();
+        });
+
+        // Optional: Add click handler for nodes
+        sigma?.on("clickNode", ({ node }) => {
+          console.log("Clicked node:", node, graph.getNodeAttributes(node));
+        });
 
         onLoadingChange(false);
       } catch (err) {
