@@ -192,9 +192,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Operation = "create",
             EntityType = "relationship",
             EntityId = relationship.Id,
+            EntityName = relationship.Name,
             ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RelationshipResponseDto
@@ -273,9 +273,9 @@ public class RelationshipBusiness: IRelationshipBusiness
                 Operation = "create",
                 EntityType = "relationship",
                 EntityId = relationship.Id,
+                EntityName = relationship.Name,
                 ProjectId = relationship.ProjectId,
                 Properties = "{}",
-                LastUpdatedBy = "", // TODO: add username when JWT are implemented
             });
         }
         
@@ -329,9 +329,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Operation = "update",
             EntityType = "relationship",
             EntityId = relationship.Id,
+            EntityName = relationship.Name,
             ProjectId = relationship.ProjectId,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            LastUpdatedBy = "", // TODO: add username when JWT are implemented
         });
         
         return new RelationshipResponseDto
@@ -397,9 +397,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Operation = "archive",
             EntityType = "relationship",
             EntityId = relationship.Id,
+            EntityName = relationship.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -432,9 +432,9 @@ public class RelationshipBusiness: IRelationshipBusiness
             Operation = "unarchive",
             EntityType = "relationship",
             EntityId = relationship.Id,
+            EntityName = relationship.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {relationship.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;

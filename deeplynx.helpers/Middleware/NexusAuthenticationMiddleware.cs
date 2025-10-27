@@ -358,7 +358,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     existingUser.Name = name;
                     existingUser.IsActive = true;
                     existingUser.IsArchived = false;
-                    existingUser.IsSysAdmin = isDefaultSuperUser;
+                    existingUser.IsSysAdmin = isDefaultSuperUser || existingUser.IsSysAdmin;
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }

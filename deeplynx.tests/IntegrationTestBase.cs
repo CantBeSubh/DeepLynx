@@ -29,10 +29,13 @@ public class TestSuiteFixture : IAsyncLifetime
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
+        // Start containers
         await _postgresContainer.StartAsync();
         await _redisContainer.StartAsync();
         
+        // Set up configuration for redis cache tests
         RedisConnectionString = _redisContainer.GetConnectionString();
+        Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", RedisConnectionString);
         
         PostgresConnectionString = _postgresContainer.GetConnectionString();
 

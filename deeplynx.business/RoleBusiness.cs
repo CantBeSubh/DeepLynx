@@ -147,8 +147,8 @@ public class RoleBusiness : IRoleBusiness
             Operation = "create",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new RoleResponseDto
@@ -221,9 +221,9 @@ public class RoleBusiness : IRoleBusiness
                 Operation = "create",
                 EntityType = "role",
                 EntityId = item.Id,
+                EntityName = item.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -259,9 +259,9 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = role.ProjectId,
             Operation = "update",
             EntityType = "role",
+            EntityName = role.Name,
             EntityId = role.Id,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new RoleResponseDto
@@ -327,8 +327,8 @@ public class RoleBusiness : IRoleBusiness
             Operation = "archive",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
@@ -360,8 +360,8 @@ public class RoleBusiness : IRoleBusiness
             Operation = "unarchive",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
@@ -389,9 +389,9 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = role.ProjectId,
             Operation = "delete",
             EntityType = "role",
+            EntityName = role.Name,
             EntityId = role.Id,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;

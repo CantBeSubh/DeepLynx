@@ -161,8 +161,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "create",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new PermissionResponseDto
@@ -216,8 +216,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "update",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new PermissionResponseDto
@@ -266,8 +266,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "archive",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;
@@ -302,8 +302,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "unarchive",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;
@@ -335,8 +335,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "delete",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;
