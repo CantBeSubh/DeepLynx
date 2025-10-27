@@ -5,6 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
+using deeplynx.helpers.Middleware;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
@@ -67,6 +68,7 @@ try
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
+                    "https://deeplynx-test.dev.inl.gov", //test environment
                     "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
                     "https://deeplynx.inl.gov")
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
@@ -175,6 +177,7 @@ try
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
     builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
+    
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -199,6 +202,7 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
+    builder.Services.AddTransient<IRolePermissionService, RolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -375,6 +379,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
+    app.UseMiddleware<RoleBasedAuthorizationMiddleware>();
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
