@@ -354,7 +354,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByEqualityOperator()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
             };
@@ -372,7 +372,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByLikeOperatorCaseInsensitive()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "LIKE", Value = "tech"
             };
@@ -390,7 +390,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByGreaterThanDateOperator()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, 
                 Filter = "last_updated_at", 
@@ -428,14 +428,14 @@ namespace deeplynx.tests
             var baselineAhsoka = ahsoka.LastUpdatedAt.AddMinutes(10);
             var baselineRex = (await Context.Records.FindAsync(rid)).LastUpdatedAt;
             
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, 
                 Filter = "last_updated_at", 
                 Operator = ">", 
                 Value = baselineRex.ToString("yyyy-MM-dd HH:mm:ss")
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", 
                 Filter = "last_updated_at", 
@@ -455,11 +455,11 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByMultipleAndConditions()
         {
             // Arrange
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-7567"
             };
@@ -476,11 +476,11 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByOrCondition()
         {
             // Arrange
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "", Filter = "name", Operator = "=", Value = "Tech"
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "OR", Filter = "name", Operator = "=", Value = "Wrecker"
             };
@@ -497,15 +497,15 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByMixedNullAndOrConditions()
         {
             // Arrange
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "name", Operator = "LIKE", Value = "rex"
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "OR", Filter = "name", Operator = "=", Value = "Tech"
             };
-            var dto3 = new CustomQueryRequestDto
+            var dto3 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
             };
@@ -522,15 +522,15 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByMixedAndOrConditions()
         {
             // Arrange
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Anakin"
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "=", Value = "Tech"
             };
-            var dto3 = new CustomQueryRequestDto
+            var dto3 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "OR", Filter = "name", Operator = "=", Value = "Hunter"
             };
@@ -547,7 +547,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByCombinedQueryAndSearchTerm()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
@@ -564,7 +564,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByContainsOperatorInDescription()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "description", Operator = "LIKE", Value = "stop"
             };
@@ -582,7 +582,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByOriginalIdPrefix()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "original_id", Operator = "LIKE", Value = "CT-99"
             };
@@ -599,7 +599,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByMultipleProjectIds()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
             };
@@ -616,7 +616,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByProjectNameFirst()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Rebellion"
             };
@@ -633,7 +633,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByProjectNameSecond()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
             };
@@ -650,7 +650,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByProjectNameThird()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "LIKE", Value = "Mandalorians"
             };
@@ -678,7 +678,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsInProjectWithCrossProjectResources()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
             };
@@ -695,7 +695,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByDataSourceAcrossAllowedProjects()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "data_source_name", Operator = "LIKE", Value = "Yavin"
             };
@@ -712,7 +712,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_ReturnsEmptyWhenNoProjectAccess()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "name", Operator = "LIKE", Value = "a"
             };
@@ -729,7 +729,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByOriginalIdPrefixWithProjectAccess()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "original_id", Operator = "LIKE", Value = "REB-"
             };
@@ -746,7 +746,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByComplexQueryWithLimitedProjectAccess()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "original_id", Operator = "LIKE", Value = "CT-"
             };
@@ -763,11 +763,11 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByMultipleProjectsWithOrCondition()
         {
             // Arrange
-            var dto1 = new CustomQueryRequestDto
+            var dto1 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null, Filter = "project_name", Operator = "=", Value = "Anakin"
             };
-            var dto2 = new CustomQueryRequestDto
+            var dto2 = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "OR", Filter = "project_name", Operator = "=", Value = "The Galactic Empire"
             };
@@ -784,7 +784,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByKeyValueSearch()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null,
                 Filter = "properties",
@@ -805,7 +805,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByKeyValueSearchMultipleResults()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null,
                 Filter = "properties",
@@ -825,7 +825,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByLikeOperatorOnPropertiesJsonb()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null,
                 Filter = "properties",
@@ -846,7 +846,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByPartialMatchWithLikeOperator()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null,
                 Filter = "name",
@@ -867,7 +867,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FiltersRecordsByPartialMatchOnOriginalId()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = null,
                 Filter = "original_id",
@@ -887,7 +887,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Success_FindsSpecificRecordWithDataSourceAndSearchTerm()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "data_source_name", Operator = "LIKE", Value = "R2D2"
             };
@@ -904,7 +904,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidFilterField()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "InvalidField", Operator = "=", Value = "test"
             };
@@ -918,7 +918,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidOperator()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "INVALID", Value = "test"
             };
@@ -932,7 +932,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Failure_ThrowsExceptionForInvalidDateFormat()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "last_updated_at", Operator = ">", Value = "invalid-date"
             };
@@ -946,7 +946,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Failure_ThrowsExceptionForNullValue()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "=", Value = null
             };
@@ -960,7 +960,7 @@ namespace deeplynx.tests
         public async Task QueryBuilder_Failure_ThrowsExceptionForEmptyValue()
         {
             // Arrange
-            var dto = new CustomQueryRequestDto
+            var dto = new CustomQueryDtos.CustomQueryRequestDto
             {
                 Connector = "AND", Filter = "name", Operator = "=", Value = ""
             };

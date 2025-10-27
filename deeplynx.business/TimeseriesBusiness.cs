@@ -550,23 +550,40 @@ public class TimeseriesBusiness(
         
         var tempFilePath = Path.Combine(tempFolderPath, file.FileName);
         
-        await using var stream = new FileStream(tempFilePath, FileMode.Create);
-        await file.CopyToAsync(stream);
-        
-        await using var command = duckDbConnection.CreateCommand();
-
-        if (fileType == ".csv")
+        // Ensure file stream is fully closed before DuckDB access
+        // (stream disposal race condition causes misleading CSV parsing errors)
         {
-            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}' (AUTO_DETECT true)";
-        }
-        else if (fileType == ".parquet")
-        {
-            command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}'";
+            await using var stream = new FileStream(tempFilePath, FileMode.Create);
+            await file.CopyToAsync(stream);
+            await stream.FlushAsync();
         }
         
-        await command.ExecuteNonQueryAsync();
+        try
+        {
+            await using var command = duckDbConnection.CreateCommand();
+            
+            if (fileType == ".csv")
+            {
+                command.CommandText = $@"
+                COPY '{tableName}' FROM '{tempFilePath}' (AUTO_DETECT true)";
+            }
+            else
+            {
+                command.CommandText = $"COPY '{tableName}' FROM '{tempFilePath}'";
+            }
         
-        Directory.Delete(tempFolderPath, true);
+            await command.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            await duckDbConnection.CloseAsync();
+        
+            // Clean up temp file
+            if (Directory.Exists(tempFolderPath))
+            {
+                Directory.Delete(tempFolderPath, true);
+            }
+        }
     }
 
     //todo: Determine how to structure query result depending on how UI needs it. This function will be commented out for now

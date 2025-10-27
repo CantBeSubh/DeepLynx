@@ -1,4 +1,3 @@
-
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using deeplynx.datalayer.Models;
@@ -6,22 +5,22 @@ using deeplynx.helpers;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Npgsql;
-using deeplynx.business;
 using NpgsqlTypes;
 
 namespace deeplynx.business;
 
 /// <summary>
-/// Filter record request
+///     Filter record request
 /// </summary>
 public class QueryBusiness : IQueryBusiness
 {
-    private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cache;
+    private readonly DeeplynxContext _context;
 
     /// <summary>
-    /// Filter record request
+    ///     Filter record request
     /// </summary>
     /// <param name="context">The database context to be used for filter operations.</param>
     public QueryBusiness(DeeplynxContext context, ICacheBusiness? cacheBusiness)
@@ -29,15 +28,16 @@ public class QueryBusiness : IQueryBusiness
         _context = context;
         _cache = cacheBusiness;
     }
-    
+
     /// <summary>
-    /// Build a query
+    ///     Build a query
     /// </summary>
     /// <param name="request">Array of query component dtos, initial connector string will be null</param>
     /// <param name="textSearch">Full text search phrase</param>
-    /// /// <param name="projectIds">Project ids that a user has access to</param>
+    /// ///
+    /// <param name="projectIds">Project ids that a user has access to</param>
     /// <returns>A list of historical record response dtos that match provided filters</returns>
-    public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
+    public async Task<IEnumerable<HistoricalRecordResponseDto>> QueryBuilder(CustomQueryDtos.CustomQueryRequestDto[] request, long[] projectIds, string? textSearch = null)
     {
         if (request == null)
         {
@@ -280,7 +280,7 @@ public class QueryBusiness : IQueryBusiness
     }
     
     /// <summary>
-    /// Full text records search
+    ///     Full text records search
     /// </summary>
     /// <param name="userQuery">String query</param>
     /// <param name="projectIds">Project ids that a user has access to</param>
@@ -368,27 +368,23 @@ public class QueryBusiness : IQueryBusiness
     }
     
     /// <summary>
-    /// Retrieves all classes for specific projects.
+    ///     Retrieves all classes for specific projects.
     /// </summary>
     /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
     /// <returns>A list of data sources within the given project.</returns>
     public async Task<List<ClassResponseDto>> GetAllClasses(long[] projectIds, bool hideArchived)
     {
-        foreach (var projectId in projectIds){
+        foreach (var projectId in projectIds)
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-        }
 
         var classes = await _context.Classes
             .Where(c => projectIds.Contains(c.ProjectId)).ToListAsync();
-        
-        if (hideArchived)
-        {
-            classes = classes.Where(c => !c.IsArchived).ToList();
-        }
-        
-        return classes 
-            .Select(c => new ClassResponseDto()
+
+        if (hideArchived) classes = classes.Where(c => !c.IsArchived).ToList();
+
+        return classes
+            .Select(c => new ClassResponseDto
             {
                 Id = c.Id,
                 Name = c.Name,
@@ -397,13 +393,12 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = c.ProjectId,
                 LastUpdatedAt = c.LastUpdatedAt,
                 LastUpdatedBy = c.LastUpdatedBy,
-                IsArchived = c.IsArchived,
-
+                IsArchived = c.IsArchived
             }).ToList();
     }
-    
+
     /// <summary>
-    /// Retrieves all data sources for a specific project.
+    ///     Retrieves all data sources for a specific project.
     /// </summary>
     /// <param name="projectIds">The IDs of the projects whose data sources are to be retrieved</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived data sources from the result</param>
@@ -411,20 +406,15 @@ public class QueryBusiness : IQueryBusiness
     public async Task<List<DataSourceResponseDto>> GetAllDataSources(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-        }
-            
+
         var dataSources = await _context.DataSources
             .Where(d => projectIds.Contains(d.ProjectId)).ToListAsync();
 
-        if (hideArchived)
-        {
-            dataSources = dataSources.Where(d =>  !d.IsArchived).ToList();
-        }
-            
+        if (hideArchived) dataSources = dataSources.Where(d => !d.IsArchived).ToList();
+
         return dataSources
-            .Select(d => new DataSourceResponseDto()
+            .Select(d => new DataSourceResponseDto
             {
                 Id = d.Id,
                 Name = d.Name,
@@ -438,13 +428,12 @@ public class QueryBusiness : IQueryBusiness
                 ProjectId = d.ProjectId,
                 LastUpdatedAt = d.LastUpdatedAt,
                 LastUpdatedBy = d.LastUpdatedBy,
-                IsArchived = d.IsArchived,
-
+                IsArchived = d.IsArchived
             }).ToList();
     }
-    
+
     /// <summary>
-    /// Retrieves all tags for a specified project.
+    ///     Retrieves all tags for a specified project.
     /// </summary>
     /// <param name="projectIds">The IDs of the projects whose tags are to be retrieved.</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived tags from the result</param>
@@ -452,25 +441,86 @@ public class QueryBusiness : IQueryBusiness
     public async Task<List<TagResponseDto>> GetAllTags(long[] projectIds, bool hideArchived)
     {
         foreach (var projectId in projectIds)
-        {
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cache, hideArchived);
-        }
         var tagQuery = _context.Tags
             .Where(t => projectIds.Contains(t.ProjectId));
-            
-        if (hideArchived)
-        {
-            tagQuery = tagQuery.Where(t => !t.IsArchived);
-        }
-            
-        return await tagQuery.Select(t => new TagResponseDto()
+
+        if (hideArchived) tagQuery = tagQuery.Where(t => !t.IsArchived);
+
+        return await tagQuery.Select(t => new TagResponseDto
             {
                 Id = t.Id,
                 Name = t.Name,
                 ProjectId = t.ProjectId,
                 LastUpdatedBy = t.LastUpdatedBy,
-                LastUpdatedAt = t.LastUpdatedAt,
+                LastUpdatedAt = t.LastUpdatedAt
             })
             .ToListAsync();
+    }
+
+
+    /// <summary>
+    /// Save search for user
+    /// </summary>
+    /// <param name="userId">The ID of the user</param>
+    /// <param name="textSearch">Full text search string</param>
+    /// <param name="filters">Query filter object array</param>
+    /// <param name="favorite">Boolean for if favorite</param>
+    /// <param name="alias">Name for saved search</param>
+    /// <returns>True if successfully saved</returns>
+    public async Task<bool> SaveSearch(long userId, string alias, string textSearch,
+        CustomQueryDtos.CustomQueryRequestDto[] filters, bool favorite = false)
+    {
+        if (filters == null)
+            throw new ArgumentNullException(nameof(filters), "Query filters cannot be null");
+        // Create an object that wraps both the textSearch and filters array
+        var searchData = new CustomQueryDtos.CustomQueryResponseDto()
+        {
+            textSearch = textSearch,
+            Filter = filters
+        };
+    
+        string queryBuilt = JsonSerializer.Serialize(searchData);
+        var savedSearch = new SavedSearch
+        {
+            Name = alias,
+            Search = queryBuilt,
+            IsFavorite = favorite,
+            UserId = userId
+        };
+        _context.SavedSearches.Add(savedSearch);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+    
+    /// <summary>
+    /// Get saved searches
+    /// </summary>
+    /// <param name="userId">The ID of the user</param>
+    /// <returns>List of saved searches for the user</returns>
+    public async Task<List<CustomQueryDtos.CustomQueryResponseDto>> GetSavedSearches(long userId)
+    {
+        var savedSearches = await _context.SavedSearches
+            .Where(s => s.UserId == userId)
+            .ToListAsync();
+
+        var result = new List<CustomQueryDtos.CustomQueryResponseDto>();
+
+        foreach (var search in savedSearches)
+        {
+            
+            // Deserialize the JSON string back to the original structure
+            var searchData = JsonSerializer.Deserialize<CustomQueryDtos.CustomQueryResponseDto>(search.Search);
+        
+            Console.WriteLine($"Filters count: {searchData?.Filter?.Length ?? 0}");
+        
+            result.Add(new CustomQueryDtos.CustomQueryResponseDto()
+            {
+                textSearch = searchData?.textSearch,
+                Filter = searchData?.Filter
+            });
+        }
+
+        return result;
     }
 }
