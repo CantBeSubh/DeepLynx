@@ -24,7 +24,7 @@ namespace deeplynx.api.Controllers
             _eventBusiness = eventBusiness;
             _logger = logger;
         }
-
+        
         /// <summary>
         /// Get All Events
         /// </summary>
@@ -38,7 +38,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var events = await _eventBusiness.GetAllEvents(filterDto);
+                var events = await _eventBusiness.GetAllEventsPaginated(filterDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -48,35 +48,41 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
-        // [HttpGet("GetAllEvents", Name = "api_get_all_events")]
-        // public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEvents(
-        //     [FromQuery] EventFilterRequestDTO? filterDto
-        //     )
-        // {
-        //     try
-        //     {
-        //         var events = await _eventBusiness.GetAllEvents(filterDto);
-        //         return Ok(events);
-        //     }
-        //     catch (Exception e)
-        //     {
-        //         var message = $"An unexpected error occurred while fetching events: {e}";
-        //         _logger.LogError(message);
-        //         return StatusCode(StatusCodes.Status500InternalServerError, message);
-        //     }
-        // }
+
+        /// <summary>
+        /// Get All Events
+        /// </summary>
+        /// <param name="projectId">The ID of the project</param>
+        /// <param name="organizationId">The ID of the origanization to which the events belong</param>
+        /// <returns></returns>
+        [HttpGet("GetAllEventsPaginated", Name = "api_get_all_events_paginated")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEventsPaginated(
+            [FromQuery] EventFilterRequestDTO? filterDto
+        )
+        {
+            try
+            {
+                var events = await _eventBusiness.GetAllEventsPaginated(filterDto);
+                return Ok(events);
+            }
+            catch (Exception e)
+            {
+                var message = $"An unexpected error occurred while fetching events: {e}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
 
         /// <summary>
         /// Get all events by user project membership.
         /// </summary>
-        [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUser(
+        [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user_paginated")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserPaginated(
             [FromQuery] EventFilterRequestDTO? filterDto)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUser(filterDto);
+                var events = await _eventBusiness.GetAllEventsByUserPaginated(filterDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -93,7 +99,6 @@ namespace deeplynx.api.Controllers
         /// <param name="userId">The ID of the user</param>
         /// <param name="projectId">The ID of the project to which the events belong</param>
         /// <returns></returns>
-
         [HttpGet("{projectId}/GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectSubscriptions(
             long projectId,

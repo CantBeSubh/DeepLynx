@@ -29,224 +29,87 @@ public class EventBusiness : IEventBusiness
     }
 
     /// <summary>
-    /// Retrieves all project events that the user is subscribed to.
-    /// </summary>
-    /// <param name="userId">The ID of the user to which the subscription belongs</param>
-    /// <param name="projectId">The ID of the project to which the subscription belongs</param>
-    /// <param name="organizationId">The ID of the project to which the subscription belongs</param>
-    public async Task<PaginatedResponse<EventResponseDto>> GetAllEvents(EventFilterRequestDTO? filterDto)
+/// Retrieves all events without pagination.
+/// </summary>
+/// <param name="filterDto">Optional filter criteria for events</param>
+/// <returns>List of all events matching the filter criteria</returns>
+public async Task<List<EventResponseDto>> GetAllEvents(EventFilterRequestDTO? filterDto)
+{
+    var eventQuery = _context.Events
+        .Include(e => e.Project)
+        .Include(e => e.DataSource)
+        .OrderByDescending(e => e.LastUpdatedAt)
+        .AsQueryable();
+
+    if (filterDto != null)
     {
-        var eventQuery = _context.Events
-            .Include(e => e.Project)
-            .Include(e => e.DataSource)
-            .OrderByDescending(e => e.LastUpdatedAt)
-            .AsQueryable();
-
-        if (filterDto != null)
+        if (filterDto.projectId.HasValue)
         {
-            if (filterDto.projectId.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.ProjectId == filterDto.projectId.Value);   
-            }
-          
-            if (filterDto.organizationId.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.OrganizationId == filterDto.organizationId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.projectName))
-            {
-                var searchTerm = filterDto.projectName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    e.Project != null &&
-                    EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.lastUpdatedBy))
-            {
-                var searchTerm = filterDto.lastUpdatedBy.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.operation))
-            {
-                var searchTerm = filterDto.operation.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.entityType))
-            {
-                var searchTerm = filterDto.entityType.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.entityName))
-            {
-                var searchTerm = filterDto.entityName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.dataSourceName))
-            {
-                var searchTerm = filterDto.dataSourceName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    e.DataSource != null &&
-                    EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
-            }
-            
-            if (filterDto.startDate.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= filterDto.startDate.Value);
-            }
-
-            if (filterDto.endDate.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= filterDto.endDate.Value);
-            }
+            eventQuery = eventQuery.Where(e => e.ProjectId == filterDto.projectId.Value);   
         }
-    
-        // Get total count before pagination
-        var totalCount = await eventQuery.CountAsync();
-
-        // Get pagination values
-        var pageNumber = filterDto?.PageNumber ?? 1;
-        var pageSize = filterDto?.GetValidatedPageSize() ?? 10;
-    
-        // Apply pagination and execute query
-        var items = await eventQuery
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .Select(e => new EventResponseDto
-            {
-                Id = e.Id,
-                Operation = e.Operation,
-                EntityType = e.EntityType,
-                EntityId = e.EntityId,
-                EntityName = e.EntityName,
-                ProjectId = e.ProjectId,
-                OrganizationId = e.OrganizationId,
-                DataSourceId = e.DataSourceId,
-                Properties = e.Properties,
-                LastUpdatedAt = e.LastUpdatedAt,
-                LastUpdatedBy = e.LastUpdatedBy,
-                ProjectName = e.Project != null ? e.Project.Name : null,
-                DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-            })
-            .ToListAsync();
-
-        return new PaginatedResponse<EventResponseDto>
+      
+        if (filterDto.organizationId.HasValue)
         {
-            Items = items,
-            PageNumber = pageNumber,
-            PageSize = pageSize,
-            TotalCount = totalCount
-        };
+            eventQuery = eventQuery.Where(e => e.OrganizationId == filterDto.organizationId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.projectName))
+        {
+            var searchTerm = filterDto.projectName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.Project != null &&
+                EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.lastUpdatedBy))
+        {
+            var searchTerm = filterDto.lastUpdatedBy.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.operation))
+        {
+            var searchTerm = filterDto.operation.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityType))
+        {
+            var searchTerm = filterDto.entityType.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityName))
+        {
+            var searchTerm = filterDto.entityName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.dataSourceName))
+        {
+            var searchTerm = filterDto.dataSourceName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.DataSource != null &&
+                EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
+        }
+        
+        if (filterDto.startDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= filterDto.startDate.Value);
+        }
+
+        if (filterDto.endDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= filterDto.endDate.Value);
+        }
     }
-    
-    /// <summary>
-    /// Retrieves all project events for projects that the user is a member of.
-    /// </summary>
-    public async Task<List<EventResponseDto>> GetAllEventsByUser(EventFilterRequestDTO? filterDto)
-    {
-        var userId = UserContextStorage.UserId;
 
-        if (userId == 0)
-        {
-            return new List<EventResponseDto>();
-        }
-
-        var userProjectIds = await _context.Projects
-            .Where(p => p.ProjectMembers.Any(pm =>
-                pm.UserId == userId ||
-                (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
-            ))
-            .Select(p => p.Id)
-            .ToListAsync();
-    
-        if (!userProjectIds.Any())
-        {
-            return new List<EventResponseDto>();
-        }
-        
-        var eventQuery = _context.Events
-            .Include(e => e.Project)
-            .Include(e => e.DataSource)
-            .Where(e => e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
-            .OrderByDescending(e => e.LastUpdatedAt)
-            .AsQueryable();
-        
-        if (filterDto != null)
-        {
-            if (filterDto.projectId.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.ProjectId == filterDto.projectId.Value);   
-            }
-          
-            if (filterDto.organizationId.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.OrganizationId == filterDto.organizationId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.projectName))
-            {
-                var searchTerm = filterDto.projectName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    e.Project != null &&
-                    EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.lastUpdatedBy))
-            {
-                var searchTerm = filterDto.lastUpdatedBy.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
-            }
-
-            if (!string.IsNullOrWhiteSpace(filterDto.operation))
-            {
-                var searchTerm = filterDto.operation.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.entityType))
-            {
-                var searchTerm = filterDto.entityType.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.entityName))
-            {
-                var searchTerm = filterDto.entityName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
-            }
-            
-            if (!string.IsNullOrWhiteSpace(filterDto.dataSourceName))
-            {
-                var searchTerm = filterDto.dataSourceName.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    e.DataSource != null &&
-                    EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
-            }
-            
-            if (filterDto.startDate.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= filterDto.startDate.Value);
-            }
-
-            if (filterDto.endDate.HasValue)
-            {
-                eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= filterDto.endDate.Value);
-            }
-        }
-        
-        return await eventQuery.Select(e => new EventResponseDto
+    return await eventQuery
+        .Select(e => new EventResponseDto
         {
             Id = e.Id,
             Operation = e.Operation,
@@ -261,8 +124,278 @@ public class EventBusiness : IEventBusiness
             LastUpdatedBy = e.LastUpdatedBy,
             ProjectName = e.Project != null ? e.Project.Name : null,
             DataSourceName = e.DataSource != null ? e.DataSource.Name : null
-        }).ToListAsync();
+        })
+        .ToListAsync();
+}
+
+/// <summary>
+/// Retrieves all project events with pagination.
+/// </summary>
+/// <param name="filterDto">Filter criteria and pagination parameters</param>
+/// <returns>Paginated response containing events and pagination metadata</returns>
+public async Task<PaginatedResponse<EventResponseDto>> GetAllEventsPaginated(EventFilterRequestDTO? filterDto)
+{
+    var eventQuery = _context.Events
+        .Include(e => e.Project)
+        .Include(e => e.DataSource)
+        .OrderByDescending(e => e.LastUpdatedAt)
+        .AsQueryable();
+
+    if (filterDto != null)
+    {
+        if (filterDto.projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == filterDto.projectId.Value);   
+        }
+      
+        if (filterDto.organizationId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.OrganizationId == filterDto.organizationId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.projectName))
+        {
+            var searchTerm = filterDto.projectName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.Project != null &&
+                EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.lastUpdatedBy))
+        {
+            var searchTerm = filterDto.lastUpdatedBy.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.operation))
+        {
+            var searchTerm = filterDto.operation.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityType))
+        {
+            var searchTerm = filterDto.entityType.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityName))
+        {
+            var searchTerm = filterDto.entityName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.dataSourceName))
+        {
+            var searchTerm = filterDto.dataSourceName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.DataSource != null &&
+                EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
+        }
+        
+        if (filterDto.startDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= filterDto.startDate.Value);
+        }
+
+        if (filterDto.endDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= filterDto.endDate.Value);
+        }
     }
+
+    // Get total count before pagination
+    var totalCount = await eventQuery.CountAsync();
+
+    // Get pagination values
+    var pageNumber = filterDto?.PageNumber ?? 1;
+    var pageSize = filterDto?.GetValidatedPageSize() ?? 10;
+
+    // Apply pagination and execute query
+    var items = await eventQuery
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .Select(e => new EventResponseDto
+        {
+            Id = e.Id,
+            Operation = e.Operation,
+            EntityType = e.EntityType,
+            EntityId = e.EntityId,
+            EntityName = e.EntityName,
+            ProjectId = e.ProjectId,
+            OrganizationId = e.OrganizationId,
+            DataSourceId = e.DataSourceId,
+            Properties = e.Properties,
+            LastUpdatedAt = e.LastUpdatedAt,
+            LastUpdatedBy = e.LastUpdatedBy,
+            ProjectName = e.Project != null ? e.Project.Name : null,
+            DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+        })
+        .ToListAsync();
+
+    return new PaginatedResponse<EventResponseDto>
+    {
+        Items = items,
+        PageNumber = pageNumber,
+        PageSize = pageSize,
+        TotalCount = totalCount
+    };
+}
+
+/// <summary>
+/// Retrieves all project events for projects that the user is a member of, with pagination.
+/// </summary>
+/// <param name="filterDto">Filter criteria and pagination parameters</param>
+/// <returns>Paginated response containing events and pagination metadata</returns>
+public async Task<PaginatedResponse<EventResponseDto>> GetAllEventsByUserPaginated(EventFilterRequestDTO? filterDto)
+{
+    var userId = UserContextStorage.UserId;
+
+    if (userId == 0)
+    {
+        return new PaginatedResponse<EventResponseDto>
+        {
+            Items = new List<EventResponseDto>(),
+            PageNumber = filterDto?.PageNumber ?? 1,
+            PageSize = filterDto?.GetValidatedPageSize() ?? 10,
+            TotalCount = 0
+        };
+    }
+
+    var userProjectIds = await _context.Projects
+        .Where(p => p.ProjectMembers.Any(pm =>
+            pm.UserId == userId ||
+            (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
+        ))
+        .Select(p => p.Id)
+        .ToListAsync();
+
+    if (!userProjectIds.Any())
+    {
+        return new PaginatedResponse<EventResponseDto>
+        {
+            Items = new List<EventResponseDto>(),
+            PageNumber = filterDto?.PageNumber ?? 1,
+            PageSize = filterDto?.GetValidatedPageSize() ?? 10,
+            TotalCount = 0
+        };
+    }
+    
+    var eventQuery = _context.Events
+        .Include(e => e.Project)
+        .Include(e => e.DataSource)
+        .Where(e => e.ProjectId.HasValue && userProjectIds.Contains(e.ProjectId.Value))
+        .OrderByDescending(e => e.LastUpdatedAt)
+        .AsQueryable();
+    
+    if (filterDto != null)
+    {
+        if (filterDto.projectId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.ProjectId == filterDto.projectId.Value);   
+        }
+      
+        if (filterDto.organizationId.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.OrganizationId == filterDto.organizationId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.projectName))
+        {
+            var searchTerm = filterDto.projectName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.Project != null &&
+                EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.lastUpdatedBy))
+        {
+            var searchTerm = filterDto.lastUpdatedBy.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filterDto.operation))
+        {
+            var searchTerm = filterDto.operation.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.Operation, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityType))
+        {
+            var searchTerm = filterDto.entityType.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityType, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.entityName))
+        {
+            var searchTerm = filterDto.entityName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                EF.Functions.ILike(e.EntityName, $"%{searchTerm}%"));
+        }
+        
+        if (!string.IsNullOrWhiteSpace(filterDto.dataSourceName))
+        {
+            var searchTerm = filterDto.dataSourceName.Trim();
+            eventQuery = eventQuery.Where(e =>
+                e.DataSource != null &&
+                EF.Functions.ILike(e.DataSource.Name, $"%{searchTerm}%"));
+        }
+        
+        if (filterDto.startDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt >= filterDto.startDate.Value);
+        }
+
+        if (filterDto.endDate.HasValue)
+        {
+            eventQuery = eventQuery.Where(e => e.LastUpdatedAt <= filterDto.endDate.Value);
+        }
+    }
+    
+    // Get total count before pagination
+    var totalCount = await eventQuery.CountAsync();
+
+    // Get pagination values
+    var pageNumber = filterDto?.PageNumber ?? 1;
+    var pageSize = filterDto?.GetValidatedPageSize() ?? 10;
+
+    // Apply pagination and execute query
+    var items = await eventQuery
+        .Skip((pageNumber - 1) * pageSize)
+        .Take(pageSize)
+        .Select(e => new EventResponseDto
+        {
+            Id = e.Id,
+            Operation = e.Operation,
+            EntityType = e.EntityType,
+            EntityId = e.EntityId,
+            EntityName = e.EntityName,
+            ProjectId = e.ProjectId,
+            OrganizationId = e.OrganizationId,
+            DataSourceId = e.DataSourceId,
+            Properties = e.Properties,
+            LastUpdatedAt = e.LastUpdatedAt,
+            LastUpdatedBy = e.LastUpdatedBy,
+            ProjectName = e.Project != null ? e.Project.Name : null,
+            DataSourceName = e.DataSource != null ? e.DataSource.Name : null
+        })
+        .ToListAsync();
+
+    return new PaginatedResponse<EventResponseDto>
+    {
+        Items = items,
+        PageNumber = pageNumber,
+        PageSize = pageSize,
+        TotalCount = totalCount
+    };
+}
     
     /// <summary>
     /// Retrieves all project events that the user is subscribed to.

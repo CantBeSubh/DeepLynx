@@ -178,7 +178,7 @@ export type TagResponseDto = {
   lastUpdatedBy?: string | null;
   isArchived:boolean;
   createdBy?: string | null;
-  createdAt: string; // ISO date string from backend
+  createdAt: string;
   archivedAt?: string | null;
 };
 
@@ -192,3 +192,26 @@ export type UserResponseDto =
   isArchived: boolean;
   isActive: boolean;
 }
+
+export type EventResponseDto = {
+  id: number;
+  operation: string;
+  entityType: string;
+  entityId?: number;
+  entityName?: string;
+  projectId?: number;
+  organizationId?: number;
+  dataSourceId?: number;
+  properties?: any;
+  lastUpdatedAt: string;
+  lastUpdatedBy: string;
+  projectName?: string;
+  dataSourceName?: string;
+};
+
+export type PaginatedEventsResponse = {
+  items: EventResponseDto[];
+  pageNumber: number;
+  pageSize: number;
+  totalCount: number;
+};
