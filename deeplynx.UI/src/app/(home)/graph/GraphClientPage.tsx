@@ -1,3 +1,4 @@
+//src/app/(home)/graph/GraphClientPage.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -6,34 +7,12 @@ import { SigmaContainer } from "@react-sigma/core";
 import "@react-sigma/core/lib/style.css";
 import Sigma from "sigma";
 import { Attributes } from "graphology-types";
-import axios from "axios";
+import { getGraphDataForRecord } from "@/app/lib/graph_services.client";
+import { GraphResponseDto } from "../types/responseDTOs";
 
 // ============================================
 // TYPE DEFINITIONS
 // ============================================
-
-/**
- * Backend API response structure
- */
-interface GraphResponse {
-  nodes: Node[];
-  links: Link[];
-}
-
-interface Node {
-  id: string | null;
-  label: string;
-  type: string;
-}
-
-interface Link {
-  source: string | null;
-  target: string | null;
-  relationshipId: string | null;
-  relationshipName: string | null;
-  edgeId: string | null;
-}
-
 /**
  * Sigma.js node attributes
  * These properties control how nodes appear and are positioned
@@ -44,7 +23,7 @@ interface NodeAttributes extends Attributes {
   size: number; // Visual size of the node
   label: string; // Text label displayed on/near the node
   color: string; // Node color (hex format)
-  type: string; // Node type from backend
+  nodeType: string; // Node type from backend (renamed from 'type' to avoid Sigma.js conflict)
 }
 
 /**
@@ -54,8 +33,8 @@ interface EdgeAttributes extends Attributes {
   size?: number; // Optional: thickness of the edge line
   color?: string; // Optional: color of the edge line
   label?: string; // Edge label (relationship name)
-  relationshipId?: string | null;
-  edgeId?: string | null;
+  relationshipId?: number | null;
+  edgeId?: number;
 }
 
 // ============================================
@@ -64,7 +43,7 @@ interface EdgeAttributes extends Attributes {
 
 interface GraphClientPageProps {
   projectId: string;
-  recordId?: number;
+  recordId: number;
   depth?: number;
 }
 
@@ -108,15 +87,14 @@ const GraphClientPage = ({
       )}
 
       {/* Graph container */}
-      <SigmaContainer style={{ height: "100%" }}>
-        <MyGraph
-          projectId={projectId}
-          recordId={recordId}
-          depth={depth}
-          onLoadingChange={setIsLoading}
-          onError={setError}
-        />
-      </SigmaContainer>
+
+      <MyGraph
+        projectId={projectId}
+        recordId={recordId}
+        depth={depth}
+        onLoadingChange={setIsLoading}
+        onError={setError}
+      />
     </div>
   );
 };
@@ -127,7 +105,7 @@ const GraphClientPage = ({
 
 interface MyGraphProps {
   projectId: string;
-  recordId?: number;
+  recordId: number; // Required
   depth?: number;
   onLoadingChange: (loading: boolean) => void;
   onError: (error: string | null) => void;
@@ -163,20 +141,16 @@ const MyGraph = ({
         onLoadingChange(true);
         onError(null);
 
-        // Fetch graph data from backend
-        const { data } = await axios.get<GraphResponse>(
-          `http://localhost:5095/projects/${projectId}/edges/GetGraphDataForRecord`,
-          {
-            params: {
-              recordId,
-              depth,
-            },
-          }
-        );
+        // Fetch graph data from backend using the service
+        const data = await getGraphDataForRecord(projectId, {
+          recordId,
+          depth,
+        });
 
         // Validate that we have data
         if (!data.nodes || data.nodes.length === 0) {
           onError("No nodes found in the graph data");
+          onLoadingChange(false);
           return;
         }
 
@@ -190,6 +164,8 @@ const MyGraph = ({
         // Generate color based on node type
         const getColorByType = (type: string): string => {
           const colors: Record<string, string> = {
+            root: "#9b59b6", // Purple for root
+            node: "#3498db", // Blue for nodes
             person: "#3498db", // Blue
             company: "#2ecc71", // Green
             document: "#e74c3c", // Red
@@ -200,36 +176,52 @@ const MyGraph = ({
         };
 
         // Add all nodes to the graph
+        // First, identify the root node
+        const rootNode = data.nodes.find((node) => node.type === "root");
+        const otherNodes = data.nodes.filter((node) => node.type !== "root");
+
         data.nodes.forEach((node, index) => {
-          // Skip nodes with null IDs
-          if (!node.id) return;
+          // Convert numeric ID to string (Graphology requires string IDs)
+          const nodeId = String(node.id);
 
-          // Calculate position using a circular layout
-          // This spreads nodes evenly in a circle
-          const angle = (index / data.nodes.length) * 2 * Math.PI;
-          const radius = 5;
+          let x = 0;
+          let y = 0;
 
-          graph.addNode(node.id, {
-            x: Math.cos(angle) * radius,
-            y: Math.sin(angle) * radius,
-            size: 15,
-            label: node.label || node.id,
+          // Position root node at the center
+          if (node.type === "root") {
+            x = 0;
+            y = 0;
+          } else {
+            // Position other nodes in a circle around the root
+            const nodeIndex = otherNodes.findIndex((n) => n.id === node.id);
+            const angle = (nodeIndex / otherNodes.length) * 2 * Math.PI;
+            const radius = 1; // Adjust this to make the circle bigger or smaller
+            x = Math.cos(angle) * radius;
+            y = Math.sin(angle) * radius;
+          }
+
+          graph.addNode(nodeId, {
+            x,
+            y,
+            size: node.type === "root" ? 20 : 15, // Root node is larger
+            label: node.label,
             color: getColorByType(node.type),
-            type: node.type,
+            nodeType: node.type,
           });
         });
 
         // Add all edges (links) to the graph
         data.links.forEach((link, index) => {
-          // Skip links with null source or target
-          if (!link.source || !link.target) return;
+          // Convert numeric IDs to strings
+          const sourceId = String(link.source);
+          const targetId = String(link.target);
 
           // Check if both nodes exist before creating edge
-          if (graph.hasNode(link.source) && graph.hasNode(link.target)) {
-            // Use edgeId if available, otherwise create a unique ID
-            const edgeId = link.edgeId || `edge-${index}`;
+          if (graph.hasNode(sourceId) && graph.hasNode(targetId)) {
+            // Use edgeId, or create a unique ID
+            const edgeId = link.edgeId ? String(link.edgeId) : `edge-${index}`;
 
-            graph.addEdge(link.source, link.target, {
+            graph.addEdge(sourceId, targetId, {
               size: 2,
               color: "#999",
               label: link.relationshipName || undefined,
@@ -252,7 +244,7 @@ const MyGraph = ({
         if (containerRef.current) {
           sigmaRef.current = new Sigma(graph, containerRef.current, {
             // Optional: Configure Sigma settings
-            renderEdgeLabels: true, // Show relationship names
+            renderEdgeLabels: false, // Set to true if you want to show relationship names
           });
         }
 

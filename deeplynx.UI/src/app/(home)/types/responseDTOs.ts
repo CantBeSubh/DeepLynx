@@ -192,3 +192,18 @@ export type UserResponseDto =
   isArchived: boolean;
   isActive: boolean;
 }
+
+export type GraphResponseDto = {
+  nodes: Array<{
+    id: number;
+    label: string;
+    type: string;
+  }>;
+  links: Array<{
+    source: number;
+    target: number;
+    relationshipId: number;
+    relationshipName: string | null;
+    edgeId: number;
+  }>;
+}
