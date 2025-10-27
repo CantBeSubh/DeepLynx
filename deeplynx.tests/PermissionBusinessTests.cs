@@ -544,7 +544,7 @@ namespace deeplynx.tests
             // Arrange
             var dto = new UpdatePermissionRequestDto
             {
-                Name = "Hardcode Update Test"
+                Name = "Default Permission Update Test"
             };
 
             // Act
