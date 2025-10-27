@@ -68,7 +68,7 @@ public class MetadataBusiness : IMetadataBusiness
     }
     
     /// <summary>
-    /// Check file format and file properties amd deserialize into our CreateMetadataRequestDto.
+    /// Check file format and file properties and deserialize into our CreateMetadataRequestDto.
     /// Call the parse and perform pre-processing and final returned data validation of all metadata.
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
