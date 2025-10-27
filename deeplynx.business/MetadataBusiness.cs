@@ -52,11 +52,35 @@ public class MetadataBusiness : IMetadataBusiness
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
+    /// <param name="metadataRequestDto">The metadata request data transfer object containing metadata.</param>
+    /// <returns>The created metadata response DTO with saved details.</returns>
+    /// <exception cref="KeyNotFoundException">If project is not found.</exception>
+    /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
+    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, CreateMetadataRequestDto metadataRequestDto)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
+        await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
+
+        if (metadataRequestDto == null)
+            throw new ArgumentNullException(nameof(metadataRequestDto));
+
+        return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
+    }
+    
+    /// <summary>
+    /// Check file format and file properties amd deserialize into our CreateMetadataRequestDto.
+    /// Call the parse and perform pre-processing and final returned data validation of all metadata.
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the project data source to which some metadata belongs.</param>
     /// <param name="file">The .json file containing the metadata contents.</param>
     /// <returns>The created metadata response DTO with saved details.</returns>
     /// <exception cref="KeyNotFoundException">If project is not found.</exception>
     /// <exception cref="KeyNotFoundException">If data source is not found.</exception>
-    public async Task<MetadataResponseDto> CreateMetadata(long projectId, long dataSourceId, IFormFile file)
+    /// <exception cref="ArgumentNullException">If file is null.</exception>
+    /// <exception cref="ArgumentException">If file is empty or not a .json file.</exception>
+    /// <exception cref="JsonException">If file cannot be deserialized or contains invalid JSON.</exception>
+    public async Task<MetadataResponseDto> CreateMetadataFromFile(long projectId, long dataSourceId, IFormFile file)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
         await ExistenceHelper.EnsureDataSourceExistsForProjectAsync(_context, dataSourceId, projectId);
@@ -83,7 +107,6 @@ public class MetadataBusiness : IMetadataBusiness
                     PropertyNameCaseInsensitive = true
                 };
             
-                // One-time deserialization so everything is ready to use in Parse method
                 metadataRequestDto = await JsonSerializer.DeserializeAsync<CreateMetadataRequestDto>(stream, options);
             
                 if (metadataRequestDto == null)
@@ -103,7 +126,7 @@ public class MetadataBusiness : IMetadataBusiness
         
         return await ParseMetadata(metadataRequestDto, dataSourceId, projectId);
     }
-
+    
     /// <summary>
     /// Individually call the bulk create functions of all metadata fields and append to return object.
     /// </summary>
@@ -174,7 +197,6 @@ public class MetadataBusiness : IMetadataBusiness
                 AttachTagsToRecordDtos(metadataResponseDto, recordTags, tagMap);
             }
         }
-
         // Edges
         if (edges.Any())
         {

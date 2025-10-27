@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
+using deeplynx.models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -71,7 +73,7 @@ namespace deeplynx.tests
                 _edgeBusiness
             );
         }
-
+        
         #region CreateMetadata Tests
         
         [Fact]
@@ -80,23 +82,20 @@ namespace deeplynx.tests
             // Arrange
             var now = DateTime.UtcNow;
     
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                classes = new[]
+                Classes = new List<CreateClassRequestDto>
                 {
-                    new
+                    new CreateClassRequestDto
                     {
-                        name = "Test Metadata Class",
-                        description = "Test Description"
+                        Name = "Test Metadata Class",
+                        Description = "Test Description"
                     }
                 }
             };
-
-            var file = CreateJsonFile(metadataContent);
-
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            
             // Assert
             Assert.NotNull(result);
             Assert.Single(result.Classes);
@@ -109,9 +108,9 @@ namespace deeplynx.tests
             // Ensure create class event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-    
+            
             var actualEvent = eventList[0];
-    
+            
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -122,28 +121,37 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Success_OnBulkCreate()
         {
             // Arrange
-            var metadataContent = new
+            var now = DateTime.UtcNow;
+
+            var dto = new CreateMetadataRequestDto
             {
-                classes = new[]
+                Classes = new List<CreateClassRequestDto>
                 {
-                    new { name = "Bulk Class 1", description = "First class" },
-                    new { name = "Bulk Class 2", description = "Second class" }
+                    new CreateClassRequestDto
+                    {
+                        Name = "Bulk Class 1",
+                        Description = "First class"
+                    },
+                    new CreateClassRequestDto
+                    {
+                        Name = "Bulk Class 2", 
+                        Description = "Second class"
+                    }
                 }
             };
 
-            var file = CreateJsonFile(metadataContent);
-
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            
             // Assert
             Assert.Equal(2, result.Classes.Count);
             Assert.Equal("Bulk Class 1", result.Classes.First().Name);
             Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
 
+            // Ensure both create class events are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
-    
+
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -156,31 +164,29 @@ namespace deeplynx.tests
             Assert.Equal("class", actualEvent1.EntityType);
             Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadata_Success_WithRecordsAndAutoClasses()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                records = new[]
+                Records = new List<CreateRecordRequestDto>
                 {
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Test Record",
-                        original_id = "rec-001",
-                        class_name = "Auto Class",
-                        description = "Test Description",
-                        properties = new { test = "value" }
+                        Name = "Test Record",
+                        OriginalId = "rec-001", 
+                        ClassName = "Auto Class",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
                     }
                 }
             };
 
-            var file = CreateJsonFile(metadataContent);
-
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            
             // Assert
             Assert.Single(result.Classes);
             Assert.Single(result.Records);
@@ -189,9 +195,10 @@ namespace deeplynx.tests
             Assert.Equal("rec-001", result.Records.First().OriginalId);
             Assert.Equal(result.Classes.First().Id, result.Records.First().ClassId);
 
+            // Ensure both create class and create record events are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
-    
+            
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -209,35 +216,33 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Success_WithTagsAndRecords()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                records = new[]
+                Records = new List<CreateRecordRequestDto>
                 {
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Tagged Record",
-                        original_id = "tagged-001",
-                        description = "Test Description",
-                        properties = new { test = "value" },
-                        tags = new[] { "important", "test" }
+                        Name = "Tagged Record",
+                        OriginalId = "tagged-001",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject,
+                        Tags = new List<string> { "important", "test" }
                     }
                 }
             };
 
-            var file = CreateJsonFile(metadataContent);
-
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            
             // Assert
             Assert.Single(result.Records);
             Assert.Equal(2, result.Tags.Count);
             Assert.Equal(2, result.Records.First().Tags.Count);
-    
+            
             // Ensure both create record and tags are logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(3, eventList.Count);
-    
+            
             var actualEvent0 = eventList[0];
             Assert.Equal(pid, actualEvent0.ProjectId);
             Assert.Equal("create", actualEvent0.Operation);
@@ -249,32 +254,29 @@ namespace deeplynx.tests
             Assert.Equal("create", actualEvent1.Operation);
             Assert.Equal("tag", actualEvent1.EntityType);
             Assert.Equal(result.Tags[1].Id, actualEvent1.EntityId);
-    
+            
             var actualEvent2 = eventList[2];
             Assert.Equal(pid, actualEvent2.ProjectId);
             Assert.Equal("create", actualEvent2.Operation);
             Assert.Equal("record", actualEvent2.EntityType);
             Assert.Equal(result.Records[0].Id, actualEvent2.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateMetadata_Fails_IfNoProjectId()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                classes = new[]
+                Classes = new List<CreateClassRequestDto>
                 {
-                    new { name = "Test Class" }
+                    new CreateClassRequestDto { Name = "Test Class" }
                 }
             };
-
-            var file = CreateJsonFile(metadataContent);
-    
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid + 99, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid + 99, did, dto));
             Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
-  
+          
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -284,26 +286,24 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Fails_IfNoDataSourceId()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                records = new[]
+                Records = new List<CreateRecordRequestDto>
                 {
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Test Record",
-                        original_id = "test-001",
-                        description = "Test Description",
-                        properties = new { test = "value" }
+                        Name = "Test Record",
+                        OriginalId = "test-001",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
                     }
                 }
             };
-
-            var file = CreateJsonFile(metadataContent);
-    
+            
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did + 99, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did + 99, dto));
             Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
-    
+            
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -317,21 +317,22 @@ namespace deeplynx.tests
             project.IsArchived = true;
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
-    
-            var metadataContent = new
+            
+            
+            var classDtos = new List<CreateClassRequestDto>
             {
-                classes = new[]
-                {
-                    new { name = "Test Class" }
-                }
+                new CreateClassRequestDto { Name = "Test Class" }
             };
 
-            var file = CreateJsonFile(metadataContent);
-    
+            var dto = new CreateMetadataRequestDto
+            {
+                Classes = classDtos
+            };
+            
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
             Assert.Contains($"Project with id {pid} not found.", exception.Message);
-    
+            
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -345,42 +346,35 @@ namespace deeplynx.tests
             dataSource.IsArchived = true;
             Context.DataSources.Update(dataSource);
             await Context.SaveChangesAsync();
-    
-            var metadataContent = new
+
+            var dto = new CreateMetadataRequestDto
             {
-                records = new[]
+                Records = new List<CreateRecordRequestDto>
                 {
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Test Record",
-                        original_id = "test-001",
-                        description = "Test Description",
-                        properties = new { test = "value" }
+                        Name = "Test Record",
+                        OriginalId = "test-001",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
                     }
                 }
             };
-
-            var file = CreateJsonFile(metadataContent);
-    
+            
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, file));
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
             Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
-    
+            
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
 
         [Fact]
-        public async Task CreateMetadata_Fails_IfNullFile()
+        public async Task CreateMetadata_Fails_IfNullDto()
         {
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, null)
-            );
-    
-            Assert.Equal("file", exception.ParamName);
-            Assert.Contains("File cannot be null.", exception.Message);
+            await Assert.ThrowsAsync<ArgumentNullException>(() => _metadataBusiness.CreateMetadata(pid, did, null));
 
             // Ensure create event was NOT logged
             var eventList = await Context.Events.ToListAsync();
@@ -391,20 +385,18 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Success_WithEmptyArrays()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                classes = Array.Empty<object>(),
-                relationships = Array.Empty<object>(),
-                tags = Array.Empty<object>(),
-                records = Array.Empty<object>(),
-                edges = Array.Empty<object>()
+                Classes = new List<CreateClassRequestDto>(),
+                Relationships = new List<CreateRelationshipRequestDto>(),
+                Tags = new List<CreateTagRequestDto>(),
+                Records = new List<CreateRecordRequestDto>(),
+                Edges = new List<CreateEdgeRequestDto>()
             };
 
-            var file = CreateJsonFile(metadataContent);
-
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-    
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
+            
             // Assert
             Assert.NotNull(result);
             Assert.Null(result.Classes);
@@ -417,208 +409,15 @@ namespace deeplynx.tests
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfEmptyFile()
-        {
-            // Arrange
-            var emptyStream = new MemoryStream();
-            var file = new FormFile(emptyStream, 0, 0, "file", "metadata.json")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "application/json"
-            };
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            Assert.Equal("file", exception.ParamName);
-            Assert.Contains("File cannot be empty.", exception.Message);
-    
-            // Ensure no events were logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfWrongFileExtension()
-        {
-            // Arrange
-            var metadataContent = new
-            {
-                classes = new[] { new { name = "Test" } }
-            };
-    
-            var file = CreateJsonFile(metadataContent, "metadata.txt"); // Wrong extension
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            Assert.Equal("file", exception.ParamName);
-            Assert.Contains("File must be a .json file.", exception.Message);
-    
-            // Ensure no events were logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfXmlExtension()
-        {
-            // Arrange
-            var metadataContent = new
-            {
-                classes = new[] { new { name = "Test" } }
-            };
-    
-            var file = CreateJsonFile(metadataContent, "metadata.xml");
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            Assert.Contains("File must be a .json file", exception.Message);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfNoExtension()
-        {
-            // Arrange
-            var metadataContent = new
-            {
-                classes = new[] { new { name = "Test" } }
-            };
-    
-            var file = CreateJsonFile(metadataContent, "metadata");
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<ArgumentException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            Assert.Contains("File must be a .json file", exception.Message);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfInvalidJson()
-        {
-            // Arrange
-            var invalidJson = "{ this is not valid json }";
-            var bytes = Encoding.UTF8.GetBytes(invalidJson);
-            var stream = new MemoryStream(bytes);
-    
-            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "application/json"
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            // Ensure no events were logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-        
-        [Fact]
-        public async Task CreateMetadata_Fails_IfMalformedJson()
-        {
-            // Arrange
-            var malformedJson = "{\"classes\": [}"; // Missing closing bracket
-            var bytes = Encoding.UTF8.GetBytes(malformedJson);
-            var stream = new MemoryStream(bytes);
-    
-            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "application/json"
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-        }
-
-        [Fact]
-        public async Task CreateMetadata_Fails_IfJsonIsNull()
-        {
-            // Arrange
-            var nullJson = "null";
-            var bytes = Encoding.UTF8.GetBytes(nullJson);
-            var stream = new MemoryStream(bytes);
-    
-            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
-            {
-                Headers = new HeaderDictionary(),
-                ContentType = "application/json"
-            };
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<JsonException>(
-                () => _metadataBusiness.CreateMetadata(pid, did, file)
-            );
-    
-            Assert.Contains("Failed to deserialize metadata from file", exception.Message);
-        }
-
-        [Fact]
-        public async Task CreateMetadata_Success_WithJsonExtensionUpperCase()
-        {
-            // Arrange - Test that .JSON (uppercase) is accepted
-            var metadataContent = new
-            {
-                classes = new[] { new { name = "Test Class" } }
-            };
-    
-            var file = CreateJsonFile(metadataContent, "metadata.JSON");
-
-            // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Classes);
-            Assert.Equal("Test Class", result.Classes.First().Name);
-        }
-
-        [Fact]
-        public async Task CreateMetadata_Success_WithMixedCaseExtension()
-        {
-            // Arrange - Test that .Json (mixed case) is accepted
-            var metadataContent = new
-            {
-                classes = new[] { new { name = "Test Class" } }
-            };
-    
-            var file = CreateJsonFile(metadataContent, "metadata.Json");
-
-            // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
-
-            // Assert
-            Assert.NotNull(result);
-            Assert.Single(result.Classes);
-        }
 
         [Fact]
         public async Task CreateMetadata_Success_WithNullArrays()
         {
             // Arrange
-            var metadataContent = new { }; // Empty JSON object - all properties will be null
-
-            var file = CreateJsonFile(metadataContent);
+            var dto = new CreateMetadataRequestDto(); // All arrays are null by default
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
 
             // Assert
             Assert.NotNull(result);
@@ -637,57 +436,54 @@ namespace deeplynx.tests
         public async Task CreateMetadata_Success_WithComplexMetadata()
         {
             // Arrange
-            var metadataContent = new
+            var dto = new CreateMetadataRequestDto
             {
-                classes = new[]
+                Classes = new List<CreateClassRequestDto>
                 {
-                    new { name = "New Class" }
+                    new CreateClassRequestDto { Name = "New Class" }
                 },
-                relationships = new[]
+                Relationships = new List<CreateRelationshipRequestDto>
                 {
-                    new
+                    new CreateRelationshipRequestDto
                     {
-                        name = "Test Relationship",
-                        origin_id = cid,
-                        destination_id = cid2
+                        Name = "Test Relationship",
+                        OriginId = cid,
+                        DestinationId = cid2
                     }
                 },
-                tags = new[]
+                Tags = new List<CreateTagRequestDto>
                 {
-                    new { name = "Test Tag" }
+                    new CreateTagRequestDto { Name = "Test Tag" }
                 },
-                records = new object[]
+                Records = new List<CreateRecordRequestDto>
                 {
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Test Record",
-                        original_id = "test-1",
-                        description = "Test Description",
-                        properties = new { test = "value" }
+                        Name = "Test Record",
+                        OriginalId = "test-1",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
                     },
-                    new
+                    new CreateRecordRequestDto
                     {
-                        name = "Test Record 2",
-                        original_id = "test-2",
-                        description = "Test Description",
-                        properties = new { test2 = "value 2" }
+                        Name = "Test Record 2",
+                        OriginalId = "test-2",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test2\": \"value 2\"}") as JsonObject
                     }
                 },
-                edges = new[]
+                Edges = new List<CreateEdgeRequestDto>
                 {
-                    new
+                    new CreateEdgeRequestDto
                     {
-                        relationship_name = "Test Relationship",
-                        origin_oid = "test-1",
-                        destination_oid = "test-2"
+                        RelationshipName = "Test Relationship",
+                        OriginOid = "test-1",
+                        DestinationOid = "test-2"
                     }
                 }
             };
-
-            var file = CreateJsonFile(metadataContent);
-
-            // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+            
+            var result = await _metadataBusiness.CreateMetadata(pid, did, dto);
             
             // Assert
             Assert.Single(result.Classes);
@@ -740,6 +536,752 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateMetadata_Fails_WhenEdgeHasSameOriginAndDestination()
         {
+            var dto = new CreateMetadataRequestDto
+            {
+                Classes = new List<CreateClassRequestDto>
+                {
+                    new CreateClassRequestDto { Name = "New Class" }
+                },
+                Relationships = new List<CreateRelationshipRequestDto>
+                {
+                    new CreateRelationshipRequestDto
+                    {
+                        Name = "Test Relationship",
+                        OriginId = cid,
+                        DestinationId = cid2
+                    }
+                },
+                Tags = new List<CreateTagRequestDto>
+                {
+                    new CreateTagRequestDto { Name = "Test Tag" }
+                },
+                Records = new List<CreateRecordRequestDto>
+                {
+                    new CreateRecordRequestDto
+                    {
+                        Name = "Test Record",
+                        OriginalId = "test-1",
+                        Description = "Test Description",
+                        Properties = JsonObject.Parse("{\"test\": \"value\"}") as JsonObject
+                    }
+                },
+                Edges = new List<CreateEdgeRequestDto>
+                {
+                    new CreateEdgeRequestDto
+                    {
+                        RelationshipName = "Test Relationship",
+                        OriginOid = "test-1",
+                        DestinationOid = "test-1"
+                    }
+                }
+            };
+
+            // Act
+            await Assert.ThrowsAsync<ValidationException> (() => _metadataBusiness.CreateMetadata(pid, did, dto));
+        }
+
+        [Fact]
+        public async Task CreateMetadata_Fails_IfMissingRecordsForEdges()
+        {
+            // Arrange
+            var dto = new CreateMetadataRequestDto
+            {
+                Edges = new List<CreateEdgeRequestDto>
+                {
+                    new CreateEdgeRequestDto
+                    {
+                        RelationshipName = "Test Rel",
+                        OriginOid = "missing-origin",
+                        DestinationOid = "missing-dest"
+                    }
+                }
+            };
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(pid, did, dto));
+            Assert.Contains("Records not found matching Original IDs", exception.Message);
+            
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            // Ensure we at least create relationship
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("relationship", actualEvent.EntityType);
+        }
+        
+        #endregion
+
+        #region CreateMetadataFromFile Tests
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_ReturnsIdAndCreatedAt()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+    
+            var metadataContent = new
+            {
+                classes = new[]
+                {
+                    new
+                    {
+                        name = "Test Metadata Class",
+                        description = "Test Description"
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+    
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
+            Assert.True(result.Classes.First().Id > 0);
+            Assert.True(result.Classes.First().LastUpdatedAt >= now);
+            Assert.Equal("Test Metadata Class", result.Classes.First().Name);
+            Assert.Equal("Test Description", result.Classes.First().Description);
+            Assert.Equal(pid, result.Classes.First().ProjectId);
+
+            // Ensure create class event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+    
+            var actualEvent = eventList[0];
+    
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("class", actualEvent.EntityType);
+            Assert.Equal(result.Classes.First().Id, actualEvent.EntityId);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_OnBulkCreate()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[]
+                {
+                    new { name = "Bulk Class 1", description = "First class" },
+                    new { name = "Bulk Class 2", description = "Second class" }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+    
+            // Assert
+            Assert.Equal(2, result.Classes.Count);
+            Assert.Equal("Bulk Class 1", result.Classes.First().Name);
+            Assert.Equal("Bulk Class 2", result.Classes.Last().Name);
+
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(2, eventList.Count);
+    
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("class", actualEvent1.EntityType);
+            Assert.Equal(result.Classes[1].Id, actualEvent1.EntityId);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithRecordsAndAutoClasses()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                records = new[]
+                {
+                    new
+                    {
+                        name = "Test Record",
+                        original_id = "rec-001",
+                        class_name = "Auto Class",
+                        description = "Test Description",
+                        properties = new { test = "value" }
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+    
+            // Assert
+            Assert.Single(result.Classes);
+            Assert.Single(result.Records);
+            Assert.Equal("Auto Class", result.Classes.First().Name);
+            Assert.Equal("Test Record", result.Records.First().Name);
+            Assert.Equal("rec-001", result.Records.First().OriginalId);
+            Assert.Equal(result.Classes.First().Id, result.Records.First().ClassId);
+
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(2, eventList.Count);
+    
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("record", actualEvent1.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent1.EntityId);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithTagsAndRecords()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                records = new[]
+                {
+                    new
+                    {
+                        name = "Tagged Record",
+                        original_id = "tagged-001",
+                        description = "Test Description",
+                        properties = new { test = "value" },
+                        tags = new[] { "important", "test" }
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+    
+            // Assert
+            Assert.Single(result.Records);
+            Assert.Equal(2, result.Tags.Count);
+            Assert.Equal(2, result.Records.First().Tags.Count);
+    
+            // Ensure both create record and tags are logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(3, eventList.Count);
+    
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("tag", actualEvent0.EntityType);
+            Assert.Equal(result.Tags[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("tag", actualEvent1.EntityType);
+            Assert.Equal(result.Tags[1].Id, actualEvent1.EntityId);
+    
+            var actualEvent2 = eventList[2];
+            Assert.Equal(pid, actualEvent2.ProjectId);
+            Assert.Equal("create", actualEvent2.Operation);
+            Assert.Equal("record", actualEvent2.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent2.EntityId);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfNoProjectId()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[]
+                {
+                    new { name = "Test Class" }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+    
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid + 99, did, file));
+            Assert.Contains($"Project with id {pid + 99} not found.", exception.Message);
+  
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfNoDataSourceId()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                records = new[]
+                {
+                    new
+                    {
+                        name = "Test Record",
+                        original_id = "test-001",
+                        description = "Test Description",
+                        properties = new { test = "value" }
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+    
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did + 99, file));
+            Assert.Contains($"DataSource with id {did + 99} not found in project with id {pid}", exception.Message);
+    
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfDeletedProjectId()
+        {
+            // Arrange
+            var project = await Context.Projects.FindAsync(pid);
+            project.IsArchived = true;
+            Context.Projects.Update(project);
+            await Context.SaveChangesAsync();
+    
+            var metadataContent = new
+            {
+                classes = new[]
+                {
+                    new { name = "Test Class" }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+    
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            Assert.Contains($"Project with id {pid} not found.", exception.Message);
+    
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfDeletedDataSourceId()
+        {
+            // Arrange
+            var dataSource = await Context.DataSources.FindAsync(did);
+            dataSource.IsArchived = true;
+            Context.DataSources.Update(dataSource);
+            await Context.SaveChangesAsync();
+    
+            var metadataContent = new
+            {
+                records = new[]
+                {
+                    new
+                    {
+                        name = "Test Record",
+                        original_id = "test-001",
+                        description = "Test Description",
+                        properties = new { test = "value" }
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+    
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
+            Assert.Contains($"DataSource with id {did} not found in project with id {pid}", exception.Message);
+    
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfNullFile()
+        {
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentNullException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, null)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File cannot be null.", exception.Message);
+
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithEmptyArrays()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = Array.Empty<object>(),
+                relationships = Array.Empty<object>(),
+                tags = Array.Empty<object>(),
+                records = Array.Empty<object>(),
+                edges = Array.Empty<object>()
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+    
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Classes);
+            Assert.Null(result.Relationships);
+            Assert.Null(result.Tags);
+            Assert.Null(result.Records);
+            Assert.Null(result.Edges);
+
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfEmptyFile()
+        {
+            // Arrange
+            var emptyStream = new MemoryStream();
+            var file = new FormFile(emptyStream, 0, 0, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File cannot be empty.", exception.Message);
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfWrongFileExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.txt"); // Wrong extension
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            Assert.Equal("file", exception.ParamName);
+            Assert.Contains("File must be a .json file.", exception.Message);
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfXmlExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.xml");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            Assert.Contains("File must be a .json file", exception.Message);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfNoExtension()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            Assert.Contains("File must be a .json file", exception.Message);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfInvalidJson()
+        {
+            // Arrange
+            var invalidJson = "{ this is not valid json }";
+            var bytes = Encoding.UTF8.GetBytes(invalidJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            // Ensure no events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfMalformedJson()
+        {
+            // Arrange
+            var malformedJson = "{\"classes\": [}"; // Missing closing bracket
+            var bytes = Encoding.UTF8.GetBytes(malformedJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_IfJsonIsNull()
+        {
+            // Arrange
+            var nullJson = "null";
+            var bytes = Encoding.UTF8.GetBytes(nullJson);
+            var stream = new MemoryStream(bytes);
+    
+            var file = new FormFile(stream, 0, bytes.Length, "file", "metadata.json")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/json"
+            };
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<JsonException>(
+                () => _metadataBusiness.CreateMetadataFromFile(pid, did, file)
+            );
+    
+            Assert.Contains("Failed to deserialize metadata from file", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithJsonExtensionUpperCase()
+        {
+            // Arrange - Test that .JSON (uppercase) is accepted
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test Class" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.JSON");
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
+            Assert.Equal("Test Class", result.Classes.First().Name);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithMixedCaseExtension()
+        {
+            // Arrange - Test that .Json (mixed case) is accepted
+            var metadataContent = new
+            {
+                classes = new[] { new { name = "Test Class" } }
+            };
+    
+            var file = CreateJsonFile(metadataContent, "metadata.Json");
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Single(result.Classes);
+        }
+
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithNullArrays()
+        {
+            // Arrange
+            var metadataContent = new { }; // Empty JSON object - all properties will be null
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Classes);
+            Assert.Null(result.Relationships);
+            Assert.Null(result.Tags);
+            Assert.Null(result.Records);
+            Assert.Null(result.Edges);
+
+            // Ensure create event was NOT logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Success_WithComplexMetadata()
+        {
+            // Arrange
+            var metadataContent = new
+            {
+                classes = new[]
+                {
+                    new { name = "New Class" }
+                },
+                relationships = new[]
+                {
+                    new
+                    {
+                        name = "Test Relationship",
+                        origin_id = cid,
+                        destination_id = cid2
+                    }
+                },
+                tags = new[]
+                {
+                    new { name = "Test Tag" }
+                },
+                records = new object[]
+                {
+                    new
+                    {
+                        name = "Test Record",
+                        original_id = "test-1",
+                        description = "Test Description",
+                        properties = new { test = "value" }
+                    },
+                    new
+                    {
+                        name = "Test Record 2",
+                        original_id = "test-2",
+                        description = "Test Description",
+                        properties = new { test2 = "value 2" }
+                    }
+                },
+                edges = new[]
+                {
+                    new
+                    {
+                        relationship_name = "Test Relationship",
+                        origin_oid = "test-1",
+                        destination_oid = "test-2"
+                    }
+                }
+            };
+
+            var file = CreateJsonFile(metadataContent);
+
+            // Act
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
+            
+            // Assert
+            Assert.Single(result.Classes);
+            Assert.Single(result.Relationships);
+            Assert.Single(result.Tags);
+            Assert.Equal(2, result.Records.Count);
+            Assert.Single(result.Edges);
+            
+            // Ensure all complex data events are created and logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Equal(6, eventList.Count);
+            
+            var actualEvent0 = eventList[0];
+            Assert.Equal(pid, actualEvent0.ProjectId);
+            Assert.Equal("create", actualEvent0.Operation);
+            Assert.Equal("class", actualEvent0.EntityType);
+            Assert.Equal(result.Classes[0].Id, actualEvent0.EntityId);
+
+            var actualEvent1 = eventList[1];
+            Assert.Equal(pid, actualEvent1.ProjectId);
+            Assert.Equal("create", actualEvent1.Operation);
+            Assert.Equal("relationship", actualEvent1.EntityType);
+            Assert.Equal(result.Relationships[0].Id, actualEvent1.EntityId);
+            
+            var actualEvent2 = eventList[2];
+            Assert.Equal(pid, actualEvent2.ProjectId);
+            Assert.Equal("create", actualEvent2.Operation);
+            Assert.Equal("tag", actualEvent2.EntityType);
+            Assert.Equal(result.Tags[0].Id, actualEvent2.EntityId);
+            
+            var actualEvent3 = eventList[3];
+            Assert.Equal(pid, actualEvent3.ProjectId);
+            Assert.Equal("create", actualEvent3.Operation);
+            Assert.Equal("record", actualEvent3.EntityType);
+            Assert.Equal(result.Records[0].Id, actualEvent3.EntityId);
+            
+            var actualEvent4 = eventList[4];
+            Assert.Equal(pid, actualEvent4.ProjectId);
+            Assert.Equal("create", actualEvent4.Operation);
+            Assert.Equal("record", actualEvent4.EntityType);
+            Assert.Equal(result.Records[1].Id, actualEvent4.EntityId);
+            
+            var actualEvent5 = eventList[5];
+            Assert.Equal(pid, actualEvent5.ProjectId);
+            Assert.Equal("create", actualEvent5.Operation);
+            Assert.Equal("edge", actualEvent5.EntityType);
+            Assert.Equal(result.Edges[0].Id, actualEvent5.EntityId);
+        }
+        
+        [Fact]
+        public async Task CreateMetadataFromFile_Fails_WhenEdgeHasSameOriginAndDestination()
+        {
             // Arrange
             var metadataContent = new
             {
@@ -784,11 +1326,11 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadata(pid, did, file));
+            await Assert.ThrowsAsync<ValidationException>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
         }
 
         [Fact]
-        public async Task CreateMetadata_Fails_IfMissingRecordsForEdges()
+        public async Task CreateMetadataFromFile_Fails_IfMissingRecordsForEdges()
         {
             // Arrange
             var metadataContent = new
@@ -807,7 +1349,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
     
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadata(pid, did, file));
+            var exception = await Assert.ThrowsAsync<Exception>(() => _metadataBusiness.CreateMetadataFromFile(pid, did, file));
             Assert.Contains("Records not found matching Original IDs", exception.Message);
     
             var eventList = await Context.Events.ToListAsync();
@@ -822,7 +1364,7 @@ namespace deeplynx.tests
         }
         
         [Fact]
-        public async Task CreateMetadata_Success_WithDeeplyNestedProperties()
+        public async Task CreateMetadataFromFile_Success_WithDeeplyNestedProperties()
         {
             // Arrange - Test very deep nesting
             var metadataContent = new
@@ -863,7 +1405,7 @@ namespace deeplynx.tests
             var file = CreateJsonFile(metadataContent);
 
             // Act
-            var result = await _metadataBusiness.CreateMetadata(pid, did, file);
+            var result = await _metadataBusiness.CreateMetadataFromFile(pid, did, file);
 
             // Assert
             Assert.NotNull(result);
