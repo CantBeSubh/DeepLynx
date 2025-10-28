@@ -188,6 +188,47 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Equal("Record With All Tags", result.First().Name);
         Assert.Equal(2, result.First().Tags.Count);
     }
+    
+    [Fact]
+    public async Task GetRecordsByTags_WithMultipleTags_DifferentProject_ReturnsEmpty()
+    {
+        // Arrange - Add additional tag
+        var tag2 = new Tag 
+        { 
+            Name = "Tag2", 
+            ProjectId = pid, 
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) 
+        };
+        Context.Tags.Add(tag2);
+        await Context.SaveChangesAsync();
+
+        var testTag = await Context.Tags.FindAsync(tid);
+    
+        var recordWithAllTags = new Record
+        {
+            Name = "Record With All Tags",
+            Description = "Has testTag and tag2",
+            OriginalId = "multi_tag_different_project",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag, tag2 },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(recordWithAllTags);
+        await Context.SaveChangesAsync();
+
+        // Act - Query for records with both tags but in different valid project (pid2)
+        var result = await _recordBusiness.GetRecordsByTags(pid2, [tid, tag2.Id], true);
+
+        // Assert - Should return empty because records exist in pid, not pid2
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
 
     [Fact]
     public async Task GetRecordsByTags_EmptyTagArray_ReturnsAllNonArchivedRecords()
