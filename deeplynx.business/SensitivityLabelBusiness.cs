@@ -141,8 +141,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Operation = "create",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
+            EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new SensitivityLabelResponseDto
@@ -188,8 +188,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Operation = "update",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
+            EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new SensitivityLabelResponseDto
@@ -231,8 +231,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Operation = "archive",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
+            EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;
@@ -264,8 +264,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Operation = "unarchive",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
+            EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;
@@ -294,8 +294,8 @@ public class SensitivityLabelBusiness : ISensitivityLabelBusiness
             Operation = "delete",
             EntityType = "sensitivity_label",
             EntityId = label.Id,
+            EntityName = label.Name,
             Properties = JsonSerializer.Serialize(new { label.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
         
         return true;

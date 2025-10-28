@@ -201,9 +201,9 @@ namespace deeplynx.business
                 Operation = "create",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
+                EntityName = dataSource.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
 
             return new DataSourceResponseDto
@@ -263,8 +263,8 @@ namespace deeplynx.business
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 DataSourceId = null,
+                EntityName = dataSource.Name,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
 
             return new DataSourceResponseDto
@@ -334,8 +334,8 @@ namespace deeplynx.business
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
                 DataSourceId = null,
+                EntityName = dataSource.Name,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
             
             return true;
@@ -368,9 +368,9 @@ namespace deeplynx.business
                 Operation = "unarchive",
                 EntityType = "data_source",
                 EntityId = dataSource.Id,
+                EntityName = dataSource.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {dataSource.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
             
             return true;
@@ -410,9 +410,9 @@ namespace deeplynx.business
                     Operation = "update",
                     EntityType = "data_source",
                     EntityId = dataSource.Id,
+                    EntityName = dataSource.Name,
                     DataSourceId = null,
                     Properties = JsonSerializer.Serialize(new { dataSource.Name }),
-                    LastUpdatedBy = "" // TODO: add username when JWT are implemented
                 });
             }
 

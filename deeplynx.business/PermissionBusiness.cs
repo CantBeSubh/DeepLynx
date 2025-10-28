@@ -10,9 +10,9 @@ namespace deeplynx.business;
 
 /// <summary>
 /// PermissionBusiness is unique from other business classes in the sense that it
-/// is partially protected. Hard-coded permissions (such as "write projects") are
-/// hard-coded in the database and should not be tampered with via standard CRUD
-/// operations via the API. As such, special checks are in place to ensure that
+/// is partially protected. Default permissions (marked with "isDefault")
+/// should not be tampered with via standard CRUD operations via the API.
+/// As such, special checks are in place to ensure that
 /// permissions being edited by the user are only those which were originally
 /// user-defined.
 /// </summary>
@@ -48,14 +48,14 @@ public class PermissionBusiness : IPermissionBusiness
         bool hideArchived = true)
     {
         var permissionQuery = _context.Permissions.Where(p =>
-            p.IsHardcoded || (!p.IsHardcoded &&         // ensure hardcoded perms are returned regardless of filters
+            p.IsDefault || (!p.IsDefault &&         // ensure Default perms are returned regardless of filters
                 (!labelId.HasValue || p.LabelId == labelId) &&                        // check for label filter
                 (!projectId.HasValue || p.ProjectId == projectId) &&                  // check for project filter
                 (!organizationId.HasValue || p.OrganizationId == organizationId)));   // check for org filter
-        
+
         if (hideArchived)
             permissionQuery = permissionQuery.Where(p => !p.IsArchived);
-        
+
         return await permissionQuery.Select(p => new PermissionResponseDto()
         {
             Id = p.Id,
@@ -69,7 +69,7 @@ public class PermissionBusiness : IPermissionBusiness
             LabelId = p.LabelId,
             ProjectId = p.ProjectId,
             OrganizationId = p.OrganizationId,
-            IsHardcoded = p.IsHardcoded,
+            IsDefault = p.IsDefault,
         })
         .ToListAsync();
     }
@@ -86,10 +86,10 @@ public class PermissionBusiness : IPermissionBusiness
         var permission = await _context.Permissions
             .Where(p => p.Id == permissionId)
             .FirstOrDefaultAsync();
-        
+
         if (permission == null)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
-        
+
         if (hideArchived && permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} is archived");
 
@@ -106,7 +106,7 @@ public class PermissionBusiness : IPermissionBusiness
             LabelId = permission.LabelId,
             ProjectId = permission.ProjectId,
             OrganizationId = permission.OrganizationId,
-            IsHardcoded = permission.IsHardcoded
+            IsDefault = permission.IsDefault
         };
     }
 
@@ -134,8 +134,8 @@ public class PermissionBusiness : IPermissionBusiness
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
 
         // Note that the CreatePermission dto only allows for the creation of permissions
-        // using labelId. Any hard-coded permissions such as "write projects" should not
-        // be manipulated by users, as they correspond with hard-coded route permissions.
+        // using labelId. Any Default permissions such as "write projects" should not
+        // be manipulated by users.
         ValidationHelper.ValidateModel(dto);
         var permission = new Permission
         {
@@ -143,16 +143,16 @@ public class PermissionBusiness : IPermissionBusiness
             Description = dto.Description,
             Action = dto.Action,
             LabelId = dto.LabelId,
-            IsHardcoded = false,
+            IsDefault = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: implement user ID here when JWT tokens are ready,
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
-        
+
         _context.Permissions.Add(permission);
         await _context.SaveChangesAsync();
-        
+
         // Log create Permission event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -161,8 +161,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "create",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new PermissionResponseDto
@@ -178,7 +178,7 @@ public class PermissionBusiness : IPermissionBusiness
             LabelId = permission.LabelId,
             ProjectId = permission.ProjectId,
             OrganizationId = permission.OrganizationId,
-            IsHardcoded = permission.IsHardcoded
+            IsDefault = permission.IsDefault
         };
     }
 
@@ -192,22 +192,22 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<PermissionResponseDto> UpdatePermission(long permissionId, UpdatePermissionRequestDto dto)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that hardcoded cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
-        if (permission.IsHardcoded)
+        if (permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
-        
+
         permission.Name = dto.Name ?? permission.Name;
         permission.Description = dto.Description ?? permission.Description;
         permission.LabelId = dto.LabelId ?? permission.LabelId;
         permission.Action = dto.Action ?? permission.Action;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
-        
+
         _context.Permissions.Update(permission);
         await _context.SaveChangesAsync();
-        
+
         // Log update Permission event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -216,8 +216,8 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "update",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new PermissionResponseDto
@@ -233,7 +233,7 @@ public class PermissionBusiness : IPermissionBusiness
             LabelId = permission.LabelId,
             ProjectId = permission.ProjectId,
             OrganizationId = permission.OrganizationId,
-            IsHardcoded = permission.IsHardcoded
+            IsDefault = permission.IsDefault
         };
     }
 
@@ -246,18 +246,18 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> ArchivePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that hardcoded cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found or is already archived");
-        if (permission.IsHardcoded)
+        if (permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
-        
+
         permission.IsArchived = true;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
         _context.Permissions.Update(permission);
         await _context.SaveChangesAsync();
-        
+
         // Log archive Permission event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -266,13 +266,13 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "archive",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a permission
     /// </summary>
@@ -282,18 +282,18 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> UnarchivePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that hardcoded cannot be edited
-        if (permission != null && permission.IsHardcoded)
+        // ensure that default permissions cannot be edited
+        if (permission != null && permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be updated");
         if (permission == null || !permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found or is not archived");
-        
+
         permission.IsArchived = false;
         permission.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         permission.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
         _context.Permissions.Update(permission);
         await _context.SaveChangesAsync();
-        
+
         // Log unarchive Permission event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -302,13 +302,13 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "unarchive",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Delete a permission
     /// </summary>
@@ -318,15 +318,15 @@ public class PermissionBusiness : IPermissionBusiness
     public async Task<bool> DeletePermission(long permissionId)
     {
         var permission = await _context.Permissions.FindAsync(permissionId);
-        // ensure that hardcoded cannot be edited
+        // ensure that default permissions cannot be edited
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
-        if (permission.IsHardcoded)
+        if (permission.IsDefault)
             throw new KeyNotFoundException($"Permission with id {permissionId} cannot be deleted");
-        
+
         _context.Permissions.Remove(permission);
         await _context.SaveChangesAsync();
-        
+
         // Log delete Permission event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -335,10 +335,10 @@ public class PermissionBusiness : IPermissionBusiness
             Operation = "delete",
             EntityType = "permission",
             EntityId = permission.Id,
+            EntityName = permission.Name,
             Properties = JsonSerializer.Serialize(new { permission.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
-        
+
         return true;
     }
 }

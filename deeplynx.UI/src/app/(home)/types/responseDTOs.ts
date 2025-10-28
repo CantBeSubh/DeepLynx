@@ -12,6 +12,11 @@ export type ClassResponseDto = {
   createdat: string;
 };
 
+export type TokenResponseDto={
+  apiKey:string;
+  apiSecret:string;
+}
+
 export type DataSourceResponseDto = {
   id: number;
   name: string;
@@ -115,7 +120,7 @@ export type PermissionResponseDto = {
   description?: string | null;
   action:string;
   resource?:string|null;
-  isHardcoded:boolean;
+  isDefault:boolean;
   labelId?:number|string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
@@ -151,11 +156,18 @@ export type ProjectStatResponseDto = {
   datasources: number;
 }
 
+//which one
 export type RoleResponseDto =
 {
-roleId: number;
-name: string;
-description?: string;
+  roleId: number;
+  id: number;
+  name: string;
+  description?: string | null;
+  lastUpdatedAt?: string | null;
+  lastUpdatedBy?: string | null;
+  isArchived?: boolean;
+  projectId: number;
+  organizationId?: number | null;
 }
 
 export type TagResponseDto = {
@@ -179,4 +191,19 @@ export type UserResponseDto =
   isSysAdmin: boolean;
   isArchived: boolean;
   isActive: boolean;
+}
+
+export type GraphResponseDto = {
+  nodes: Array<{
+    id: number;
+    label: string;
+    type: string;
+  }>;
+  links: Array<{
+    source: number;
+    target: number;
+    relationshipId: number;
+    relationshipName: string | null;
+    edgeId: number;
+  }>;
 }

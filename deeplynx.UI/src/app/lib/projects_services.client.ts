@@ -95,28 +95,6 @@ export async function getProjectMembers(projectId: number) {
   return res.data;
 }
 
-//Function for when roles are not optional
-// export async function addMember(
-//   projectId: number,
-//   userId: number,
-//   roleId?: number,
-//   groupId?: number,
-// ) {
-//   try {
-//     console.log(`Adding member to project: ${userId}, Role: ${roleId}, Project: ${projectId}`);
-//     const res = await api.post(`/projects/AddMemberToProject?projectId=${projectId}&roleId=${roleId}&userId=${userId}`, {
-//       projectId,
-//       userId,
-//       roleId,
-//       groupId,
-//     });
-//     return res.data;
-//   } catch (error) {
-//     console.error("API call failed:", error);
-//     throw error;
-//   }
-// }
-
 export async function addMember(
   projectId: number,
   userId: number,
