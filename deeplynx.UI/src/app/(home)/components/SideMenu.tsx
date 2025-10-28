@@ -17,6 +17,7 @@ import {
   PresentationChartLineIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
+  ShareIcon,
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -84,6 +85,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/upload_center",
       "/data_catalog",
       "/member_management",
+      "/graph",
     ];
     const isExactMatch = selectedItem === targetPath;
     const isDynamicProject =
