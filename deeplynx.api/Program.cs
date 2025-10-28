@@ -67,7 +67,6 @@ try
                     "http://*.cluster.local",
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
-                    "https://deeplynx-test.dev.inl.gov", //test environment
                     "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
                     "https://deeplynx.inl.gov")
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
