@@ -2,9 +2,9 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: deeplynx-sandbox
+  name: deeplynx-test
   labels:
-    name: deeplynx-sandbox
+    name: deeplynx-test
 
 ---
 
@@ -13,7 +13,7 @@ apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
   name: azurefile-duckdb
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 provisioner: file.csi.azure.com
 parameters:
   skuName: Premium_LRS
@@ -37,7 +37,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: deeplynx-duckdb-pvc
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   accessModes:
     - ReadWriteMany # Allows multiple pods to access the same volume
@@ -51,19 +51,19 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: deeplynx-sandbox
-  namespace: deeplynx-sandbox
+  name: deeplynx-test
+  namespace: deeplynx-test
 spec:
   selector:
     matchLabels:
-      app: deeplynx-sandbox
+      app: deeplynx-test
   template:
     metadata:
       labels:
-        app: deeplynx-sandbox
+        app: deeplynx-test
     spec:
       containers:
-        - name: deeplynx-sandbox
+        - name: deeplynx-test
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynx-ui-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
@@ -184,7 +184,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deeplynxbackend
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   selector:
     matchLabels:
@@ -195,7 +195,7 @@ spec:
         app: deeplynxbackend
     spec:
       containers:
-        - name: deeplynx-sandbox
+        - name: deeplynx-test
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynx-server-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
@@ -309,7 +309,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: deeplynx-docs
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   selector:
     matchLabels:
@@ -320,7 +320,7 @@ spec:
         app: deeplynx-docs
     spec:
       containers:
-        - name: deeplynx-sandbox
+        - name: deeplynx-test
           image: ${CI_REGISTRY}/${CI_REGISTRY_PATH}:deeplynx-docs-${GITHUB_RUN_NUMBER}
           imagePullPolicy: Always
           env:
@@ -342,7 +342,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: deeplynx-service
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   type: ClusterIP
   ports:
@@ -358,7 +358,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: deeplynx-backend-service
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   type: ClusterIP
   ports:
@@ -374,7 +374,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: deeplynx-docs-service
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
 spec:
   type: ClusterIP
   ports:
@@ -390,7 +390,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: deeplynx-ingress
-  namespace: deeplynx-sandbox
+  namespace: deeplynx-test
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/configuration-snippet: |
@@ -403,7 +403,7 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
   rules:
-    - host: deeplynx.sandbox.inl.gov
+    - host: deeplynx-test.dev.inl.gov
       http:
         paths:
           - path: /
