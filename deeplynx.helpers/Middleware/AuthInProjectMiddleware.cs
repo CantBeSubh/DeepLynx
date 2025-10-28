@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace deeplynx.helpers.Middleware;
 
-// Attribute to decorate controllers/actions with required permissions
+// Attribute to decorate controllers/actions
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class AuthInProjectAttribute : Attribute
 {
@@ -17,10 +17,9 @@ public class AuthInProjectAttribute : Attribute
     }
 
     public string Action { get; set; } // e.g., "read", "write"
-    public string Resource { get; set; } // e.g., "project", "record", "file"
+    public string Resource { get; set; } // e.g., "project", "record", "class"
 }
 
-// Middleware for role-based permission checking
 public class RoleBasedAuthorizationMiddleware
 {
     private readonly RequestDelegate _next;
@@ -32,7 +31,6 @@ public class RoleBasedAuthorizationMiddleware
 
     public async Task InvokeAsync(HttpContext context, IRolePermissionService rolePermissionService)
     {
-        // Get the endpoint
         var endpoint = context.GetEndpoint();
         if (endpoint == null)
         {
@@ -44,24 +42,24 @@ public class RoleBasedAuthorizationMiddleware
         var authAttributes = endpoint.Metadata
             .GetOrderedMetadata<AuthInProjectAttribute>();
 
-        // If no auth attributes, proceed
+        // If no auth attributes, return
         if (!authAttributes.Any())
         {
             await _next(context);
             return;
         }
-
-        // Get user and project from context
-        var userId = UserContextStorage.UserId;
         
-        if (userId < 0)
+        var userId = UserContextStorage.UserId;
+
+        if (userId <= 0)
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            await context.Response.WriteAsJsonAsync(new { error = "Unauthorized: User not authenticated" });
+            await context.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
             return;
         }
 
         // Get projectId from route
+        //TODO: Update routes that are passing projectId as a query param instead of in the route or add logic for param projectId
         var projectIdString = context.GetRouteValue("projectId")?.ToString();
         if (string.IsNullOrEmpty(projectIdString) || !int.TryParse(projectIdString, out var projectId))
         {

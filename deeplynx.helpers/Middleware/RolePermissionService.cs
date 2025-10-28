@@ -2,12 +2,12 @@ using deeplynx.datalayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+//Keeping this interface in the same file as the service
 public interface IRolePermissionService
 { 
     Task<bool> UserHasPermissionInProjectAsync(long userId, long projectId, string action, string resource);
 }
 
-// Service implementation using your actual database schema with caching
 public class RolePermissionService : IRolePermissionService
 {
     private readonly DeeplynxContext _dbContext;
@@ -31,7 +31,7 @@ public class RolePermissionService : IRolePermissionService
             "Checking permission - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
             userId, projectId, action, resource);
         
-        // Check direct user membership
+        // Returns TRUE or FALSE based on whether user has action/resource permission for the project
         var hasDirectPermission = await _dbContext.ProjectMembers
             .Include(pm => pm.Role)
                 .ThenInclude(r => r.Permissions)
@@ -54,6 +54,7 @@ public class RolePermissionService : IRolePermissionService
             return true;
         }
         
+        //check for whether a user has permission to an action/resource within a project through group membership
         var hasGroupPermission = _dbContext.Database
             .SqlQuery<int>($@"
                 SELECT COUNT(1)::int
