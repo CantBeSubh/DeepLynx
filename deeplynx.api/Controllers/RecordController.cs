@@ -72,7 +72,7 @@ namespace deeplynx.api.Controllers
             }
             catch (Exception exc)
             {
-                var message = $"An error occurred while listing records: {exc}";
+                var message = $"An error occurred while listing records by tags: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
