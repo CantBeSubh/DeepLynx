@@ -53,6 +53,32 @@ namespace deeplynx.api.Controllers
         }
         
         /// <summary>
+        /// Get all records that have every given tagId. 
+        /// </summary>
+        /// <param name="projectId">Project ID which records are associated with</param>
+        /// <param name="tagIds">The list of Ids to filter records by - records must contain all Ids in the list</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+        /// <returns>List of record response DTOs</returns>
+        [HttpGet("GetRecordsByTags", Name = "api_get_records_by_tags")]
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetRecordsByTags(
+            long projectId,
+            [FromQuery] long[] tagIds,
+            [FromQuery] bool hideArchived = true)
+        {
+            try
+            {
+                var records = await _recordBusiness.GetRecordsByTags(projectId, tagIds, hideArchived);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing records: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
         /// Get a record
         /// </summary>
         /// <param name="projectId">Project ID which record is associated with</param>
