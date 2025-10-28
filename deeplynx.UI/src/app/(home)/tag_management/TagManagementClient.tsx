@@ -1,15 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import ProjectDropdown from "../components/ProjectDropdown";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
-import { TagResponseDto } from "../types/responseDTOs";
+import { ProjectResponseDto, TagResponseDto } from "../types/responseDTOs";
 import SearchTags from "./search_create_attach_edit-tag-page/SearchTags";
+import CreateTag from "./search_create_attach_edit-tag-page/CreateTag";
+import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 
 interface Props {
-  initialProjects: { id: string; name: string }[];
-  initialSelectedProjects: string[];
+  initialProjects: ProjectResponseDto[];
+  initialSelectedProjects: ProjectResponseDto;
 }
 
 const TagManagementClient = ({
@@ -17,9 +18,9 @@ const TagManagementClient = ({
   initialSelectedProjects,
 }: Props) => {
   const { t } = useLanguage();
-  const [projects] = useState(initialProjects);
-  const [selectedProjects, setSelectedProjects] = useState<string[]>(
-    initialSelectedProjects
+  const [projects] = useState<ProjectResponseDto[]>(initialProjects);
+  const [selectedProject, setSelectedProject] = useState<string>(
+    initialSelectedProjects?.id?.toString() || ""
   );
   const [selectedMenuItem, setSelectedMenuItems] = useState("Search Tags");
   const [tags, setTags] = useState<TagResponseDto[]>([]);
@@ -30,10 +31,11 @@ const TagManagementClient = ({
   const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
-  // Fetches tags when ever project changes - by default it fetches all tags from all projects
+
+  // Fetches tags when project changes
   useEffect(() => {
     const fetchTags = async () => {
-      if (selectedProjects.length === 0) {
+      if (!selectedProject) {
         setTags([]);
         setFilteredTags([]);
         return;
@@ -43,11 +45,7 @@ const TagManagementClient = ({
       setError(null);
 
       try {
-        const tagPromise = selectedProjects.map((projectId) =>
-          getAllTags(Number(projectId))
-        );
-        const tagResults = await Promise.all(tagPromise);
-        const allTags = tagResults.flat();
+        const allTags = await getAllTags(Number(selectedProject));
         setTags(allTags);
         setFilteredTags(allTags);
       } catch (error) {
@@ -59,7 +57,11 @@ const TagManagementClient = ({
     };
 
     fetchTags();
-  }, [selectedProjects]);
+  }, [selectedProject]);
+
+  const handleProjectChange = useCallback((newProjectId: string) => {
+    setSelectedProject(newProjectId);
+  }, []);
 
   // Does a client side filter for tags
   useEffect(() => {
@@ -80,12 +82,10 @@ const TagManagementClient = ({
       {/* Header */}
       <div className="items-center bg-base-200/40 pl-12 py-2 pb-4">
         <h1 className="text-2xl font-bold text-info-content">Tag Management</h1>
-        <ProjectDropdown
+        <ProjectDropdownSingleSelect
           projects={projects}
-          onSelectionChange={setSelectedProjects}
-          defaultSelected={
-            initialSelectedProjects.length ? initialSelectedProjects : undefined
-          }
+          onSelectionChange={handleProjectChange}
+          defaultSelectedId={initialSelectedProjects?.id?.toString() || ""}
         />
       </div>
 
@@ -120,6 +120,9 @@ const TagManagementClient = ({
               filteredTags={filteredTags}
               tags={tags}
             />
+          )}
+          {selectedMenuItem === "Create Tag" && (
+            <CreateTag projectId={selectedProject} />
           )}
         </div>
       </div>
