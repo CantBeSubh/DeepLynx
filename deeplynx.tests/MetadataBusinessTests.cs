@@ -460,8 +460,6 @@ namespace deeplynx.tests
                 new CreateRelationshipRequestDto
                 {
                     Name = "Test Relationship",
-                    OriginId = originClassId,
-                    DestinationId = destClassId
                 }
             };
 
@@ -483,7 +481,7 @@ namespace deeplynx.tests
                 {
                     Name = "Test Record 2",
                     OriginalId = "test-2",
-                    Description = "Test Description",
+                    Description = "Test Description 2",
                     Properties = JsonObject.Parse("{\"test2\": \"value 2\"}") as JsonObject
                 }
             };
@@ -515,6 +513,41 @@ namespace deeplynx.tests
             Assert.Single(result.Tags);
             Assert.Equal(2, result.Records.Count);
             Assert.Single(result.Edges);
+            
+            var createdClass = result.Classes[0];
+            Assert.Equal("New Class", createdClass.Name);
+            Assert.Equal(pid, createdClass.ProjectId);
+            
+            var createdRelationship = result.Relationships[0];
+            Assert.Equal("Test Relationship", createdRelationship.Name);
+            Assert.Equal(pid, createdRelationship.ProjectId);
+            
+            var createdTag = result.Tags[0];
+            Assert.Equal("Test Tag", createdTag.Name);
+            Assert.Equal(pid, createdTag.ProjectId);
+            
+            var createdRecord1 = result.Records[0];
+            Assert.Equal("Test Record", createdRecord1.Name);
+            Assert.Equal("test-1", createdRecord1.OriginalId);
+            Assert.Equal("Test Description", createdRecord1.Description);
+            Assert.NotNull(createdRecord1.Properties);
+            Assert.Equal(pid, createdRecord1.ProjectId);
+            Assert.Equal(did, createdRecord1.DataSourceId);
+            
+            var createdRecord2 = result.Records[1];
+            Assert.Equal("Test Record 2", createdRecord2.Name);
+            Assert.Equal("test-2", createdRecord2.OriginalId);
+            Assert.Equal("Test Description 2", createdRecord2.Description);
+            Assert.NotNull(createdRecord2.Properties);
+            Assert.Equal(pid, createdRecord2.ProjectId);
+            Assert.Equal(did, createdRecord2.DataSourceId);
+            
+            var createdEdge = result.Edges[0];
+            Assert.Equal(createdRelationship.Id, createdEdge.RelationshipId);
+            Assert.Equal(createdRecord1.Id, createdEdge.OriginId);
+            Assert.Equal(createdRecord2.Id, createdEdge.DestinationId);
+            Assert.Equal(pid, createdEdge.ProjectId);
+            Assert.Equal(did, createdEdge.DataSourceId);
             
             // Ensure all complex data events are created and logged
             var eventList = await Context.Events.ToListAsync();
