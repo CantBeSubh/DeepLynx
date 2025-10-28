@@ -4,7 +4,7 @@ using deeplynx.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-// namespace deeplynx.helpers.Middleware;
+namespace deeplynx.helpers;
 
 // Attribute to decorate controllers/actions
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]

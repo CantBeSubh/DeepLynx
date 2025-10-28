@@ -2,6 +2,8 @@ using deeplynx.datalayer.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+namespace deeplynx.helpers;
+
 //Keeping this interface in the same file as the service
 public interface IRolePermissionService
 { 
@@ -56,25 +58,22 @@ public class RolePermissionService : IRolePermissionService
         
         //check for whether a user has permission to an action/resource within a project through group membership
         var hasGroupPermission = _dbContext.Database
-            .SqlQuery<int>($@"
-                SELECT COUNT(1)::int
-                FROM deeplynx.group_users gu
-                INNER JOIN deeplynx.project_members pm ON gu.group_id = pm.group_id
-                INNER JOIN deeplynx.roles r ON pm.role_id = r.id
-                INNER JOIN deeplynx.role_permissions rp ON r.id = rp.role_id
-                INNER JOIN deeplynx.permissions p ON rp.permission_id = p.id
-                INNER JOIN deeplynx.groups g ON pm.group_id = g.id
-                WHERE gu.user_id = {userId}
-                  AND pm.project_id = {projectId}
-                  AND p.action = {action}
-                  AND p.resource = {resource}
-                  AND pm.role_id IS NOT NULL
-                  AND r.is_archived = false
-                  AND g.is_archived = false
-                  AND p.is_archived = false
-                LIMIT 1")
+            .SqlQuery<bool>($@"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM deeplynx.users u
+                    LEFT JOIN deeplynx.group_users gu ON gu.user_id = u.id
+                    LEFT JOIN deeplynx.groups g ON gu.group_id = g.id
+                    LEFT JOIN deeplynx.project_members pm ON (pm.user_id = u.id OR pm.group_id = g.id)
+                    LEFT JOIN deeplynx.role_permissions rp ON rp.role_id = pm.role_id
+                    LEFT JOIN deeplynx.permissions perm ON rp.permission_id = perm.id
+                    WHERE u.id = {userId}
+                      AND pm.project_id = {projectId}
+                      AND perm.resource = {resource}
+                      AND perm.action = {action}
+                ) AS has_permission")
             .AsEnumerable()
-            .FirstOrDefault() > 0;
+            .FirstOrDefault();
         
         var hasPermission = hasGroupPermission;
 

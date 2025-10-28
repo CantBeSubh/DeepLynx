@@ -5,7 +5,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
-using deeplynx.helpers;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
@@ -379,7 +378,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<RoleBasedAuthorizationMiddleware>();
+    app.UseMiddleware<RoleBasedAuthorizationMiddleware>(); //RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
