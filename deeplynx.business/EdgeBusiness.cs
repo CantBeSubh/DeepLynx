@@ -446,7 +446,6 @@ public class EdgeBusiness : IEdgeBusiness
                 origin = edge.OriginId,
                 destination = edge.DestinationId
             }), // TODO: Determine the extent of data edge properties need
-            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
 
         return new EdgeResponseDto
@@ -552,7 +551,6 @@ public class EdgeBusiness : IEdgeBusiness
                 EntityId = newEdge.Id,
                 DataSourceId = newEdge.DataSourceId,
                 Properties = "{}", // TODO: Determine the extent of data edge properties need
-                LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -608,7 +606,6 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edge.Id,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new EdgeResponseDto
@@ -686,7 +683,6 @@ public class EdgeBusiness : IEdgeBusiness
             EntityId = edgeId,
             DataSourceId = edge.DataSourceId,
             Properties = "{}", // TODO: Determine the extent of data edge properties need
-            LastUpdatedBy = "" // TODO: Implement user ID here when JWT tokens are ready
         });
 
         return edge.Id;
@@ -716,6 +712,16 @@ public class EdgeBusiness : IEdgeBusiness
         edge.IsArchived = false;
         _context.Edges.Update(edge);
         await _context.SaveChangesAsync();
+        
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            ProjectId = projectId,
+            Operation = "unarchive",
+            EntityType = "edge",
+            EntityId = edgeId,
+            DataSourceId = edge.DataSourceId,
+            Properties = "{}", // TODO: Determine the extent of data edge properties need
+        });
 
         return edge.Id;
     }

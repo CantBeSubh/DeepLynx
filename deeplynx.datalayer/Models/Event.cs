@@ -25,6 +25,9 @@ public partial class Event
 
     [Column("entity_id")]
     public long? EntityId { get; set; }
+    
+    [Column("entity_name")]
+    public string? EntityName { get; set; }
 
     [Column("project_id")]
     public long? ProjectId { get; set; }
@@ -43,4 +46,6 @@ public partial class Event
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
+    public virtual Project? Project { get; set; }
+    public virtual DataSource? DataSource { get; set; }
 }

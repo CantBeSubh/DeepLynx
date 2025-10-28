@@ -119,8 +119,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Operation = "create",
             EntityType = "organization",
             EntityId = organization.Id,
+            EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new OrganizationResponseDto
@@ -165,8 +165,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Operation = "update",
             EntityType = "organization",
             EntityId = organization.Id,
+            EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new OrganizationResponseDto
@@ -207,8 +207,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Operation = "archive",
             EntityType = "organization",
             EntityId = organization.Id,
+            EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return true;
@@ -240,8 +240,8 @@ public class OrganizationBusiness : IOrganizationBusiness
             Operation = "unarchive",
             EntityType = "organization",
             EntityId = organization.Id,
+            EntityName = organization.Name,
             Properties = JsonSerializer.Serialize(new { organization.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return true;

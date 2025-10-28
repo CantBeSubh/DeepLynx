@@ -11,60 +11,40 @@ API authentication requires you to obtain a temporary Bearer token, create your 
 
 Sign into the app through the web interface to access your account.
 
-### Step 2: Get Your Temporary Bearer Token
+### Step 2: Create Your API Key and Secret
 
-Since API credentials are not yet available in the UI, you'll need to extract your Bearer token from the browser:
+Select your profile in the top corner and "settings" under that:
 
-1. Open your browser's Developer Tools (F12 or right-click → Inspect)
-2. Go to the **Network** tab
-3. Refresh the page or navigate to trigger some API requests
-4. Find any API request (like `getAllDataSources` or similar)
-5. Click on the request and look at the **Headers** section
-6. Copy the `Bearer` token from the `Authorization` header
-
-<Image
-    src="/images/browser-dev-tools.png"
-    alt="Create Project UI"
-    width={800}
-    height={600}
+<Image 
+  src="/docs/images/user-profile-dropdown.png" 
+  alt="Create Project UI" 
+  width={800} 
+  height={600} 
 />
 
+Click "Generate" in the API Keys section at the bottom of the settings page:
 
-> **Note**: This token is temporary and used only to bootstrap your API credentials. Save it for the next steps.
+<Image 
+  src="/docs/images/generate-api-key.png" 
+  alt="Create Project UI" 
+  width={800} 
+  height={600} 
+/>
 
-### Step 3: Create Your API Key and Secret
+A new API key/secret will show up in the top banner:
 
-Use the temporary Bearer token to generate your permanent API credentials by calling the CreateApiKey endpoint.
-
-#### Endpoint
-
-```
-POST /api/token/CreateApiKey
-```
-
-#### Example Request
-
-```bash copy
-curl /api/token/CreateApiKey \
-  --request POST \
-  --header 'Content-Type: application/json' \
-  --header 'Authorization: Bearer [temporary-token-from-step-2]'
-```
-
-#### Response
-
-```json
-{
-  "apiKey": "ak_live_abc123...",
-  "apiSecret": "sk_live_xyz789..."
-}
-```
+<Image 
+  src="/docs/images/key-generated.png" 
+  alt="Create Project UI" 
+  width={800} 
+  height={600} 
+/>
 
 > **Critical**: Your API Secret will only be shown once. Save both the API Key and Secret immediately in a secure location (password manager, environment variables, secrets manager). Never commit these to version control.
 
-### Step 4: Create Access Tokens
+### Step 3: Create Access Tokens
 
-Now use your API Key, Secret, and the temporary Bearer token to generate access tokens with your desired expiration time.
+Now use your API Key and Secret to generate access tokens with your desired expiration time. This endpoint does not require a bearer token.
 
 #### Endpoint
 
@@ -107,7 +87,7 @@ curl /api/token/CreateToken \
 }
 ```
 
-### Step 5: Use Access Tokens for API Requests
+### Step 4: Use Access Tokens for API Requests
 
 Include your access token in the Authorization header of all API requests:
 
@@ -119,7 +99,7 @@ curl /api/projects/GetAllProjects \
   --header "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
-### Step 6: Refresh Expired Tokens
+### Step 5: Refresh Expired Tokens
 
 When your access token expires, generate a new one by calling CreateToken again with your saved API Key and Secret. You no longer need the temporary Bearer token from Step 2 - just your API credentials.
 

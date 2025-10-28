@@ -12,14 +12,12 @@ import PropertyTable from "../components/PropertyTable";
 import Tabs from "@/app/(home)/components/Tabs";
 import { TagResponseDto } from "../types/responseDTOs";
 import {
-  Column,
-} from "@/app/(home)/types/types";
-import {
   XMarkIcon,
   PencilIcon,
   CheckCircleIcon,
   XCircleIcon,
 } from "@heroicons/react/24/outline";
+import RecordLoading from "./loading";
 
 // Components
 import TagButton from "@/app/(home)/components/TagButton";
@@ -36,11 +34,12 @@ import {
 } from "@/app/lib/edge_services.client";
 
 // Types & Context
-import { FileViewerTableRow} from "@/app/(home)/types/types";
+import { FileViewerTableRow } from "@/app/(home)/types/types";
 import { useLanguage } from "@/app/contexts/Language";
 import RelatedRecordsCardSkeleton from "./skeletons/RelatedRecordsSkeleton";
 import { RelatedRecordsResponseDto } from "../types/responseDTOs";
 import { RelatedRecordsRequestDto } from "../types/requestDTOs";
+import GraphClientPage from "../graph/GraphClientPage";
 
 // ============= TYPE DEFINITIONS =============
 interface Props {
@@ -113,7 +112,7 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
         const update = await updateRecord(projectId, recordId, {
           [field]: value,
         });
-        setRecord(update);
+        setRecord((prev) => (prev ? { ...prev, ...update } : update));
         toast.success(successMessage);
       } catch (error) {
         toast.error(`${t.translations.FAILED_TO_UPDATE} ${field}`);
@@ -466,18 +465,14 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
 
   // ============= RENDER HELPERS =============
   if (!record) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="loading loading-spinner loading-xl" />
-      </div>
-    );
+    return <RecordLoading />;
   }
 
   const tabs = [
     {
       label: t.translations.RECORD_INFORMATION,
       content: (
-        <div className="flex gap-6">
+        <div className="flex gap-6 mt-4">
           {/* Left Column - Properties */}
           <div className="w-full md:w-1/2 space-y-4">
             <PropertyTable
@@ -597,6 +592,12 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
             )}
           </div>
         </div>
+      ),
+    },
+    {
+      label: "Graph",
+      content: (
+        <GraphClientPage projectId={String(projectId)} recordId={recordId} />
       ),
     },
   ];
