@@ -1,194 +1,136 @@
 "use client";
 
-import ServerPaginatedTable, { PaginationInfo } from "@/app/(home)/components/ServerPaginatedTable";
+import React, { useState, useEffect } from "react";
+import GenericTable from "@/app/(home)/components/GenericTable";
 import { Column } from "@/app/(home)/types/types";
-import { useEffect, useMemo, useState } from "react";
-import { getAllEvents } from "@/app/lib/event_services.client";
-import EventFilters from "@/app/(home)/components/EventFilters";
+import {
+  getAllEventsPaginated,
+  EventFilterParams,
+} from "@/app/lib/event_services.client";
+import { EventResponseDto, PaginatedEventsResponseDto } from "../types/responseDTOs"
 
-// Define the Event type based on the C# model
-interface Event {
-  id: number;
-  operation: string;
-  entityType: string;
-  entityId: number | null;
-  entityName: string | null;
-  projectId: number | null;
-  projectName: string | null;
-  organizationId: number | null;
-  dataSourceId: number | null;
-  dataSourceName: string | null;
-  properties: string;
-  lastUpdatedBy: string | null;
-  lastUpdatedAt: Date;
-  summary?: React.ReactNode;
-  dataSource?: string;
-}
-
-const EventHistory = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [paginationInfo, setPaginationInfo] = useState<PaginationInfo | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+const EventsHistory = () => {
+  const [data, setData] = useState<EventResponseDto[]>([]);
+  const [pagination, setPagination] = useState({
+    pageNumber: 1,
+    pageSize: 500,
+    totalCount: 0,
+  });
   const [loading, setLoading] = useState(false);
+  const [filters, setFilters] = useState<EventFilterParams>({});
 
-  // Fetch events with pagination
-  const fetchEvents = async (page: number, size: number) => {
+  // Fetch events from backend
+  const fetchEvents = async (pageNumber: number, pageSize: number) => {
     setLoading(true);
     try {
-      // Update getAllEvents to accept page and size parameters
-      const fetchedEventData = await getAllEvents(page, size);
-      
-      setEvents(fetchedEventData.items);
-      
-      // Set pagination info from the API response
-      setPaginationInfo({
-        pageNumber: fetchedEventData.pageNumber,
-        pageSize: fetchedEventData.pageSize,
-        totalCount: fetchedEventData.totalCount,
-        totalPages: fetchedEventData.totalPages,
-        hasPrevious: fetchedEventData.hasPrevious,
-        hasNext: fetchedEventData.hasNext,
+      const result: PaginatedEventsResponseDto = await getAllEventsPaginated({
+        pageNumber,
+        pageSize,
+        ...filters,
       });
-      
-      console.log(fetchedEventData.items);
-    } catch (e) {
-      console.error('Failed to fetch events:', e);
+
+      setData(result.items);
+      setPagination({
+        pageNumber: result.pageNumber,
+        pageSize: result.pageSize,
+        totalCount: result.totalCount,
+      });
+    } catch (error) {
+      console.error("Failed to fetch events:", error);
+      setData([]);
+      setPagination({
+        pageNumber: 1,
+        pageSize: 500,
+        totalCount: 0,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch events when page or page size changes
+  // Initial fetch
   useEffect(() => {
-    fetchEvents(currentPage, pageSize);
-  }, [currentPage, pageSize]);
+    fetchEvents(1, 30);
+  }, []);
 
-  // Handle page change
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage);
+  // Handle page changes
+  const handlePageChange = (pageNumber: number) => {
+    fetchEvents(pageNumber, pagination.pageSize);
   };
 
-  // Handle page size change
-  const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize);
-    setCurrentPage(1); // Reset to first page when changing page size
+  // Handle page size changes (optional)
+  const handlePageSizeChange = (pageSize: number) => {
+    fetchEvents(1, pageSize);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: true,
-      timeZoneName: "short",
-    };
-    return date.toLocaleString("en-US", options);
-  };
-
-  const formatEntityType = (type: string) => {
-    const spaced = type.replace(/_/g, " ");
-    const capitalized = spaced
-      .split(" ")
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-    
-    return capitalized;
-  };
-
-  // Define columns for the table
-  const columns: Column<Event>[] = useMemo(() => [
+  // Define columns
+  const columns: Column<EventResponseDto>[] = [
     {
-      header: "Event Occurred",
+      header: "Updated At",
       data: "lastUpdatedAt",
-      sortable: true,
-      cell: (row) => formatDate(row.lastUpdatedAt.toString()),
+      sortable: false,
+      // cell: (row) => {
+      //     const date = new Date(row.lastUpdatedAt);
+      //     return date.toLocaleString();
+      // },
     },
     {
-      header: "Last Updated By",
-      data: "lastUpdatedBy",
-      sortable: true,
-      cell: (row) => row.lastUpdatedBy ?? "Unknown",
-    },
-    {
-      header: "Project Name",
+      header: "Project",
       data: "projectName",
-      sortable: true,
-      cell: (row) => row.projectName ?? "N/A",
+      sortable: false,
     },
     {
       header: "Operation",
       data: "operation",
-      sortable: true,
-      cell: (row) => (
-        <span
-          className={`badge ${
-            row.operation === "CREATE"
-              ? "badge-success"
-              : row.operation === "UPDATE"
-              ? "badge-warning"
-              : "badge-error text-black"
-          }`}
-        >
-          {row.operation}
-        </span>
-      ),
+      sortable: false,
     },
     {
       header: "Entity Type",
       data: "entityType",
-      sortable: true,
-      cell: (row) => row.entityType ? formatEntityType(row.entityType) : "N/A",
+      sortable: false,
     },
     {
       header: "Entity Name",
       data: "entityName",
-      sortable: true,
-      cell: (row) => row.entityName ?? "N/A",
+      sortable: false,
     },
     {
       header: "Data Source",
       data: "dataSourceName",
-      sortable: true,
-      cell: (row) => row.dataSourceName ?? "N/A",
+      sortable: false,
+    },
+    {
+      header: "Updated By",
+      data: "lastUpdatedBy",
+      sortable: false,
     }
-  ], []);
-
-  // Show loading state while fetching
-  if (loading && !paginationInfo) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
-
-  // Don't render table until we have pagination info
-  if (!paginationInfo) {
-    return null;
-  }
+  ];
 
   return (
-    <div className="flex flex-col p-4">
-      {/* <div className="mb-4">
-        <EventFilters />
-      </div> */}
-      
-      <ServerPaginatedTable
-        columns={columns}
-        data={events}
-        paginationInfo={paginationInfo}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-        title="Event History"
-        bordered={false}
-        gridView={true}
-      />
-    </div>
+      <div className="px-8">
+        <h1 className="text-2xl my-4 font-bold text-info-content">
+          {/*{t.translations.DATA_CATALOG}*/}
+          Event History
+        </h1>
+        {loading && (
+            <div className="text-center py-4 text-base-content">
+              Loading events...
+            </div>
+        )}
+        <GenericTable
+            columns={columns}
+            data={data}
+            enablePagination={true}
+            backendPagination={true}
+            paginationMetadata={pagination}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+            bordered={true}
+            searchBar = {true}
+            rowsPerPage={500}
+        />
+      </div>
   );
 };
 
-export default EventHistory;
+export default EventsHistory;
