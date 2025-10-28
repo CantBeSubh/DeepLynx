@@ -12,12 +12,17 @@ interface TabsProps {
   activeTab: string;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, className = "", onTabChange, activeTab }) => {
+const Tabs: React.FC<TabsProps> = ({
+  tabs,
+  className = "",
+  onTabChange,
+  activeTab,
+}) => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   // Use useEffect to update activeIndex based on activeTab prop
   useEffect(() => {
-    const index = tabs.findIndex(tab => tab.label === activeTab);
+    const index = tabs.findIndex((tab) => tab.label === activeTab);
     setActiveIndex(index !== -1 ? index : 0);
   }, [activeTab, tabs]);
 
@@ -35,7 +40,9 @@ const Tabs: React.FC<TabsProps> = ({ tabs, className = "", onTabChange, activeTa
         {tabs.map((tab, index) => (
           <a
             key={index}
-            className={`tab tab-bordered ${activeIndex === index ? "tab-active text-secondary" : ""}`}
+            className={`tab tab-bordered mr-4 ${
+              activeIndex === index ? "tab-active text-secondary" : ""
+            }`}
             onClick={() => handleTabClick(index, tab.label)}
           >
             {tab.label}

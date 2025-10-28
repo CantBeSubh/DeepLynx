@@ -48,7 +48,7 @@ interface GraphClientPageProps {
 const GraphClientPage = ({
   projectId,
   recordId,
-  depth = 2,
+  depth = 3,
 }: GraphClientPageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
