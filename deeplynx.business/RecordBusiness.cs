@@ -94,7 +94,7 @@ public class RecordBusiness : IRecordBusiness
     /// Get all records that contain all given tags
     /// </summary>
     /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
-    /// <param name="tagIds">List of tag Ids. Returned records must contain every given Id.</param>
+    /// <param name="tagIds">List of tag IDs - returned records must contain every given ID</param>
     /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
     /// <returns></returns>
     public async Task<List<RecordResponseDto>> GetRecordsByTags(
