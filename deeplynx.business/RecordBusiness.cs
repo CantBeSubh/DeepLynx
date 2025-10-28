@@ -109,7 +109,7 @@ public class RecordBusiness : IRecordBusiness
             recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
         
-        // Only return records that contain ALL given Ids (AND logic)
+        // Only return records that contain ALL given IDs
         recordQuery = recordQuery.Where(r => 
             tagIds.All(tagId => r.Tags.Any(t => t.Id == tagId)));
         
