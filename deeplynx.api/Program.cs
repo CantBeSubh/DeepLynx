@@ -68,7 +68,8 @@ try
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
                     "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
-                    "https://deeplynx.inl.gov")
+                    "https://deeplynx.inl.gov",
+                    "https://deeplynx-*.*.inl.gov")  // Matches "deeplynx-thing.domain" namespaces like deeplynx-test.dev
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
