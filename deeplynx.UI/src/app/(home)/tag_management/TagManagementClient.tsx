@@ -5,7 +5,7 @@ import ProjectDropdown from "../components/ProjectDropdown";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
 import { TagResponseDto } from "../types/responseDTOs";
-import SimpleFilterInput from "../components/SimpleFilterComponent";
+import SearchTags from "./search_create_attach_edit-tag-page/SearchTags";
 
 interface Props {
   initialProjects: { id: string; name: string }[];
@@ -27,6 +27,7 @@ const TagManagementClient = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
   // Fetches tags when ever project changes - by default it fetches all tags from all projects
@@ -89,7 +90,11 @@ const TagManagementClient = ({
       </div>
 
       {/* Content */}
-      <div className="grid grid-cols-[20%_40%_40%] p-6">
+      <div
+        className={`grid ${
+          selectedTag ? "grid-cols-[20%_40%_40%]" : "grid-cols-[20%_40%]"
+        } p-6 transition-all`}
+      >
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           <ul>
             {menuItems.map((item) => (
@@ -109,49 +114,14 @@ const TagManagementClient = ({
         </div>
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           {selectedMenuItem === "Search Tags" && (
-            <div>
-              <h3 className="font-bold mb-4">Search Tags</h3>
-              <SimpleFilterInput
-                placeholder="Filter tags..."
-                value={searchQuery}
-                onChange={setSearchQuery}
-              />
-              <div className="mt-4">
-                {loading && <p>Loading tags ...</p>}
-                {error && (
-                  <p className="text-error flex justify-center">{error}</p>
-                )}
-                {!loading && filteredTags.length === 0 && tags.length === 0 && (
-                  <p className="text-base-300">No Tags found</p>
-                )}
-                {!loading && filteredTags.length === 0 && tags.length > 0 && (
-                  <p className="text-base-300">No tags match your search</p>
-                )}
-                {!loading && filteredTags.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-sm font-semibold">
-                      Tags ({filteredTags.length}):
-                    </p>
-                    <ul className="space-y-1">
-                      {filteredTags.map((tag, index) => (
-                        <li key={tag.id || index} className="px-3 py-1">
-                          <input
-                            type="checkbox"
-                            className="checkbox checkbox-primary"
-                          />
-                          <span className="badge ml-2">
-                            {tag.name || JSON.stringify(tag)}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </div>
+            <SearchTags
+              loading={loading}
+              error={error}
+              filteredTags={filteredTags}
+              tags={tags}
+            />
           )}
         </div>
-        <div className="card shadow-xl rounded-lg p-6">Records</div>
       </div>
     </div>
   );
