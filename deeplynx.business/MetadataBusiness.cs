@@ -115,10 +115,6 @@ public class MetadataBusiness : IMetadataBusiness
                 }
             }
         }
-        catch (JsonException)
-        {
-            throw;
-        }
         catch (Exception ex)
         {
             throw new JsonException($"Error reading JSON from file: {ex.Message}", ex);
