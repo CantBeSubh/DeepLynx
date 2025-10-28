@@ -146,12 +146,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-          <li>
-            <Link href={`/graph`} className={getItemClass(`/graph`)}>
-              <ShareIcon className="size-6" />
-              {!isCollapsed && <p className="ml-2">Graph</p>}
-            </Link>
-          </li>
         </ul>
 
         <div className="divider divider-secondary" />
