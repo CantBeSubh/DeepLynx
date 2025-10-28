@@ -23,9 +23,9 @@ public class MetadataController : ControllerBase
         _metadataBusiness = metadataBusiness;
         _logger = logger;
     }
-
+    
     /// <summary>
-    /// Parses metadata
+    /// Parses metadata from raw JSON
     /// </summary>
     /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
@@ -39,6 +39,32 @@ public class MetadataController : ControllerBase
         try
         {
             var createdMetadata = await _metadataBusiness.CreateMetadata(projectId, dataSourceId, metadataRequestDto);
+            return Ok(createdMetadata);
+        }
+        catch (Exception exception)
+        {
+            Console.WriteLine(exception.Message);
+            var message = $"An error occurred while parsing metadata: {exception}";
+            _logger.LogError(message);
+            return StatusCode(StatusCodes.Status500InternalServerError, message);
+        }
+    }
+    
+    /// <summary>
+    /// Parses metadata from a JSON file
+    /// </summary>
+    /// <param name="projectId">The ID of the project to which the metadata belongs.</param>
+    /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
+    /// <param name="file">The .json file that contains the metadata.</param>
+    [HttpPost("CreateMetadataFromFile", Name = "api_create_metadata_from_file")]
+    public async Task<ActionResult<MetadataResponseDto>> CreateMetadataFromFile(
+        long projectId, 
+        long dataSourceId,
+        IFormFile file)
+    {
+        try
+        {
+            var createdMetadata = await _metadataBusiness.CreateMetadataFromFile(projectId, dataSourceId, file);
             return Ok(createdMetadata);
         }
         catch (Exception exception)
