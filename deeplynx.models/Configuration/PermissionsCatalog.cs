@@ -1,6 +1,6 @@
 namespace deeplynx.models.Configuration;
 
-public class PermissionCatalog
+public class PermissionsCatalog
 {
     public static class DefaultPermissions
     {
