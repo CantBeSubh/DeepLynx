@@ -116,6 +116,7 @@ public class RecordBusinessTests : IntegrationTestBase
     #endregion
     
     #region GetRecordsByTags Tests
+    
     [Fact]
     public async Task GetRecordsByTags_ValidProjectIdWithSingleTag_ReturnsMatchingRecords()
     {
