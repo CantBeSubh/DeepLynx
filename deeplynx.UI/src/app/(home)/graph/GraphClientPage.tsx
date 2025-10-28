@@ -1,14 +1,12 @@
-//src/app/(home)/graph/GraphClientPage.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import Graph from "graphology";
-import { SigmaContainer } from "@react-sigma/core";
-import "@react-sigma/core/lib/style.css";
-import Sigma from "sigma";
+// Remove this line: import Sigma from "sigma";
 import { Attributes } from "graphology-types";
 import { getGraphDataForRecord } from "@/app/lib/graph_services.client";
 import { GraphResponseDto } from "../types/responseDTOs";
+// Remove this line: import FA2Layout from "graphology-layout-forceatlas2/worker";
 
 // ============================================
 // TYPE DEFINITIONS
@@ -57,20 +55,6 @@ const GraphClientPage = ({
 
   return (
     <div style={{ height: "800px", width: "80%", position: "relative" }}>
-      {/* Loading state */}
-      {isLoading && (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-          }}
-        >
-          Loading graph data...
-        </div>
-      )}
-
       {/* Error state */}
       {error && (
         <div
@@ -87,7 +71,6 @@ const GraphClientPage = ({
       )}
 
       {/* Graph container */}
-
       <MyGraph
         projectId={projectId}
         recordId={recordId}
@@ -114,19 +97,21 @@ interface MyGraphProps {
 const MyGraph = ({
   projectId,
   recordId,
-  depth = 3,
+  depth = 2,
   onLoadingChange,
   onError,
 }: MyGraphProps) => {
   // Reference to the DOM element that will hold the graph
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Reference to the Sigma instance for cleanup
-  const sigmaRef = useRef<Sigma<
-    NodeAttributes,
-    EdgeAttributes,
-    Attributes
-  > | null>(null);
+  // Reference to the Sigma instance for cleanup (using any to avoid complex types)
+  const sigmaRef = useRef<unknown>(null);
+
+  // Reference to the layout for cleanup
+  const layoutRef = useRef<unknown>(null);
+
+  // Add state to track if layout is settling
+  const [isLayoutSettling, setIsLayoutSettling] = useState(true);
 
   useEffect(() => {
     // Safety check: ensure the container element exists
@@ -140,6 +125,12 @@ const MyGraph = ({
       try {
         onLoadingChange(true);
         onError(null);
+
+        // Dynamically import Sigma and FA2Layout (client-side only)
+        const [{ default: Sigma }, { default: FA2Layout }] = await Promise.all([
+          import("sigma"),
+          import("graphology-layout-forceatlas2/worker"),
+        ]);
 
         // Fetch graph data from backend using the service
         const data = await getGraphDataForRecord(projectId, {
@@ -161,29 +152,9 @@ const MyGraph = ({
         // Initialize a new graph instance
         const graph = new Graph<NodeAttributes, EdgeAttributes>();
 
-        // Generate color based on node type
-        const getColorByType = (type: string): string => {
-          const colors: Record<string, string> = {
-            root: "#9b59b6", // Purple for root
-            node: "#3498db", // Blue for nodes
-            person: "#3498db", // Blue
-            company: "#2ecc71", // Green
-            document: "#e74c3c", // Red
-            location: "#f39c12", // Orange
-            default: "#95a5a6", // Gray
-          };
-          return colors[type.toLowerCase()] || colors["default"];
-        };
-
-        // Find this section (around line 191) where you're adding nodes:
-
-        // Add all nodes to the graph
-        // First, identify the root node
-        const rootNode = data.nodes.find((node) => node.type === "root");
-        const otherNodes = data.nodes.filter((node) => node.type !== "root");
-
         // Calculate depth for each node (distance from root)
         const nodeDepths = new Map<number, number>();
+        const rootNode = data.nodes.find((node) => node.type === "root");
 
         // BFS to calculate depths from root
         if (rootNode) {
@@ -234,32 +205,21 @@ const MyGraph = ({
           return colors[Math.min(depth, colors.length - 1)];
         };
 
-        data.nodes.forEach((node, index) => {
-          // Convert numeric ID to string (Graphology requires string IDs)
+        // Add all nodes with random initial positions
+        // The force-directed algorithm will arrange them
+        data.nodes.forEach((node) => {
           const nodeId = String(node.id);
 
-          let x = 0;
-          let y = 0;
-
-          // Position root node at the center
-          if (node.type === "root") {
-            x = 0;
-            y = 0;
-          } else {
-            // Position other nodes in a circle around the root
-            const nodeIndex = otherNodes.findIndex((n) => n.id === node.id);
-            const angle = (nodeIndex / otherNodes.length) * 2 * Math.PI;
-            const radius = 1; // Adjust this to make the circle bigger or smaller
-            x = Math.cos(angle) * radius;
-            y = Math.sin(angle) * radius;
-          }
+          // Start with random positions
+          const x = Math.random() * 10 - 5;
+          const y = Math.random() * 10 - 5;
 
           graph.addNode(nodeId, {
             x,
             y,
-            size: node.type === "root" ? 20 : 15, // Root node is larger
+            size: node.type === "root" ? 25 : 15, // Root node is larger
             label: node.label,
-            color: getColorByDepth(node.id), // Use depth-based coloring
+            color: getColorByDepth(node.id),
             nodeType: node.type,
           });
         });
@@ -291,88 +251,179 @@ const MyGraph = ({
 
         // Destroy existing Sigma instance if it exists
         if (sigmaRef.current) {
-          sigmaRef.current.kill();
+          const instance = sigmaRef.current as { kill?: () => void };
+          if (typeof instance.kill === "function") {
+            instance.kill();
+          }
+        }
+
+        // Stop existing layout if running
+        if (layoutRef.current) {
+          const instance = layoutRef.current as { stop?: () => void };
+          if (typeof instance.stop === "function") {
+            instance.stop();
+          }
         }
 
         // Create new Sigma instance to render the graph
         if (containerRef.current) {
-          sigmaRef.current = new Sigma(graph, containerRef.current, {
-            // Optional: Configure Sigma settings
-            renderEdgeLabels: false, // Set to true if you want to show relationship names
+          const sigma = new Sigma(graph, containerRef.current, {
+            renderEdgeLabels: false,
             defaultEdgeType: "arrow",
+            labelSize: 14,
+            labelWeight: "normal",
+          });
+
+          sigmaRef.current = sigma;
+          // ========================================
+          // ADD ZOOM-BASED LABEL VISIBILITY
+          // ========================================
+
+          const camera = sigma.getCamera();
+
+          // Store original labels before modifying
+          const originalLabels = new Map<string, string>();
+          graph.forEachNode((node) => {
+            originalLabels.set(node, graph.getNodeAttribute(node, "label"));
+          });
+
+          // Function to update label visibility based on zoom and depth
+          const updateLabelVisibility = () => {
+            const zoom = camera.ratio; // Lower ratio = more zoomed in
+
+            graph.forEachNode((node) => {
+              const nodeId = parseInt(node);
+              const depth = nodeDepths.get(nodeId) || 0;
+              const originalLabel = originalLabels.get(node) || "";
+
+              if (zoom < 0.8) {
+                // Zoomed in - show all labels
+                graph.setNodeAttribute(node, "label", originalLabel);
+              } else {
+                // Default/zoomed out view - show only root (depth 0) and depth 1
+                if (depth === 0 || depth === 1) {
+                  graph.setNodeAttribute(node, "label", originalLabel);
+                } else {
+                  graph.setNodeAttribute(node, "label", "");
+                }
+              }
+            });
+
+            sigma.refresh();
+          };
+
+          // Initial label visibility based on starting zoom
+          updateLabelVisibility();
+
+          // Update labels when camera moves (zoom or pan)
+          camera.on("updated", updateLabelVisibility);
+
+          // ========================================
+          // APPLY FORCE-DIRECTED LAYOUT
+          // ========================================
+
+          // Create ForceAtlas2 layout for organic, web-like positioning
+          const layout = new FA2Layout(graph, {
+            settings: {
+              barnesHutOptimize: true,
+              strongGravityMode: true,
+              gravity: 0.5,
+              scalingRatio: 10,
+              slowDown: 2,
+            },
+          });
+
+          layoutRef.current = layout;
+
+          // Start the layout
+          layout.start();
+          setIsLayoutSettling(true); // Keep hidden during layout
+          onLoadingChange(false);
+
+          // Let it run for 3 seconds then stop
+          setTimeout(() => {
+            layout.stop();
+            setIsLayoutSettling(false); // Show graph after layout settles
+          }, 3000);
+
+          // ========================================
+          // ADD HOVER INTERACTIONS
+          // ========================================
+
+          // Store original edge colors
+          const originalEdgeColors = new Map<string, string>();
+          graph.forEachEdge((edge, attributes) => {
+            originalEdgeColors.set(edge, attributes.color || "#999");
+          });
+
+          // Mouse enter event on node
+          sigma?.on("enterNode", ({ node }: { node: string }) => {
+            // Always show label on hover
+            const nodeLabel = originalLabels.get(node);
+            if (nodeLabel) {
+              graph.setNodeAttribute(node, "label", nodeLabel);
+            }
+
+            // Get all edges connected to this node
+            const incomingEdges = new Set<string>();
+            const outgoingEdges = new Set<string>();
+
+            // Separate incoming and outgoing edges
+            graph.forEachEdge(node, (edge, attributes, source, target) => {
+              if (target === node) {
+                // Edge is incoming (pointing TO this node)
+                incomingEdges.add(edge);
+              } else {
+                // Edge is outgoing (pointing FROM this node)
+                outgoingEdges.add(edge);
+              }
+            });
+
+            // Update edge colors - highlight connected edges
+            graph.forEachEdge((edge) => {
+              if (incomingEdges.has(edge)) {
+                // Highlight incoming edges (red and thicker)
+                graph.setEdgeAttribute(edge, "color", "#ff6b6b");
+                graph.setEdgeAttribute(edge, "size", 4);
+              } else if (outgoingEdges.has(edge)) {
+                // Highlight outgoing edges (blue and thicker)
+                graph.setEdgeAttribute(edge, "color", "#3498db");
+                graph.setEdgeAttribute(edge, "size", 4);
+              } else {
+                // Dim other edges (light gray and thinner)
+                graph.setEdgeAttribute(edge, "color", "#ddd");
+                graph.setEdgeAttribute(edge, "size", 1);
+              }
+            });
+
+            // Refresh the display
+            sigma.refresh();
+          });
+
+          // Mouse leave event on node
+          sigma?.on("leaveNode", () => {
+            // Restore label visibility based on zoom level
+            updateLabelVisibility();
+
+            // Restore original edge colors and sizes
+            graph.forEachEdge((edge) => {
+              graph.setEdgeAttribute(
+                edge,
+                "color",
+                originalEdgeColors.get(edge) || "#999"
+              );
+              graph.setEdgeAttribute(edge, "size", 2);
+            });
+
+            // Refresh the display
+            sigma.refresh();
+          });
+
+          // Optional: Add click handler for nodes
+          sigma?.on("clickNode", ({ node }: { node: string }) => {
+            console.log("Clicked node:", node, graph.getNodeAttributes(node));
           });
         }
-
-        // ========================================
-        // ADD HOVER INTERACTIONS
-        // ========================================
-
-        const sigma = sigmaRef.current;
-
-        // Store original edge colors
-        const originalEdgeColors = new Map<string, string>();
-        graph.forEachEdge((edge, attributes) => {
-          originalEdgeColors.set(edge, attributes.color || "#999");
-        });
-
-        // Mouse enter event on node
-        sigma?.on("enterNode", ({ node }) => {
-          // Get all edges connected to this node
-          const incomingEdges = new Set<string>();
-          const outgoingEdges = new Set<string>();
-
-          // Separate incoming and outgoing edges
-          graph.forEachEdge(node, (edge, attributes, source, target) => {
-            if (target === node) {
-              // Edge is incoming (pointing TO this node)
-              incomingEdges.add(edge);
-            } else {
-              // Edge is outgoing (pointing FROM this node)
-              outgoingEdges.add(edge);
-            }
-          });
-
-          // Update edge colors - highlight connected edges
-          graph.forEachEdge((edge) => {
-            if (incomingEdges.has(edge)) {
-              // Highlight incoming edges (red and thicker)
-              graph.setEdgeAttribute(edge, "color", "#ff6b6b");
-              graph.setEdgeAttribute(edge, "size", 4);
-            } else if (outgoingEdges.has(edge)) {
-              // Highlight outgoing edges (blue and thicker)
-              graph.setEdgeAttribute(edge, "color", "#3498db");
-              graph.setEdgeAttribute(edge, "size", 4);
-            } else {
-              // Dim other edges (light gray and thinner)
-              graph.setEdgeAttribute(edge, "color", "#ddd");
-              graph.setEdgeAttribute(edge, "size", 1);
-            }
-          });
-
-          // Refresh the display
-          sigma.refresh();
-        });
-
-        // Mouse leave event on node
-        sigma?.on("leaveNode", () => {
-          // Restore original edge colors and sizes
-          graph.forEachEdge((edge) => {
-            graph.setEdgeAttribute(
-              edge,
-              "color",
-              originalEdgeColors.get(edge) || "#999"
-            );
-            graph.setEdgeAttribute(edge, "size", 2);
-          });
-
-          // Refresh the display
-          sigma.refresh();
-        });
-
-        // Optional: Add click handler for nodes
-        sigma?.on("clickNode", ({ node }) => {
-          console.log("Clicked node:", node, graph.getNodeAttributes(node));
-        });
 
         onLoadingChange(false);
       } catch (err) {
@@ -392,12 +443,79 @@ const MyGraph = ({
 
     // This runs when the component unmounts
     return () => {
-      sigmaRef.current?.kill();
+      if (layoutRef.current) {
+        const instance = layoutRef.current as { stop?: () => void };
+        if (typeof instance.stop === "function") {
+          instance.stop();
+        }
+      }
+      if (sigmaRef.current) {
+        const instance = sigmaRef.current as { kill?: () => void };
+        if (typeof instance.kill === "function") {
+          instance.kill();
+        }
+      }
     };
   }, [projectId, recordId, depth, onLoadingChange, onError]);
 
   // Render the container div that Sigma will attach to
-  return <div ref={containerRef} style={{ width: "100%", height: "100%" }} />;
+  return (
+    <div style={{ width: "120%", height: "150%", position: "relative" }}>
+      {/* Loading spinner during layout calculation */}
+      {isLayoutSettling && (
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid #f3f3f3",
+              borderTop: "4px solid #3498db",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <span style={{ color: "#666", fontSize: "14px" }}>
+            Calculating layout...
+          </span>
+        </div>
+      )}
+
+      {/* Graph container */}
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: "100%",
+          opacity: isLayoutSettling ? 0 : 1, // Dim during layout
+          transition: "opacity 0.5s ease-in",
+        }}
+      />
+
+      {/* Add CSS animation for spinner */}
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export default GraphClientPage;
