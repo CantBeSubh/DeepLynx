@@ -32,6 +32,8 @@ namespace deeplynx.tests
         public long pid;
         public long cid; // origin class ID
         public long cid2; // dest. class ID
+        public long rid; // existing record ID
+        public long rid2; // archived record ID
 
         public RelationshipBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -258,6 +260,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfInvalidOriginId()
         {
+            // Arrange
             var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
@@ -265,6 +268,7 @@ namespace deeplynx.tests
                 OriginId = 999,
                 DestinationId = cid2
             };
+            
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _relationshipBusiness.CreateRelationship(pid, dto));
@@ -279,6 +283,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task CreateRelationship_Fails_IfInvalidDestinationId()
         {
+            // Arrange
             var dto = new CreateRelationshipRequestDto
             {
                 Name = "Test Relationship",
@@ -286,12 +291,15 @@ namespace deeplynx.tests
                 OriginId = cid,
                 DestinationId = 999
             };
-            var result = () => _relationshipBusiness.CreateRelationship(pid, dto);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _relationshipBusiness.CreateRelationship(pid, dto));
+
+            Assert.Contains($"Destination class with ID {dto.DestinationId} not found.", exception.Message);
             
             // Ensure that no relationship create event is logged
-            var eventList = Context.Events.ToList();
-            eventList.Should().HaveCount(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -305,14 +313,14 @@ namespace deeplynx.tests
             var now = DateTime.UtcNow;
             var relationshipDtos = new List<CreateRelationshipRequestDto>
             {
-                new CreateRelationshipRequestDto
+                new()
                 {
                     Name = "Bulk Relationship 1",
                     Description = "First bulk relationship",
                     OriginId = cid,
                     DestinationId = cid2
                 },
-                new CreateRelationshipRequestDto
+                new()
                 {
                     Name = "Bulk Relationship 2",
                     Description = "Second bulk relationship",
@@ -351,12 +359,13 @@ namespace deeplynx.tests
         [Fact]
         public async Task BulkCreateRelationships_Fails_IfNullDto()
         {
-            var result = () => _relationshipBusiness.BulkCreateRelationships(pid, null!);
-            await result.Should().ThrowAsync<ArgumentNullException>();
-            
-            // Ensure that no relationship create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentNullException>(
+                () => _relationshipBusiness.BulkCreateRelationships(pid, null!));
+    
+            // Assert - Ensure that no relationship create events were logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -366,6 +375,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllRelationships_ReturnsOnlyForProject()
         {
+            // Arrange
             var p2 = new Project { Name = "ExtraProj" };
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
@@ -390,13 +400,17 @@ namespace deeplynx.tests
             Context.Relationships.Add(p2Relationship);
             await Context.SaveChangesAsync();
 
+            // Act
             var list = await _relationshipBusiness.GetAllRelationships(pid, true);
+            
+            // Assert
             Assert.All(list, r => Assert.Equal(pid, r.ProjectId));
         }
 
         [Fact]
         public async Task GetAllRelationships_ExcludesSoftDeleted()
         {
+            // Arrange
             var activeRelationship = new Relationship
             {
                 Name = $"Active Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -420,12 +434,14 @@ namespace deeplynx.tests
             Context.Relationships.Add(activeRelationship);
             Context.Relationships.Add(archivedRelationship);
             await Context.SaveChangesAsync();
-
+            
+            // Act
             var listWithArchived = await _relationshipBusiness.GetAllRelationships(pid, false);
             var listWithoutArchived = await _relationshipBusiness.GetAllRelationships(pid, true);
 
-            listWithArchived.Should().Contain(r => r.Id == archivedRelationship.Id);
-            listWithoutArchived.Should().NotContain(r => r.Id == archivedRelationship.Id);
+            // Assert
+            Assert.Contains(listWithArchived, r => r.Id == archivedRelationship.Id);
+            Assert.DoesNotContain(listWithoutArchived, r => r.Id == archivedRelationship.Id);
         }
         
         #endregion
@@ -435,6 +451,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetRelationship_Success_WhenExists()
         {
+            // Arrange
             var testRelationship = new Relationship
             {
                 Name = $"Test Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -448,7 +465,10 @@ namespace deeplynx.tests
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
 
+            // Act
             var result = await _relationshipBusiness.GetRelationship(pid, testRelationship.Id, true);
+            
+            // Assert
             Assert.Equal(testRelationship.Id, result.Id);
             Assert.Equal(testRelationship.Name, result.Name);
             Assert.Equal(cid, result.OriginId);
@@ -458,6 +478,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetRelationship_Fails_IfNoProjectID()
         {
+            // Arrange
             var testRelationship = new Relationship
             {
                 Name = $"Test Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -469,14 +490,18 @@ namespace deeplynx.tests
             };
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _relationshipBusiness.GetRelationship(pid + 999, testRelationship.Id, true));
 
-            var result = () => _relationshipBusiness.GetRelationship(pid + 999, testRelationship.Id, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            Assert.Contains($"Project with id {pid + 999} not found.", exception.Message);
         }
 
         [Fact]
         public async Task GetRelationship_Fails_IfDeletedRelationship()
         {
+            // Arrange
             var testRelationship = new Relationship
             {
                 Name = $"Deleted Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -490,8 +515,11 @@ namespace deeplynx.tests
             Context.Relationships.Add(testRelationship);
             await Context.SaveChangesAsync();
 
-            var result = () => _relationshipBusiness.GetRelationship(pid, testRelationship.Id, true);
-            await result.Should().ThrowAsync<KeyNotFoundException>();
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _relationshipBusiness.GetRelationship(pid, testRelationship.Id, true));
+
+            Assert.Contains($"Relationship with id {testRelationship.Id} is archived", exception.Message);
         }
         
         #endregion
@@ -501,6 +529,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task UpdateRelationship_Success_ReturnsModifiedAt()
         {
+            // Arrange
             var testRelationship = new Relationship
             {
                 Name = $"Original Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
@@ -524,24 +553,26 @@ namespace deeplynx.tests
                 OriginId = cid2,
                 DestinationId = cid
             };
+            
+            // Act
             var updatedResult = await _relationshipBusiness.UpdateRelationship(pid, testRelationship.Id, dto);
 
-            updatedResult.LastUpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-            updatedResult.Name.Should().Be(dto.Name);
-            updatedResult.Description.Should().Be(dto.Description);
-            updatedResult.OriginId.Should().Be(cid2);
-            updatedResult.DestinationId.Should().Be(cid);
-            
+            // Assert
+            Assert.True((DateTime.UtcNow - updatedResult.LastUpdatedAt).TotalSeconds < 1);
+            Assert.Equal(dto.Name, updatedResult.Name);
+            Assert.Equal(dto.Description, updatedResult.Description);
+            Assert.Equal(cid2, updatedResult.OriginId);
+            Assert.Equal(cid, updatedResult.DestinationId);
+
             // Ensure that relationship update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "relationship",
-                EntityId = updatedResult.Id,
-                ProjectId = updatedResult.ProjectId,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("relationship", actualEvent.EntityType);
+            Assert.Equal(updatedResult.Id, actualEvent.EntityId);
+            Assert.Equal(updatedResult.ProjectId, actualEvent.ProjectId);
         }
 
         [Fact]
@@ -582,22 +613,22 @@ namespace deeplynx.tests
             Assert.Equal("Updated Description", updatedRelationship.Description);
             Assert.Equal(originalRelationship.Name, updatedRelationship.Name);
             Assert.NotNull(updatedRelationship.LastUpdatedAt);
-            
+
             // Ensure that relationship update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "relationship",
-                EntityId = result.Id,
-                ProjectId = result.ProjectId
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+
+            var actualEvent = eventList[0];
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("relationship", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
+            Assert.Equal(result.ProjectId, actualEvent.ProjectId);
         }
 
         [Fact]
         public async Task UpdateRelationship_Fails_IfNotFound()
         {
+            // Arrange
             var dto = new UpdateRelationshipRequestDto
             {
                 Name = "Updated Relationship",
@@ -605,13 +636,16 @@ namespace deeplynx.tests
                 OriginId = cid,
                 DestinationId = cid2
             };
-            var updatedResult = () => _relationshipBusiness.UpdateRelationship(pid, 99, dto);
 
-            await updatedResult.Should().ThrowAsync<KeyNotFoundException>();
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _relationshipBusiness.UpdateRelationship(pid, 99, dto));
             
+            Assert.Contains($"Relationship with ID 99 not found.", exception.Message);
+    
             // Ensure that no relationship update event is logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -968,6 +1002,33 @@ namespace deeplynx.tests
 
             cid = originClass.Id;
             cid2 = destinationClass.Id;
+            
+            // Add relationships
+            var existingRelationship = new Relationship
+            {
+                Name = "Original Relationship",
+                Description = "Original Description",
+                ProjectId = pid,
+                OriginId = cid,
+                DestinationId = cid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            var arhivedRelationship = new Relationship
+            {
+                Name = "Archived Relationship",
+                Description = "Archived Description",
+                ProjectId = pid,
+                OriginId = cid,
+                DestinationId = cid2,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Relationships.AddRange(existingRelationship, arhivedRelationship);
+            await Context.SaveChangesAsync();
+
+            rid = existingRelationship.Id;
+            rid2 = arhivedRelationship.Id;
         }
     }
 }
