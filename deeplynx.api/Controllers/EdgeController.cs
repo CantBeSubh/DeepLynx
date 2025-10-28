@@ -9,7 +9,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("projects/{projectId}/edges")]
-    // [Authorize]
+    [Authorize]
     public class EdgeController : ControllerBase
     {
         private readonly IEdgeBusiness _edgeBusiness;
@@ -92,7 +92,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, 22, depth);
+                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
                 return Ok(edges);
             }
             catch (Exception exc)
