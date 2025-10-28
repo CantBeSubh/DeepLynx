@@ -4,7 +4,7 @@ using deeplynx.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace deeplynx.helpers.Middleware;
+// namespace deeplynx.helpers.Middleware;
 
 // Attribute to decorate controllers/actions
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
@@ -16,8 +16,8 @@ public class AuthInProjectAttribute : Attribute
         Resource = resource;
     }
 
-    public string Action { get; set; } // e.g., "read", "write"
-    public string Resource { get; set; } // e.g., "project", "record", "class"
+    public string Action { get; set; } 
+    public string Resource { get; set; } 
 }
 
 public class RoleBasedAuthorizationMiddleware
@@ -37,11 +37,13 @@ public class RoleBasedAuthorizationMiddleware
             await _next(context);
             return;
         }
+        
+        
 
         // Get all AuthInProject attributes from the endpoint
         var authAttributes = endpoint.Metadata
             .GetOrderedMetadata<AuthInProjectAttribute>();
-
+        
         // If no auth attributes, return
         if (!authAttributes.Any())
         {
@@ -57,11 +59,22 @@ public class RoleBasedAuthorizationMiddleware
             await context.Response.WriteAsJsonAsync(new { error = "Unauthorized" });
             return;
         }
-
-        // Get projectId from route
-        //TODO: Update routes that are passing projectId as a query param instead of in the route or add logic for param projectId
-        var projectIdString = context.GetRouteValue("projectId")?.ToString();
-        if (string.IsNullOrEmpty(projectIdString) || !int.TryParse(projectIdString, out var projectId))
+        
+        // 1. First try route values
+        int projectId = 0;
+        var routeProjectId = context.GetRouteValue("projectId")?.ToString();
+        if (!string.IsNullOrEmpty(routeProjectId) && int.TryParse(routeProjectId, out projectId))
+        {
+            // Found in route
+        }
+        // 2. Then try query parameters
+        else if (context.Request.Query.TryGetValue("projectId", out var queryProjectId) 
+                 && int.TryParse(queryProjectId.FirstOrDefault(), out projectId))
+        {
+            // Found in query
+        }
+        // 3. no project for you 
+        else
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new { error = "Bad Request: Invalid or missing projectId" });

@@ -5,7 +5,7 @@ using deeplynx.datalayer.Models;
 using deeplynx.graph;
 using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
-using deeplynx.helpers.Middleware;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
