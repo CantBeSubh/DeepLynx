@@ -42,7 +42,7 @@ public partial class Subscription
     public long? EntityId { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
@@ -65,4 +65,7 @@ public partial class Subscription
     [ForeignKey("UserId")]
     [InverseProperty("Subscriptions")]
     public virtual User User { get; set; } = null!;
+    
+    [InverseProperty("UpdatedSubscriptions")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

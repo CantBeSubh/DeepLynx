@@ -46,7 +46,7 @@ public partial class Record
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("description")]
     public string Description { get; set; } = null!;
@@ -92,4 +92,7 @@ public partial class Record
     [ForeignKey("RecordId")]
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    
+    [InverseProperty("UpdatedRecords")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

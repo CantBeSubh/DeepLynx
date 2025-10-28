@@ -760,7 +760,7 @@ namespace deeplynx.tests
                 Name = "Test Project",
                 Description = "Test Description",
                 Abbreviation = "TST",
-                LastUpdatedBy = "test@example.com",
+                LastUpdatedBy = uid,
                 LastUpdatedAt = now,
                 IsArchived = false
             };
@@ -770,7 +770,7 @@ namespace deeplynx.tests
             Assert.Equal("Test Project", dto.Name);
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("TST", dto.Abbreviation);
-            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.Equal(dto.Id, dto.LastUpdatedBy);
             Assert.False(dto.IsArchived);
         }
         
@@ -1196,7 +1196,126 @@ namespace deeplynx.tests
         }
         
         #endregion
-        
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateProject_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testProject = new Project
+            {
+                Name = $"Test Project with User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description with User ID",
+                Abbreviation = "TST",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Projects.Add(testProject);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedProject = await Context.Projects.FindAsync(testProject.Id);
+            Assert.NotNull(savedProject);
+            Assert.Equal(uid, savedProject.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testProject = new Project
+            {
+                Name = $"Test Project Navigation {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Navigation Property",
+                Abbreviation = "NAV",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            Context.Projects.Add(testProject);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var projectWithUser = await Context.Projects
+                .Include(p => p.LastUpdatedByUser)
+                .FirstAsync(p => p.Id == testProject.Id);
+            
+            // Assert
+            Assert.NotNull(projectWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", projectWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@example.com", projectWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, projectWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testProject = new Project
+            {
+                Name = $"Test Project Null User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test with null LastUpdatedBy",
+                Abbreviation = "NUL",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Projects.Add(testProject);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedProject = await Context.Projects.FindAsync(testProject.Id);
+            Assert.NotNull(savedProject);
+            Assert.Null(savedProject.LastUpdatedBy);
+            
+            var projectWithUser = await Context.Projects
+                .Include(p => p.LastUpdatedByUser)
+                .FirstAsync(p => p.Id == testProject.Id);
+            
+            Assert.Null(projectWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateProject_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testProject = new Project
+            {
+                Name = $"Original Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                Abbreviation = "ORI",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Projects.Add(testProject);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testProject.LastUpdatedBy = uid;
+            testProject.Description = "Updated Description";
+            testProject.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Projects.Update(testProject);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedProject = await Context.Projects
+                .Include(p => p.LastUpdatedByUser)
+                .FirstAsync(p => p.Id == testProject.Id);
+            
+            Assert.Equal(uid, updatedProject.LastUpdatedBy);
+            Assert.NotNull(updatedProject.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedProject.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Description", updatedProject.Description);
+        }
+
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

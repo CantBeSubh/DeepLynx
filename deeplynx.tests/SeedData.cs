@@ -16,12 +16,12 @@ public static class SeedData
 
         // Seed all entities in proper order to maintain referential integrity
         await SeedUsers(context);
-        await SeedProjects(context);
+        await SeedProjects(context, js_user, md_user, sa_user, js_user);
         await SeedClasses(context, js_user, md_user, sa_user);
         await SeedDataSources(context, js_user, md_user, sa_user);
-        await SeedTags(context);
-        await SeedRelationships(context);
-        await SeedRecords(context);
+        await SeedTags(context,js_user, md_user, sa_user,sj_user);
+        await SeedRelationships(context, js_user, md_user, sa_user,sj_user);
+        await SeedRecords(context, js_user, md_user, sa_user,sj_user);
         await SeedEdges(context,js_user, md_user, sa_user);
     }
 
@@ -65,7 +65,7 @@ public static class SeedData
     }
 
     // Projects
-    public static async Task SeedProjects(DeeplynxContext context)
+    public static async Task SeedProjects(DeeplynxContext context , User js_user, User md_user, User sa_user, User sj_user)
     {
         var projects = new List<Project>
         {
@@ -74,7 +74,7 @@ public static class SeedData
                 Name = "Customer Analytics Platform",
                 Abbreviation = "CAP",
                 Description = "Comprehensive customer data analysis and segmentation platform for marketing insights",
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                 IsArchived = false
             },
@@ -83,7 +83,7 @@ public static class SeedData
                 Name = "Supply Chain Optimization",
                 Abbreviation = "SCO",
                 Description = "Real-time supply chain monitoring and optimization system with predictive analytics",
-                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8),
                  IsArchived = false
             },
@@ -92,7 +92,7 @@ public static class SeedData
                 Name = "Legacy System Migration",
                 Abbreviation = "LSM",
                 Description = "Migration of legacy data systems to modern cloud-based infrastructure",
-                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18),
                  IsArchived = true
             }
@@ -318,29 +318,29 @@ public static class SeedData
     }
 
     // Tags
-    public static async Task SeedTags(DeeplynxContext context)
+    public static async Task SeedTags(DeeplynxContext context, User js_user, User md_user, User sa_user, User sj_user)
     {
         var tags = new List<Tag>
         {
             // Note: Id is automatically assigned and incremented by the database. These tags will be Id 1-12 in order.
             
             // Customer Analytics Platform Tags
-            new Tag { Name = "Analytics", ProjectId = 1, LastUpdatedBy = "john.smith@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),  IsArchived = false },
-            new Tag { Name = "Marketing", ProjectId = 1, LastUpdatedBy = "sarah.johnson@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), IsArchived = false },
-            new Tag { Name = "Customer Data", ProjectId = 1, LastUpdatedBy = "john.smith@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), IsArchived = false },
-            new Tag { Name = "Business Intelligence", ProjectId = 1, LastUpdatedBy = "sarah.johnson@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), IsArchived = false },
+            new Tag { Name = "Analytics", ProjectId = 1, LastUpdatedBy = js_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),  IsArchived = false },
+            new Tag { Name = "Marketing", ProjectId = 1, LastUpdatedBy = sj_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11), IsArchived = false },
+            new Tag { Name = "Customer Data", ProjectId = 1, LastUpdatedBy = js_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10), IsArchived = false },
+            new Tag { Name = "Business Intelligence", ProjectId = 1, LastUpdatedBy = sj_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9), IsArchived = false },
 
             // Supply Chain Optimization Tags
-            new Tag { Name = "Logistics", ProjectId = 2, LastUpdatedBy = "mike.davis@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), IsArchived = false },
-            new Tag { Name = "Optimization", ProjectId = 2, LastUpdatedBy = "mike.davis@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),  IsArchived = false },
-            new Tag { Name = "Real-time Monitoring", ProjectId = 2, LastUpdatedBy = "supply.manager@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), IsArchived = false },
-            new Tag { Name = "Predictive Analytics", ProjectId = 2, LastUpdatedBy = "data.scientist@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), IsArchived = false },
-            new Tag { Name = "Inventory Management", ProjectId = 2, LastUpdatedBy = "warehouse.admin@company.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),  IsArchived = false },
+            new Tag { Name = "Logistics", ProjectId = 2, LastUpdatedBy = md_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-8), IsArchived = false },
+            new Tag { Name = "Optimization", ProjectId = 2, LastUpdatedBy = md_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),  IsArchived = false },
+            new Tag { Name = "Real-time Monitoring", ProjectId = 2, LastUpdatedBy = sa_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6), IsArchived = false },
+            new Tag { Name = "Predictive Analytics", ProjectId = 2, LastUpdatedBy = md_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5), IsArchived = false },
+            new Tag { Name = "Inventory Management", ProjectId = 2, LastUpdatedBy = md_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),  IsArchived = false },
 
             // Legacy System Migration Tags (Archived)
-            new Tag { Name = "Migration", ProjectId = 3, LastUpdatedBy = "system.architect@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), IsArchived = true },
-            new Tag { Name = "Legacy Systems", ProjectId = 3, LastUpdatedBy = "system.architect@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), IsArchived = true },
-            new Tag { Name = "Data Transformation", ProjectId = 3, LastUpdatedBy = "data.migration@legacy.com", LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), IsArchived = true }
+            new Tag { Name = "Migration", ProjectId = 3, LastUpdatedBy = sa_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-18), IsArchived = true },
+            new Tag { Name = "Legacy Systems", ProjectId = 3, LastUpdatedBy = sa_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17), IsArchived = true },
+            new Tag { Name = "Data Transformation", ProjectId = 3, LastUpdatedBy = sa_user.Id, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16), IsArchived = true }
         };
 
         await context.Tags.AddRangeAsync(tags);
@@ -348,7 +348,7 @@ public static class SeedData
     }
 
     // Relationships
-    public static async Task SeedRelationships(DeeplynxContext context)
+    public static async Task SeedRelationships(DeeplynxContext context, User js_user, User md_user, User sa_user, User sj_user)
     {
         var relationships = new List<Relationship>
         {
@@ -361,7 +361,7 @@ public static class SeedData
                 OriginId = 1, // Customer class
                 DestinationId = 2, // Purchase class
                 ProjectId = 1,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
                  IsArchived = false
             },
@@ -373,7 +373,7 @@ public static class SeedData
                 OriginId = 1, // Customer class
                 DestinationId = 3, // Segment class
                 ProjectId = 1,
-                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedBy = sj_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                  IsArchived = false
             },
@@ -385,7 +385,7 @@ public static class SeedData
                 OriginId = 2, // Purchase class
                 DestinationId = 4, // Product class
                 ProjectId = 1,
-                LastUpdatedBy = "data.analyst@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
                  IsArchived = false
             },
@@ -399,7 +399,7 @@ public static class SeedData
                 OriginId = 5, // Supplier class
                 DestinationId = 6, // Inventory class
                 ProjectId = 2,
-                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
                  IsArchived = false
             },
@@ -411,7 +411,7 @@ public static class SeedData
                 OriginId = 6, // Inventory class
                 DestinationId = 7, // Warehouse class
                 ProjectId = 2,
-                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
                  IsArchived = false
             },
@@ -423,7 +423,7 @@ public static class SeedData
                 OriginId = 8, // Shipment class
                 DestinationId = 6, // Inventory class
                 ProjectId = 2,
-                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
                  IsArchived = false
             },
@@ -437,7 +437,7 @@ public static class SeedData
                 OriginId = 9, // LegacyUser class
                 DestinationId = 10, // LegacyData class
                 ProjectId = 3,
-                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
                  IsArchived = true
             }
@@ -448,7 +448,7 @@ public static class SeedData
     }
     
     // Records
-    public static async Task SeedRecords(DeeplynxContext context)
+    public static async Task SeedRecords(DeeplynxContext context, User js_user, User md_user, User sa_user, User sj_user)
     {
         var records = new List<Record>
         {
@@ -461,7 +461,7 @@ public static class SeedData
                 ClassId = 1,
                 DataSourceId = 1,
                 ProjectId = 1,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-11),
                  IsArchived = false
             },
@@ -474,7 +474,7 @@ public static class SeedData
                 ClassId = 2,
                 DataSourceId = 2,
                 ProjectId = 1,
-                LastUpdatedBy = "ecommerce.api@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-10),
                  IsArchived = false
             },
@@ -487,7 +487,7 @@ public static class SeedData
                 ClassId = 3,
                 DataSourceId = 2,
                 ProjectId = 1,
-                LastUpdatedBy = "sarah.johnson@company.com",
+                LastUpdatedBy = sj_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-9),
                  IsArchived = false
             },
@@ -502,7 +502,7 @@ public static class SeedData
                 ClassId = 5,
                 DataSourceId = 3,
                 ProjectId = 2,
-                LastUpdatedBy = "mike.davis@company.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-7),
                  IsArchived = false
             },
@@ -515,7 +515,7 @@ public static class SeedData
                 ClassId = 6,
                 DataSourceId = 3,
                 ProjectId = 2,
-                LastUpdatedBy = "inventory.manager@company.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-6),
                  IsArchived = false
             },
@@ -528,7 +528,7 @@ public static class SeedData
                 ClassId = 7,
                 DataSourceId = 4,
                 ProjectId = 2,
-                LastUpdatedBy = "warehouse.manager@company.com",
+                LastUpdatedBy =js_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-5),
                  IsArchived = false
             },
@@ -541,7 +541,7 @@ public static class SeedData
                 ClassId = 8,
                 DataSourceId = 4,
                 ProjectId = 2,
-                LastUpdatedBy = "logistics.coordinator@company.com",
+                LastUpdatedBy = sj_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-4),
                  IsArchived = false
             },
@@ -556,7 +556,7 @@ public static class SeedData
                 ClassId = 9,
                 DataSourceId = 5,
                 ProjectId = 3,
-                LastUpdatedBy = "system.architect@legacy.com",
+                LastUpdatedBy = sa_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-17),
                  IsArchived = true
             },
@@ -569,7 +569,7 @@ public static class SeedData
                 ClassId = 10,
                 DataSourceId = 6,
                 ProjectId = 3,
-                LastUpdatedBy = "data.migration@legacy.com",
+                LastUpdatedBy = md_user.Id,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-16),
                  IsArchived = true
             }

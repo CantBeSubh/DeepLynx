@@ -732,8 +732,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -752,6 +752,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("object_storage_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_object_storages_last_updated_by");
 
                     b.HasIndex(new[] { "ProjectId" }, "IX_object_storages_project_id");
 
@@ -785,8 +788,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -796,6 +799,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("organization_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_organizations_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_organizations_id");
 
@@ -869,8 +875,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -892,6 +898,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("permission_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_permissions_last_updated_by");
 
                     b.HasIndex(new[] { "Action" }, "idx_permissions_action");
 
@@ -952,8 +961,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -967,6 +976,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("projects_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_projects_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_projects_id");
 
@@ -1057,8 +1069,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -1090,6 +1102,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("records_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_records_last_updated_by");
 
                     b.HasIndex(new[] { "ObjectStorageId" }, "IX_records_object_storage_id");
 
@@ -1144,8 +1159,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -1167,6 +1182,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("relationships_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_relationships_last_updated_by");
 
                     b.HasIndex(new[] { "DestinationId" }, "idx_relationships_destination_id");
 
@@ -1211,8 +1229,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -1230,6 +1248,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("roles_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_roles_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_roles_id");
 
@@ -1314,8 +1335,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -1333,6 +1354,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("sensitivity_labels_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_sensitivity_labels_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_sensitivity_labels_id");
 
@@ -1382,8 +1406,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Operation")
@@ -1400,6 +1424,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("subscriptions_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_subscriptions_last_updated_by");
 
                     b.HasIndex(new[] { "ActionId" }, "IX_subscriptions_action_id");
 
@@ -1440,8 +1467,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasColumnName("last_updated_at")
                         .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                    b.Property<string>("LastUpdatedBy")
-                        .HasColumnType("text")
+                    b.Property<long?>("LastUpdatedBy")
+                        .HasColumnType("bigint")
                         .HasColumnName("last_updated_by");
 
                     b.Property<string>("Name")
@@ -1455,6 +1482,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasKey("Id")
                         .HasName("tags_pkey");
+
+                    b.HasIndex("LastUpdatedBy")
+                        .HasDatabaseName("idx_tags_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_tags_id");
 
@@ -1788,6 +1818,11 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedObjectStorages")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("ObjectStorages")
                         .HasForeignKey("ProjectId")
@@ -1795,7 +1830,19 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasConstraintName("object_storage_project_id_fkey");
 
+                    b.Navigation("LastUpdatedByUser");
+
                     b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("deeplynx.datalayer.Models.Organization", b =>
+                {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedOrganizations")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("LastUpdatedByUser");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.OrganizationUser", b =>
@@ -1827,6 +1874,11 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("permissions_label_id_fkey");
 
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedPermissions")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Permissions")
                         .HasForeignKey("OrganizationId")
@@ -1841,6 +1893,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Label");
 
+                    b.Navigation("LastUpdatedByUser");
+
                     b.Navigation("Organization");
 
                     b.Navigation("Project");
@@ -1848,11 +1902,18 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Project", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedProjects")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.SetNull)
                         .HasConstraintName("projects_organization_id_fkey");
+
+                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("Organization");
                 });
@@ -1907,6 +1968,11 @@ namespace deeplynx.datalayer.Migrations
                         .IsRequired()
                         .HasConstraintName("records_data_source_id_fkey");
 
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedRecords")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.ObjectStorage", "ObjectStorage")
                         .WithMany("Records")
                         .HasForeignKey("ObjectStorageId")
@@ -1923,6 +1989,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("DataSource");
 
+                    b.Navigation("LastUpdatedByUser");
+
                     b.Navigation("ObjectStorage");
 
                     b.Navigation("Project");
@@ -1935,6 +2003,11 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("DestinationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("relationships_destination_id_fkey");
+
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedRelationships")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("deeplynx.datalayer.Models.Class", "Origin")
                         .WithMany("RelationshipOrigins")
@@ -1951,6 +2024,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("Destination");
 
+                    b.Navigation("LastUpdatedByUser");
+
                     b.Navigation("Origin");
 
                     b.Navigation("Project");
@@ -1958,6 +2033,11 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Role", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedRoles")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Roles")
                         .HasForeignKey("OrganizationId")
@@ -1969,6 +2049,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("roles_project_id_fkey");
+
+                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("Organization");
 
@@ -1987,6 +2069,11 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.SensitivityLabel", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedSensitivityLabels")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("SensitivityLabels")
                         .HasForeignKey("OrganizationId")
@@ -1998,6 +2085,8 @@ namespace deeplynx.datalayer.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("sensitivity_label_project_id_fkey");
+
+                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("Organization");
 
@@ -2019,6 +2108,11 @@ namespace deeplynx.datalayer.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("subscriptions_dataSource_id_fkey");
 
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedSubscriptions")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Subscriptions")
                         .HasForeignKey("ProjectId")
@@ -2037,6 +2131,8 @@ namespace deeplynx.datalayer.Migrations
 
                     b.Navigation("DataSource");
 
+                    b.Navigation("LastUpdatedByUser");
+
                     b.Navigation("Project");
 
                     b.Navigation("User");
@@ -2044,12 +2140,19 @@ namespace deeplynx.datalayer.Migrations
 
             modelBuilder.Entity("deeplynx.datalayer.Models.Tag", b =>
                 {
+                    b.HasOne("deeplynx.datalayer.Models.User", "LastUpdatedByUser")
+                        .WithMany("UpdatedTags")
+                        .HasForeignKey("LastUpdatedBy")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("deeplynx.datalayer.Models.Project", "Project")
                         .WithMany("Tags")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("tags_project_id_fkey");
+
+                    b.Navigation("LastUpdatedByUser");
 
                     b.Navigation("Project");
                 });
@@ -2183,6 +2286,26 @@ namespace deeplynx.datalayer.Migrations
                     b.Navigation("UpdatedGroups");
 
                     b.Navigation("UpdatedHistoricalEdges");
+
+                    b.Navigation("UpdatedObjectStorages");
+
+                    b.Navigation("UpdatedOrganizations");
+
+                    b.Navigation("UpdatedPermissions");
+
+                    b.Navigation("UpdatedProjects");
+
+                    b.Navigation("UpdatedRecords");
+
+                    b.Navigation("UpdatedRelationships");
+
+                    b.Navigation("UpdatedRoles");
+
+                    b.Navigation("UpdatedSensitivityLabels");
+
+                    b.Navigation("UpdatedSubscriptions");
+
+                    b.Navigation("UpdatedTags");
                 });
 #pragma warning restore 612, 618
         }

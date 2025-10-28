@@ -25,7 +25,7 @@ public partial class Role
     public string? Description { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -53,4 +53,7 @@ public partial class Role
     [ForeignKey("RoleId")]
     [InverseProperty("Roles")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+    
+    [InverseProperty("UpdatedRoles")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

@@ -42,7 +42,7 @@ public partial class Relationship
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
@@ -61,4 +61,7 @@ public partial class Relationship
     [ForeignKey("ProjectId")]
     [InverseProperty("Relationships")]
     public virtual Project Project { get; set; } = null!;
+    
+    [InverseProperty("UpdatedRelationships")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

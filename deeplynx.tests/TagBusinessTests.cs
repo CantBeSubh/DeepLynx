@@ -27,7 +27,7 @@ namespace deeplynx.tests
         public long tid2;
         public long tid3;
         public long tid4;
-
+        public long uid;
         public TagBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
         }
@@ -103,7 +103,7 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Analytics", result.Name);
-            Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
+            Assert.Equal(uid, result.LastUpdatedBy);
             Assert.False( result.IsArchived);
             Assert.Equal(pid, result.ProjectId);
         }
@@ -315,7 +315,7 @@ namespace deeplynx.tests
             {
                 Name = "Original Tag",
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = uid,
             };
 
             Context.Tags.Add(originalTag);
@@ -611,7 +611,7 @@ namespace deeplynx.tests
               {
                   Id = 1,
                   Name = "Tag One",
-                  LastUpdatedBy= "Test Suite",
+                  LastUpdatedBy= uid,
                   ProjectId = 1,
                   LastUpdatedAt = now,
                   IsArchived = false
@@ -620,9 +620,9 @@ namespace deeplynx.tests
               // Assert
               Assert.Equal(1, dto.Id);
               Assert.Equal("Tag One", dto.Name);
-              Assert.Equal("Test Suite", dto.LastUpdatedBy);
+              Assert.Equal(uid, dto.LastUpdatedBy);
               Assert.Equal(1, dto.ProjectId);
-              Assert.Equal("Test Suite", dto.LastUpdatedBy);
+              Assert.Equal(uid, dto.LastUpdatedBy);
               Assert.Equal(now, dto.LastUpdatedAt);
               Assert.False(dto.IsArchived);
           }
@@ -638,7 +638,7 @@ namespace deeplynx.tests
              {
                  Name = "Archived Tag",
                  ProjectId = pid,
-                 LastUpdatedBy = "Test Suite",
+                 LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-5), DateTimeKind.Unspecified),
                  IsArchived = true
              };
@@ -690,6 +690,17 @@ namespace deeplynx.tests
          protected override async Task SeedTestDataAsync()
          {
              await base.SeedTestDataAsync();
+             var testUser = new User
+             {
+                 Name = "Test User",
+                 Email = "test.user@test.com",
+                 Password = "test_password",
+                 IsArchived = false
+             };
+             Context.Users.Add(testUser);
+             await Context.SaveChangesAsync();
+             uid = testUser.Id;
+             
              var project = new Project { Name = "Project 1" };
              var project2 = new Project { Name = "Project2" };
              var project3 = new Project { Name = "Project 3" };
@@ -704,26 +715,26 @@ namespace deeplynx.tests
              
              var tag = new Tag
              {
-                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), 
                  IsArchived = false
              };
              
              var tag2 = new Tag
              {
-                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = false
              };
              var tag3 = new Tag
              {
-                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = true
              };
              var tag4 = new Tag
              {
-                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = false
              };

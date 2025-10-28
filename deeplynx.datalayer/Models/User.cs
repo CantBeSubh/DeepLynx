@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -75,4 +76,34 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<SavedSearch> SavedSearches { get; set; } = new List<SavedSearch>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<ObjectStorage> UpdatedObjectStorages { get; set; } = new List<ObjectStorage>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Organization> UpdatedOrganizations { get; set; } = new List<Organization>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Project> UpdatedProjects { get; set; } = new List<Project>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Record> UpdatedRecords { get; set; } = new List<Record>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Permission> UpdatedPermissions { get; set; } = new List<Permission>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Relationship> UpdatedRelationships { get; set; } = new List<Relationship>();
+
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Role> UpdatedRoles { get; set; } = new List<Role>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<SensitivityLabel> UpdatedSensitivityLabels { get; set; } = new List<SensitivityLabel>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Tag> UpdatedTags { get; set; } = new List<Tag>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Subscription> UpdatedSubscriptions { get; set; } = new List<Subscription>();
 }
