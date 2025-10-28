@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Routing;
 namespace deeplynx.helpers;
 
 // Attribute to decorate controllers/actions
+// Example usage: [AuthInProject("read", "project")]
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = true)]
 public class AuthInProjectAttribute : Attribute
 {
