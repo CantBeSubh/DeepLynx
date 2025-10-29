@@ -114,6 +114,231 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    
+    #region GetRecordsByTags Tests
+    
+    [Fact]
+    public async Task GetRecordsByTags_ValidProjectIdWithSingleTag_ReturnsMatchingRecords()
+    {
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Test Record", result.First().Name);
+        Assert.Single(result.First().Tags);
+        Assert.Equal("Test Tag", result.First().Tags.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_WithMultipleTags_ReturnsOnlyRecordsWithAllTags()
+    {
+        // Arrange - Add additional tag
+        var tag2 = new Tag 
+        { 
+            Name = "Tag2", 
+            ProjectId = pid, 
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) 
+        };
+        Context.Tags.Add(tag2);
+        await Context.SaveChangesAsync();
+
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var recordWithAllTags = new Record
+        {
+            Name = "Record With All Tags",
+            Description = "Has testTag and tag2",
+            OriginalId = "multi_tag_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag, tag2 },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        var recordWithSomeTags = new Record
+        {
+            Name = "Record With Some Tags",
+            Description = "Has only testTag",
+            OriginalId = "partial_tag_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.AddRange(recordWithAllTags, recordWithSomeTags);
+        await Context.SaveChangesAsync();
+
+        // Act - Query for records with both testTag AND tag2
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid, tag2.Id], true);
+
+        // Assert - Should only get the record with ALL tags
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Record With All Tags", result.First().Name);
+        Assert.Equal(2, result.First().Tags.Count);
+    }
+    
+    [Fact]
+    public async Task GetRecordsByTags_WithMultipleTags_DifferentProject_ReturnsEmpty()
+    {
+        // Arrange - Add additional tag
+        var tag2 = new Tag 
+        { 
+            Name = "Tag2", 
+            ProjectId = pid, 
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) 
+        };
+        Context.Tags.Add(tag2);
+        await Context.SaveChangesAsync();
+
+        var testTag = await Context.Tags.FindAsync(tid);
+    
+        var recordWithAllTags = new Record
+        {
+            Name = "Record With All Tags",
+            Description = "Has testTag and tag2",
+            OriginalId = "multi_tag_different_project",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag, tag2 },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(recordWithAllTags);
+        await Context.SaveChangesAsync();
+
+        // Act - Query for records with both tags but in different valid project (pid2)
+        var result = await _recordBusiness.GetRecordsByTags(pid2, [tid, tag2.Id], true);
+
+        // Assert - Should return empty because records exist in pid, not pid2
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_EmptyTagArray_ReturnsAllNonArchivedRecords()
+    {
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [], true);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result); // Only the seeded record
+        Assert.Equal("Test Record", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_HideArchivedTrue_ExcludesArchivedRecords()
+    {
+        // Arrange - Add an archived record with the same tag
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            Description = "Archived",
+            OriginalId = "archived_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            IsArchived = true,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+
+        // Assert - Should only get the non-archived seeded record
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Test Record", result.First().Name);
+        Assert.False(result.First().IsArchived);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_HideArchivedFalse_IncludesArchivedRecords()
+    {
+        // Arrange - Add an archived record with the same tag
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            Description = "Archived",
+            OriginalId = "archived_record_2",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            IsArchived = true,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], false);
+
+        // Assert - Should get both archived and non-archived records
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, r => r.Name == "Test Record" && !r.IsArchived);
+        Assert.Contains(result, r => r.Name == "Archived Record" && r.IsArchived);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_NonExistentTag_ReturnsEmpty()
+    {
+        // Arrange - Make sure non-existent tag results in no results
+        var nonExistentTagResult = await _recordBusiness.GetRecordsByTags(pid, [99999], true);
+        Assert.Empty(nonExistentTagResult);
+        
+        // Act - Verify correct tag returns results
+        var correctTagResult = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+        
+        // Assert
+        Assert.NotNull(correctTagResult);
+        Assert.Single(correctTagResult);
+        Assert.Equal("Test Record", correctTagResult.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_InvalidProjectId_ThrowsException()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.GetRecordsByTags(999L, [tid], true));
+
+        Assert.Contains("Project with id 999 not found.", exception.Message);
+    }
+    
+    #endregion
 
     #region GetRecord Tests
 
