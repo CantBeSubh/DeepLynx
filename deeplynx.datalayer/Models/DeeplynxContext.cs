@@ -16,7 +16,7 @@ public partial class DeeplynxContext : DbContext
     }
 
     public virtual DbSet<Action> Actions { get; set; }
-    
+
     public virtual DbSet<ApiKey> ApiKeys { get; set; }
 
     public virtual DbSet<Class> Classes { get; set; }
@@ -58,7 +58,7 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
-    
+
     public virtual DbSet<SavedSearch> SavedSearches { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -91,7 +91,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
-            
+
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_classes_last_updated_by");
             entity.HasOne(d => d.LastUpdatedByUser)
                 .WithMany(p => p.UpdatedClasses)
@@ -246,11 +246,11 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Label).WithMany(p => p.Permissions)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("permissions_label_id_fkey");
-            
+
             entity.HasOne(d => d.Project).WithMany(p => p.Permissions)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("permissions_project_id_fkey");
-            
+
             entity.HasOne(d => d.Organization).WithMany(p => p.Permissions)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("permissions_organization_id_fkey");
@@ -267,6 +267,8 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Organization).WithMany(p => p.Projects)
+                .HasForeignKey(p => p.OrganizationId)
+                .IsRequired()
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("projects_organization_id_fkey");
         });
@@ -461,22 +463,22 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.Property(e => e.IsSysAdmin).HasDefaultValue(false);
-            
+
             entity.Property(e => e.IsActive).HasDefaultValue(false);
         });
-        
+
         modelBuilder.Entity<SavedSearch>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("saved_searches_pkey");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
-            
+
             entity.Property(e => e.IsFavorite).HasDefaultValue(false);
 
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            
+
             entity.HasOne(d => d.User).WithMany(p => p.SavedSearches).HasConstraintName("saved_searches_user_id_fkey");
-            
+
         });
 
         OnModelCreatingPartial(modelBuilder);

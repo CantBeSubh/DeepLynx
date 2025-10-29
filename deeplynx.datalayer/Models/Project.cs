@@ -37,7 +37,7 @@ public partial class Project
     public bool IsArchived { get; set; }
 
     [Column("organization_id")]
-    public long? OrganizationId { get; set; }
+    public long OrganizationId { get; set; }
 
     [InverseProperty("Project")]
     public virtual ICollection<Action> Actions { get; set; } = new List<Action>();
@@ -56,7 +56,7 @@ public partial class Project
 
     [ForeignKey("OrganizationId")]
     [InverseProperty("Projects")]
-    public virtual Organization? Organization { get; set; }
+    public virtual Organization Organization { get; set; }
 
     [InverseProperty("Project")]
     public virtual ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
@@ -75,7 +75,7 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
-    
+
     [InverseProperty("Project")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
 
