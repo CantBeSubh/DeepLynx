@@ -120,7 +120,7 @@ export type PermissionResponseDto = {
   description?: string | null;
   action:string;
   resource?:string|null;
-  isHardcoded:boolean;
+  isDefault:boolean;
   labelId?:number|string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
@@ -191,4 +191,19 @@ export type UserResponseDto =
   isSysAdmin: boolean;
   isArchived: boolean;
   isActive: boolean;
+}
+
+export type GraphResponseDto = {
+  nodes: Array<{
+    id: number;
+    label: string;
+    type: string;
+  }>;
+  links: Array<{
+    source: number;
+    target: number;
+    relationshipId: number;
+    relationshipName: string | null;
+    edgeId: number;
+  }>;
 }

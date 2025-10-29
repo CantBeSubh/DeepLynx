@@ -1275,7 +1275,7 @@ export const projectPermissions = [
     name: "Write Project",
     description: "Create and modify project details.",
     action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1283,7 +1283,7 @@ export const projectPermissions = [
     name: "Read Project",
     description: "View project details.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1291,7 +1291,7 @@ export const projectPermissions = [
     name: "Write Object Storage",
     description: "Create, modify, and delete objects in storage.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1299,7 +1299,7 @@ export const projectPermissions = [
     name: "Read Object Storage",
     description: "View objects stored in storage.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1307,7 +1307,7 @@ export const projectPermissions = [
     name: "Write Data Source",
     description: "Create and modify data source configurations.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1315,7 +1315,7 @@ export const projectPermissions = [
     name: "Read Data Source",
     description: "View data source information.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1323,7 +1323,7 @@ export const projectPermissions = [
     name: "Write Record",
     description: "Add and modify records in the database.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1331,7 +1331,7 @@ export const projectPermissions = [
     name: "Read Record",
     description: "View records in the database.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1339,7 +1339,7 @@ export const projectPermissions = [
     name: "Write Edge",
     description: "Create and modify edges in the graph database.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1347,7 +1347,7 @@ export const projectPermissions = [
     name: "Read Edge",
     description: "View edges in the graph database.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1355,7 +1355,7 @@ export const projectPermissions = [
     name: "Write File",
     description: "Upload and modify files.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1363,7 +1363,7 @@ export const projectPermissions = [
     name: "Read File",
     description: "View files.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1371,7 +1371,7 @@ export const projectPermissions = [
     name: "Write Tag",
     description: "Add and modify tags for categorizing resources.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1379,7 +1379,7 @@ export const projectPermissions = [
     name: "Read Tag",
     description: "View tags associated with resources.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1387,7 +1387,7 @@ export const projectPermissions = [
     name: "Write Class",
     description: "Create and modify class definitions.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1395,7 +1395,7 @@ export const projectPermissions = [
     name: "Read Class",
     description: "View class definitions.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1403,7 +1403,7 @@ export const projectPermissions = [
     name: "Write Relationship",
     description: "Create and modify relationships between entities.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1411,7 +1411,7 @@ export const projectPermissions = [
     name: "Read Relationship",
     description: "View relationships between entities.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
 ];
@@ -1422,7 +1422,7 @@ export const userPermissions = [
     name: "Write User",
     description: "Create and modify user accounts.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1430,7 +1430,7 @@ export const userPermissions = [
     name: "Read User",
     description: "View user account details.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1438,7 +1438,7 @@ export const userPermissions = [
     name: "Write Group",
     description: "Create and modify user groups.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1446,7 +1446,7 @@ export const userPermissions = [
     name: "Read Group",
     description: "View user group details.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1454,7 +1454,7 @@ export const userPermissions = [
     name: "Write Organization",
     description: "Create and modify organization information.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1462,7 +1462,7 @@ export const userPermissions = [
     name: "Read Organization",
     description: "View organization details.",
         action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1470,7 +1470,7 @@ export const userPermissions = [
     name: "Write Role",
     description: "Create and modify role definitions.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
   {
@@ -1478,7 +1478,7 @@ export const userPermissions = [
     name: "Read Role",
     description: "View role definitions.",
       action:"write",
-    isHardcoded:true,
+    isDefault:true,
     isArchived:false
   },
 ];

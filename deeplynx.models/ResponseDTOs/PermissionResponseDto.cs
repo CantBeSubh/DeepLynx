@@ -7,7 +7,7 @@ public class PermissionResponseDto
     public string? Description { get; set; }
     public string Action { get; set; }
     public string? Resource { get; set; }
-    public bool IsHardcoded { get; set; }
+    public bool IsDefault { get; set; }
     public long? LabelId { get; set; }
     public DateTime LastUpdatedAt { get; set; }
     public long? LastUpdatedBy { get; set; }
