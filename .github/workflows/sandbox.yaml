@@ -2,8 +2,8 @@
 name: Build Sandbox/Test
 on:
   workflow_dispatch:
-  push:
-    branches: ["sandbox"]
+#  push:
+#    branches: ["sandbox"]
 
 jobs:
   build:
@@ -82,7 +82,7 @@ jobs:
   kubernetes:
     needs: build
     runs-on: [self-hosted]
-    environment: sandbox
+    environment: Test
     steps:
       - name: Checkout
         uses: actions/checkout@v3
