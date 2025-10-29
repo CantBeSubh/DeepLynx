@@ -7,9 +7,9 @@ import {
   getAllEventsPaginated,
   EventFilterParams,
 } from "@/app/lib/event_services.client";
-import { EventResponseDto, PaginatedEventsResponseDto } from "../types/responseDTOs"
+import { EventResponseDto, PaginatedEventsResponseDto } from "../types/responseDTOs";
 
-const EventsHistory = () => {
+const EventsHistoryClient = () => {
   const [data, setData] = useState<EventResponseDto[]>([]);
   const [pagination, setPagination] = useState({
     pageNumber: 1,
@@ -50,7 +50,7 @@ const EventsHistory = () => {
 
   // Initial fetch
   useEffect(() => {
-    fetchEvents(1, 30);
+    fetchEvents(1, 20);
   }, []);
 
   // Handle page changes
@@ -107,30 +107,36 @@ const EventsHistory = () => {
   ];
 
   return (
-      <div className="px-8">
-        <h1 className="text-2xl my-4 font-bold text-info-content">
-          {/*{t.translations.DATA_CATALOG}*/}
-          Event History
-        </h1>
-        {loading && (
-            <div className="text-center py-4 text-base-content">
-              Loading events...
-            </div>
-        )}
-        <GenericTable
+    <div className="px-8">
+      <h1 className="text-2xl my-4 font-bold text-info-content">
+        {/*{t.translations.DATA_CATALOG}*/}
+        Event History
+      </h1>
+      {loading && (
+        <div className="text-center py-4 text-base-content">
+          Loading events...
+        </div>
+      )}
+      <div className="flex">
+
+        <div className="flex-1">
+          <GenericTable
             columns={columns}
+            gridView={true}
             data={data}
             enablePagination={true}
             backendPagination={true}
             paginationMetadata={pagination}
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
-            bordered={true}
-            searchBar = {true}
+            bordered={false}
+            searchBar={true}
             rowsPerPage={500}
-        />
+          />
+        </div>
       </div>
+    </div>
   );
 };
 
-export default EventsHistory;
+export default EventsHistoryClient;

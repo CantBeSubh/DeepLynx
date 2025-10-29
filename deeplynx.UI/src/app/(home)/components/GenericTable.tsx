@@ -260,7 +260,7 @@ const GenericTable = <T extends object>(
         <div className="my-2 flex justify-between items-center">
           {searchBar && (
               <div>
-                <p className="text-base-content">Search this page</p>
+                {/* <p className="text-base-content">Search this page</p> */}
                 <SearchInput
                   placeholder={filterPlaceholder}
                   onChange={(e) => setFilterText(e.target.value)}
@@ -299,13 +299,13 @@ const GenericTable = <T extends object>(
                 <th
                     key={index}
                     className={`${gridView ? "border border-base-300 bg-base-200" : ""
-                    } ${column.sortable !== false && !backendPagination
+                    } ${column.sortable !== false
                         ? "cursor-pointer select-none hover:bg-base-300 transition-colors"
                         : ""
                     } ${column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
                     }`}
                     onClick={() => {
-                      if (column.sortable == false || !column.data || backendPagination) return;
+                      if (column.sortable == false || !column.data) return;
                       const direction =
                           sortConfig?.key === column.data &&
                           sortConfig?.direction === "asc"
@@ -317,8 +317,7 @@ const GenericTable = <T extends object>(
                   <div className="flex items-center gap-1">
                     {column.header}
                     {sortConfig?.key === column.data &&
-                        column.sortable !== false &&
-                        !backendPagination && (
+                        column.sortable !== false && (
                             <>
                               {sortConfig?.direction === "asc" ? (
                                   <ChevronUpIcon className="size-5" />
@@ -378,7 +377,7 @@ const GenericTable = <T extends object>(
           </tbody>
         </table>
         {showPagination && (
-            <div className="flex justify-center p-2">
+            <div className="flex justify-end p-2">
               <div className="join">{createPagination()}</div>
             </div>
         )}

@@ -1,9 +1,9 @@
-import EventHistory from "./EventHistory"
+import EventHistoryClient from "./EventHistoryClient"
 
 const EventManagementPage = () => {
   return (
     <section>
-      <EventHistory/>
+      <EventHistoryClient/>
     </section>
   )
 }
