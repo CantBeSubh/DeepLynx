@@ -6,19 +6,53 @@ import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import SearchBar from "../../components/SearchBar";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import { FileViewerTableRow } from "../../types/types";
+import { attachTagToRecord } from "@/app/lib/record_services.client";
+
+// Create a type that represents a record with parsed tags
+type RecordWithParsedTags = (RecordResponseDto | FileViewerTableRow) & {
+  tags: TagResponseDto[];
+};
+
+// Helper function to parse tags
+const parseTags = (
+  tags: string | TagResponseDto[] | undefined | null
+): TagResponseDto[] => {
+  if (!tags) return [];
+
+  if (typeof tags === "string") {
+    try {
+      return JSON.parse(tags) as TagResponseDto[];
+    } catch (e) {
+      console.error("Error parsing tags:", e);
+      return [];
+    }
+  }
+
+  if (Array.isArray(tags)) {
+    return tags;
+  }
+
+  return [];
+};
 
 // Main CreateTag Component
 interface CreateTagProps {
   projectId: string;
   onTagCreated: () => Promise<void>;
+  selectedTagIds: Set<number>;
+  setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
 }
 
-const CreateTag = ({ projectId, onTagCreated }: CreateTagProps) => {
+const CreateTag = ({
+  projectId,
+  onTagCreated,
+  selectedTagIds,
+  setSelectedTagIds,
+}: CreateTagProps) => {
   const [tagName, setTagName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdTags, setCreatedTags] = useState<TagResponseDto[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
 
   const handleCreateTag = async () => {
     if (!tagName.trim()) {
@@ -136,16 +170,31 @@ const CreateTag = ({ projectId, onTagCreated }: CreateTagProps) => {
 // Recently Added Records Component
 interface CreateTagRecordsListProps {
   projectId: string;
+  selectedTagIds: Set<number>;
 }
 
 export const CreateTagRecordsList = ({
   projectId,
+  selectedTagIds,
 }: CreateTagRecordsListProps) => {
-  const [records, setRecords] = useState<RecordResponseDto[]>([]);
-  const [searchResults, setSearchResults] = useState<any[]>([]); // Changed type
+  // Create a type that represents a record with parsed tags
+  type RecordWithParsedTags = Omit<
+    RecordResponseDto | FileViewerTableRow,
+    "tags"
+  > & {
+    tags: TagResponseDto[];
+  };
+  const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
+  const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
+    []
+  );
   const [loading, setLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [attachLoading, setAttachLoading] = useState(false);
+  const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
+    new Set()
+  );
 
   useEffect(() => {
     const fetchRecentRecords = async () => {
@@ -159,25 +208,14 @@ export const CreateTagRecordsList = ({
       try {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
 
-        const recordsWithParsedTags = recentRecords.map((record: any) => {
-          let parsedTags = [];
-
-          if (typeof record.tags === "string") {
-            try {
-              parsedTags = JSON.parse(record.tags);
-            } catch (e) {
-              console.error("Error parsing tags for record:", record.id, e);
-              parsedTags = [];
-            }
-          } else if (Array.isArray(record.tags)) {
-            parsedTags = record.tags;
-          }
-
-          return {
+        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
+          (record: RecordResponseDto) => ({
             ...record,
-            tags: parsedTags,
-          };
-        });
+            tags: parseTags(
+              record.tags as string | TagResponseDto[] | undefined | null
+            ),
+          })
+        );
 
         setRecords(recordsWithParsedTags);
       } catch (error) {
@@ -201,30 +239,14 @@ export const CreateTagRecordsList = ({
       setSearchLoading(true);
 
       try {
-        console.log("Searching for:", searchTerm, "in project:", projectId);
         const data = await fullTextSearch(searchTerm, [projectId]);
-        console.log("Search results:", data);
 
-        // Parse tags for search results too
-        const resultsWithParsedTags = data.map((record: any) => {
-          let parsedTags = [];
-
-          if (typeof record.tags === "string") {
-            try {
-              parsedTags = JSON.parse(record.tags);
-            } catch (e) {
-              console.error("Error parsing tags for record:", record.id, e);
-              parsedTags = [];
-            }
-          } else if (Array.isArray(record.tags)) {
-            parsedTags = record.tags;
-          }
-
-          return {
+        const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
+          (record) => ({
             ...record,
-            tags: parsedTags,
-          };
-        });
+            tags: parseTags(record.tags),
+          })
+        );
 
         setSearchResults(resultsWithParsedTags);
       } catch (error) {
@@ -249,6 +271,78 @@ export const CreateTagRecordsList = ({
     }
   };
 
+  // Toggle record selection
+  const handleRecordToggle = (recordId: number | null) => {
+    if (recordId === null) return;
+
+    const newSelected = new Set(selectedRecordIds);
+    if (newSelected.has(recordId)) {
+      newSelected.delete(recordId);
+    } else {
+      newSelected.add(recordId);
+    }
+    setSelectedRecordIds(newSelected);
+  };
+
+  // Attach tags to selected records
+  const handleAttachTags = async () => {
+    if (selectedRecordIds.size === 0) {
+      toast.error("Please select at least one record");
+      return;
+    }
+
+    if (selectedTagIds.size === 0) {
+      toast.error("Please select at least one tag to attach");
+      return;
+    }
+
+    setAttachLoading(true);
+
+    try {
+      const attachPromises: Promise<TagResponseDto>[] = [];
+
+      // For each selected record
+      selectedRecordIds.forEach((recordId) => {
+        // Attach each selected tag
+        selectedTagIds.forEach((tagId) => {
+          attachPromises.push(
+            attachTagToRecord(Number(projectId), recordId, tagId)
+          );
+        });
+      });
+
+      await Promise.all(attachPromises);
+
+      toast.success(
+        `Successfully attached ${selectedTagIds.size} tag(s) to ${selectedRecordIds.size} record(s)`
+      );
+
+      // Clear selections and refresh records
+      setSelectedRecordIds(new Set());
+
+      // Refresh the records list to show updated tags
+      if (searchTerm.trim()) {
+        await performFullTextSearch(searchTerm, projectId);
+      } else {
+        const recentRecords = await getRecentlyAddedRecords([projectId]);
+        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
+          (record: RecordResponseDto) => ({
+            ...record,
+            tags: parseTags(
+              record.tags as string | TagResponseDto[] | undefined | null
+            ),
+          })
+        );
+        setRecords(recordsWithParsedTags);
+      }
+    } catch (error) {
+      console.error("Error attaching tags:", error);
+      toast.error("Failed to attach tags to some records");
+    } finally {
+      setAttachLoading(false);
+    }
+  };
+
   // Determine which records to display
   const displayRecords = searchTerm.trim() ? searchResults : records;
   const isSearching = searchTerm.trim().length > 0;
@@ -265,15 +359,22 @@ export const CreateTagRecordsList = ({
           onKeyDown={handleKeyPress}
           className="input input-bordered mb-4 w-full"
         />
-        <div className="flex justify-end">
-          <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={searchLoading || !searchTerm.trim()}
-          >
-            {searchLoading ? "Searching..." : "Search"}
-          </button>
-        </div>
+        {/* Attach Tags Button */}
+        {selectedRecordIds.size > 0 && (
+          <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
+            <span className="text-sm">
+              {selectedRecordIds.size} record(s) selected •{" "}
+              {selectedTagIds.size} tag(s) to attach
+            </span>
+            <button
+              className="btn btn-secondary btn-sm"
+              onClick={handleAttachTags}
+              disabled={attachLoading || selectedTagIds.size === 0}
+            >
+              {attachLoading ? "Attaching..." : "Attach Tags"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Search Results or Recent Records */}
@@ -310,25 +411,28 @@ export const CreateTagRecordsList = ({
                     <input
                       type="checkbox"
                       className="checkbox checkbox-primary mt-1"
+                      checked={
+                        record.id !== null && selectedRecordIds.has(record.id)
+                      }
+                      onChange={() => handleRecordToggle(record.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
 
                     <div className="flex-1">
                       <div className="text-sm font-semibold">{record.name}</div>
 
-                      {record.tags &&
-                        Array.isArray(record.tags) &&
-                        record.tags.length > 0 && (
-                          <div className="flex gap-1 flex-wrap mt-1">
-                            {record.tags.map((tag: any) => (
-                              <span
-                                className="badge badge-outline badge-secondary badge-sm"
-                                key={tag.id}
-                              >
-                                {tag.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                      {record.tags && record.tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap mt-1">
+                          {record.tags.map((tag) => (
+                            <span
+                              className="badge badge-outline badge-secondary badge-sm"
+                              key={tag.id}
+                            >
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {record.lastUpdatedAt && (
                         <div className="text-xs text-base-content/60 mt-1">

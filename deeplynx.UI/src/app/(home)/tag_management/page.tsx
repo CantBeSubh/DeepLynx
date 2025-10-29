@@ -14,18 +14,16 @@ const TagManagementPage = async ({
 
   // Keep SSR for projects (fast initial render, no client flash)
   const projects = (await getAllProjectsServer()) as ProjectResponseDto[];
-  const initialProjects = projects.map((p) => ({
-    id: String(p.id),
-    name: p.name,
-  }));
 
-  // Let the client fetch records after mount based on the dropdown selection
-  const initialSelectedProjects = fromProject ? [fromProject] : [];
+  // Find the initial selected project or use the first one
+  const initialSelectedProject = fromProject
+    ? projects.find((p) => String(p.id) === fromProject) || projects[0]
+    : projects[0];
 
   return (
     <TagManagementClient
-      initialProjects={initialProjects}
-      initialSelectedProjects={initialSelectedProjects}
+      initialProjects={projects}
+      initialSelectedProjects={initialSelectedProject}
     />
   );
 };

@@ -31,6 +31,7 @@ const TagManagementClient = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
 
@@ -151,7 +152,12 @@ const TagManagementClient = ({
             />
           )}
           {selectedMenuItem === "Create Tag" && (
-            <CreateTag projectId={selectedProject} onTagCreated={refetchTags} />
+            <CreateTag
+              projectId={selectedProject}
+              onTagCreated={refetchTags}
+              selectedTagIds={selectedTagIds}
+              setSelectedTagIds={setSelectedTagIds}
+            />
           )}
           {selectedMenuItem === "Attach Tags" && (
             <div>
@@ -177,7 +183,10 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Create Tag" && (
             <div>
-              <CreateTagRecordsList projectId={selectedProject} />
+              <CreateTagRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+              />
             </div>
           )}
           {selectedMenuItem === "Attach Tags" && (
