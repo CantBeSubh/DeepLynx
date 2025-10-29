@@ -186,6 +186,7 @@ const TagManagementClient = ({
               <SearchTagsRecordsList
                 projectId={selectedProject}
                 selectedTagIds={selectedTagIds}
+                onClearSelectedTags={() => setSelectedTagIds(new Set())}
               />
             </div>
           )}

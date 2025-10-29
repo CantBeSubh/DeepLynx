@@ -119,11 +119,13 @@ const SearchTags = ({
 interface SearchTagsRecordsListProps {
   projectId: string;
   selectedTagIds: Set<number>;
+  onClearSelectedTags: () => void;
 }
 
 export const SearchTagsRecordsList = ({
   projectId,
   selectedTagIds,
+  onClearSelectedTags,
 }: SearchTagsRecordsListProps) => {
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
@@ -260,6 +262,7 @@ export const SearchTagsRecordsList = ({
 
       // Clear selections and refresh records
       setSelectedRecordIds(new Set());
+      onClearSelectedTags();
 
       // Refresh the records list to show updated tags
       if (searchTerm.trim()) {
@@ -289,7 +292,10 @@ export const SearchTagsRecordsList = ({
   const isSearching = searchTerm.trim().length > 0;
 
   return (
-    <div className="w-[85%] mx-auto">
+    <div
+      className="w-[85%] mx-auto flex flex-col"
+      style={{ height: "calc(90vh - 200px)" }}
+    >
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Search Records</h3>
         <input
@@ -319,7 +325,7 @@ export const SearchTagsRecordsList = ({
       </div>
 
       {/* Search Results or Recent Records */}
-      <div className="mt-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <h3 className="font-bold mb-4">
           {isSearching ? "Search Results" : "Recently Added Records"}
         </h3>
@@ -337,12 +343,12 @@ export const SearchTagsRecordsList = ({
         )}
 
         {!searchLoading && !loading && displayRecords.length > 0 && (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <p className="text-sm text-base-content/70 mb-2">
               {displayRecords.length} record
               {displayRecords.length !== 1 ? "s" : ""}
             </p>
-            <ul className="space-y-2">
+            <ul className="space-y-2 overflow-y-auto flex-1">
               {displayRecords.map((record, index) => (
                 <li
                   key={record.id || index}
