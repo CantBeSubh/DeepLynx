@@ -1,8 +1,10 @@
 import { createTag } from "@/app/lib/tag_services.client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { TagResponseDto } from "../../types/responseDTOs";
+import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
+import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 
+// Main CreateTag Component
 interface CreateTagProps {
   projectId: string;
   onTagCreated: () => Promise<void>;
@@ -34,10 +36,7 @@ const CreateTag = ({ projectId, onTagCreated }: CreateTagProps) => {
       setTagName("");
       toast.success("Tag Created");
 
-      // Add the newly created tag to the list
       setCreatedTags((prev) => [...prev, newTag]);
-
-      // Refresh the tags list from parent
       await onTagCreated();
     } catch (err) {
       setError("Failed to create tag");
@@ -131,4 +130,124 @@ const CreateTag = ({ projectId, onTagCreated }: CreateTagProps) => {
   );
 };
 
+// Recently Added Records Component
+interface CreateTagRecordsListProps {
+  projectId: string;
+}
+
+export const CreateTagRecordsList = ({
+  projectId,
+}: CreateTagRecordsListProps) => {
+  const [records, setRecords] = useState<RecordResponseDto[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRecentRecords = async () => {
+      if (!projectId || projectId === "0") {
+        setRecords([]);
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const recentRecords = await getRecentlyAddedRecords([projectId]);
+
+        // Parse tags from string to array for each record
+        const recordsWithParsedTags = recentRecords.map((record: any) => {
+          let parsedTags = [];
+
+          // Check if tags is a string and parse it
+          if (typeof record.tags === "string") {
+            try {
+              parsedTags = JSON.parse(record.tags);
+            } catch (e) {
+              console.error("Error parsing tags for record:", record.id, e);
+              parsedTags = [];
+            }
+          } else if (Array.isArray(record.tags)) {
+            // If it's already an array, use it directly
+            parsedTags = record.tags;
+          }
+
+          return {
+            ...record,
+            tags: parsedTags,
+          };
+        });
+
+        setRecords(recordsWithParsedTags);
+      } catch (error) {
+        console.error("Error fetching recent records:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentRecords();
+  }, [projectId]);
+
+  return (
+    <div>
+      <h3 className="font-bold mb-4">Recently Added Records</h3>
+
+      {loading && <p className="text-sm">Loading records...</p>}
+
+      {!loading && records.length === 0 && (
+        <p className="text-base-content/70 text-sm">No recent records found</p>
+      )}
+
+      {!loading && records.length > 0 && (
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          <p className="text-sm text-base-content/70 mb-2">
+            {records.length} recent record{records.length !== 1 ? "s" : ""}
+          </p>
+          <ul className="space-y-2">
+            {records.map((record, index) => (
+              <li
+                key={record.id || index}
+                className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
+              >
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    className="checkbox checkbox-primary mt-1"
+                  />
+
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold">{record.name}</div>
+
+                    {/* Now tags should be an array */}
+                    {record.tags &&
+                      Array.isArray(record.tags) &&
+                      record.tags.length > 0 && (
+                        <div className="flex gap-1 flex-wrap mt-1">
+                          {record.tags.map((tag: any) => (
+                            <span
+                              className="badge badge-outline badge-secondary badge-sm"
+                              key={tag.id}
+                            >
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                    {record.lastUpdatedAt && (
+                      <div className="text-xs text-base-content/60 mt-1">
+                        {new Date(record.lastUpdatedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Default export
 export default CreateTag;

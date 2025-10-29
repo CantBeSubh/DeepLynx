@@ -5,7 +5,9 @@ import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
 import { ProjectResponseDto, TagResponseDto } from "../types/responseDTOs";
 import SearchTags from "./search_create_attach_edit-tag-page/SearchTags";
-import CreateTag from "./search_create_attach_edit-tag-page/CreateTag";
+import CreateTag, {
+  CreateTagRecordsList,
+} from "./search_create_attach_edit-tag-page/CreateTag";
 import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 
 interface Props {
@@ -117,12 +119,9 @@ const TagManagementClient = ({
         />
       </div>
 
-      {/* Content */}
-      <div
-        className={`grid ${
-          selectedTag ? "grid-cols-[20%_40%_40%]" : "grid-cols-[20%_40%]"
-        } p-6 transition-all`}
-      >
+      {/* Content - Always 3 columns */}
+      <div className="grid grid-cols-[20%_40%_40%] p-6 transition-all">
+        {/* Menu Column */}
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           <ul>
             {menuItems.map((item) => (
@@ -140,6 +139,8 @@ const TagManagementClient = ({
             ))}
           </ul>
         </div>
+
+        {/* Middle Column - Main Content */}
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           {selectedMenuItem === "Search Tags" && (
             <SearchTags
@@ -151,6 +152,45 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Create Tag" && (
             <CreateTag projectId={selectedProject} onTagCreated={refetchTags} />
+          )}
+          {selectedMenuItem === "Attach Tags" && (
+            <div>
+              <h3 className="font-bold mb-4">Attach Tags</h3>
+              {/* Attach Tags content */}
+            </div>
+          )}
+          {selectedMenuItem === "Edit Tags" && (
+            <div>
+              <h3 className="font-bold mb-4">Edit Tags</h3>
+              {/* Edit Tags content */}
+            </div>
+          )}
+        </div>
+
+        {/* Right Column - Context-specific content */}
+        <div className="card shadow-xl rounded-lg p-6">
+          {selectedMenuItem === "Search Tags" && (
+            <div>
+              <h3 className="font-bold mb-4">Tag Details</h3>
+              {/* Tag details will go here */}
+            </div>
+          )}
+          {selectedMenuItem === "Create Tag" && (
+            <div>
+              <CreateTagRecordsList projectId={selectedProject} />
+            </div>
+          )}
+          {selectedMenuItem === "Attach Tags" && (
+            <div>
+              <h3 className="font-bold mb-4">Selected Records</h3>
+              {/* Selected records to attach tags to */}
+            </div>
+          )}
+          {selectedMenuItem === "Edit Tags" && (
+            <div>
+              <h3 className="font-bold mb-4">Edit History</h3>
+              {/* Edit history or preview */}
+            </div>
           )}
         </div>
       </div>
