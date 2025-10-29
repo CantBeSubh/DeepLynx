@@ -4,7 +4,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
 import { ProjectResponseDto, TagResponseDto } from "../types/responseDTOs";
-import SearchTags from "./search_create_attach_edit-tag-page/SearchTags";
+import SearchTags, {
+  SearchTagsRecordsList,
+} from "./search_create_attach_edit-tag-page/SearchTags";
 import CreateTag, {
   CreateTagRecordsList,
 } from "./search_create_attach_edit-tag-page/CreateTag";
@@ -149,6 +151,10 @@ const TagManagementClient = ({
               error={error}
               filteredTags={filteredTags}
               tags={tags}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedTagIds={selectedTagIds}
+              setSelectedTagIds={setSelectedTagIds}
             />
           )}
           {selectedMenuItem === "Create Tag" && (
@@ -177,8 +183,10 @@ const TagManagementClient = ({
         <div className="card shadow-xl rounded-lg p-6">
           {selectedMenuItem === "Search Tags" && (
             <div>
-              <h3 className="font-bold mb-4">Tag Details</h3>
-              {/* Tag details will go here */}
+              <SearchTagsRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+              />
             </div>
           )}
           {selectedMenuItem === "Create Tag" && (
