@@ -150,11 +150,12 @@ jobs:
           INVITE_URL: ${{ vars.INVITE_URL }}
           SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
           DISABLE_BACKEND_AUTHENTICATION: ${{ vars.DISABLE_BACKEND_AUTHENTICATION }}
+          SUPERUSER_EMAIL: ${{ vars.SUPERUSER_EMAIL }}
           HOSTED_LINK: ${{ vars.HOSTED_LINK }}
 
         run: |
           cd $GITHUB_WORKSPACE/kubernetes
-          envsubst < development.yaml > manifest.yaml
+          envsubst < sandbox.yaml > manifest.yaml
 
       # Deploys the kube manifest
       - uses: Azure/k8s-deploy@v4
