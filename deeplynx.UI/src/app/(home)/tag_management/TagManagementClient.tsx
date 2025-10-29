@@ -59,6 +59,34 @@ const TagManagementClient = ({
     fetchTags();
   }, [selectedProject]);
 
+  // Create a refetch function
+  const refetchTags = useCallback(async () => {
+    if (!selectedProject) {
+      setTags([]);
+      setFilteredTags([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const allTags = await getAllTags(Number(selectedProject));
+      setTags(allTags);
+      setFilteredTags(allTags);
+    } catch (error) {
+      setError("Failed to fetch tags");
+      console.error("Error fetching tags:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedProject]);
+
+  // Update the existing useEffect to use refetchTags
+  useEffect(() => {
+    refetchTags();
+  }, [refetchTags]);
+
   const handleProjectChange = useCallback((newProjectId: string) => {
     setSelectedProject(newProjectId);
   }, []);
@@ -122,7 +150,7 @@ const TagManagementClient = ({
             />
           )}
           {selectedMenuItem === "Create Tag" && (
-            <CreateTag projectId={selectedProject} />
+            <CreateTag projectId={selectedProject} onTagCreated={refetchTags} />
           )}
         </div>
       </div>
