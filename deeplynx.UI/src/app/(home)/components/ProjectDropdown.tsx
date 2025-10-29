@@ -95,7 +95,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
       ref={dropdownRef}
     >
       <button
-        className="flex items-center gap-1 text-md"
+        className="flex items-center gap-1 text-md text-base-content"
         onClick={() => setIsOpen((o) => !o)}
         type="button"
       >
@@ -109,11 +109,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow rounded-box p-4 max-h-80 overflow-auto">
+        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow rounded-box p-4 max-h-80 overflow-auto border border-base-200">
           <input
             type="text"
             placeholder="Search"
-            className="input input-bordered w-full mb-4"
+            className="input input-bordered w-full mb-4 text-base-content"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -126,7 +126,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
                 checked={selectedIds.includes("ALL")}
                 onChange={() => toggleProject("ALL")}
               />
-              <span className="label-text">
+              <span className="label-text text-base-content">
                 {t.translations.ALL_YOUR_PROJECTS}
               </span>
             </label>
@@ -136,7 +136,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
             {filteredProjects.map((project) => (
               <label
                 key={project.id}
-                className="label cursor-pointer justify-start gap-2"
+                className="label text-base-content cursor-pointer justify-start gap-2"
               >
                 <input
                   type="checkbox"
@@ -144,7 +144,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
                   checked={selectedIds.includes(project.id)}
                   onChange={() => toggleProject(project.id)}
                 />
-                <span className="label-text">{project.name}</span>
+                <span className="label-text text-base-content">{project.name}</span>
               </label>
             ))}
           </div>
