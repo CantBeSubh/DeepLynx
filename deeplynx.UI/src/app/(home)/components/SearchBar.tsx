@@ -25,6 +25,7 @@ interface SearchBarProps {
   onClearAll?: () => void;
   resultCount?: number;
   showResultsMessage?: boolean;
+  aditionalFilters?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -50,6 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onClearAll,
   resultCount,
   showResultsMessage,
+  aditionalFilters = true,
 }) => {
   const locale = "en";
   const t = translations[locale];
@@ -128,7 +130,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               href="/data_catalog/query_builder"
               className="text-sm underline text-secondary hover:underline"
             >
-              {t.translations.ADITIONAL_FILTERS}
+              {aditionalFilters && t.translations.ADITIONAL_FILTERS}
             </a>
           </div>
         </div>

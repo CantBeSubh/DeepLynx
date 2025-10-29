@@ -1,8 +1,11 @@
 import { createTag } from "@/app/lib/tag_services.client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
+import SearchBar from "../../components/SearchBar";
+import { fullTextSearch } from "@/app/lib/query_services.client";
+import { FileViewerTableRow } from "../../types/types";
 
 // Main CreateTag Component
 interface CreateTagProps {
@@ -139,7 +142,10 @@ export const CreateTagRecordsList = ({
   projectId,
 }: CreateTagRecordsListProps) => {
   const [records, setRecords] = useState<RecordResponseDto[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]); // Changed type
   const [loading, setLoading] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchRecentRecords = async () => {
@@ -153,11 +159,9 @@ export const CreateTagRecordsList = ({
       try {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
 
-        // Parse tags from string to array for each record
         const recordsWithParsedTags = recentRecords.map((record: any) => {
           let parsedTags = [];
 
-          // Check if tags is a string and parse it
           if (typeof record.tags === "string") {
             try {
               parsedTags = JSON.parse(record.tags);
@@ -166,7 +170,6 @@ export const CreateTagRecordsList = ({
               parsedTags = [];
             }
           } else if (Array.isArray(record.tags)) {
-            // If it's already an array, use it directly
             parsedTags = record.tags;
           }
 
@@ -187,64 +190,159 @@ export const CreateTagRecordsList = ({
     fetchRecentRecords();
   }, [projectId]);
 
+  // Perform Full text search
+  const performFullTextSearch = useCallback(
+    async (searchTerm: string, projectId: string) => {
+      if (!searchTerm.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setSearchLoading(true);
+
+      try {
+        console.log("Searching for:", searchTerm, "in project:", projectId);
+        const data = await fullTextSearch(searchTerm, [projectId]);
+        console.log("Search results:", data);
+
+        // Parse tags for search results too
+        const resultsWithParsedTags = data.map((record: any) => {
+          let parsedTags = [];
+
+          if (typeof record.tags === "string") {
+            try {
+              parsedTags = JSON.parse(record.tags);
+            } catch (e) {
+              console.error("Error parsing tags for record:", record.id, e);
+              parsedTags = [];
+            }
+          } else if (Array.isArray(record.tags)) {
+            parsedTags = record.tags;
+          }
+
+          return {
+            ...record,
+            tags: parsedTags,
+          };
+        });
+
+        setSearchResults(resultsWithParsedTags);
+      } catch (error) {
+        console.error("Search error:", error);
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    },
+    []
+  );
+
+  // Handle submit from search bar
+  const handleSubmit = async () => {
+    await performFullTextSearch(searchTerm, projectId);
+  };
+
+  // Also trigger search on Enter key
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSubmit();
+    }
+  };
+
+  // Determine which records to display
+  const displayRecords = searchTerm.trim() ? searchResults : records;
+  const isSearching = searchTerm.trim().length > 0;
+
   return (
-    <div>
-      <h3 className="font-bold mb-4">Recently Added Records</h3>
+    <div className="w-[85%] mx-auto">
+      <div className="gap-2 mb-4">
+        <h3 className="font-bold mb-4">Search Records</h3>
+        <input
+          type="text"
+          placeholder="Search Record"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          onKeyDown={handleKeyPress}
+          className="input input-bordered mb-4 w-full"
+        />
+        <div className="flex justify-end">
+          <button
+            className="btn btn-primary"
+            onClick={handleSubmit}
+            disabled={searchLoading || !searchTerm.trim()}
+          >
+            {searchLoading ? "Searching..." : "Search"}
+          </button>
+        </div>
+      </div>
 
-      {loading && <p className="text-sm">Loading records...</p>}
+      {/* Search Results or Recent Records */}
+      <div className="mt-6">
+        <h3 className="font-bold mb-4">
+          {isSearching ? "Search Results" : "Recently Added Records"}
+        </h3>
 
-      {!loading && records.length === 0 && (
-        <p className="text-base-content/70 text-sm">No recent records found</p>
-      )}
+        {(searchLoading || loading) && (
+          <p className="text-sm">Loading records...</p>
+        )}
 
-      {!loading && records.length > 0 && (
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          <p className="text-sm text-base-content/70 mb-2">
-            {records.length} recent record{records.length !== 1 ? "s" : ""}
+        {!searchLoading && !loading && displayRecords.length === 0 && (
+          <p className="text-base-content/70 text-sm">
+            {isSearching
+              ? "No records found matching your search"
+              : "No recent records found"}
           </p>
-          <ul className="space-y-2">
-            {records.map((record, index) => (
-              <li
-                key={record.id || index}
-                className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
-              >
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-primary mt-1"
-                  />
+        )}
 
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold">{record.name}</div>
+        {!searchLoading && !loading && displayRecords.length > 0 && (
+          <div className="space-y-2 max-h-96 overflow-y-auto">
+            <p className="text-sm text-base-content/70 mb-2">
+              {displayRecords.length} record
+              {displayRecords.length !== 1 ? "s" : ""}
+            </p>
+            <ul className="space-y-2">
+              {displayRecords.map((record, index) => (
+                <li
+                  key={record.id || index}
+                  className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
+                >
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary mt-1"
+                    />
 
-                    {/* Now tags should be an array */}
-                    {record.tags &&
-                      Array.isArray(record.tags) &&
-                      record.tags.length > 0 && (
-                        <div className="flex gap-1 flex-wrap mt-1">
-                          {record.tags.map((tag: any) => (
-                            <span
-                              className="badge badge-outline badge-secondary badge-sm"
-                              key={tag.id}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
+                    <div className="flex-1">
+                      <div className="text-sm font-semibold">{record.name}</div>
+
+                      {record.tags &&
+                        Array.isArray(record.tags) &&
+                        record.tags.length > 0 && (
+                          <div className="flex gap-1 flex-wrap mt-1">
+                            {record.tags.map((tag: any) => (
+                              <span
+                                className="badge badge-outline badge-secondary badge-sm"
+                                key={tag.id}
+                              >
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                      {record.lastUpdatedAt && (
+                        <div className="text-xs text-base-content/60 mt-1">
+                          {new Date(record.lastUpdatedAt).toLocaleDateString()}
                         </div>
                       )}
-
-                    {record.lastUpdatedAt && (
-                      <div className="text-xs text-base-content/60 mt-1">
-                        {new Date(record.lastUpdatedAt).toLocaleDateString()}
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
