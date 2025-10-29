@@ -33,31 +33,8 @@ public class RolePermissionService : IRolePermissionService
             "Checking permission - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
             userId, projectId, action, resource);
         
-        // Returns TRUE or FALSE based on whether user has action/resource permission for the project
-        var hasDirectPermission = await _dbContext.ProjectMembers
-            .Include(pm => pm.Role)
-                .ThenInclude(r => r.Permissions)
-            .Where(pm => 
-                pm.UserId == userId && 
-                pm.ProjectId == projectId &&
-                pm.RoleId != null &&
-                !pm.Role.IsArchived)
-            .AnyAsync(pm => 
-                pm.Role.Permissions.Any(p => 
-                    p.Action == action &&
-                    p.Resource == resource &&
-                    !p.IsArchived));
-
-        if (hasDirectPermission)
-        {
-            _logger.LogInformation(
-                "Permission granted (direct) - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
-                userId, projectId, action, resource);
-            return true;
-        }
-        
         //check for whether a user has permission to an action/resource within a project through group membership
-        var hasGroupPermission = _dbContext.Database
+        var hasPermission = _dbContext.Database
             .SqlQuery<bool>($@"
                SELECT EXISTS (
                     SELECT 1
@@ -77,8 +54,6 @@ public class RolePermissionService : IRolePermissionService
                 ) AS has_permission")
             .AsEnumerable()
             .FirstOrDefault();
-        
-        var hasPermission = hasGroupPermission;
 
         if (hasPermission)
         {
