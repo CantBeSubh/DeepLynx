@@ -106,4 +106,7 @@ public partial class User
     
     [InverseProperty("LastUpdatedByUser")]
     public virtual ICollection<Subscription> UpdatedSubscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<Action> UpdatedActions { get; set; } = new List<Action>();
 }

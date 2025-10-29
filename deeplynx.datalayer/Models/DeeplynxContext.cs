@@ -70,6 +70,14 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_actions_last_updated_by");
+    
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedActions)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
 
             entity.HasOne(d => d.Project).WithMany(p => p.Actions).HasConstraintName("actions_project_id_fkey");
         });

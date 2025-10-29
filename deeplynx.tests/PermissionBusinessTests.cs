@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Nodes;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
@@ -32,6 +33,8 @@ namespace deeplynx.tests
         public long permid6;    
         public long permid7;
         public long permid8;
+        public long uid;
+
         
         public PermissionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -782,11 +785,157 @@ namespace deeplynx.tests
         }
         
         #endregion
-        
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateObjectStorage_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var config = new JsonObject();
+            config["mountPath"] = "./test/storage/";
+            var testObjectStorage = new ObjectStorage
+            {
+                Name = "Test Object Storage",
+                ProjectId = pid,
+                Type = "filesystem",
+                Config = config.ToString(),
+                Default = false,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            // Act
+            Context.ObjectStorages.Add(testObjectStorage);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedObjectStorage = await Context.ObjectStorages.FindAsync(testObjectStorage.Id);
+            Assert.NotNull(savedObjectStorage);
+            Assert.Equal(uid, savedObjectStorage.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateObjectStorage_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var config = new JsonObject();
+            config["mountPath"] = "./test/storage2/";
+            var testObjectStorage = new ObjectStorage
+            {
+                Name = "Test Object Storage 2",
+                ProjectId = pid,
+                Type = "filesystem",
+                Config = config.ToString(),
+                Default = false,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            Context.ObjectStorages.Add(testObjectStorage);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var objectStorageWithUser = await Context.ObjectStorages
+                .Include(os => os.LastUpdatedByUser)
+                .FirstAsync(os => os.Id == testObjectStorage.Id);
+            
+            // Assert
+            Assert.NotNull(objectStorageWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", objectStorageWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test_user@example.com", objectStorageWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, objectStorageWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateObjectStorage_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var config = new JsonObject();
+            config["mountPath"] = "./test/storage3/";
+            var testObjectStorage = new ObjectStorage
+            {
+                Name = "Test Object Storage 3",
+                ProjectId = pid,
+                Type = "filesystem",
+                Config = config.ToString(),
+                Default = false,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.ObjectStorages.Add(testObjectStorage);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedObjectStorage = await Context.ObjectStorages.FindAsync(testObjectStorage.Id);
+            Assert.NotNull(savedObjectStorage);
+            Assert.Null(savedObjectStorage.LastUpdatedBy);
+            
+            var objectStorageWithUser = await Context.ObjectStorages
+                .Include(os => os.LastUpdatedByUser)
+                .FirstAsync(os => os.Id == testObjectStorage.Id);
+            
+            Assert.Null(objectStorageWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateObjectStorage_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var config = new JsonObject();
+            config["mountPath"] = "./test/storage4/";
+            var testObjectStorage = new ObjectStorage
+            {
+                Name = "Test Object Storage 4",
+                ProjectId = pid,
+                Type = "filesystem",
+                Config = config.ToString(),
+                Default = false,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.ObjectStorages.Add(testObjectStorage);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testObjectStorage.LastUpdatedBy = uid;
+            testObjectStorage.Name = "Updated Name";
+            testObjectStorage.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.ObjectStorages.Update(testObjectStorage);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedObjectStorage = await Context.ObjectStorages
+                .Include(os => os.LastUpdatedByUser)
+                .FirstAsync(os => os.Id == testObjectStorage.Id);
+            
+            Assert.Equal(uid, updatedObjectStorage.LastUpdatedBy);
+            Assert.NotNull(updatedObjectStorage.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedObjectStorage.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Name", updatedObjectStorage.Name);
+        }
+
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             // await CleanupTestData();
             await base.SeedTestDataAsync();
+            
+            await base.SeedTestDataAsync();
+    
+            // Create test user
+            var user = new User
+            {
+                Name = "Test User",
+                Email = "test_user@example.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid = user.Id;
             
             // create test organization
             var organization = new Organization { Name = "Test Org" };

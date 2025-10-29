@@ -1008,7 +1008,12 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             await Context.SaveChangesAsync();
             uid = testUser.Id;
             
-            var project = new Project { Name = "Project 1" };
+            var project = new Project
+            {
+                Name = "Project 1",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
@@ -1017,7 +1022,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "DataSource 1",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
@@ -1027,7 +1033,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid 
             };
             Context.Classes.Add(originClass);
 
@@ -1035,7 +1042,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid 
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();

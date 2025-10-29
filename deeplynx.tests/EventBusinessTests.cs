@@ -545,7 +545,7 @@ namespace deeplynx.tests
 
         #endregion
 
-             #region LastUpdatedBy Tests
+        #region LastUpdatedBy Tests
         
         [Fact]
         public async Task CreateEvent_Success_StoresLastUpdatedByUserId()
@@ -677,17 +677,7 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-
-            var projects = new List<Project>
-            {
-                new Project { Name = "Project 1" },
-                new Project { Name = "Project 2" },
-            };
-            Context.Projects.AddRange(projects);
-            await Context.SaveChangesAsync();
-            pid = projects[0].Id;
-            pid2 = projects[1].Id;
-
+            
             var users = new List<User>
             {
                 new User { Name = "user1", Email = "test@gmail.com" },
@@ -701,12 +691,22 @@ namespace deeplynx.tests
             mockUser2Id = users[1].Id;
             mockUser3Id = users[2].Id;
             mockUser4Id = users[3].Id;
+            
+            var projects = new List<Project>
+            {
+                new Project { Name = "Project 1", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)},
+                new Project { Name = "Project 2", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) },
+            };
+            Context.Projects.AddRange(projects);
+            await Context.SaveChangesAsync();
+            pid = projects[0].Id;
+            pid2 = projects[1].Id;
 
             var action = new deeplynx.datalayer.Models.Action
             {
                 Name = "Action1",
                 ProjectId = pid,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy = mockUserId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Actions.Add(action);

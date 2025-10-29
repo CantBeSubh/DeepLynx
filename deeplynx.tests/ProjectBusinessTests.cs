@@ -770,7 +770,7 @@ namespace deeplynx.tests
             Assert.Equal("Test Project", dto.Name);
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("TST", dto.Abbreviation);
-            Assert.Equal(dto.Id, dto.LastUpdatedBy);
+            Assert.Equal(uid, dto.LastUpdatedBy);
             Assert.False(dto.IsArchived);
         }
         

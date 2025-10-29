@@ -1531,6 +1531,7 @@ namespace deeplynx.tests
             Assert.Equal(7, dto.ProjectId);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
+            Assert.Equal(uid1,dto.LastUpdatedBy);
         }
         
         #endregion

@@ -323,7 +323,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     }
     
     #endregion
-   #region LastUpdatedBy Tests
+    #region LastUpdatedBy Tests
 
     [Fact]
     public async Task CreateHistoricalEdge_Success_StoresLastUpdatedByUserId()
