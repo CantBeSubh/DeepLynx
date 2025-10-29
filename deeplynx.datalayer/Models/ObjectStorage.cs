@@ -46,6 +46,6 @@ public partial class ObjectStorage
     [InverseProperty("ObjectStorage")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
     
-    [InverseProperty("UpdatedObjectStorages")]
+    [InverseProperty("LastUpdatedObjectStorages")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

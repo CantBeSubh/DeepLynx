@@ -49,6 +49,6 @@ public partial class Event
     public virtual Project? Project { get; set; }
     public virtual DataSource? DataSource { get; set; }
     
-    [InverseProperty("UpdatedEvents")]
+    [InverseProperty("LastUpdatedEvents")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

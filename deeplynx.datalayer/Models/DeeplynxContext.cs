@@ -74,7 +74,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_actions_last_updated_by");
     
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedActions)
+                .WithMany(p => p.LastUpdatedActions)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -102,7 +102,7 @@ public partial class DeeplynxContext : DbContext
             
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_classes_last_updated_by");
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedClasses)
+                .WithMany(p => p.LastUpdatedClasses)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -119,7 +119,7 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_data_sources_last_updated_by");
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedDataSources)
+                .WithMany(p => p.LastUpdatedDataSources)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -141,7 +141,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_edges_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedEdges)
+                .WithMany(p => p.LastUpdatedEdges)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -168,7 +168,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e=>e.LastUpdatedBy).HasDatabaseName("idx_events_last_updated_by");
             
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedEvents)
+                .WithMany(p => p.LastUpdatedEvents)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -186,7 +186,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_groups_last_updated_by");
     
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedGroups)
+                .WithMany(p => p.LastUpdatedGroups)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -225,7 +225,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_historical_edges_last_updated_by");
     
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedHistoricalEdges)
+                .WithMany(p => p.LastUpdatedHistoricalEdges)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -259,7 +259,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_object_storages_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedObjectStorages)
+                .WithMany(p => p.LastUpdatedObjectStorages)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -278,7 +278,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_organizations_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedOrganizations)
+                .WithMany(p => p.LastUpdatedOrganizations)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -306,7 +306,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_permissions_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedPermissions)
+                .WithMany(p => p.LastUpdatedPermissions)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -337,7 +337,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_projects_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedProjects)
+                .WithMany(p => p.LastUpdatedProjects)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -378,7 +378,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_records_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedRecords)
+                .WithMany(p => p.LastUpdatedRecords)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -444,7 +444,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_relationships_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedRelationships)
+                .WithMany(p => p.LastUpdatedRelationships)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -471,7 +471,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_roles_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedRoles)
+                .WithMany(p => p.LastUpdatedRoles)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -515,7 +515,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_sensitivity_labels_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedSensitivityLabels)
+                .WithMany(p => p.LastUpdatedSensitivityLabels)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -540,7 +540,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_subscriptions_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedSubscriptions)
+                .WithMany(p => p.LastUpdatedSubscriptions)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);
@@ -568,7 +568,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_tags_last_updated_by");
 
             entity.HasOne(d => d.LastUpdatedByUser)
-                .WithMany(p => p.UpdatedTags)
+                .WithMany(p => p.LastUpdatedTags)
                 .HasForeignKey(d => d.LastUpdatedBy)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName(null);

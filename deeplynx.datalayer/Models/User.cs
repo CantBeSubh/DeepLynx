@@ -56,57 +56,58 @@ public partial class User
     
     [InverseProperty("User")]
     public virtual ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+    
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Class> UpdatedClasses { get; set; } = new List<Class>();
+    public virtual ICollection<Class> LastUpdatedClasses { get; set; } = new List<Class>();
      
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<DataSource> UpdatedDataSources { get; set; } = new List<DataSource>();
+    public virtual ICollection<DataSource> LastUpdatedDataSources { get; set; } = new List<DataSource>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Edge> UpdatedEdges { get; set; } = new List<Edge>();
+    public virtual ICollection<Edge> LastUpdatedEdges { get; set; } = new List<Edge>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<HistoricalEdge> UpdatedHistoricalEdges { get; set; } = new List<HistoricalEdge>();
+    public virtual ICollection<HistoricalEdge> LastUpdatedHistoricalEdges { get; set; } = new List<HistoricalEdge>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Event> UpdatedEvents { get; set; } = new List<Event>();
+    public virtual ICollection<Event> LastUpdatedEvents { get; set; } = new List<Event>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Group> UpdatedGroups { get; set; } = new List<Group>();
+    public virtual ICollection<Group> LastUpdatedGroups { get; set; } = new List<Group>();
     
     [InverseProperty("User")]
     public virtual ICollection<SavedSearch> SavedSearches { get; set; } = new List<SavedSearch>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<ObjectStorage> UpdatedObjectStorages { get; set; } = new List<ObjectStorage>();
+    public virtual ICollection<ObjectStorage> LastUpdatedObjectStorages { get; set; } = new List<ObjectStorage>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Organization> UpdatedOrganizations { get; set; } = new List<Organization>();
+    public virtual ICollection<Organization> LastUpdatedOrganizations { get; set; } = new List<Organization>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Project> UpdatedProjects { get; set; } = new List<Project>();
+    public virtual ICollection<Project> LastUpdatedProjects { get; set; } = new List<Project>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Record> UpdatedRecords { get; set; } = new List<Record>();
+    public virtual ICollection<Record> LastUpdatedRecords { get; set; } = new List<Record>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Permission> UpdatedPermissions { get; set; } = new List<Permission>();
+    public virtual ICollection<Permission> LastUpdatedPermissions { get; set; } = new List<Permission>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Relationship> UpdatedRelationships { get; set; } = new List<Relationship>();
+    public virtual ICollection<Relationship> LastUpdatedRelationships { get; set; } = new List<Relationship>();
 
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Role> UpdatedRoles { get; set; } = new List<Role>();
+    public virtual ICollection<Role> LastUpdatedRoles { get; set; } = new List<Role>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<SensitivityLabel> UpdatedSensitivityLabels { get; set; } = new List<SensitivityLabel>();
+    public virtual ICollection<SensitivityLabel> LastUpdatedSensitivityLabels { get; set; } = new List<SensitivityLabel>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Tag> UpdatedTags { get; set; } = new List<Tag>();
+    public virtual ICollection<Tag> LastUpdatedTags { get; set; } = new List<Tag>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Subscription> UpdatedSubscriptions { get; set; } = new List<Subscription>();
+    public virtual ICollection<Subscription> LastUpdatedSubscriptions { get; set; } = new List<Subscription>();
     
     [InverseProperty("LastUpdatedByUser")]
-    public virtual ICollection<Action> UpdatedActions { get; set; } = new List<Action>();
+    public virtual ICollection<Action> LastUpdatedActions { get; set; } = new List<Action>();
 }

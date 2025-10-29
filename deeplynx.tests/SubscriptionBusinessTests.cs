@@ -24,6 +24,7 @@ namespace deeplynx.tests
         {
             await base.InitializeAsync();
             _subscriptionBusiness = new SubscriptionBusiness(Context, _cacheBusiness);
+            await _cacheBusiness.SetAsync("projects", (List<ProjectResponseDto>?)null, TimeSpan.FromSeconds(1));
         }
 
         # region GetTests
@@ -337,7 +338,9 @@ namespace deeplynx.tests
                     Operation = "create",
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 },
                 new Subscription
                 {
@@ -347,7 +350,9 @@ namespace deeplynx.tests
                     Operation = "update",
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 },
                 new Subscription
                 {
@@ -357,7 +362,9 @@ namespace deeplynx.tests
                     Operation = "delete",
                     DataSourceId = mockDataSourceId,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 }
             };
             Context.Subscriptions.AddRange(subscriptions);
@@ -619,7 +626,11 @@ public void SubscriptionResponseDto_AllProperties_CanBeSetAndRetrieved()
             await Context.SaveChangesAsync();
             uid = user.Id;
             
-            var project = new Project { Name = "Project 1" };
+            var project = new Project {
+                Name = "Project 1", 
+                LastUpdatedBy = uid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
@@ -643,9 +654,6 @@ public void SubscriptionResponseDto_AllProperties_CanBeSetAndRetrieved()
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             mockDataSourceId = dataSource.Id;
-            Context.Users.Add(user);
-            await Context.SaveChangesAsync();
-            uid = user.Id;
         }
     }
 }

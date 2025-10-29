@@ -44,6 +44,6 @@ public partial class Group
     [InverseProperty("Groups")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
     
-    [InverseProperty("UpdatedGroups")]
+    [InverseProperty("LastUpdatedGroups")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

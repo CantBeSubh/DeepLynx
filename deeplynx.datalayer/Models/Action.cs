@@ -40,6 +40,6 @@ public partial class Action
     [InverseProperty("Action")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     
-    [InverseProperty("UpdatedActions")]
+    [InverseProperty("LastUpdatedActions")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

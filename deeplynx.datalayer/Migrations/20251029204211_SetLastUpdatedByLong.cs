@@ -159,12 +159,23 @@ namespace deeplynx.datalayer.Migrations
                 schema: "deeplynx",
                 table: "tags",
                 column: "last_updated_by");
+            
+            migrationBuilder.Sql(@"
+                ALTER TABLE deeplynx.actions 
+                ALTER COLUMN last_updated_by TYPE bigint USING NULL;
+            ");
+
+            migrationBuilder.CreateIndex(
+                name: "idx_actions_last_updated_by",
+                schema: "deeplynx",
+                table: "actions",
+                column: "last_updated_by");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
+           migrationBuilder.DropIndex(
                 name: "idx_data_sources_last_updated_by",
                 schema: "deeplynx",
                 table: "data_sources");
@@ -325,6 +336,17 @@ namespace deeplynx.datalayer.Migrations
             
             migrationBuilder.Sql(@"
                 ALTER TABLE deeplynx.tags 
+                ALTER COLUMN last_updated_by TYPE text 
+                USING last_updated_by::text;
+            ");
+            
+            migrationBuilder.DropIndex(
+                name: "idx_actions_last_updated_by",
+                schema: "deeplynx",
+                table: "actions");
+
+            migrationBuilder.Sql(@"
+                ALTER TABLE deeplynx.actions 
                 ALTER COLUMN last_updated_by TYPE text 
                 USING last_updated_by::text;
             ");

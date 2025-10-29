@@ -53,6 +53,6 @@ public partial class SensitivityLabel
     [InverseProperty("Labels")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
     
-    [InverseProperty("UpdatedSensitivityLabels")]
+    [InverseProperty("LastUpdatedSensitivityLabels")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

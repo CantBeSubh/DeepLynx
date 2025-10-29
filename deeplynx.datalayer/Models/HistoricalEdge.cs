@@ -59,6 +59,6 @@ public partial class HistoricalEdge
     [InverseProperty("HistoricalEdges")]
     public virtual Edge Edge { get; set; } = null!;
     
-    [InverseProperty("UpdatedHistoricalEdges")]
+    [InverseProperty("LastUpdatedHistoricalEdges")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

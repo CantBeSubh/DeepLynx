@@ -47,6 +47,6 @@ public partial class Organization
     [InverseProperty("Organization")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
     
-    [InverseProperty("UpdatedOrganizations")]
+    [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

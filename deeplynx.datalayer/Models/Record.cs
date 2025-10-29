@@ -93,6 +93,6 @@ public partial class Record
     [InverseProperty("Records")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
     
-    [InverseProperty("UpdatedRecords")]
+    [InverseProperty("LastUpdatedRecords")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

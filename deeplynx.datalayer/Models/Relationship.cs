@@ -62,6 +62,6 @@ public partial class Relationship
     [InverseProperty("Relationships")]
     public virtual Project Project { get; set; } = null!;
     
-    [InverseProperty("UpdatedRelationships")]
+    [InverseProperty("LastUpdatedRelationships")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

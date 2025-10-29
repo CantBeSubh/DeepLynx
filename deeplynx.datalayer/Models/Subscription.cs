@@ -66,6 +66,6 @@ public partial class Subscription
     [InverseProperty("Subscriptions")]
     public virtual User User { get; set; } = null!;
     
-    [InverseProperty("UpdatedSubscriptions")]
+    [InverseProperty("LastUpdatedSubscriptions")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

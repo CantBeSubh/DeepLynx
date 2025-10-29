@@ -67,6 +67,6 @@ public partial class Edge
     [InverseProperty("Edges")]
     public virtual Relationship? Relationship { get; set; }
     
-    [InverseProperty("UpdatedEdges")]
+    [InverseProperty("LastUpdatedEdges")]
     public virtual User? LastUpdatedByUser { get; set; }
 }

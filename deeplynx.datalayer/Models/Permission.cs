@@ -69,6 +69,6 @@ public partial class Permission
     [InverseProperty("Permissions")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
     
-    [InverseProperty("UpdatedPermissions")]
+    [InverseProperty("LastUpdatedPermissions")]
     public virtual User? LastUpdatedByUser { get; set; }
 }
