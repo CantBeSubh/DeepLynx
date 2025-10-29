@@ -1,21 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, use, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLanguage } from "@/app/contexts/Language";
-// import { defaultRoles } from "../../dummy_data/data";
 import Tabs from "../Tabs";
-import AddProjectMember from "@/app/(home)/components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
+import AddProjectMember from "../../components/ProjectSettingsTable/ProjectModals/ProjectMemberModal";
 import MembersTable from '././ProjectTables/MembersTable';
 import RolesTable from '././ProjectTables/RolesTable';
 import { useRouter, useSearchParams } from "next/navigation";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import ProjectDropdownSingleSelect from '../ProjectDropdownSingleSelect';
-import { UserResponseDto } from '../../types/responseDTOs';
-import { ProjectMembersDto } from '../../types/responseDTOs';
 import { getProjectMembers } from '@/app/lib/projects_services.client';
 import { getAllRoles } from '@/app/lib/role_services.client';
+import { ProjectResponseDto, ProjectMembersDto } from '../../types/responseDTOs';
 import ProjectSettingsMemberSkeleton from '../skeletons/projectsettingsmemberskeleton';
-import { ProjectResponseDto } from '../../types/responseDTOs';
+import { Role } from '@/app/(home)/types/types';
+
 interface ProjectSettingsProps {
   projects: ProjectResponseDto[];
   initialProject: ProjectResponseDto | null;
@@ -25,45 +24,42 @@ const ProjectSettings = ({
   projects,
   initialProject,
 }: ProjectSettingsProps) => {
-  // const [selectedProjects, setSelectedProjects] = useState<string[]>(
-  //   initialSelectedProjects
-  // );
   const { t } = useLanguage();
   const [addProjectMemberModal, setAddProjectMemberModal] = useState(false);
   const [activeTab, setActiveTab] = useState("Members");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [project, setProject] = useState<ProjectResponseDto | null>(initialProject);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    initialProject?.id.toString() || null
+  const [selectedProjectId, setSelectedProjectId] = useState<string | number | null>(
+    initialProject?.id ?? null
   );
   const [projectMembers, setProjectMembers] = useState<ProjectMembersDto[]>([]);
-
-  const [roles, setRoles] = useState([]);
   const [isMembersLoading, setIsMembersLoading] = useState(true);
 
+  const [roles, setRoles] = useState([]);
+
+  //Getting Project Roles
   useEffect(() => {
     const fetchRoles = async () => {
-      const rolesData = await getAllRoles(Number(selectedProjectId)); // Your API call
+      const rolesData = await getAllRoles(Number(selectedProjectId));
       setRoles(rolesData);
     };
     fetchRoles();
   }, [selectedProjectId]);
 
+  //Getting Project Members
   useEffect(() => {
     if (!selectedProjectId) return;
-
     (async () => {
       try {
         const users = await getProjectMembers(Number(selectedProjectId));
         setProjectMembers(users);
-        setIsMembersLoading(false);
       } catch (err) {
         console.error(err);
       }
     })();
   }, [selectedProjectId]);
 
+  //Refreshing Members Table
   const refreshMembers = async () => {
     if (selectedProjectId) {
       const users = await getProjectMembers(Number(selectedProjectId));
@@ -71,24 +67,32 @@ const ProjectSettings = ({
     }
   };
 
-  const memberConent = isMembersLoading? <ProjectSettingsMemberSkeleton/>:<MembersTable data={projectMembers} projectId={selectedProjectId} roles={roles}/>;
+const memberContent = isMembersLoading || selectedProjectId == null ? <ProjectSettingsMemberSkeleton/>:
+<MembersTable
+  data={projectMembers}
+  projectId={selectedProjectId == null
+      ? null
+      : String(selectedProjectId)}
+  roles={roles}
+/>;
 
+  //Tab Data for Project Settings Tables
   const tabData = [
     {
       label: "Members",
       content: (
-        memberConent
+        memberContent
       ),
     },
-    // {
-    //   label: "Roles",
-    //   content: (
-    //     <RolesTable
-    //       id={selectedProjectId}
-    //       data={defaultRoles}
-    //     />
-    //   ),
-    // },
+    {
+      label: "Roles",
+      content: (
+        <RolesTable
+          id={selectedProjectId == null ? undefined : String(selectedProjectId)}
+          data={roles}
+        />
+      ),
+    },
     //  TODO POST FY: ADD BACK DATA SOURCE / OBJ STORAGE
     // {
     //   label: "Data Source",
@@ -112,33 +116,35 @@ const ProjectSettings = ({
     setActiveTab(label);
   };
 
+  //Function for adding roles
   const handleAddButtonClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (activeTab === "Roles") {
-      router.push("/project_settings/project_roles");
+      router.push(`/project/${selectedProjectId}/project_settings/project_roles/new_role`);
     } else if (activeTab === "Members") {
       setAddProjectMemberModal(true);
     }
   };
 
+  //Function for changing a project from dropdown
   const handleProjectChange = useCallback((newProjectId: string) => {
     setSelectedProjectId(newProjectId);
   }, []);
 
   // Effect to set the active tab from the query parameter
+  const tab = searchParams.get('tab');
   useEffect(() => {
-    const tab = searchParams.get('tab');
     if (tab) {
       setActiveTab(tab);
     }
-  }, [searchParams]);
+  }, [tab]);
 
   return (
     <div className="">
       <div className="">
         <div className="">
           <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
-            <div>
+            <div className="">
               <h1 className="text-2xl font-bold text-info-content">
                 {t.translations.PROJECT_SETTINGS}
               </h1>
@@ -146,7 +152,10 @@ const ProjectSettings = ({
               <ProjectDropdownSingleSelect
                 projects={projects}
                 onSelectionChange={handleProjectChange}
-                defaultSelectedId={initialProject?.id.toString() || ""}
+                defaultSelectedId={selectedProjectId === undefined
+                  || selectedProjectId === null
+                  ? undefined
+                  : String(selectedProjectId)}
               />
             </div>
           </div>
@@ -160,7 +169,7 @@ const ProjectSettings = ({
             </button>
             <div className="flex flex-col">
               {/* TODO POST FY
-    {activeTab === "Members" && <MemberSearchBar />} */}
+              {activeTab === "Members" && <MemberSearchBar />} */}
             </div>
           </div>
         </div>

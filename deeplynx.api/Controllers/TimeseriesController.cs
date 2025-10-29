@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using deeplynx.helpers.exceptions;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -8,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/datasources/{dataSourceId}/timeseries")]
+    [Route("projects/{projectId}/datasources/{dataSourceId}/timeseries")]
     [Authorize]
     public class TimeseriesController : ControllerBase
     {

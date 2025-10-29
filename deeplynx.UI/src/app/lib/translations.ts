@@ -26,7 +26,10 @@ export const translations = {
             GROUP: "Group",
             ROLE: "Role",
             ROLE_SETTINGS: "Role Settings",
+            ROLE_DETAILS: "Role Details",
+            ROLE_PERMISSIONS: "Role Permissions",
             ADD_NEW_ROLE: "Add New Role",
+            RETURN_TO_ROLES: "Return to Roles",
             PROJECT: "Project",
             PROJECT_ROLES: "Project Roles",
             EXPLORE: "Explore",
@@ -102,7 +105,7 @@ export const translations = {
             SEE_MORE: "See more",
             TAGS: "Tags:",
             CLASS: "Class: ",
-            DATA_SOURCE: "Data source: ",
+            DATA_SOURCE: "Data source ",
             ALL_YOUR_PROJECTS: "All your Projects",
             RECENTLY_ADDED_RECORDS: "Recently Added Records",
             TIMESERIES: "Timeseries",
@@ -167,6 +170,7 @@ export const translations = {
             ENGLISH: "English",
             ESPANOL: "Español",
             USER_SETTINGS: "User Settings",
+            USER_MANAGEMENT: "User Management",
             SELECT_A_ROLE: "Select a role",
             GENERAL: "General",
             EMAIL: "Email",
@@ -177,7 +181,7 @@ export const translations = {
             LANGUAGE: "Language",
             RECORD_NAME: "Record Name",
             LAST_UPDATED_AT: "Last Updated At",
-            API_KEYPAIRS: "API Keypairs",
+            API_KEYPAIRS: "API Keys",
             NO_RECENT_RECORDS: "No recent records found",
             ORIGINAL_ID: "Original ID",
             PROPERTIES_EXAMPLE: `Properties.\nExample:\n  { "key1": "value1" },\n OR \n { "key2": { "subKey2": "subValue2" } } \n(single JSON object only)`,
@@ -227,7 +231,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-
+            STORAGE_DESTINATION: "Storage Destination",
         }
     },
     es: {
@@ -286,7 +290,10 @@ export const translations = {
             LINKS: "Enlaces",
             ROLES: "Roles",
             ROLE_SETTINGS: "Configuraciónes del rol",
+            ROLE_DETAILS: "Detalles del rol",
+            ROLE_PERMISSIONS: "Permisos del rol",
             ADD_NEW_ROLE: "Agregar rol nuevo",
+            RETURN_TO_ROLES: "Regresar a los rol",
             FILE_EXPLORER: "Explorador de archivos",
             REPORTS: "Reportes",
             TRENDS: "Tendencias",
@@ -392,6 +399,7 @@ export const translations = {
             ENGLISH: "English",
             ESPANOL: "Español",
             USER_SETTINGS: "Configuración de usuario",
+            USER_MANAGEMENT: "Gestión de usuarios",
             SELECT_A_ROLE: "Seleccione un rol",
             GENERAL: "General",
             EMAIL: "Correo electrónico",
@@ -468,7 +476,7 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            
+            STORAGE_DESTINATION: "Destino de almacenamiento"
         }
     }
 }

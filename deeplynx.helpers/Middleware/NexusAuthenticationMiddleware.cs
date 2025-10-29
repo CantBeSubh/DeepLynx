@@ -36,23 +36,55 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-
-        // Check for local development bypass
-        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
-        if (disableAuth)
-        {
-            Log.Information("Local development bypass enabled");
-            return await HandleLocalDevelopmentBypass();
-        }
-
         // Extract token
         var token = ExtractToken(Request);
+        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
+        
+        // If local bypass is enabled, try to use the token but fall back to superuser on any issues
+        if (disableAuth)
+        {
+            // No token provided - use superuser
+            if (string.IsNullOrEmpty(token))
+            {
+                Log.Information("Local bypass enabled with no token - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+
+            // Token provided - try to validate it
+            try
+            {
+                var result = await ValidateTokenAsync(token);
+
+                // If token validation succeeded, use the authenticated user
+                if (result.Succeeded)
+                {
+                    Log.Information("Valid token detected - using authenticated user from token");
+                    return result;
+                }
+
+                // Token validation failed - fall back to superuser
+                Log.Warning("Local bypass enabled but token validation failed - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Local bypass enabled but token validation threw exception - using local development superuser");
+                return await HandleLocalDevelopmentBypass();
+            }
+        }
+
+        // Normal flow - auth bypass NOT enabled
         if (string.IsNullOrEmpty(token))
         {
             Log.Warning("No token found in request");
             return AuthenticateResult.NoResult();
         }
 
+        return await ValidateTokenAsync(token);
+    }
+
+    private async Task<AuthenticateResult> ValidateTokenAsync(string token)
+    {
         var handler = new JwtSecurityTokenHandler();
         if (!handler.CanReadToken(token))
         {
@@ -312,11 +344,13 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
+            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
             {
-                if (string.IsNullOrEmpty(existingUser.SsoId) && !string.IsNullOrEmpty(ssoId) 
+                // update if admin needs to be set or if SSO ID is improperly configured
+                if ((isDefaultSuperUser && !existingUser.IsSysAdmin) 
                     || existingUser.SsoId != principal.FindFirst("uid")?.Value)
                 {
                     existingUser.SsoId = ssoId;
@@ -324,6 +358,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     existingUser.Name = name;
                     existingUser.IsActive = true;
                     existingUser.IsArchived = false;
+                    existingUser.IsSysAdmin = isDefaultSuperUser || existingUser.IsSysAdmin;
                     await dbContext.SaveChangesAsync();
                     Log.Information($"Updated SSO ID for existing user {email}");
                 }
@@ -337,7 +372,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                     Username = username,
                     SsoId = ssoId,
                     IsActive = true,
-                    IsArchived = false
+                    IsArchived = false,
+                    IsSysAdmin = isDefaultSuperUser,
                 };
                 dbContext.Users.Add(newUser);
                 await dbContext.SaveChangesAsync();

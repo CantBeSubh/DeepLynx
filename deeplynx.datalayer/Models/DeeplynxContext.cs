@@ -58,6 +58,8 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<Tag> Tags { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+    
+    public virtual DbSet<SavedSearch> SavedSearches { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -89,7 +91,13 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
-
+            
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_classes_last_updated_by");
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedClasses)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
             entity.HasOne(d => d.Project).WithMany(p => p.Classes).HasConstraintName("classes_project_id_fkey");
         });
 
@@ -455,6 +463,20 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsSysAdmin).HasDefaultValue(false);
             
             entity.Property(e => e.IsActive).HasDefaultValue(false);
+        });
+        
+        modelBuilder.Entity<SavedSearch>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("saved_searches_pkey");
+
+            entity.Property(e => e.Id).UseIdentityAlwaysColumn();
+            
+            entity.Property(e => e.IsFavorite).HasDefaultValue(false);
+
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            
+            entity.HasOne(d => d.User).WithMany(p => p.SavedSearches).HasConstraintName("saved_searches_user_id_fkey");
+            
         });
 
         OnModelCreatingPartial(modelBuilder);

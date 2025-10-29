@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import Tabs from "../../Tabs";
 import { useLanguage } from "@/app/contexts/Language";
-import SettingsTab from './RoleName';
-import PermissionsTab from './RolePermissions';
+import RoleDetails from './RoleDetails';
 import { useRouter, useSearchParams } from "next/navigation";
+import { getAllRoles, updateRole } from "@/app/lib/role_services.client";
+import { RoleResponseDto, PermissionResponseDto } from "../../../types/responseDTOs";
 
 interface RoleSettingsProps {
   id?: string | string[];
@@ -11,54 +11,62 @@ interface RoleSettingsProps {
 
 const RoleSettings = ({ id }: RoleSettingsProps) => {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState("Settings");
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const handleTabChange = (label: string) => {
-    setActiveTab(label);
-  };
+  const [role, setRole] = useState<RoleResponseDto | null>(null);
+  const [permissions, setPermissions] = useState<PermissionResponseDto[]>([]);
 
-  const toPermissionsTab = () => {
-    setActiveTab("Permissions");
-  };
-
-  const onCancel = () => {
-    router.push(`/project_settings?tab=Roles`);
-  };
-
-  const onSave = () => {
-    // TODO Add logic to save role changes
-    router.push(`/project_settings?tab=Roles`);
-  };
-
-  // Effect to read roleId from query and perform any necessary logic
+  // Fetch role and permissions data on component mount
   useEffect(() => {
     const roleId = searchParams.get('roleId');
     if (roleId) {
-      // Fetch the role data using the roleId if needed
+      getAllRoles()
+        .then((data) => {
+          setRole(data.find((r: RoleResponseDto) => r.id === Number(roleId)) || null);
+          // Add API call to get permissions based on roleId
+        })
+        .catch((error) => {
+          console.error("Error fetching role data:", error);
+        });
     }
   }, [searchParams]);
 
-  const tabData = [
-    { label: "Settings", content: <SettingsTab toPermissionsTab={toPermissionsTab} onCancel={onCancel} /> },
-    { label: "Permissions", content: <PermissionsTab onCancel={onCancel} onSave={onSave} /> },
-  ];
+    const onCancel = () => {
+      router.push(`/project/${id}/project_settings?tab=Roles`);
+    };
+
+    //Function for saving roles and permissions
+    const onSave = async () => {
+    if (role) {
+      try {
+        await updateRole(role.id, {
+          name: role.name,
+          description: role.description,
+        });
+        const updatedRoles = await getAllRoles();
+        setRole(updatedRoles.find((updatedRole: { id: number; }) => updatedRole.id === role.id) || null);
+        router.push(`/project/${id}/project_settings?tab=Roles`);
+      } catch (error) {
+        console.error("Error updating role:", error);
+      }
+    }
+  };
 
   return (
     <div className="bg-base-100 text-accent-content rounded-xl p-0 shadow-md card">
       <div className="card-body">
-        <div className="flex justify-between items-start">
-          <h2 className="card-title">{t.translations.ROLE_SETTINGS}</h2>
-          {/* TODO Differentiate the name of the role instead of just role settings */}
-        </div>
         <div className="w-full">
-          <Tabs
-            tabs={tabData}
-            className="tabs tabs-border"
-            onTabChange={handleTabChange}
-            activeTab={activeTab}
-          />
+          {role && (
+            <RoleDetails
+              role={role}
+              setRole={setRole}
+              permissions={permissions}
+              setPermissions={setPermissions}
+              onCancel={onCancel}
+              onSave={onSave}
+            />
+          )}
         </div>
       </div>
     </div>

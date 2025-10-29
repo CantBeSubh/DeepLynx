@@ -12,6 +12,11 @@ export type ClassResponseDto = {
   createdat: string;
 };
 
+export type TokenResponseDto={
+  apiKey:string;
+  apiSecret:string;
+}
+
 export type DataSourceResponseDto = {
   id: number;
   name: string;
@@ -29,6 +34,13 @@ export type DataSourceResponseDto = {
   createdat: string;          // RFC 3339 date-time
   archivedat: string | null;  // RFC 3339 or null
 };
+
+export type RelatedRecordsResponseDto = {
+    relatedRecordName: string;
+    relatedRecordId: number;
+    relatedRecordProjectId: number;
+    relationshipName: string | null;
+}
 
 export type GroupResponseDto = {
   id: number|string;
@@ -64,6 +76,35 @@ export type HistoricalRecordResponseDto = {
   ArchivedAt?: Date;
 }
 
+export type RecordResponseDto = {
+  id: number | null;
+  name: string;
+  description?: string | null;
+  uri?: string | null;
+  properties?: unknown;
+  objectStorageId?: number | null;
+  originalId?: string | null;
+  classId?: number | null;
+  dataSourceId?: number | null;
+  projectId?: number | null;
+  lastUpdatedAt?: string;
+  lastUpdatedBy?: string | null;
+  isArchived?: boolean;
+  fileType?: string|null;
+  tags?: { id: number | null; name: string }[];
+};
+
+export type ObjectStorageResponseDto = {
+    id: number | string;
+    name: string;
+    type: string;
+    projectId: number | string;
+    default: boolean;
+    lastUpdatedAt: string;
+    lastUpdatedBy: string;
+    isArchived: boolean;
+}
+
 export type OrganizationResponseDto = {
   id: number|string;
   name: string;
@@ -79,7 +120,7 @@ export type PermissionResponseDto = {
   description?: string | null;
   action:string;
   resource?:string|null;
-  isHardcoded:boolean;
+  isDefault:boolean;
   labelId?:number|string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
@@ -109,11 +150,24 @@ export type ProjectResponseDto = {
   organizationId: number | string;
 };
 
+export type ProjectStatResponseDto = {
+  classes: number;
+  records: number;
+  datasources: number;
+}
+
+//which one
 export type RoleResponseDto =
 {
-roleId: number;
-name: string;
-description?: string;
+  roleId: number;
+  id: number;
+  name: string;
+  description?: string | null;
+  lastUpdatedAt?: string | null;
+  lastUpdatedBy?: string | null;
+  isArchived?: boolean;
+  projectId: number;
+  organizationId?: number | null;
 }
 
 export type TagResponseDto = {
@@ -137,4 +191,19 @@ export type UserResponseDto =
   isSysAdmin: boolean;
   isArchived: boolean;
   isActive: boolean;
+}
+
+export type GraphResponseDto = {
+  nodes: Array<{
+    id: number;
+    label: string;
+    type: string;
+  }>;
+  links: Array<{
+    source: number;
+    target: number;
+    relationshipId: number;
+    relationshipName: string | null;
+    edgeId: number;
+  }>;
 }

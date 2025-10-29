@@ -108,6 +108,8 @@ spec:
               value: ${SUPPORT_EMAIL}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             - name: TENANT_MODE
               value: ${TENANT_MODE}
             # Runtime environment variables from secrets (sensitive)
@@ -242,6 +244,8 @@ spec:
               value: ${TENANT_MODE}
             - name: DISABLE_BACKEND_AUTHENTICATION
               value: ${DISABLE_BACKEND_AUTHENTICATION}
+            - name: SUPERUSER_EMAIL
+              value: ${SUPERUSER_EMAIL}
             # Backend may also need these environment variables
             - name: OKTA_CLIENT_SECRET
               valueFrom:
@@ -288,6 +292,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: backend-base-url
+            - name: HOSTED_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: hosted-link
           resources:
             limits:
               memory: "4Gi"
@@ -398,7 +407,6 @@ metadata:
       more_clear_headers "x-content-type-options";
       more_clear_headers "x-frame-options";
       more_clear_headers "content-security-policy";
-      more_set_headers "cache-Control: no-cache, no-store";
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
 spec:
@@ -406,6 +414,13 @@ spec:
     - host: deeplynx.dev.inl.gov
       http:
         paths:
+          - path: /_next/static
+            pathType: Prefix
+            backend:
+              service:
+                name: deeplynxv3-service
+                port:
+                  number: 80
           - path: /
             pathType: Prefix
             backend:

@@ -45,7 +45,7 @@ public class RoleBusiness : IRoleBusiness
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness, hideArchived);
             roleQuery = roleQuery.Where(r => r.ProjectId == projectId);
         }
-        
+
         if (organizationId.HasValue)
         {
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value, hideArchived);
@@ -83,10 +83,10 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles
             .Where(r => r.Id == roleId)
             .FirstOrDefaultAsync();
-        
+
         if (role == null)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         if (hideArchived && role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} is archived");
 
@@ -124,7 +124,7 @@ public class RoleBusiness : IRoleBusiness
             await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId.Value, _cacheBusiness);
         if (organizationId.HasValue)
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, organizationId.Value);
-        
+
         ValidationHelper.ValidateModel(dto);
         var role = new Role
         {
@@ -135,10 +135,10 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = projectId,
             OrganizationId = organizationId,
         };
-        
+
         _context.Roles.Add(role);
         await _context.SaveChangesAsync();
-        
+
         // Log create Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -147,8 +147,8 @@ public class RoleBusiness : IRoleBusiness
             Operation = "create",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new RoleResponseDto
@@ -173,7 +173,7 @@ public class RoleBusiness : IRoleBusiness
     public async Task<List<RoleResponseDto>> BulkCreateRoles(long projectId, List<CreateRoleRequestDto> roles)
     {
         await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness);
-        
+
         // TODO: add support for organization roles
         // Bulk insert into roles; if there is a name collision, update the description if present
         var sql = @"
@@ -182,30 +182,30 @@ public class RoleBusiness : IRoleBusiness
             ON CONFLICT (project_id, name) DO UPDATE SET
                 description = COALESCE(EXCLUDED.description, roles.description),
                 last_updated_at = @now
-            RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;                                  
+            RETURNING id, project_id, organization_id, name, description, last_updated_at, is_archived, last_updated_by;
         ";
-        
+
         // establish "constant" parameters
         var parameters = new List<NpgsqlParameter>
         {
             new NpgsqlParameter("@projectId", projectId),
             new NpgsqlParameter("@now", DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified))
         };
-        
+
         // establish "dynamic" parameters (new for each dto in the list)
         parameters.AddRange(roles.SelectMany((dto, i) => new[]
         {
             new NpgsqlParameter($"@p{i}_name", dto.Name),
             new NpgsqlParameter($"@p{i}_desc", (object?)dto.Description ?? DBNull.Value),
         }));
-        
+
         // stringify the params and comma separate them
         var valueTuples = string.Join(", ", roles.Select((dto, i) =>
             $"(@projectId, @p{i}_name, @p{i}_desc, @now, NULL)"));
-        
+
         // put everything together and execute the query
         sql = string.Format(sql, valueTuples);
-        
+
         // returns the resulting upserted classes
         var result = await _context.Database
             .SqlQueryRaw<RoleResponseDto>(sql, parameters.ToArray())
@@ -221,13 +221,13 @@ public class RoleBusiness : IRoleBusiness
                 Operation = "create",
                 EntityType = "role",
                 EntityId = item.Id,
+                EntityName = item.Name,
                 DataSourceId = null,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
-        
+
         return result;
     }
 
@@ -243,15 +243,15 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         role.Name = dto.Name ?? role.Name;
         role.Description = dto.Description ?? role.Description;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         role.LastUpdatedBy = null;  // TODO: implement user ID here when JWT tokens are ready
-        
+
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
-        
+
         // Log update Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -259,9 +259,9 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = role.ProjectId,
             Operation = "update",
             EntityType = "role",
+            EntityName = role.Name,
             EntityId = role.Id,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return new RoleResponseDto
@@ -289,10 +289,10 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is archived");
-        
+
         // set lastUpdatedAt timestamp
         var lastUpdatedAt = DateTime.UtcNow;
-        
+
         // run archive procedure in a transaction to roll back any errors
         using (var transaction = await _context.Database.BeginTransactionAsync())
         {
@@ -318,7 +318,7 @@ public class RoleBusiness : IRoleBusiness
                     $"Unable to archive role {roleId} or its downstream dependents: {exc}");
             }
         }
-        
+
         // Log archive Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -327,13 +327,13 @@ public class RoleBusiness : IRoleBusiness
             Operation = "archive",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a role by ID
     /// </summary>
@@ -345,13 +345,13 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || !role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is not archived");
-        
+
         role.IsArchived = false;
         role.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         role.LastUpdatedBy = null; // TODO: add username when JWTs are implemented
         _context.Roles.Update(role);
         await _context.SaveChangesAsync();
-        
+
         // Log unarchive Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -360,13 +360,13 @@ public class RoleBusiness : IRoleBusiness
             Operation = "unarchive",
             EntityType = "role",
             EntityId = role.Id,
+            EntityName = role.Name,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
     }
-    
+
     /// <summary>
     /// Delete a role by ID
     /// </summary>
@@ -378,10 +378,10 @@ public class RoleBusiness : IRoleBusiness
         var role = await _context.Roles.FindAsync(roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found or is archived");
-        
+
         _context.Roles.Remove(role);
         await _context.SaveChangesAsync();
-        
+
         // Log archive Role event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -389,14 +389,14 @@ public class RoleBusiness : IRoleBusiness
             ProjectId = role.ProjectId,
             Operation = "delete",
             EntityType = "role",
+            EntityName = role.Name,
             EntityId = role.Id,
             Properties = JsonSerializer.Serialize(new { role.Name }),
-            LastUpdatedBy = "" // TODO: add username when JWTs are implemented
         });
 
         return true;
     }
-    
+
     /// <summary>
     /// List all permissions for a given role
     /// </summary>
@@ -412,7 +412,7 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         return role.Permissions.Select(p => new PermissionResponseDto()
         {
             Id = p.Id,
@@ -426,10 +426,10 @@ public class RoleBusiness : IRoleBusiness
             LabelId = p.LabelId,
             ProjectId = p.ProjectId,
             OrganizationId = p.OrganizationId,
-            IsHardcoded = p.IsHardcoded
+            IsDefault = p.IsDefault
         });
     }
-    
+
     /// <summary>
     /// Add a permission to a role
     /// </summary>
@@ -446,21 +446,21 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         // check if permission exists
         var permission = await _context.Permissions.FindAsync(permissionId);
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} not found");
-        
+
         // check if permission is already assigned to the role
         if (role.Permissions.Any(p => p.Id == permission.Id))
             throw new ArgumentException($"Permission with id {permissionId} already exists as part of role {roleId}");
-        
+
         role.Permissions.Add(permission);
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
     /// Remove a permission from a role
     /// </summary>
@@ -476,12 +476,12 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         // check if permission exists on role
         var permission = role.Permissions.FirstOrDefault(p => p.Id == permissionId);
         if (permission == null || permission.IsArchived)
             throw new KeyNotFoundException($"Permission with id {permissionId} is not assigned to role {roleId}");
-        
+
         role.Permissions.Remove(permission);
         await _context.SaveChangesAsync();
         return true;
@@ -502,7 +502,7 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         // validate that all permissions IDs exist
         var permissions = await _context.Permissions
             .Where(p => permissionIds.Contains(p.Id))
@@ -513,12 +513,12 @@ public class RoleBusiness : IRoleBusiness
             var missingIds = permissionIds.Except(permissions.Select(p => p.Id).ToList());
             throw new KeyNotFoundException($"Permissions not found: {string.Join(", ", missingIds)}");
         }
-        
+
         // clear existing permissions and add new ones
         role.Permissions.Clear();
         foreach (var permission in permissions)
             role.Permissions.Add(permission);
-        
+
         await _context.SaveChangesAsync();
         return true;
     }
@@ -537,26 +537,26 @@ public class RoleBusiness : IRoleBusiness
             .FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         // get the list of resources we're interested in
         var resources = permissionPatterns.Keys.ToList();
-    
+
         // fetch all permissions for these resources
         var allPermissions = await _context.Permissions
             .Where(p => resources.Contains(p.Resource))
             .ToListAsync();
-    
+
         // filter in memory to match the exact actions
         var matchingPermissions = allPermissions
-            .Where(p => permissionPatterns.ContainsKey(p.Resource) && 
+            .Where(p => permissionPatterns.ContainsKey(p.Resource) &&
                         permissionPatterns[p.Resource].Contains(p.Action))
             .ToList();
-        
+
         // clear existing permissions and add new ones
         role.Permissions.Clear();
         foreach (var permission in matchingPermissions)
             role.Permissions.Add(permission);
-        
+
         await _context.SaveChangesAsync();
         return true;
     }

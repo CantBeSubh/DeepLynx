@@ -1,4 +1,3 @@
-using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -7,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/records")]
+    [Route("projects/{projectId}/records")]
     [Authorize]
     public class RecordController : ControllerBase
     {
@@ -30,22 +29,50 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="dataSourceId">Datasource ID which records are associated with</param>
+        /// <param name="fileType">File extension to filter by (e.g., pdf, png, jpg) - leading dot is optional and will be removed</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords", Name = "api_get_all_records")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
+            [FromQuery] string? fileType,
             [FromQuery] bool hideArchived = true)
         {
             try
             {
-                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived);
+                var records = await _recordBusiness.GetAllRecords(projectId, dataSourceId, hideArchived, fileType);
                 return Ok(records);
             }
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing records: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+        
+        /// <summary>
+        /// Get all records that have every given tagId. 
+        /// </summary>
+        /// <param name="projectId">Project ID which records are associated with</param>
+        /// <param name="tagIds">The list of Ids to filter records by - records must contain all Ids in the list</param>
+        /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
+        /// <returns>List of record response DTOs</returns>
+        [HttpGet("GetRecordsByTags", Name = "api_get_records_by_tags")]
+        public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetRecordsByTags(
+            long projectId,
+            [FromQuery] long[] tagIds,
+            [FromQuery] bool hideArchived = true)
+        {
+            try
+            {
+                var records = await _recordBusiness.GetRecordsByTags(projectId, tagIds, hideArchived);
+                return Ok(records);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An error occurred while listing records by tags: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }

@@ -216,7 +216,7 @@ namespace deeplynx.tests
             // Act
             var result = await _userBusiness.GetAllUsers(pid2, null);
             var users = result.ToList();
-            
+
             // Assert
             Assert.All(users, u => Assert.False(u.IsArchived));
             Assert.DoesNotContain(users, u => u.Id == uid2); // archived user excluded
@@ -250,19 +250,100 @@ namespace deeplynx.tests
             // Assert
             Assert.Contains($"User with id {uid2} not found", exception.Message);
         }
-        
+
         [Fact]
         public async Task GetUser_Fails_IfDeleted()
         {
             // Act
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _userBusiness.GetUser(uid3));
-            
+
             // Assert
             Assert.Contains($"User with id {uid3} not found", exception.Message);
         }
         
         #endregion
+        
+        # region GetLocalDevUser Tests
+        [Fact]
+        public async Task GetLocalDevUser_Succeeds_IfExists()
+        {
+            // Arrange - Create local dev user and set environment variable
+            var localDevUser = new User
+            {
+                Name = "Local Developer",
+                Email = "developer@localhost",
+                Username = "localdev",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.Add(localDevUser);
+            await Context.SaveChangesAsync();
+            
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act
+                var result = await _userBusiness.GetLocalDevUser();
+                
+                // Assert
+                Assert.NotNull(result);
+                Assert.Equal("developer@localhost", result.Email);
+                Assert.Equal("Local Developer", result.Name);
+                Assert.Equal("localdev", result.Username);
+                Assert.True(result.IsSysAdmin);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfEnvNullOrFalse()
+        {
+            // Arrange - Ensure environment variable is not set
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            
+            // Act & Assert
+            var nullException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", nullException.Message);
+            
+            // Arrange - Ensure environment variable is set to false
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
+            
+            // Act & Assert
+            var falseException = await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _userBusiness.GetLocalDevUser());
+            
+            Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", falseException.Message);
+        }
+
+        [Fact]
+        public async Task GetLocalDevUser_Fails_IfNotExists()
+        {
+            // Arrange - Set environment variable but don't create the user
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
+            
+            try
+            {
+                // Act & Assert
+                var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                    () => _userBusiness.GetLocalDevUser());
+                
+                Assert.Contains("Local Dev User not found", exception.Message);
+            }
+            finally
+            {
+                // Cleanup
+                Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            }
+        }
+        # endregion
         
         #region UpdateUser Tests
         
@@ -494,6 +575,252 @@ namespace deeplynx.tests
             Assert.Equal(0, result.Tags);
         }
         
+        #endregion
+        
+        #region SetSysAdmin Tests
+
+        [Fact]
+        public async Task SetSysAdmin_Succeeds_WhenAuthorizerIsSysAdmin()
+        {
+            // Arrange - Create a sysadmin authorizer and a regular candidate user
+            var authorizer = new User
+            {
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Username = "admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            var candidate = new User
+            {
+                Name = "Regular User",
+                Email = "regular@test.com",
+                Username = "regular",
+                IsActive = true,
+                IsSysAdmin = false
+            };
+            Context.Users.AddRange(authorizer, candidate);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _userBusiness.SetSysAdmin(authorizer.Id, candidate.Id);
+            
+            // Assert
+            Assert.True(result);
+            
+            // Verify it was actually saved to DB
+            var updatedCandidate = await Context.Users.FindAsync(candidate.Id);
+            Assert.NotNull(updatedCandidate);
+            Assert.True(updatedCandidate.IsSysAdmin);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Fails_WhenAuthorizerIsNotSysAdmin()
+        {
+            // Arrange - Create a non-admin authorizer and a candidate user
+            var authorizer = new User
+            {
+                Name = "Regular User",
+                Email = "regular@test.com",
+                Username = "regular",
+                IsActive = true,
+                IsSysAdmin = false
+            };
+            var candidate = new User
+            {
+                Name = "Candidate User",
+                Email = "candidate@test.com",
+                Username = "candidate",
+                IsActive = true,
+                IsSysAdmin = false
+            };
+            Context.Users.AddRange(authorizer, candidate);
+            await Context.SaveChangesAsync();
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _userBusiness.SetSysAdmin(authorizer.Id, candidate.Id));
+            
+            Assert.Contains($"User with ID {authorizer.Id} not found or cannot grant admin privileges", exception.Message);
+            
+            // Verify candidate was NOT made admin
+            var updatedCandidate = await Context.Users.FindAsync(candidate.Id);
+            Assert.NotNull(updatedCandidate);
+            Assert.False(updatedCandidate.IsSysAdmin);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Fails_WhenAuthorizerIsArchived()
+        {
+            // Arrange - Create an archived sysadmin authorizer and a candidate user
+            var authorizer = new User
+            {
+                Name = "Archived Admin",
+                Email = "archived_admin@test.com",
+                Username = "archived_admin",
+                IsActive = true,
+                IsSysAdmin = true,
+                IsArchived = true
+            };
+            var candidate = new User
+            {
+                Name = "Candidate User",
+                Email = "candidate@test.com",
+                Username = "candidate",
+                IsActive = true,
+                IsSysAdmin = false
+            };
+            Context.Users.AddRange(authorizer, candidate);
+            await Context.SaveChangesAsync();
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _userBusiness.SetSysAdmin(authorizer.Id, candidate.Id));
+            
+            Assert.Contains($"User with ID {authorizer.Id} not found or cannot grant admin privileges", exception.Message);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Fails_WhenAuthorizerNotFound()
+        {
+            // Arrange - Create only a candidate user
+            var candidate = new User
+            {
+                Name = "Candidate User",
+                Email = "candidate@test.com",
+                Username = "candidate",
+                IsActive = true,
+                IsSysAdmin = false
+            };
+            Context.Users.Add(candidate);
+            await Context.SaveChangesAsync();
+            
+            long nonExistentAuthorizerId = 99999;
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _userBusiness.SetSysAdmin(nonExistentAuthorizerId, candidate.Id));
+            
+            Assert.Contains($"User with ID {nonExistentAuthorizerId} not found or cannot grant admin privileges", exception.Message);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Fails_WhenCandidateNotFound()
+        {
+            // Arrange - Create only an authorizer
+            var authorizer = new User
+            {
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Username = "admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.Add(authorizer);
+            await Context.SaveChangesAsync();
+            
+            long nonExistentCandidateId = 99999;
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _userBusiness.SetSysAdmin(authorizer.Id, nonExistentCandidateId));
+            
+            Assert.Contains($"User with ID {nonExistentCandidateId} not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Fails_WhenCandidateIsArchived()
+        {
+            // Arrange - Create a sysadmin authorizer and an archived candidate
+            var authorizer = new User
+            {
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Username = "admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            var candidate = new User
+            {
+                Name = "Archived User",
+                Email = "archived@test.com",
+                Username = "archived",
+                IsActive = true,
+                IsSysAdmin = false,
+                IsArchived = true
+            };
+            Context.Users.AddRange(authorizer, candidate);
+            await Context.SaveChangesAsync();
+            
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
+                () => _userBusiness.SetSysAdmin(authorizer.Id, candidate.Id));
+            
+            Assert.Contains($"User with ID {candidate.Id} not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Succeeds_WhenCandidateAlreadySysAdmin()
+        {
+            // Arrange - Create a sysadmin authorizer and a candidate who is already sysadmin
+            var authorizer = new User
+            {
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Username = "admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            var candidate = new User
+            {
+                Name = "Already Admin",
+                Email = "already_admin@test.com",
+                Username = "already_admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.AddRange(authorizer, candidate);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _userBusiness.SetSysAdmin(authorizer.Id, candidate.Id);
+            
+            // Assert
+            Assert.True(result);
+            
+            // Verify candidate is still admin
+            var updatedCandidate = await Context.Users.FindAsync(candidate.Id);
+            Assert.NotNull(updatedCandidate);
+            Assert.True(updatedCandidate.IsSysAdmin);
+        }
+
+        [Fact]
+        public async Task SetSysAdmin_Succeeds_WhenAuthorizerGrantsToSelf()
+        {
+            // Arrange - Create a sysadmin who will grant to themselves (edge case)
+            var authorizer = new User
+            {
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Username = "admin",
+                IsActive = true,
+                IsSysAdmin = true
+            };
+            Context.Users.Add(authorizer);
+            await Context.SaveChangesAsync();
+            
+            // Act
+            var result = await _userBusiness.SetSysAdmin(authorizer.Id, authorizer.Id);
+            
+            // Assert
+            Assert.True(result);
+            
+            // Verify authorizer is still admin
+            var updatedAuthorizer = await Context.Users.FindAsync(authorizer.Id);
+            Assert.NotNull(updatedAuthorizer);
+            Assert.True(updatedAuthorizer.IsSysAdmin);
+        }
+
         #endregion
         
         #region GetRecentlyAddedRecords Tests

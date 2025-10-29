@@ -1,6 +1,7 @@
 // src/app/lib/record_services.client.ts
 "use client";
 
+import { CreateRecordPayload } from "../(home)/types/types";
 import api from "./api";
 
 export async function getAllRecords(projectId: string) {
@@ -54,7 +55,7 @@ export async function updateRecord(
 export const attachTagToRecord = async (projectId: number, recordId: number, tagId: number) => {
     try {
         const res = await api.post(
-            `/projects/${projectId}/records/AttachTag/${recordId}`, 
+            `/projects/${projectId}/records/AttachTag/${recordId}`,
             null,
             { params: { tagId: tagId } }
         );
@@ -68,7 +69,7 @@ export const attachTagToRecord = async (projectId: number, recordId: number, tag
 export const unAttachTagFromRecord = async (projectId: number, recordId: number, tagId: number) => {
     try {
         const res = await api.post(
-            `/projects/${projectId}/records/UnattachTag/${recordId}`, 
+            `/projects/${projectId}/records/UnattachTag/${recordId}`,
             null,
             { params: { tagId: tagId } }
         );
@@ -77,21 +78,6 @@ export const unAttachTagFromRecord = async (projectId: number, recordId: number,
         console.error("Error unattaching tag to record:", error);
         throw error;
     }
-};
-
-export type CreateRecordPayload = {
-  name: string;
-  original_id: string;
-  description: string;
-
-  properties: Record<string, unknown>;
-
-  class_id?: number | null;
-  object_storage_id?: number | null;
-  uri?: string | null;
-  class_name?: string | null;
-  tags?: string[] | null;
-  sensitivity_labels?: string[] | null;
 };
 
 export async function createRecord(

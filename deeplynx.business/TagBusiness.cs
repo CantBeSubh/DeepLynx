@@ -144,9 +144,9 @@ public class TagBusiness : ITagBusiness
             Operation = "create",
             EntityType = "tag",
             EntityId = tag.Id,
+            EntityName = tag.Name,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
             DataSourceId = null,
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto // Return validated response DTO back to user.
@@ -216,9 +216,9 @@ public class TagBusiness : ITagBusiness
                 Operation = "create",
                 EntityType = "tag",
                 EntityId = item.Id,
+                EntityName = item.Name,
                 Properties = JsonSerializer.Serialize(new {item.Name}),
                 DataSourceId = null,
-                LastUpdatedBy = "" // TODO: add username when JWT are implemented
             });
         }
         await _eventBusiness.BulkCreateEvents(projectId, events);
@@ -263,9 +263,9 @@ public class TagBusiness : ITagBusiness
             EntityType = "tag",
             EntityId = tag.Id,
             ProjectId = tag.ProjectId,
+            EntityName = tag.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
 
         return new TagResponseDto
@@ -324,9 +324,9 @@ public class TagBusiness : ITagBusiness
             EntityType = "tag",
             EntityId = tag.Id,
             ProjectId = tag.ProjectId,
+            EntityName = tag.Name,
             DataSourceId = null,
             Properties = JsonSerializer.Serialize(new {tag.Name}),
-            LastUpdatedBy = "" // TODO: add username when JWT are implemented
         });
         
         return true;
@@ -351,6 +351,18 @@ public class TagBusiness : ITagBusiness
         tag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         _context.Tags.Update(tag);
         await _context.SaveChangesAsync();
+        
+        await _eventBusiness.CreateEvent(new CreateEventRequestDto
+        {
+            Operation = "unarchive",
+            EntityType = "tag",
+            EntityId = tag.Id,
+            ProjectId = tag.ProjectId,
+            EntityName = tag.Name,
+            DataSourceId = null,
+            Properties = JsonSerializer.Serialize(new {tag.Name}),
+        });
+        
         return true;
     }
     

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using deeplynx.helpers;
 using deeplynx.helpers.Context;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
@@ -9,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("api/projects/{projectId}/edges")]
+    [Route("projects/{projectId}/edges")]
     [Authorize]
     public class EdgeController : ControllerBase
     {
@@ -42,7 +41,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edges = await _edgeBusiness.GetAllEdges(projectId, dataSourceId, hideArchived); 
+                var edges = await _edgeBusiness.GetAllEdges(projectId, dataSourceId, hideArchived);
                 return Ok(edges);
             }
             catch (Exception exc)
@@ -52,7 +51,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get edges by record
         /// </summary>
@@ -69,7 +68,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize); 
+                var edges = await _edgeBusiness.GetEdgesByRecord(recordId, isOrigin, page, hideArchived, pageSize);
                 return Ok(edges);
             }
             catch (Exception exc)
@@ -79,7 +78,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get Graph Data
         /// </summary>
@@ -93,7 +92,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth); 
+                var edges = await _edgeBusiness.GetGraphDataForRecord(recordId, UserContextStorage.UserId, depth);
                 return Ok(edges);
             }
             catch (Exception exc)
@@ -115,9 +114,9 @@ namespace deeplynx.api.Controllers
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge", Name = "api_get_an_edge")]
         public async Task<ActionResult<EdgeResponseDto>> GetEdge(
-            long projectId, 
+            long projectId,
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId,
             [FromQuery] bool hideArchived = true)
         {
@@ -155,7 +154,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create many edges 
         /// </summary>
@@ -195,7 +194,7 @@ namespace deeplynx.api.Controllers
             long projectId,
             [FromBody] UpdateEdgeRequestDto dto,
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId)
         {
             try
@@ -223,8 +222,8 @@ namespace deeplynx.api.Controllers
         public async Task<IActionResult> DeleteEdge(
             long projectId,
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
-            [FromQuery] long? destinationId, 
+            [FromQuery] long? originId,
+            [FromQuery] long? destinationId,
             [FromQuery] bool force = false)
         {
             try
@@ -239,7 +238,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Archive an edge
         /// </summary>
@@ -252,7 +251,7 @@ namespace deeplynx.api.Controllers
         public async Task<IActionResult> ArchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId)
         {
             try
@@ -267,7 +266,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unarchive an edge
         /// </summary>
@@ -280,7 +279,7 @@ namespace deeplynx.api.Controllers
         public async Task<IActionResult> UnarchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId)
         {
             try

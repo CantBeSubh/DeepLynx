@@ -136,7 +136,7 @@ const UsersTable = () => {
     },
   ];
 
-  if (loading) return <MemberManagementUserSkeleton />;;
+  if (loading) return <MemberManagementUserSkeleton />;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
 
   return (

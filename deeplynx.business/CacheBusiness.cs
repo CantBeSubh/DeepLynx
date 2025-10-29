@@ -18,6 +18,11 @@ namespace deeplynx.business
         }
         
         /// <summary>
+        /// Static property that will return the cache type in use (overridden in the two cache types).
+        /// </summary>
+        public string CacheType => Cache.CacheType;
+        
+        /// <summary>
         /// Static property to provide access to the singleton instance.
         /// </summary>
         public static CacheBusiness Instance => _instance;
@@ -29,6 +34,15 @@ namespace deeplynx.business
         public void SetCacheService(ICacheBusiness cacheService)
         {
             Cache = cacheService;
+        }
+        
+        /// <summary>
+        /// Reset the cache instance by recreating it from the factory.
+        /// Useful for testing when environment variables change.
+        /// </summary>
+        public void ResetCacheInstance()
+        {
+            Cache = CacheFactory.CreateCache();
         }
         
         /// <summary>
