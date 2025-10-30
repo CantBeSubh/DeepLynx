@@ -56,20 +56,6 @@ jobs:
           az account set --subscription "$ACR_SUBSCRIPTION"
 
           az acr build --registry "$ACR_REGISTRY" \
-            --image "$ACR_PATH:deeplynx-ui-${{ github.run_number }}" \
-            --file Dockerfiles/ui/Dockerfile.sandbox \
-            --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
-            --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
-            --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
-            --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
-            --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
-            --build-arg AUTH_SECRET="$AUTH_SECRET" \
-            --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-            --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
-            --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION=$DISABLE_FRONTEND_AUTHENTICATION \
-            .
-          az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
             --file Dockerfiles/server/Dockerfile.sandbox \
             --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
@@ -95,7 +81,7 @@ jobs:
         run: |
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-docs-${GITHUB_RUN_NUMBER}" \
-            --file Dockerfiles/docs/Dockerfile.public \
+            --file Dockerfiles/docs/Dockerfile.sandbox \
             --build-arg HOSTED_LINK="$HOSTED_LINK" \
             .
 
