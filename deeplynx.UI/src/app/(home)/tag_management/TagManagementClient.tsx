@@ -186,6 +186,12 @@ const TagManagementClient = ({
     setSelectedTagIds(new Set());
   };
 
+  const handleRefreshSearch = async () => {
+    if (selectedTagIds.size > 0) {
+      await handleSearchByTags(Array.from(selectedTagIds));
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -276,6 +282,7 @@ const TagManagementClient = ({
                 recordsFromTagSearch={recordsFromTagSearch}
                 isSearchingByTags={isSearchingByTags}
                 onClearSearch={handleClearSearch}
+                onRefreshSearch={handleRefreshSearch}
               />
             </div>
           )}

@@ -3,9 +3,13 @@ import SimpleFilterInput from "../../components/SimpleFilterComponent";
 import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import { FileViewerTableRow } from "../../types/types";
 import { fullTextSearch } from "@/app/lib/query_services.client";
-import { attachTagToRecord } from "@/app/lib/record_services.client";
+import {
+  attachTagToRecord,
+  unAttachTagFromRecord,
+} from "@/app/lib/record_services.client";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import toast from "react-hot-toast";
+import { LinkSlashIcon } from "@heroicons/react/24/outline";
 
 // Helper function to parse tags - move this to the top
 export const parseTags = (
@@ -180,6 +184,7 @@ interface SearchTagsRecordsListProps {
   recordsFromTagSearch: RecordResponseDto[];
   isSearchingByTags: boolean;
   onClearSearch: () => void;
+  onRefreshSearch: () => Promise<void>;
 }
 
 export const SearchTagsRecordsList = ({
@@ -189,11 +194,16 @@ export const SearchTagsRecordsList = ({
   recordsFromTagSearch,
   isSearchingByTags,
   onClearSearch,
+  onRefreshSearch,
 }: SearchTagsRecordsListProps) => {
   const [attachLoading, setAttachLoading] = useState(false);
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
     new Set()
   );
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [recordToUnattach, setRecordToUnattach] =
+    useState<RecordResponseDto | null>(null);
+  const [unattachLoading, setUnattachLoading] = useState(false);
 
   // Toggle record selection
   const handleRecordToggle = (recordId: number | null) => {
@@ -258,6 +268,75 @@ export const SearchTagsRecordsList = ({
     toast.success("Search cleared");
   };
 
+  // Add handler for opening the modal
+  const handleOpenUnattachModal = (record: RecordResponseDto) => {
+    setRecordToUnattach(record);
+    setIsModalOpen(true);
+  };
+
+  // Add handler for closing the modal
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setRecordToUnattach(null);
+  };
+
+  // Implement the unattach logic
+  const handleUnattachTags = async () => {
+    if (!recordToUnattach || selectedTagIds.size === 0) {
+      return;
+    }
+
+    setUnattachLoading(true);
+
+    try {
+      const unattachPromises: Promise<TagResponseDto>[] = [];
+
+      // Get tags that need to be removed (only the selected tags that exist on the record)
+      const tagsToRemove = recordToUnattach.tags
+        ?.filter((tag) => tag.id !== null && selectedTagIds.has(tag.id))
+        .map((tag) => tag.id) as number[];
+
+      if (tagsToRemove.length === 0) {
+        toast.error("No selected tags found on this record");
+        handleCloseModal();
+        return;
+      }
+
+      // Remove each selected tag from the record
+      tagsToRemove.forEach((tagId) => {
+        unattachPromises.push(
+          unAttachTagFromRecord(
+            Number(projectId),
+            recordToUnattach.id as number,
+            tagId
+          )
+        );
+      });
+
+      await Promise.all(unattachPromises);
+
+      toast.success(
+        `Successfully removed ${tagsToRemove.length} tag${
+          tagsToRemove.length !== 1 ? "s" : ""
+        } from "${recordToUnattach.name}"`
+      );
+
+      // Close modal
+      handleCloseModal();
+
+      // Refresh the search results to show updated tags
+      // We need to add a callback prop for this
+      if (onRefreshSearch) {
+        await onRefreshSearch();
+      }
+    } catch (error) {
+      console.error("Error unattaching tags:", error);
+      toast.error("Failed to remove tags from record");
+    } finally {
+      setUnattachLoading(false);
+    }
+  };
+
   const displayRecords = recordsFromTagSearch;
 
   return (
@@ -313,7 +392,7 @@ export const SearchTagsRecordsList = ({
                       <div className="text-sm font-semibold">{record.name}</div>
 
                       {record.tags && record.tags.length > 0 && (
-                        <div className="flex gap-1 flex-wrap mt-1">
+                        <div className="flex gap-1 flex-wrap mt-1 items-center">
                           {record.tags.map((tag) => {
                             const isSearchedTag =
                               tag.id !== null && selectedTagIds.has(tag.id);
@@ -330,6 +409,18 @@ export const SearchTagsRecordsList = ({
                               </span>
                             );
                           })}
+                          <div className="ml-auto">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenUnattachModal(record);
+                              }}
+                              className="btn btn-ghost btn-sm p-1"
+                              title="Remove selected tags from this record"
+                            >
+                              <LinkSlashIcon className="size-6 text-error" />
+                            </button>
+                          </div>
                         </div>
                       )}
 
@@ -356,6 +447,59 @@ export const SearchTagsRecordsList = ({
           >
             Clear Search Results
           </button>
+        </div>
+      )}
+
+      {/* Unattach Tags Modal */}
+      {isModalOpen && recordToUnattach && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Remove Tags from Record</h3>
+            <p className="py-4">
+              Are you sure you want to remove {selectedTagIds.size} selected tag
+              {selectedTagIds.size !== 1 ? "s" : ""} from "
+              {recordToUnattach.name}"?
+            </p>
+
+            {/* Show which tags will be removed */}
+            <div className="mb-4">
+              <p className="text-sm font-semibold mb-2">Tags to be removed:</p>
+              <div className="flex gap-1 flex-wrap">
+                {recordToUnattach.tags
+                  ?.filter(
+                    (tag) => tag.id !== null && selectedTagIds.has(tag.id)
+                  )
+                  .map((tag) => (
+                    <span
+                      className="badge badge-secondary badge-sm"
+                      key={tag.id}
+                    >
+                      {tag.name}
+                    </span>
+                  ))}
+              </div>
+            </div>
+
+            <div className="modal-action">
+              <button className="btn btn-ghost" onClick={handleCloseModal}>
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={handleUnattachTags}
+                disabled={unattachLoading}
+              >
+                {unattachLoading ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Removing...
+                  </>
+                ) : (
+                  "Remove Tags"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
