@@ -55,9 +55,10 @@ jobs:
 
           az account set --subscription "$ACR_SUBSCRIPTION"
 
+
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
-            --file Dockerfiles/server/Dockerfile.sandbox \
+            --file Dockerfiles/server/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
             --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
             --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
