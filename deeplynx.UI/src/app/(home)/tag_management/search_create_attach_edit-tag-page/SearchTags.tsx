@@ -8,7 +8,7 @@ import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import toast from "react-hot-toast";
 
 // Helper function to parse tags - move this to the top
-const parseTags = (
+export const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
 ): TagResponseDto[] => {
   if (!tags) return [];
@@ -47,6 +47,7 @@ interface Props {
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
   projectId: string;
+  onSearchByTags: (tagIds: number[]) => Promise<void>;
 }
 
 const SearchTags = ({
@@ -59,6 +60,7 @@ const SearchTags = ({
   selectedTagIds,
   setSelectedTagIds,
   projectId,
+  onSearchByTags,
 }: Props) => {
   const [searchLoading, setSearchLoading] = useState(false);
 
@@ -80,8 +82,8 @@ const SearchTags = ({
 
     setSearchLoading(true);
     try {
-      // We'll implement this in the next step
-      toast.success("Searching for records with selected tags...");
+      await onSearchByTags(Array.from(selectedTagIds));
+      toast.success(`Found records with selected tags`);
     } catch (error) {
       console.error("Error searching by tags:", error);
       toast.error("Failed to search records");
@@ -176,99 +178,21 @@ interface SearchTagsRecordsListProps {
   projectId: string;
   selectedTagIds: Set<number>;
   onClearSelectedTags: () => void;
+  recordsFromTagSearch: RecordResponseDto[];
+  isSearchingByTags: boolean;
 }
 
 export const SearchTagsRecordsList = ({
   projectId,
   selectedTagIds,
   onClearSelectedTags,
+  recordsFromTagSearch,
+  isSearchingByTags,
 }: SearchTagsRecordsListProps) => {
-  const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
-  const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
-    []
-  );
-  const [loading, setLoading] = useState(false);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const [attachLoading, setAttachLoading] = useState(false);
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
     new Set()
   );
-
-  useEffect(() => {
-    const fetchRecentRecords = async () => {
-      if (!projectId || projectId === "0") {
-        setRecords([]);
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-
-        setRecords(recordsWithParsedTags);
-      } catch (error) {
-        console.error("Error fetching recent records:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentRecords();
-  }, [projectId]);
-
-  // Perform Full text search
-  const performFullTextSearch = useCallback(
-    async (searchTerm: string, projectId: string) => {
-      if (!searchTerm.trim()) {
-        setSearchResults([]);
-        return;
-      }
-
-      setSearchLoading(true);
-
-      try {
-        const data = await fullTextSearch(searchTerm, [projectId]);
-
-        const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
-          (record) => ({
-            ...record,
-            tags: parseTags(record.tags),
-          })
-        );
-
-        setSearchResults(resultsWithParsedTags);
-      } catch (error) {
-        console.error("Search error:", error);
-        setSearchResults([]);
-      } finally {
-        setSearchLoading(false);
-      }
-    },
-    []
-  );
-
-  // Handle submit from search bar
-  const handleSubmit = async () => {
-    await performFullTextSearch(searchTerm, projectId);
-  };
-
-  // Also trigger search on Enter key
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      handleSubmit();
-    }
-  };
 
   // Toggle record selection
   const handleRecordToggle = (recordId: number | null) => {
@@ -316,25 +240,9 @@ export const SearchTagsRecordsList = ({
         `Successfully attached ${selectedTagIds.size} tag(s) to ${selectedRecordIds.size} record(s)`
       );
 
-      // Clear selections and refresh records
+      // Clear selections
       setSelectedRecordIds(new Set());
       onClearSelectedTags();
-
-      // Refresh the records list to show updated tags
-      if (searchTerm.trim()) {
-        await performFullTextSearch(searchTerm, projectId);
-      } else {
-        const recentRecords = await getRecentlyAddedRecords([projectId]);
-        const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
-          (record: RecordResponseDto) => ({
-            ...record,
-            tags: parseTags(
-              record.tags as string | TagResponseDto[] | undefined | null
-            ),
-          })
-        );
-        setRecords(recordsWithParsedTags);
-      }
     } catch (error) {
       console.error("Error attaching tags:", error);
       toast.error("Failed to attach tags to some records");
@@ -343,9 +251,7 @@ export const SearchTagsRecordsList = ({
     }
   };
 
-  // Determine which records to display
-  const displayRecords = searchTerm.trim() ? searchResults : records;
-  const isSearching = searchTerm.trim().length > 0;
+  const displayRecords = recordsFromTagSearch;
 
   return (
     <div
@@ -353,15 +259,8 @@ export const SearchTagsRecordsList = ({
       style={{ height: "calc(90vh - 200px)" }}
     >
       <div className="gap-2 mb-4">
-        <h3 className="font-bold mb-4">Search Records</h3>
-        <input
-          type="text"
-          placeholder="Search Record"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="input input-bordered mb-4 w-full"
-        />
+        <h3 className="font-bold mb-4">Records with Selected Tags</h3>
+
         {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
@@ -380,25 +279,17 @@ export const SearchTagsRecordsList = ({
         )}
       </div>
 
-      {/* Search Results or Recent Records */}
+      {/* Search Results */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <h3 className="font-bold mb-4">
-          {isSearching ? "Search Results" : "Recently Added Records"}
-        </h3>
+        {isSearchingByTags && <p className="text-sm">Loading records...</p>}
 
-        {(searchLoading || loading) && (
-          <p className="text-sm">Loading records...</p>
-        )}
-
-        {!searchLoading && !loading && displayRecords.length === 0 && (
+        {!isSearchingByTags && displayRecords.length === 0 && (
           <p className="text-base-content/70 text-sm">
-            {isSearching
-              ? "No records found matching your search"
-              : "No recent records found"}
+            Select tags and click "Search Records" to find records
           </p>
         )}
 
-        {!searchLoading && !loading && displayRecords.length > 0 && (
+        {!isSearchingByTags && displayRecords.length > 0 && (
           <div className="flex-1 flex flex-col overflow-hidden">
             <p className="text-sm text-base-content/70 mb-2">
               {displayRecords.length} record

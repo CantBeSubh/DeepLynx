@@ -3,7 +3,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
-import { ProjectResponseDto, TagResponseDto } from "../types/responseDTOs";
+import {
+  ProjectResponseDto,
+  RecordResponseDto,
+  TagResponseDto,
+} from "../types/responseDTOs";
 import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 import SearchTags, {
   SearchTagsRecordsList,
@@ -14,6 +18,28 @@ import CreateTag, {
 import AttachTags, {
   AttachTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/AttachTags";
+import { getRecordsByTags } from "@/app/lib/record_services.client";
+
+const parseTags = (
+  tags: string | TagResponseDto[] | undefined | null
+): TagResponseDto[] => {
+  if (!tags) return [];
+
+  if (typeof tags === "string") {
+    try {
+      return JSON.parse(tags) as TagResponseDto[];
+    } catch (e) {
+      console.error("Error parsing tags:", e);
+      return [];
+    }
+  }
+
+  if (Array.isArray(tags)) {
+    return tags;
+  }
+
+  return [];
+};
 
 interface Props {
   initialProjects: ProjectResponseDto[];
@@ -37,6 +63,10 @@ const TagManagementClient = ({
   const [error, setError] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
+  const [recordsFromTagSearch, setRecordsFromTagSearch] = useState<
+    RecordResponseDto[]
+  >([]);
+  const [isSearchingByTags, setIsSearchingByTags] = useState(false);
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
 
@@ -113,6 +143,31 @@ const TagManagementClient = ({
     setFilteredTags(filtered);
   }, [searchQuery, tags]);
 
+  // Add the search handler
+  const handleSearchByTags = async (tagIds: number[]) => {
+    setIsSearchingByTags(true);
+    try {
+      const records = await getRecordsByTags(Number(selectedProject), tagIds);
+
+      // Parse tags for each record
+      const recordsWithParsedTags = records.map(
+        (record: RecordResponseDto) => ({
+          ...record,
+          tags: parseTags(
+            record.tags as string | TagResponseDto[] | undefined | null
+          ),
+        })
+      );
+
+      setRecordsFromTagSearch(recordsWithParsedTags);
+    } catch (error) {
+      console.error("Error fetching records by tags:", error);
+      throw error;
+    } finally {
+      setIsSearchingByTags(false);
+    }
+  };
+
   return (
     <div>
       {/* Header */}
@@ -159,6 +214,7 @@ const TagManagementClient = ({
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
               projectId={selectedProject}
+              onSearchByTags={handleSearchByTags}
             />
           )}
           {selectedMenuItem === "Create Tag" && (
@@ -199,6 +255,8 @@ const TagManagementClient = ({
                 projectId={selectedProject}
                 selectedTagIds={selectedTagIds}
                 onClearSelectedTags={() => setSelectedTagIds(new Set())}
+                recordsFromTagSearch={recordsFromTagSearch}
+                isSearchingByTags={isSearchingByTags}
               />
             </div>
           )}
