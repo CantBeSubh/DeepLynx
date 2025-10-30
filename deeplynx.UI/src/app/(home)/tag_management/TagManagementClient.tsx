@@ -19,6 +19,7 @@ import AttachTags, {
   AttachTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/AttachTags";
 import { getRecordsByTags } from "@/app/lib/record_services.client";
+import toast from "react-hot-toast";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -149,6 +150,12 @@ const TagManagementClient = ({
     try {
       const records = await getRecordsByTags(Number(selectedProject), tagIds);
 
+      if (records.length === 0) {
+        toast.error("No records found with these tags");
+        setRecordsFromTagSearch([]);
+        return;
+      }
+
       // Parse tags for each record
       const recordsWithParsedTags = records.map(
         (record: RecordResponseDto) => ({
@@ -160,8 +167,14 @@ const TagManagementClient = ({
       );
 
       setRecordsFromTagSearch(recordsWithParsedTags);
+      toast.success(
+        `Found ${records.length} record${
+          records.length !== 1 ? "s" : ""
+        } with selected tags`
+      );
     } catch (error) {
       console.error("Error fetching records by tags:", error);
+      toast.error("Failed to search records");
       throw error;
     } finally {
       setIsSearchingByTags(false);

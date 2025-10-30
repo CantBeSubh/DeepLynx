@@ -83,7 +83,6 @@ const SearchTags = ({
     setSearchLoading(true);
     try {
       await onSearchByTags(Array.from(selectedTagIds));
-      toast.success(`Found records with selected tags`);
     } catch (error) {
       console.error("Error searching by tags:", error);
       toast.error("Failed to search records");
