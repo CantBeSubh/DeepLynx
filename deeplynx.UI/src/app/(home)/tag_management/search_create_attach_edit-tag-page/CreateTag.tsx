@@ -343,22 +343,45 @@ export const CreateTagRecordsList = ({
     }
   };
 
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSearchResults([]);
+    setSelectedRecordIds(new Set());
+  };
+
   // Determine which records to display
-  const displayRecords = searchTerm.trim() ? searchResults : records;
-  const isSearching = searchTerm.trim().length > 0;
+  const displayRecords = searchResults.length > 0 ? searchResults : records;
+  const isSearching = searchResults.length > 0;
 
   return (
     <div className="w-[85%] mx-auto">
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Search Records</h3>
-        <input
-          type="text"
-          placeholder="Search Record"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="input input-bordered mb-4 w-full"
-        />
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Search Record"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyPress}
+            className="input input-bordered flex-1"
+          />
+          <button
+            className="btn btn-primary"
+            onClick={handleSubmit}
+            disabled={searchLoading || !searchTerm.trim()}
+          >
+            {searchLoading ? "Searching..." : "Search"}
+          </button>
+          {searchResults.length > 0 && (
+            <button
+              className="btn btn-outline btn-error"
+              onClick={handleClearSearch}
+            >
+              Clear
+            </button>
+          )}
+        </div>
         {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">

@@ -78,6 +78,11 @@ const TagManagementClient = ({
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
 
+  // Clear selected tags when menu item changes
+  useEffect(() => {
+    setSelectedTagIds(new Set());
+  }, [selectedMenuItem]);
+
   // Fetches tags when project changes
   useEffect(() => {
     const fetchTags = async () => {
@@ -238,7 +243,7 @@ const TagManagementClient = ({
         <ProjectDropdownSingleSelect
           projects={projects}
           onSelectionChange={handleProjectChange}
-          defaultSelectedId={initialSelectedProjects?.id?.toString() || ""}
+          defaultSelectedId={selectedProject}
         />
       </div>
 

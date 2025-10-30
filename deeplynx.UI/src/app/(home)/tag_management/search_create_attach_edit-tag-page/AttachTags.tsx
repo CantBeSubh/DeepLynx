@@ -67,14 +67,17 @@ const AttachTags = ({
     setSelectedTagIds(newSelected);
   };
   return (
-    <div>
+    <div
+      className="w-[85%] mx-auto flex flex-col"
+      style={{ height: "calc(90vh - 200px)" }}
+    >
       <h3 className="font-bold mb-4">Attach Tags</h3>
       <SimpleFilterInput
         placeholder="Filter tags..."
         value={searchQuery}
         onChange={onSearchChange}
       />
-      <div className="mt-4">
+      <div className="mt-4 flex-1 flex flex-col overflow-hidden">
         {loading && <p>Loading tags ...</p>}
         {error && <p className="text-error flex justify-center">{error}</p>}
         {!loading && filteredTags.length === 0 && tags.length === 0 && (
@@ -84,11 +87,18 @@ const AttachTags = ({
           <p className="text-base-300">No tags match your search</p>
         )}
         {!loading && filteredTags.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">
-              Tags ({filteredTags.length}):
-            </p>
-            <ul className="space-y-1">
+          <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold">
+                Tags ({filteredTags.length}):
+              </p>
+              {selectedTagIds.size > 0 && (
+                <span className="text-xs text-base-content/70">
+                  {selectedTagIds.size} selected
+                </span>
+              )}
+            </div>
+            <ul className="space-y-1 flex-1 overflow-y-auto">
               {filteredTags.map((tag, index) => (
                 <li
                   key={tag.id || index}
@@ -205,6 +215,13 @@ export const AttachTagsRecordsList = ({
     await performFullTextSearch(searchTerm, projectId);
   };
 
+  // Clear search results
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSearchResults([]);
+    setSelectedRecordIds(new Set());
+  };
+
   // Also trigger search on Enter key
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -286,8 +303,8 @@ export const AttachTagsRecordsList = ({
   };
 
   // Determine which records to display
-  const displayRecords = searchTerm.trim() ? searchResults : records;
-  const isSearching = searchTerm.trim().length > 0;
+  const displayRecords = searchResults.length > 0 ? searchResults : records;
+  const isSearching = searchResults.length > 0;
 
   return (
     <div
@@ -296,14 +313,31 @@ export const AttachTagsRecordsList = ({
     >
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Search Records</h3>
-        <input
-          type="text"
-          placeholder="Search Record"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={handleKeyPress}
-          className="input input-bordered mb-4 w-full"
-        />
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="Search Record"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={handleKeyPress}
+            className="input input-bordered flex-1"
+          />
+          <button
+            className="btn btn-primary"
+            onClick={handleSubmit}
+            disabled={searchLoading || !searchTerm.trim()}
+          >
+            {searchLoading ? "Searching..." : "Search"}
+          </button>
+          {searchResults.length > 0 && (
+            <button
+              className="btn btn-outline btn-error"
+              onClick={handleClearSearch}
+            >
+              Clear
+            </button>
+          )}
+        </div>
         {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
@@ -381,6 +415,7 @@ export const AttachTagsRecordsList = ({
 
                       {record.lastUpdatedAt && (
                         <div className="text-xs text-base-content/60 mt-1">
+                          Last Updated:{" "}
                           {new Date(record.lastUpdatedAt).toLocaleDateString()}
                         </div>
                       )}
