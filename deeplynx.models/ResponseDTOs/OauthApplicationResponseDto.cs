@@ -16,8 +16,11 @@ public class OauthApplicationResponseDto
     [Column("description")]
     public string? Description { get; set; }
     
-    [Column("redirect_uris")]
-    public List<string> RedirectUris { get; set; }
+    [Column("callback_url")]
+    public string CallbackUrl { get; set; }
+    
+    [Column("base_url")]
+    public string? BaseUrl { get; set; }
     
     [Column("app_owner_email")]
     public string? AppOwnerEmail { get; set; }
