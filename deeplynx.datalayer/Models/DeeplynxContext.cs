@@ -32,6 +32,10 @@ public partial class DeeplynxContext : DbContext
     public virtual DbSet<HistoricalEdge> HistoricalEdges { get; set; }
 
     public virtual DbSet<HistoricalRecord> HistoricalRecords { get; set; }
+    
+    public virtual DbSet<OauthApplication> OauthApplications { get; set; }
+    
+    public virtual DbSet<OauthToken> OauthTokens { get; set; }
 
     public virtual DbSet<ObjectStorage> ObjectStorages { get; set; }
 
@@ -246,6 +250,34 @@ public partial class DeeplynxContext : DbContext
             entity.Property(e => e.IsArchived).HasDefaultValue(false);
 
             entity.HasOne(d => d.Record).WithMany(p => p.HistoricalRecords).HasConstraintName("historical_records_record_id_fkey");
+        });
+
+        modelBuilder.Entity<OauthApplication>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("oauth_applications_pkey");
+            entity.Property(e => e.LastUpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.IsArchived).HasDefaultValue(false);
+            
+            entity.HasIndex(e => e.LastUpdatedBy).HasDatabaseName("idx_oauth_applications_last_updated_by");
+            entity.HasOne(d => d.LastUpdatedByUser)
+                .WithMany(p => p.UpdatedOauthApplications)
+                .HasForeignKey(d => d.LastUpdatedBy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName(null);
+        });
+        
+        modelBuilder.Entity<OauthToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("oauth_tokens_pkey");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.LastUsedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            entity.Property(e => e.Revoked).HasDefaultValue(false);
+            
+            entity.HasOne(d => d.OauthApplication).WithMany(p => p.OauthTokens)
+                .HasConstraintName("oauth_tokens_application_id_fkey");
+            
+            entity.HasOne(d => d.User).WithMany(p => p.OauthTokens)
+                .HasConstraintName("oauth_tokens_user_id_fkey");
         });
 
         modelBuilder.Entity<ObjectStorage>(entity =>
