@@ -91,11 +91,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
 
   return (
     <div
-      className="relative inline-block text-left min-w-sm text-accent-content"
+      className="relative inline-block text-left min-w-sm text-base-content/80"
       ref={dropdownRef}
     >
       <button
-        className="flex items-center gap-1 text-md text-base-content"
+        className="flex items-center gap-1 text-md"
         onClick={() => setIsOpen((o) => !o)}
         type="button"
       >
@@ -109,11 +109,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow rounded-box p-4 max-h-80 overflow-auto border border-base-200">
+        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow shadow-dynamic-shadow rounded-box p-4 max-h-80 overflow-auto">
           <input
             type="text"
             placeholder="Search"
-            className="input input-bordered w-full mb-4 text-base-content"
+            className="input input-bordered w-full mb-4"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -122,7 +122,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
             <label className="label cursor-pointer justify-start gap-2">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary"
+                className="checkbox text-white checked:bg-dynamic-blue border-dynamic-blue"
                 checked={selectedIds.includes("ALL")}
                 onChange={() => toggleProject("ALL")}
               />
@@ -136,15 +136,15 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
             {filteredProjects.map((project) => (
               <label
                 key={project.id}
-                className="label text-base-content cursor-pointer justify-start gap-2"
+                className="label cursor-pointer justify-start gap-2 text-base-content"
               >
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox text-white checked:bg-dynamic-blue border-dynamic-blue"
                   checked={selectedIds.includes(project.id)}
                   onChange={() => toggleProject(project.id)}
                 />
-                <span className="label-text text-base-content">{project.name}</span>
+                <span className="label-text">{project.name}</span>
               </label>
             ))}
           </div>

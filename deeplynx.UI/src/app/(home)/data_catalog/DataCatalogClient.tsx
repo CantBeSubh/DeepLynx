@@ -216,7 +216,7 @@ export default function DataCatalogClient({
   return (
     <div>
       {/* Header */}
-      <div className="flex justify-between items-center bg-base-200/40 dark:bg-base-200 pl-12 py-2">
+      <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
           <h1 className="text-2xl font-bold text-info-content">
             {t.translations.DATA_CATALOG}
@@ -255,7 +255,7 @@ export default function DataCatalogClient({
         <div className="flex gap-4 pr-4">
           <Link
             href="data_catalog/all_records"
-            className="btn btn-outline btn-primary dark:text-base-content dark:btn-secondary"
+            className="btn btn-outline btn-primary text-dynamic-blue border-dynamic-blue hover:text-base-content hover:bg-dynamic-blue"
             onClick={() => {
               setShowAll(true);
               setViewMode("list");
@@ -268,7 +268,7 @@ export default function DataCatalogClient({
 
           <button
             onClick={() => setIsRecordModalOpen(true)}
-            className="btn btn-primary text-white dark:btn-secondary"
+            className="btn btn-primary text-white border-dynamic-blue bg-dynamic-blue"
           >
             <PlusIcon className="size-5" />
             <span>{t.translations.RECORD}</span>
@@ -311,7 +311,7 @@ export default function DataCatalogClient({
         ) : (
           records && (
             <div className="w-2/3">
-              <h2 className="text-center font-bold mb-8 text-base-content">
+              <h2 className="text-center font-bold mb-8">
                 {t.translations.NO_RECENT_RECORDS}
               </h2>
               <RecentRecordsCard selectedProjects={selectedProjects} />

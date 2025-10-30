@@ -117,7 +117,7 @@ const RecentRecordsCard: React.FC<Props> = ({
   if (isLoading) return <CatalogViewSkeleton />;
 
   return (
-    <div className={border ? "shadow shadow-md rounded-xl" : ""}>
+    <div className={border ? "shadow-md shadow-dynamic-shadow rounded-xl" : ""}>
       {/* Header + Sort */}
       <div className="flex items-center justify-between p-4">
         <h2 className="text-lg font-semibold text-base-content">
@@ -136,8 +136,8 @@ const RecentRecordsCard: React.FC<Props> = ({
               value={sortOption}
               onChange={(e) => handleSortChange(e.target.value as SortOption)}
               className={`appearance-none border-2 border-gray-400 square-lg pl-3 pr-9 py-2 text-sm 
-                          bg-white font-semibold text-base-content/50 cursor-pointer
-                          hover:bg-[var(--color-secondary)] hover:text-[var(--color-base-200)] focus:ring-2 focus:ring-[var(--color-secondary)]
+                          bg-base-100 font-semibold text-base-content/50 cursor-pointer
+                          hover:bg-[var(--color-dynamic-blue)] hover:text-[var(--color-base-content)] focus:ring-2 focus:ring-[var(--color-secondary)]
                           transition-all duration-200 w-44`}
             >
               <option value="nameAZ">Name: A to Z</option>
@@ -169,7 +169,7 @@ const RecentRecordsCard: React.FC<Props> = ({
         {paginatedRecords.map((record) => (
           <li
             key={record.id}
-            className="border-b border-base-300/30 cursor-pointer hover:bg-base-200/40 p-3 -mx-1 transition-colors"
+            className="border-b border-base-content/30 cursor-pointer hover:bg-base-100/40 p-3 -mx-1 transition-colors"
             onClick={() =>
               router.push(
                 `/record?recordId=${record.id}&projectId=${record.projectId}`

@@ -77,7 +77,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       data: (row: ProjectResponseDto) => (
         <Link
           href={`/project/${row.id}`}
-          className="font-bold text-secondary hover:text-primary/80 underline underline-offset-2 transition-colors"
+          className="font-bold text-secondary hover:text-base-content/80 underline underline-offset-2 transition-colors"
         >
           {row.name}
         </Link>
@@ -137,7 +137,7 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       {/* Main Content */}
       <div className="p-6">
         <div className="w-4/5 mx-auto">
-          <div className="card card-border p-4" data-tour="projects-section">
+          <div className="card card-border shadow-md shadow-dynamic-shadow p-4" data-tour="projects-section">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-info-content text-lg font-semibold">
                 {t.translations.YOUR_PROJECTS}
