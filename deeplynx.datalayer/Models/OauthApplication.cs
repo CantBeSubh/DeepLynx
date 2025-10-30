@@ -1,0 +1,48 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace deeplynx.datalayer.Models;
+
+[Table("oauth_applications")]
+[Index("Id", Name = "idx_oauth_applications_id")]
+[Index("ClientId", Name = "idx_oauth_applications_client_id")]
+public partial class OauthApplication
+{
+    [Key]
+    [Column("id")]
+    public long Id { get; set; }
+
+    [Column("name")]
+    public string Name { get; set; } = null!;
+
+    [Column("description")]
+    public string? Description { get; set; }
+    
+    [Column("client_id")]
+    public string ClientId { get; set; } = null!;
+
+    [Column("client_secret_hash")]
+    public string ClientSecretHash { get; set; }
+    
+    [Column("redirect_uris", TypeName = "jsonb")]
+    public List<string> RedirectUris { get; set; } = new();
+    
+    [Column("app_owner_email")]
+    public string? AppOwnerEmail { get; set; } = null!;
+    
+    [Column("is_archived")]
+    public bool IsArchived { get; set; }
+    
+    [Column("last_updated_at", TypeName = "timestamp without time zone")]
+    public DateTime LastUpdatedAt { get; set; }
+
+    [Column("last_updated_by")]
+    public long? LastUpdatedBy { get; set; }
+    
+    [InverseProperty("OauthApplication")]
+    public virtual ICollection<OauthToken> OauthTokens { get; set; }
+    
+    [InverseProperty("UpdatedOauthApplications")]
+    public virtual User? LastUpdatedByUser { get; set; }
+}
