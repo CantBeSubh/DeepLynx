@@ -191,7 +191,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -240,7 +240,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -349,7 +349,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -519,7 +519,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -643,7 +643,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -709,7 +709,7 @@ namespace deeplynx.tests
             {
                 Name = "TestAction_Optimize",
                 ProjectId = _projectId,
-                LastUpdatedBy = "testuser",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(testAction);
@@ -758,7 +758,31 @@ namespace deeplynx.tests
         {
             await base.SeedTestDataAsync();
             
-            var project = new Project { Name = "Test Project" };
+            _user1 = new User
+            {
+                Name = "Test User 1",
+                Email = "testuser1@example.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+
+            _user2 = new User
+            {
+                Name = "Test User 2",
+                Email = "testuser2@example.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+
+            Context.Users.AddRange(_user1, _user2);
+            await Context.SaveChangesAsync();
+            
+            var project = new Project 
+            { 
+                Name = "Test Project",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = _user1.Id
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             _projectId = project.Id;
@@ -767,33 +791,18 @@ namespace deeplynx.tests
             {
                 Name = "Test DataSource",
                 ProjectId = _projectId,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = _user1.Id
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             _dataSourceId = dataSource.Id;
-
-            // Create test users with emails (matching the hub's email lookup pattern)
-            _user1 = new User
-            {
-                Name = "fake user1",
-                Email = "testuser1@example.com",
-            };
-
-            _user2 = new User
-            {
-                Name = "fake user2",
-                Email = "testuser2@example.com",
-            };
-
-            Context.Users.AddRange(_user1, _user2);
-            await Context.SaveChangesAsync();
             
             var action = new Action
             {
                 Name = "Action1",
                 ProjectId = _projectId,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy = _user1.Id,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(action);

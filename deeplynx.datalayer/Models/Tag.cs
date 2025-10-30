@@ -27,7 +27,7 @@ public partial class Tag
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
@@ -39,4 +39,7 @@ public partial class Tag
     [ForeignKey("TagId")]
     [InverseProperty("Tags")]
     public virtual ICollection<Record> Records { get; set; } = new List<Record>();
+    
+    [InverseProperty("LastUpdatedTags")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

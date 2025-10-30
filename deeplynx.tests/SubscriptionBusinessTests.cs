@@ -13,10 +13,10 @@ namespace deeplynx.tests
     {
         private SubscriptionBusiness _subscriptionBusiness = null!;
         
-        public long aid;
-        public long did;
-        public long pid;
-        public long uid;
+        public long aid;    // Action ID
+        public long did;    // Datasource ID
+        public long pid;    // Project ID
+        public long uid;    // User ID
         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         
         public SubscriptionBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
@@ -25,6 +25,7 @@ namespace deeplynx.tests
         {
             await base.InitializeAsync();
             _subscriptionBusiness = new SubscriptionBusiness(Context, _cacheBusiness);
+            await _cacheBusiness.SetAsync("projects", (List<ProjectResponseDto>?)null, TimeSpan.FromSeconds(1));
         }
 
         #region GetAllSubscriptions Tests
@@ -379,7 +380,9 @@ namespace deeplynx.tests
                     Operation = "create",
                     DataSourceId = did,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 },
                 new()
                 {
@@ -389,7 +392,9 @@ namespace deeplynx.tests
                     Operation = "update",
                     DataSourceId = did,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 },
                 new()
                 {
@@ -399,7 +404,9 @@ namespace deeplynx.tests
                     Operation = "delete",
                     DataSourceId = did,
                     EntityType = "record",
-                    EntityId = 1
+                    EntityId = 1,
+                    LastUpdatedBy = uid, 
+                    LastUpdatedAt = now  
                 }
             };
             Context.Subscriptions.AddRange(subscriptions);
@@ -486,12 +493,198 @@ namespace deeplynx.tests
         
         #endregion
         
+        #region SubscriptionResponseDto Tests
+
+        [Fact]
+        public void SubscriptionResponseDto_AllProperties_CanBeSetAndRetrieved()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new SubscriptionResponseDto
+            {
+                Id = 1,
+                UserId = uid,
+                ProjectId = pid,
+                ActionId = 100,
+                Operation = "create",
+                DataSourceId = 200,
+                EntityType = "record",
+                EntityId = 300,
+                LastUpdatedAt = now,
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+
+            // Assert
+            Assert.Equal(1, dto.Id);
+            Assert.Equal(uid, dto.UserId);
+            Assert.Equal(pid, dto.ProjectId);
+            Assert.Equal(100, dto.ActionId);
+            Assert.Equal("create", dto.Operation);
+            Assert.Equal(200, dto.DataSourceId);
+            Assert.Equal("record", dto.EntityType);
+            Assert.Equal(300, dto.EntityId);
+            Assert.Equal(now, dto.LastUpdatedAt);
+            Assert.Equal(uid, dto.LastUpdatedBy);
+            Assert.False(dto.IsArchived);
+        }
+
+        #endregion
+
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateSubscription_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testSubscription = new Subscription
+            {
+                UserId = uid,
+                ProjectId = pid,
+                ActionId = aid,
+                Operation = "create",
+                DataSourceId = did,
+                EntityType = "record",
+                EntityId = 100,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            // Act
+            Context.Subscriptions.Add(testSubscription);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedSubscription = await Context.Subscriptions.FindAsync(testSubscription.Id);
+            Assert.NotNull(savedSubscription);
+            Assert.Equal(uid, savedSubscription.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateSubscription_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testSubscription = new Subscription
+            {
+                UserId = uid,
+                ProjectId = pid,
+                ActionId = aid,
+                Operation = "update",
+                DataSourceId = did,
+                EntityType = "record",
+                EntityId = 101,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            Context.Subscriptions.Add(testSubscription);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var subscriptionWithUser = await Context.Subscriptions
+                .Include(s => s.LastUpdatedByUser)
+                .FirstAsync(s => s.Id == testSubscription.Id);
+            
+            // Assert
+            Assert.NotNull(subscriptionWithUser.LastUpdatedByUser);
+            Assert.Equal("test_user", subscriptionWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("Fake@gmail.com", subscriptionWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, subscriptionWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateSubscription_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testSubscription = new Subscription
+            {
+                UserId = uid,
+                ProjectId = pid,
+                ActionId = aid,
+                Operation = "delete",
+                DataSourceId = did,
+                EntityType = "record",
+                EntityId = 102,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.Subscriptions.Add(testSubscription);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedSubscription = await Context.Subscriptions.FindAsync(testSubscription.Id);
+            Assert.NotNull(savedSubscription);
+            Assert.Null(savedSubscription.LastUpdatedBy);
+            
+            var subscriptionWithUser = await Context.Subscriptions
+                .Include(s => s.LastUpdatedByUser)
+                .FirstAsync(s => s.Id == testSubscription.Id);
+            
+            Assert.Null(subscriptionWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateSubscription_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testSubscription = new Subscription
+            {
+                UserId = uid,
+                ProjectId = pid,
+                ActionId = aid,
+                Operation = "create",
+                DataSourceId = did,
+                EntityType = "record",
+                EntityId = 103,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Subscriptions.Add(testSubscription);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testSubscription.LastUpdatedBy = uid;
+            testSubscription.Operation = "update";
+            testSubscription.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Subscriptions.Update(testSubscription);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedSubscription = await Context.Subscriptions
+                .Include(s => s.LastUpdatedByUser)
+                .FirstAsync(s => s.Id == testSubscription.Id);
+            
+            Assert.Equal(uid, updatedSubscription.LastUpdatedBy);
+            Assert.NotNull(updatedSubscription.LastUpdatedByUser);
+            Assert.Equal("test_user", updatedSubscription.LastUpdatedByUser.Name);
+            Assert.Equal("update", updatedSubscription.Operation);
+        }
+
+        #endregion
+
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
             
-            // Add project
-            var project = new Project { Name = "Project 1" };
+            var user = new User 
+            { 
+                Name = "test_user", 
+                Email = "Fake@gmail.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid = user.Id;
+            
+            var project = new Project {
+                Name = "Project 1", 
+                LastUpdatedBy = uid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
@@ -501,7 +694,7 @@ namespace deeplynx.tests
             {
                 Name = "Action1",
                 ProjectId = pid,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy =uid,
                 LastUpdatedAt = now
             };
             Context.Actions.Add(action);
@@ -513,18 +706,12 @@ namespace deeplynx.tests
             {
                 Name = "DataSource2",
                 ProjectId = pid,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy = uid ,
                 LastUpdatedAt = now
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
             did = dataSource.Id;
-            
-            // Add user
-            var user = new User { Name = "test_user", Email = "Fake@gmail.com" };
-            Context.Users.Add(user);
-            await Context.SaveChangesAsync();
-            uid = user.Id;
         }
     }
 }

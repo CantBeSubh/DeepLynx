@@ -7,6 +7,7 @@ using deeplynx.models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.tests
 {
@@ -22,9 +23,12 @@ namespace deeplynx.tests
         private DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         private long mockUserId;
         private long mockUser2Id;
+        private long mockUser3Id;
+        private long mockUser4Id;
         private long mockActionId;
         private long mockDataSourceId;
         private long mockDataSource2Id;
+        private long mockOrganizationId;
 
         public EventBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -38,7 +42,7 @@ namespace deeplynx.tests
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         }
 
-        #region GetAllEvents
+        #region GetAllEvents (Simplified - No Pagination)
 
         [Fact]
         public async Task GetAllEvents_Success_NoFilters()
@@ -73,7 +77,353 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllEventsByUserProjectMembership_Success()
+        public async Task GetAllEvents_Success_FilterByOrganizationId()
+        {
+            // Act
+            var result = await _eventBusiness.GetAllEvents(null, mockOrganizationId);
+
+            // Assert
+            Assert.Equal(8, result.Count); // All events have the same organizationId
+            Assert.All(result, e => Assert.Equal(mockOrganizationId, e.OrganizationId));
+        }
+
+        [Fact]
+        public async Task GetAllEvents_Success_FilterByBothProjectAndOrganization()
+        {
+            // Act
+            var result = await _eventBusiness.GetAllEvents(pid, mockOrganizationId);
+
+            // Assert
+            Assert.Equal(6, result.Count);
+            Assert.All(result, e => 
+            {
+                Assert.Equal(pid, e.ProjectId);
+                Assert.Equal(mockOrganizationId, e.OrganizationId);
+            });
+        }
+
+        #endregion
+
+        #region QueryEvents (Paginated with Filters)
+
+        [Fact]
+        public async Task QueryEvents_Success_DefaultPagination()
+        {
+            // Act
+            var result = await _eventBusiness.QueryEvents(null);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount);
+            Assert.Equal(8, result.Items.Count);
+            Assert.Equal(1, result.PageNumber);
+            Assert.Equal(500, result.PageSize); // Default page size
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByProjectId()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { projectId = pid };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(6, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal(pid, e.ProjectId));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByOrganizationId()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { organizationId = mockOrganizationId };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal(mockOrganizationId, e.OrganizationId));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByProjectName()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { projectName = "Project 1" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(6, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal("Project 1", e.ProjectName));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByProjectName_CaseInsensitive()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { projectName = "project 1" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(6, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal("Project 1", e.ProjectName));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByProjectName_PartialMatch()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { projectName = "Project" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount); // Both projects contain "Project"
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByLastUpdatedBy()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { lastUpdatedBy = mockUserId };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(3, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal(mockUserId, e.LastUpdatedBy));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByOperation()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { operation = "create" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(2, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal("create", e.Operation));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByEntityType()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { entityType = "edge" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(6, result.TotalCount);
+            Assert.All(result.Items, e => Assert.Equal("edge", e.EntityType));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByEntityName()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { entityName = "TestEntity" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.All(result.Items, e => Assert.Contains("TestEntity", e.EntityName));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByDataSourceName()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO { dataSourceName = "DataSource1" };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(7, result.TotalCount); // 6 from pid + 1 from pid2 that shares DataSource1
+            Assert.All(result.Items, e => Assert.Equal("DataSource1", e.DataSourceName));
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByStartDate()
+        {
+            // Arrange
+            var futureDate = now.AddHours(1);
+            var queryDto = new EventsQueryRequestDTO { startDate = futureDate };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Empty(result.Items); // No events after the future date
+            Assert.Equal(0, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByEndDate()
+        {
+            // Arrange
+            var pastDate = now.AddHours(-1);
+            var queryDto = new EventsQueryRequestDTO { endDate = pastDate };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Empty(result.Items); // No events before the past date
+            Assert.Equal(0, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_FilterByDateRange()
+        {
+            // Arrange
+            var startDate = now.AddHours(-1);
+            var endDate = now.AddHours(1);
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                startDate = startDate,
+                endDate = endDate
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount); // All events within range
+            Assert.All(result.Items, e => 
+            {
+                Assert.True(e.LastUpdatedAt >= startDate);
+                Assert.True(e.LastUpdatedAt <= endDate);
+            });
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_MultipleFilters()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                projectId = pid,
+                operation = "delete",
+                entityType = "edge"
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Single(result.Items);
+            Assert.Equal(pid, result.Items[0].ProjectId);
+            Assert.Equal("delete", result.Items[0].Operation);
+            Assert.Equal("edge", result.Items[0].EntityType);
+            Assert.Equal(2, result.Items[0].EntityId);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_CustomPageSize()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                PageNumber = 1,
+                PageSize = 3
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount);
+            Assert.Equal(3, result.Items.Count);
+            Assert.Equal(1, result.PageNumber);
+            Assert.Equal(3, result.PageSize);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_SecondPage()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                PageNumber = 2,
+                PageSize = 3
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount);
+            Assert.Equal(3, result.Items.Count);
+            Assert.Equal(2, result.PageNumber);
+            Assert.Equal(3, result.PageSize);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_LastPage()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                PageNumber = 3,
+                PageSize = 3
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(8, result.TotalCount);
+            Assert.Equal(2, result.Items.Count); // Last page has only 2 items
+            Assert.Equal(3, result.PageNumber);
+            Assert.Equal(3, result.PageSize);
+        }
+
+        [Fact]
+        public async Task QueryEvents_Success_WithFiltersAndPagination()
+        {
+            // Arrange
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                projectId = pid,
+                entityType = "edge",
+                PageNumber = 1,
+                PageSize = 2
+            };
+
+            // Act
+            var result = await _eventBusiness.QueryEvents(queryDto);
+
+            // Assert
+            Assert.Equal(4, result.TotalCount); // 4 edge events in pid
+            Assert.Equal(2, result.Items.Count); // First page with 2 items
+            Assert.All(result.Items, e => 
+            {
+                Assert.Equal(pid, e.ProjectId);
+                Assert.Equal("edge", e.EntityType);
+            });
+        }
+
+        #endregion
+
+        #region QueryEventsByUser
+
+        [Fact]
+        public async Task QueryEventsByUser_Success()
         {
             // Arrange - Add project membership for mockUserId to pid
             var projectMember = new ProjectMember
@@ -92,11 +442,14 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUser();
+                var result = await _eventBusiness.QueryEventsByUser(null);
 
                 // Assert
-                Assert.Equal(6, result.Count);
-                Assert.All(result, e => Assert.Equal(pid, e.ProjectId));
+                Assert.Equal(6, result.TotalCount);
+                Assert.Equal(6, result.Items.Count);
+                Assert.All(result.Items, e => Assert.Equal(pid, e.ProjectId));
+                Assert.Equal(1, result.PageNumber);
+                Assert.Equal(25, result.PageSize);
             }
             finally
             {
@@ -107,7 +460,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllEventsByUserProjectMembership_Success_MultipleProjects()
+        public async Task QueryEventsByUser_Success_MultipleProjects()
         {
             // Arrange - Add project membership for mockUserId to both projects
             var projectMembers = new List<ProjectMember>
@@ -135,10 +488,13 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUser();
+                var result = await _eventBusiness.QueryEventsByUser(null);
 
                 // Assert
-                Assert.Equal(8, result.Count); // All events from both projects
+                Assert.Equal(8, result.TotalCount); // All events from both projects
+                Assert.Equal(8, result.Items.Count);
+                Assert.Equal(1, result.PageNumber);
+                Assert.Equal(25, result.PageSize);
             }
             finally
             {
@@ -149,7 +505,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllEventsByUserProjectMembership_ReturnsEmpty_WhenUserNotAuthenticated()
+        public async Task QueryEventsByUser_ReturnsEmpty_WhenUserNotAuthenticated()
         {
             // Arrange - User context is not set (userId = 0)
             UserContextStorage.UserId = 0;
@@ -158,10 +514,13 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUser();
+                var result = await _eventBusiness.QueryEventsByUser(null);
 
                 // Assert
-                Assert.Empty(result);
+                Assert.Empty(result.Items);
+                Assert.Equal(0, result.TotalCount);
+                Assert.Equal(1, result.PageNumber);
+                Assert.Equal(25, result.PageSize);
             }
             finally
             {
@@ -172,7 +531,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task GetAllEventsByUserProjectMembership_ReturnsEmpty_WhenUserHasNoProjectMemberships()
+        public async Task QueryEventsByUser_ReturnsEmpty_WhenUserHasNoProjectMemberships()
         {
             // Arrange - User is authenticated but has no project memberships
             UserContextStorage.UserId = mockUserId;
@@ -181,10 +540,13 @@ namespace deeplynx.tests
             try
             {
                 // Act
-                var result = await _eventBusiness.GetAllEventsByUser();
+                var result = await _eventBusiness.QueryEventsByUser(null);
 
                 // Assert
-                Assert.Empty(result);
+                Assert.Empty(result.Items);
+                Assert.Equal(0, result.TotalCount);
+                Assert.Equal(1, result.PageNumber);
+                Assert.Equal(25, result.PageSize);
             }
             finally
             {
@@ -194,9 +556,174 @@ namespace deeplynx.tests
             }
         }
 
-        # endregion
+        [Fact]
+        public async Task QueryEventsByUser_Success_WithPagination()
+        {
+            // Arrange - Add project membership for mockUserId to both projects
+            var projectMembers = new List<ProjectMember>
+            {
+                new ProjectMember
+                {
+                    ProjectId = pid,
+                    UserId = mockUserId,
+                    RoleId = null
+                },
+                new ProjectMember
+                {
+                    ProjectId = pid2,
+                    UserId = mockUserId,
+                    RoleId = null
+                }
+            };
+            Context.ProjectMembers.AddRange(projectMembers);
+            await Context.SaveChangesAsync();
 
-        #region GetEvents Tests
+            UserContextStorage.UserId = mockUserId;
+            UserContextStorage.Email = "test@gmail.com";
+
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                PageNumber = 1, 
+                PageSize = 3 
+            };
+
+            try
+            {
+                // Act
+                var result = await _eventBusiness.QueryEventsByUser(queryDto);
+
+                // Assert
+                Assert.Equal(8, result.TotalCount);
+                Assert.Equal(3, result.Items.Count);
+                Assert.Equal(1, result.PageNumber);
+                Assert.Equal(3, result.PageSize);
+            }
+            finally
+            {
+                // Cleanup
+                UserContextStorage.UserId = 0;
+                UserContextStorage.Email = null;
+            }
+        }
+
+        [Fact]
+        public async Task QueryEventsByUser_Success_WithFilters()
+        {
+            // Arrange - Add project membership
+            var projectMember = new ProjectMember
+            {
+                ProjectId = pid,
+                UserId = mockUserId,
+                RoleId = null
+            };
+            Context.ProjectMembers.Add(projectMember);
+            await Context.SaveChangesAsync();
+
+            UserContextStorage.UserId = mockUserId;
+            UserContextStorage.Email = "test@gmail.com";
+
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                operation = "create",
+                PageNumber = 1,
+                PageSize = 10
+            };
+
+            try
+            {
+                // Act
+                var result = await _eventBusiness.QueryEventsByUser(queryDto);
+
+                // Assert
+                Assert.Equal(2, result.TotalCount);
+                Assert.Equal(2, result.Items.Count);
+                Assert.All(result.Items, e => Assert.Equal("create", e.Operation));
+            }
+            finally
+            {
+                UserContextStorage.UserId = 0;
+                UserContextStorage.Email = null;
+            }
+        }
+
+        [Fact]
+        public async Task QueryEventsByUser_Success_FilterByProjectName()
+        {
+            // Arrange - Add memberships to both projects
+            var projectMembers = new List<ProjectMember>
+            {
+                new ProjectMember { ProjectId = pid, UserId = mockUserId, RoleId = null },
+                new ProjectMember { ProjectId = pid2, UserId = mockUserId, RoleId = null }
+            };
+            Context.ProjectMembers.AddRange(projectMembers);
+            await Context.SaveChangesAsync();
+
+            UserContextStorage.UserId = mockUserId;
+            UserContextStorage.Email = "test@gmail.com";
+
+            var queryDto = new EventsQueryRequestDTO { projectName = "Project 2" };
+
+            try
+            {
+                // Act
+                var result = await _eventBusiness.QueryEventsByUser(queryDto);
+
+                // Assert
+                Assert.Equal(2, result.TotalCount);
+                Assert.All(result.Items, e => Assert.Equal("Project 2", e.ProjectName));
+            }
+            finally
+            {
+                UserContextStorage.UserId = 0;
+                UserContextStorage.Email = null;
+            }
+        }
+
+        [Fact]
+        public async Task QueryEventsByUser_Success_FilterByDateRange()
+        {
+            // Arrange - Add project membership
+            var projectMember = new ProjectMember
+            {
+                ProjectId = pid,
+                UserId = mockUserId,
+                RoleId = null
+            };
+            Context.ProjectMembers.Add(projectMember);
+            await Context.SaveChangesAsync();
+
+            UserContextStorage.UserId = mockUserId;
+            UserContextStorage.Email = "test@gmail.com";
+
+            var queryDto = new EventsQueryRequestDTO 
+            { 
+                startDate = now.AddHours(-1),
+                endDate = now.AddHours(1)
+            };
+
+            try
+            {
+                // Act
+                var result = await _eventBusiness.QueryEventsByUser(queryDto);
+
+                // Assert
+                Assert.Equal(6, result.TotalCount);
+                Assert.All(result.Items, e => 
+                {
+                    Assert.True(e.LastUpdatedAt >= queryDto.startDate);
+                    Assert.True(e.LastUpdatedAt <= queryDto.endDate);
+                });
+            }
+            finally
+            {
+                UserContextStorage.UserId = 0;
+                UserContextStorage.Email = null;
+            }
+        }
+
+        #endregion
+
+        #region GetEventsByUserProjectSubscriptions Tests
 
         [Fact]
         public async Task GetEventsByUserProjectSubscriptions_Success_NoFilters()
@@ -542,35 +1069,168 @@ namespace deeplynx.tests
 
         #endregion
 
+        #region LastUpdatedBy Tests
+        
+        [Fact]
+        public async Task CreateEvent_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 999,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = mockUserId,
+                LastUpdatedAt = now
+            };
+            
+            // Act
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEvent = await Context.Events.FindAsync(testEvent.Id);
+            Assert.NotNull(savedEvent);
+            Assert.Equal(mockUserId, savedEvent.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEvent_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 998,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = mockUserId,
+                LastUpdatedAt = now
+            };
+            
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var eventWithUser = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            // Assert
+            Assert.NotNull(eventWithUser.LastUpdatedByUser);
+            Assert.Equal("user1", eventWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@gmail.com", eventWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(mockUserId, eventWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEvent_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 997,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = null,
+                LastUpdatedAt = now
+            };
+            
+            // Act
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEvent = await Context.Events.FindAsync(testEvent.Id);
+            Assert.NotNull(savedEvent);
+            Assert.Null(savedEvent.LastUpdatedBy);
+            
+            var eventWithUser = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            Assert.Null(eventWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateEvent_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEvent = new Event
+            {
+                ProjectId = pid,
+                Operation = "create",
+                EntityType = "test",
+                EntityId = 996,
+                DataSourceId = mockDataSourceId,
+                Properties = "{}",
+                LastUpdatedBy = null,
+                LastUpdatedAt = now
+            };
+            Context.Events.Add(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testEvent.LastUpdatedBy = mockUser2Id;
+            testEvent.Operation = "update";
+            testEvent.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Events.Update(testEvent);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedEvent = await Context.Events
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEvent.Id);
+            
+            Assert.Equal(mockUser2Id, updatedEvent.LastUpdatedBy);
+            Assert.NotNull(updatedEvent.LastUpdatedByUser);
+            Assert.Equal("user2", updatedEvent.LastUpdatedByUser.Name);
+            Assert.Equal("update", updatedEvent.Operation);
+        }
+        
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-
+            
+            var users = new List<User>
+            {
+                new User { Name = "user1", Email = "test@gmail.com" },
+                new User { Name = "user2", Email = "test2@gmail.com" },
+                new User { Name = "user3", Email = "test3@gmail.com" },
+                new User { Name = "user4", Email = "test4@gmail.com" },
+            };
+            Context.Users.AddRange(users);
+            await Context.SaveChangesAsync();
+            mockUserId = users[0].Id;
+            mockUser2Id = users[1].Id;
+            mockUser3Id = users[2].Id;
+            mockUser4Id = users[3].Id;
+            
             var projects = new List<Project>
             {
-                new Project { Name = "Project 1" },
-                new Project { Name = "Project 2" },
+                new Project { Name = "Project 1", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)},
+                new Project { Name = "Project 2", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) },
             };
             Context.Projects.AddRange(projects);
             await Context.SaveChangesAsync();
             pid = projects[0].Id;
             pid2 = projects[1].Id;
 
-            var users = new List<User>
-            {
-                new User { Name = "user1", Email = "test@gmail.com" },
-                new User { Name = "user2", Email = "test2@gmail.com" },
-            };
-            Context.Users.AddRange(users);
-            await Context.SaveChangesAsync();
-            mockUserId = users[0].Id;
-            mockUser2Id = users[1].Id;
-
             var action = new deeplynx.datalayer.Models.Action
             {
                 Name = "Action1",
                 ProjectId = pid,
-                LastUpdatedBy = "user123",
+                LastUpdatedBy = mockUserId,
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Actions.Add(action);
@@ -583,14 +1243,14 @@ namespace deeplynx.tests
                 {
                     Name = "DataSource1",
                     ProjectId = pid,
-                    LastUpdatedBy = "user123",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 },
                 new DataSource
                 {
                     Name = "DataSource2",
                     ProjectId = pid2,
-                    LastUpdatedBy = "user123",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
                 }
             };
@@ -600,96 +1260,121 @@ namespace deeplynx.tests
             mockDataSourceId = dataSources[0].Id;
             mockDataSource2Id = dataSources[1].Id;
 
+            var organization = new Organization
+            {
+                Name = "Organization1",
+            };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            mockOrganizationId = organization.Id;
+
+            var organizationUser = new OrganizationUser
+            {
+                OrganizationId = mockOrganizationId,
+                UserId = mockUserId,
+                IsOrgAdmin = true
+            };
+            Context.OrganizationUsers.Add(organizationUser);
+            await Context.SaveChangesAsync();
+
             var events = new List<Event>
             {
                 // Events with 1st Project
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "create",
                     EntityType = "edge",
                     EntityId = 1,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "create",
                     EntityType = "edge",
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "class",
                     EntityId = 3,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "class",
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "edge",
                     EntityId = 2,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user1",
+                    LastUpdatedBy = mockUserId,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid,
+                    OrganizationId = mockOrganizationId,
                     Operation = "update",
                     EntityType = "edge",
                     EntityId = 5,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user2",
+                    LastUpdatedBy = mockUser2Id,
                     LastUpdatedAt = now
                 },
                 // Events with 2nd Project
                 new Event
                 {
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     Operation = "update",
                     EntityType = "edge",
                     EntityId = 3,
                     DataSourceId = null,
                     Properties = "{}",
-                    LastUpdatedBy = "user3",
+                    LastUpdatedBy = mockUser3Id,
                     LastUpdatedAt = now
                 },
                 new Event
                 {
                     ProjectId = pid2,
+                    OrganizationId = mockOrganizationId,
                     Operation = "delete",
                     EntityType = "edge",
                     EntityId = 4,
                     DataSourceId = mockDataSourceId,
                     Properties = "{}",
-                    LastUpdatedBy = "user4",
+                    LastUpdatedBy = mockUser4Id,
                     LastUpdatedAt = now
                 }
             };
