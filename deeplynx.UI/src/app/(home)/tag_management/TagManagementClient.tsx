@@ -168,6 +168,11 @@ const TagManagementClient = ({
     }
   };
 
+  const handleClearSearch = () => {
+    setRecordsFromTagSearch([]);
+    setSelectedTagIds(new Set());
+  };
+
   return (
     <div>
       {/* Header */}
@@ -257,6 +262,7 @@ const TagManagementClient = ({
                 onClearSelectedTags={() => setSelectedTagIds(new Set())}
                 recordsFromTagSearch={recordsFromTagSearch}
                 isSearchingByTags={isSearchingByTags}
+                onClearSearch={handleClearSearch}
               />
             </div>
           )}

@@ -180,6 +180,7 @@ interface SearchTagsRecordsListProps {
   onClearSelectedTags: () => void;
   recordsFromTagSearch: RecordResponseDto[];
   isSearchingByTags: boolean;
+  onClearSearch: () => void;
 }
 
 export const SearchTagsRecordsList = ({
@@ -188,6 +189,7 @@ export const SearchTagsRecordsList = ({
   onClearSelectedTags,
   recordsFromTagSearch,
   isSearchingByTags,
+  onClearSearch,
 }: SearchTagsRecordsListProps) => {
   const [attachLoading, setAttachLoading] = useState(false);
   const [selectedRecordIds, setSelectedRecordIds] = useState<Set<number>>(
@@ -251,6 +253,12 @@ export const SearchTagsRecordsList = ({
     }
   };
 
+  const handleClearSearch = () => {
+    onClearSearch();
+    setSelectedRecordIds(new Set());
+    toast.success("Search cleared");
+  };
+
   const displayRecords = recordsFromTagSearch;
 
   return (
@@ -302,29 +310,27 @@ export const SearchTagsRecordsList = ({
                   className="px-3 py-2 hover:bg-info/50 cursor-pointer transition-colors border-b border-base-200"
                 >
                   <div className="flex items-start gap-2">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary mt-1"
-                      checked={
-                        record.id !== null && selectedRecordIds.has(record.id)
-                      }
-                      onChange={() => handleRecordToggle(record.id)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-
                     <div className="flex-1">
                       <div className="text-sm font-semibold">{record.name}</div>
 
                       {record.tags && record.tags.length > 0 && (
                         <div className="flex gap-1 flex-wrap mt-1">
-                          {record.tags.map((tag) => (
-                            <span
-                              className="badge badge-outline badge-secondary badge-sm"
-                              key={tag.id}
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
+                          {record.tags.map((tag) => {
+                            const isSearchedTag =
+                              tag.id !== null && selectedTagIds.has(tag.id);
+                            return (
+                              <span
+                                className={`badge badge-sm ${
+                                  isSearchedTag
+                                    ? "badge-secondary"
+                                    : "badge-outline badge-secondary"
+                                }`}
+                                key={tag.id}
+                              >
+                                {tag.name}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
 
@@ -341,6 +347,18 @@ export const SearchTagsRecordsList = ({
           </div>
         )}
       </div>
+
+      {/* Clear Search Button - At the bottom */}
+      {displayRecords.length > 0 && (
+        <div className="mt-4">
+          <button
+            className="btn btn-outline btn-error w-full"
+            onClick={handleClearSearch}
+          >
+            Clear Search Results
+          </button>
+        </div>
+      )}
     </div>
   );
 };
