@@ -1,4 +1,5 @@
 using deeplynx.helpers.Context;
+using deeplynx.helpers;
 using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -60,6 +61,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}", Name = "api_get_a_project")]
+        
         public async Task<ActionResult<ProjectResponseDto>> GetProject(
             long projectId,
             [FromQuery] bool hideArchived = true)

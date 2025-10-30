@@ -8,6 +8,6 @@ public class ObjectStorageResponseDto
     public long ProjectId { get; set; }
     public bool Default { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; } = false;
 }

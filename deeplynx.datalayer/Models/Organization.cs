@@ -21,7 +21,7 @@ public partial class Organization
     public string? Description { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
@@ -46,5 +46,7 @@ public partial class Organization
 
     [InverseProperty("Organization")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
-
+    
+    [InverseProperty("LastUpdatedOrganizations")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

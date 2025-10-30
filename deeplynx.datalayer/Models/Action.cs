@@ -25,7 +25,7 @@ public partial class Action
     public string? Config { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("is_archived")]
     public bool IsArchived { get; set; }
@@ -39,4 +39,7 @@ public partial class Action
 
     [InverseProperty("Action")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("LastUpdatedActions")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }
