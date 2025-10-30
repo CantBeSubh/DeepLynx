@@ -10,7 +10,7 @@ public class PermissionResponseDto
     public bool IsDefault { get; set; }
     public long? LabelId { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public long? LastUpdatedBy { get; set; }
+    public string? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
     public long? ProjectId { get; set; }
     public long? OrganizationId { get; set; }
