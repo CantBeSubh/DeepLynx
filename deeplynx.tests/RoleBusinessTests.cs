@@ -943,20 +943,161 @@ namespace deeplynx.tests
         }
         
         # endregion
-        
+        #region LastUpdatedBy Tests
+
+            [Fact]
+            public async Task CreateRole_Success_StoresLastUpdatedByUserId()
+            {
+                // Arrange
+                var testRole = new Role
+                {
+                    Name = "Test Role LastUpdatedBy",
+                    Description = "Test description",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid
+                };
+                
+                // Act
+                Context.Roles.Add(testRole);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedRole = await Context.Roles.FindAsync(testRole.Id);
+                Assert.NotNull(savedRole);
+                Assert.Equal(uid, savedRole.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateRole_Success_NavigationPropertyLoadsUser()
+            {
+                // Arrange
+                var testRole = new Role
+                {
+                    Name = "Test Role Navigation",
+                    Description = "Test description 2",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid
+                };
+                
+                Context.Roles.Add(testRole);
+                await Context.SaveChangesAsync();
+
+                // Act
+                var roleWithUser = await Context.Roles
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRole.Id);
+                
+                // Assert
+                Assert.NotNull(roleWithUser.LastUpdatedByUser);
+                Assert.Equal("Test User", roleWithUser.LastUpdatedByUser.Name);
+                Assert.Equal("test@test.com", roleWithUser.LastUpdatedByUser.Email);
+                Assert.Equal(uid, roleWithUser.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateRole_Success_WithNullLastUpdatedBy()
+            {
+                // Arrange
+                var testRole = new Role
+                {
+                    Name = "Test Role Null",
+                    Description = "Test description 3",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null
+                };
+                
+                // Act
+                Context.Roles.Add(testRole);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedRole = await Context.Roles.FindAsync(testRole.Id);
+                Assert.NotNull(savedRole);
+                Assert.Null(savedRole.LastUpdatedBy);
+                
+                var roleWithUser = await Context.Roles
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRole.Id);
+                
+                Assert.Null(roleWithUser.LastUpdatedByUser);
+            }
+
+            [Fact]
+            public async Task UpdateRole_Success_UpdatesLastUpdatedByUserId()
+            {
+                // Arrange
+                var testRole = new Role
+                {
+                    Name = "Test Role Update",
+                    Description = "Test description 4",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null
+                };
+                Context.Roles.Add(testRole);
+                await Context.SaveChangesAsync();
+
+                // Act
+                testRole.LastUpdatedBy = uid;
+                testRole.Name = "Updated Role Name";
+                testRole.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                
+                Context.Roles.Update(testRole);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var updatedRole = await Context.Roles
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRole.Id);
+                
+                Assert.Equal(uid, updatedRole.LastUpdatedBy);
+                Assert.NotNull(updatedRole.LastUpdatedByUser);
+                Assert.Equal("Test User", updatedRole.LastUpdatedByUser.Name);
+                Assert.Equal("Updated Role Name", updatedRole.Name);
+            }
+
+            #endregion
+
+
         protected override async Task SeedTestDataAsync()
         {
             await CleanupTestData();
             
             await base.SeedTestDataAsync();
+            
+            // create user
+            var user = new User 
+            { 
+                Name = "Test User", 
+                Email = "test@test.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid = user.Id;
+            
             // create test organization
-            var organization = new Organization { Name = "Test" };
+            var organization = new Organization 
+            { 
+                Name = "Test",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
             Context.Organizations.Add(organization);
             await Context.SaveChangesAsync();
             oid = organization.Id;
             
             // create test project
-            var project = new Project { Name = "Test" };
+            var project = new Project 
+            { 
+                Name = "Test",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
@@ -978,12 +1119,6 @@ namespace deeplynx.tests
             // delete role 3
             Context.Roles.Remove(role3);
             await Context.SaveChangesAsync();
-            
-            // create user
-            var user = new User { Name = "Test User", Email = "test@test.com" };
-            Context.Users.Add(user);
-            await Context.SaveChangesAsync();
-            uid = user.Id;
             
             // add user as project member
             var projectMember = new ProjectMember { ProjectId = pid, UserId = uid, RoleId = rid4 };

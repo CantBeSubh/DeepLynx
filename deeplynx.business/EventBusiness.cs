@@ -395,7 +395,7 @@ public class EventBusiness : IEventBusiness
             EntityType = dto.EntityType,
             ProjectId = dto.ProjectId,
             Properties = dto.Properties,
-            LastUpdatedBy = UserContextStorage.Email,
+            LastUpdatedBy = UserContextStorage.UserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             DataSourceId = dto.DataSourceId,
             EntityId = dto.EntityId,
@@ -461,7 +461,7 @@ public class EventBusiness : IEventBusiness
             EntityName = dto.EntityName,
             Properties = dto.Properties,
             DataSourceId = dto.DataSourceId,
-            LastUpdatedBy = UserContextStorage.Email,
+            LastUpdatedBy = UserContextStorage.UserId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
         }).ToList();
 

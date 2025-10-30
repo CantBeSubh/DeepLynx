@@ -14,6 +14,6 @@ public class DataSourceResponseDto
     public JsonObject? Config { get; set; }
     public long ProjectId { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
 }
