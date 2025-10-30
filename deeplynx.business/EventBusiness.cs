@@ -96,11 +96,9 @@ public class EventBusiness : IEventBusiness
                     EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
             }
 
-            if (!string.IsNullOrWhiteSpace(queryDto.lastUpdatedBy))
+            if (queryDto.lastUpdatedBy.HasValue)
             {
-                var searchTerm = queryDto.lastUpdatedBy.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
+                eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(queryDto.operation))
@@ -235,11 +233,9 @@ public class EventBusiness : IEventBusiness
                     EF.Functions.ILike(e.Project.Name, $"%{searchTerm}%"));
             }
 
-            if (!string.IsNullOrWhiteSpace(queryDto.lastUpdatedBy))
+            if (queryDto.lastUpdatedBy.HasValue)
             {
-                var searchTerm = queryDto.lastUpdatedBy.Trim();
-                eventQuery = eventQuery.Where(e =>
-                    EF.Functions.ILike(e.LastUpdatedBy, $"%{searchTerm}%"));
+                eventQuery = eventQuery.Where(e => e.LastUpdatedBy == queryDto.lastUpdatedBy.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(queryDto.operation))
