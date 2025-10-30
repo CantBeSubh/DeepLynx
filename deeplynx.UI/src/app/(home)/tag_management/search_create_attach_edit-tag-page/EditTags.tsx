@@ -12,8 +12,6 @@ interface Props {
   onSearchChange: (query: string) => void;
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
-  projectId: string;
-  onSearchByTags: (tagIds: number[]) => Promise<void>;
 }
 
 const EditTags = ({
@@ -25,8 +23,6 @@ const EditTags = ({
   onSearchChange,
   selectedTagIds,
   setSelectedTagIds,
-  projectId,
-  onSearchByTags,
 }: Props) => {
   // Get the actual tag objects for the selected IDs
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
@@ -107,16 +103,21 @@ const EditTags = ({
 interface EditTagsNameFieldsProps {
   selectedTags: TagResponseDto[];
   onUpdateTag: (tagId: number, newName: string) => Promise<void>;
+  onDeleteTag: (tagId: number) => Promise<void>;
 }
 
 export const EditTagsNameFields = ({
   selectedTags,
   onUpdateTag,
+  onDeleteTag,
 }: EditTagsNameFieldsProps) => {
   const [editedNames, setEditedNames] = useState<Map<number, string>>(
     new Map()
   );
   const [savingAll, setSavingAll] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [tagToDelete, setTagToDelete] = useState<TagResponseDto | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Initialize edited names when selected tags change
   React.useEffect(() => {
@@ -200,7 +201,36 @@ export const EditTagsNameFields = ({
       initialNames.set(tag.id, tag.name);
     });
     setEditedNames(initialNames);
-    toast.error("All changes reset");
+    toast.success("All changes reset");
+  };
+
+  // Open delete modal
+  const handleOpenDeleteModal = (tag: TagResponseDto) => {
+    setTagToDelete(tag);
+    setIsDeleteModalOpen(true);
+  };
+
+  // Close delete modal
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setTagToDelete(null);
+  };
+
+  // Delete tag
+  const handleDeleteTag = async () => {
+    if (!tagToDelete) return;
+
+    setDeleting(true);
+    try {
+      await onDeleteTag(tagToDelete.id);
+      toast.success(`Tag "${tagToDelete.name}" deleted successfully`);
+      handleCloseDeleteModal();
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      toast.error(`Failed to delete tag "${tagToDelete.name}"`);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   // Check if any tag has been edited
@@ -242,14 +272,28 @@ export const EditTagsNameFields = ({
           return (
             <div
               key={tag.id}
-              className={"card bg-base-200/50 shadow-sm p-4 space-y-3"}
+              className="card bg-base-200/50 shadow-sm p-4 space-y-3"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-base-content/60">Original:</span>
-                <span className="badge badge-secondary">{tag.name}</span>
-                {isEdited && (
-                  <span className="badge badge-primary badge-sm">Modified</span>
-                )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-base-content/60">
+                    Original:
+                  </span>
+                  <span className="badge badge-secondary">{tag.name}</span>
+                  {isEdited && (
+                    <span className="badge badge-primary badge-sm">
+                      Modified
+                    </span>
+                  )}
+                </div>
+                <button
+                  className="btn btn-error btn-sm"
+                  onClick={() => handleOpenDeleteModal(tag)}
+                  disabled={savingAll}
+                  title="Delete this tag"
+                >
+                  Delete
+                </button>
               </div>
 
               <div className="form-control">
@@ -294,6 +338,47 @@ export const EditTagsNameFields = ({
               "Save All Changes"
             )}
           </button>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && tagToDelete && (
+        <div className="modal modal-open">
+          <div className="modal-box">
+            <h3 className="font-bold text-lg">Delete Tag</h3>
+            <p className="py-4">
+              Are you sure you want to delete the tag{" "}
+              <span className="font-semibold">"{tagToDelete.name}"</span>?
+            </p>
+            <p className="text-sm">
+              This action cannot be undone. The tag will be removed from all
+              records.
+            </p>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={handleCloseDeleteModal}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-error"
+                onClick={handleDeleteTag}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Tag"
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

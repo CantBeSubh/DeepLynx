@@ -2,7 +2,11 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { getAllTags, updateTag } from "@/app/lib/tag_services.client";
+import {
+  getAllTags,
+  updateTag,
+  deleteTag,
+} from "@/app/lib/tag_services.client";
 import {
   ProjectResponseDto,
   RecordResponseDto,
@@ -207,6 +211,22 @@ const TagManagementClient = ({
     }
   };
 
+  // Add the delete handler
+  const handleDeleteTag = async (tagId: number) => {
+    try {
+      await deleteTag(Number(selectedProject), tagId);
+      // Remove the deleted tag from selected tags
+      const newSelected = new Set(selectedTagIds);
+      newSelected.delete(tagId);
+      setSelectedTagIds(newSelected);
+      // Refetch tags to get the updated list
+      await refetchTags();
+    } catch (error) {
+      console.error("Error deleting tag:", error);
+      throw error;
+    }
+  };
+
   // Get the selected tag objects from the selected IDs
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
 
@@ -292,8 +312,6 @@ const TagManagementClient = ({
                 onSearchChange={setSearchQuery}
                 selectedTagIds={selectedTagIds}
                 setSelectedTagIds={setSelectedTagIds}
-                projectId={selectedProject}
-                onSearchByTags={handleSearchByTags}
               />
             </div>
           )}
@@ -336,6 +354,7 @@ const TagManagementClient = ({
               <EditTagsNameFields
                 selectedTags={selectedTags}
                 onUpdateTag={handleUpdateTag}
+                onDeleteTag={handleDeleteTag}
               />
             </div>
           )}
