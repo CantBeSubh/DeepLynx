@@ -57,7 +57,7 @@ jobs:
 
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-ui-${{ github.run_number }}" \
-            --file Dockerfiles/ui/Dockerfile.public \
+            --file Dockerfiles/ui/Dockerfile.sandbox \
             --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
             --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
             --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
@@ -71,7 +71,7 @@ jobs:
             .
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
-            --file Dockerfiles/server/Dockerfile.public \
+            --file Dockerfiles/server/Dockerfile.sandbox \
             --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
             --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
             --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
@@ -87,7 +87,7 @@ jobs:
 
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-docs-${{ github.run_number }}" \
-            --file Dockerfiles/docs/Dockerfile.public \
+            --file Dockerfiles/docs/Dockerfile.sandbox \
             --build-arg HOSTED_LINK="$HOSTED_LINK" \
             .
 
