@@ -1,16 +1,39 @@
-- name: Debug Dockerfile Build
-  run: |
-    az acr build --registry "$ACR_REGISTRY" \
-      --image "$ACR_PATH:debug-env-${GITHUB_RUN_NUMBER}" \
-      --file Dockerfile.debug \
-      --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
-      --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
-      --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
-      --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
-      --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
-      --build-arg AUTH_SECRET="$AUTH_SECRET" \
-      --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-      --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
-      --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-      --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
-      .
+
+ #github Sandbox/Test workflow
+name: Build Sandbox/Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'sandbox'
+
+  push:
+    branches: ["sandbox"]
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+    environment: Test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Debug Dockerfile Build
+        run: |
+          az acr build --registry "$ACR_REGISTRY" \
+            --image "$ACR_PATH:debug-env-${GITHUB_RUN_NUMBER}" \
+            --file Dockerfile.debug \
+            --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
+            --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
+            --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
+            --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
+            --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
+            --build-arg AUTH_SECRET="$AUTH_SECRET" \
+            --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+            --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
+            --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
+            .
