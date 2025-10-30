@@ -3,17 +3,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
-import SearchBar from "../../components/SearchBar";
 import { fullTextSearch } from "@/app/lib/query_services.client";
 import { FileViewerTableRow } from "../../types/types";
 import { attachTagToRecord } from "@/app/lib/record_services.client";
 
-// Create a type that represents a record with parsed tags
-type RecordWithParsedTags = (RecordResponseDto | FileViewerTableRow) & {
-  tags: TagResponseDto[];
-};
-
-// Helper function to parse tags
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
 ): TagResponseDto[] => {
@@ -35,7 +28,6 @@ const parseTags = (
   return [];
 };
 
-// Main CreateTag Component
 interface CreateTagProps {
   projectId: string;
   onTagCreated: () => Promise<void>;
@@ -72,7 +64,6 @@ const CreateTag = ({
       const newTag = await createTag(Number(projectId), { name: tagName });
       setTagName("");
       toast.success("Tag Created");
-
       setCreatedTags((prev) => [...prev, newTag]);
       await onTagCreated();
     } catch (err) {
@@ -133,7 +124,6 @@ const CreateTag = ({
           </button>
         </div>
 
-        {/* Newly Created Tags List */}
         {createdTags.length > 0 && (
           <div className="mt-6 border-t pt-4">
             <h4 className="font-semibold mb-3">Created Tags</h4>
@@ -167,7 +157,6 @@ const CreateTag = ({
   );
 };
 
-// Recently Added Records Component
 interface CreateTagRecordsListProps {
   projectId: string;
   selectedTagIds: Set<number>;
@@ -177,13 +166,13 @@ export const CreateTagRecordsList = ({
   projectId,
   selectedTagIds,
 }: CreateTagRecordsListProps) => {
-  // Create a type that represents a record with parsed tags
   type RecordWithParsedTags = Omit<
     RecordResponseDto | FileViewerTableRow,
     "tags"
   > & {
     tags: TagResponseDto[];
   };
+
   const [records, setRecords] = useState<RecordWithParsedTags[]>([]);
   const [searchResults, setSearchResults] = useState<RecordWithParsedTags[]>(
     []
@@ -207,7 +196,6 @@ export const CreateTagRecordsList = ({
 
       try {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
-
         const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
           (record: RecordResponseDto) => ({
             ...record,
@@ -216,7 +204,6 @@ export const CreateTagRecordsList = ({
             ),
           })
         );
-
         setRecords(recordsWithParsedTags);
       } catch (error) {
         console.error("Error fetching recent records:", error);
@@ -228,7 +215,6 @@ export const CreateTagRecordsList = ({
     fetchRecentRecords();
   }, [projectId]);
 
-  // Perform Full text search
   const performFullTextSearch = useCallback(
     async (searchTerm: string, projectId: string) => {
       if (!searchTerm.trim()) {
@@ -240,14 +226,12 @@ export const CreateTagRecordsList = ({
 
       try {
         const data = await fullTextSearch(searchTerm, [projectId]);
-
         const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
           (record) => ({
             ...record,
             tags: parseTags(record.tags),
           })
         );
-
         setSearchResults(resultsWithParsedTags);
       } catch (error) {
         console.error("Search error:", error);
@@ -259,19 +243,22 @@ export const CreateTagRecordsList = ({
     []
   );
 
-  // Handle submit from search bar
   const handleSubmit = async () => {
     await performFullTextSearch(searchTerm, projectId);
   };
 
-  // Also trigger search on Enter key
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setSearchResults([]);
+    setSelectedRecordIds(new Set());
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSubmit();
     }
   };
 
-  // Toggle record selection
   const handleRecordToggle = (recordId: number | null) => {
     if (recordId === null) return;
 
@@ -284,7 +271,6 @@ export const CreateTagRecordsList = ({
     setSelectedRecordIds(newSelected);
   };
 
-  // Attach tags to selected records
   const handleAttachTags = async () => {
     if (selectedRecordIds.size === 0) {
       toast.error("Please select at least one record");
@@ -301,9 +287,7 @@ export const CreateTagRecordsList = ({
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
 
-      // For each selected record
       selectedRecordIds.forEach((recordId) => {
-        // Attach each selected tag
         selectedTagIds.forEach((tagId) => {
           attachPromises.push(
             attachTagToRecord(Number(projectId), recordId, tagId)
@@ -317,11 +301,9 @@ export const CreateTagRecordsList = ({
         `Successfully attached ${selectedTagIds.size} tag(s) to ${selectedRecordIds.size} record(s)`
       );
 
-      // Clear selections and refresh records
       setSelectedRecordIds(new Set());
 
-      // Refresh the records list to show updated tags
-      if (searchTerm.trim()) {
+      if (searchResults.length > 0) {
         await performFullTextSearch(searchTerm, projectId);
       } else {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
@@ -343,18 +325,14 @@ export const CreateTagRecordsList = ({
     }
   };
 
-  const handleClearSearch = () => {
-    setSearchTerm("");
-    setSearchResults([]);
-    setSelectedRecordIds(new Set());
-  };
-
-  // Determine which records to display
   const displayRecords = searchResults.length > 0 ? searchResults : records;
   const isSearching = searchResults.length > 0;
 
   return (
-    <div className="w-[85%] mx-auto">
+    <div
+      className="w-[85%] mx-auto flex flex-col"
+      style={{ height: "calc(90vh - 200px)" }}
+    >
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Search Records</h3>
         <div className="flex gap-2 mb-4">
@@ -382,7 +360,6 @@ export const CreateTagRecordsList = ({
             </button>
           )}
         </div>
-        {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
             <span className="text-sm">
@@ -400,8 +377,7 @@ export const CreateTagRecordsList = ({
         )}
       </div>
 
-      {/* Search Results or Recent Records */}
-      <div className="mt-6">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <h3 className="font-bold mb-4">
           {isSearching ? "Search Results" : "Recently Added Records"}
         </h3>
@@ -419,12 +395,12 @@ export const CreateTagRecordsList = ({
         )}
 
         {!searchLoading && !loading && displayRecords.length > 0 && (
-          <div className="space-y-2 max-h-96 overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-hidden">
             <p className="text-sm text-base-content/70 mb-2">
               {displayRecords.length} record
               {displayRecords.length !== 1 ? "s" : ""}
             </p>
-            <ul className="space-y-2">
+            <ul className="space-y-2 overflow-y-auto flex-1">
               {displayRecords.map((record, index) => (
                 <li
                   key={record.id || index}
@@ -459,6 +435,7 @@ export const CreateTagRecordsList = ({
 
                       {record.lastUpdatedAt && (
                         <div className="text-xs text-base-content/60 mt-1">
+                          Last Updated:{" "}
                           {new Date(record.lastUpdatedAt).toLocaleDateString()}
                         </div>
                       )}
@@ -474,5 +451,4 @@ export const CreateTagRecordsList = ({
   );
 };
 
-// Default export
 export default CreateTag;

@@ -7,7 +7,6 @@ import { attachTagToRecord } from "@/app/lib/record_services.client";
 import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import toast from "react-hot-toast";
 
-// Helper function to parse tags - move this to the top
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
 ): TagResponseDto[] => {
@@ -66,6 +65,7 @@ const AttachTags = ({
     }
     setSelectedTagIds(newSelected);
   };
+
   return (
     <div
       className="w-[85%] mx-auto flex flex-col"
@@ -102,7 +102,7 @@ const AttachTags = ({
               {filteredTags.map((tag, index) => (
                 <li
                   key={tag.id || index}
-                  className="px-3 py-1"
+                  className="px-3 py-1 hover:bg-base-200 rounded cursor-pointer"
                   onClick={() => handleTagToggle(tag.id)}
                 >
                   <input
@@ -158,7 +158,6 @@ export const AttachTagsRecordsList = ({
 
       try {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
-
         const recordsWithParsedTags: RecordWithParsedTags[] = recentRecords.map(
           (record: RecordResponseDto) => ({
             ...record,
@@ -167,7 +166,6 @@ export const AttachTagsRecordsList = ({
             ),
           })
         );
-
         setRecords(recordsWithParsedTags);
       } catch (error) {
         console.error("Error fetching recent records:", error);
@@ -179,7 +177,6 @@ export const AttachTagsRecordsList = ({
     fetchRecentRecords();
   }, [projectId]);
 
-  // Perform Full text search
   const performFullTextSearch = useCallback(
     async (searchTerm: string, projectId: string) => {
       if (!searchTerm.trim()) {
@@ -191,14 +188,12 @@ export const AttachTagsRecordsList = ({
 
       try {
         const data = await fullTextSearch(searchTerm, [projectId]);
-
         const resultsWithParsedTags: RecordWithParsedTags[] = data.map(
           (record) => ({
             ...record,
             tags: parseTags(record.tags),
           })
         );
-
         setSearchResults(resultsWithParsedTags);
       } catch (error) {
         console.error("Search error:", error);
@@ -210,26 +205,22 @@ export const AttachTagsRecordsList = ({
     []
   );
 
-  // Handle submit from search bar
   const handleSubmit = async () => {
     await performFullTextSearch(searchTerm, projectId);
   };
 
-  // Clear search results
   const handleClearSearch = () => {
     setSearchTerm("");
     setSearchResults([]);
     setSelectedRecordIds(new Set());
   };
 
-  // Also trigger search on Enter key
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSubmit();
     }
   };
 
-  // Toggle record selection
   const handleRecordToggle = (recordId: number | null) => {
     if (recordId === null) return;
 
@@ -242,7 +233,6 @@ export const AttachTagsRecordsList = ({
     setSelectedRecordIds(newSelected);
   };
 
-  // Attach tags to selected records
   const handleAttachTags = async () => {
     if (selectedRecordIds.size === 0) {
       toast.error("Please select at least one record");
@@ -259,9 +249,7 @@ export const AttachTagsRecordsList = ({
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
 
-      // For each selected record
       selectedRecordIds.forEach((recordId) => {
-        // Attach each selected tag
         selectedTagIds.forEach((tagId) => {
           attachPromises.push(
             attachTagToRecord(Number(projectId), recordId, tagId)
@@ -275,12 +263,10 @@ export const AttachTagsRecordsList = ({
         `Successfully attached ${selectedTagIds.size} tag(s) to ${selectedRecordIds.size} record(s)`
       );
 
-      // Clear selections and refresh records
       setSelectedRecordIds(new Set());
       onClearSelectedTags();
 
-      // Refresh the records list to show updated tags
-      if (searchTerm.trim()) {
+      if (searchResults.length > 0) {
         await performFullTextSearch(searchTerm, projectId);
       } else {
         const recentRecords = await getRecentlyAddedRecords([projectId]);
@@ -302,7 +288,6 @@ export const AttachTagsRecordsList = ({
     }
   };
 
-  // Determine which records to display
   const displayRecords = searchResults.length > 0 ? searchResults : records;
   const isSearching = searchResults.length > 0;
 
@@ -338,7 +323,6 @@ export const AttachTagsRecordsList = ({
             </button>
           )}
         </div>
-        {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
             <span className="text-sm">
@@ -356,7 +340,6 @@ export const AttachTagsRecordsList = ({
         )}
       </div>
 
-      {/* Search Results or Recent Records */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <h3 className="font-bold mb-4">
           {isSearching ? "Search Results" : "Recently Added Records"}

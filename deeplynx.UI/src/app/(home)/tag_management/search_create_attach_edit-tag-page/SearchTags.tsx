@@ -8,7 +8,6 @@ import {
 import toast from "react-hot-toast";
 import { LinkSlashIcon } from "@heroicons/react/24/outline";
 
-// Helper function to parse tags - move this to the top
 export const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
 ): TagResponseDto[] => {
@@ -91,14 +90,12 @@ const SearchTags = ({
     >
       <h3 className="font-bold mb-4">Search Tags</h3>
 
-      {/* Filter tags input */}
       <SimpleFilterInput
         placeholder="Filter tags..."
         value={searchQuery}
         onChange={onSearchChange}
       />
 
-      {/* Display filtered tags - This section now fills available space */}
       <div className="mt-4 flex-1 flex flex-col overflow-hidden">
         {loading && <p>Loading tags ...</p>}
         {error && <p className="text-error flex justify-center">{error}</p>}
@@ -143,7 +140,6 @@ const SearchTags = ({
         )}
       </div>
 
-      {/* Search button - Stays at bottom */}
       {selectedTagIds.size > 0 && (
         <div className="mt-4">
           <button
@@ -165,7 +161,6 @@ const SearchTags = ({
   );
 };
 
-// Recently Added Records Component
 interface SearchTagsRecordsListProps {
   projectId: string;
   selectedTagIds: Set<number>;
@@ -194,7 +189,6 @@ export const SearchTagsRecordsList = ({
     useState<RecordResponseDto | null>(null);
   const [unattachLoading, setUnattachLoading] = useState(false);
 
-  // Toggle record selection
   const handleRecordToggle = (recordId: number | null) => {
     if (recordId === null) return;
 
@@ -207,7 +201,6 @@ export const SearchTagsRecordsList = ({
     setSelectedRecordIds(newSelected);
   };
 
-  // Attach tags to selected records
   const handleAttachTags = async () => {
     if (selectedRecordIds.size === 0) {
       toast.error("Please select at least one record");
@@ -224,9 +217,7 @@ export const SearchTagsRecordsList = ({
     try {
       const attachPromises: Promise<TagResponseDto>[] = [];
 
-      // For each selected record
       selectedRecordIds.forEach((recordId) => {
-        // Attach each selected tag
         selectedTagIds.forEach((tagId) => {
           attachPromises.push(
             attachTagToRecord(Number(projectId), recordId, tagId)
@@ -240,7 +231,6 @@ export const SearchTagsRecordsList = ({
         `Successfully attached ${selectedTagIds.size} tag(s) to ${selectedRecordIds.size} record(s)`
       );
 
-      // Clear selections
       setSelectedRecordIds(new Set());
       onClearSelectedTags();
     } catch (error) {
@@ -257,21 +247,24 @@ export const SearchTagsRecordsList = ({
     toast.success("Search cleared");
   };
 
-  // Add handler for opening the modal
   const handleOpenUnattachModal = (record: RecordResponseDto) => {
     setRecordToUnattach(record);
     setIsModalOpen(true);
   };
 
-  // Add handler for closing the modal
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setRecordToUnattach(null);
   };
 
-  // Implement the unattach logic
   const handleUnattachTags = async () => {
     if (!recordToUnattach || selectedTagIds.size === 0) {
+      return;
+    }
+
+    if (recordToUnattach.id === null) {
+      toast.error("Invalid record ID");
+      handleCloseModal();
       return;
     }
 
@@ -280,7 +273,6 @@ export const SearchTagsRecordsList = ({
     try {
       const unattachPromises: Promise<TagResponseDto>[] = [];
 
-      // Get tags that need to be removed (only the selected tags that exist on the record)
       const tagsToRemove = recordToUnattach.tags
         ?.filter((tag) => tag.id !== null && selectedTagIds.has(tag.id))
         .map((tag) => tag.id) as number[];
@@ -291,7 +283,6 @@ export const SearchTagsRecordsList = ({
         return;
       }
 
-      // Remove each selected tag from the record
       tagsToRemove.forEach((tagId) => {
         unattachPromises.push(
           unAttachTagFromRecord(
@@ -310,10 +301,8 @@ export const SearchTagsRecordsList = ({
         } from "${recordToUnattach.name}"`
       );
 
-      // Close modal
       handleCloseModal();
 
-      // Refresh the search results to show updated tags
       if (onRefreshSearch) {
         await onRefreshSearch();
       }
@@ -335,7 +324,6 @@ export const SearchTagsRecordsList = ({
       <div className="gap-2 mb-4">
         <h3 className="font-bold mb-4">Records with Selected Tags</h3>
 
-        {/* Attach Tags Button */}
         {selectedRecordIds.size > 0 && (
           <div className="mb-4 p-3 bg-base-200 rounded-lg flex items-center justify-between">
             <span className="text-sm">
@@ -353,7 +341,6 @@ export const SearchTagsRecordsList = ({
         )}
       </div>
 
-      {/* Search Results */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {isSearchingByTags && <p className="text-sm">Loading records...</p>}
 
@@ -414,9 +401,8 @@ export const SearchTagsRecordsList = ({
 
                       {record.lastUpdatedAt && (
                         <div className="text-xs text-base-content/60 mt-1">
-                          {`Last Updated: ${new Date(
-                            record.lastUpdatedAt
-                          ).toLocaleDateString()}`}
+                          Last Updated:{" "}
+                          {new Date(record.lastUpdatedAt).toLocaleDateString()}
                         </div>
                       )}
                     </div>
@@ -428,7 +414,6 @@ export const SearchTagsRecordsList = ({
         )}
       </div>
 
-      {/* Clear Search Button - At the bottom */}
       {displayRecords.length > 0 && (
         <div className="mt-4">
           <button
@@ -440,7 +425,6 @@ export const SearchTagsRecordsList = ({
         </div>
       )}
 
-      {/* Unattach Tags Modal */}
       {isModalOpen && recordToUnattach && (
         <div className="modal modal-open">
           <div className="modal-box">
@@ -451,7 +435,6 @@ export const SearchTagsRecordsList = ({
               {recordToUnattach.name}"?
             </p>
 
-            {/* Show which tags will be removed */}
             <div className="mb-4">
               <p className="text-sm font-semibold mb-2">Tags to be removed:</p>
               <div className="flex gap-1 flex-wrap">

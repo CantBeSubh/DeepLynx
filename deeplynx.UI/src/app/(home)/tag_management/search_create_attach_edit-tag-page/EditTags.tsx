@@ -24,10 +24,6 @@ const EditTags = ({
   selectedTagIds,
   setSelectedTagIds,
 }: Props) => {
-  // Get the actual tag objects for the selected IDs
-  const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
-
-  // Remove the search functionality from this component since we're editing
   const handleTagToggle = (tagId: number) => {
     const newSelected = new Set(selectedTagIds);
     if (newSelected.has(tagId)) {
@@ -45,14 +41,12 @@ const EditTags = ({
     >
       <h3 className="font-bold mb-4">Select Tags to Edit</h3>
 
-      {/* Filter tags input */}
       <SimpleFilterInput
         placeholder="Filter tags..."
         value={searchQuery}
         onChange={onSearchChange}
       />
 
-      {/* Display filtered tags */}
       <div className="mt-4 flex-1 flex flex-col overflow-hidden">
         {loading && <p>Loading tags ...</p>}
         {error && <p className="text-error flex justify-center">{error}</p>}
@@ -119,7 +113,6 @@ export const EditTagsNameFields = ({
   const [tagToDelete, setTagToDelete] = useState<TagResponseDto | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Initialize edited names when selected tags change
   React.useEffect(() => {
     const initialNames = new Map<number, string>();
     selectedTags.forEach((tag) => {
@@ -135,7 +128,6 @@ export const EditTagsNameFields = ({
   };
 
   const handleSaveAll = async () => {
-    // Get all tags that have been edited
     const editsToSave = selectedTags.filter((tag) => {
       const newName = editedNames.get(tag.id);
       return newName && newName.trim() && newName !== tag.name;
@@ -146,7 +138,6 @@ export const EditTagsNameFields = ({
       return;
     }
 
-    // Check for empty names
     const hasEmptyName = editsToSave.some((tag) => {
       const newName = editedNames.get(tag.id);
       return !newName || !newName.trim();
@@ -162,7 +153,6 @@ export const EditTagsNameFields = ({
     const failedUpdates: string[] = [];
 
     try {
-      // Update all edited tags
       for (const tag of editsToSave) {
         const newName = editedNames.get(tag.id)!;
         try {
@@ -174,7 +164,6 @@ export const EditTagsNameFields = ({
         }
       }
 
-      // Show results
       if (successfulUpdates.length > 0) {
         toast.success(
           `Successfully updated ${successfulUpdates.length} tag${
@@ -204,19 +193,16 @@ export const EditTagsNameFields = ({
     toast.success("All changes reset");
   };
 
-  // Open delete modal
   const handleOpenDeleteModal = (tag: TagResponseDto) => {
     setTagToDelete(tag);
     setIsDeleteModalOpen(true);
   };
 
-  // Close delete modal
   const handleCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setTagToDelete(null);
   };
 
-  // Delete tag
   const handleDeleteTag = async () => {
     if (!tagToDelete) return;
 
@@ -233,7 +219,6 @@ export const EditTagsNameFields = ({
     }
   };
 
-  // Check if any tag has been edited
   const hasAnyEdits = selectedTags.some((tag) => {
     const editedName = editedNames.get(tag.id);
     return editedName !== tag.name;
@@ -314,7 +299,6 @@ export const EditTagsNameFields = ({
         })}
       </div>
 
-      {/* Action buttons at the bottom */}
       {hasAnyEdits && (
         <div className="mt-4 flex gap-2 justify-end p-3 rounded-lg">
           <button
@@ -341,7 +325,6 @@ export const EditTagsNameFields = ({
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && tagToDelete && (
         <div className="modal modal-open">
           <div className="modal-box">
@@ -350,8 +333,8 @@ export const EditTagsNameFields = ({
               Are you sure you want to delete the tag{" "}
               <span className="font-semibold">"{tagToDelete.name}"</span>?
             </p>
-            <p className="text-sm">
-              This action cannot be undone. The tag will be removed from all
+            <p className="text-sm text-warning">
+              ⚠️ This action cannot be undone. The tag will be removed from all
               records.
             </p>
 

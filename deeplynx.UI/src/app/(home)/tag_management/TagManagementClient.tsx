@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { useLanguage } from "@/app/contexts/Language";
 import {
   getAllTags,
   updateTag,
@@ -58,7 +57,6 @@ const TagManagementClient = ({
   initialProjects,
   initialSelectedProjects,
 }: Props) => {
-  const { t } = useLanguage();
   const [projects] = useState<ProjectResponseDto[]>(initialProjects);
   const [selectedProject, setSelectedProject] = useState<string>(
     initialSelectedProjects?.id?.toString() || ""
@@ -69,7 +67,6 @@ const TagManagementClient = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedTag, setSelectedTag] = useState<TagResponseDto | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
   const [recordsFromTagSearch, setRecordsFromTagSearch] = useState<
     RecordResponseDto[]
@@ -78,39 +75,10 @@ const TagManagementClient = ({
 
   const menuItems = ["Search Tags", "Create Tag", "Attach Tags", "Edit Tags"];
 
-  // Clear selected tags when menu item changes
   useEffect(() => {
     setSelectedTagIds(new Set());
   }, [selectedMenuItem]);
 
-  // Fetches tags when project changes
-  useEffect(() => {
-    const fetchTags = async () => {
-      if (!selectedProject) {
-        setTags([]);
-        setFilteredTags([]);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const allTags = await getAllTags(Number(selectedProject));
-        setTags(allTags);
-        setFilteredTags(allTags);
-      } catch (error) {
-        setError("Failed to fetch tags");
-        console.error("Error fetching tags:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTags();
-  }, [selectedProject]);
-
-  // Create a refetch function
   const refetchTags = useCallback(async () => {
     if (!selectedProject) {
       setTags([]);
@@ -133,7 +101,6 @@ const TagManagementClient = ({
     }
   }, [selectedProject]);
 
-  // Update the existing useEffect to use refetchTags
   useEffect(() => {
     refetchTags();
   }, [refetchTags]);
@@ -142,7 +109,6 @@ const TagManagementClient = ({
     setSelectedProject(newProjectId);
   }, []);
 
-  // Does a client side filter for tags
   useEffect(() => {
     if (!searchQuery.trim()) {
       setFilteredTags(tags);
@@ -156,7 +122,6 @@ const TagManagementClient = ({
     setFilteredTags(filtered);
   }, [searchQuery, tags]);
 
-  // Add the search handler
   const handleSearchByTags = async (tagIds: number[]) => {
     setIsSearchingByTags(true);
     try {
@@ -168,7 +133,6 @@ const TagManagementClient = ({
         return;
       }
 
-      // Parse tags for each record
       const recordsWithParsedTags = records.map(
         (record: RecordResponseDto) => ({
           ...record,
@@ -204,11 +168,9 @@ const TagManagementClient = ({
     }
   };
 
-  // Add handler for updating tags
   const handleUpdateTag = async (tagId: number, newName: string) => {
     try {
       await updateTag(Number(selectedProject), tagId, { name: newName });
-      // Refetch tags to get the updated list
       await refetchTags();
     } catch (error) {
       console.error("Error updating tag:", error);
@@ -216,15 +178,12 @@ const TagManagementClient = ({
     }
   };
 
-  // Add the delete handler
   const handleDeleteTag = async (tagId: number) => {
     try {
       await deleteTag(Number(selectedProject), tagId);
-      // Remove the deleted tag from selected tags
       const newSelected = new Set(selectedTagIds);
       newSelected.delete(tagId);
       setSelectedTagIds(newSelected);
-      // Refetch tags to get the updated list
       await refetchTags();
     } catch (error) {
       console.error("Error deleting tag:", error);
@@ -232,12 +191,10 @@ const TagManagementClient = ({
     }
   };
 
-  // Get the selected tag objects from the selected IDs
   const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
 
   return (
     <div>
-      {/* Header */}
       <div className="items-center bg-base-200/40 pl-12 py-2 pb-4">
         <h1 className="text-2xl font-bold text-info-content">Tag Management</h1>
         <ProjectDropdownSingleSelect
@@ -247,9 +204,7 @@ const TagManagementClient = ({
         />
       </div>
 
-      {/* Content - Always 3 columns */}
       <div className="grid grid-cols-[20%_40%_40%] p-6 transition-all">
-        {/* Menu Column */}
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           <ul>
             {menuItems.map((item) => (
@@ -268,7 +223,6 @@ const TagManagementClient = ({
           </ul>
         </div>
 
-        {/* Middle Column - Main Content */}
         <div className="card shadow-xl rounded-lg p-6 mr-6">
           {selectedMenuItem === "Search Tags" && (
             <SearchTags
@@ -293,75 +247,62 @@ const TagManagementClient = ({
             />
           )}
           {selectedMenuItem === "Attach Tags" && (
-            <div>
-              <AttachTags
-                loading={loading}
-                error={error}
-                filteredTags={filteredTags}
-                tags={tags}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedTagIds={selectedTagIds}
-                setSelectedTagIds={setSelectedTagIds}
-              />
-            </div>
+            <AttachTags
+              loading={loading}
+              error={error}
+              filteredTags={filteredTags}
+              tags={tags}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedTagIds={selectedTagIds}
+              setSelectedTagIds={setSelectedTagIds}
+            />
           )}
           {selectedMenuItem === "Edit Tags" && (
-            <div>
-              <EditTags
-                loading={loading}
-                error={error}
-                filteredTags={filteredTags}
-                tags={tags}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                selectedTagIds={selectedTagIds}
-                setSelectedTagIds={setSelectedTagIds}
-              />
-            </div>
+            <EditTags
+              loading={loading}
+              error={error}
+              filteredTags={filteredTags}
+              tags={tags}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedTagIds={selectedTagIds}
+              setSelectedTagIds={setSelectedTagIds}
+            />
           )}
         </div>
 
-        {/* Right Column - Context-specific content */}
         <div className="card shadow-xl rounded-lg p-6">
           {selectedMenuItem === "Search Tags" && (
-            <div>
-              <SearchTagsRecordsList
-                projectId={selectedProject}
-                selectedTagIds={selectedTagIds}
-                onClearSelectedTags={() => setSelectedTagIds(new Set())}
-                recordsFromTagSearch={recordsFromTagSearch}
-                isSearchingByTags={isSearchingByTags}
-                onClearSearch={handleClearSearch}
-                onRefreshSearch={handleRefreshSearch}
-              />
-            </div>
+            <SearchTagsRecordsList
+              projectId={selectedProject}
+              selectedTagIds={selectedTagIds}
+              onClearSelectedTags={() => setSelectedTagIds(new Set())}
+              recordsFromTagSearch={recordsFromTagSearch}
+              isSearchingByTags={isSearchingByTags}
+              onClearSearch={handleClearSearch}
+              onRefreshSearch={handleRefreshSearch}
+            />
           )}
           {selectedMenuItem === "Create Tag" && (
-            <div>
-              <CreateTagRecordsList
-                projectId={selectedProject}
-                selectedTagIds={selectedTagIds}
-              />
-            </div>
+            <CreateTagRecordsList
+              projectId={selectedProject}
+              selectedTagIds={selectedTagIds}
+            />
           )}
           {selectedMenuItem === "Attach Tags" && (
-            <div>
-              <AttachTagsRecordsList
-                projectId={selectedProject}
-                selectedTagIds={selectedTagIds}
-                onClearSelectedTags={() => setSelectedTagIds(new Set())}
-              />
-            </div>
+            <AttachTagsRecordsList
+              projectId={selectedProject}
+              selectedTagIds={selectedTagIds}
+              onClearSelectedTags={() => setSelectedTagIds(new Set())}
+            />
           )}
           {selectedMenuItem === "Edit Tags" && (
-            <div>
-              <EditTagsNameFields
-                selectedTags={selectedTags}
-                onUpdateTag={handleUpdateTag}
-                onDeleteTag={handleDeleteTag}
-              />
-            </div>
+            <EditTagsNameFields
+              selectedTags={selectedTags}
+              onUpdateTag={handleUpdateTag}
+              onDeleteTag={handleDeleteTag}
+            />
           )}
         </div>
       </div>
