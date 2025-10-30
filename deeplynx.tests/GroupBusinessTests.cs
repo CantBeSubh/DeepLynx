@@ -613,7 +613,126 @@ namespace deeplynx.tests
         }
         
         #endregion
-        
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateGroup_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testGroup = new Group
+            {
+                Name = $"Test Group with User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description with User ID",
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Groups.Add(testGroup);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedGroup = await Context.Groups.FindAsync(testGroup.Id);
+            Assert.NotNull(savedGroup);
+            Assert.Equal(uid, savedGroup.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateGroup_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testGroup = new Group
+            {
+                Name = $"Test Group Navigation {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Navigation Property",
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+                IsArchived = false
+            };
+            
+            Context.Groups.Add(testGroup);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var groupWithUser = await Context.Groups
+                .Include(g => g.LastUpdatedByUser)
+                .FirstAsync(g => g.Id == testGroup.Id);
+            
+            // Assert
+            Assert.NotNull(groupWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", groupWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@test.com", groupWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, groupWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateGroup_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testGroup = new Group
+            {
+                Name = $"Test Group Null User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test with null LastUpdatedBy",
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null,
+                IsArchived = false
+            };
+            
+            // Act
+            Context.Groups.Add(testGroup);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedGroup = await Context.Groups.FindAsync(testGroup.Id);
+            Assert.NotNull(savedGroup);
+            Assert.Null(savedGroup.LastUpdatedBy);
+            
+            var groupWithUser = await Context.Groups
+                .Include(g => g.LastUpdatedByUser)
+                .FirstAsync(g => g.Id == testGroup.Id);
+            
+            Assert.Null(groupWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateGroup_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testGroup = new Group
+            {
+                Name = $"Original Group {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Original Description",
+                OrganizationId = oid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Groups.Add(testGroup);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testGroup.LastUpdatedBy = uid2;
+            testGroup.Description = "Updated Description";
+            testGroup.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Groups.Update(testGroup);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedGroup = await Context.Groups
+                .Include(g => g.LastUpdatedByUser)
+                .FirstAsync(g => g.Id == testGroup.Id);
+            
+            Assert.Equal(uid2, updatedGroup.LastUpdatedBy);
+            Assert.NotNull(updatedGroup.LastUpdatedByUser);
+            Assert.Equal("Test User 2", updatedGroup.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Description", updatedGroup.Description);
+        }
+
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();

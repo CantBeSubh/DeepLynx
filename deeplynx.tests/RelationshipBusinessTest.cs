@@ -32,6 +32,7 @@ namespace deeplynx.tests
         public long dsid;
         public long originClassId;
         public long destinationClassId;
+        public long uid;
 
         public RelationshipBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -756,7 +757,7 @@ namespace deeplynx.tests
                 Description = "Test Description",
                 Uuid = "test-uuid",
                 ProjectId = 3,
-                LastUpdatedBy = "test@example.com",
+                LastUpdatedBy = uid,
                 LastUpdatedAt = now,
                 IsArchived = false,
                 OriginId = 1,
@@ -769,7 +770,7 @@ namespace deeplynx.tests
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("test-uuid", dto.Uuid);
             Assert.Equal(3, dto.ProjectId);
-            Assert.Equal("test@example.com", dto.LastUpdatedBy);
+            Assert.Equal(uid, dto.LastUpdatedBy);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
             Assert.Equal(1, dto.OriginId);
@@ -864,11 +865,155 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
 }
 
 #endregion
+        #region LastUpdatedBy Tests
+
+            [Fact]
+            public async Task CreateRelationship_Success_StoresLastUpdatedByUserId()
+            {
+                // Arrange
+                var testRelationship = new Relationship
+                {
+                    Name = $"Test Relationship with User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                    Description = "Test Description with User ID",
+                    ProjectId = pid,
+                    OriginId = originClassId,
+                    DestinationId = destinationClassId,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid,
+                    IsArchived = false
+                };
+                
+                // Act
+                Context.Relationships.Add(testRelationship);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedRelationship = await Context.Relationships.FindAsync(testRelationship.Id);
+                Assert.NotNull(savedRelationship);
+                Assert.Equal(uid, savedRelationship.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateRelationship_Success_NavigationPropertyLoadsUser()
+            {
+                // Arrange
+                var testRelationship = new Relationship
+                {
+                    Name = $"Test Relationship Navigation {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                    Description = "Test Navigation Property",
+                    ProjectId = pid,
+                    OriginId = originClassId,
+                    DestinationId = destinationClassId,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid,
+                    IsArchived = false
+                };
+                
+                Context.Relationships.Add(testRelationship);
+                await Context.SaveChangesAsync();
+
+                // Act
+                var relationshipWithUser = await Context.Relationships
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRelationship.Id);
+                
+                // Assert
+                Assert.NotNull(relationshipWithUser.LastUpdatedByUser);
+                Assert.Equal("Test User", relationshipWithUser.LastUpdatedByUser.Name);
+                Assert.Equal("test.user@test.com", relationshipWithUser.LastUpdatedByUser.Email);
+                Assert.Equal(uid, relationshipWithUser.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateRelationship_Success_WithNullLastUpdatedBy()
+            {
+                // Arrange
+                var testRelationship = new Relationship
+                {
+                    Name = $"Test Relationship Null User {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                    Description = "Test with null LastUpdatedBy",
+                    ProjectId = pid,
+                    OriginId = originClassId,
+                    DestinationId = destinationClassId,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null,
+                    IsArchived = false
+                };
+                
+                // Act
+                Context.Relationships.Add(testRelationship);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedRelationship = await Context.Relationships.FindAsync(testRelationship.Id);
+                Assert.NotNull(savedRelationship);
+                Assert.Null(savedRelationship.LastUpdatedBy);
+                
+                var relationshipWithUser = await Context.Relationships
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRelationship.Id);
+                
+                Assert.Null(relationshipWithUser.LastUpdatedByUser);
+            }
+
+            [Fact]
+            public async Task UpdateRelationship_Success_UpdatesLastUpdatedByUserId()
+            {
+                // Arrange
+                var testRelationship = new Relationship
+                {
+                    Name = $"Original Relationship {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                    Description = "Original Description",
+                    ProjectId = pid,
+                    OriginId = originClassId,
+                    DestinationId = destinationClassId,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null
+                };
+                Context.Relationships.Add(testRelationship);
+                await Context.SaveChangesAsync();
+
+                // Act
+                testRelationship.LastUpdatedBy = uid;
+                testRelationship.Description = "Updated Description";
+                testRelationship.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                
+                Context.Relationships.Update(testRelationship);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var updatedRelationship = await Context.Relationships
+                    .Include(r => r.LastUpdatedByUser)
+                    .FirstAsync(r => r.Id == testRelationship.Id);
+                
+                Assert.Equal(uid, updatedRelationship.LastUpdatedBy);
+                Assert.NotNull(updatedRelationship.LastUpdatedByUser);
+                Assert.Equal("Test User", updatedRelationship.LastUpdatedByUser.Name);
+                Assert.Equal("Updated Description", updatedRelationship.Description);
+            }
+
+            #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-
-            var project = new Project { Name = "Project 1" };
+            
+            var testUser = new User
+            {
+                Name = "Test User",
+                Email = "test.user@test.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(testUser);
+            await Context.SaveChangesAsync();
+            uid = testUser.Id;
+            
+            var project = new Project
+            {
+                Name = "Project 1",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
+            };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
@@ -877,7 +1022,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "DataSource 1",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
             };
             Context.DataSources.Add(dataSource);
             await Context.SaveChangesAsync();
@@ -887,7 +1033,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Origin Class",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid 
             };
             Context.Classes.Add(originClass);
 
@@ -895,7 +1042,8 @@ public async Task GetRelationshipsByName_InvalidProjectId_ThrowsKeyNotFoundExcep
             {
                 Name = "Destination Class",
                 ProjectId = pid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid 
             };
             Context.Classes.Add(destinationClass);
             await Context.SaveChangesAsync();

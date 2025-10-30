@@ -68,7 +68,8 @@ try
                     "https://*.svc.cluster.local",
                     "http://*.svc.cluster.local",
                     "https://deeplynx.*.inl.gov",  // Matches deeplynx.dev.inl.gov, deeplynx.acc.inl.gov, etc.
-                    "https://deeplynx.inl.gov")
+                    "https://deeplynx.inl.gov",
+                    "https://deeplynx-*.*.inl.gov")  // Matches "deeplynx-thing.domain" namespaces like deeplynx-test.dev
                 .SetIsOriginAllowedToAllowWildcardSubdomains()
                 .AllowAnyMethod()
                 .AllowAnyHeader()
@@ -175,6 +176,7 @@ try
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
     builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
+    
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -199,6 +201,7 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
+    builder.Services.AddTransient<IRolePermissionService, RolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -375,6 +378,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
+    app.UseMiddleware<RoleBasedAuthorizationMiddleware>(); //RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
