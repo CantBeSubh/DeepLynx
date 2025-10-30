@@ -169,7 +169,7 @@ const RecentRecordsCard: React.FC<Props> = ({
         {paginatedRecords.map((record) => (
           <li
             key={record.id}
-            className="border-b border-base-content/30 cursor-pointer hover:bg-base-100/40 p-3 -mx-1 transition-colors"
+            className="border-b border-base-content/40 cursor-pointer hover:bg-base-100/40 p-3 -mx-1 transition-colors"
             onClick={() =>
               router.push(
                 `/record?recordId=${record.id}&projectId=${record.projectId}`
@@ -182,7 +182,7 @@ const RecentRecordsCard: React.FC<Props> = ({
 
             <div className="text-sm text-base-content/60 flex flex-wrap gap-x-4 gap-y-1">
               <span className="flex items-center gap-1">
-                <span>{t.translations.CLASS}:</span>
+                <span>{t.translations.CLASS}: </span>
                 <span className="badge badge-sm badge-secondary">
                   {record.className}
                 </span>

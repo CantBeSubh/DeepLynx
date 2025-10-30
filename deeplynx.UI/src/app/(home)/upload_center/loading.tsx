@@ -66,8 +66,8 @@ export default function Loadingtranslations() {
                             <React.Fragment key={globalIndex}>
                               <tr className="bg-base-200/30 hover:bg-base-200/50 rounded-lg overflow-hidden">
                                 {columns.map((col, i) => (
-                                  
-                                    <><td key={i} className="text-base-content">
+                                  <React.Fragment key={i}>
+                                    <td key={i} className="text-base-content">
                                     <Skeleton
                                       width={100}
                                       baseColor="var(--color-base-200)"
@@ -82,7 +82,8 @@ export default function Loadingtranslations() {
                                         width={100}
                                         baseColor="var(--color-base-200)"
                                         highlightColor="var(--color-base-300)" />
-                                    </td></>
+                                    </td>
+                                  </React.Fragment>
                                 )
                                 )}
                               </tr>

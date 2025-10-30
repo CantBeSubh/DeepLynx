@@ -42,6 +42,7 @@ export default function DataCatalogClient({
   );
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(!!initialSearchTerm);
+
   const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
 
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
@@ -255,7 +256,7 @@ export default function DataCatalogClient({
         <div className="flex gap-4 pr-4">
           <Link
             href="data_catalog/all_records"
-            className="btn btn-outline btn-primary text-dynamic-blue border-dynamic-blue hover:text-base-content hover:bg-dynamic-blue"
+            className="btn btn-outline btn-primary text-dynamic-blue border-dynamic-blue hover:text-white hover:bg-dynamic-blue"
             onClick={() => {
               setShowAll(true);
               setViewMode("list");

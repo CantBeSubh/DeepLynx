@@ -76,7 +76,7 @@ const MemberSettings = ({ className }: ProjectSettingsProps) => {
     <div className="bg-base-100 text-accent-content rounded-xl shadow-md card">
       <div className="card-body">
         <div className="flex justify-between items-start">
-          <h2 className="card-title">{t.translations.MEMBER_MANAGEMENT}</h2>
+          <h2 className="card-title text-base-content">{t.translations.MEMBER_MANAGEMENT}</h2>
           <div className="flex space-x-4">
             <button
               onClick={handleAddButtonClick}
