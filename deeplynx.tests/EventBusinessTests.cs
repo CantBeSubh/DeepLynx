@@ -192,14 +192,14 @@ namespace deeplynx.tests
         public async Task QueryEvents_Success_FilterByLastUpdatedBy()
         {
             // Arrange
-            var queryDto = new EventsQueryRequestDTO { lastUpdatedBy = "user1" };
+            var queryDto = new EventsQueryRequestDTO { lastUpdatedBy = mockUserId };
 
             // Act
             var result = await _eventBusiness.QueryEvents(queryDto);
 
             // Assert
             Assert.Equal(3, result.TotalCount);
-            Assert.All(result.Items, e => Assert.Contains("user1", e.LastUpdatedBy));
+            Assert.All(result.Items, e => Assert.Equal(mockUserId, e.LastUpdatedBy));
         }
 
         [Fact]
