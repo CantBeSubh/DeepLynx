@@ -1,15 +1,16 @@
 # github Sandbox/Test workflow
 name: Build Sandbox/Test
+
 on:
   workflow_dispatch:
-  push:
-    branches: ["sandbox"]
-     inputs:
+    inputs:
       environment:
         description: 'Environment to deploy to'
         required: true
         default: 'sandbox'
 
+  push:
+    branches: ["sandbox"]
 
 jobs:
   build:
