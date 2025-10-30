@@ -7,7 +7,7 @@ public class ProjectResponseDto
     public string? Description { get; set; }
     public string? Abbreviation { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; } = false;
     public long? OrganizationId { get; set; }
 }

@@ -13,7 +13,7 @@ public class SubscriptionResponseDto
    
     public DateTime? LastUpdatedAt { get; set; }
     
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
   
     public bool IsArchived { get; set; } = false;
 }

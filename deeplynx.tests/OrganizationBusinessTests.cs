@@ -573,7 +573,148 @@ namespace deeplynx.tests
         }
         
         #endregion
-        
+        #region OrganizationResponseDto Tests
+
+[Fact]
+public void OrganizationResponseDto_AllProperties_CanBeSetAndRetrieved()
+{
+    // Arrange
+    var now = DateTime.UtcNow;
+    var dto = new OrganizationResponseDto
+    {
+        Id = 1,
+        Name = "Test Organization",
+        Description = "Test Description",
+        LastUpdatedAt = now,
+        LastUpdatedBy = uid,
+        IsArchived = false
+    };
+
+    // Assert
+    Assert.Equal(1, dto.Id);
+    Assert.Equal("Test Organization", dto.Name);
+    Assert.Equal("Test Description", dto.Description);
+    Assert.Equal(now, dto.LastUpdatedAt);
+    Assert.Equal(uid, dto.LastUpdatedBy);
+    Assert.False(dto.IsArchived);
+}
+
+#endregion
+
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateOrganization_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testOrganization = new Organization
+            {
+                Name = "Test Organization LastUpdatedBy",
+                Description = "Test description",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            // Act
+            Context.Organizations.Add(testOrganization);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedOrganization = await Context.Organizations.FindAsync(testOrganization.Id);
+            Assert.NotNull(savedOrganization);
+            Assert.Equal(uid, savedOrganization.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateOrganization_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testOrganization = new Organization
+            {
+                Name = "Test Organization Navigation",
+                Description = "Test description 2",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            Context.Organizations.Add(testOrganization);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var organizationWithUser = await Context.Organizations
+                .Include(o => o.LastUpdatedByUser)
+                .FirstAsync(o => o.Id == testOrganization.Id);
+            
+            // Assert
+            Assert.NotNull(organizationWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", organizationWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@test.com", organizationWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, organizationWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateOrganization_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testOrganization = new Organization
+            {
+                Name = "Test Organization Null",
+                Description = "Test description 3",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.Organizations.Add(testOrganization);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedOrganization = await Context.Organizations.FindAsync(testOrganization.Id);
+            Assert.NotNull(savedOrganization);
+            Assert.Null(savedOrganization.LastUpdatedBy);
+            
+            var organizationWithUser = await Context.Organizations
+                .Include(o => o.LastUpdatedByUser)
+                .FirstAsync(o => o.Id == testOrganization.Id);
+            
+            Assert.Null(organizationWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateOrganization_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testOrganization = new Organization
+            {
+                Name = "Test Organization Update",
+                Description = "Test description 4",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Organizations.Add(testOrganization);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testOrganization.LastUpdatedBy = uid;
+            testOrganization.Name = "Updated Organization Name";
+            testOrganization.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Organizations.Update(testOrganization);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedOrganization = await Context.Organizations
+                .Include(o => o.LastUpdatedByUser)
+                .FirstAsync(o => o.Id == testOrganization.Id);
+            
+            Assert.Equal(uid, updatedOrganization.LastUpdatedBy);
+            Assert.NotNull(updatedOrganization.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedOrganization.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Organization Name", updatedOrganization.Name);
+        }
+
+        #endregion
+
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
@@ -583,6 +724,7 @@ namespace deeplynx.tests
                 Name = "Test Organization",
                 Description = "Test org for unit tests",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = false
             };
             var archivedOrg = new Organization
@@ -590,6 +732,7 @@ namespace deeplynx.tests
                 Name = "Archived Organization",
                 Description = "Archived org for tests",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = true
             };
             Context.Organizations.AddRange(testOrg, archivedOrg);
