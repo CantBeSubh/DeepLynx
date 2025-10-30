@@ -4,13 +4,16 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { getAllTags } from "@/app/lib/tag_services.client";
 import { ProjectResponseDto, TagResponseDto } from "../types/responseDTOs";
+import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
 import SearchTags, {
   SearchTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/SearchTags";
 import CreateTag, {
   CreateTagRecordsList,
 } from "./search_create_attach_edit-tag-page/CreateTag";
-import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
+import AttachTags, {
+  AttachTagsRecordsList,
+} from "./search_create_attach_edit-tag-page/AttachTags";
 
 interface Props {
   initialProjects: ProjectResponseDto[];
@@ -167,8 +170,16 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Attach Tags" && (
             <div>
-              <h3 className="font-bold mb-4">Attach Tags</h3>
-              {/* Attach Tags content */}
+              <AttachTags
+                loading={loading}
+                error={error}
+                filteredTags={filteredTags}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+              />
             </div>
           )}
           {selectedMenuItem === "Edit Tags" && (
@@ -200,8 +211,11 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Attach Tags" && (
             <div>
-              <h3 className="font-bold mb-4">Selected Records</h3>
-              {/* Selected records to attach tags to */}
+              <AttachTagsRecordsList
+                projectId={selectedProject}
+                selectedTagIds={selectedTagIds}
+                onClearSelectedTags={() => setSelectedTagIds(new Set())}
+              />
             </div>
           )}
           {selectedMenuItem === "Edit Tags" && (
