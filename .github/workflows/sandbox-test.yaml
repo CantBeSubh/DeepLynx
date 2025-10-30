@@ -68,7 +68,7 @@ jobs:
             --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
             --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
             --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION"
-
+            .
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
             --file Dockerfiles/server/Dockerfile.public \
