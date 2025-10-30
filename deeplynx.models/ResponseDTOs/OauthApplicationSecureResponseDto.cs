@@ -10,6 +10,6 @@ public class OauthApplicationSecureResponseDto
     [Column("client_id")]
     public string ClientId { get; set; }
     
-    [Column("client_secret_hash")]
-    public string ClientSecretHash { get; set; }
+    [Column("client_secret_raw")]
+    public string ClientSecretRaw { get; set; }
 }

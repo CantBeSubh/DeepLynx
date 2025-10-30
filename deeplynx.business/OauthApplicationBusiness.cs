@@ -124,7 +124,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         {
             Name = application.Name,
             ClientId = application.ClientId,
-            ClientSecretHash = clientSecret,
+            ClientSecretRaw = clientSecret,
         };
     }
 
