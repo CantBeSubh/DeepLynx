@@ -269,7 +269,7 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.Organization).WithMany(p => p.Projects)
                 .HasForeignKey(p => p.OrganizationId)
                 .IsRequired()
-                .OnDelete(DeleteBehavior.SetNull)
+                .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("projects_organization_id_fkey");
         });
 

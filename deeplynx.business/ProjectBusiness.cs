@@ -163,6 +163,9 @@ public class ProjectBusiness : IProjectBusiness
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
 
+        //Ensure org exists and is active
+        await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId);
+
         var project = new Project
         {
             Name = dto.Name,
