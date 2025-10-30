@@ -103,3 +103,25 @@ export async function createRecord(
     throw error;
   }
 }
+
+export async function getRecordsByTags(
+  projectId: number,
+  tagIds: number[],
+  hideArchived: boolean = true
+) {
+  try {
+    const params = new URLSearchParams();
+    
+    tagIds.forEach((tagId) => params.append("tagIds", tagId.toString()));
+    
+    params.append("hideArchived", hideArchived.toString());
+    
+    const res = await api.get(
+      `/projects/${projectId}/records/GetRecordsByTags?${params.toString()}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error fetching records by tags:", error);
+    throw error;
+  }
+}
