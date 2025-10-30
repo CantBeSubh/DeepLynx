@@ -67,7 +67,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
             --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
             --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION"
+            --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
             .
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
@@ -82,12 +82,14 @@ jobs:
             --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
             --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
             --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
-            --build-arg HOSTED_LINK="$HOSTED_LINK" .
+            --build-arg HOSTED_LINK="$HOSTED_LINK" \
+            .
 
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-docs-${{ github.run_number }}" \
             --file Dockerfiles/docs/Dockerfile.public \
-            --build-arg HOSTED_LINK="$HOSTED_LINK" .
+            --build-arg HOSTED_LINK="$HOSTED_LINK" \
+            .
 
   kubernetes:
     needs: build
