@@ -35,3 +35,23 @@ export async function createTag(projectId: number, obj: {
         throw error;
     }
 }
+
+export const updateTag = async (
+  projectId: number,
+  tagId: number,
+  obj: { name: string }
+): Promise<TagResponseDto> => {
+  try {
+    const res = await api.put(
+      `/projects/${projectId}/tags/UpdateTag/${tagId}`,
+      obj,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error updating tag:", error);
+    throw error;
+  }
+};

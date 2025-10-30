@@ -1,13 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState } from "react";
 import SimpleFilterInput from "../../components/SimpleFilterComponent";
 import { RecordResponseDto, TagResponseDto } from "../../types/responseDTOs";
-import { FileViewerTableRow } from "../../types/types";
-import { fullTextSearch } from "@/app/lib/query_services.client";
 import {
   attachTagToRecord,
   unAttachTagFromRecord,
 } from "@/app/lib/record_services.client";
-import { getRecentlyAddedRecords } from "@/app/lib/user_services.client";
 import toast from "react-hot-toast";
 import { LinkSlashIcon } from "@heroicons/react/24/outline";
 

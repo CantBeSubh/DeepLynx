@@ -2,13 +2,15 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { getAllTags } from "@/app/lib/tag_services.client";
+import { getAllTags, updateTag } from "@/app/lib/tag_services.client";
 import {
   ProjectResponseDto,
   RecordResponseDto,
   TagResponseDto,
 } from "../types/responseDTOs";
 import ProjectDropdownSingleSelect from "../components/ProjectDropdownSingleSelect";
+import { getRecordsByTags } from "@/app/lib/record_services.client";
+import toast from "react-hot-toast";
 import SearchTags, {
   SearchTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/SearchTags";
@@ -18,8 +20,9 @@ import CreateTag, {
 import AttachTags, {
   AttachTagsRecordsList,
 } from "./search_create_attach_edit-tag-page/AttachTags";
-import { getRecordsByTags } from "@/app/lib/record_services.client";
-import toast from "react-hot-toast";
+import EditTags, {
+  EditTagsNameFields,
+} from "./search_create_attach_edit-tag-page/EditTags";
 
 const parseTags = (
   tags: string | TagResponseDto[] | undefined | null
@@ -192,6 +195,21 @@ const TagManagementClient = ({
     }
   };
 
+  // Add handler for updating tags
+  const handleUpdateTag = async (tagId: number, newName: string) => {
+    try {
+      await updateTag(Number(selectedProject), tagId, { name: newName });
+      // Refetch tags to get the updated list
+      await refetchTags();
+    } catch (error) {
+      console.error("Error updating tag:", error);
+      throw error;
+    }
+  };
+
+  // Get the selected tag objects from the selected IDs
+  const selectedTags = tags.filter((tag) => selectedTagIds.has(tag.id));
+
   return (
     <div>
       {/* Header */}
@@ -265,8 +283,18 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Edit Tags" && (
             <div>
-              <h3 className="font-bold mb-4">Edit Tags</h3>
-              {/* Edit Tags content */}
+              <EditTags
+                loading={loading}
+                error={error}
+                filteredTags={filteredTags}
+                tags={tags}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedTagIds={selectedTagIds}
+                setSelectedTagIds={setSelectedTagIds}
+                projectId={selectedProject}
+                onSearchByTags={handleSearchByTags}
+              />
             </div>
           )}
         </div>
@@ -305,8 +333,10 @@ const TagManagementClient = ({
           )}
           {selectedMenuItem === "Edit Tags" && (
             <div>
-              <h3 className="font-bold mb-4">Edit History</h3>
-              {/* Edit history or preview */}
+              <EditTagsNameFields
+                selectedTags={selectedTags}
+                onUpdateTag={handleUpdateTag}
+              />
             </div>
           )}
         </div>
