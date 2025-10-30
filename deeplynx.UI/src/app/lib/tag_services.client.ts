@@ -55,3 +55,18 @@ export const updateTag = async (
     throw error;
   }
 };
+
+export const deleteTag = async (
+  projectId: number,
+  tagId: number
+): Promise<{ message: string }> => {
+  try {
+    const res = await api.delete(
+      `/projects/${projectId}/tags/DeleteTag/${tagId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting tag:", error);
+    throw error;
+  }
+};

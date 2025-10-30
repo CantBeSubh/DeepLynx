@@ -116,7 +116,7 @@ export const EditTagsNameFields = ({
   const [editedNames, setEditedNames] = useState<Map<number, string>>(
     new Map()
   );
-  const [savingTagId, setSavingTagId] = useState<number | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
 
   // Initialize edited names when selected tags change
   React.useEffect(() => {
@@ -133,40 +133,81 @@ export const EditTagsNameFields = ({
     setEditedNames(newMap);
   };
 
-  const handleSaveTag = async (tag: TagResponseDto) => {
-    const newName = editedNames.get(tag.id);
+  const handleSaveAll = async () => {
+    // Get all tags that have been edited
+    const editsToSave = selectedTags.filter((tag) => {
+      const newName = editedNames.get(tag.id);
+      return newName && newName.trim() && newName !== tag.name;
+    });
 
-    if (!newName || !newName.trim()) {
-      toast.error("Tag name cannot be empty");
-      return;
-    }
-
-    if (newName === tag.name) {
+    if (editsToSave.length === 0) {
       toast.error("No changes to save");
       return;
     }
 
-    setSavingTagId(tag.id);
+    // Check for empty names
+    const hasEmptyName = editsToSave.some((tag) => {
+      const newName = editedNames.get(tag.id);
+      return !newName || !newName.trim();
+    });
+
+    if (hasEmptyName) {
+      toast.error("Tag names cannot be empty");
+      return;
+    }
+
+    setSavingAll(true);
+    const successfulUpdates: string[] = [];
+    const failedUpdates: string[] = [];
+
     try {
-      await onUpdateTag(tag.id, newName);
-      toast.success(`Tag "${tag.name}" updated to "${newName}"`);
-    } catch (error) {
-      console.error("Error updating tag:", error);
-      toast.error("Failed to update tag");
-      // Reset to original name on error
-      const newMap = new Map(editedNames);
-      newMap.set(tag.id, tag.name);
-      setEditedNames(newMap);
+      // Update all edited tags
+      for (const tag of editsToSave) {
+        const newName = editedNames.get(tag.id)!;
+        try {
+          await onUpdateTag(tag.id, newName);
+          successfulUpdates.push(`"${tag.name}" → "${newName}"`);
+        } catch (error) {
+          failedUpdates.push(tag.name);
+          console.error(`Failed to update tag ${tag.name}:`, error);
+        }
+      }
+
+      // Show results
+      if (successfulUpdates.length > 0) {
+        toast.success(
+          `Successfully updated ${successfulUpdates.length} tag${
+            successfulUpdates.length !== 1 ? "s" : ""
+          }`
+        );
+      }
+
+      if (failedUpdates.length > 0) {
+        toast.error(
+          `Failed to update ${failedUpdates.length} tag${
+            failedUpdates.length !== 1 ? "s" : ""
+          }: ${failedUpdates.join(", ")}`
+        );
+      }
     } finally {
-      setSavingTagId(null);
+      setSavingAll(false);
     }
   };
 
-  const handleReset = (tag: TagResponseDto) => {
-    const newMap = new Map(editedNames);
-    newMap.set(tag.id, tag.name);
-    setEditedNames(newMap);
+  const handleResetAll = () => {
+    const initialNames = new Map<number, string>();
+    selectedTags.forEach((tag) => {
+      initialNames.set(tag.id, tag.name);
+    });
+    setEditedNames(initialNames);
+    toast.error("All changes reset");
   };
+
+  // Check if any tag has been edited
+  const hasAnyEdits = selectedTags.some((tag) => {
+    const editedName = editedNames.get(tag.id);
+    return editedName !== tag.name;
+  });
 
   if (selectedTags.length === 0) {
     return (
@@ -186,24 +227,29 @@ export const EditTagsNameFields = ({
       className="w-[85%] mx-auto flex flex-col"
       style={{ height: "calc(90vh - 200px)" }}
     >
-      <h3 className="font-bold mb-4">Edit Tag Names</h3>
-      <p className="text-sm text-base-content/70 mb-4">
-        {selectedTags.length} tag{selectedTags.length !== 1 ? "s" : ""} selected
-      </p>
+      <div className="mb-4">
+        <h3 className="font-bold mb-2">Edit Tag Names</h3>
+        <p className="text-sm text-base-content/70">
+          {selectedTags.length} tag{selectedTags.length !== 1 ? "s" : ""}{" "}
+          selected
+        </p>
+      </div>
 
       <div className="space-y-4 overflow-y-auto flex-1">
         {selectedTags.map((tag) => {
           const isEdited = editedNames.get(tag.id) !== tag.name;
-          const isSaving = savingTagId === tag.id;
 
           return (
             <div
               key={tag.id}
-              className="card bg-base-200 shadow-sm p-4 space-y-3"
+              className={"card bg-base-200/50 shadow-sm p-4 space-y-3"}
             >
               <div className="flex items-center gap-2">
                 <span className="text-xs text-base-content/60">Original:</span>
                 <span className="badge badge-secondary">{tag.name}</span>
+                {isEdited && (
+                  <span className="badge badge-primary badge-sm">Modified</span>
+                )}
               </div>
 
               <div className="form-control">
@@ -215,38 +261,41 @@ export const EditTagsNameFields = ({
                   className="input input-bordered w-full"
                   value={editedNames.get(tag.id) || ""}
                   onChange={(e) => handleNameChange(tag.id, e.target.value)}
-                  disabled={isSaving}
+                  disabled={savingAll}
                   placeholder="Enter new tag name"
                 />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <button
-                  className="btn btn-ghost btn-sm"
-                  onClick={() => handleReset(tag)}
-                  disabled={!isEdited || isSaving}
-                >
-                  Reset
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleSaveTag(tag)}
-                  disabled={!isEdited || isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <span className="loading loading-spinner loading-xs"></span>
-                      Saving...
-                    </>
-                  ) : (
-                    "Save Changes"
-                  )}
-                </button>
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Action buttons at the bottom */}
+      {hasAnyEdits && (
+        <div className="mt-4 flex gap-2 justify-end p-3 rounded-lg">
+          <button
+            className="btn btn-ghost"
+            onClick={handleResetAll}
+            disabled={savingAll}
+          >
+            Reset All
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleSaveAll}
+            disabled={savingAll}
+          >
+            {savingAll ? (
+              <>
+                <span className="loading loading-spinner loading-sm"></span>
+                Saving Changes...
+              </>
+            ) : (
+              "Save All Changes"
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
