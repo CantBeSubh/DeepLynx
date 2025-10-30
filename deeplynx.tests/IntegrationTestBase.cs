@@ -113,8 +113,6 @@ public class IntegrationTestBase : IAsyncLifetime
     {
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
-        var datasources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(datasources);
         var classes = await Context.Classes.ToListAsync();
         Context.Classes.RemoveRange(classes);
         var records = await Context.Records.ToListAsync();
@@ -137,6 +135,10 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Events.RemoveRange(events);
         var permissions = await Context.Permissions.ToListAsync();
         Context.Permissions.RemoveRange(permissions);
+        var projectMembers = await Context.ProjectMembers.ToListAsync();
+        Context.ProjectMembers.RemoveRange(projectMembers);
+        var roles = await Context.Roles.ToListAsync();
+        Context.Roles.RemoveRange(roles);
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }
