@@ -110,4 +110,10 @@ public partial class User
     
     [InverseProperty("LastUpdatedByUser")]
     public virtual ICollection<Action> LastUpdatedActions { get; set; } = new List<Action>();
+    
+    [InverseProperty("User")]
+    public virtual ICollection<OauthToken> OauthTokens { get; set; } = new List<OauthToken>();
+    
+    [InverseProperty("LastUpdatedByUser")]
+    public virtual ICollection<OauthApplication> UpdatedOauthApplications { get; set; } = new List<OauthApplication>();
 }
