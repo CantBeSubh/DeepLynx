@@ -25,7 +25,7 @@ jobs:
         env:
           ACR_SP_USER: ${{ secrets.CI_SP_USER }}
           ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
-          ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
+          ACR_REGISTRY: gvadecr
           ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
           ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
           ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
