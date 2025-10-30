@@ -158,6 +158,7 @@ const TagManagementClient = ({
               onSearchChange={setSearchQuery}
               selectedTagIds={selectedTagIds}
               setSelectedTagIds={setSelectedTagIds}
+              projectId={selectedProject}
             />
           )}
           {selectedMenuItem === "Create Tag" && (

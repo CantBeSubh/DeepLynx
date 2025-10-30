@@ -46,6 +46,7 @@ interface Props {
   onSearchChange: (query: string) => void;
   selectedTagIds: Set<number>;
   setSelectedTagIds: React.Dispatch<React.SetStateAction<Set<number>>>;
+  projectId: string;
 }
 
 const SearchTags = ({
@@ -57,7 +58,10 @@ const SearchTags = ({
   onSearchChange,
   selectedTagIds,
   setSelectedTagIds,
+  projectId,
 }: Props) => {
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const handleTagToggle = (tagId: number) => {
     const newSelected = new Set(selectedTagIds);
     if (newSelected.has(tagId)) {
@@ -67,15 +71,41 @@ const SearchTags = ({
     }
     setSelectedTagIds(newSelected);
   };
+
+  const handleSearchByTags = async () => {
+    if (selectedTagIds.size === 0) {
+      toast.error("Please select at least one tag to search");
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      // We'll implement this in the next step
+      toast.success("Searching for records with selected tags...");
+    } catch (error) {
+      console.error("Error searching by tags:", error);
+      toast.error("Failed to search records");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
   return (
-    <div>
+    <div
+      className="w-[85%] mx-auto flex flex-col"
+      style={{ height: "calc(90vh - 200px)" }}
+    >
       <h3 className="font-bold mb-4">Search Tags</h3>
+
+      {/* Filter tags input */}
       <SimpleFilterInput
         placeholder="Filter tags..."
         value={searchQuery}
         onChange={onSearchChange}
       />
-      <div className="mt-4">
+
+      {/* Display filtered tags - This section now fills available space */}
+      <div className="mt-4 flex-1 flex flex-col overflow-hidden">
         {loading && <p>Loading tags ...</p>}
         {error && <p className="text-error flex justify-center">{error}</p>}
         {!loading && filteredTags.length === 0 && tags.length === 0 && (
@@ -85,15 +115,22 @@ const SearchTags = ({
           <p className="text-base-300">No tags match your search</p>
         )}
         {!loading && filteredTags.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">
-              Tags ({filteredTags.length}):
-            </p>
-            <ul className="space-y-1">
+          <div className="space-y-2 flex-1 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-2">
+              <p className="text-sm font-semibold">
+                Tags ({filteredTags.length}):
+              </p>
+              {selectedTagIds.size > 0 && (
+                <span className="text-xs text-base-content/70">
+                  {selectedTagIds.size} selected
+                </span>
+              )}
+            </div>
+            <ul className="space-y-1 flex-1 overflow-y-auto">
               {filteredTags.map((tag, index) => (
                 <li
                   key={tag.id || index}
-                  className="px-3 py-1"
+                  className="px-3 py-1 hover:bg-base-200 rounded cursor-pointer"
                   onClick={() => handleTagToggle(tag.id)}
                 >
                   <input
@@ -111,6 +148,25 @@ const SearchTags = ({
           </div>
         )}
       </div>
+
+      {/* Search button - Stays at bottom */}
+      {selectedTagIds.size > 0 && (
+        <div className="mt-4">
+          <button
+            className="btn btn-primary w-full"
+            onClick={handleSearchByTags}
+            disabled={searchLoading}
+          >
+            {searchLoading ? (
+              <span className="loading loading-spinner loading-sm"></span>
+            ) : (
+              `Search Records with ${selectedTagIds.size} Tag${
+                selectedTagIds.size > 1 ? "s" : ""
+              }`
+            )}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
