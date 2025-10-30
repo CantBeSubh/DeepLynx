@@ -22,6 +22,27 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Debug Dockerfile Build
+        env:
+          ACR_SP_USER: ${{ secrets.CI_SP_USER }}
+          ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
+          ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
+          ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
+          ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
+          ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
+          GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
+          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
+          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
+          OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
+          JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+          REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
+          SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+          DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
+          HOSTED_LINK: ${{ vars.HOSTED_LINK }}
         run: |
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:debug-env-${GITHUB_RUN_NUMBER}" \
