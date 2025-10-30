@@ -33,14 +33,6 @@ export const parseTags = (
   return [];
 };
 
-// Create a type that represents a record with parsed tags - move this to the top
-type RecordWithParsedTags = Omit<
-  RecordResponseDto | FileViewerTableRow,
-  "tags"
-> & {
-  tags: TagResponseDto[];
-};
-
 interface Props {
   loading: boolean;
   error: string | null;
@@ -325,7 +317,6 @@ export const SearchTagsRecordsList = ({
       handleCloseModal();
 
       // Refresh the search results to show updated tags
-      // We need to add a callback prop for this
       if (onRefreshSearch) {
         await onRefreshSearch();
       }
@@ -426,7 +417,9 @@ export const SearchTagsRecordsList = ({
 
                       {record.lastUpdatedAt && (
                         <div className="text-xs text-base-content/60 mt-1">
-                          {new Date(record.lastUpdatedAt).toLocaleDateString()}
+                          {`Last Updated: ${new Date(
+                            record.lastUpdatedAt
+                          ).toLocaleDateString()}`}
                         </div>
                       )}
                     </div>
