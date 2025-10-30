@@ -21,74 +21,94 @@ jobs:
         uses: actions/checkout@v3
 
       # Builds the required image
-      - shell: bash
-        name: Container Build
-        env:
-          ACR_SP_USER: ${{ secrets.CI_SP_USER }}
-          ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
-          ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
-          ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
-          ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
-          ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
-          GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
-          OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
-          OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
-          OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
-          JWT_ISSUER: ${{vars.JWT_ISSUER}}
-          JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
-          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
-          REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
-          SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
-          BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
-          DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
-          HOSTED_LINK: ${{ vars.HOSTED_LINK }}
-        run: |
-          cd "$GITHUB_WORKSPACE"
+# Builds the required image with debug output
+- shell: bash
+  name: Container Build (Debug)
+  env:
+    ACR_SP_USER: ${{ secrets.CI_SP_USER }}
+    ACR_SP_PASSWORD: ${{ secrets.CI_SP_PASSWORD }}
+    ACR_REGISTRY: ${{ secrets.CI_REGISTRY }}
+    ACR_PATH: ${{ secrets.CI_REGISTRY_PATH }}
+    ACR_SP_TENANT: ${{ secrets.CI_SP_TENANT }}
+    ACR_SUBSCRIPTION: ${{ secrets.CI_ACR_SUBSCRIPTION }}
+    GITHUB_RUN_NUMBER: ${{ github.RUN_NUMBER }}
+    OKTA_CLIENT_ID: ${{ vars.OKTA_CLIENT_ID }}
+    OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
+    OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
+    JWT_ISSUER: ${{ vars.JWT_ISSUER }}
+    JWT_AUDIENCE: ${{ vars.JWT_AUDIENCE }}
+    AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+    NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+    NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+    REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
+    SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
+    BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
+    DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
+    HOSTED_LINK: ${{ vars.HOSTED_LINK }}
+  run: |
+    set -e
 
-          az cloud set --name AzureUSGovernment
+    echo "🔍 Debugging environment variables (non-sensitive):"
+    echo "GITHUB_RUN_NUMBER=$GITHUB_RUN_NUMBER"
+    echo "OKTA_CLIENT_ID=$OKTA_CLIENT_ID"
+    echo "OKTA_ISSUER=$OKTA_ISSUER"
+    echo "JWT_ISSUER=$JWT_ISSUER"
+    echo "JWT_AUDIENCE=$JWT_AUDIENCE"
+    echo "NEXTAUTH_URL=$NEXTAUTH_URL"
+    echo "REDIRECT_LINK=$REDIRECT_LINK"
+    echo "BACKEND_BASE_URL=$BACKEND_BASE_URL"
+    echo "DISABLE_FRONTEND_AUTHENTICATION=$DISABLE_FRONTEND_AUTHENTICATION"
+    echo "HOSTED_LINK=$HOSTED_LINK"
+    echo "✅ Environment variables loaded."
 
-          az login --service-principal \
-            -u "$ACR_SP_USER" \
-            -p "$ACR_SP_PASSWORD" \
-            --tenant "$ACR_SP_TENANT"
+    cd "$GITHUB_WORKSPACE"
 
-          az account set --subscription "$ACR_SUBSCRIPTION"
+    az cloud set --name AzureUSGovernment
 
-          az acr build --registry "$ACR_REGISTRY" \
-            --image "$ACR_PATH:deeplynx-ui-${{ github.run_number }}" \
-            --file Dockerfiles/ui/Dockerfile.public \
-            --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
-            --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
-            --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
-            --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
-            --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
-            --build-arg AUTH_SECRET="$AUTH_SECRET" \
-            --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-            --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
-            --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" .
+    az login --service-principal \
+      -u "$ACR_SP_USER" \
+      -p "$ACR_SP_PASSWORD" \
+      --tenant "$ACR_SP_TENANT"
 
-          az acr build --registry "$ACR_REGISTRY" \
-            --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
-            --file Dockerfiles/server/Dockerfile.public \
-            --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
-            --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
-            --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
-            --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
-            --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
-            --build-arg AUTH_SECRET="$AUTH_SECRET" \
-            --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
-            --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
-            --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
-            --build-arg HOSTED_LINK="$HOSTED_LINK" .
+    az account set --subscription "$ACR_SUBSCRIPTION"
 
-          az acr build --registry "$ACR_REGISTRY" \
-            --image "$ACR_PATH:deeplynx-docs-${{ github.run_number }}" \
-            --file Dockerfiles/docs/Dockerfile.public \
-            --build-arg HOSTED_LINK="$HOSTED_LINK" .
+    echo "🚀 Starting ACR build for UI..."
+    az acr build --registry "$ACR_REGISTRY" \
+      --image "$ACR_PATH:deeplynx-ui-${{ github.run_number }}" \
+      --file Dockerfiles/ui/Dockerfile.public \
+      --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
+      --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
+      --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
+      --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
+      --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
+      --build-arg AUTH_SECRET="$AUTH_SECRET" \
+      --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+      --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
+      --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
+      --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" .
+
+    echo "🚀 Starting ACR build for Server..."
+    az acr build --registry "$ACR_REGISTRY" \
+      --image "$ACR_PATH:deeplynx-server-${{ github.run_number }}" \
+      --file Dockerfiles/server/Dockerfile.public \
+      --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
+      --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
+      --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
+      --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
+      --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
+      --build-arg AUTH_SECRET="$AUTH_SECRET" \
+      --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+      --build-arg BACKEND_BASE_URL="$BACKEND_BASE_URL" \
+      --build-arg SERVICE_TOKEN="$SERVICE_TOKEN" \
+      --build-arg DISABLE_FRONTEND_AUTHENTICATION="$DISABLE_FRONTEND_AUTHENTICATION" \
+      --build-arg HOSTED_LINK="$HOSTED_LINK" .
+
+    echo "🚀 Starting ACR build for Docs..."
+    az acr build --registry "$ACR_REGISTRY" \
+      --image "$ACR_PATH:deeplynx-docs-${{ github.run_number }}" \
+      --file Dockerfiles/docs/Dockerfile.public \
+      --build-arg HOSTED_LINK="$HOSTED_LINK" .
+
 
   kubernetes:
     needs: build
