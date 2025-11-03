@@ -25,8 +25,13 @@ public partial class OauthApplication
     [Column("client_secret_hash")]
     public string ClientSecretHash { get; set; }
     
-    [Column("redirect_uris", TypeName = "jsonb")]
-    public List<string> RedirectUris { get; set; } = new();
+    // used for oauth redirect
+    [Column("callback_url")]
+    public string CallbackUrl { get; set; } = null!;
+    
+    // used for any frontend/api redirect for configurable DL ecosystem apps
+    [Column("base_url")]
+    public string? BaseUrl { get; set; } = null!;
     
     [Column("app_owner_email")]
     public string? AppOwnerEmail { get; set; } = null!;
