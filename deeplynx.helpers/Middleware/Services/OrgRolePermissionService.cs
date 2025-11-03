@@ -5,35 +5,35 @@ using Microsoft.Extensions.Logging;
 namespace deeplynx.helpers;
 
 //Keeping this interface in the same file as the service
-public interface IProjectRolePermissionService
+public interface IOrgRolePermissionService
 { 
-    Task<bool> UserHasPermissionInProjectAsync(long userId, long projectId, string action, string resource);
+    Task<bool> PermissionInOrg(long userId, long orgId, string action, string resource);
 }
 
-public class ProjectRolePermissionService : IProjectRolePermissionService
+public class OrgRolePermissionService : IOrgRolePermissionService
 {
     private readonly DeeplynxContext _dbContext;
-    private readonly ILogger<ProjectRolePermissionService> _logger;
+    private readonly ILogger<OrgRolePermissionService> _logger;
 
-    public ProjectRolePermissionService(
+    public OrgRolePermissionService(
         DeeplynxContext dbContext, 
-        ILogger<ProjectRolePermissionService> logger)
+        ILogger<OrgRolePermissionService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
     }
 
-    public async Task<bool> UserHasPermissionInProjectAsync(
+    public async Task<bool> PermissionInOrg(
         long userId, 
-        long projectId, 
+        long orgId, 
         string action, 
         string resource)
     {
         _logger.LogInformation(
-            "Checking permission - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
-            userId, projectId, action, resource);
+            "Checking permission - User: {UserId}, Organization: {OrgId}, Action: {Action}, Resource: {Resource}",
+            userId, orgId, action, resource);
         
-        //check for whether a user has permission to an action/resource within a project through group membership
+        //check for whether a user has permission to an action/resource within a organization through group membership
         var hasPermission = _dbContext.Database
             .SqlQuery<bool>($@"
                SELECT EXISTS (
@@ -46,7 +46,7 @@ public class ProjectRolePermissionService : IProjectRolePermissionService
                     LEFT JOIN deeplynx.role_permissions rp ON rp.role_id = pm.role_id
                     LEFT JOIN deeplynx.permissions perm ON rp.permission_id = perm.id
                     WHERE u.id = {userId}
-                      AND pm.project_id = {projectId}
+                      AND pm.project_id = {orgId}
                       AND perm.resource = {resource}
                       AND perm.action = {action}
                       AND r.is_archived = false
@@ -58,14 +58,14 @@ public class ProjectRolePermissionService : IProjectRolePermissionService
         if (hasPermission)
         {
             _logger.LogInformation(
-                "Permission granted (group) - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
-                userId, projectId, action, resource);
+                "Permission granted (group) - User: {UserId}, Organization: {OrgId}, Action: {Action}, Resource: {Resource}",
+                userId, orgId, action, resource);
         }
         else
         {
             _logger.LogWarning(
-                "Permission denied - User: {UserId}, Project: {ProjectId}, Action: {Action}, Resource: {Resource}",
-                userId, projectId, action, resource);
+                "Permission denied - User: {UserId}, Organization: {OrgId}, Action: {Action}, Resource: {Resource}",
+                userId, orgId, action, resource);
         }
 
         return hasPermission;

@@ -1,6 +1,4 @@
-using System.Security.Claims;
 using deeplynx.helpers.Context;
-using deeplynx.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -86,7 +84,7 @@ public class AuthInProjectMiddleware
         foreach (var authAttr in authAttributes)
         {
             // Check if user's roles in this project have the required permission
-            var hasPermission = await rolePermissionService.UserHasPermissionInProjectAsync(
+            var hasPermission = await rolePermissionService.PermissionInProject(
                 userId,
                 projectId,
                 authAttr.Action,

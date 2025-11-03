@@ -203,6 +203,7 @@ try
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
     builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
+    builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
