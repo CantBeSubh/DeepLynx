@@ -39,7 +39,7 @@ const ProjectOverviewWidget = () => {
     <div className="card-body">
       <h2 className="card-title">{t.translations.PROJECT_OVERVIEW}</h2>
       {/* Option 1: Use grid instead of stats (no divider by default) */}
-      <div className="grid grid-cols-2 gap-4 p-4 bg-base-200/10 rounded-lg">
+      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg">
         <div>
           <div className="text-base-content opacity-70 text-sm">
             {t.translations.LINKED_SOURCES}
@@ -63,7 +63,7 @@ const ProjectOverviewWidget = () => {
           </div>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4 p-4 bg-base-200/10 rounded-lg mt-2">
+      <div className="grid grid-cols-2 gap-4 p-4 rounded-lg mt-2">
         <div>
           <div className="text-base-content opacity-70 text-sm">
             {t.translations.CLASSES}

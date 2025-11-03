@@ -160,7 +160,7 @@ export default function ProjectSettingsClient({
                 </div>
                 <Tabs
                     tabs={tabData}
-                    className="tabs tabs-border"
+                    className="tabs tabs-border ml-5"
                     onTabChange={handleTabChange}
                     activeTab={activeTab}
                 />

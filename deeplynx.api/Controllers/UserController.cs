@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace deeplynx.api.Controllers
 {
     [ApiController]
-    [Route("user")]
+    [Route("users")]
     [Authorize]
     public class UserController : ControllerBase
     {

@@ -6,6 +6,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -27,7 +28,7 @@ namespace deeplynx.tests
         public long tid2;
         public long tid3;
         public long tid4;
-
+        public long uid;
         public TagBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
         }
@@ -103,7 +104,7 @@ namespace deeplynx.tests
             Assert.NotNull(result);
             Assert.Equal(tid, result.Id);
             Assert.Equal("Analytics", result.Name);
-            Assert.Equal("john.smith@company.com", result.LastUpdatedBy);
+            Assert.Equal(uid, result.LastUpdatedBy);
             Assert.False( result.IsArchived);
             Assert.Equal(pid, result.ProjectId);
         }
@@ -315,7 +316,7 @@ namespace deeplynx.tests
             {
                 Name = "Original Tag",
                 ProjectId = pid,
-                LastUpdatedBy = "john.smith@company.com",
+                LastUpdatedBy = uid,
             };
 
             Context.Tags.Add(originalTag);
@@ -611,7 +612,7 @@ namespace deeplynx.tests
               {
                   Id = 1,
                   Name = "Tag One",
-                  LastUpdatedBy= "Test Suite",
+                  LastUpdatedBy= uid,
                   ProjectId = 1,
                   LastUpdatedAt = now,
                   IsArchived = false
@@ -620,9 +621,9 @@ namespace deeplynx.tests
               // Assert
               Assert.Equal(1, dto.Id);
               Assert.Equal("Tag One", dto.Name);
-              Assert.Equal("Test Suite", dto.LastUpdatedBy);
+              Assert.Equal(uid, dto.LastUpdatedBy);
               Assert.Equal(1, dto.ProjectId);
-              Assert.Equal("Test Suite", dto.LastUpdatedBy);
+              Assert.Equal(uid, dto.LastUpdatedBy);
               Assert.Equal(now, dto.LastUpdatedAt);
               Assert.False(dto.IsArchived);
           }
@@ -638,7 +639,7 @@ namespace deeplynx.tests
              {
                  Name = "Archived Tag",
                  ProjectId = pid,
-                 LastUpdatedBy = "Test Suite",
+                 LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow.AddDays(-5), DateTimeKind.Unspecified),
                  IsArchived = true
              };
@@ -686,13 +687,136 @@ namespace deeplynx.tests
          }
 
          #endregion
-         
+         #region LastUpdatedBy Tests
+
+            [Fact]
+            public async Task CreateTag_Success_StoresLastUpdatedByUserId()
+            {
+                // Arrange
+                var testTag = new Tag
+                {
+                    Name = "Test Tag LastUpdatedBy",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid
+                };
+                
+                // Act
+                Context.Tags.Add(testTag);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedTag = await Context.Tags.FindAsync(testTag.Id);
+                Assert.NotNull(savedTag);
+                Assert.Equal(uid, savedTag.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateTag_Success_NavigationPropertyLoadsUser()
+            {
+                // Arrange
+                var testTag = new Tag
+                {
+                    Name = "Test Tag Navigation",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = uid
+                };
+                
+                Context.Tags.Add(testTag);
+                await Context.SaveChangesAsync();
+
+                // Act
+                var tagWithUser = await Context.Tags
+                    .Include(t => t.LastUpdatedByUser)
+                    .FirstAsync(t => t.Id == testTag.Id);
+                
+                // Assert
+                Assert.NotNull(tagWithUser.LastUpdatedByUser);
+                Assert.Equal("Test User", tagWithUser.LastUpdatedByUser.Name);
+                Assert.Equal("test.user@test.com", tagWithUser.LastUpdatedByUser.Email);
+                Assert.Equal(uid, tagWithUser.LastUpdatedBy);
+            }
+
+            [Fact]
+            public async Task CreateTag_Success_WithNullLastUpdatedBy()
+            {
+                // Arrange
+                var testTag = new Tag
+                {
+                    Name = "Test Tag Null",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null
+                };
+                
+                // Act
+                Context.Tags.Add(testTag);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var savedTag = await Context.Tags.FindAsync(testTag.Id);
+                Assert.NotNull(savedTag);
+                Assert.Null(savedTag.LastUpdatedBy);
+                
+                var tagWithUser = await Context.Tags
+                    .Include(t => t.LastUpdatedByUser)
+                    .FirstAsync(t => t.Id == testTag.Id);
+                
+                Assert.Null(tagWithUser.LastUpdatedByUser);
+            }
+
+            [Fact]
+            public async Task UpdateTag_Success_UpdatesLastUpdatedByUserId()
+            {
+                // Arrange
+                var testTag = new Tag
+                {
+                    Name = "Test Tag Update",
+                    ProjectId = pid,
+                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                    LastUpdatedBy = null
+                };
+                Context.Tags.Add(testTag);
+                await Context.SaveChangesAsync();
+
+                // Act
+                testTag.LastUpdatedBy = uid;
+                testTag.Name = "Updated Tag Name";
+                testTag.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+                
+                Context.Tags.Update(testTag);
+                await Context.SaveChangesAsync();
+
+                // Assert
+                var updatedTag = await Context.Tags
+                    .Include(t => t.LastUpdatedByUser)
+                    .FirstAsync(t => t.Id == testTag.Id);
+                
+                Assert.Equal(uid, updatedTag.LastUpdatedBy);
+                Assert.NotNull(updatedTag.LastUpdatedByUser);
+                Assert.Equal("Test User", updatedTag.LastUpdatedByUser.Name);
+                Assert.Equal("Updated Tag Name", updatedTag.Name);
+            }
+
+            #endregion
          protected override async Task SeedTestDataAsync()
          {
              await base.SeedTestDataAsync();
-             var project = new Project { Name = "Project 1" };
-             var project2 = new Project { Name = "Project2" };
-             var project3 = new Project { Name = "Project 3" };
+             var testUser = new User
+             {
+                 Name = "Test User",
+                 Email = "test.user@test.com",
+                 Password = "test_password",
+                 IsArchived = false
+             };
+             Context.Users.Add(testUser);
+             await Context.SaveChangesAsync();
+             uid = testUser.Id;
+             
+             var project = new Project { Name = "Project 1", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
              Context.Projects.Add(project);
              Context.Projects.Add(project2);
              Context.Projects.Add(project3);
@@ -704,26 +828,26 @@ namespace deeplynx.tests
              
              var tag = new Tag
              {
-                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), 
                  IsArchived = false
              };
              
              var tag2 = new Tag
              {
-                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = false
              };
              var tag3 = new Tag
              {
-                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = true
              };
              var tag4 = new Tag
              {
-                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = "john.smith@company.com",
+                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = uid,
                  LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
                  IsArchived = false
              };

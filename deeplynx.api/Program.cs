@@ -176,6 +176,8 @@ try
     builder.Services.AddTransient<IUserBusiness, UserBusiness>();
     builder.Services.AddTransient<INotificationBusiness, NotificationBusiness>();
     builder.Services.AddTransient<ITokenBusiness, TokenBusiness>();
+    builder.Services.AddTransient<IOauthApplicationBusiness, OauthApplicationBusiness>();
+    
 
     Console.WriteLine("Program cs: " + connectionString);
 
@@ -200,6 +202,7 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
+    builder.Services.AddTransient<IRolePermissionService, RolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -237,8 +240,18 @@ try
                 },
                 new()
                 {
-                    Name = "Query",
-                    Description = "Facilitates data filtering operations for efficient data retrieval and management."
+                    Name = "Event",
+                    Description = "Handles Event fetching by project and user subscriptions."
+                },
+                new()
+                {
+                    Name = "File",
+                    Description = "Handles operations related to file management"
+                },
+                new()
+                {
+                    Name = "Group",
+                    Description = "Handles operations related to Group management"
                 },
                 new()
                 {
@@ -265,14 +278,39 @@ try
                 },
                 new()
                 {
+                    Name = "Notification",
+                    Description = "Handles notification operations."
+                },
+                new()
+                {
+                    Name = "OauthApplication",
+                    Description = "Handles operations related to registered Oauth Application management"
+                },
+                new()
+                {
                     Name = "ObjectStorage",
                     Description = "Handles the management and processing of metadata associated with object storages."
+                },
+                new()
+                {
+                    Name = "Organization",
+                    Description = "Handles operations related to Organization management"
+                },
+                new()
+                {
+                    Name = "Permission",
+                    Description = "Handles operations related to Permission management"
                 },
                 new()
                 {
                     Name = "Project",
                     Description =
                         "Facilitates project lifecycle management, including creating, updating, retrieving, and archiving projects."
+                },
+                new()
+                {
+                    Name = "Query",
+                    Description = "Facilitates data filtering operations for efficient data retrieval and management."
                 },
                 new()
                 {
@@ -285,6 +323,21 @@ try
                     Name = "Relationship",
                     Description =
                         "Handles complex relationships between various entities, allowing for creation, updates, retrieval, and deletion."
+                },
+                new()
+                {
+                    Name = "Role",
+                    Description = "Handles operations related to Role management"
+                },
+                new()
+                {
+                    Name = "SensitivityLabel",
+                    Description = "Handles operations related to Sensitivity Label management"
+                },
+                new()
+                {
+                    Name = "Subscription",
+                    Description = "Handles operations related to subscription creation, retrieval, and deletion."
                 },
                 new()
                 {
@@ -304,51 +357,6 @@ try
                     Description =
                         "Manages user-related operations, including user creation, updates, retrieval, and authentication processes."
                 },
-                new()
-                {
-                    Name = "Event",
-                    Description = "Handles Event fetching by project and user subscriptions."
-                },
-                new()
-                {
-                    Name = "Subscription",
-                    Description = "Handles operations related to subscription creation, retrieval, and deletion."
-                },
-                new()
-                {
-                    Name = "File",
-                    Description = "Handles operations related to file management"
-                },
-                new()
-                {
-                    Name = "Notification",
-                    Description = "Handles notification operations."
-                },
-                new()
-                {
-                    Name = "SensitivityLabel",
-                    Description = "Handles operations related to Sensitivity Label management"
-                },
-                new()
-                {
-                    Name = "Group",
-                    Description = "Handles operations related to Group management"
-                },
-                new()
-                {
-                    Name = "Organization",
-                    Description = "Handles operations related to Organization management"
-                },
-                new()
-                {
-                    Name = "Role",
-                    Description = "Handles operations related to Role management"
-                },
-                new()
-                {
-                    Name = "Permission",
-                    Description = "Handles operations related to Permission management"
-                }
             };
         });
     });
@@ -376,6 +384,7 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
+    app.UseMiddleware<RoleBasedAuthorizationMiddleware>(); //RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
