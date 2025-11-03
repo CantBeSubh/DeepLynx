@@ -28,7 +28,8 @@ type GenericTableProps<T extends object> = {
   isAnyRowSelected?: boolean;
   deleteSelectedRows?: () => void;
   rowsPerPage?: number;
-  rowsPerPageOptions?: number[];
+  pageLengthOptions?: number[];
+  enablePageLengthChange?: boolean;
   enablePagination?: boolean;
   bordered?: boolean;
   searchBar?: boolean;
@@ -52,7 +53,8 @@ const GenericTable = <T extends object>(
     isAnyRowSelected,
     deleteSelectedRows,
     rowsPerPage = 10,
-    rowsPerPageOptions = [10, 25, 50, 100, 500],
+    pageLengthOptions = [10, 25, 50, 100, 500],
+    enablePageLengthChange = false,
     enablePagination = false,
     bordered = false,
     searchBar = false,
@@ -258,15 +260,15 @@ const GenericTable = <T extends object>(
   const rowNumberSelect = () => {
     const rowOptions = [];
 
-    for (let i = 0; i < rowsPerPageOptions.length; i++) {
+    for (let i = 0; i < pageLengthOptions.length; i++) {
       rowOptions.push(
         <button
           key={i}
-          className={`join-item btn ${currentDisplayedRows === rowsPerPageOptions[i] ? "btn-primary" : ""
+          className={`join-item btn ${currentDisplayedRows === pageLengthOptions[i] ? "btn-primary" : ""
             }`}
-          onClick={() => handleRowLengthClick(rowsPerPageOptions[i])}
+          onClick={() => handleRowLengthClick(pageLengthOptions[i])}
         >
-          {rowsPerPageOptions[i]}
+          {pageLengthOptions[i]}
         </button>
       );
     }
@@ -332,7 +334,7 @@ const GenericTable = <T extends object>(
           }`}
       >
         <thead>
-          <tr className="text-base-content bg-base-300">
+          <tr className={`text-base-content bg-base-300 border`}>
             {columns.map((column, index) => (
               <th
                 key={index}
@@ -394,7 +396,7 @@ const GenericTable = <T extends object>(
                     className={`text-base-content ${column.data === "id"
                       ? "sticky left-0 z-10 bg-base-100"
                       : ""
-                      } ${gridView ? "border border-base-300" : ""}`}
+                      } ${gridView ? "border border-base-200" : ""}`}
                   >
                     {column.cell
                       ? column.cell(row, rowIndex)
@@ -414,22 +416,28 @@ const GenericTable = <T extends object>(
           })}
         </tbody>
       </table>
-      
-        <div className="flex justify-between">
-          {showPagination && (
-            <div className="flex justify-start p-2">
-            <div className="flex join items-center">
-              <p className="mr-2">Rows Per Page: </p>
+
+      <div className="flex justify-between">
+        {showPagination && enablePageLengthChange && (
+          <div className="flex justify-start items-center p-2">
+            <p className="text-sm mr-2">
+                Rows per page:
+              </p>
+            <div className="flex join">
               {rowNumberSelect()}
             </div>
-          </div>)}
-          
-          {showPageNavigation && (
-          <div className="flex justify-end p-2">
-            <div className="join">{createPagination()}</div>
           </div>
-          )}
-        </div>
+        )}
+        {showPageNavigation && (
+          <div className="flex justify-end p-2 items-center">
+            <p className="text-sm mr-2">
+              Page:
+            </p>
+            <div className="flex join">
+            {createPagination()}</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

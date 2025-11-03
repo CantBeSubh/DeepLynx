@@ -129,6 +129,7 @@ const EventsHistoryClient = () => {
             columns={columns}
             gridView={true}
             data={data}
+            enablePageLengthChange={true}
             enablePagination={true}
             backendPagination={true}
             paginationMetadata={pagination}
