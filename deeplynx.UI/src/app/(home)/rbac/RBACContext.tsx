@@ -1,4 +1,4 @@
-// RBACContext.tsx
+// src/app/(home)/rbac/RBACContext.tsx
 "use client";
 
 import React, { createContext, useState, useEffect, ReactNode } from "react";
@@ -48,14 +48,11 @@ export function RBACProvider({ children }: { children: ReactNode }) {
 
   const fetchUserData = async () => {
     try {
-      // Debug: Check if session has token
-      console.log("Session status:", status);
-      console.log("Session data:", session);
-
       // Call the new /users/me endpoint which gets user from JWT token
       const response = await api.get("/users/me");
 
       // Add role field based on isSysAdmin
+      // Later you can get this from the API response if backend provides it
       const userData: User = {
         ...response.data,
         role: response.data.isSysAdmin ? "sysAdmin" : "viewer",
@@ -64,12 +61,6 @@ export function RBACProvider({ children }: { children: ReactNode }) {
       setUser(userData);
     } catch (error) {
       console.error("Failed to fetch user data:", error);
-
-      // Type guard for Axios errors
-      if (error && typeof error === "object" && "response" in error) {
-        console.error("Error details:", (error as any).response?.data);
-      }
-
       setUser(null);
     } finally {
       setLoading(false);
