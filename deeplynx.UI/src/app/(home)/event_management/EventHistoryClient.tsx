@@ -50,7 +50,7 @@ const EventsHistoryClient = () => {
 
   // Initial fetch
   useEffect(() => {
-    fetchEvents(1, 20);
+    fetchEvents(1, 500);
   }, []);
 
   // Handle page changes
