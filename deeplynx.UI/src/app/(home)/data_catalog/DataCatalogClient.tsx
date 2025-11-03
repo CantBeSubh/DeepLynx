@@ -42,6 +42,7 @@ export default function DataCatalogClient({
   );
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(!!initialSearchTerm);
+
   const [hasInitialSearchRun, setHasInitialSearchRun] = useState(false);
 
   const [tableData, setTableData] = useState<FileViewerTableRow[]>(
@@ -255,7 +256,7 @@ export default function DataCatalogClient({
         <div className="flex gap-4 pr-4">
           <Link
             href="data_catalog/all_records"
-            className="btn btn-outline btn-primary"
+            className="btn btn-outline btn-primary text-dynamic-blue border-dynamic-blue hover:text-white hover:bg-dynamic-blue"
             onClick={() => {
               setShowAll(true);
               setViewMode("list");
@@ -268,7 +269,7 @@ export default function DataCatalogClient({
 
           <button
             onClick={() => setIsRecordModalOpen(true)}
-            className="btn btn-primary text-white"
+            className="btn btn-primary text-white border-dynamic-blue bg-dynamic-blue"
           >
             <PlusIcon className="size-5" />
             <span>{t.translations.RECORD}</span>
