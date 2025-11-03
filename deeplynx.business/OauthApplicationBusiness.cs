@@ -14,6 +14,12 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
     private readonly ILogger<OauthApplicationBusiness> _logger;
     private readonly IEventBusiness _eventBusiness;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OauthApplicationBusiness"/> class. 
+    /// </summary>
+    /// <param name="context">The database context used for oauth application CRUD operations</param>
+    /// <param name="logger">Used for logging</param>
+    /// <param name="eventBusiness">Used for recording events during CRUD operations</param>
     public OauthApplicationBusiness(
         DeeplynxContext context,
         ILogger<OauthApplicationBusiness> logger,
@@ -25,6 +31,11 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         _logger = logger;
     }
 
+    /// <summary>
+    /// Retrieves all oauth applications
+    /// </summary>
+    /// <param name="hideArchived">Flag indicating whether to hide archived applications from the result</param>
+    /// <returns>List of applications</returns>
     public async Task<IEnumerable<OauthApplicationResponseDto>> GetAllOauthApplications(bool hideArchived = true)
     {
         var applicationQuery = _context.OauthApplications.AsQueryable();
@@ -33,7 +44,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         {
             applicationQuery = applicationQuery.Where(x => !x.IsArchived);
         }
-        
+
         var applications = await applicationQuery.ToListAsync();
 
         return applications
@@ -52,6 +63,13 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
             });
     }
 
+    /// <summary>
+    /// Retrieve a specific application by ID
+    /// </summary>
+    /// <param name="applicationId">The ID of the requested application</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived applications from the result</param>
+    /// <returns>The requested application if exists</returns>
+    /// <exception cref="KeyNotFoundException">Returned if app does not exist or is archived</exception>
     public async Task<OauthApplicationResponseDto> GetOauthApplication(
         long applicationId, bool hideArchived = true)
     {
@@ -84,10 +102,16 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         };
     }
 
+    /// <summary>
+    /// Create a new oauth application to represent an ecosystem app that uses Nexus as a provider
+    /// </summary>
+    /// <param name="dto">The data transfer object with details on the application to be created</param>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <returns>The client ID and secret of the newly created application</returns>
     public async Task<OauthApplicationSecureResponseDto> CreateOauthApplication(
-        CreateOauthApplicationRequestDto requestDto, long userId)
+        CreateOauthApplicationRequestDto dto, long userId)
     {
-        ValidationHelper.ValidateModel(requestDto);
+        ValidationHelper.ValidateModel(dto);
 
         // generate client ID and secret
         var clientId = GenerateClientId();
@@ -96,20 +120,20 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
 
         var application = new OauthApplication
         {
-            Name = requestDto.Name,
-            Description = requestDto.Description,
+            Name = dto.Name,
+            Description = dto.Description,
             ClientId = clientId,
             ClientSecretHash = clientSecretHash,
-            CallbackUrl = requestDto.CallbackUrl,
-            BaseUrl = requestDto.BaseUrl,
-            AppOwnerEmail = requestDto.AppOwnerEmail,
+            CallbackUrl = dto.CallbackUrl,
+            BaseUrl = dto.BaseUrl,
+            AppOwnerEmail = dto.AppOwnerEmail,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = userId
         };
-        
+
         _context.OauthApplications.Add(application);
         await _context.SaveChangesAsync();
-        
+
         // log create OAuth application event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -128,8 +152,16 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         };
     }
 
+    /// <summary>
+    /// Update an existing oauth application by ID
+    /// </summary>
+    /// <param name="applicationId">The ID of the application to be updated</param>
+    /// <param name="dto">A data transfer object with details on the application to be updated</param>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <returns>The updated application</returns>
+    /// <exception cref="KeyNotFoundException">Returned if application was not found or is archived</exception>
     public async Task<OauthApplicationResponseDto> UpdateOauthApplication(
-        long applicationId, UpdateOauthApplicationRequestDto requestDto, long userId)
+        long applicationId, UpdateOauthApplicationRequestDto dto, long userId)
     {
         var application = await _context.OauthApplications.FindAsync(applicationId);
 
@@ -137,18 +169,18 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         {
             throw new KeyNotFoundException($"Oauth application with id {applicationId} not found");
         }
-        
-        application.Name = requestDto.Name ?? application.Name;
-        application.Description = requestDto.Description ?? application.Description;
-        application.CallbackUrl = requestDto.CallbackUrl ?? application.CallbackUrl;
-        application.BaseUrl = requestDto.BaseUrl ?? application.BaseUrl;
-        application.AppOwnerEmail = requestDto.AppOwnerEmail ?? application.AppOwnerEmail;
+
+        application.Name = dto.Name ?? application.Name;
+        application.Description = dto.Description ?? application.Description;
+        application.CallbackUrl = dto.CallbackUrl ?? application.CallbackUrl;
+        application.BaseUrl = dto.BaseUrl ?? application.BaseUrl;
+        application.AppOwnerEmail = dto.AppOwnerEmail ?? application.AppOwnerEmail;
         application.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         application.LastUpdatedBy = userId;
-        
+
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
-        
+
         // log update Oauth application event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -174,10 +206,17 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         };
     }
 
+    /// <summary>
+    /// Archive an application by ID
+    /// </summary>
+    /// <param name="applicationId">The ID of the app to be archived</param>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <returns>Boolean true on success</returns>
+    /// <exception cref="KeyNotFoundException">Returned if application not found or already archived</exception>
     public async Task<bool> ArchiveOauthApplication(long applicationId, long userId)
     {
         var application = await _context.OauthApplications.FindAsync(applicationId);
-        
+
         if (application == null || application.IsArchived)
             throw new KeyNotFoundException($"Oauth application with id {applicationId} not found");
 
@@ -186,7 +225,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         application.LastUpdatedBy = userId;
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
-        
+
         // log archive Oauth application event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -199,11 +238,18 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
 
         return true;
     }
-    
+
+    /// <summary>
+    /// Unarchive an application by ID
+    /// </summary>
+    /// <param name="applicationId">The ID of the app to be unarchived</param>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <returns>Boolean true on success</returns>
+    /// <exception cref="KeyNotFoundException">Returned if application not found or not yet archived</exception>
     public async Task<bool> UnarchiveOauthApplication(long applicationId, long userId)
     {
         var application = await _context.OauthApplications.FindAsync(applicationId);
-        
+
         if (application == null || !application.IsArchived)
             throw new KeyNotFoundException($"Oauth application with id {applicationId} not found or is not archived");
 
@@ -212,7 +258,7 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         application.LastUpdatedBy = userId;
         _context.OauthApplications.Update(application);
         await _context.SaveChangesAsync();
-        
+
         // log unarchive Oauth application event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -226,6 +272,13 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         return true;
     }
     
+    /// <summary>
+    /// Delete an application by ID
+    /// </summary>
+    /// <param name="applicationId">The ID of the app to be deleted</param>
+    /// <param name="userId">The ID of the requesting user</param>
+    /// <returns>Boolean true on success</returns>
+    /// <exception cref="KeyNotFoundException">Returned if application not found</exception>
     public async Task<bool> DeleteOauthApplication(long applicationId, long userId)
     {
         var application = await _context.OauthApplications.FindAsync(applicationId);
@@ -254,6 +307,10 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         return true;
     }
 
+    /// <summary>
+    /// Used to generate the client ID for the app. Client ID + Secret will be used for token creation
+    /// </summary>
+    /// <returns></returns>
     private string GenerateClientId()
     {
         var bytes = new byte[32];
@@ -265,6 +322,10 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
     }
 
+    /// <summary>
+    /// Used to create the raw client secret for the app. This will be returned to the user in its raw form only once.
+    /// </summary>
+    /// <returns></returns>
     private string GenerateClientSecret()
     {
         var bytes = new byte[64];
@@ -276,6 +337,11 @@ public class OauthApplicationBusiness : IOauthApplicationBusiness
         return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
     }
 
+    /// <summary>
+    /// Used to hash the client secret. This hashed version will be stored in the database.
+    /// </summary>
+    /// <param name="secret"></param>
+    /// <returns></returns>
     private string HashSecret(string secret)
     {
         using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
