@@ -66,7 +66,7 @@ const EventsHistoryClient = () => {
   // Define columns
   const columns: Column<EventResponseDto>[] = [
     {
-      header: "Updated At",
+      header: "Timestamp",
       data: "lastUpdatedAt",
       sortable: false,
       // cell: (row) => {
@@ -75,7 +75,12 @@ const EventsHistoryClient = () => {
       // },
     },
     {
-      header: "Project",
+      header: "User",
+      data: "lastUpdatedBy",
+      sortable: false,
+    },
+    {
+      header: "Project Name",
       data: "projectName",
       sortable: false,
     },

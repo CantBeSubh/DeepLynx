@@ -22,7 +22,7 @@ export const getAllEventsPaginated = async (
     params?: EventFilterParams
 ): Promise<PaginatedEventsResponseDto> => {
     try {
-        const res = await api.get(`/events/GetAllEventsPaginated`, {
+        const res = await api.get(`/events/QueryEvents`, {
             params: {
                 pageNumber: params?.pageNumber || 1,
                 pageSize: params?.pageSize || 10,
@@ -40,7 +40,7 @@ export const getAllEventsByUserPaginated = async (
     params?: EventFilterParams
 ): Promise<PaginatedEventsResponseDto> => {
     try {
-        const res = await api.get(`/events/GetAllEventsByUserPaginated`, {
+        const res = await api.get(`/events/QueryEventsByUser`, {
             params: {
                 pageNumber: params?.pageNumber || 1,
                 pageSize: params?.pageSize || 10,
