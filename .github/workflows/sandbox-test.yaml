@@ -6,7 +6,7 @@ on:
       environment:
         description: 'Environment to deploy to'
         required: true
-        default: 'sandbox'
+        default: 'Test'
 
   push:
     branches: ["sandbox"]
@@ -57,11 +57,11 @@ jobs:
 
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-ui-${{ github.run_number }}" \
-            --file Dockerfiles/ui/Dockerfile.sandbox \
+            --file Dockerfiles/ui/Dockerfile.public \
             --build-arg OKTA_CLIENT_ID="$OKTA_CLIENT_ID" \
             --build-arg OKTA_ISSUER="$OKTA_ISSUER" \
             --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
-           --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
+            --build-arg REDIRECT_LINK="$REDIRECT_LINK" \
             --build-arg OKTA_CLIENT_SECRET="$OKTA_CLIENT_SECRET" \
             --build-arg AUTH_SECRET="$AUTH_SECRET" \
             --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
@@ -93,7 +93,7 @@ jobs:
 
           az acr build --registry "$ACR_REGISTRY" \
             --image "$ACR_PATH:deeplynx-docs-${GITHUB_RUN_NUMBER}" \
-            --file Dockerfiles/docs/Dockerfile.sandbox \
+            --file Dockerfiles/docs/Dockerfile.public \
             --build-arg HOSTED_LINK="$HOSTED_LINK" \
             .
 
