@@ -8,7 +8,7 @@ namespace deeplynx.api.Controllers
 {
     [ApiController]
     [Route("users")]
-    // [Authorize]
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly IUserBusiness _userBusiness;
@@ -268,7 +268,7 @@ namespace deeplynx.api.Controllers
         /// Get the current authenticated user
         /// </summary>
         /// <returns>User response DTO</returns>
-        [HttpGet("me", Name = "api_get_current_user")]
+        [HttpGet("GetCurrentUser", Name = "api_get_current_user")]
         public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
         {
             try

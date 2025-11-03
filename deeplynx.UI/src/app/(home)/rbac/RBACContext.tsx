@@ -49,7 +49,7 @@ export function RBACProvider({ children }: { children: ReactNode }) {
   const fetchUserData = async () => {
     try {
       // Call the new /users/me endpoint which gets user from JWT token
-      const response = await api.get("/users/me");
+      const response = await api.get("/users/GetCurrentUser");
 
       // Add role field based on isSysAdmin
       // Later you can get this from the API response if backend provides it
