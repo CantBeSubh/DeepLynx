@@ -29,5 +29,5 @@ public class EventResponseDto
     public string? EntityName { get; set; }
     public string? DataSourceName { get; set; }
     public DateTime LastUpdatedAt { get; set; }
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 }

@@ -21,7 +21,7 @@ export async function getAllUsersServer<T = UserResponseDto[]>(
   projectId: number
 ): Promise<T> {
   const qs = new URLSearchParams({ projectId: String(projectId) });
-  const res = await fetch(`${BASE}/user/GetAllUsers?${qs.toString()}`, {
+  const res = await fetch(`${BASE}/users/GetAllUsers?${qs.toString()}`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -31,7 +31,7 @@ export async function getAllUsersServer<T = UserResponseDto[]>(
 export async function getDataOverviewServer<T = unknown>(
   userId: string
 ): Promise<T> {
-  const res = await fetch(`${BASE}/user/GetDataOverview/${encodeURIComponent(userId)}`, {
+  const res = await fetch(`${BASE}/users/GetDataOverview/${encodeURIComponent(userId)}`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -43,7 +43,7 @@ export async function getRecentlyAddedRecordsServer<T = unknown[]>(
 ): Promise<T> {
   const qs = new URLSearchParams();
   projectIds.forEach((id) => qs.append("projectId", id));
-  const res = await fetch(`${BASE}/user/GetRecentlyAddedRecords?${qs.toString()}`, {
+  const res = await fetch(`${BASE}/users/GetRecentlyAddedRecords?${qs.toString()}`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -54,7 +54,7 @@ export async function updateUserServer<T = UserResponseDto>(
   userId: number,
   name?: string
 ): Promise<T> {
-  const res = await fetch(`${BASE}/user/UpdateUser/${userId}`, {
+  const res = await fetch(`${BASE}/users/UpdateUser/${userId}`, {
     method: 'PUT',
     headers: {
       ...authHeaders(),
@@ -66,7 +66,7 @@ export async function updateUserServer<T = UserResponseDto>(
 }
 
 export async function deleteUserServer<T = void>(userId: number): Promise<T> {
-  const res = await fetch(`${BASE}/user/DeleteUser/${userId}`, {
+  const res = await fetch(`${BASE}/users/DeleteUser/${userId}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });

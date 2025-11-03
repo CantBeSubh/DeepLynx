@@ -17,6 +17,7 @@ import {
   PresentationChartLineIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
+  TagIcon,
   BellIcon
 } from "@heroicons/react/24/outline";
 
@@ -85,7 +86,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/upload_center",
       "/data_catalog",
       "/member_management",
-      "/event_management"
+      "/event_management",
+      "/tag_management",
     ];
     const isExactMatch = selectedItem === targetPath;
     const isDynamicProject =
@@ -132,6 +134,16 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               {!isCollapsed && (
                 <p className="ml-2">{t.translations.UPLOAD_CENTER}</p>
               )}
+            </Link>
+          </li>
+          <li className="mt-2">
+            <Link
+              href="/tag_management"
+              prefetch={false}
+              className={getItemClass("/tag_management")}
+            >
+              <TagIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Tag Management</p>}
             </Link>
           </li>
           <li className="mt-2">

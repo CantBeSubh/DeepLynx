@@ -25,6 +25,7 @@ interface SearchBarProps {
   onClearAll?: () => void;
   resultCount?: number;
   showResultsMessage?: boolean;
+  aditionalFilters?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -50,6 +51,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onClearAll,
   resultCount,
   showResultsMessage,
+  aditionalFilters = true,
 }) => {
   const locale = "en";
   const t = translations[locale];
@@ -98,13 +100,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
       <div className="flex gap-2 w-full">
         {/* Search Input */}
         <div className="relative flex-1 min-w-0">
-          <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-neutral" />
+          <MagnifyingGlassIcon className="absolute left-4 top-5 transform -translate-y-1/2 w-5 h-5 text-base-content" />
 
           <input
             ref={inputRef}
             type="text"
             placeholder={placeholder}
-            className="w-full pl-12 pr-4 py-2 rounded-full border border-base-300 bg-base-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary text-info-content"
+            className="w-full pl-12 pr-4 py-2 rounded-full border border-base-content/25 bg-base-100 shadow-sm shadow-dynamic-shadow focus:outline-none focus:ring-2 focus:ring-dynamic-blue text-info-content"
             onChange={
               isControlled ? onChange : (e) => setInternalValue(e.target.value)
             }
@@ -126,9 +128,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
           <div className="text-right mt-1">
             <a
               href="/data_catalog/query_builder"
-              className="text-sm underline text-secondary hover:underline"
+              className="text-sm underline text-dynamic-blue hover:underline"
             >
-              {t.translations.ADITIONAL_FILTERS}
+              {aditionalFilters && t.translations.ADITIONAL_FILTERS}
             </a>
           </div>
         </div>

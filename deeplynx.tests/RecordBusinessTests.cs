@@ -34,6 +34,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public string rdesc;
     public string ruri;
     public string rfiletype;
+    public long uid;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -113,6 +114,231 @@ public class RecordBusinessTests : IntegrationTestBase
         Assert.Contains("Project with id 999 not found.", exception.Message);
     }
 
+    #endregion
+    
+    #region GetRecordsByTags Tests
+    
+    [Fact]
+    public async Task GetRecordsByTags_ValidProjectIdWithSingleTag_ReturnsMatchingRecords()
+    {
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Test Record", result.First().Name);
+        Assert.Single(result.First().Tags);
+        Assert.Equal("Test Tag", result.First().Tags.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_WithMultipleTags_ReturnsOnlyRecordsWithAllTags()
+    {
+        // Arrange - Add additional tag
+        var tag2 = new Tag 
+        { 
+            Name = "Tag2", 
+            ProjectId = pid, 
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) 
+        };
+        Context.Tags.Add(tag2);
+        await Context.SaveChangesAsync();
+
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var recordWithAllTags = new Record
+        {
+            Name = "Record With All Tags",
+            Description = "Has testTag and tag2",
+            OriginalId = "multi_tag_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag, tag2 },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        var recordWithSomeTags = new Record
+        {
+            Name = "Record With Some Tags",
+            Description = "Has only testTag",
+            OriginalId = "partial_tag_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.AddRange(recordWithAllTags, recordWithSomeTags);
+        await Context.SaveChangesAsync();
+
+        // Act - Query for records with both testTag AND tag2
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid, tag2.Id], true);
+
+        // Assert - Should only get the record with ALL tags
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Record With All Tags", result.First().Name);
+        Assert.Equal(2, result.First().Tags.Count);
+    }
+    
+    [Fact]
+    public async Task GetRecordsByTags_WithMultipleTags_DifferentProject_ReturnsEmpty()
+    {
+        // Arrange - Add additional tag
+        var tag2 = new Tag 
+        { 
+            Name = "Tag2", 
+            ProjectId = pid, 
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) 
+        };
+        Context.Tags.Add(tag2);
+        await Context.SaveChangesAsync();
+
+        var testTag = await Context.Tags.FindAsync(tid);
+    
+        var recordWithAllTags = new Record
+        {
+            Name = "Record With All Tags",
+            Description = "Has testTag and tag2",
+            OriginalId = "multi_tag_different_project",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag, tag2 },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(recordWithAllTags);
+        await Context.SaveChangesAsync();
+
+        // Act - Query for records with both tags but in different valid project (pid2)
+        var result = await _recordBusiness.GetRecordsByTags(pid2, [tid, tag2.Id], true);
+
+        // Assert - Should return empty because records exist in pid, not pid2
+        Assert.NotNull(result);
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_EmptyTagArray_ReturnsAllNonArchivedRecords()
+    {
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [], true);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Single(result); // Only the seeded record
+        Assert.Equal("Test Record", result.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_HideArchivedTrue_ExcludesArchivedRecords()
+    {
+        // Arrange - Add an archived record with the same tag
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            Description = "Archived",
+            OriginalId = "archived_record",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            IsArchived = true,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+
+        // Assert - Should only get the non-archived seeded record
+        Assert.NotNull(result);
+        Assert.Single(result);
+        Assert.Equal("Test Record", result.First().Name);
+        Assert.False(result.First().IsArchived);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_HideArchivedFalse_IncludesArchivedRecords()
+    {
+        // Arrange - Add an archived record with the same tag
+        var testTag = await Context.Tags.FindAsync(tid);
+        
+        var archivedRecord = new Record
+        {
+            Name = "Archived Record",
+            Description = "Archived",
+            OriginalId = "archived_record_2",
+            Properties = "{}",
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            IsArchived = true,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            Tags = new List<Tag> { testTag },
+            Uri = "localhost:8090",
+            FileType = "pdf"
+        };
+
+        Context.Records.Add(archivedRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var result = await _recordBusiness.GetRecordsByTags(pid, [tid], false);
+
+        // Assert - Should get both archived and non-archived records
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Count);
+        Assert.Contains(result, r => r.Name == "Test Record" && !r.IsArchived);
+        Assert.Contains(result, r => r.Name == "Archived Record" && r.IsArchived);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_NonExistentTag_ReturnsEmpty()
+    {
+        // Arrange - Make sure non-existent tag results in no results
+        var nonExistentTagResult = await _recordBusiness.GetRecordsByTags(pid, [99999], true);
+        Assert.Empty(nonExistentTagResult);
+        
+        // Act - Verify correct tag returns results
+        var correctTagResult = await _recordBusiness.GetRecordsByTags(pid, [tid], true);
+        
+        // Assert
+        Assert.NotNull(correctTagResult);
+        Assert.Single(correctTagResult);
+        Assert.Equal("Test Record", correctTagResult.First().Name);
+    }
+
+    [Fact]
+    public async Task GetRecordsByTags_InvalidProjectId_ThrowsException()
+    {
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<KeyNotFoundException>(() => 
+            _recordBusiness.GetRecordsByTags(999L, [tid], true));
+
+        Assert.Contains("Project with id 999 not found.", exception.Message);
+    }
+    
     #endregion
 
     #region GetRecord Tests
@@ -1050,23 +1276,229 @@ public class RecordBusinessTests : IntegrationTestBase
     }
 
     #endregion
+    #region RecordResponseDto Tests
+
+    [Fact]
+    public void RecordResponseDto_AllProperties_CanBeSetAndRetrieved()
+    {
+        // Arrange
+        var now = DateTime.UtcNow;
+        var tags = new List<RecordTagDto>
+        {
+            new RecordTagDto { Id = 1, Name = "Test Tag" }
+        };
         
+        var dto = new RecordResponseDto
+        {
+            Id = 1,
+            Name = "Test Record",
+            Description = "Test Description",
+            Uri = "test://uri",
+            Properties = "{\"test\":\"value\"}",
+            ObjectStorageId = 100,
+            OriginalId = "original-123",
+            ClassId = 200,
+            DataSourceId = 300,
+            ProjectId = 400,
+            LastUpdatedAt = now,
+            LastUpdatedBy = uid,
+            IsArchived = false,
+            FileType = "pdf",
+            Tags = tags
+        };
+
+        // Assert
+        Assert.Equal(1, dto.Id);
+        Assert.Equal("Test Record", dto.Name);
+        Assert.Equal("Test Description", dto.Description);
+        Assert.Equal("test://uri", dto.Uri);
+        Assert.Equal("{\"test\":\"value\"}", dto.Properties);
+        Assert.Equal(100, dto.ObjectStorageId);
+        Assert.Equal("original-123", dto.OriginalId);
+        Assert.Equal(200, dto.ClassId);
+        Assert.Equal(300, dto.DataSourceId);
+        Assert.Equal(400, dto.ProjectId);
+        Assert.Equal(now, dto.LastUpdatedAt);
+        Assert.Equal(uid, dto.LastUpdatedBy);
+        Assert.False(dto.IsArchived);
+        Assert.Equal("pdf", dto.FileType);
+        Assert.Single(dto.Tags);
+        Assert.Equal("Test Tag", dto.Tags.First().Name);
+    }
+
+#endregion
+
+#region LastUpdatedBy Tests
+
+    [Fact]
+    public async Task CreateRecord_Success_StoresLastUpdatedByUserId()
+    {
+        // Arrange
+        var testRecord = new Record
+        {
+            Name = "Test Record LastUpdatedBy",
+            Description = "Test description",
+            OriginalId = "test-original-id",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue" }),
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            Uri = "test://uri",
+            FileType = "txt"
+        };
+        
+        // Act
+        Context.Records.Add(testRecord);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var savedRecord = await Context.Records.FindAsync(testRecord.Id);
+        Assert.NotNull(savedRecord);
+        Assert.Equal(uid, savedRecord.LastUpdatedBy);
+    }
+
+    [Fact]
+    public async Task CreateRecord_Success_NavigationPropertyLoadsUser()
+    {
+        // Arrange
+        var testRecord = new Record
+        {
+            Name = "Test Record Navigation",
+            Description = "Test description 2",
+            OriginalId = "test-original-id-2",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue2" }),
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
+            Uri = "test://uri2",
+            FileType = "txt"
+        };
+        
+        Context.Records.Add(testRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        var recordWithUser = await Context.Records
+            .Include(r => r.LastUpdatedByUser)
+            .FirstAsync(r => r.Id == testRecord.Id);
+        
+        // Assert
+        Assert.NotNull(recordWithUser.LastUpdatedByUser);
+        Assert.Equal("Test User", recordWithUser.LastUpdatedByUser.Name);
+        Assert.Equal("test_record@example.com", recordWithUser.LastUpdatedByUser.Email);
+        Assert.Equal(uid, recordWithUser.LastUpdatedBy);
+    }
+
+    [Fact]
+    public async Task CreateRecord_Success_WithNullLastUpdatedBy()
+    {
+        // Arrange
+        var testRecord = new Record
+        {
+            Name = "Test Record Null",
+            Description = "Test description 3",
+            OriginalId = "test-original-id-3",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue3" }),
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            Uri = "test://uri3",
+            FileType = "txt"
+        };
+        
+        // Act
+        Context.Records.Add(testRecord);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var savedRecord = await Context.Records.FindAsync(testRecord.Id);
+        Assert.NotNull(savedRecord);
+        Assert.Null(savedRecord.LastUpdatedBy);
+        
+        var recordWithUser = await Context.Records
+            .Include(r => r.LastUpdatedByUser)
+            .FirstAsync(r => r.Id == testRecord.Id);
+        
+        Assert.Null(recordWithUser.LastUpdatedByUser);
+    }
+
+    [Fact]
+    public async Task UpdateRecord_Success_UpdatesLastUpdatedByUserId()
+    {
+        // Arrange
+        var testRecord = new Record
+        {
+            Name = "Test Record Update",
+            Description = "Test description 4",
+            OriginalId = "test-original-id-4",
+            Properties = JsonSerializer.Serialize(new { TestProperty = "TestValue4" }),
+            ProjectId = pid,
+            DataSourceId = did,
+            ClassId = cid,
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = null,
+            Uri = "test://uri4",
+            FileType = "txt"
+        };
+        Context.Records.Add(testRecord);
+        await Context.SaveChangesAsync();
+
+        // Act
+        testRecord.LastUpdatedBy = uid;
+        testRecord.Name = "Updated Record Name";
+        testRecord.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        
+        Context.Records.Update(testRecord);
+        await Context.SaveChangesAsync();
+
+        // Assert
+        var updatedRecord = await Context.Records
+            .Include(r => r.LastUpdatedByUser)
+            .FirstAsync(r => r.Id == testRecord.Id);
+        
+        Assert.Equal(uid, updatedRecord.LastUpdatedBy);
+        Assert.NotNull(updatedRecord.LastUpdatedByUser);
+        Assert.Equal("Test User", updatedRecord.LastUpdatedByUser.Name);
+        Assert.Equal("Updated Record Name", updatedRecord.Name);
+    }
+
+    #endregion
+    
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
+        
+        var user = new User
+        {
+            Name = "Test User",
+            Email = "test_record@example.com",
+            Password = "test_password",
+            IsArchived = false
+        };
+        Context.Users.Add(user);
+        await Context.SaveChangesAsync();
+        uid = user.Id;
         
         // Add projects
         var project = new Project
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         var project2 = new Project
         {
             Name = "Test Project 2",
             Description = "Test project 2 for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);
@@ -1080,7 +1512,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Data Source",
             Description = "Test data source for unit tests",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         Context.DataSources.Add(dataSource);
         await Context.SaveChangesAsync();
@@ -1093,7 +1526,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Name = "Test Class",
             Description = "Test class for unit tests",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         Context.Classes.Add(testClass);
         await Context.SaveChangesAsync();
@@ -1107,7 +1541,8 @@ public class RecordBusinessTests : IntegrationTestBase
             Type = "filesystem",
             Config = config.ToString(),
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         Context.ObjectStorages.Add(objectStorage);
         await Context.SaveChangesAsync();
@@ -1118,7 +1553,8 @@ public class RecordBusinessTests : IntegrationTestBase
         {
             Name = "Test Tag",
             ProjectId = pid,
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid 
         };
         
         // Add record
@@ -1132,6 +1568,7 @@ public class RecordBusinessTests : IntegrationTestBase
             DataSourceId = dataSource.Id,
             ClassId = testClass.Id,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            LastUpdatedBy = uid,
             Tags =  new List<Tag> { testTag },
             Uri = "localhost:8090",
             FileType = "pdf"

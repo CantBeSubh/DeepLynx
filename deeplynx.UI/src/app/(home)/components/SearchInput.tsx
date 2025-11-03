@@ -74,7 +74,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
           text-base-content
           placeholder:text-base-content/40
           focus:outline-none 
-          focus:border-primary
+          focus:border-dynamic-blue
           transition-colors
         `}
         onChange={onChange}

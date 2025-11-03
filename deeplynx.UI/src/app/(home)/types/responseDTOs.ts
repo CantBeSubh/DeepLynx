@@ -120,7 +120,7 @@ export type PermissionResponseDto = {
   description?: string | null;
   action:string;
   resource?:string|null;
-  isHardcoded:boolean;
+  isDefault:boolean;
   labelId?:number|string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
@@ -177,8 +177,6 @@ export type TagResponseDto = {
   lastUpdatedAt?: string | null;
   lastUpdatedBy?: string | null;
   isArchived:boolean;
-  createdBy?: string | null;
-  createdAt: string; // ISO date string from backend
   archivedAt?: string | null;
 };
 
@@ -193,28 +191,43 @@ export type UserResponseDto =
   isActive: boolean;
 }
 
-export type PaginatedEventsResponseDto = 
-{
-  items: EventResponseDto[] | [];
-  pageNumber: number;
-  pageSize: number;
-  maxPageSize: number;
-  totalCount: number;
-};
+export type GraphResponseDto = {
+  nodes: Array<{
+    id: number;
+    label: string;
+    type: string;
+  }>;
+  links: Array<{
+    source: number;
+    target: number;
+    relationshipId: number;
+    relationshipName: string | null;
+    edgeId: number;
+  }>;
+}
 
-export type EventResponseDto = 
-{
-  id: number;
-  operation: string;
-  entityType: string;
-  entityId?: number | null;
-  entityName: string;
-  projectId?: number;
-  projectName?: string;
-  organizationId?: number | null;
-  dataSourceId?: number | null;
-  dataSourceName?: string | null;
-  properties?: JSON | string | null;
-  lastUpdatedAt?: string | null;
-  lastUpdatedBy?: string | null;
-};
+export type PaginatedEventsResponseDto =
+    {
+        items: EventResponseDto[] | [];
+        pageNumber: number;
+        pageSize: number;
+        maxPageSize: number;
+        totalCount: number;
+    };
+
+export type EventResponseDto =
+    {
+        id: number;
+        operation: string;
+        entityType: string;
+        entityId?: number | null;
+        entityName: string;
+        projectId?: number;
+        projectName?: string;
+        organizationId?: number | null;
+        dataSourceId?: number | null;
+        dataSourceName?: string | null;
+        properties?: JSON | string | null;
+        lastUpdatedAt?: string | null;
+        lastUpdatedBy?: string | null;
+    };

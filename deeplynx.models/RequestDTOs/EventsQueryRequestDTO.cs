@@ -4,7 +4,7 @@ public class EventsQueryRequestDTO
 {
     public long? projectId { get; set; }
     public long? organizationId { get; set; }
-    public string? lastUpdatedBy { get; set; }
+    public long? lastUpdatedBy { get; set; }
     public string? projectName { get; set; }
     public string? operation { get; set; }
     public string? entityType { get; set; }

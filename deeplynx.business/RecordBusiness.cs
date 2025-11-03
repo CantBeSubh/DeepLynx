@@ -89,7 +89,56 @@ public class RecordBusiness : IRecordBusiness
                 }).ToList()
             }).ToList();
     }
-    
+
+    /// <summary>
+    /// Get all records that contain all given tags
+    /// </summary>
+    /// <param name="projectId">The ID of the project whose records are to be retrieved</param>
+    /// <param name="tagIds">List of tag IDs - returned records must contain every given ID</param>
+    /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
+    /// <returns></returns>
+    public async Task<List<RecordResponseDto>> GetRecordsByTags(
+        long projectId, long[] tagIds, bool hideArchived)
+    {
+        await ExistenceHelper.EnsureProjectExistsAsync(_context, projectId, _cacheBusiness, hideArchived);
+        var recordQuery = _context.Records
+            .Where(r => r.ProjectId == projectId);     
+        
+        if (hideArchived)
+        {
+            recordQuery = recordQuery.Where(r => !r.IsArchived);
+        }
+        
+        // Only return records that contain ALL given IDs
+        recordQuery = recordQuery.Where(r => 
+            tagIds.All(tagId => r.Tags.Any(t => t.Id == tagId)));
+        
+        var records = await recordQuery.Include(r => r.Tags).ToListAsync();
+        
+        return records
+            .Select(r => new RecordResponseDto()
+            {
+                Id = r.Id,
+                Description = r.Description,
+                Uri = r.Uri,
+                Properties = r.Properties,
+                OriginalId = r.OriginalId,
+                Name = r.Name,
+                ClassId = r.ClassId,
+                DataSourceId = r.DataSourceId,
+                ProjectId = r.ProjectId,
+                LastUpdatedBy = r.LastUpdatedBy,
+                LastUpdatedAt = r.LastUpdatedAt,
+                IsArchived = r.IsArchived,
+                FileType = r.FileType,
+                Tags = r.Tags.Select(t => new RecordTagDto()
+                {
+                    Id = t.Id,
+                    Name = t.Name
+                }).ToList()
+            }).ToList();
+    }
+
     /// <summary>
     /// Retrieves a specific record by its ID
     /// </summary>

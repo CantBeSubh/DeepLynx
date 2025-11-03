@@ -28,16 +28,18 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get All Events
         /// </summary>
-        /// <param name="queryDto">Filter criteria and pagination parameters</param>
+        /// <param name="projectId">Optional filter to only include events matching the projectId</param>
+        /// <param name="organizationId">Optional filter </param>
         /// <returns></returns>
         [HttpGet("GetAllEvents", Name = "api_get_all_events")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEvents(
-            [FromQuery] EventsQueryRequestDTO? queryDto
+            [FromQuery] long? projectId,
+            [FromQuery] long? organizationId
         )
         {
             try
             {
-                var events = await _eventBusiness.GetAllEvents(queryDto);
+                var events = await _eventBusiness.GetAllEvents(projectId, organizationId);
                 return Ok(events);
             }
             catch (Exception e)
@@ -53,14 +55,14 @@ namespace deeplynx.api.Controllers
         /// </summary>
         /// <param name="queryDto">Filter criteria and pagination parameters</param>.
         /// <returns></returns>
-        [HttpGet("GetAllEventsPaginated", Name = "api_get_all_events_paginated")]
-        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEventsPaginated(
+        [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
+        public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
             [FromQuery] EventsQueryRequestDTO? queryDto
         )
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsPaginated(queryDto);
+                var events = await _eventBusiness.QueryEvents(queryDto);
                 return Ok(events);
             }
             catch (Exception e)
@@ -74,13 +76,13 @@ namespace deeplynx.api.Controllers
         /// <summary>
         /// Get all events by user project membership (Paginated).
         /// </summary>
-        [HttpGet("GetAllEventsByUser", Name = "api_get_all_events_by_user_paginated")]
-        public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserPaginated(
+        [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
+        public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsByUser(
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
             try
             {
-                var events = await _eventBusiness.GetAllEventsByUserPaginated(queryDto);
+                var events = await _eventBusiness.QueryEventsByUser(queryDto);
                 return Ok(events);
             }
             catch (Exception e)

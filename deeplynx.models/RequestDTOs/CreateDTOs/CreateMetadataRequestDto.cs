@@ -1,13 +1,10 @@
-using System.Text.Json.Serialization;
-using System.Text.Json.Nodes;
-
 namespace deeplynx.models;
 
 public class CreateMetadataRequestDto
 {
-    public JsonArray? Classes { get; set; }
-    public JsonArray? Relationships { get; set; }
-    public JsonArray? Tags { get; set; }
-    public JsonArray? Records { get; set; }
-    public JsonArray? Edges { get; set; }
+    public List<CreateClassRequestDto>? Classes { get; set; }
+    public List<CreateRelationshipRequestDto>? Relationships { get; set; }
+    public List<CreateTagRequestDto>? Tags { get; set; }
+    public List<CreateRecordRequestDto>? Records { get; set; }
+    public List<CreateEdgeRequestDto>? Edges { get; set; }
 }
