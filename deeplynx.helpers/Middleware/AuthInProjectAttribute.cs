@@ -21,16 +21,16 @@ public class AuthInProjectAttribute : Attribute
     public string Resource { get; set; } 
 }
 
-public class RoleBasedAuthorizationMiddleware
+public class AuthInProjectMiddleware
 {
     private readonly RequestDelegate _next;
 
-    public RoleBasedAuthorizationMiddleware(RequestDelegate next)
+    public AuthInProjectMiddleware(RequestDelegate next)
     {
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IRolePermissionService rolePermissionService)
+    public async Task InvokeAsync(HttpContext context, IProjectRolePermissionService rolePermissionService)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint == null)
