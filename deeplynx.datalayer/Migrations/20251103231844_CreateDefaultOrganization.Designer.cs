@@ -13,7 +13,7 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    [Migration("20251030212354_CreateDefaultOrganization")]
+    [Migration("20251103231844_CreateDefaultOrganization")]
     partial class CreateDefaultOrganization
     {
         /// <inheritdoc />
@@ -933,6 +933,9 @@ namespace deeplynx.datalayer.Migrations
                         .HasDatabaseName("idx_organizations_last_updated_by");
 
                     b.HasIndex(new[] { "Id" }, "idx_organizations_id");
+
+                    b.HasIndex(new[] { "Name" }, "unique_organization_name")
+                        .IsUnique();
 
                     b.ToTable("organizations", "deeplynx");
                 });
@@ -2075,7 +2078,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("projects_organization_id_fkey");
 

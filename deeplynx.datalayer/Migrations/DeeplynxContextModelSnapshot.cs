@@ -931,6 +931,9 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_organizations_id");
 
+                    b.HasIndex(new[] { "Name" }, "unique_organization_name")
+                        .IsUnique();
+
                     b.ToTable("organizations", "deeplynx");
                 });
 
@@ -2072,7 +2075,7 @@ namespace deeplynx.datalayer.Migrations
                     b.HasOne("deeplynx.datalayer.Models.Organization", "Organization")
                         .WithMany("Projects")
                         .HasForeignKey("OrganizationId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("projects_organization_id_fkey");
 
