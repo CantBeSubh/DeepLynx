@@ -10,31 +10,6 @@ function MemberManagementUserSkeleton() {
   const rows = 6;
   const totalPages = 2;
 
-  const [skeletonColors, setSkeletonColors] = useState({
-    baseColor: '',
-    highlightColor: ''
-  });
-  
-  useEffect(() => {
-    const updateColors = () => {
-      const styles = getComputedStyle(document.documentElement);
-      setSkeletonColors({
-        baseColor: styles.getPropertyValue('--color-dynamic-base').trim(),
-        highlightColor: styles.getPropertyValue('--color-dynamic-highlight').trim()
-      });
-    };
-    
-    updateColors();
-    
-    const observer = new MutationObserver(updateColors);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <div className="w-full">
       <div>
@@ -51,10 +26,10 @@ function MemberManagementUserSkeleton() {
               <input className="checkbox" type="checkbox"></input>
             </div>
             <div className="w-1/4 pl-4 h-4">
-              <Skeleton width="35%" baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+              <Skeleton width="35%" baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
             </div>
             <div className="w-1/2 pl-4 h-4">
-              <Skeleton width="35%" baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+              <Skeleton width="35%" baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
             </div>
             <div className="w-1/8 pl-4">
               <span>
@@ -74,7 +49,7 @@ function MemberManagementUserSkeleton() {
               <ChevronLeftIcon className="size-6" />
             </button>
             <span className="px-2 text-sm">
-              <Skeleton width={60} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+              <Skeleton width={60} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
             </span>
             <button className="btn btn-sm btn-ghost">
               <ChevronRightIcon className="size-6" />

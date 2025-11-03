@@ -9,31 +9,6 @@ function CatalogViewSkeleton() {
   const { t } = useLanguage();
   const rows = 6;
   const totalPages = 2;
-  
-  const [skeletonColors, setSkeletonColors] = useState({
-    baseColor: '',
-    highlightColor: ''
-  });
-  
-  useEffect(() => {
-    const updateColors = () => {
-      const styles = getComputedStyle(document.documentElement);
-      setSkeletonColors({
-        baseColor: styles.getPropertyValue('--color-dynamic-base').trim(),
-        highlightColor: styles.getPropertyValue('--color-dynamic-highlight').trim()
-      });
-    };
-    
-    updateColors();
-    
-    const observer = new MutationObserver(updateColors);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
 
   return (
     <div className="shadow-md shadow-dynamic-shadow rounded-xl">
@@ -50,23 +25,23 @@ function CatalogViewSkeleton() {
               className="border-b border-base-content/20 hover:bg-base-200/30 p-2 pl-0 rounded-sm"
             >
               <div className="text-accent-content mb-1 w-160">
-                <Skeleton width="35%" baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+                <Skeleton width="35%" baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
               </div>
               <div className="text-sm text-base-content space-x-2 flex flex-wrap items-center">
                 <span>
                   {t.translations.CLASS}{" "}
                   <span className="badge badge-sm text-xs text-base-content">
-                    <Skeleton width={100} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+                    <Skeleton width={100} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
                   </span>
                 </span>
                 <span className="ml-4">
-                  {t.translations.LAST_EDIT} <Skeleton width={250} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+                  {t.translations.LAST_EDIT} <Skeleton width={250} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
                 </span>
                 <span className="ml-4">
-                  {t.translations.PROJECT} <Skeleton width={150} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+                  {t.translations.PROJECT} <Skeleton width={150} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
                 </span>
                 <span className="basis-full text-left">
-                  {t.translations.DATA_SOURCE} <Skeleton width={200} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+                  {t.translations.DATA_SOURCE} <Skeleton width={200} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
                 </span>
               </div>
             </li>
@@ -79,7 +54,7 @@ function CatalogViewSkeleton() {
               <ChevronLeftIcon className="size-6" />
             </button>
             <span className="px-2 text-sm">
-              <Skeleton width={60} baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+              <Skeleton width={60} baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
             </span>
             <button className="btn btn-sm btn-ghost">
               <ChevronRightIcon className="size-6" />

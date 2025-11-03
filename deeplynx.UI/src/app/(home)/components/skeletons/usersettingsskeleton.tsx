@@ -10,38 +10,13 @@ function UserSettingsSkeleton() {
   const rows = 4;
   const totalPages = 1;
 
-  const [skeletonColors, setSkeletonColors] = useState({
-    baseColor: '',
-    highlightColor: ''
-  });
-  
-  useEffect(() => {
-    const updateColors = () => {
-      const styles = getComputedStyle(document.documentElement);
-      setSkeletonColors({
-        baseColor: styles.getPropertyValue('--color-dynamic-gray').trim(),
-        highlightColor: styles.getPropertyValue('--color-dynamic-white').trim()
-      });
-    };
-    
-    updateColors();
-    
-    const observer = new MutationObserver(updateColors);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['data-theme']
-    });
-    
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <div className="w-full bg-base-200 rounded-box p-6">
       <div>
         {times(rows).map((i) => (
           <div key={i} className="flex items-center font-mono text-sm pb-3">
             <div className="w-7/8 h-2">
-              <Skeleton width="90%" baseColor={skeletonColors.baseColor} highlightColor={skeletonColors.highlightColor} />
+              <Skeleton width="90%" baseColor="var(--skeleton-base)" highlightColor="var(--skeleton-highlight)" />
             </div>
             <div className="ml-auto">
               <span>

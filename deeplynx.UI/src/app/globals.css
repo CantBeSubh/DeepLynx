@@ -23,8 +23,6 @@
   --color-accent: oklch(75% 0.2 70.934);
   --color-accent-content: oklch(13.454% 0.033 35.791);
   --color-dynamic-shadow: oklch(80% 0 0);
-  --color-dynamic-base: oklch(86% 0.022 252.894);
-  --color-dynamic-highlight: oklch(0.9213 0.022 252.894);
   --color-neutral: oklch(47.441% 0.013 253.041);
   --color-neutral-content: oklch(85.488% 0.002 253.041);
   --color-info: oklch(86.19% 0.047 224.14);
@@ -43,6 +41,8 @@
   --border: 1.5px;
   --depth: 1;
   --noise: 0;
+  --skeleton-base: oklch(86% 0.022 252.894);
+  --skeleton-highlight: oklch(0.9213 0.022 252.894);
 }
 
 @plugin "daisyui/theme" {
@@ -62,8 +62,6 @@
   --color-accent: oklch(1 0.02 70);
   --color-accent-content: oklch(18% 0.02 70);
   --color-dynamic-shadow: oklch(50% 0 0);
-  --color-dynamic-base: oklch(28% 0.02 256);
-  --color-dynamic-highlight: oklch(23% 0.018 258);
   --color-neutral: oklch(35% 0.015 253);
   --color-neutral-content: oklch(90% 0.004 253);
   --color-info: oklch(60% 0.12 224);
@@ -82,6 +80,8 @@
   --border: 1.5px;
   --depth: 1;
   --noise: 0;
+  --skeleton-base: oklch(28% 0.02 256);
+  --skeleton-highlight: oklch(23% 0.018 258);
 }
 
 /* :root {
