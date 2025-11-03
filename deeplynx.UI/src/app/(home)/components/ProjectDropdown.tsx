@@ -91,7 +91,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
 
   return (
     <div
-      className="relative inline-block text-left min-w-sm text-accent-content"
+      className="relative inline-block text-left min-w-sm text-base-content/80"
       ref={dropdownRef}
     >
       <button
@@ -109,7 +109,7 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow rounded-box p-4 max-h-80 overflow-auto">
+        <div className="absolute z-10 mt-2 w-full bg-base-100 shadow shadow-dynamic-shadow rounded-box p-4 max-h-80 overflow-auto">
           <input
             type="text"
             placeholder="Search"
@@ -122,11 +122,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
             <label className="label cursor-pointer justify-start gap-2">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary"
+                className="checkbox text-white checked:bg-dynamic-blue border-dynamic-blue"
                 checked={selectedIds.includes("ALL")}
                 onChange={() => toggleProject("ALL")}
               />
-              <span className="label-text">
+              <span className="label-text text-base-content">
                 {t.translations.ALL_YOUR_PROJECTS}
               </span>
             </label>
@@ -136,11 +136,11 @@ const ProjectDropdown: React.FC<ProjectDropdownProps> = ({
             {filteredProjects.map((project) => (
               <label
                 key={project.id}
-                className="label cursor-pointer justify-start gap-2"
+                className="label cursor-pointer justify-start gap-2 text-base-content"
               >
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox text-white checked:bg-dynamic-blue border-dynamic-blue"
                   checked={selectedIds.includes(project.id)}
                   onChange={() => toggleProject(project.id)}
                 />
