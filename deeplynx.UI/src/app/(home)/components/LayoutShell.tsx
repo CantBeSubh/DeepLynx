@@ -16,6 +16,7 @@ import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
 import { useRBAC } from "@/app/(home)/rbac/useRBAC";
+import { RoleGate } from "../rbac/RBACComponents";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
@@ -62,11 +63,15 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => router.push("/")}
         />
         <div className="dropdown dropdown-end">
-          {hasPermission(PERMISSIONS.SYSADMIN_PAGE) && (
-            <Cog6ToothIcon className="size-10" />
-          )}
-          <div tabIndex={0} role="button" className="btn btn-ghost m-1">
-            <UserCircleIcon className="size-10" />
+          <div className="flex">
+            <RoleGate role="sysAdmin">
+              <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+                <Cog6ToothIcon className="size-10" />
+              </div>
+            </RoleGate>
+            <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+              <UserCircleIcon className="size-10" />
+            </div>
           </div>
           <ul
             tabIndex={0}
