@@ -109,36 +109,46 @@ public class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Clean database between tests
     /// </summary>
-    protected async Task CleanDatabaseAsync()
+    private async Task CleanDatabaseAsync()
     {
+        var organizations = await Context.Organizations.ToListAsync();
+        Context.Organizations.RemoveRange(organizations);
+        var projectMembers = await Context.ProjectMembers.ToListAsync();
+        Context.ProjectMembers.RemoveRange(projectMembers);
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
+        var tokens = await Context.OauthTokens.ToListAsync();
+        Context.OauthTokens.RemoveRange(tokens);
+        var applications = await Context.OauthApplications.ToListAsync();
+        Context.OauthApplications.RemoveRange(applications);
+        var groups = await Context.Groups.ToListAsync();
+        Context.Groups.RemoveRange(groups);
+        var roles = await Context.Roles.ToListAsync();
+        Context.Roles.RemoveRange(roles);
+        var permissions = await Context.Permissions.ToListAsync();
+        Context.Permissions.RemoveRange(permissions);
+        var labels = await Context.SensitivityLabels.ToListAsync();
+        Context.SensitivityLabels.RemoveRange(labels);
+        var dataSources = await Context.DataSources.ToListAsync();
+        Context.DataSources.RemoveRange(dataSources);
         var classes = await Context.Classes.ToListAsync();
         Context.Classes.RemoveRange(classes);
         var records = await Context.Records.ToListAsync();
         Context.Records.RemoveRange(records);
-        var users = await Context.Users.ToListAsync();
-        Context.Users.RemoveRange(users);
         var edges = await Context.Edges.ToListAsync();
         Context.Edges.RemoveRange(edges);
         var relationships = await Context.Relationships.ToListAsync();
         Context.Relationships.RemoveRange(relationships);
         var tags = await Context.Tags.ToListAsync();
         Context.Tags.RemoveRange(tags);
-        var dataSources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(dataSources);
         var subscriptions = await Context.Subscriptions.ToListAsync();
         Context.Subscriptions.RemoveRange(subscriptions);
         var actions = await Context.Actions.ToListAsync();
         Context.Actions.RemoveRange(actions);
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
-        var permissions = await Context.Permissions.ToListAsync();
-        Context.Permissions.RemoveRange(permissions);
-        var projectMembers = await Context.ProjectMembers.ToListAsync();
-        Context.ProjectMembers.RemoveRange(projectMembers);
-        var roles = await Context.Roles.ToListAsync();
-        Context.Roles.RemoveRange(roles);
+        var users = await Context.Users.ToListAsync();
+        Context.Users.RemoveRange(users);
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }
