@@ -15,11 +15,13 @@ import React from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
+import { useRBAC } from "@/app/(home)/rbac/useRBAC";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
+  const { hasPermission, user, PERMISSIONS } = useRBAC();
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
@@ -60,6 +62,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => router.push("/")}
         />
         <div className="dropdown dropdown-end">
+          {hasPermission(PERMISSIONS.SYSADMIN_PAGE) && (
+            <Cog6ToothIcon className="size-10" />
+          )}
           <div tabIndex={0} role="button" className="btn btn-ghost m-1">
             <UserCircleIcon className="size-10" />
           </div>
