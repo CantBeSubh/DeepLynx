@@ -1,5 +1,4 @@
 // src/app/(home)/components/LayoutShell.tsx
-
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -27,6 +26,10 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
+  // Check if auth is disabled
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
   };
@@ -51,9 +54,15 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     return [firstName, lastName].filter(Boolean).join(", ");
   };
 
-  // Use RBAC user data, fallback to session data
-  const displayName = user?.name || session?.user?.name || "";
-  const displayEmail = user?.email || session?.user?.email || "";
+  // When auth is disabled, use RBAC user. When enabled, use session.
+  const displayName = isAuthDisabled
+    ? user?.name || ""
+    : session?.user?.name || "";
+
+  const displayEmail = isAuthDisabled
+    ? user?.email || ""
+    : session?.user?.email || "";
+
   const displayImage = session?.user?.image;
 
   return (
@@ -84,7 +93,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             className="menu dropdown-content bg-base-100 text-base-content rounded-box z-[100] w-auto min-w-52 max-w-[90vw] p-2 shadow-xl border border-base-300"
           >
             <li>
-              <div className="flex hover:bg-base-300">
+              <div className="flex bg-base-100">
                 <AvatarCell
                   image={displayImage ?? undefined}
                   name={displayName}
@@ -101,7 +110,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <li className="mt-2">
               <Link
                 href="/settings"
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
               >
                 <Cog6ToothIcon className="size-6" />
                 {t.translations.SETTINGS}
@@ -109,7 +118,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </li>
             <li>
               <button
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
                 onClick={handleLogout}
               >
                 <ArrowRightStartOnRectangleIcon className="size-6" />
