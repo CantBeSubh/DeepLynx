@@ -381,7 +381,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(projectsForOrganization);
             Assert.NotEmpty(projectsForOrganization);
-            Assert.Equal(3, projectsForOrganization.Count);
+            Assert.Equal(5, projectsForOrganization.Count);
             Assert.All(projectsForOrganization, p => Assert.Equal(oid, p.OrganizationId));
         }
 
@@ -1210,7 +1210,8 @@ namespace deeplynx.tests
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             
             // Act
@@ -1234,7 +1235,8 @@ namespace deeplynx.tests
                 Abbreviation = "NAV",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             
             Context.Projects.Add(testProject);
@@ -1263,7 +1265,8 @@ namespace deeplynx.tests
                 Abbreviation = "NUL",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             
             // Act
@@ -1292,7 +1295,8 @@ namespace deeplynx.tests
                 Description = "Original Description",
                 Abbreviation = "ORI",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
+                LastUpdatedBy = null,
+                OrganizationId = oid
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -1335,7 +1339,8 @@ namespace deeplynx.tests
                 Description = "Test project for unit tests",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             var testProj2 = new Project
             {
@@ -1361,7 +1366,8 @@ namespace deeplynx.tests
                 Description = "Archived project for unit tests",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = true
+                IsArchived = true,
+                OrganizationId = oid
             };
             var groupProj = new Project
             {

@@ -1125,7 +1125,8 @@ namespace deeplynx.tests
             { 
                 Name = "Test",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = uid
+                LastUpdatedBy = uid,
+                OrganizationId = organization.Id
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

@@ -39,6 +39,7 @@ namespace deeplynx.tests
         public long destinationRecordId3;
         public long relationshipId;
         public long uid1;
+        private long organizationId;
         public EdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -1670,13 +1671,18 @@ namespace deeplynx.tests
             Context.Users.Add(user);
             await Context.SaveChangesAsync();
             uid1 = user.Id;
+            
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
 
-            var project = new Project { Name = "Project 1" };
+            var project = new Project { Name = "Project 1", OrganizationId = organizationId };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
             
-            var project2 = new Project { Name = "Project 2" };
+            var project2 = new Project { Name = "Project 2", OrganizationId = organizationId };
             Context.Projects.Add(project2);
             await Context.SaveChangesAsync();
             pid2 = project2.Id;

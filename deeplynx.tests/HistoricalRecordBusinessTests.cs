@@ -24,6 +24,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     public long rid;
     public long rid2;
     public long os1;
+    private long organizationId;
     private HistoricalRecordBusiness _historicalRecordBusiness = null!;
     private RecordBusiness _recordBusiness = null!;
     private EventBusiness _eventBusiness;
@@ -469,17 +470,24 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     
     protected override async Task SeedTestDataAsync()
     {
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
         var project = new Project
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         var project2 = new Project
         {
             Name = "Test Project 2",
             Description = "Test project 2 for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);

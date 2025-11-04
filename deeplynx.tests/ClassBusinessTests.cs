@@ -31,6 +31,7 @@ namespace deeplynx.tests
         public long did;
         public long os1;
         public long uid;
+        public long organizationId;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -226,9 +227,8 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetAllClasses_ReturnsOnlyForProjects()
         {
-            
             // Arrange
-            var p2 = new Project { Name = "ExtraProj" };
+            var p2 = new Project { Name = "ExtraProj", OrganizationId = organizationId};
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
@@ -854,7 +854,7 @@ namespace deeplynx.tests
         public async Task UnarchiveClass_Throws_IfClassProjectMismatch()
         {
             // Arrange
-            var otherProject = new Project { Name = "Other Project" };
+            var otherProject = new Project { Name = "Other Project", OrganizationId = organizationId};
             Context.Projects.Add(otherProject);
             await Context.SaveChangesAsync();
 
@@ -1094,7 +1094,13 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            var project = new Project { Name = "Project 1" };
+
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
+            var project = new Project { Name = "Project 1", OrganizationId = organizationId };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;

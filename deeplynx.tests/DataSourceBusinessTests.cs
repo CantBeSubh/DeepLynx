@@ -26,6 +26,7 @@ namespace deeplynx.tests
         public long did2;
         public long did3;
         private long uid; 
+        private long organizationId;
 
         public DataSourceBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
@@ -1009,6 +1010,12 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
+            
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             var testUser = new User
             {
                 Name = "John Smith",
@@ -1019,8 +1026,8 @@ namespace deeplynx.tests
             Context.Users.Add(testUser);
             await Context.SaveChangesAsync();
             uid = testUser.Id;
-            var project = new Project { Name = "Project 1" };
-            var project2 = new Project { Name = "Project2" };
+            var project = new Project { Name = "Project 1", OrganizationId = organizationId };
+            var project2 = new Project { Name = "Project2", OrganizationId = organizationId };
             Context.Projects.Add(project);
             Context.Projects.Add(project2);
         
