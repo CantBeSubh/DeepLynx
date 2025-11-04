@@ -6,6 +6,7 @@ using deeplynx.interfaces;
 using deeplynx.models;
 using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -24,7 +25,7 @@ namespace deeplynx.tests
         public long pid;    // project ID
         public long lid;    // label ID
         public long lid2;   // archived label ID
-        
+        public long uid;
         public SensitivityLabelBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -573,15 +574,145 @@ namespace deeplynx.tests
         
         #endregion
         
+    #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateSensitivityLabel_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testLabel = new SensitivityLabel
+            {
+                Name = "Test Label LastUpdatedBy",
+                Description = "Test description",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            // Act
+            Context.SensitivityLabels.Add(testLabel);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedLabel = await Context.SensitivityLabels.FindAsync(testLabel.Id);
+            Assert.NotNull(savedLabel);
+            Assert.Equal(uid, savedLabel.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateSensitivityLabel_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testLabel = new SensitivityLabel
+            {
+                Name = "Test Label Navigation",
+                Description = "Test description 2",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            Context.SensitivityLabels.Add(testLabel);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var labelWithUser = await Context.SensitivityLabels
+                .Include(l => l.LastUpdatedByUser)
+                .FirstAsync(l => l.Id == testLabel.Id);
+            
+            // Assert
+            Assert.NotNull(labelWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", labelWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test_label@example.com", labelWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, labelWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateSensitivityLabel_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testLabel = new SensitivityLabel
+            {
+                Name = "Test Label Null",
+                Description = "Test description 3",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.SensitivityLabels.Add(testLabel);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedLabel = await Context.SensitivityLabels.FindAsync(testLabel.Id);
+            Assert.NotNull(savedLabel);
+            Assert.Null(savedLabel.LastUpdatedBy);
+            
+            var labelWithUser = await Context.SensitivityLabels
+                .Include(l => l.LastUpdatedByUser)
+                .FirstAsync(l => l.Id == testLabel.Id);
+            
+            Assert.Null(labelWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateSensitivityLabel_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testLabel = new SensitivityLabel
+            {
+                Name = "Test Label Update",
+                Description = "Test description 4",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.SensitivityLabels.Add(testLabel);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testLabel.LastUpdatedBy = uid;
+            testLabel.Name = "Updated Label Name";
+            testLabel.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.SensitivityLabels.Update(testLabel);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedLabel = await Context.SensitivityLabels
+                .Include(l => l.LastUpdatedByUser)
+                .FirstAsync(l => l.Id == testLabel.Id);
+            
+            Assert.Equal(uid, updatedLabel.LastUpdatedBy);
+            Assert.NotNull(updatedLabel.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedLabel.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Label Name", updatedLabel.Name);
+        }
+
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
+            
+            var user = new User
+            {
+                Name = "Test User",
+                Email = "test_label@example.com",
+                Password = "test_password",
+                IsArchived = false
+            };
+            Context.Users.Add(user);
+            await Context.SaveChangesAsync();
+            uid = user.Id;
             
             // create test organization
             var testOrg = new Organization
             {
                 Name = "Test Organization",
                 Description = "Test org for unit tests",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = false
             };
             Context.Organizations.Add(testOrg);
@@ -593,6 +724,8 @@ namespace deeplynx.tests
             {
                 Name = "Test Project",
                 Description = "Test project for unit tests",
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = false
             };
             Context.Projects.Add(testProject);
@@ -605,6 +738,8 @@ namespace deeplynx.tests
                 Name = "Test Label",
                 Description = "Test label for unit tests",
                 ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = false
             };
             var archivedLabel = new SensitivityLabel
@@ -612,6 +747,8 @@ namespace deeplynx.tests
                 Name = "Archived Label",
                 Description = "Archived label for tests",
                 ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid,
                 IsArchived = true
             };
             Context.SensitivityLabels.AddRange(testLabel, archivedLabel);

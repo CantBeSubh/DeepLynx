@@ -42,10 +42,13 @@ public partial class Event
     public string Properties { get; set; } = null!;
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("last_updated_at", TypeName = "timestamp without time zone")]
     public DateTime LastUpdatedAt { get; set; }
     public virtual Project? Project { get; set; }
     public virtual DataSource? DataSource { get; set; }
+    
+    [InverseProperty("LastUpdatedEvents")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

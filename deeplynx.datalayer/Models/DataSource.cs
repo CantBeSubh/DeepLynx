@@ -37,7 +37,7 @@ public partial class DataSource
     public DateTime LastUpdatedAt { get; set; }
 
     [Column("last_updated_by")]
-    public string? LastUpdatedBy { get; set; }
+    public long? LastUpdatedBy { get; set; }
 
     [Column("description")]
     public string? Description { get; set; }
@@ -60,4 +60,7 @@ public partial class DataSource
 
     [InverseProperty("DataSource")]
     public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+    
+    [InverseProperty("LastUpdatedDataSources")]
+    public virtual User? LastUpdatedByUser { get; set; }
 }

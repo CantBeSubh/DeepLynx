@@ -1517,7 +1517,7 @@ namespace deeplynx.tests
                 RelationshipId = 4,
                 DataSourceId = 6,
                 ProjectId = 7,
-                LastUpdatedBy = "test@example.com",
+                LastUpdatedBy = uid1,
                 LastUpdatedAt = now,
                 IsArchived = false
             };
@@ -1531,10 +1531,131 @@ namespace deeplynx.tests
             Assert.Equal(7, dto.ProjectId);
             Assert.Equal(now, dto.LastUpdatedAt);
             Assert.False(dto.IsArchived);
+            Assert.Equal(uid1,dto.LastUpdatedBy);
         }
         
         #endregion
-        
+        #region LastUpdatedBy Tests
+
+        [Fact]
+        public async Task CreateEdge_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid1
+            };
+            
+            // Act
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.NotNull(savedEdge);
+            Assert.Equal(uid1, savedEdge.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEdge_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid1
+            };
+            
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+
+            // Act
+            var edgeWithUser = await Context.Edges
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEdge.Id);
+            
+            // Assert
+            Assert.NotNull(edgeWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User 1", edgeWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test_email@example.com", edgeWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid1, edgeWithUser.LastUpdatedBy);
+        }
+
+        [Fact]
+        public async Task CreateEdge_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var savedEdge = await Context.Edges.FindAsync(testEdge.Id);
+            Assert.NotNull(savedEdge);
+            Assert.Null(savedEdge.LastUpdatedBy);
+            
+            var edgeWithUser = await Context.Edges
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEdge.Id);
+            
+            Assert.Null(edgeWithUser.LastUpdatedByUser);
+        }
+
+        [Fact]
+        public async Task UpdateEdge_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testEdge = new Edge
+            {
+                OriginId = originRecordId,
+                DestinationId = destinationRecordId,
+                DataSourceId = dsid,
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Edges.Add(testEdge);
+            await Context.SaveChangesAsync();
+
+            // Act
+            testEdge.LastUpdatedBy = uid1;
+            testEdge.DestinationId = destinationRecordId2;
+            testEdge.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Edges.Update(testEdge);
+            await Context.SaveChangesAsync();
+
+            // Assert
+            var updatedEdge = await Context.Edges
+                .Include(e => e.LastUpdatedByUser)
+                .FirstAsync(e => e.Id == testEdge.Id);
+            
+            Assert.Equal(uid1, updatedEdge.LastUpdatedBy);
+            Assert.NotNull(updatedEdge.LastUpdatedByUser);
+            Assert.Equal("Test User 1", updatedEdge.LastUpdatedByUser.Name);
+            Assert.Equal(destinationRecordId2, updatedEdge.DestinationId);
+        }
+
+        #endregion
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
@@ -1542,7 +1663,9 @@ namespace deeplynx.tests
             var user = new User
             {
                 Name = "Test User 1",
-                Email = "test_email@example.com"
+                Email = "test_email@example.com",
+                Password = "test_password",
+                IsArchived = false
             };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();

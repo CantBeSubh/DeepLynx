@@ -75,7 +75,7 @@ export function ExpandableTable<T>({
                     <td colSpan={columns.length + 2} className="p-0">
                       <div className="overflow-hidden transition-all duration-500 ease-in-out max-h-[1000px] opacity-100">
                         <div
-                          className="card bg-base-200 border border-base-300/30 p-6 rounded-box shadow-lg"
+                          className="card bg-base-200 border border-base-300/30 p-6 rounded-box shadow-lg shadow-dynamic-shadow"
                           data-tour={`project-row-${rowid}-expanded`}
                         >
                           {renderExpandedContent(row, closeExpanded)}
@@ -84,7 +84,7 @@ export function ExpandableTable<T>({
                     </td>
                   </tr>
                 ) : (
-                  <tr className="bg-base-200/30 hover:bg-base-200/60 transition-colors">
+                  <tr className="bg-base-200/30 hover:bg-base-300/60 transition-colors shadow shadow-dynamic-shadow">
                     {columns.map((col, i) => (
                       <td
                         key={i}
