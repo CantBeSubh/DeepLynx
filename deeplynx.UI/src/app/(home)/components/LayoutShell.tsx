@@ -1,5 +1,4 @@
 // src/app/(home)/components/LayoutShell.tsx
-
 "use client";
 
 import { useLanguage } from "@/app/contexts/Language";
@@ -15,16 +14,21 @@ import React from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
-import { useRBAC } from "@/app/(home)/rbac/useRBAC";
 import { RoleGate } from "../rbac/RBACComponents";
+import { useRBAC } from "../rbac/useRBAC";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
-  const { hasPermission, user, PERMISSIONS } = useRBAC();
+  const { user } = useRBAC();
+
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
+
+  // Check if auth is disabled
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
@@ -47,8 +51,19 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const parts = fullName.trim().split(/\s+/);
     const firstName = parts[0] ?? "";
     const lastName = parts[parts.length - 1] ?? "";
-    return [firstName, lastName].filter(Boolean).join(", ");
+    return [firstName, lastName].filter(Boolean).join(" ");
   };
+
+  // When auth is disabled, use RBAC user. When enabled, use session.
+  const displayName = isAuthDisabled
+    ? user?.name || ""
+    : session?.user?.name || "";
+
+  const displayEmail = isAuthDisabled
+    ? user?.email || ""
+    : session?.user?.email || "";
+
+  const displayImage = session?.user?.image;
 
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
@@ -78,26 +93,24 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             className="menu dropdown-content bg-base-100 text-base-content rounded-box z-[100] w-auto min-w-52 max-w-[90vw] p-2 shadow-xl border border-base-300"
           >
             <li>
-              <div className="flex hover:bg-base-300">
+              <div className="flex bg-base-100">
                 <AvatarCell
-                  image={session?.user?.image ?? undefined}
-                  name={session?.user?.name ?? ""}
+                  image={displayImage ?? undefined}
+                  name={displayName}
                   size={20}
                 />
                 <div className="flex-1 min-w-0">
                   <h1 className="font-bold text-lg text-base-content">
-                    {formatUserName(session?.user?.name ?? null)}
+                    {formatUserName(displayName)}
                   </h1>
-                  <p className="text-base-content/70 text-sm">
-                    {session?.user?.email}
-                  </p>
+                  <p className="text-base-content/70 text-sm">{displayEmail}</p>
                 </div>
               </div>
             </li>
             <li className="mt-2">
               <Link
                 href="/settings"
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
               >
                 <Cog6ToothIcon className="size-6" />
                 {t.translations.SETTINGS}
@@ -105,7 +118,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </li>
             <li>
               <button
-                className="text-base-content hover:bg-base-300"
+                className="text-base-content hover:bg-base-200"
                 onClick={handleLogout}
               >
                 <ArrowRightStartOnRectangleIcon className="size-6" />
