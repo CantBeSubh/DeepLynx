@@ -8,8 +8,8 @@ on:
         required: true
         default: 'Test'
 
-#  push:
-#    branches: ["sandbox"]
+  push:
+    branches: ["develop"]
 
 jobs:
   build:
