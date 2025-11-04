@@ -111,35 +111,71 @@ public class IntegrationTestBase : IAsyncLifetime
     /// </summary>
     protected async Task CleanDatabaseAsync()
     {
-        var projects = await Context.Projects.ToListAsync();
-        Context.Projects.RemoveRange(projects);
-        var datasources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(datasources);
-        var classes = await Context.Classes.ToListAsync();
-        Context.Classes.RemoveRange(classes);
-        var records = await Context.Records.ToListAsync();
-        Context.Records.RemoveRange(records);
-        var users = await Context.Users.ToListAsync();
-        Context.Users.RemoveRange(users);
-        var edges = await Context.Edges.ToListAsync();
-        Context.Edges.RemoveRange(edges);
-        var relationships = await Context.Relationships.ToListAsync();
-        Context.Relationships.RemoveRange(relationships);
-        var tags = await Context.Tags.ToListAsync();
-        Context.Tags.RemoveRange(tags);
-        var dataSources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(dataSources);
+        var oauthApplications = await Context.OauthApplications.ToListAsync();
+        Context.OauthApplications.RemoveRange(oauthApplications);
+        await Context.SaveChangesAsync();
+
         var subscriptions = await Context.Subscriptions.ToListAsync();
         Context.Subscriptions.RemoveRange(subscriptions);
+        await Context.SaveChangesAsync();
+
         var actions = await Context.Actions.ToListAsync();
         Context.Actions.RemoveRange(actions);
+        await Context.SaveChangesAsync();
+
         var events = await Context.Events.ToListAsync();
         Context.Events.RemoveRange(events);
+        await Context.SaveChangesAsync();
+
         var permissions = await Context.Permissions.ToListAsync();
         Context.Permissions.RemoveRange(permissions);
+        await Context.SaveChangesAsync();
+
+        var edges = await Context.Edges.ToListAsync();
+        Context.Edges.RemoveRange(edges);
+        await Context.SaveChangesAsync();
+
+        var relationships = await Context.Relationships.ToListAsync();
+        Context.Relationships.RemoveRange(relationships);
+        await Context.SaveChangesAsync();
+
+        var tags = await Context.Tags.ToListAsync();
+        Context.Tags.RemoveRange(tags);
+        await Context.SaveChangesAsync();
+
+        var records = await Context.Records.ToListAsync();
+        Context.Records.RemoveRange(records);
+        await Context.SaveChangesAsync();
+
+        var classes = await Context.Classes.ToListAsync();
+        Context.Classes.RemoveRange(classes);
+        await Context.SaveChangesAsync();
+
+        var dataSources = await Context.DataSources.ToListAsync();
+        Context.DataSources.RemoveRange(dataSources);
+        await Context.SaveChangesAsync();
+
+        var projectMembers = await Context.ProjectMembers.ToListAsync();
+        Context.ProjectMembers.RemoveRange(projectMembers);
+        await Context.SaveChangesAsync();
+
+        var roles = await Context.Roles.ToListAsync();
+        Context.Roles.RemoveRange(roles);
+        await Context.SaveChangesAsync();
+
+        var projects = await Context.Projects.ToListAsync();
+        Context.Projects.RemoveRange(projects);
+        await Context.SaveChangesAsync();
+
+        // Delete parent entities last
+        var users = await Context.Users.ToListAsync();
+        Context.Users.RemoveRange(users);
+        await Context.SaveChangesAsync();
+
         var organizations = await Context.Organizations.ToListAsync();
         Context.Organizations.RemoveRange(organizations);
         await Context.SaveChangesAsync();
+
         await _cacheBusiness.FlushAsync();
     }
 

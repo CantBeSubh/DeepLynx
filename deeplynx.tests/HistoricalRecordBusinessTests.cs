@@ -470,7 +470,7 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     
     protected override async Task SeedTestDataAsync()
     {
-        var organization = new Organization { Name = "Test Organization" };
+        var organization = new Organization { Name = $"unique org {Guid.NewGuid()}"  };
         Context.Organizations.Add(organization);
         await Context.SaveChangesAsync();
         organizationId = organization.Id;
