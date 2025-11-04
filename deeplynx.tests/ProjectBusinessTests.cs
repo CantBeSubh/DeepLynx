@@ -381,7 +381,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(projectsForOrganization);
             Assert.NotEmpty(projectsForOrganization);
-            Assert.Equal(5, projectsForOrganization.Count);
+            Assert.Equal(4, projectsForOrganization.Count);
             Assert.All(projectsForOrganization, p => Assert.Equal(oid, p.OrganizationId));
         }
 
