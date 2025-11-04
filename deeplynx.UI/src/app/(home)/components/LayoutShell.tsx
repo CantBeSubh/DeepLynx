@@ -15,14 +15,15 @@ import React from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
-import { useRBAC } from "@/app/(home)/rbac/useRBAC";
 import { RoleGate } from "../rbac/RBACComponents";
+import { useRBAC } from "../rbac/useRBAC";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
-  const { hasPermission, user, PERMISSIONS } = useRBAC();
+  const { user } = useRBAC();
+
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
 
@@ -49,6 +50,11 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const lastName = parts[parts.length - 1] ?? "";
     return [firstName, lastName].filter(Boolean).join(", ");
   };
+
+  // Use RBAC user data, fallback to session data
+  const displayName = user?.name || session?.user?.name || "";
+  const displayEmail = user?.email || session?.user?.email || "";
+  const displayImage = session?.user?.image;
 
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
@@ -80,17 +86,15 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <li>
               <div className="flex hover:bg-base-300">
                 <AvatarCell
-                  image={session?.user?.image ?? undefined}
-                  name={session?.user?.name ?? ""}
+                  image={displayImage ?? undefined}
+                  name={displayName}
                   size={20}
                 />
                 <div className="flex-1 min-w-0">
                   <h1 className="font-bold text-lg text-base-content">
-                    {formatUserName(session?.user?.name ?? null)}
+                    {formatUserName(displayName)}
                   </h1>
-                  <p className="text-base-content/70 text-sm">
-                    {session?.user?.email}
-                  </p>
+                  <p className="text-base-content/70 text-sm">{displayEmail}</p>
                 </div>
               </div>
             </li>

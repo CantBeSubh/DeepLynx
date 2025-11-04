@@ -6,26 +6,20 @@ import LayoutShell from "../(home)/components/LayoutShell";
 import { UserSessionProvider } from "../contexts/UserSessionProvider";
 import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
 import AuthGuard from "./components/AuthGuard";
+import { RBACProvider } from "./rbac/RBACContext";
 
 export default function HomeLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
-
-  if (disableAuth == "true") {
-    return (
-      <ProjectSessionProvider>
-        <LayoutShell>{children}</LayoutShell>
-      </ProjectSessionProvider>
-    );
-  } else
-    return (
-      <AuthGuard>
+  return (
+    <AuthGuard>
+      <RBACProvider>
         <ProjectSessionProvider>
           <LayoutShell>{children}</LayoutShell>
         </ProjectSessionProvider>
-      </AuthGuard>
-    );
+      </RBACProvider>
+    </AuthGuard>
+  );
 }

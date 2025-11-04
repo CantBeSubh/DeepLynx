@@ -28,9 +28,9 @@ export default async function Page() {
   }
 
   // Local development bypass
-  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION;
+  const disableAuth = process.env.DISABLE_FRONTEND_AUTHENTICATION === "true";
 
-  if (disableAuth == "true") {
+  if (disableAuth) {
     return <HomeDashboardClient initialProjects={projects} />;
   } else
     return (
