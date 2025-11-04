@@ -14,7 +14,7 @@ services:
         NEXTAUTH_SECRET: ""
         BACKEND_BASE_URL: "http://server:5000/api"
         AUTH_TRUST_HOST: true
-        DISABLE_FRONTEND_AUTHENTICATION: true
+        NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION: true
     environment:
       NODE_ENV: production
       OKTA_ISSUER: "https://identity-preview.inl.gov"
@@ -27,7 +27,7 @@ services:
       NEXTAUTH_SECRET: ""
       BACKEND_BASE_URL: "http://server:5000/api"
       AUTH_TRUST_HOST: true
-      DISABLE_FRONTEND_AUTHENTICATION: true
+      NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION: true
     ports:
       - "3000:3000"
     networks:

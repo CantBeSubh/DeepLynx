@@ -109,7 +109,7 @@ public class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Clean database between tests
     /// </summary>
-    protected async Task CleanDatabaseAsync()
+    private async Task CleanDatabaseAsync()
     {
         var organizations = await Context.Organizations.ToListAsync();
         Context.Organizations.RemoveRange(organizations);
@@ -117,8 +117,8 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.ProjectMembers.RemoveRange(projectMembers);
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
-        var tokens = await Context.OauthApplications.ToListAsync();
-        Context.OauthApplications.RemoveRange(tokens);
+        var tokens = await Context.OauthTokens.ToListAsync();
+        Context.OauthTokens.RemoveRange(tokens);
         var applications = await Context.OauthApplications.ToListAsync();
         Context.OauthApplications.RemoveRange(applications);
         var groups = await Context.Groups.ToListAsync();
@@ -129,8 +129,8 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Permissions.RemoveRange(permissions);
         var labels = await Context.SensitivityLabels.ToListAsync();
         Context.SensitivityLabels.RemoveRange(labels);
-        var datasources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(datasources);
+        var dataSources = await Context.DataSources.ToListAsync();
+        Context.DataSources.RemoveRange(dataSources);
         var classes = await Context.Classes.ToListAsync();
         Context.Classes.RemoveRange(classes);
         var records = await Context.Records.ToListAsync();
@@ -141,8 +141,6 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Relationships.RemoveRange(relationships);
         var tags = await Context.Tags.ToListAsync();
         Context.Tags.RemoveRange(tags);
-        var dataSources = await Context.DataSources.ToListAsync();
-        Context.DataSources.RemoveRange(dataSources);
         var subscriptions = await Context.Subscriptions.ToListAsync();
         Context.Subscriptions.RemoveRange(subscriptions);
         var actions = await Context.Actions.ToListAsync();
