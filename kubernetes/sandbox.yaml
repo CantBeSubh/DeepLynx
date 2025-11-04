@@ -288,6 +288,11 @@ spec:
                 configMapKeyRef:
                   name: app-config
                   key: backend-base-url
+            - name: HOSTED_LINK
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: hosted-link
           resources:
             limits:
               memory: "4Gi"
