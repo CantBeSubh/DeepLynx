@@ -7,7 +7,11 @@ import AvatarCell from "../components/Avatar";
 import ThemeToggle from "../components/ThemeToggle";
 import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
-import { createApiKey, deleteApiKey, getAllKeysByUser } from "@/app/lib/settings_services.client";
+import {
+  createApiKey,
+  deleteApiKey,
+  getAllKeysByUser,
+} from "@/app/lib/settings_services.client";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import UserSettingsSkeleton from "../components/skeletons/usersettingsskeleton";
@@ -15,7 +19,7 @@ import ToastInfoModal from "../components/ToastInfoModal";
 const SettingsPageClient = () => {
   const { lang, setLang, t } = useLanguage();
   const { data: session } = useSession();
-  const[userKeys, setUserKeys] = useState<string[]>([]);
+  const [userKeys, setUserKeys] = useState<string[]>([]);
   const name = session?.user?.name ?? "";
   const email = session?.user?.email ?? "";
   const image = session?.user?.image ?? undefined;
@@ -23,45 +27,46 @@ const SettingsPageClient = () => {
   const [deleting, setDeleting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  
+
   const apiKeyGen = async () => {
     try {
       setCreating(true);
       const res = await createApiKey();
-      const keyStr = "Key: "+res.apiKey;
-      const secretStr = "Secret: "+res.apiSecret;
-      setUserKeys(prev=>[res.apiKey,...prev])
-      toast.success((t)=>(
-        <ToastInfoModal 
-          title={"API Keypair created successfully! Keep these somewhere safe:"} 
-          toastId={t.id} 
-          infoDisplay={[keyStr,secretStr]} 
-          onClose={() => test()}
-        />
-        // <div className="relative">
-        //   <div className="space-y-1 pb-5">
-        //     <div className="flex justify-center w-full">
-        //       <span>API Keypair created successfully! Keep these somewhere safe:</span>
-        //     </div>
-        //     <code className="block">Key: {res.apiKey}</code>
-        //     <code className="block">Secret: {res.apiSecret}</code>
-        //   </div>
-        //   <div className="flex justify-center w-full">
-        //     <button className="btn btn-primary btn-outline btn-xs" onClick={()=>{toast.dismiss(t.id); router.refresh()}}>
-        //     Dismiss
-        //     </button>
-        //   </div>
+      const keyStr = "Key: " + res.apiKey;
+      const secretStr = "Secret: " + res.apiSecret;
+      setUserKeys((prev) => [res.apiKey, ...prev]);
+      toast.success(
+        (t) => (
+          <ToastInfoModal
+            title={
+              "API Keypair created successfully! Keep these somewhere safe:"
+            }
+            toastId={t.id}
+            infoDisplay={[keyStr, secretStr]}
+          />
+          // <div className="relative">
+          //   <div className="space-y-1 pb-5">
+          //     <div className="flex justify-center w-full">
+          //       <span>API Keypair created successfully! Keep these somewhere safe:</span>
+          //     </div>
+          //     <code className="block">Key: {res.apiKey}</code>
+          //     <code className="block">Secret: {res.apiSecret}</code>
+          //   </div>
+          //   <div className="flex justify-center w-full">
+          //     <button className="btn btn-primary btn-outline btn-xs" onClick={()=>{toast.dismiss(t.id); router.refresh()}}>
+          //     Dismiss
+          //     </button>
+          //   </div>
 
-        // </div>
-
-      ),{
-        duration:Infinity,
-        style:{
-          maxWidth:"none",
-
+          // </div>
+        ),
+        {
+          duration: Infinity,
+          style: {
+            maxWidth: "none",
+          },
         }
-
-      });
+      );
     } catch (error) {
       console.error("Error creating keypair:", error);
       toast.error("API Keypair creation failed.");
@@ -70,14 +75,11 @@ const SettingsPageClient = () => {
     }
   };
 
-  const test = ()=>{
-    console.log("on close test works")
-  }
-  const apiKeyDelete = (key:string) => async (e:React.MouseEvent)  => {
+  const apiKeyDelete = (key: string) => async (e: React.MouseEvent) => {
     try {
       setDeleting(true);
       const res = await deleteApiKey(key);
-      setUserKeys(prev=>prev.filter(x=>x!==key))
+      setUserKeys((prev) => prev.filter((x) => x !== key));
       toast.success("API Keypair deleted successfully!");
     } catch (error) {
       console.error("Error deleteing keypair:", error);
@@ -87,17 +89,17 @@ const SettingsPageClient = () => {
     }
   };
 
-    useEffect(() => {
-      (async () => {
-        try {
-          const keys = await getAllKeysByUser();
-          setUserKeys(keys);
-          setIsLoading(false);
-        } catch (error) {
-          console.error(error);
-        }
-      })();
-    }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const keys = await getAllKeysByUser();
+        setUserKeys(keys);
+        setIsLoading(false);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  }, []);
 
   return (
     <div className="min-h-screen bg-base-100 p-8 lg:p-20">
@@ -169,7 +171,11 @@ const SettingsPageClient = () => {
                 <span className="font-semibold text-base-content">
                   {t.translations.EMAIL_NOTIFICATIONS ?? "Email Notifications"}
                 </span>
-                <input type="checkbox" defaultChecked className="toggle toggle-primary" />
+                <input
+                  type="checkbox"
+                  defaultChecked
+                  className="toggle toggle-primary"
+                />
               </div>
 
               <div className="divider my-2" />
@@ -211,22 +217,32 @@ const SettingsPageClient = () => {
           </div>
 
           {isLoading ? (
-            <UserSettingsSkeleton/>
-          ):(
+            <UserSettingsSkeleton />
+          ) : (
             <div className="bg-base-200 rounded-box p-6">
-              {userKeys.length > 0 ?(
+              {userKeys.length > 0 ? (
                 <ul>
-                {userKeys.map((k,i)=>(
-                      <li key={k} className="flex items-center font-mono text-sm pb-3">
-                        {i+1}:  {k} 
-                        <button className="ml-auto" type="button" onClick={apiKeyDelete(k)} disabled={deleting}>
-                          <TrashIcon className="text-red-400 hover:text-red-700 hover:cursor-pointer size-5"/>
-                        </button>
-                      </li>
-                    ))}
+                  {userKeys.map((k, i) => (
+                    <li
+                      key={k}
+                      className="flex items-center font-mono text-sm pb-3"
+                    >
+                      {i + 1}: {k}
+                      <button
+                        className="ml-auto"
+                        type="button"
+                        onClick={apiKeyDelete(k)}
+                        disabled={deleting}
+                      >
+                        <TrashIcon className="text-red-400 hover:text-red-700 hover:cursor-pointer size-5" />
+                      </button>
+                    </li>
+                  ))}
                 </ul>
-              ):(
-              <p className="text-base-content/60">No API keypairs configured</p>
+              ) : (
+                <p className="text-base-content/60">
+                  No API keypairs configured
+                </p>
               )}
             </div>
           )}

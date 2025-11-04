@@ -19,4 +19,6 @@ public interface IUserBusiness
     Task<bool> SetSysAdmin(long authorizerId, long candidateId);
     Task<IEnumerable<HistoricalRecordResponseDto>> GetRecentlyAddedRecords(
         long[] projectId);
+    Task<UserResponseDto> GetUserBySsoId(string ssoId);
+    Task<UserResponseDto> GetUserByEmail(string email);
 }

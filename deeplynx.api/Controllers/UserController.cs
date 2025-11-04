@@ -144,7 +144,7 @@ namespace deeplynx.api.Controllers
         public async Task<IActionResult> DeleteUser(long userId)
         {
             try
-            { 
+            {
                 await _userBusiness.DeleteUser(userId);
                 return Ok(new { message = $"Deleted user {userId}" });
             }
@@ -176,7 +176,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Grant System Admin Rights
         /// </summary>
@@ -259,6 +259,64 @@ namespace deeplynx.api.Controllers
             catch (Exception exc)
             {
                 var message = $"An error occurred while listing historical records: {exc}";
+                _logger.LogError(message);
+                return StatusCode(StatusCodes.Status500InternalServerError, message);
+            }
+        }
+
+        /// <summary>
+        /// Get the current authenticated user
+        /// </summary>
+        /// <returns>User response DTO</returns>
+        [HttpGet("GetCurrentUser", Name = "api_get_current_user")]
+        public async Task<ActionResult<UserResponseDto>> GetCurrentUser()
+        {
+            try
+            {
+                // Try multiple claim types since different auth providers use different claims
+                // First try the Okta UID claim
+                var ssoId = User.FindFirst("uid")?.Value;
+
+                // If not found, try the standard subject claim
+                if (string.IsNullOrEmpty(ssoId))
+                {
+                    ssoId = User.FindFirst("sub")?.Value;
+                }
+
+                // If still not found, try using email as fallback
+                if (string.IsNullOrEmpty(ssoId))
+                {
+                    var email = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                    if (!string.IsNullOrEmpty(email))
+                    {
+                        // Get user by email instead
+                        var userByEmail = await _userBusiness.GetUserByEmail(email);
+                        if (userByEmail == null)
+                        {
+                            return NotFound($"User with email {email} not found");
+                        }
+                        return Ok(userByEmail);
+                    }
+                }
+
+                if (string.IsNullOrEmpty(ssoId))
+                {
+                    return Unauthorized("Unable to identify user from token");
+                }
+
+                // Get user by SSO ID
+                var user = await _userBusiness.GetUserBySsoId(ssoId);
+
+                if (user == null)
+                {
+                    return NotFound($"User with SSO ID {ssoId} not found");
+                }
+
+                return Ok(user);
+            }
+            catch (Exception exc)
+            {
+                var message = $"An unexpected error occurred while fetching current user: {exc}";
                 _logger.LogError(message);
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
