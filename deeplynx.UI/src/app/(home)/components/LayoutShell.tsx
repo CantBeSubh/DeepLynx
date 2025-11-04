@@ -65,9 +65,9 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="dropdown dropdown-end">
           <div className="flex">
             <RoleGate role="sysAdmin">
-              <div tabIndex={0} role="button" className="btn btn-ghost m-1">
+              <Link href={"/sys_admin"} prefetch={false}>
                 <Cog6ToothIcon className="size-10" />
-              </div>
+              </Link>
             </RoleGate>
             <div tabIndex={0} role="button" className="btn btn-ghost m-1">
               <UserCircleIcon className="size-10" />
