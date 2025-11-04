@@ -420,9 +420,7 @@ const MyGraph = ({
           });
 
           // Optional: Add click handler for nodes
-          sigma?.on("clickNode", ({ node }: { node: string }) => {
-            console.log("Clicked node:", node, graph.getNodeAttributes(node));
-          });
+          sigma?.on("clickNode", ({ node }: { node: string }) => {});
         }
 
         onLoadingChange(false);

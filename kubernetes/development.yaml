@@ -138,7 +138,7 @@ spec:
                   name: app-secrets
                   key: service-token
             # Runtime environment variables from configmap (non-sensitive)
-            - name: DISABLE_FRONTEND_AUTHENTICATION
+            - name: NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
                   name: app-config
@@ -266,7 +266,7 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: service-token
-            - name: DISABLE_FRONTEND_AUTHENTICATION
+            - name: NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION
               valueFrom:
                 configMapKeyRef:
                   name: app-config

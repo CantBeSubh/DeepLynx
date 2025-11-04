@@ -6,15 +6,15 @@ import { ProjectResponseDto } from "../../types/responseDTOs";
 
 function toProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
-  id: String(p.id),
-  name: p.name ?? "",
-  description: p.description ?? "", // fallback to empty string
-  abbreviation:p.abbreviation ?? "",
-  lastUpdatedAt: p.lastUpdatedAt,
-  lastUpdatedBy: p.lastUpdatedBy ?? "",
-  isArchived: p.isArchived,
-  organizationId: p.organizationId
-};
+    id: String(p.id),
+    name: p.name ?? "",
+    description: p.description ?? "", // fallback to empty string
+    abbreviation: p.abbreviation ?? "",
+    lastUpdatedAt: p.lastUpdatedAt,
+    lastUpdatedBy: p.lastUpdatedBy ?? "",
+    isArchived: p.isArchived,
+    organizationId: p.organizationId,
+  };
 }
 
 type Props = {
@@ -25,9 +25,11 @@ export default async function ProjectPage({ params }: Props) {
   const { id } = await params;
   if (!id) return notFound();
 
-  const ProjectResponseDtos = (await getAllProjectsServer()) as ProjectResponseDto[];
-  console.log(ProjectResponseDtos);
-  const initialProjects = ProjectResponseDtos.map((p) => toProjectResponseDtos(p));
+  const ProjectResponseDtos =
+    (await getAllProjectsServer()) as ProjectResponseDto[];
+  const initialProjects = ProjectResponseDtos.map((p) =>
+    toProjectResponseDtos(p)
+  );
   const initialProject = initialProjects.find((p) => p.id == id);
 
   if (initialProject == undefined) return notFound();

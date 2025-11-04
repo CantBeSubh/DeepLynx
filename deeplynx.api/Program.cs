@@ -205,7 +205,8 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
-    builder.Services.AddTransient<IRolePermissionService, RolePermissionService>();
+    builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
+    builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -387,7 +388,8 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<RoleBasedAuthorizationMiddleware>(); //RBAC
+    app.UseMiddleware<AuthInProjectMiddleware>(); //Project level RBAC
+    app.UseMiddleware<AuthInOrgMiddleware>(); //Project level RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")
