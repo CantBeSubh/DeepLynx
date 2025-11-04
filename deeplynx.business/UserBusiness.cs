@@ -43,7 +43,7 @@ public class UserBusiness : IUserBusiness
 
         if (organizationId != null)
         {
-            users = users.Where(u => 
+            users = users.Where(u =>
                 u.OrganizationUsers.Any(ou => ou.OrganizationId == organizationId && ou.UserId == u.Id) ||
                 u.Groups.Any(g => g.OrganizationId == organizationId)
             );
@@ -138,7 +138,7 @@ public class UserBusiness : IUserBusiness
         {
             throw new ArgumentException("User with email already exists");
         }
-        
+
         var user = new User
         {
             Name = dto.Name,
@@ -183,7 +183,7 @@ public class UserBusiness : IUserBusiness
         user.Username = dto.Username ?? user.Username;
         user.IsArchived = dto.IsArchived ?? user.IsArchived;
         user.IsActive = dto.IsActive ?? user.IsActive;
-        
+
         _context.Users.Update(user);
         await _context.SaveChangesAsync();
 
@@ -260,7 +260,7 @@ public class UserBusiness : IUserBusiness
         await _context.SaveChangesAsync();
         return true;
     }
-    
+
     /// <summary>
     /// Set a user to sysAdmin. Only works if the user granting admin privilege is also a sysAdmin.
     /// </summary>
@@ -275,7 +275,7 @@ public class UserBusiness : IUserBusiness
             .FirstOrDefaultAsync();
         if (authorizer == null)
             throw new KeyNotFoundException($"User with ID {authorizerId} not found or cannot grant admin privileges.");
-        
+
         var candidate = await _context.Users
             .Where(c => c.Id == candidateId && !c.IsArchived)
             .FirstOrDefaultAsync();
@@ -283,7 +283,7 @@ public class UserBusiness : IUserBusiness
             throw new KeyNotFoundException($"User with ID {candidateId} not found.");
 
         candidate.IsSysAdmin = true;
-        
+
         _context.Users.Update(candidate);
         await _context.SaveChangesAsync();
         return true;
@@ -334,7 +334,7 @@ public class UserBusiness : IUserBusiness
             .GroupBy(r => r.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).First())
             .ToList();
-        
+
         return records
             .Select(r => new HistoricalRecordResponseDto()
             {
@@ -355,6 +355,55 @@ public class UserBusiness : IUserBusiness
                 IsArchived = r.IsArchived,
                 LastUpdatedAt = r.LastUpdatedAt
             });
+    }
+
+    /// <summary>
+    /// Retrieves a user by their SSO ID (Okta ID)
+    /// </summary>
+    /// <param name="ssoId">The SSO ID (subject claim from JWT token)</param>
+    /// <returns>User response DTO if found, null otherwise</returns>
+    public async Task<UserResponseDto> GetUserBySsoId(string ssoId)
+    {
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.SsoId == ssoId);
+
+        if (user == null) return null;
+
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Username = user.Username,
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive
+        };
+    }
+
+    /// <summary>
+    /// Retrieves a user by their email address
+    /// </summary>
+    /// <param name="email">The email address to search for</param>
+    /// <returns>User response DTO if found, null otherwise</returns>
+    public async Task<UserResponseDto> GetUserByEmail(string email)
+    {
+        var user = await _context.Users
+            .Where(u => u.Email.ToLower() == email.ToLower() && !u.IsArchived)
+            .FirstOrDefaultAsync();
+
+        if (user == null) return null;
+
+        return new UserResponseDto
+        {
+            Id = user.Id,
+            Name = user.Name,
+            Email = user.Email,
+            Username = user.Username,
+            IsSysAdmin = user.IsSysAdmin,
+            IsArchived = user.IsArchived,
+            IsActive = user.IsActive
+        };
     }
 
 }

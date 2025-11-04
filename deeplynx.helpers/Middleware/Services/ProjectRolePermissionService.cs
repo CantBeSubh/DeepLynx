@@ -5,25 +5,25 @@ using Microsoft.Extensions.Logging;
 namespace deeplynx.helpers;
 
 //Keeping this interface in the same file as the service
-public interface IRolePermissionService
+public interface IProjectRolePermissionService
 { 
-    Task<bool> UserHasPermissionInProjectAsync(long userId, long projectId, string action, string resource);
+    Task<bool> PermissionInProject(long userId, long projectId, string action, string resource);
 }
 
-public class RolePermissionService : IRolePermissionService
+public class ProjectRolePermissionService : IProjectRolePermissionService
 {
     private readonly DeeplynxContext _dbContext;
-    private readonly ILogger<RolePermissionService> _logger;
+    private readonly ILogger<ProjectRolePermissionService> _logger;
 
-    public RolePermissionService(
+    public ProjectRolePermissionService(
         DeeplynxContext dbContext, 
-        ILogger<RolePermissionService> logger)
+        ILogger<ProjectRolePermissionService> logger)
     {
         _dbContext = dbContext;
         _logger = logger;
     }
 
-    public async Task<bool> UserHasPermissionInProjectAsync(
+    public async Task<bool> PermissionInProject(
         long userId, 
         long projectId, 
         string action, 

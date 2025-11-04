@@ -35,7 +35,7 @@ jobs:
           REDIRECT_LINK: ${{ vars.REDIRECT_LINK }}
           SERVICE_TOKEN: ${{ secrets.SERVICE_TOKEN }}
           BACKEND_BASE_URL: ${{ vars.BACKEND_BASE_URL }}
-          DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}
+          NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION: ${{ vars.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION }}
           HOSTED_LINK: ${{ vars.HOSTED_LINK }}
         run: |
           cd $GITHUB_WORKSPACE
@@ -54,7 +54,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
+            --build-arg NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${{ vars.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION }} \
             .
           
           az acr build --registry $ACR_REGISTRY \
@@ -69,7 +69,7 @@ jobs:
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
-            --build-arg DISABLE_FRONTEND_AUTHENTICATION=${{ vars.DISABLE_FRONTEND_AUTHENTICATION }} \
+            --build-arg NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION=${{ vars.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION }} \
             --build-arg HOSTED_LINK=${{ vars.HOSTED_LINK }} \
             .
 
@@ -119,7 +119,7 @@ jobs:
             --from-literal=auth-url="${{ vars.NEXTAUTH_URL }}" \
             --from-literal=redirect-link="${{ vars.REDIRECT_LINK }}" \
             --from-literal=backend-base-url="${{ vars.BACKEND_BASE_URL }}" \
-            --from-literal=disabled-front-auth="${{ vars.DISABLE_FRONTEND_AUTHENTICATION }}" \
+            --from-literal=disabled-front-auth="${{ vars.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION }}" \
             --from-literal=hosted-link="${{ vars.HOSTED_LINK }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
