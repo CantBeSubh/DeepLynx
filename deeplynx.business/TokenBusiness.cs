@@ -24,20 +24,32 @@ public class TokenBusiness : ITokenBusiness
     public string CreateToken(string apiSecret, string apiKey, double? expiration)
     {
         // 1. Look up the API key record
-        var apiKeyRecord = _context.ApiKeys.FirstOrDefault(x => x.Key == apiKey);
+        var apiKeyRecord = _context.ApiKeys
+            .FirstOrDefault(x => x.Key == apiKey);
 
         if (apiKeyRecord == null)
         {
             throw new KeyNotFoundException($"API key not found");
         }
+        
+        // 2. Get the User Email for the Token
+        var user = _context.Users
+            .FirstOrDefault(x => x.Id == apiKeyRecord.UserId);
 
-        // 2. Verify the PROVIDED plaintext secret against the STORED hash
+        if (user == null)
+        {
+            throw new InvalidOperationException("Associated user not found");
+        }
+
+        var userEmail = user.Email;
+
+        // 3. Verify the PROVIDED plaintext secret against the STORED hash
         if (!VerifyApiKey(apiSecret, apiKeyRecord.Secret))
         {
             throw new UnauthorizedAccessException("Invalid API credentials");
         }
 
-        // 3. Use a separate JWT signing secret from configuration
+        // 4. Use the JWT signing secret
         var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
         if (string.IsNullOrEmpty(jwtSigningSecret))
@@ -55,8 +67,8 @@ public class TokenBusiness : ITokenBusiness
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, UserContextStorage.Email.ToLower()),
-            new Claim(JwtRegisteredClaimNames.Name, UserContextStorage.Email.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Sub, userEmail.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Name, userEmail.ToLower()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat,
                 DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
@@ -103,7 +115,7 @@ public class TokenBusiness : ITokenBusiness
         string apiKey = KeyGenerator.GenerateKeyBase64();
         string apiSecret = KeyGenerator.GenerateKeyBase64();
 
-        // Hash the SECRET, not the key
+        // Hash the SECRET
         string hashedSecret = HashApiKey(apiSecret);
 
         var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == UserContextStorage.Email.ToLower());
@@ -113,49 +125,23 @@ public class TokenBusiness : ITokenBusiness
             throw new KeyNotFoundException($"User with email {UserContextStorage.Email} not found");
         }
 
-        // Store: plaintext key + hashed secret
+        // Store the plaintext key + hashed secret
         _context.ApiKeys.Add(new ApiKey
         {
-            Key = apiKey, // Plaintext (used to lookup the record)
+            Key = apiKey,
             UserId = user.Id,
-            Secret = hashedSecret // ✅ HASHED secret
+            Secret = hashedSecret
         });
         _context.SaveChanges();
 
-        // Return: plaintext key + plaintext secret to user (ONE TIME ONLY)
+        // Return: plaintext key + plaintext secret to user
         return new TokenResponseDto
         {
-            apiKey = apiKey, // Plaintext key
-            apiSecret = apiSecret // ✅ Plaintext secret (user must save this!)
+            apiKey = apiKey,
+            apiSecret = apiSecret
         };
     }
-
-    // public TokenResponseDto CreateApiKey()
-    // {
-    //     string apiKey = KeyGenerator.GenerateKeyBase64();
-    //     string secret = KeyGenerator.GenerateKeyBase64();
-    //     string hashedKey = HashApiKey(apiKey);
-    //     var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == UserContextStorage.Email.ToLower());
-    //     
-    //     if (user == null)
-    //     {
-    //         throw new KeyNotFoundException($"User with email {UserContextStorage.Email} not found");
-    //     }
-    //
-    //     _context.ApiKeys.Add(new ApiKey
-    //     {
-    //         Key = apiKey,
-    //         UserId = user.Id,
-    //         Secret = secret
-    //     });
-    //     _context.SaveChanges();
-    //     
-    //     return new TokenResponseDto
-    //     {
-    //         apiKey = apiKey,
-    //         apiSecret = hashedKey
-    //     };
-    // }
+    
     public async Task<bool> DeleteApiKey(long userId, string key)
     {
         var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == userId);
