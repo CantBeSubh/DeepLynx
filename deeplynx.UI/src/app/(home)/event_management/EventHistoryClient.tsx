@@ -103,11 +103,6 @@ const EventsHistoryClient = () => {
       header: "Data Source",
       data: "dataSourceName",
       sortable: false,
-    },
-    {
-      header: "Updated By",
-      data: "lastUpdatedBy",
-      sortable: false,
     }
   ];
 
@@ -117,11 +112,11 @@ const EventsHistoryClient = () => {
         {/*{t.translations.DATA_CATALOG}*/}
         Event History
       </h1>
-      {loading && (
+      {/* {loading && (
         <div className="text-center py-4 text-base-content">
           Loading events...
         </div>
-      )}
+      )} */}
       <div className="flex">
 
         <div className="flex-1">

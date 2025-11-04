@@ -158,7 +158,7 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
               }`}
             onClick={() => handlePageClick(i)}
           >
@@ -183,7 +183,7 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
               }`}
             onClick={() => handlePageClick(i)}
           >
@@ -201,7 +201,7 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={currentPage}
-            className="join-item btn btn-primary"
+            className="join-item btn bg-dynamic-blue text-white"
             onClick={() => handlePageClick(currentPage)}
           >
             {currentPage}
@@ -224,7 +224,7 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "btn-primary" : ""
+            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
               }`}
             onClick={() => handlePageClick(i)}
           >
@@ -264,7 +264,7 @@ const GenericTable = <T extends object>(
       rowOptions.push(
         <button
           key={i}
-          className={`join-item btn ${currentDisplayedRows === pageLengthOptions[i] ? "btn-primary" : ""
+          className={`join-item btn ${currentDisplayedRows === pageLengthOptions[i] ? "bg-dynamic-blue text-white" : ""
             }`}
           onClick={() => handleRowLengthClick(pageLengthOptions[i])}
         >
@@ -334,7 +334,7 @@ const GenericTable = <T extends object>(
           }`}
       >
         <thead>
-          <tr className={`text-base-content bg-base-300 border`}>
+          <tr className={`text-base-content bg-base-300 ${gridView ? "border" : ""}`}>
             {columns.map((column, index) => (
               <th
                 key={index}
