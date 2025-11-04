@@ -1,4 +1,5 @@
 // TokenBusinessTests.cs
+
 using System.IdentityModel.Tokens.Jwt;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
@@ -13,7 +14,9 @@ namespace deeplynx.tests
     {
         private TokenBusiness _tokenBusiness;
 
-        public TokenBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
+        public TokenBusinessTests(TestSuiteFixture fixture) : base(fixture)
+        {
+        }
 
         public override async Task InitializeAsync()
         {
@@ -35,16 +38,18 @@ namespace deeplynx.tests
             Context.SaveChanges();
 
             var apiKey = "api-key-123";
-            var dbSecret = "short-secret"; // < 32 chars triggers pad-right branch
-            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = dbSecret, UserId = user.Id });
+            var plaintextSecret = "my-plaintext-secret";
+
+            // Store the HASHED secret in the database
+            var hashedSecret = _tokenBusiness.HashApiKey(plaintextSecret);
+            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = hashedSecret, UserId = user.Id });
             Context.SaveChanges();
 
-            // CreateToken verifies: VerifyApiKey(apiKey, secretKeyParameter)
-            // So we pass a *hash of the apiKey* as the secretKey argument.
-            var secretKeyParam = _tokenBusiness.HashApiKey(apiKey);
+            // Set the JWT signing secret environment variable
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
 
-            // Act
-            var jwt = _tokenBusiness.CreateToken(secretKeyParam, apiKey, expiration: 5);
+            // Act - Pass the PLAINTEXT secret to CreateToken
+            var jwt = _tokenBusiness.CreateToken(plaintextSecret, apiKey, expiration: 5);
 
             // Assert
             Assert.False(string.IsNullOrWhiteSpace(jwt));
@@ -55,7 +60,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public void CreateToken_ReturnsEmpty_WhenVerifyFails()
+        public void CreateToken_Throws_WhenVerifyFails()
         {
             // Arrange
             var email = $"tester-{Guid.NewGuid():N}@example.com";
@@ -66,21 +71,25 @@ namespace deeplynx.tests
             Context.SaveChanges();
 
             var apiKey = "api-key-XYZ";
-            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = "any-secret", UserId = user.Id });
+            var correctSecret = "correct-secret";
+            var hashedSecret = _tokenBusiness.HashApiKey(correctSecret);
+
+            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = hashedSecret, UserId = user.Id });
             Context.SaveChanges();
 
-            // Wrong hash -> VerifyApiKey(apiKey, wrongHash) == false
-            var wrongHash = _tokenBusiness.HashApiKey("not-the-api-key");
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
 
-            // Act
-            var jwt = _tokenBusiness.CreateToken(wrongHash, apiKey, expiration: 5);
+            // Pass wrong plaintext secret
+            var wrongSecret = "wrong-secret";
 
-            // Assert
-            Assert.Equal(string.Empty, jwt);
+            // Act & Assert
+            var ex = Assert.Throws<UnauthorizedAccessException>(() =>
+                _tokenBusiness.CreateToken(wrongSecret, apiKey, expiration: 5));
+            Assert.Contains("Invalid API credentials", ex.Message);
         }
 
         [Fact]
-        public void CreateToken_Throws_WhenDbSecretMissing()
+        public void CreateToken_Throws_WhenApiKeyNotFound()
         {
             // Arrange
             var email = $"tester-{Guid.NewGuid():N}@example.com";
@@ -90,17 +99,15 @@ namespace deeplynx.tests
             Context.Users.Add(user);
             Context.SaveChanges();
 
-            var apiKey = "will-have-no-secret";
-            // Add an ApiKey *without* a Secret to force the not found branch
-            Context.ApiKeys.Add(new ApiKey { Key = apiKey, Secret = "", UserId = user.Id });
-            Context.SaveChanges();
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "test-jwt-secret-key-min-32-chars");
 
-            var goodHash = _tokenBusiness.HashApiKey(apiKey);
+            var nonExistentApiKey = "does-not-exist";
+            var someSecret = "any-secret";
 
             // Act & Assert
             var ex = Assert.Throws<KeyNotFoundException>(() =>
-                _tokenBusiness.CreateToken(goodHash, apiKey, expiration: 5));
-            Assert.Contains("Api key not found", ex.Message);
+                _tokenBusiness.CreateToken(someSecret, nonExistentApiKey, expiration: 5));
+            Assert.Contains("API key not found", ex.Message);
         }
 
         #endregion
@@ -116,7 +123,7 @@ namespace deeplynx.tests
             var username = "tester";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email, Name=name, Username = username };
+            var user = new User { Email = email, Name = name, Username = username };
             Context.Users.Add(user);
             Context.SaveChanges();
 
@@ -168,12 +175,16 @@ namespace deeplynx.tests
             // Assert - DTO populated
             Assert.False(string.IsNullOrWhiteSpace(dto.apiKey));
             Assert.False(string.IsNullOrWhiteSpace(dto.apiSecret));
-            Assert.True(_tokenBusiness.VerifyApiKey(dto.apiKey, dto.apiSecret));
 
-            // Assert - Persisted row (secret is stored as plaintext per current design)
+            // Assert - Persisted row (secret is stored as HASH)
             var saved = Context.ApiKeys.SingleOrDefault(k => k.Key == dto.apiKey && k.UserId == user.Id);
             Assert.NotNull(saved);
             Assert.False(string.IsNullOrWhiteSpace(saved!.Secret));
+            
+            Assert.True(_tokenBusiness.VerifyApiKey(dto.apiSecret, saved.Secret));
+    
+            // Verify they are NOT the same (one is plaintext, one is hash)
+            Assert.NotEqual(dto.apiSecret, saved.Secret);
         }
 
         [Fact]
@@ -200,7 +211,7 @@ namespace deeplynx.tests
             var username = "deleter2";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email, Name=name, Username = username };
+            var user = new User { Email = email, Name = name, Username = username };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();
 
@@ -225,7 +236,7 @@ namespace deeplynx.tests
             var username = "deleter";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email, Name=name, Username = username };
+            var user = new User { Email = email, Name = name, Username = username };
             Context.Users.Add(user);
             await Context.SaveChangesAsync();
 
@@ -267,8 +278,9 @@ namespace deeplynx.tests
             var username = "keysUsername";
             UserContextStorage.Email = email;
 
-            var user = new User { Email = email, Name=name, Username = username };
-            var other = new User { Email = $"other-{Guid.NewGuid():N}@example.com", Name="otherName", Username="otherUsername" };
+            var user = new User { Email = email, Name = name, Username = username };
+            var other = new User
+                { Email = $"other-{Guid.NewGuid():N}@example.com", Name = "otherName", Username = "otherUsername" };
 
             Context.Users.AddRange(user, other);
             await Context.SaveChangesAsync();
