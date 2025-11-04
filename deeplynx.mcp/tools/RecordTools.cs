@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Web;
+using deeplynx.mcp.helpers;
 using ModelContextProtocol.Server;
 
 namespace deeplynx.mcp.tools;
@@ -12,7 +13,7 @@ public static class RecordTools
 {
     private static readonly HttpClient _httpClient = new HttpClient
     {
-        BaseAddress = new Uri("http://localhost:5095/api/")
+        BaseAddress = new Uri(EnvironmentHelper.GetRequiredEnvironmentVariable("NEXUS_API_URL"))
     };
     
     [McpServerTool, Description("Gets all of the records that are related to the record with the ID that is provided. " +

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Web;
+using deeplynx.mcp.helpers;
 using ModelContextProtocol.Server;
 
 namespace deeplynx.mcp.tools;
@@ -43,8 +44,9 @@ public static class ProjectTools
     
     private static readonly HttpClient _httpClient = new HttpClient
     {
-        BaseAddress = new Uri("http://localhost:5095/api/")
+        BaseAddress = new Uri(EnvironmentHelper.GetRequiredEnvironmentVariable("NEXUS_API_URL")),
     };
+    
 
     [McpServerTool(UseStructuredContent = true), Description("Get all projects from the API. Returns stringified JSON array of projects. Optional parameters: organizationId (filter by organization), hideArchived (default true).")]
     public static async Task<string> GetAllProjects(
