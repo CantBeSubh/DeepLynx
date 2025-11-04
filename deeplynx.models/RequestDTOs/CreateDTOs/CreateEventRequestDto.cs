@@ -10,6 +10,6 @@ namespace deeplynx.models
         public long? OrganizationId { get; set; }
         public long? DataSourceId { get; set; }
         public string Properties { get; set; }
-        public string? LastUpdatedBy { get; set; }
+        public long? LastUpdatedBy { get; set; }
     }
 }

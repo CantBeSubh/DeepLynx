@@ -423,7 +423,7 @@ public class EventBusiness : IEventBusiness
             DataSourceId = newEvent.DataSourceId,
             Properties = newEvent.Properties,
             LastUpdatedAt = newEvent.LastUpdatedAt,
-            LastUpdatedBy = UserContextStorage.UserId,
+            LastUpdatedBy = newEvent.LastUpdatedBy,
             ProjectName = project?.Name,
             DataSourceName = dataSource?.Name
         };
@@ -486,7 +486,7 @@ public class EventBusiness : IEventBusiness
             DataSourceId = e.DataSourceId,
             Properties = e.Properties,
             LastUpdatedAt = e.LastUpdatedAt,
-            LastUpdatedBy = UserContextStorage.UserId,
+            LastUpdatedBy = e.LastUpdatedBy,
             ProjectName = project?.Name,
             DataSourceName = dataSource?.Name
         }).ToList();
