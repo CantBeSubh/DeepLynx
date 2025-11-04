@@ -25,18 +25,18 @@ public class TestSuiteFixture : IAsyncLifetime
             .WithImage("redis:7-alpine")
             .Build();
     }
-    
+
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
         // Start containers
         await _postgresContainer.StartAsync();
         await _redisContainer.StartAsync();
-        
+
         // Set up configuration for redis cache tests
         RedisConnectionString = _redisContainer.GetConnectionString();
         Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", RedisConnectionString);
-        
+
         PostgresConnectionString = _postgresContainer.GetConnectionString();
 
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
@@ -44,10 +44,10 @@ public class TestSuiteFixture : IAsyncLifetime
             .Options;
 
         Context = new DeeplynxContext(options);
-        
+
         // Apply migrations only once
         await Context.Database.MigrateAsync();
-        
+
         // Apply env variables without exposing values in tests
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
@@ -55,7 +55,7 @@ public class TestSuiteFixture : IAsyncLifetime
         // ensure the notification service is tested
         Environment.SetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE", "true");
     }
-    
+
     // Runs at the end of every test suite
     public async Task DisposeAsync()
     {
@@ -137,10 +137,12 @@ public class IntegrationTestBase : IAsyncLifetime
         Context.Events.RemoveRange(events);
         var permissions = await Context.Permissions.ToListAsync();
         Context.Permissions.RemoveRange(permissions);
+        var organizations = await Context.Organizations.ToListAsync();
+        Context.Organizations.RemoveRange(organizations);
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }
-    
+
     protected virtual async Task SeedTestDataAsync()
     {
         await CleanDatabaseAsync();
