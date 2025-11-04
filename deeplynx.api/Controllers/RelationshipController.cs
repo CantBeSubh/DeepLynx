@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -31,6 +32,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
         /// <returns>List of relationship response DTOs</returns>
         [HttpGet("GetAllRelationships", Name = "api_get_all_relationships")]
+        [AuthInProject("read", "relationship")]
 
         public async Task<ActionResult<IEnumerable<RelationshipResponseDto>>> GetAllRelationships(
         long projectId,
@@ -38,7 +40,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var relationships = await _business.GetAllRelationships(projectId,  hideArchived);
+                var relationships = await _business.GetAllRelationships(projectId, hideArchived);
                 return Ok(relationships);
             }
             catch (Exception exc)
@@ -57,8 +59,9 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived relationships from the result (Default true)</param>
         /// <returns>Relationship response DTO</returns>
         [HttpGet("GetRelationship/{relationshipId}", Name = "api_get_a_relationship")]
+        [AuthInProject("read", "relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> GetRelationship(
-            long projectId, 
+            long projectId,
             long relationshipId,
             [FromQuery] bool hideArchived = true)
         {
@@ -69,7 +72,8 @@ namespace deeplynx.api.Controllers
             catch (KeyNotFoundException ex)
             {
                 return NotFound(new { error = ex.Message });
-            } catch (Exception exc)
+            }
+            catch (Exception exc)
             {
                 var message = $"An unexpected error occurred while fetching the relationship {relationshipId}: {exc}";
                 _logger.LogError(message);
@@ -78,12 +82,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create a relationship 
+        /// Create a relationship
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("CreateRelationship", Name = "api_create_a_relationship")]
+        [AuthInProject("write", "relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> CreateRelationship(long projectId, [FromBody] CreateRelationshipRequestDto dto)
         {
             try
@@ -98,16 +103,17 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Create many relationships 
+        /// Create many relationships
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="relationships">Relationship request DTOs</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPost("BulkCreateRelationships", Name = "api_create_many_relationships")]
+        [AuthInProject("write", "relationship")]
         public async Task<ActionResult<List<RelationshipResponseDto>>> BulkCreateRelationships(
-            long projectId, 
+            long projectId,
             [FromBody] List<CreateRelationshipRequestDto> relationships)
         {
             try
@@ -124,13 +130,14 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Update a relationship 
+        /// Update a relationship
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <param name="dto">Relationship request DTO</param>
         /// <returns>Relationship response DTO</returns>
         [HttpPut("UpdateRelationship/{relationshipId}", Name = "api_update_a_relationship")]
+        [AuthInProject("write", "relationship")]
         public async Task<ActionResult<RelationshipResponseDto>> UpdateRelationship(long projectId, long relationshipId,
             [FromBody] UpdateRelationshipRequestDto dto)
         {
@@ -154,6 +161,7 @@ namespace deeplynx.api.Controllers
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>Relationship was successfully deleted.</returns>
         [HttpDelete("DeleteRelationship/{relationshipId}", Name = "api_delete_a_relationship")]
+        [AuthInProject("write", "relationship")]
         public async Task<IActionResult> DeleteRelationship(long projectId, long relationshipId)
         {
             try
@@ -168,14 +176,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Archive a relationship 
+        /// Archive a relationship
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>A message stating the relationship was successfully archived.</returns>
         [HttpDelete("ArchiveRelationship/{relationshipId}", Name = "api_archive_a_relationship")]
+        [AuthInProject("write", "relationship")]
         public async Task<IActionResult> ArchiveRelationship(long projectId, long relationshipId)
         {
             try
@@ -190,14 +199,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Unarchive a relationship 
+        /// Unarchive a relationship
         /// </summary>
         /// <param name="projectId">ID for project relationship is associated with</param>
         /// <param name="relationshipId">Relationship ID</param>
         /// <returns>A message stating the relationship was successfully unarchived.</returns>
         [HttpPut("UnarchiveRelationship/{relationshipId}", Name = "api_unarchive_a_relationship")]
+        [AuthInProject("write", "relationship")]
         public async Task<IActionResult> UnarchiveRelationship(long projectId, long relationshipId)
         {
             try

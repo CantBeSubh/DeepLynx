@@ -29,6 +29,7 @@ namespace deeplynx.api.Controllers
         /// <param name="file">File to upload</param>
         /// <returns></returns>
         [HttpPost("UploadFile", Name = "api_upload_file")]
+        [AuthInProject("write", "file")]
         public async Task<ActionResult<RecordResponseDto>> UploadFile(
             long projectId,
             [FromQuery] long? dataSourceId,
@@ -57,6 +58,7 @@ namespace deeplynx.api.Controllers
         /// <param name="file">The file to replace the old one</param>
         /// <returns></returns>
         [HttpPut("UpdateFile/{recordId}", Name = "api_update_file")]
+        [AuthInProject("write", "file")]
         public async Task<ActionResult<RecordResponseDto>> UpdateFile(
             long projectId,
             long recordId,
@@ -82,6 +84,8 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">Id of project to which the file belongs</param>
         /// <param name="recordId">Id of record that contains file info</param>
         [HttpGet("DownloadFile/{recordId}", Name = "api_download_file")]
+        [AuthInProject("read", "file")]
+        [AuthInProject("write", "file")]
         public async Task<IActionResult> DownloadFile(long projectId, long recordId)
         {
             try
@@ -105,6 +109,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">Id of project to which the file belongs</param>
         /// <param name="recordId">Id of record that contains file info</param>
         [HttpDelete("DeleteFile/{recordId}", Name = "api_delete_file")]
+        [AuthInProject("write", "file")]
         public async Task<IActionResult> DeleteFile(long projectId, long recordId)
         {
             try

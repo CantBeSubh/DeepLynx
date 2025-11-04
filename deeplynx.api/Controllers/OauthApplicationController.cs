@@ -32,6 +32,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
         /// <returns></returns>
         [HttpGet("GetAllOauthApplications", Name = "api_get_all_oauth_applications")]
+        [AuthInProject("read", "oauth_application")]
         public async Task<ActionResult<IEnumerable<OauthApplicationResponseDto>>> GetAllOauthApplications(
             [FromQuery] bool hideArchived = true)
         {
@@ -56,6 +57,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide or show archived applications</param>
         /// <returns></returns>
         [HttpGet("GetOauthApplication/{applicationId}", Name = "api_get_oauth_application")]
+        [AuthInProject("read", "oauth_application")]
         public async Task<ActionResult<OauthApplicationResponseDto>> GetOauthApplication(
             long applicationId, [FromQuery] bool hideArchived = true)
         {
@@ -78,6 +80,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Data structure of OAuth application to create</param>
         /// <returns></returns>
         [HttpPost("CreateOauthApplication", Name = "api_create_oauth_application")]
+        [AuthInProject("write", "oauth_application")]
         public async Task<ActionResult<OauthApplicationSecureResponseDto>> CreateOauthApplication(
             [FromBody] CreateOauthApplicationRequestDto dto)
         {
@@ -103,6 +106,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Fields to update</param>
         /// <returns></returns>
         [HttpPut("UpdateOauthApplication/{applicationId}", Name = "api_update_oauth_application")]
+        [AuthInProject("write", "oauth_application")]
         public async Task<ActionResult<OauthApplicationResponseDto>> UpdateOauthApplication(
             long applicationId,
             [FromBody] UpdateOauthApplicationRequestDto dto)
@@ -128,6 +132,7 @@ namespace deeplynx.api.Controllers
         /// <param name="applicationId">ID of the OAuth application to hard delete</param>
         /// <returns></returns>
         [HttpDelete("DeleteOauthApplication/{applicationId}", Name = "api_delete_oauth_application")]
+        [AuthInProject("write", "oauth_application")]
         public async Task<ActionResult> DeleteOauthApplication(long applicationId)
         {
             try
@@ -151,6 +156,7 @@ namespace deeplynx.api.Controllers
         /// <param name="applicationId">ID of the OAuth application</param>
         /// <returns></returns>
         [HttpDelete("ArchiveOauthApplication/{applicationId}", Name = "api_archive_oauth_application")]
+        [AuthInProject("write", "oauth_application")]
         public async Task<ActionResult> ArchiveOauthApplication(long applicationId)
         {
             try
@@ -174,6 +180,7 @@ namespace deeplynx.api.Controllers
         /// <param name="applicationId">ID of the OAuth application</param>
         /// <returns></returns>
         [HttpPut("UnarchiveOauthApplication/{applicationId}", Name = "api_unarchive_oauth_application")]
+        [AuthInProject("write", "oauth_application")]
         public async Task<ActionResult> UnarchiveOauthApplication(long applicationId)
         {
             try

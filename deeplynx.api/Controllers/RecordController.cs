@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -23,7 +24,7 @@ namespace deeplynx.api.Controllers
             _recordBusiness = recordBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get all records
         /// </summary>
@@ -33,6 +34,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetAllRecords", Name = "api_get_all_records")]
+        [AuthInProject("read", "record")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetAllRecords(
             long projectId,
             [FromQuery] long? dataSourceId,
@@ -51,15 +53,16 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Get all records that have every given tagId. 
+        /// Get all records that have every given tagId.
         /// </summary>
         /// <param name="projectId">Project ID which records are associated with</param>
         /// <param name="tagIds">The list of Ids to filter records by - records must contain all Ids in the list</param>
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("GetRecordsByTags", Name = "api_get_records_by_tags")]
+        [AuthInProject("read", "record")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetRecordsByTags(
             long projectId,
             [FromQuery] long[] tagIds,
@@ -77,7 +80,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get a record
         /// </summary>
@@ -86,9 +89,10 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result (Default true)</param>
         /// <returns>Record response DTO</returns>
         [HttpGet("GetRecord/{recordId}", Name = "api_get_a_record")]
+        [AuthInProject("read", "record")]
         public async Task<ActionResult<RecordResponseDto>> GetRecord(
-            long projectId, 
-            long recordId, 
+            long projectId,
+            long recordId,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -103,7 +107,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create a record
         /// </summary>
@@ -112,8 +116,9 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("CreateRecord", Name = "api_create_a_record")]
+        [AuthInProject("write", "record")]
         public async Task<ActionResult<RecordResponseDto>> CreateRecord(
-            long projectId, 
+            long projectId,
             [FromQuery] long dataSourceId,
             [FromBody] CreateRecordRequestDto dto)
         {
@@ -129,7 +134,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Create many records
         /// </summary>
@@ -138,8 +143,9 @@ namespace deeplynx.api.Controllers
         /// <param name="records">List of record request DTOs</param>
         /// <returns>Record response DTO</returns>
         [HttpPost("BulkCreateRecords", Name = "api_create_many_records")]
+        [AuthInProject("write", "record")]
         public async Task<ActionResult<List<RecordResponseDto>>> BulkCreateRecords(
-            long projectId, 
+            long projectId,
             [FromQuery] long dataSourceId,
             [FromBody] List<CreateRecordRequestDto> records)
         {
@@ -155,7 +161,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update a record
         /// </summary>
@@ -164,6 +170,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">Record request DTO</param>
         /// <returns>Record response DTO</returns>
         [HttpPut("UpdateRecord/{recordId}", Name = "api_update_a_record")]
+        [AuthInProject("write", "record")]
         public async Task<ActionResult<RecordResponseDto>> UpdateRecord(
             long projectId,
             long recordId,
@@ -181,14 +188,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Delete a record 
+        /// Delete a record
         /// </summary>
         /// <param name="recordId">The ID of the record to delete.</param>
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully deleted.</returns>
         [HttpDelete("DeleteRecord/{recordId}", Name = "api_delete_a_record")]
+        [AuthInProject("write", "record")]
         public async Task<IActionResult> DeleteRecord(long projectId, long recordId)
         {
             try
@@ -203,7 +211,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-            
+
         /// <summary>
         /// Archive a record
         /// </summary>
@@ -211,6 +219,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully archived.</returns>
         [HttpDelete("ArchiveRecord/{recordId}", Name = "api_archive_a_record")]
+        [AuthInProject("write", "record")]
         public async Task<IActionResult> ArchiveRecord(long projectId, long recordId)
         {
             try
@@ -225,7 +234,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unarchive a record
         /// </summary>
@@ -233,6 +242,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the record belongs.</param>
         /// <returns>A message stating the record was successfully unarchived.</returns>
         [HttpPut("UnarchiveRecord/{recordId}", Name = "api_unarchive_a_record")]
+        [AuthInProject("write", "record")]
         public async Task<IActionResult> UnarchiveRecord(long projectId, long recordId)
         {
             try
@@ -256,6 +266,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tagId">The ID of the tag.</param>
         /// <returns>A message stating the tag was successfully attached to the record.</returns>
         [HttpPost("AttachTag/{recordId}", Name = "api_attach_a_tag")]
+        [AuthInProject("write", "record")]
         public async Task<IActionResult> AttachTag(long projectId, long recordId, [FromQuery] long tagId)
         {
             try
@@ -270,7 +281,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unattach a tag to a record
         /// </summary>
@@ -279,6 +290,7 @@ namespace deeplynx.api.Controllers
         /// <param name="tagId">The ID of the tag.</param>
         /// <returns>A message stating the tag was successfully unattached from the record.</returns>
         [HttpPost("UnattachTag/{recordId}", Name = "api_unattach_a_tag")]
+        [AuthInProject("write", "record")]
         public async Task<IActionResult> UnattachTag(long projectId, long recordId, [FromQuery] long tagId)
         {
             try

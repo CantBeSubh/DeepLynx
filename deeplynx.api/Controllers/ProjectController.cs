@@ -34,6 +34,7 @@ namespace deeplynx.api.Controllers
         /// <returns>A list of projects</returns>
         /// TODO: only list projects which the requesting user has access to once auth middleware is implemented
         [HttpGet("GetAllProjects", Name = "api_get_all_projects")]
+        [AuthInProject("read", "project")]
         public async Task<ActionResult<IEnumerable<ProjectResponseDto>>> GetAllProjects(
             [FromQuery] long? organizationId,
             [FromQuery] bool hideArchived = true)
@@ -61,7 +62,8 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived projects from the result (Default true)</param>
         /// <returns>The given project to return</returns>
         [HttpGet("GetProject/{projectId}", Name = "api_get_a_project")]
-        
+        [AuthInProject("read", "project")]
+
         public async Task<ActionResult<ProjectResponseDto>> GetProject(
             long projectId,
             [FromQuery] bool hideArchived = true)
@@ -85,6 +87,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">A data transfer object with details on the new project to be created.</param>
         /// <returns>The new project which was just created.</returns>
         [HttpPost("CreateProject", Name = "api_create_a_project")]
+        [AuthInProject("write", "project")]
         public async Task<ActionResult<ProjectResponseDto>> CreateProject([FromBody] CreateProjectRequestDto dto)
         {
             try
@@ -108,6 +111,7 @@ namespace deeplynx.api.Controllers
         /// <param name="dto">A data transfer object with details on the project to be updated.</param>
         /// <returns>The project which was just updated.</returns>
         [HttpPut("UpdateProject/{projectId}", Name = "api_update_a_project")]
+        [AuthInProject("write", "project")]
         public async Task<ActionResult<ProjectResponseDto>> UpdateProject(long projectId, [FromBody] UpdateProjectRequestDto dto)
         {
             try
@@ -129,6 +133,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of the project to delete.</param>
         /// <returns>Boolean true on successful deletion.</returns>
         [HttpDelete("DeleteProject/{projectId}", Name = "api_delete_a_project")]
+        [AuthInProject("write", "project")]
         public async Task<IActionResult> DeleteProject(long projectId)
         {
             try
@@ -150,6 +155,7 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">ID of the project to archive.</param>
         /// <returns>A message stating the project was successfully archived.</returns>
         [HttpDelete("ArchiveProject/{projectId}", Name = "api_archive_a_project")]
+        [AuthInProject("write", "project")]
         public async Task<IActionResult> ArchiveProject(long projectId)
         {
             try
@@ -164,13 +170,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Unarchive a project
         /// </summary>
         /// <param name="projectId">ID of the project to unarchive.</param>
         /// <returns>A message stating the project was successfully unarchived.</returns>
         [HttpPut("UnarchiveProject/{projectId}", Name = "api_unarchive_a_project")]
+        [AuthInProject("write", "project")]
         public async Task<IActionResult> UnarchiveProject(long projectId)
         {
             try
@@ -185,13 +192,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Get project stats 
+        /// Get project stats
         /// </summary>
         /// <param name="projectId">ID of the project to display stats about.</param>
         /// <returns>Project stats</returns>
         [HttpGet("ProjectStats/{projectId}", Name = "api_get_a_projects_stats")]
+        [AuthInProject("read", "project")]
         public async Task<ActionResult<ProjectStatResponseDto>> ProjectStats(long projectId)
         {
             try
@@ -206,7 +214,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Retrieves all records for multiple projects.
         /// </summary>
@@ -214,8 +222,9 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived records from the result</param>
         /// <returns>List of record response DTOs</returns>
         [HttpGet("MultiProjectRecords", Name = "api_multiproject_records")]
+        [AuthInProject("read", "project")]
         public async Task<ActionResult<IEnumerable<RecordResponseDto>>> GetMultiProjectRecords(
-            [FromQuery]long[] projects,
+            [FromQuery] long[] projects,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -230,13 +239,14 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// List Project Members
         /// </summary>
         /// <param name="projectId">(Optional)ID of the project</param>
         /// <returns>A list of groups and users in the project, along with their roles</returns>
         [HttpGet("GetProjectMembers/{projectId}", Name = "api_get_project_members")]
+        [AuthInProject("read", "project")]
         public async Task<ActionResult> GetProjectMembers(long projectId)
         {
             try
@@ -251,7 +261,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Add User or Group to Project
         /// </summary>
@@ -261,8 +271,9 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of group if group is member</param>
         /// <returns></returns>
         [HttpPost("AddMemberToProject", Name = "api_add_member_to_project")]
+        [AuthInProject("write", "project")]
         public async Task<ActionResult> AddMemberToProject(
-            [FromQuery] long projectId, [FromQuery] long? roleId, 
+            [FromQuery] long projectId, [FromQuery] long? roleId,
             [FromQuery] long? userId, [FromQuery] long? groupId)
         {
             try
@@ -277,7 +288,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Update Member Role in Project
         /// </summary>
@@ -287,8 +298,9 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of group if group is member</param>
         /// <returns></returns>
         [HttpPut("UpdateProjectMemberRole", Name = "api_update_project_member_role")]
+        [AuthInProject("write", "project")]
         public async Task<ActionResult> UpdateProjectMemberRole(
-            [FromQuery] long projectId, [FromQuery] long roleId, 
+            [FromQuery] long projectId, [FromQuery] long roleId,
             [FromQuery] long? userId, [FromQuery] long? groupId)
         {
             try
@@ -303,7 +315,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Remove User or Group from Project
         /// </summary>
@@ -312,9 +324,10 @@ namespace deeplynx.api.Controllers
         /// <param name="groupId">ID of the group if group is member</param>
         /// <returns></returns>
         [HttpDelete("RemoveMemberFromProject", Name = "api_remove_member_from_project")]
+        [AuthInProject("write", "project")]
         public async Task<ActionResult> RemoveMemberFromProject(
             [FromQuery] long projectId,
-            [FromQuery] long? userId, 
+            [FromQuery] long? userId,
             [FromQuery] long? groupId)
         {
             try

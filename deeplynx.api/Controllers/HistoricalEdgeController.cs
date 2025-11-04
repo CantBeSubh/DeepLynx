@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -23,7 +24,7 @@ namespace deeplynx.api.Controllers
             _historicalEdgeBusiness = historicalEdgeBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get all edges at a point in time
         /// </summary>
@@ -34,6 +35,7 @@ namespace deeplynx.api.Controllers
         /// <param name="current">(Optional) Find only the most current edges. Overrides point in time (Default true)</param>
         /// <returns>List of edge response DTOs</returns>
         [HttpGet("GetAllHistoricalEdges", Name = "api_get_all_historical_edges")]
+        [AuthInProject("read", "historical_edge")]
         public async Task<ActionResult<IEnumerable<HistoricalEdgeResponseDto>>> GetAllHistoricalEdges(
             long projectId,
             [FromQuery] long? dataSourceId,
@@ -53,7 +55,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get an edge at a point in time
         /// </summary>
@@ -65,11 +67,12 @@ namespace deeplynx.api.Controllers
         /// <param name="current">(Optional) Find only the most current edges. Overrides point in time (Default true)</param>
         /// <returns>Edge response DTO</returns>
         [HttpGet("GetHistoricalEdge", Name = "api_get_a_historical_edge")]
+        [AuthInProject("read", "historical_edge")]
         public async Task<ActionResult<HistoricalEdgeResponseDto>> GetHistoricalEdge(
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId,
-            [FromQuery] DateTime? pointInTime, 
+            [FromQuery] DateTime? pointInTime,
             [FromQuery] bool hideArchived = true)
         {
             try
@@ -85,7 +88,7 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
         /// Get edge history
         /// </summary>
@@ -94,9 +97,10 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">the destination ID by which to fetch the edge if no ID</param>
         /// <returns>A list of previous edge versions</returns>
         [HttpGet("GetEdgeHistory", Name = "api_get_an_edge_history")]
+        [AuthInProject("read", "historical_edge")]
         public async Task<ActionResult<HistoricalEdgeResponseDto>> GetEdgeHistory(
             [FromQuery] long? edgeId,
-            [FromQuery] long? originId, 
+            [FromQuery] long? originId,
             [FromQuery] long? destinationId)
         {
             try
