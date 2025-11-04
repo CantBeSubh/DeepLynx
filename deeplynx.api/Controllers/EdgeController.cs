@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -34,6 +35,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdges", Name = "api_get_all_edges")]
+        [AuthInProject("read", "edge")]
         public async Task<ActionResult<IEnumerable<EdgeResponseDto>>> GetAllEdges(
             long projectId,
             [FromQuery] long? dataSourceId = null,
@@ -59,6 +61,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetAllEdgesByRecord", Name = "api_get_edges_by_record")]
+        [AuthInProject("read", "edge")]
         public async Task<ActionResult<IEnumerable<RelatedRecordsResponseDto>>> GetEdgesByRecord(
             long recordId,
             bool isOrigin,
@@ -86,6 +89,7 @@ namespace deeplynx.api.Controllers
         /// <param name="depth">The number of levels you want to search through</param>
         /// <returns>A list of edges based on the applied filters.</returns>
         [HttpGet("GetGraphDataForRecord", Name = "api_get_graph_data_for_record")]
+        [AuthInProject("read", "edge")]
         public async Task<ActionResult<GraphResponse>> GetGraphDataForRecord(
             long recordId,
             int depth)
@@ -104,7 +108,7 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Get edge 
+        /// Get edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="edgeId">The ID whereby to fetch the edge</param>
@@ -113,6 +117,7 @@ namespace deeplynx.api.Controllers
         /// <param name="hideArchived">Flag indicating whether to hide archived edges from the result (Default true)</param>
         /// <returns>The edge associated with the given id or origin/destination combo</returns>
         [HttpGet("GetEdge", Name = "api_get_an_edge")]
+        [AuthInProject("read", "edge")]
         public async Task<ActionResult<EdgeResponseDto>> GetEdge(
             long projectId,
             [FromQuery] long? edgeId,
@@ -134,12 +139,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create edge 
+        /// Create edge
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edge">The edge request data transfer object containing edge details</param>
         [HttpPost("CreateEdge", Name = "api_create_an_edge")]
+        [AuthInProject("write", "edge")]
         public async Task<ActionResult<EdgeResponseDto>> CreateEdge(long projectId, [Required] long dataSourceId, [FromBody] CreateEdgeRequestDto edge)
         {
             try
@@ -156,12 +162,13 @@ namespace deeplynx.api.Controllers
         }
 
         /// <summary>
-        /// Create many edges 
+        /// Create many edges
         /// </summary>
         /// <param name="projectId">The ID of the project to which the edge belongs</param>
         /// <param name="dataSourceId">The ID of the data source to which the edge belongs</param>
         /// <param name="edges">List of the edge request data transfer objects containing edge details</param>
         [HttpPost("BulkCreateEdges", Name = "api_create_many_edges")]
+        [AuthInProject("write", "edge")]
         public async Task<ActionResult<List<EdgeResponseDto>>> BulkCreateEdges(
             long projectId,
             [Required] long dataSourceId,
@@ -190,6 +197,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>The updated edge response DTO with its details</returns>
         [HttpPut("UpdateEdge", Name = "api_update_an_edge")]
+        [AuthInProject("write", "edge")]
         public async Task<ActionResult<EdgeResponseDto>> UpdateEdge(
             long projectId,
             [FromBody] UpdateEdgeRequestDto dto,
@@ -219,6 +227,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">The destination ID of the edge if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully deleted.</returns>
         [HttpDelete("DeleteEdge", Name = "api_delete_an_edge")]
+        [AuthInProject("write", "edge")]
         public async Task<IActionResult> DeleteEdge(
             long projectId,
             [FromQuery] long? edgeId,
@@ -248,6 +257,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">The destination ID of the edge to archive if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully archived.</returns>
         [HttpDelete("ArchiveEdge", Name = "api_archive_an_edge")]
+        [AuthInProject("write", "edge")]
         public async Task<IActionResult> ArchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,
@@ -276,6 +286,7 @@ namespace deeplynx.api.Controllers
         /// <param name="destinationId">The destination ID of the edge to unarchive if edgeID is not present.</param>
         /// <returns>A message stating the edge was successfully unarchived.</returns>
         [HttpPut("UnarchiveEdge", Name = "api_unarchive_an_edge")]
+        [AuthInProject("write", "edge")]
         public async Task<IActionResult> UnarchiveEdge(
             long projectId,
             [FromQuery] long? edgeId,

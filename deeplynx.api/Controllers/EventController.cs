@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using deeplynx.interfaces;
 using deeplynx.models;
 using Microsoft.AspNetCore.Authorization;
+using deeplynx.helpers;
 
 namespace deeplynx.api.Controllers
 {
@@ -19,12 +20,12 @@ namespace deeplynx.api.Controllers
     {
         private readonly IEventBusiness _eventBusiness;
         private readonly ILogger<EventController> _logger;
-        public EventController(IEventBusiness eventBusiness,  ILogger<EventController> logger)
+        public EventController(IEventBusiness eventBusiness, ILogger<EventController> logger)
         {
             _eventBusiness = eventBusiness;
             _logger = logger;
         }
-        
+
         /// <summary>
         /// Get All Events
         /// </summary>
@@ -32,6 +33,7 @@ namespace deeplynx.api.Controllers
         /// <param name="organizationId">Optional filter </param>
         /// <returns></returns>
         [HttpGet("GetAllEvents", Name = "api_get_all_events")]
+        [AuthInProject("read", "event")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> GetAllEvents(
             [FromQuery] long? projectId,
             [FromQuery] long? organizationId
@@ -56,6 +58,8 @@ namespace deeplynx.api.Controllers
         /// <param name="queryDto">Filter criteria and pagination parameters</param>.
         /// <returns></returns>
         [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
+        [AuthInProject("read", "event")]
+        [AuthInProject("write", "event")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
             [FromQuery] EventsQueryRequestDTO? queryDto
         )
@@ -77,6 +81,8 @@ namespace deeplynx.api.Controllers
         /// Get all events by user project membership (Paginated).
         /// </summary>
         [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
+        [AuthInProject("read", "event")]
+        [AuthInProject("write", "event")]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsByUser(
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
@@ -92,14 +98,15 @@ namespace deeplynx.api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, message);
             }
         }
-        
+
         /// <summary>
-        /// Get project Events by user subscriptions 
+        /// Get project Events by user subscriptions
         /// </summary>
         /// <param name="userId">The ID of the user</param>
         /// <param name="projectId">The ID of the project to which the events belong</param>
         /// <returns></returns>
         [HttpGet("{projectId}/GetAllEventsByUserProjectSubscriptions", Name = "api_get_all_events_by_user_project_subscriptions")]
+        [AuthInProject("read", "event")]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> GetAllEventsByUserProjectSubscriptions(
             long projectId,
             [FromQuery] long userId)
