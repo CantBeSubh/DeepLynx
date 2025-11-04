@@ -51,7 +51,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const parts = fullName.trim().split(/\s+/);
     const firstName = parts[0] ?? "";
     const lastName = parts[parts.length - 1] ?? "";
-    return [firstName, lastName].filter(Boolean).join(", ");
+    return [firstName, lastName].filter(Boolean).join(" ");
   };
 
   // When auth is disabled, use RBAC user. When enabled, use session.
