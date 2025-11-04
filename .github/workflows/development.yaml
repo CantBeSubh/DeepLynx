@@ -28,6 +28,7 @@ jobs:
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
           JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_SECRET_KEY: ${{ vars.JWT_SECRET_KEY }}
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}

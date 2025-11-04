@@ -200,11 +200,12 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         try
         {
             var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+            var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
             var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
 
-            if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
+            if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience) || string.IsNullOrWhiteSpace(secret))
             {
-                Log.Error("JWT_ISSUER or JWT_AUDIENCE not configured");
+                Log.Error("JWT_ISSUER or JWT_AUDIENCE or JWT_SECRET_KEY not configured");
                 return AuthenticateResult.Fail("JWT configuration error");
             }
 
