@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import { Toaster } from "react-hot-toast";
 import "shepherd.js/dist/css/shepherd.css";
 import "../../styles/shepherd-theme.css";
+import { RBACProvider } from "./(home)/rbac/RBACContext";
 
 export default function RootLayout({
   children,
@@ -52,10 +53,12 @@ export default function RootLayout({
       {/* Use DaisyUI tokens so colors switch with the theme */}
       <body className="min-h-screen bg-base-100 text-base-content">
         <SessionProvider>
-          <LanguageProvider>
-            {children}
-            <Toaster />
-          </LanguageProvider>
+          <RBACProvider>
+            <LanguageProvider>
+              {children}
+              <Toaster />
+            </LanguageProvider>
+          </RBACProvider>
         </SessionProvider>
       </body>
     </html>

@@ -16,20 +16,16 @@ export default function HomeLayout({
 
   if (disableAuth == "true") {
     return (
-      <UserSessionProvider>
+      <ProjectSessionProvider>
+        <LayoutShell>{children}</LayoutShell>
+      </ProjectSessionProvider>
+    );
+  } else
+    return (
+      <AuthGuard>
         <ProjectSessionProvider>
           <LayoutShell>{children}</LayoutShell>
         </ProjectSessionProvider>
-      </UserSessionProvider>
-    )
-  } else
-    return (
-      <UserSessionProvider>
-        <AuthGuard>
-          <ProjectSessionProvider>
-            <LayoutShell>{children}</LayoutShell>
-          </ProjectSessionProvider>
-        </AuthGuard>
-      </UserSessionProvider>
+      </AuthGuard>
     );
 }
