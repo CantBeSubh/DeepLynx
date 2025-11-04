@@ -51,8 +51,8 @@ public partial class Class
 
     [InverseProperty("Origin")]
     public virtual ICollection<Relationship> RelationshipOrigins { get; set; } = new List<Relationship>();
-   
+
     [InverseProperty("LastUpdatedClasses")]
     public virtual User? LastUpdatedByUser { get; set; }
-    
+
 }

@@ -8,6 +8,7 @@ namespace deeplynx.datalayer.Models;
 
 [Table("organizations", Schema = "deeplynx")]
 [Index("Id", Name = "idx_organizations_id")]
+[Index("Name", Name = "unique_organization_name", IsUnique = true)]
 public partial class Organization
 {
     [Key]
@@ -43,10 +44,10 @@ public partial class Organization
 
     [InverseProperty("Organization")]
     public virtual ICollection<SensitivityLabel> SensitivityLabels { get; set; } = new List<SensitivityLabel>();
-    
+
     [InverseProperty("Organization")]
     public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
-    
+
     [InverseProperty("LastUpdatedOrganizations")]
     public virtual User? LastUpdatedByUser { get; set; }
 }
