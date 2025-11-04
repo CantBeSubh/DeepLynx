@@ -1,7 +1,11 @@
 import React from "react";
 
 const Organizations = () => {
-  return <div>Organizations content goes here</div>;
+  return (
+    <div className="flex justify-center mt-10">
+      Organizations content goes here
+    </div>
+  );
 };
 
 export default Organizations;
