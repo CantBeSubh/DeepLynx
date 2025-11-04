@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace deeplynx.business;
+
 using DotNetEnv;
 using System.Linq;
 
@@ -261,7 +262,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {project.Name}),
+            Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
         var updatedProject = new ProjectResponseDto
@@ -525,18 +526,18 @@ public class ProjectBusiness : IProjectBusiness
     {
         //classes": number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
-            .Where(p =>  !p.IsArchived  && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         var records = _context.Records
-            .Where(p => !p.IsArchived  && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources
             .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
 
         var response = new ProjectStatResponseDto()
-            {
-               classes = classes,
-               records = records,
-               datasources =  datasources
-            };
+        {
+            classes = classes,
+            records = records,
+            datasources = datasources
+        };
         return response;
     }
 
@@ -638,7 +639,7 @@ public class ProjectBusiness : IProjectBusiness
         // check if the group or user is already in the project
         var existingProjectMember = await _context.ProjectMembers
             .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (
-                (userId != null && pm.UserId == userId) || 
+                (userId != null && pm.UserId == userId) ||
                 (groupId != null && pm.GroupId == groupId)));
         if (existingProjectMember != null)
             return false; // group or user is already present in the project
@@ -700,8 +701,8 @@ public class ProjectBusiness : IProjectBusiness
 
         // Find the existing project member to update
         var existingProjectMember = await _context.ProjectMembers
-            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && 
-                                       ((userId.HasValue && pm.UserId == userId) || 
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId &&
+                                       ((userId.HasValue && pm.UserId == userId) ||
                                         (groupId.HasValue && pm.GroupId == groupId)));
         if (existingProjectMember == null)
         {
@@ -780,7 +781,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = p.LastUpdatedBy,
             LastUpdatedAt = p.LastUpdatedAt,
             IsArchived = p.IsArchived,
-            OrganizationId =  p.OrganizationId
+            OrganizationId = p.OrganizationId
         }).ToList();
     }
 

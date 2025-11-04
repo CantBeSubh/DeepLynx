@@ -351,13 +351,4 @@ public class OrganizationBusiness : IOrganizationBusiness
 
         return true;
     }
-
-    // ======================================================
-    // CREATE DEFAULT ORGANIZATION ROLES AND PERMISSIONS
-    // ==================================================
-    // TODO: ADD SUMMARY, default roles and perms, set the permissions
-    // private async Task SetOrganizationDefaults(long organizationId)
-    // {
-
-    // }
 }

@@ -81,7 +81,7 @@ public partial class Project
 
     [InverseProperty("Project")]
     public virtual ICollection<Tag> Tags { get; set; } = new List<Tag>();
-    
+
     [InverseProperty("LastUpdatedProjects")]
     public virtual User? LastUpdatedByUser { get; set; }
 }
