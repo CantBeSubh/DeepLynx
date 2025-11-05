@@ -28,6 +28,7 @@ jobs:
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
           JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -50,6 +51,7 @@ jobs:
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
@@ -65,6 +67,7 @@ jobs:
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
@@ -107,6 +110,7 @@ jobs:
             --from-literal=auth-secret="${{ secrets.AUTH_SECRET }}" \
             --from-literal=next-auth-secret="${{ secrets.NEXTAUTH_SECRET }}" \
             --from-literal=service-token="${{ secrets.SERVICE_TOKEN }}" \
+            --from-literal=jwt-secret-key="${{ secrets.JWT_SECRET_KEY }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Create Kubernetes ConfigMap for non-sensitive environment variables
@@ -138,6 +142,7 @@ jobs:
           POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}

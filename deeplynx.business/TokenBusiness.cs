@@ -21,46 +21,62 @@ public class TokenBusiness : ITokenBusiness
         _context = context;
     }
 
-    public string CreateToken(string secretKey, string apiKey, double? expiration)
+    public string CreateToken(string apiSecret, string apiKey, double? expiration)
     {
-        if (VerifyApiKey(apiKey, secretKey))
+        // 1. Look up the API key record
+        var apiKeyRecord = _context.ApiKeys
+            .FirstOrDefault(x => x.Key == apiKey);
+
+        if (apiKeyRecord == null)
+            throw new KeyNotFoundException("API key not found");
+
+        // 2. Get the User Email for the Token
+        var user = _context.Users
+            .FirstOrDefault(x => x.Id == apiKeyRecord.UserId);
+
+        if (user == null)
+            throw new InvalidOperationException("Associated user not found");
+
+        // 3. Verify the PROVIDED plaintext secret against the STORED hash
+        if (!VerifyApiKey(apiSecret, apiKeyRecord.Secret))
+            throw new UnauthorizedAccessException("Invalid API credentials");
+
+        // 4. Use the JWT signing secret
+        var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+
+        if (string.IsNullOrEmpty(jwtSigningSecret))
+            throw new InvalidOperationException("JWT signing secret not configured");
+
+        var secretCheck = jwtSigningSecret.Length < 32
+            ? jwtSigningSecret.PadRight(32, '0')
+            : jwtSigningSecret;
+
+        var key = Encoding.UTF8.GetBytes(secretCheck);
+        double expirationMinutes = expiration > 0 ? (double)expiration : 60;
+
+        var claims = new[]
         {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var secret = _context.ApiKeys.FirstOrDefault(x => x.Key == apiKey)?.Secret;
-            if (string.IsNullOrEmpty(secret))
-            {
-                throw new KeyNotFoundException($"Api key not found");
-            }
+            new Claim(JwtRegisteredClaimNames.Sub, user.Email.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Name, user.Email.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim(JwtRegisteredClaimNames.Iat,
+                DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+                ClaimValueTypes.Integer64),
+            new Claim("apiKey", apiKey)
+        };
 
-            // Use the actual secret from database with padding if needed
-            var secretCheck = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
-            var key = Encoding.UTF8.GetBytes(secretCheck);
-            double expirationMinutes = expiration > 0 ? (double)expiration: 60;
+        var tokenDescriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(claims),
+            Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
+            SigningCredentials = new SigningCredentials(
+                new SymmetricSecurityKey(key),
+                SecurityAlgorithms.HmacSha256Signature)
+        };
 
-            var claims = new[]
-            {
-                new Claim(JwtRegisteredClaimNames.Sub, UserContextStorage.Email.ToLower()),
-                new Claim(JwtRegisteredClaimNames.Name, UserContextStorage.Email.ToLower()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat,
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                    ClaimValueTypes.Integer64), 
-                new Claim("apiKey", apiKey)
-            };
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(expirationMinutes),
-                SigningCredentials = new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256Signature)
-            };
-
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
-        }
-        return string.Empty;
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
     }
 
     public ApiKey GetApiKey(string apiKey)
@@ -72,6 +88,7 @@ public class TokenBusiness : ITokenBusiness
             {
                 throw new KeyNotFoundException($"User with email {UserContextStorage.Email} not found");
             }
+
             var userApiKey = _context.ApiKeys.FirstOrDefault(k => k.Key == apiKey);
             return userApiKey;
         }
@@ -83,42 +100,50 @@ public class TokenBusiness : ITokenBusiness
 
     public TokenResponseDto CreateApiKey()
     {
+        // Generate random key and secret
         string apiKey = KeyGenerator.GenerateKeyBase64();
-        string secret = KeyGenerator.GenerateKeyBase64();
-        string hashedKey = HashApiKey(apiKey);
+        string apiSecret = KeyGenerator.GenerateKeyBase64();
+
+        // Hash the SECRET
+        string hashedSecret = HashApiKey(apiSecret);
+
         var user = _context.Users.FirstOrDefault(u => u.Email.ToLower() == UserContextStorage.Email.ToLower());
-        
+
         if (user == null)
         {
             throw new KeyNotFoundException($"User with email {UserContextStorage.Email} not found");
         }
 
+        // Store the plaintext key + hashed secret
         _context.ApiKeys.Add(new ApiKey
         {
             Key = apiKey,
             UserId = user.Id,
-            Secret = secret
+            Secret = hashedSecret
         });
         _context.SaveChanges();
-        
+
+        // Return: plaintext key + plaintext secret to user
         return new TokenResponseDto
         {
             apiKey = apiKey,
-            apiSecret = hashedKey
+            apiSecret = apiSecret
         };
     }
+
     public async Task<bool> DeleteApiKey(long userId, string key)
     {
-        var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k=>k.Key == key && k.UserId == userId);
+        var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == userId);
 
         if (keyToRemove == null)
             throw new KeyNotFoundException($"Key {key} not found.");
 
         _context.ApiKeys.Remove(keyToRemove);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
+
     public string HashApiKey(string apiKey)
     {
         return BCrypt.Net.BCrypt.HashPassword(apiKey, workFactor: 12);
