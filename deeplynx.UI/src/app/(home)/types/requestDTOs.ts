@@ -36,3 +36,9 @@ export type CreateOrganizationRequestDto = {
   name: string;
   description?: string;
 }
+
+export type UpdateOrganizationRequestDto = {
+  name: string;
+  description?: string;
+}
+

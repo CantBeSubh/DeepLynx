@@ -9,9 +9,8 @@ import GenericTable from "../components/GenericTable";
 import { Column } from "../types/types";
 import CreateOrganization from "../components/CreateOrganizationModal";
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
-// In organization_services.client.ts
 import { OrganizationResponseDto } from "../types/responseDTOs";
-import UsersTable from "./member_management/users/UsersTable";
+import UsersTable from "../components/UsersTable";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
