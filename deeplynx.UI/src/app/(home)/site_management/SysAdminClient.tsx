@@ -20,7 +20,7 @@ interface SysAdminProps {
   applications: OauthApplicationResponseDto[];
 }
 
-const SysAdminClient = ({ organizations }: SysAdminProps) => {
+const SysAdminClient = ({ organizations, applications }: SysAdminProps) => {
   const [activeTab, setActiveTab] = useState("Organization Management");
 
   const tabData = [
@@ -30,7 +30,7 @@ const SysAdminClient = ({ organizations }: SysAdminProps) => {
     },
     {
       label: "Oauth Application",
-      content: <OAuthManagement />,
+      content: <OAuthManagement applications={applications} />,
     },
     {
       label: "Member Management",

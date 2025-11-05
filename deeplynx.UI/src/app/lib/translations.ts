@@ -233,7 +233,10 @@ export const translations = {
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Storage Destination",
             CREATE_ORGANIZATION: "Create Organization",
-            EDIT_ORGANIZATION: "Edit Organization"
+            EDIT_ORGANIZATION: "Edit Organization",
+            OAUTH_APPLICATION: "OAuth Application",
+            CALLBACK_URL: "Callback URL",
+            CREATE_OAUTH_APPLICATION: "Create OAuth Application"
         }
     },
     es: {
@@ -480,7 +483,10 @@ export const translations = {
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Destino de almacenamiento",
             CREATE_ORGANIZATION: "Crear organización",
-            EDIT_ORGANIZATION: "Editar organización"
+            EDIT_ORGANIZATION: "Editar organización",
+            OAUTH_APPLICATION: "OAuth Application",
+            CALLBACK_URL: "Callback URL",
+            CREATE_OAUTH_APPLICATION: "Create OAuth Application"
 
         }
     }

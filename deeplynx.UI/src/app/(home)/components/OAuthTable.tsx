@@ -5,6 +5,8 @@ import { archiveOauthApplication, getAllOauthApplications } from "@/app/lib/oaut
 import { Column } from "../types/types";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import GenericTable from "./GenericTable";
+import CreateOAuthModal from "./CreateOauthModal";
+import EditOAuthApplication from "./EditOAuthApplicationModal";
 
 interface Props {
     applications: OauthApplicationResponseDto[];
@@ -13,21 +15,21 @@ interface Props {
 const OAuthManagement = ({ applications }: Props) => {
     const { t } = useLanguage();
     const [data, setData] = useState<OauthApplicationResponseDto[]>(applications);
-    const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
-    const [editOrganizationModal, setEditOrganizationModal] = useState(false);
-    const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
-    const [selectedOrganizationName, setSelectedOrganizationName] = useState<string>("");
-    const [selectedOrganizationDescription, setSelectedOrganizationDescription] = useState<string>("");
-    const [selectedOrganizations, setSelectedOrganizations] = useState<boolean[]>([]);
+    const [isOAuthApplicationModalOpen, setIsOAuthApplicationModalOpen] = useState(false);
+    const [editOAuthApplicationModal, setEditOAuthApplicationModal] = useState(false);
+    const [selectedOAuthApplicationId, setSelectedOAuthApplicationId] = useState<number | null>(null);
+    const [selectedOAuthApplicationName, setSelectedOAuthApplicationName] = useState<string>("");
+    const [selectedOAuthApplicationDescription, setSelectedOAuthApplicationDescription] = useState<string>("");
+    const [selectedOAuthApplications, setSelectedOAuthApplications] = useState<boolean[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // useEffect(() => {
-    //     setSelectedOrganizations(new Array(data.length).fill(false));
-    //     setSelectAll(false);
-    // }, [data.length]);
+    useEffect(() => {
+        setSelectedOAuthApplications(new Array(data.length).fill(false));
+        setSelectAll(false);
+    }, [data.length]);
 
-    const refreshOrganizations = async () => {
+    const refreshOAuthApplications = async () => {
         try {
             const updatedData = await getAllOauthApplications();
             setData(updatedData);
@@ -40,47 +42,47 @@ const OAuthManagement = ({ applications }: Props) => {
     const handleSelectAll = () => {
         const next = !selectAll;
         setSelectAll(next);
-        // setSelectedOrganizations(new Array(data.length).fill(next));
+        setSelectedOAuthApplications(new Array(data.length).fill(next));
     };
 
     const handleCheckboxChange = (index: number) => {
-        const next = [...selectedOrganizations];
+        const next = [...selectedOAuthApplications];
         next[index] = !next[index];
-        setSelectedOrganizations(next);
+        setSelectedOAuthApplications(next);
         setSelectAll(next.every(Boolean));
     };
 
-    // const handleDelete = async (index: number) => {
-    //     const organizationId = data[index].id as number;
-    //     try {
-    //         await archiveOauthApplication(organizationId);
-    //         // setData((prev) => prev.filter((_, i) => i !== index));
-    //     } catch (err) {
-    //         console.error("Failed to delete organization:", err);
-    //         setError("Failed to delete organization.");
-    //     }
-    // };
+    const handleDelete = async (index: number) => {
+        const oauthId = data[index].id as number;
+        try {
+            await archiveOauthApplication(oauthId);
+            setData((prev) => prev.filter((_, i) => i !== index));
+        } catch (err) {
+            console.error("Failed to delete organization:", err);
+            setError("Failed to delete organization.");
+        }
+    };
 
-    // const handleDeleteSelected = async () => {
-    //     const selectedOrgIds = data
-    //         .filter((_, i) => selectedOrganizations[i])
-    //         .map((org) => org.id);
-    //     try {
-    //         await Promise.all(selectedOrgIds.map((orgId) => archiveOauthApplication(orgId as number)));
-    //         setData((prev) => prev.filter((_, i) => !selectedOrganizations[i]));
-    //     } catch (err) {
-    //         console.error("Failed to delete selected organizations:", err);
-    //         setError("Failed to delete selected organizations.");
-    //     }
-    // };
+    const handleDeleteSelected = async () => {
+        const selectedOAuthIds = data
+            .filter((_, i) => selectedOAuthApplications[i])
+            .map((app) => app.id);
+        try {
+            await Promise.all(selectedOAuthIds.map((appId) => archiveOauthApplication(appId as number)));
+            setData((prev) => prev.filter((_, i) => !selectedOAuthApplications[i]));
+        } catch (err) {
+            console.error("Failed to delete selected organizations:", err);
+            setError("Failed to delete selected organizations.");
+        }
+    };
 
-    const multipleSelected = () => selectedOrganizations.filter(Boolean).length > 1;
+    const multipleSelected = () => selectedOAuthApplications.filter(Boolean).length > 1;
 
     const openEditModal = (organizationId: number, organizationName: string, organizationDescription: string) => {
-        setSelectedOrganizationId(organizationId);
-        setSelectedOrganizationName(organizationName);
-        setSelectedOrganizationDescription(organizationDescription)
-        setEditOrganizationModal(true);
+        setSelectedOAuthApplicationId(organizationId);
+        setSelectedOAuthApplicationName(organizationName);
+        setSelectedOAuthApplicationDescription(organizationDescription)
+        setEditOAuthApplicationModal(true);
     };
 
     const columns: Column<OauthApplicationResponseDto>[] = [
@@ -97,7 +99,7 @@ const OAuthManagement = ({ applications }: Props) => {
                 <input
                     type="checkbox"
                     className="checkbox"
-                    checked={!!selectedOrganizations[index]}
+                    checked={!!selectedOAuthApplications[index]}
                     onChange={() => handleCheckboxChange(index)}
                 />
             ),
@@ -125,18 +127,18 @@ const OAuthManagement = ({ applications }: Props) => {
         {
             header: (
                 <div className="flex">
-                    {/* {multipleSelected() && (
+                    {multipleSelected() && (
                         <button onClick={handleDeleteSelected}>
                             <TrashIcon className="size-6 text-red-500" />
                         </button>
-                    )} */}
+                    )}
                 </div>
             ),
             cell: (_row, index) => (
                 <div className="flex">
-                    {/* <button onClick={() => handleDelete(index)}>
+                    <button onClick={() => handleDelete(index)}>
                         <TrashIcon className="size-6 text-red-500" />
-                    </button> */}
+                    </button>
                 </div>
             ),
             sortable: false,
@@ -149,10 +151,10 @@ const OAuthManagement = ({ applications }: Props) => {
                 <button
                     className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
                     data-tour="create-project"
-                    onClick={() => setIsOrganizationModalOpen(true)}
+                    onClick={() => setIsOAuthApplicationModalOpen(true)}
                 >
                     <PlusIcon className="size-5" />
-                    <span>{t.translations.ORGANIZATION}</span>
+                    <span>{t.translations.OAUTH_APPLICATION}</span>
                 </button>
             </div>
             {error && <div className="p-4 text-red-500">{error}</div>}
@@ -161,21 +163,21 @@ const OAuthManagement = ({ applications }: Props) => {
                 data={data}
                 enablePagination
             />
-            {/* <CreateOrganization
-        isOpen={isOrganizationModalOpen}
-        onClose={() => setIsOrganizationModalOpen(false)}
-        onOrganizationCreated={refreshOrganizations}
-      /> */}
-            {/* {selectedOrganizationId !== null && (
-        <EditOrganizataion
-          isOpen={editOrganizationModal}
-          onClose={() => setEditOrganizationModal(false)}
-          organizationId={selectedOrganizationId}
-          organizationName={selectedOrganizationName}
-          organizationDescription={selectedOrganizationDescription}
-          onOrganizationUpdated={refreshOrganizations}
-        />
-      )} */}
+            <CreateOAuthModal
+                isOpen={isOAuthApplicationModalOpen}
+                onClose={() => setIsOAuthApplicationModalOpen(false)}
+                onOAuthApplicationCreated={refreshOAuthApplications}
+            />
+            {selectedOAuthApplicationId !== null && (
+                <EditOAuthApplication
+                    isOpen={editOAuthApplicationModal}
+                    onClose={() => setEditOAuthApplicationModal(false)}
+                    oAuthApplicationId={selectedOAuthApplicationId}
+                    oAuthApplicationName={selectedOAuthApplicationName}
+                    oAuthApplicationCallbackURL={selectedOAuthApplicationDescription}
+                    onOAuthApplicationUpdated={refreshOAuthApplications}
+                />
+            )}
         </div>
     );
 };

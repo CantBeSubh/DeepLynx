@@ -1,37 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { updateUser } from "@/app/lib/user_services.client";
-import { updateOrganization } from "@/app/lib/organization_services.client";
+import { updateOauthApplication } from "@/app/lib/oauth_services.client";
 
-interface EditOrganizationProps {
+interface EditOAuthApplicationProps {
     isOpen: boolean;
     onClose: () => void;
-    organizationId: number;
-    organizationName: string;
-    organizationDescription: string;
-    onOrganizationUpdated: () => void;
+    oAuthApplicationId: number;
+    oAuthApplicationName: string;
+    oAuthApplicationCallbackURL: string;
+    onOAuthApplicationUpdated: () => void;
 }
 
 // Main EditSysUser component
-const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, organizationDescription, onOrganizationUpdated }: EditOrganizationProps) => {
+const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplicationName, oAuthApplicationCallbackURL, onOAuthApplicationUpdated }: EditOAuthApplicationProps) => {
     const { t } = useLanguage();
-    const [name, setName] = useState(organizationName);
-    const [description, setDescription] = useState(organizationDescription)
+    const [name, setName] = useState(oAuthApplicationName);
+    const [callbackUrl, setCallbackURL] = useState(oAuthApplicationCallbackURL)
 
     useEffect(() => {
         if (isOpen) {
-            setName(organizationName);
+            setName(oAuthApplicationName);
         }
-    }, [isOpen, organizationName]);
+    }, [isOpen, oAuthApplicationName]);
 
     const handleUpdate = async (e: React.FormEvent) => {
         try {
-            await updateOrganization(organizationId, { name, description });
-            onOrganizationUpdated();
-            alert("Organization updated successfully!");
+            await updateOauthApplication(oAuthApplicationId, { name, callbackUrl });
+            onOAuthApplicationUpdated();
+            alert("OAuthApplication updated successfully!");
         } catch (error) {
-            console.error("Error updating organization:", error);
-            alert("An error occurred while updating the organization.");
+            console.error("Error updating oAuthApplication:", error);
+            alert("An error occurred while updating the oAuthApplication.");
         }
 
         onClose();
@@ -62,10 +62,10 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
                             </label>
                             <input
                                 type="text"
-                                placeholder="Description"
+                                placeholder="CallbackURL"
                                 className="input input-primary w-full"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                value={callbackUrl}
+                                onChange={(e) => setCallbackURL(e.target.value)}
                                 required
                             />
                             <div className="modal-action">
@@ -84,4 +84,4 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
     );
 };
 
-export default EditOrganization;
+export default EditOAuthApplication;
