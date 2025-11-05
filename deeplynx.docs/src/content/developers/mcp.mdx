@@ -1,0 +1,84 @@
+---
+title: Run the Local Nexus MCP Server
+---
+# Overview
+The Nexus MCP Server allows users/developers to interact with Nexus using natural language. This server is still in the development
+stage, so it can only be run locally and only has a few tools developed. If you want to know how to run and test the server,
+this page will help!
+
+## Step 1: .env Set Up
+In the deeplynx.mcp directory, create a .env file. If you are running Nexus locally, you can copy the contents
+of the .env_sample file and paste them into your .env file. The environment variables and their values are:
+MCP_SERVER_URL=http://localhost:3001
+NEXUS_API_URL=http://localhost:5095/api/
+
+'MCP_SERVER_URL' is the url that the mcp server will be hosted on. You may change this value to best fit your needs. If
+there is not a value assigned, the server will run on the default url decided at runtime.
+
+'NEXUS_API_URL' is the url that the Nexus server is hosted on. If it is running locally, the value should always be the same,
+but you may need to change it depending on which instance you want your server to hit. The value must have a trailing slash.
+
+## Step 2: Run the Server
+
+This is easy!If you are running the server for the first time, cd into the deeplynx.mcp folder and execute this command:
+dotnet build && dotnet run 
+
+From then on, every time you want to start the server, you will only need to execute dotnet run
+
+# Example Agent (Optional)
+
+You can use whichever agent that can connect to a remote MCP server, but here is an example using the Continue agent and 
+Ollama model. Keep in mind, these are free, lightweight services so they are not perfect.
+
+1. Install the Continue extension on VSCode
+<Image
+    src="/docs/images/continue-extension.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+2. Click on the extension icon on the left and ensure Continue is in Agent mode (indicated in bottom left of the chat window) 
+<Image
+    src="/docs/images/continue-icon.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+3. Click on the model dropdown, and click "Add Chat model"
+<Image
+    src="/docs/images/add-chat-model.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+4. Click on the tool icon above the chat window
+<Image
+    src="/docs/images/tool-icon.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+5. Click the + icon to the right of MCP Servers
+
+<Image
+    src="/docs/images/add-mcp-server.png"
+    alt="Create Project UI"
+    width={800}
+    height={600}
+/>
+
+
+
+
+
+```js copy filename=".env"
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=nexuscore
+POSTGRES_DB_NAME=deeplynx
+POSTGRES_DB_HOST=localhost
+POSTGRES_PORT=5432
+```
