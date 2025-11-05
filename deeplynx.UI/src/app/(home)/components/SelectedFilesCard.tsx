@@ -1,13 +1,14 @@
 // src/app/(home)/components/SelectedFilesCard.tsx
 
 "use client";
+import { useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 
 type Props = {
   files: File[];
   onRemoveAt: (idx: number) => void;
   onClear: () => void;
-  onUpload: () => void;
+  onUpload: () => Promise<void>; // Changed to async
   canUpload: boolean;
 };
 
@@ -19,7 +20,19 @@ export default function SelectedFilesCard({
   canUpload,
 }: Props) {
   const { t } = useLanguage();
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleUpload = async () => {
+    setIsUploading(true);
+    try {
+      await onUpload();
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (files.length === 0) return null;
+
   return (
     <div className="card card-border mt-4">
       <div className="card-body">
@@ -39,22 +52,37 @@ export default function SelectedFilesCard({
                       {Math.round(f.size / 1024)} KB
                     </span>
                   </div>
-                  <button className="btn btn-xs" onClick={() => onRemoveAt(i)}>
+                  <button
+                    className="btn btn-xs"
+                    onClick={() => onRemoveAt(i)}
+                    disabled={isUploading}
+                  >
                     {t.translations.REMOVE}
                   </button>
                 </li>
               ))}
             </ul>
             <div className="mt-4 flex gap-2">
-              <button className="btn btn-ghost btn-sm" onClick={onClear}>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={onClear}
+                disabled={isUploading}
+              >
                 {t.translations.CLEAR_ALL}
               </button>
               <button
                 className="btn btn-secondary btn-sm"
-                onClick={onUpload}
-                disabled={!canUpload}
+                onClick={handleUpload}
+                disabled={!canUpload || isUploading}
               >
-                {t.translations.UPLOAD}
+                {isUploading ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs"></span>
+                    {t.translations.UPLOADING}
+                  </>
+                ) : (
+                  t.translations.UPLOAD
+                )}
               </button>
             </div>
           </>
