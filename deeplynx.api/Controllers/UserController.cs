@@ -191,7 +191,6 @@ namespace deeplynx.api.Controllers
         /// <param name="candidateId">ID of user to grant the sysadmin rights to </param>
         /// <returns>User response DTO</returns>
         [HttpGet("SetSysAdmin/{candidateID}", Name = "api_set_sys_admin")]
-        [AuthInProject("read", "user")]
         [AuthInProject("write", "user")]
         public async Task<ActionResult<UserResponseDto>> SetSysAdmin(long candidateId)
         {

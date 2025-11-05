@@ -85,7 +85,6 @@ namespace deeplynx.api.Controllers
         /// <param name="recordId">Id of record that contains file info</param>
         [HttpGet("DownloadFile/{recordId}", Name = "api_download_file")]
         [AuthInProject("read", "file")]
-        [AuthInProject("write", "file")]
         public async Task<IActionResult> DownloadFile(long projectId, long recordId)
         {
             try

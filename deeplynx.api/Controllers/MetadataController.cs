@@ -32,7 +32,7 @@ public class MetadataController : ControllerBase
     /// <param name="dataSourceId">The ID of the datasource from which the metadata was collected.</param>
     /// <param name="metadataRequestDto">The metadata data transfer object containing metadata details.</param>
     [HttpPost("CreateMetadata", Name = "api_create_metadata")]
-    [AuthInProject("read", "metadata")]
+    [AuthInProject("write", "metadata")]
     public async Task<ActionResult<MetadataResponseDto>> CreateMetadata(
         long projectId,
         long dataSourceId,

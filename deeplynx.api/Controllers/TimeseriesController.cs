@@ -36,7 +36,6 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpPost("Query", Name = "api_query_timeseries")]
         [AuthInProject("read", "timeseries")]
-        [AuthInProject("write", "timeseries")]
         public async Task<ActionResult<RecordResponseDto>> QueryTimeseries(long projectId, long dataSourceId, [FromQuery] string fileType, [FromBody] TimeseriesQueryRequestDto request)
         {
             try
@@ -189,7 +188,7 @@ namespace deeplynx.api.Controllers
         /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpGet("InterpolateRows", Name = "api_interpolate_timeseries_rows")]
-        [AuthInProject("write", "timeseries")]
+        [AuthInProject("read", "timeseries")]
         public async Task<IActionResult> InterpolateRows(long projectId, long dataSourceId, [FromQuery] string tableName, [FromQuery] string rowNumber, [FromQuery] string fileType)
         {
             try
@@ -214,7 +213,7 @@ namespace deeplynx.api.Controllers
         /// <param name="fileType">The type of file to convert query to</param>
         /// <returns></returns>
         [HttpGet("Export", Name = "api_export_timeseries_table")]
-        [AuthInProject("write", "timeseries")]
+        [AuthInProject("read", "timeseries")]
         public async Task<IActionResult> ExportTimeseriesTable(long projectId, long dataSourceId, [FromQuery] string tableName, string fileType)
         {
             try

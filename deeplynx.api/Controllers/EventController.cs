@@ -59,7 +59,6 @@ namespace deeplynx.api.Controllers
         /// <returns></returns>
         [HttpGet("QueryEvents", Name = "api_query_events_paginated")]
         [AuthInProject("read", "event")]
-        [AuthInProject("write", "event")]
         public async Task<ActionResult<PaginatedResponse<EventResponseDto>>> QueryEvents(
             [FromQuery] EventsQueryRequestDTO? queryDto
         )
@@ -82,7 +81,6 @@ namespace deeplynx.api.Controllers
         /// </summary>
         [HttpGet("QueryEventsByUser", Name = "api_query_events_by_user")]
         [AuthInProject("read", "event")]
-        [AuthInProject("write", "event")]
         public async Task<ActionResult<IEnumerable<EventResponseDto>>> QueryEventsByUser(
             [FromQuery] EventsQueryRequestDTO? queryDto)
         {
