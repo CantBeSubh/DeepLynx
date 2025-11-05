@@ -232,7 +232,8 @@ export const translations = {
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Storage Destination",
-            CREATE_ORGANIZATION: "Create Organization"
+            CREATE_ORGANIZATION: "Create Organization",
+            EDIT_ORGANIZATION: "Edit Organization"
         }
     },
     es: {
@@ -478,7 +479,9 @@ export const translations = {
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Destino de almacenamiento",
-            CREATE_ORGANIZATION: "Crear organización"
+            CREATE_ORGANIZATION: "Crear organización",
+            EDIT_ORGANIZATION: "Editar organización"
+
         }
     }
 }

@@ -11,6 +11,7 @@ import { getAllOrganizations, archiveOrganization } from "@/app/lib/organization
 import { OrganizationResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/UsersTable";
 import { LargeNumberLike } from "crypto";
+import EditOrganizataion from "../components/EditOrganizationModal";
 // import EditOrganization from "../components/EditOrganizationModal";
 
 interface SysAdminProps {
@@ -67,6 +68,7 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
   const [editOrganizationModal, setEditOrganizationModal] = useState(false);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
   const [selectedOrganizationName, setSelectedOrganizationName] = useState<string>("");
+  const [selectedOrganizationDescription, setSelectedOrganizationDescription] = useState<string>("");
   const [selectedOrganizations, setSelectedOrganizations] = useState<boolean[]>([]);
   const [selectAll, setSelectAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -125,9 +127,10 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
 
   const multipleSelected = () => selectedOrganizations.filter(Boolean).length > 1;
 
-  const openEditModal = (organizationId: number, organizationName: string) => {
+  const openEditModal = (organizationId: number, organizationName: string, organizationDescription: string) => {
     setSelectedOrganizationId(organizationId);
     setSelectedOrganizationName(organizationName);
+    setSelectedOrganizationDescription(organizationDescription)
     setEditOrganizationModal(true);
   };
 
@@ -163,9 +166,9 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
       header: "",
       cell: (row) => (
         <div className="flex">
-          {/* <button onClick={() => openEditModal(row.id, row.name)}>
+          <button onClick={() => openEditModal(row.id as number, row.name, row.description as string)}>
             <PencilIcon className="size-6 text-secondary" />
-          </button> */}
+          </button>
         </div>
       ),
       sortable: false,
@@ -214,15 +217,16 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
         onClose={() => setIsOrganizationModalOpen(false)}
         onOrganizationCreated={refreshOrganizations}
       />
-      {/* {selectedOrganizationId !== null && (
-        <EditOrganization
+      {selectedOrganizationId !== null && (
+        <EditOrganizataion
           isOpen={editOrganizationModal}
           onClose={() => setEditOrganizationModal(false)}
           organizationId={selectedOrganizationId}
           organizationName={selectedOrganizationName}
+          organizationDescription={selectedOrganizationDescription}
           onOrganizationUpdated={refreshOrganizations}
         />
-      )} */}
+      )}
     </div>
   );
 };

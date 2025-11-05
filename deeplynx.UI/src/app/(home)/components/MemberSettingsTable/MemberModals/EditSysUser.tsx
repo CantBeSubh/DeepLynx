@@ -7,10 +7,11 @@ interface EditSysUserProps {
   onClose: () => void;
   userId: number;
   userName: string;
+  onUserUpdated: () => void;
 }
 
 // Main EditSysUser component
-const EditSysUser = ({ isOpen, onClose, userId, userName }: EditSysUserProps) => {
+const EditSysUser = ({ isOpen, onClose, userId, userName, onUserUpdated }: EditSysUserProps) => {
   const { t } = useLanguage();
   const [name, setName] = useState(userName);
 
@@ -23,6 +24,7 @@ const EditSysUser = ({ isOpen, onClose, userId, userName }: EditSysUserProps) =>
   const handleUpdate = async (e: React.FormEvent) => {
     try {
       await updateUser(userId, name);
+      onUserUpdated();
       alert("User updated successfully!");
     } catch (error) {
       console.error("Error updating user:", error);

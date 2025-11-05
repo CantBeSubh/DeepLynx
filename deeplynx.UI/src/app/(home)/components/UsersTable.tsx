@@ -154,6 +154,7 @@ const UsersTable = () => {
           onClose={() => setEditSysUserModal(false)}
           userId={selectedUserId}
           userName={selectedUserName}
+          onUserUpdated={fetchUsers}  // Add this line
         />
       )}
     </div>
