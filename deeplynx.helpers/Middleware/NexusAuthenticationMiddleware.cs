@@ -140,8 +140,11 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
+            // Extract username with fallback priority: name -> preferred_username -> sub -> email
             var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
-                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
+                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
+                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
             var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
 
