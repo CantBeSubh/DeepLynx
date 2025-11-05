@@ -28,7 +28,7 @@ jobs:
           OKTA_CLIENT_SECRET: ${{ secrets.OKTA_CLIENT_SECRET }}
           OKTA_ISSUER: ${{ vars.OKTA_ISSUER }}
           JWT_ISSUER: ${{vars.JWT_ISSUER}}
-          JWT_SECRET_KEY: ${{ vars.JWT_SECRET_KEY }}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -108,6 +108,7 @@ jobs:
             --from-literal=auth-secret="${{ secrets.AUTH_SECRET }}" \
             --from-literal=next-auth-secret="${{ secrets.NEXTAUTH_SECRET }}" \
             --from-literal=service-token="${{ secrets.SERVICE_TOKEN }}" \
+            --from-literal=jwt-secret-key="${{ secrets.JWT_SECRET_KEY }}" \
             --namespace=deeplynxv3-dev \
             --dry-run=client -o yaml | kubectl apply -f -
       # Create Kubernetes ConfigMap for non-sensitive environment variables
@@ -139,6 +140,7 @@ jobs:
           POSTGRES_DB_NAME: ${{ vars.POSTGRES_DB_NAME }}
           POSTGRES_USER: ${{ vars.POSTGRES_USER }}
           JWT_ISSUER: ${{vars.JWT_ISSUER}}
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
           JWT_AUDIENCE: ${{vars.JWT_AUDIENCE}}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           STORAGE_DIRECTORY: ${{ vars.STORAGE_DIRECTORY }}
