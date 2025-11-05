@@ -11,8 +11,11 @@ this page will help!
 ## Step 1: .env Set Up
 In the deeplynx.mcp directory, create a .env file. If you are running Nexus locally, you can copy the contents
 of the .env_sample file and paste them into your .env file. The environment variables and their values are:
+
+```js copy
 MCP_SERVER_URL=http://localhost:3001
 NEXUS_API_URL=http://localhost:5095/api/
+```
 
 'MCP_SERVER_URL' is the url that the mcp server will be hosted on. You may change this value to best fit your needs. If
 there is not a value assigned, the server will run on the default url decided at runtime.
@@ -23,9 +26,12 @@ but you may need to change it depending on which instance you want your server t
 ## Step 2: Run the Server
 
 This is easy!If you are running the server for the first time, cd into the deeplynx.mcp folder and execute this command:
-dotnet build && dotnet run 
 
-From then on, every time you want to start the server, you will only need to execute dotnet run
+```js copy
+dotnet build && dotnet run 
+```
+
+From then on, every time you want to start the server, you will only need to execute ```dotnet run```
 
 
 ## Example Agent (Optional)
