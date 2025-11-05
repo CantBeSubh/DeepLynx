@@ -13,7 +13,7 @@ In the deeplynx.mcp directory, create a .env file. If you are running Nexus loca
 of the .env_sample file and paste them into your .env file. The environment variables and their values are:
 
 ```js copy
-MCP_SERVER_URL=http://localhost:3001
+MCP_SERVER_URL=http://localhost:3002
 NEXUS_API_URL=http://localhost:5095/api/
 ```
 
@@ -21,7 +21,7 @@ NEXUS_API_URL=http://localhost:5095/api/
 there is not a value assigned, the server will run on the default url decided at runtime.
 
 'NEXUS_API_URL' is the url that the Nexus server is hosted on. If it is running locally, the value should always be the same,
-but you may need to change it depending on which instance you want your server to hit. The value must have a trailing slash.
+but you may need to change it depending on which instance you want your server to hit. **The value must have a trailing slash.**
 
 ## Step 2: Run the Server
 
@@ -33,6 +33,11 @@ dotnet build && dotnet run
 
 From then on, every time you want to start the server, you will only need to execute ```dotnet run```
 
+## Adding tools
+All the tools for the MCP server are located in the 'tools' folder. Each file is separated by the entity you are wanting to
+query. For example, if you create a GetProject tool, you would put it in the ProjectTools.cs file. If you are
+wanting to create a GetAllDataSources tool, you would need to create a new file and put the tool inside a class named
+'DataSourceTools'. Use the existing tools as a reference of how to make new ones.
 
 ## Example Agent (Optional)
 
