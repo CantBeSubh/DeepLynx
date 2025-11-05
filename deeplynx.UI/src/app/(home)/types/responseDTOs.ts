@@ -230,4 +230,5 @@ export type EventResponseDto =
         properties?: JSON | string | null;
         lastUpdatedAt?: string | null;
         lastUpdatedBy?: string | null;
+        lastUpdatedByUserName?: string | null;
     };
