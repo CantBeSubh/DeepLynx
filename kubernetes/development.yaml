@@ -118,6 +118,11 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: okta-client-secret
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: jwt-secret-key      
             - name: AUTH_TRUST_HOST          
               value: "true"
             - name: AUTH_SECRET
@@ -221,6 +226,8 @@ spec:
               value: ${POSTGRES_PASSWORD}
             - name: JWT_ISSUER
               value: ${JWT_ISSUER}
+            - name: JWT_SECRET_KEY
+              value: ${JWT_SECRET_KEY}
             - name: JWT_AUDIENCE
               value: ${JWT_AUDIENCE}
             # DuckDB Configuration (same as frontend)
