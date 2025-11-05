@@ -30,4 +30,5 @@ public class EventResponseDto
     public string? DataSourceName { get; set; }
     public DateTime LastUpdatedAt { get; set; }
     public long? LastUpdatedBy { get; set; }
+    public string? LastUpdatedByUserName { get; set; }
 }

@@ -28,9 +28,15 @@ namespace deeplynx.tests.Middleware
 
         public NexusAuthenticationMiddlewareTests(TestSuiteFixture fixture) : base(fixture) { }
 
+        private const string TEST_JWT_SECRET = "test-jwt-secret-key-for-signing-tokens-minimum-32-chars";
+
+// Update the InitializeAsync method to set JWT_SECRET_KEY
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+
+            // Set JWT_SECRET_KEY for all tests
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", TEST_JWT_SECRET);
 
             // Setup mocks
             _optionsMock = new Mock<IOptionsMonitor<JwtBearerOptions>>();
@@ -318,14 +324,14 @@ namespace deeplynx.tests.Middleware
         {
             // Arrange
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
-            
+    
             var user = await Context.Users.FindAsync(uid1);
             var apiKey = await Context.ApiKeys.FindAsync(akid1);
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create token with wrong secret
-            var token = GenerateHS256Token(user.Email, apiKey.Key, "wrong-secret");
+            // Create token with wrong secret - USE THE NEW HELPER
+            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key");
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -490,8 +496,8 @@ namespace deeplynx.tests.Middleware
             Assert.NotNull(user);
             Assert.NotNull(apiKey);
 
-            // Create token with wrong secret
-            var token = GenerateHS256Token(user.Email, apiKey.Key, "wrong-secret-key");
+            // Create token with wrong secret - USE THE NEW HELPER
+            var token = GenerateHS256TokenWithInvalidSignature(user.Email, apiKey.Key, "wrong-secret-key");
             var context = CreateHttpContext(token);
             var middleware = await CreateAndInitializeMiddleware(context);
 
@@ -1331,20 +1337,23 @@ namespace deeplynx.tests.Middleware
         private string GenerateHS256Token(
             string email,
             string apiKey,
-            string secret,
+            string secret,  // This parameter is kept for backward compatibility but overridden
             int expiresInMinutes = 60)
         {
             var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
+                    "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var exp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
             var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-                $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"exp\":{exp}}}"))
+                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"exp\":{exp}}}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var message = $"{header}.{payload}";
-            var secretKey = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
+    
+            // IMPORTANT: Always use JWT_SECRET_KEY for signing, not the API key secret
+            var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
+            var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
 
             using var hmac = new System.Security.Cryptography.HMACSHA256(
                 Encoding.UTF8.GetBytes(secretKey));
@@ -1357,15 +1366,15 @@ namespace deeplynx.tests.Middleware
 
         private string GenerateHS256TokenWithCustomClaims(
             Dictionary<string, string> claims,
-            string secret,
+            string secret,  // This parameter is kept for backward compatibility but overridden
             int expiryMinutes = 5)
         {
             var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
-                "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
+                    "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var exp = DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).ToUnixTimeSeconds();
-            
+    
             // Build claims JSON
             var claimsJson = new StringBuilder("{");
             foreach (var claim in claims)
@@ -1378,7 +1387,39 @@ namespace deeplynx.tests.Middleware
                 .TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
             var message = $"{header}.{payload}";
-            var secretKey = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
+    
+            // IMPORTANT: Always use JWT_SECRET_KEY for signing, not the API key secret
+            var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? TEST_JWT_SECRET;
+            var secretKey = jwtSecret.Length < 32 ? jwtSecret.PadRight(32, '0') : jwtSecret;
+
+            using var hmac = new System.Security.Cryptography.HMACSHA256(
+                Encoding.UTF8.GetBytes(secretKey));
+            var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(message));
+            var signature = Convert.ToBase64String(hash)
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            return $"{message}.{signature}";
+        }
+
+        private string GenerateHS256TokenWithInvalidSignature(
+            string email,
+            string apiKey,
+            string wrongSecret,
+            int expiresInMinutes = 60)
+        {
+            var header = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    "{\"alg\":\"HS256\",\"typ\":\"JWT\"}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var exp = DateTimeOffset.UtcNow.AddMinutes(expiresInMinutes).ToUnixTimeSeconds();
+            var payload = Convert.ToBase64String(Encoding.UTF8.GetBytes(
+                    $"{{\"name\":\"{email}\",\"apiKey\":\"{apiKey}\",\"exp\":{exp}}}"))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+            var message = $"{header}.{payload}";
+
+            // Use the WRONG secret to create an invalid signature
+            var secretKey = wrongSecret.Length < 32 ? wrongSecret.PadRight(32, '0') : wrongSecret;
 
             using var hmac = new System.Security.Cryptography.HMACSHA256(
                 Encoding.UTF8.GetBytes(secretKey));

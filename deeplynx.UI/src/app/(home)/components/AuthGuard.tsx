@@ -1,4 +1,4 @@
-// src/app/components/AuthGuard.tsx
+// src/app/(home)/components/AuthGuard.tsx
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -17,7 +17,16 @@ export default function AuthGuard({
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Check if auth is disabled
+  const disableAuth =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
   useEffect(() => {
+    // Skip auth check if disabled
+    if (disableAuth) {
+      return;
+    }
+
     // If loading, don't do anything yet
     if (status === "loading") return;
 
@@ -26,7 +35,12 @@ export default function AuthGuard({
       router.push(redirectTo);
       return;
     }
-  }, [status, session, router, redirectTo]);
+  }, [status, session, router, redirectTo, disableAuth]);
+
+  // If auth is disabled, always render children immediately
+  if (disableAuth) {
+    return <>{children}</>;
+  }
 
   // Show loading while checking authentication
   if (status === "loading") {
