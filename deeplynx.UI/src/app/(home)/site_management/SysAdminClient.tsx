@@ -11,6 +11,7 @@ import CreateOrganization from "../components/CreateOrganizationModal";
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
 // In organization_services.client.ts
 import { OrganizationResponseDto } from "../types/responseDTOs";
+import UsersTable from "./member_management/users/UsersTable";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
@@ -30,7 +31,7 @@ const SysAdminClient = ({ organizations }: SysAdminProps) => {
     },
     {
       label: "Member Management",
-      content: <div>Need to pull over</div>,
+      content: <UsersTable />,
     }
   ];
 

@@ -65,7 +65,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="dropdown dropdown-end">
           <div className="flex">
             <RoleGate role="sysAdmin">
-              <Link href={"/sys_admin"} prefetch={false}>
+              <Link href={"/site_management"} prefetch={false}>
                 <Cog6ToothIcon className="size-10" />
               </Link>
             </RoleGate>
@@ -121,9 +121,8 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* Side Menu */}
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18 ${
-            isMenuCollapsed ? "ml-20" : "ml-64"
-          }`}
+          className={`transition-all duration-300 w-full mt-18 ${isMenuCollapsed ? "ml-20" : "ml-64"
+            }`}
         >
           {children}
         </main>

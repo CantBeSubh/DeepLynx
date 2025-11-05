@@ -1,8 +1,8 @@
 import React from "react";
-import { FileViewerTableRow } from "../types/types";
+import { FileViewerTableRow } from "../../types/types";
 import { getAllProjectsServer } from "@/app/lib/projects_services.server";
 import MemberManagementClient from "./MemberManagementClient";
-import { ProjectResponseDto } from "../types/responseDTOs";
+import { ProjectResponseDto } from "../../types/responseDTOs";
 
 
 export default async function Page({

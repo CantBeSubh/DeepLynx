@@ -1,25 +1,15 @@
 "use client";
 
 import React from "react";
-import Tabs from "../components/Tabs";
+import Tabs from "../../components/Tabs";
 import UsersTable from "./users/UsersTable";
-import Groups from "./groups/Groups";
-import Organizations from "./organizations/Organizations";
 
 const MemberManagementClient = () => {
   const tabs = [
     {
       label: "Users",
       content: <UsersTable />,
-    },
-    {
-      label: "Groups",
-      content: <Groups />,
-    },
-    {
-      label: "Organizations",
-      content: <Organizations />,
-    },
+    }
   ];
 
   return (
