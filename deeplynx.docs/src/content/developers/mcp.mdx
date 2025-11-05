@@ -1,6 +1,8 @@
 ---
 title: Run the Local Nexus MCP Server
 ---
+import Image from 'next/image'
+
 # Overview
 The Nexus MCP Server allows users/developers to interact with Nexus using natural language. This server is still in the development
 stage, so it can only be run locally and only has a few tools developed. If you want to know how to run and test the server,
@@ -25,12 +27,14 @@ dotnet build && dotnet run
 
 From then on, every time you want to start the server, you will only need to execute dotnet run
 
-# Example Agent (Optional)
+
+## Example Agent (Optional)
 
 You can use whichever agent that can connect to a remote MCP server, but here is an example using the Continue agent and 
 Ollama model. Keep in mind, these are free, lightweight services so they are not perfect.
 
 1. Install the Continue extension on VSCode
+
 <Image
     src="/docs/images/continue-extension.png"
     alt="Create Project UI"
@@ -39,22 +43,49 @@ Ollama model. Keep in mind, these are free, lightweight services so they are not
 />
 
 2. Click on the extension icon on the left and ensure Continue is in Agent mode (indicated in bottom left of the chat window) 
+
 <Image
     src="/docs/images/continue-icon.png"
     alt="Create Project UI"
-    width={800}
-    height={600}
+    width={500}
+    height={350}
 />
 
 3. Click on the model dropdown, and click "Add Chat model"
+
 <Image
     src="/docs/images/add-chat-model.png"
     alt="Create Project UI"
-    width={800}
-    height={600}
+    width={500}
+    height={350}
+/>
+
+4. Set the Provider to Ollama and download Ollama at the provided URL.
+
+<Image
+    src="/docs/images/ollama-download.png"
+    alt="Create Project UI"
+    width={500}
+    height={350}
+/>
+
+5. After Ollama is downloaded and installed, run the command:
+
+```shell copy
+ollama pull llama3.1:8b   
+```
+
+6. Make sure the Model is set to Llamma3.1 8B and click "Connect"
+
+<Image
+    src="/docs/images/ollama-complete.png"
+    alt="Create Project UI"
+    width={500}
+    height={250}
 />
 
 4. Click on the tool icon above the chat window
+
 <Image
     src="/docs/images/tool-icon.png"
     alt="Create Project UI"
@@ -71,14 +102,23 @@ Ollama model. Keep in mind, these are free, lightweight services so they are not
     height={600}
 />
 
+6. Add this into the yaml file that is created. Insert the URL that your mcp server is hosted on.
 
-
-
-
-```js copy filename=".env"
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=nexuscore
-POSTGRES_DB_NAME=deeplynx
-POSTGRES_DB_HOST=localhost
-POSTGRES_PORT=5432
+```yaml copy
+name: Nexus
+version: 0.0.1
+schema: v1
+mcpServers:
+- name: Nexus MCP Server
+  type: streamable-http
+  url: {Insert MCP URL Here}
 ```
+
+Now you should be able to ask the agent questions like: 
+"get all of my projects and read the names and LastUpdatedAt values back to me"
+"Get all of my records in project 2"
+
+Keep in mind, we can not control how the model/agent serializes the request to your mcp server based on your response, so
+it may hallucinate and add random values or may send the string "true" instead of a boolean true or visa-versa. This is not
+the best agent-model pair that is available, but it is free. Feel free to use other services if you come across another that
+works better for you. That is the beauty of MCP servers, they can be used with any! 
