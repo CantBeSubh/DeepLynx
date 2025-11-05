@@ -226,12 +226,13 @@ export const translations = {
             OUTGOING_ARROW: " → Other Records)",
             INCOMING: "Incoming (",
             INCOMING_ARROW: " ← Other Records)",
-            EDGE: "Edge", 
+            EDGE: "Edge",
             TAG_: "Tag ",
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Storage Destination",
+            CREATE_ORGANIZATION: "Create Organization"
         }
     },
     es: {
@@ -476,7 +477,8 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            STORAGE_DESTINATION: "Destino de almacenamiento"
+            STORAGE_DESTINATION: "Destino de almacenamiento",
+            CREATE_ORGANIZATION: "Crear organización"
         }
     }
 }

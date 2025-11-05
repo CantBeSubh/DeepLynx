@@ -9,11 +9,11 @@ export type CustomQueryRequestDto = {
 };
 
 export type RelatedRecordsRequestDto = {
-    recordId?: number;
-    isOrigin?: boolean;
-    page?: number;
-    pageSize?: number;
-    hideArchived?: boolean;
+  recordId?: number;
+  isOrigin?: boolean;
+  page?: number;
+  pageSize?: number;
+  hideArchived?: boolean;
 }
 
 export type CreateRoleRequestDto =
@@ -31,3 +31,8 @@ export type PermissionRequestDto =
     projectId?: number;
     organizationId?: number;
   }
+
+export type CreateOrganizationRequestDto = {
+  name: string;
+  description?: string;
+}
