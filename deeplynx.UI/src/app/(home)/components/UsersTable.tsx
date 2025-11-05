@@ -3,14 +3,11 @@ import GenericTable from "./GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column } from "../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
-import {
-  getAllUsers,
-  updateUser,
-  deleteUser,
-} from "@/app/lib/user_services.client";
+import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "./MemberSettingsTable/MemberModals/EditSysUser";
 import MemberManagementUserSkeleton from "./skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
+
 const UsersTable = () => {
   const { t } = useLanguage();
   const [data, setData] = useState<UserResponseDto[]>([]);
