@@ -1,30 +1,38 @@
 "use client";
 
 import React from "react";
-import { peopleData } from "../dummy_data/data";
-import { useLanguage } from "@/app/contexts/Language";
-import MemberSettings from "@/app/(home)/components/MemberSettingsTable/MemberSettings";
+import Tabs from "../components/Tabs";
+import UsersTable from "./users/UsersTable";
+import Groups from "./groups/Groups";
+import Organizations from "./organizations/Organizations";
 
 const MemberManagementClient = () => {
-  const { lang, setLang, t } = useLanguage();
-  const jason = peopleData.find((p) => p.name === "Jason");
+  const tabs = [
+    {
+      label: "Users",
+      content: <UsersTable />,
+    },
+    {
+      label: "Groups",
+      content: <Groups />,
+    },
+    {
+      label: "Organizations",
+      content: <Organizations />,
+    },
+  ];
 
   return (
     <div>
-            <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
-                <div>
-                <h1 className="text-2xl font-bold text-info-content">
-                    {t.translations.MEMBER_SETTINGS}
-                </h1>
-                </div>
-            </div>
-
-            <div className="flex w-full gap-8 p-8">
-                <div className="w-full">
-                    <MemberSettings />
-                </div>
-            </div>
-        </div>
+      <div className="bg-base-200/40 pl-12 p-4">
+        <h1 className="text-2xl font-bold text-base-content">
+          Member Management
+        </h1>
+      </div>
+      <div className="p-6">
+        <Tabs tabs={tabs} activeTab={""} />
+      </div>
+    </div>
   );
 };
 
