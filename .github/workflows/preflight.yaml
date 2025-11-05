@@ -34,6 +34,7 @@ jobs:
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg SERVICE_TOKEN=${{ secrets.SERVICE_TOKEN }} \
@@ -49,6 +50,7 @@ jobs:
             --build-arg NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }} \
             --build-arg REDIRECT_LINK=${{ vars.REDIRECT_LINK }} \
             --build-arg OKTA_CLIENT_SECRET=${{ secrets.OKTA_CLIENT_SECRET }} \
+            --build-arg JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }} \
             --build-arg AUTH_SECRET=${{ secrets.AUTH_SECRET }} \
             --build-arg NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }} \
             --build-arg BACKEND_BASE_URL=${{ vars.BACKEND_BASE_URL }} \
