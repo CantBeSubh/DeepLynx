@@ -28,36 +28,25 @@ public class TokenBusiness : ITokenBusiness
             .FirstOrDefault(x => x.Key == apiKey);
 
         if (apiKeyRecord == null)
-        {
-            throw new KeyNotFoundException($"API key not found");
-        }
-        
+            throw new KeyNotFoundException("API key not found");
+
         // 2. Get the User Email for the Token
         var user = _context.Users
             .FirstOrDefault(x => x.Id == apiKeyRecord.UserId);
 
         if (user == null)
-        {
             throw new InvalidOperationException("Associated user not found");
-        }
-
-        var userEmail = user.Email;
 
         // 3. Verify the PROVIDED plaintext secret against the STORED hash
         if (!VerifyApiKey(apiSecret, apiKeyRecord.Secret))
-        {
             throw new UnauthorizedAccessException("Invalid API credentials");
-        }
 
         // 4. Use the JWT signing secret
         var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
         if (string.IsNullOrEmpty(jwtSigningSecret))
-        {
             throw new InvalidOperationException("JWT signing secret not configured");
-        }
 
-        // Use the actual secret from database with padding if needed
         var secretCheck = jwtSigningSecret.Length < 32
             ? jwtSigningSecret.PadRight(32, '0')
             : jwtSigningSecret;
@@ -67,8 +56,8 @@ public class TokenBusiness : ITokenBusiness
 
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, userEmail.ToLower()),
-            new Claim(JwtRegisteredClaimNames.Name, userEmail.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Email.ToLower()),
+            new Claim(JwtRegisteredClaimNames.Name, user.Email.ToLower()),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat,
                 DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
@@ -141,7 +130,7 @@ public class TokenBusiness : ITokenBusiness
             apiSecret = apiSecret
         };
     }
-    
+
     public async Task<bool> DeleteApiKey(long userId, string key)
     {
         var keyToRemove = await _context.ApiKeys.SingleOrDefaultAsync(k => k.Key == key && k.UserId == userId);

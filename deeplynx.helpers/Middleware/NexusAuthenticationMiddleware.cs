@@ -141,49 +141,51 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         try
         {
             var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
-                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
-                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
-                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
+                           ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
 
             var apiKey = jwtToken.Claims.FirstOrDefault(c => c.Type == "apiKey")?.Value;
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey))
             {
+                Log.Warning("Token missing required claims");
                 return AuthenticateResult.Fail("Token missing required claims");
             }
 
-            // Verify the API key exists and belongs to the user (authorization check)
+            // Verify the API key still exists and is valid
             var apiKeySecret = await GetSecretForUserAsync(username, apiKey);
             if (string.IsNullOrWhiteSpace(apiKeySecret))
             {
+                Log.Warning($"API key not found or revoked - Username: {username}");
                 return AuthenticateResult.Fail("Invalid API key");
             }
 
-            // Use JWT_SECRET_KEY for signature validation (same as token creation)
+            // Use JWT_SECRET_KEY for signature validation
             var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+
             if (string.IsNullOrEmpty(jwtSigningSecret))
             {
+                Log.Error("JWT_SECRET_KEY not configured");
                 return AuthenticateResult.Fail("Server configuration error");
             }
 
-            var secretKey = jwtSigningSecret.Length < 32 ? jwtSigningSecret.PadRight(32, '0') : jwtSigningSecret;
+            var secretKey = jwtSigningSecret.Length < 32
+                ? jwtSigningSecret.PadRight(32, '0')
+                : jwtSigningSecret;
 
             if (!ValidateJwtSignature(token, secretKey))
             {
+                Log.Warning("JWT signature validation failed");
                 return AuthenticateResult.Fail("JWT signature validation failed");
             }
 
             // Validate expiration
             var exp = jwtToken.Claims.FirstOrDefault(c => c.Type == "exp")?.Value;
-
             if (!string.IsNullOrEmpty(exp))
             {
                 var expirationTime = DateTimeOffset.FromUnixTimeSeconds(long.Parse(exp));
-                var currentTime = DateTimeOffset.UtcNow;
-
-
-                if (expirationTime < currentTime)
+                if (expirationTime < DateTimeOffset.UtcNow)
                 {
+                    Log.Warning("Token has expired");
                     return AuthenticateResult.Fail("Token has expired");
                 }
             }
@@ -192,13 +194,14 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             var principal = new ClaimsPrincipal(claimsIdentity);
 
             await EnsureUserExistsAsync(principal);
-            var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            Log.Information("HS256 token validated successfully");
             return AuthenticateResult.Success(ticket);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, $"HS256 validation failed - {ex.GetType().Name}: {ex.Message}");
+            Log.Error(ex, $"HS256 validation failed: {ex.Message}");
             return AuthenticateResult.Fail(ex);
         }
     }
