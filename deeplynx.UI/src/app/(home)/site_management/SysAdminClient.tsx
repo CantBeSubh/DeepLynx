@@ -8,14 +8,16 @@ import GenericTable from "../components/GenericTable";
 import { Column } from "../types/types";
 import CreateOrganization from "../components/CreateOrganizationModal";
 import { getAllOrganizations, archiveOrganization } from "@/app/lib/organization_services.client";
-import { OrganizationResponseDto } from "../types/responseDTOs";
+import { OauthApplicationResponseDto, OrganizationResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/UsersTable";
 import { LargeNumberLike } from "crypto";
 import EditOrganizataion from "../components/EditOrganizationModal";
+import OAuthManagement from "../components/OAuthTable";
 // import EditOrganization from "../components/EditOrganizationModal";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
+  applications: OauthApplicationResponseDto[];
 }
 
 const SysAdminClient = ({ organizations }: SysAdminProps) => {
@@ -28,7 +30,7 @@ const SysAdminClient = ({ organizations }: SysAdminProps) => {
     },
     {
       label: "Oauth Application",
-      content: <div>Once J2 finishes stuff</div>,
+      content: <OAuthManagement />,
     },
     {
       label: "Member Management",

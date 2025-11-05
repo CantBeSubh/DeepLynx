@@ -6,49 +6,49 @@ export type ClassResponseDto = {
   projectid: number;
   lastUpdatedAt: string | null;
   lastUpdatedBy: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
   archivedat: string | null;
   createdby: string | null;
   createdat: string;
 };
 
-export type TokenResponseDto={
-  apiKey:string;
-  apiSecret:string;
+export type TokenResponseDto = {
+  apiKey: string;
+  apiSecret: string;
 }
 
 export type DataSourceResponseDto = {
   id: number;
   name: string;
   description: string | null;
-  default:boolean;
+  default: boolean;
   abbreviation: string | null;
   type: string | null;
   baseuri: string | null;
   config: Record<string, unknown> | null; // object | null
   projectid: number;
   lastUpdatedAt: string | null; // RFC 3339 or null
-  lastUpdatedBy: string | null;  
-  isArchived:boolean;
+  lastUpdatedBy: string | null;
+  isArchived: boolean;
   createdby: string | null;
   createdat: string;          // RFC 3339 date-time
   archivedat: string | null;  // RFC 3339 or null
 };
 
 export type RelatedRecordsResponseDto = {
-    relatedRecordName: string;
-    relatedRecordId: number;
-    relatedRecordProjectId: number;
-    relationshipName: string | null;
+  relatedRecordName: string;
+  relatedRecordId: number;
+  relatedRecordProjectId: number;
+  relationshipName: string | null;
 }
 
 export type GroupResponseDto = {
-  id: number|string;
+  id: number | string;
   name: string;
   description?: string | null;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
   organizationId: number | string;
 }
 
@@ -70,7 +70,7 @@ export type HistoricalRecordResponseDto = {
   Tags?: string;
   LastUpdatedAt?: Date;
   LastUpdateBy?: string;
-  isArchived:boolean
+  isArchived: boolean
   CreatedBy?: string;
   CreatedAt?: Date;
   ArchivedAt?: Date;
@@ -90,41 +90,41 @@ export type RecordResponseDto = {
   lastUpdatedAt?: string;
   lastUpdatedBy?: string | null;
   isArchived?: boolean;
-  fileType?: string|null;
+  fileType?: string | null;
   tags?: { id: number | null; name: string }[];
 };
 
 export type ObjectStorageResponseDto = {
-    id: number | string;
-    name: string;
-    type: string;
-    projectId: number | string;
-    default: boolean;
-    lastUpdatedAt: string;
-    lastUpdatedBy: string;
-    isArchived: boolean;
+  id: number | string;
+  name: string;
+  type: string;
+  projectId: number | string;
+  default: boolean;
+  lastUpdatedAt: string;
+  lastUpdatedBy: string;
+  isArchived: boolean;
 }
 
 export type OrganizationResponseDto = {
-  id: number|string;
+  id: number | string;
   name: string;
   description?: string | null;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
 }
 
 export type PermissionResponseDto = {
-  id: number|string;
+  id: number | string;
   name: string;
   description?: string | null;
-  action:string;
-  resource?:string|null;
-  isDefault:boolean;
-  labelId?:number|string;
+  action: string;
+  resource?: string | null;
+  isDefault: boolean;
+  labelId?: number | string;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
   projectId?: number | string;
   organizationId?: number | string;
 }
@@ -143,10 +143,10 @@ export type ProjectResponseDto = {
   id: number | string;
   name: string;
   description?: string | null;
-  abbreviation ?: string | null;
+  abbreviation?: string | null;
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
   organizationId: number | string;
 };
 
@@ -158,17 +158,17 @@ export type ProjectStatResponseDto = {
 
 //which one
 export type RoleResponseDto =
-{
-  roleId: number;
-  id: number;
-  name: string;
-  description?: string | null;
-  lastUpdatedAt?: string | null;
-  lastUpdatedBy?: string | null;
-  isArchived?: boolean;
-  projectId: number;
-  organizationId?: number | null;
-}
+  {
+    roleId: number;
+    id: number;
+    name: string;
+    description?: string | null;
+    lastUpdatedAt?: string | null;
+    lastUpdatedBy?: string | null;
+    isArchived?: boolean;
+    projectId: number;
+    organizationId?: number | null;
+  }
 
 export type TagResponseDto = {
   id: number;
@@ -176,20 +176,20 @@ export type TagResponseDto = {
   projectId: number;
   lastUpdatedAt?: string | null;
   lastUpdatedBy?: string | null;
-  isArchived:boolean;
+  isArchived: boolean;
   archivedAt?: string | null;
 };
 
 export type UserResponseDto =
-{
-  id: number;
-  name: string;
-  email: string;
-  username: string;
-  isSysAdmin: boolean;
-  isArchived: boolean;
-  isActive: boolean;
-}
+  {
+    id: number;
+    name: string;
+    email: string;
+    username: string;
+    isSysAdmin: boolean;
+    isArchived: boolean;
+    isActive: boolean;
+  }
 
 export type GraphResponseDto = {
   nodes: Array<{
@@ -204,4 +204,23 @@ export type GraphResponseDto = {
     relationshipName: string | null;
     edgeId: number;
   }>;
+}
+
+export type OauthApplicationResponseDto = {
+  id: number;
+  clientId: string;
+  name: string;
+  description?: string;
+  callbackUrl: string;
+  baseUrl?: string;
+  appOwnerEmail?: string;
+  isArchived: boolean;
+  lastUpdatedAt: string;
+  lastUpdatedBy?: number;
+}
+
+export type OauthApplicationSecureResponseDto = {
+  name: string;
+  clientId: string;
+  clientSecretRaw: string;
 }
