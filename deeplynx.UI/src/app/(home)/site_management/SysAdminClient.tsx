@@ -1,16 +1,17 @@
 "use client";
 
-import { PlusIcon } from "@heroicons/react/24/outline";
-import React, { useState } from "react";
+import { PlusIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
+import React, { useState, useEffect } from "react";
 import Tabs from "../components/Tabs";
 import { useLanguage } from "@/app/contexts/Language";
-import { ExpandableTable } from "../components/ExpandableTable";
 import GenericTable from "../components/GenericTable";
 import { Column } from "../types/types";
 import CreateOrganization from "../components/CreateOrganizationModal";
-import { getAllOrganizations } from "@/app/lib/organization_services.client";
+import { getAllOrganizations, archiveOrganization } from "@/app/lib/organization_services.client";
 import { OrganizationResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/UsersTable";
+import { LargeNumberLike } from "crypto";
+// import EditOrganization from "../components/EditOrganizationModal";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
@@ -61,19 +62,95 @@ interface OrganizationManagementProps {
 
 const OrganizationManagement = ({ initialOrganizations }: OrganizationManagementProps) => {
   const { t } = useLanguage();
-  const [organizations, setOrganizations] =
-    useState<OrganizationResponseDto[]>(initialOrganizations);
+  const [data, setData] = useState<OrganizationResponseDto[]>(initialOrganizations);
   const [isOrganizationModalOpen, setIsOrganizationModalOpen] = useState(false);
+  const [editOrganizationModal, setEditOrganizationModal] = useState(false);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<number | null>(null);
+  const [selectedOrganizationName, setSelectedOrganizationName] = useState<string>("");
+  const [selectedOrganizations, setSelectedOrganizations] = useState<boolean[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedOrganizations(new Array(data.length).fill(false));
+    setSelectAll(false);
+  }, [data.length]);
+
   const refreshOrganizations = async () => {
     try {
-      const data = await getAllOrganizations();
-      setOrganizations(data);
+      const updatedData = await getAllOrganizations();
+      setData(updatedData);
     } catch (err) {
-      console.error("Failed to refresh projects:", err);
+      console.error("Failed to refresh organizations:", err);
+      setError("Failed to refresh organizations.");
     }
   };
 
+  const handleSelectAll = () => {
+    const next = !selectAll;
+    setSelectAll(next);
+    setSelectedOrganizations(new Array(data.length).fill(next));
+  };
+
+  const handleCheckboxChange = (index: number) => {
+    const next = [...selectedOrganizations];
+    next[index] = !next[index];
+    setSelectedOrganizations(next);
+    setSelectAll(next.every(Boolean));
+  };
+
+  const handleDelete = async (index: number) => {
+    const organizationId = data[index].id as number;
+    try {
+      await archiveOrganization(organizationId);
+      setData((prev) => prev.filter((_, i) => i !== index));
+    } catch (err) {
+      console.error("Failed to delete organization:", err);
+      setError("Failed to delete organization.");
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    const selectedOrgIds = data
+      .filter((_, i) => selectedOrganizations[i])
+      .map((org) => org.id);
+    try {
+      await Promise.all(selectedOrgIds.map((orgId) => archiveOrganization(orgId as number)));
+      setData((prev) => prev.filter((_, i) => !selectedOrganizations[i]));
+    } catch (err) {
+      console.error("Failed to delete selected organizations:", err);
+      setError("Failed to delete selected organizations.");
+    }
+  };
+
+  const multipleSelected = () => selectedOrganizations.filter(Boolean).length > 1;
+
+  const openEditModal = (organizationId: number, organizationName: string) => {
+    setSelectedOrganizationId(organizationId);
+    setSelectedOrganizationName(organizationName);
+    setEditOrganizationModal(true);
+  };
+
   const columns: Column<OrganizationResponseDto>[] = [
+    {
+      header: (
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={selectAll}
+          onChange={handleSelectAll}
+        />
+      ),
+      cell: (_row, index) => (
+        <input
+          type="checkbox"
+          className="checkbox"
+          checked={!!selectedOrganizations[index]}
+          onChange={() => handleCheckboxChange(index)}
+        />
+      ),
+      sortable: false,
+    },
     {
       header: t.translations.NAME,
       data: "name" as keyof OrganizationResponseDto,
@@ -81,7 +158,37 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
     {
       header: t.translations.DESCRIPTION,
       data: "description" as keyof OrganizationResponseDto,
-    }
+    },
+    {
+      header: "",
+      cell: (row) => (
+        <div className="flex">
+          {/* <button onClick={() => openEditModal(row.id, row.name)}>
+            <PencilIcon className="size-6 text-secondary" />
+          </button> */}
+        </div>
+      ),
+      sortable: false,
+    },
+    {
+      header: (
+        <div className="flex">
+          {multipleSelected() && (
+            <button onClick={handleDeleteSelected}>
+              <TrashIcon className="size-6 text-red-500" />
+            </button>
+          )}
+        </div>
+      ),
+      cell: (_row, index) => (
+        <div className="flex">
+          <button onClick={() => handleDelete(index)}>
+            <TrashIcon className="size-6 text-red-500" />
+          </button>
+        </div>
+      ),
+      sortable: false,
+    },
   ];
 
   return (
@@ -96,9 +203,10 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
           <span>{t.translations.ORGANIZATION}</span>
         </button>
       </div>
+      {error && <div className="p-4 text-red-500">{error}</div>}
       <GenericTable
         columns={columns}
-        data={organizations}
+        data={data}
         enablePagination
       />
       <CreateOrganization
@@ -106,8 +214,16 @@ const OrganizationManagement = ({ initialOrganizations }: OrganizationManagement
         onClose={() => setIsOrganizationModalOpen(false)}
         onOrganizationCreated={refreshOrganizations}
       />
+      {/* {selectedOrganizationId !== null && (
+        <EditOrganization
+          isOpen={editOrganizationModal}
+          onClose={() => setEditOrganizationModal(false)}
+          organizationId={selectedOrganizationId}
+          organizationName={selectedOrganizationName}
+          onOrganizationUpdated={refreshOrganizations}
+        />
+      )} */}
     </div>
-
   );
 };
 
