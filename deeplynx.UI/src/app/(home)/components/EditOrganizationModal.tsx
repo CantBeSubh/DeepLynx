@@ -21,8 +21,9 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
     useEffect(() => {
         if (isOpen) {
             setName(organizationName);
+            setDescription(organizationDescription);
         }
-    }, [isOpen, organizationName]);
+    }, [isOpen, organizationName, organizationDescription]);
 
     const handleUpdate = async (e: React.FormEvent) => {
         try {
