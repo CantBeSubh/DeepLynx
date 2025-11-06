@@ -81,47 +81,38 @@ const CreateOrganization = ({
                         <h3 className="font-bold text-lg mb-4 text-base-content">
                             {t.translations.CREATE_ORGANIZATION}
                         </h3>
-                        <form
-                            method="dialog"
-                            className="flex flex-col gap-4"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleSubmit();
-                            }}
-                        >
-                            <input
-                                type="text"
-                                placeholder={t.translations.NAME}
-                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                            />
-                            <textarea
-                                placeholder={t.translations.DESCRIPTION} // Placeholder for project description
-                                className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
+                        <input
+                            type="text"
+                            placeholder={t.translations.NAME}
+                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                        <textarea
+                            placeholder={t.translations.DESCRIPTION} // Placeholder for project description
+                            className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
 
-                            {/* Modal Actions */}
-                            <div className="modal-action mt-6">
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost"
-                                    onClick={onClose}
-                                >
-                                    {t.translations.CANCEL}
-                                </button>
-                                <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary">
-                                    {isLoading ? (
-                                        <>
-                                            <span className="spinner" aria-hidden="true" />
-                                        </>
-                                    ) : (t.translations.CREATE)}
-                                </button>
-                            </div>
-                        </form>
+                        {/* Modal Actions */}
+                        <div className="modal-action mt-6">
+                            <button
+                                type="button"
+                                className="btn btn-ghost"
+                                onClick={onClose}
+                            >
+                                {t.translations.CANCEL}
+                            </button>
+                            <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary" onClick={handleSubmit}>
+                                {isLoading ? (
+                                    <>
+                                        <span className="spinner" aria-hidden="true" />
+                                    </>
+                                ) : (t.translations.CREATE)}
+                            </button>
+                        </div>
                     </div>
                 </dialog>
             )}

@@ -47,22 +47,21 @@ const EditSysUser = ({ isOpen, onClose, userId, userName, onUserUpdated }: EditS
             <h3 className="font-bold text-lg mb-4 text-neutral">
               {t.translations.EDIT_USER}
             </h3>
-            <form className="flex flex-col gap-4" onSubmit={handleUpdate}>
-              <div className="flex flex-col gap-2">
-                <label className="font-semibold text-sm text-neutral">
-                  {t.translations.NAME}
-                </label>
-                <input
-                  type="text"
-                  placeholder="Name"
-                  className="input input-primary w-full"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                {/* <label className="font-semibold text-sm text-neutral">
+            <div className="flex flex-col gap-2">
+              <label className="font-semibold text-sm text-neutral">
+                {t.translations.NAME}
+              </label>
+              <input
+                type="text"
+                placeholder="Name"
+                className="input input-primary w-full"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              {/* <label className="font-semibold text-sm text-neutral">
                   {t.translations.ADMIN}
                 </label>
                 <select
@@ -73,16 +72,15 @@ const EditSysUser = ({ isOpen, onClose, userId, userName, onUserUpdated }: EditS
                   <option value="false">No</option>
                   <option value="true">Yes</option>
                 </select> */}
-              </div>
-              <div className="modal-action">
-                <button type="button" className="btn" onClick={onClose}>
-                  {t.translations.CANCEL}
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  {t.translations.SAVE}
-                </button>
-              </div>
-            </form>
+            </div>
+            <div className="modal-action">
+              <button type="button" className="btn" onClick={onClose}>
+                {t.translations.CANCEL}
+              </button>
+              <button type="submit" className="btn btn-primary" onClick={handleUpdate}>
+                {t.translations.SAVE}
+              </button>
+            </div>
           </div>
         </dialog>
       )}

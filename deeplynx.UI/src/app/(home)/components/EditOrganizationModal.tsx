@@ -45,41 +45,36 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
                         <h3 className="font-bold text-lg mb-4 text-neutral">
                             {t.translations.EDIT_ORGANIZATION}
                         </h3>
-                        <form className="flex flex-col gap-4" onSubmit={(e) => {
-                            e.preventDefault();
-                            handleUpdate();
-                        }}>
-                            <label className="font-semibold text-sm text-neutral">
-                                {t.translations.NAME}
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Name"
-                                className="input input-primary w-full"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                            />
-                            <label className="font-semibold text-sm text-neutral">
-                                {t.translations.DESCRIPTION}
-                            </label>
-                            <input
-                                type="text"
-                                placeholder="Description"
-                                className="input input-primary w-full"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                required
-                            />
-                            <div className="modal-action">
-                                <button type="button" className="btn" onClick={onClose}>
-                                    {t.translations.CANCEL}
-                                </button>
-                                <button type="submit" className="btn btn-primary">
-                                    {t.translations.SAVE}
-                                </button>
-                            </div>
-                        </form>
+                        <label className="font-semibold text-sm text-neutral">
+                            {t.translations.NAME}
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Name"
+                            className="input input-primary w-full"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            required
+                        />
+                        <label className="font-semibold text-sm text-neutral">
+                            {t.translations.DESCRIPTION}
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="Description"
+                            className="input input-primary w-full"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            required
+                        />
+                        <div className="modal-action">
+                            <button type="button" className="btn" onClick={onClose}>
+                                {t.translations.CANCEL}
+                            </button>
+                            <button type="submit" className="btn btn-primary" onClick={handleUpdate}>
+                                {t.translations.SAVE}
+                            </button>
+                        </div>
                     </div>
                 </dialog>
             )}
