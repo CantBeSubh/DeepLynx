@@ -119,7 +119,7 @@ export const translations = {
             START_UPLOAD_BY_CHOOSING_TYPE: "Start an Upload by Choosing Upload Type and Destination:",
             UPLOAD_MULTIPLE_FILES: "Upload Multiple Files",
             MULTI_FILES_ONLY_AVAILABLE: "Multiple uploads are only available for New File",
-            UPLOADING: "Uploading",
+            UPLOADING: "Uploading ...",
             CHOOSE_A_TYPE: "Choose a Type",
             NEW_VERSION_OF: "New Version of",
             PROPERTIES_FOR: "Properties for",
@@ -358,7 +358,7 @@ export const translations = {
             UPLOAD_MULTIPLE_FILES: "Subir múltiples archivos",
             MULTI_FILES_ONLY_AVAILABLE:
                 "Las cargas múltiples solo están disponibles para Archivo nuevo",
-            UPLOADING: "Cargando",
+            UPLOADING: "Cargando ...",
             CHOOSE_A_TYPE: "Elige un tipo",
             NEW_VERSION_OF: "Nueva versión de",
             PROPERTIES_FOR: "Propiedades para",

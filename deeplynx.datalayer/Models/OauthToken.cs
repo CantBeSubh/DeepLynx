@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("oauth_tokens")]
+[Table("oauth_tokens", Schema = "deeplynx")]
 [Index("Id", Name = "idx_oauth_tokens_id")]
 [Index("ApplicationId", Name = "idx_oauth_tokens_application_id")]
 [Index("UserId", Name = "idx_oauth_tokens_user_id")]
