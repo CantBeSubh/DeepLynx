@@ -18,7 +18,10 @@ const CreateOAuthModal = ({
 }: CreateOAuthModalProps) => {
     const { t } = useLanguage();
     const [name, setName] = useState("");
-    const [callback_url, setCallbackUrl] = useState("");
+    const [callbackUrl, setCallbackUrl] = useState("");
+    const [description, setDescription] = useState("");
+    const [baseUrl, setBaseUrl] = useState("");
+    const [appOwnerEmail, setAppOwnerEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     // TODO: Use the react hot toast ... it uses a lot less code
     const [toastMessage, setToastMessage] = useState("");
@@ -31,15 +34,20 @@ const CreateOAuthModal = ({
         if (isLoading) return;
         setIsLoading(true);
         try {
-            console.log(name, callback_url)
             data = await createOauthApplication({
                 name,
-                callback_url,
+                callbackUrl,
+                description,
+                baseUrl,
+                appOwnerEmail
             });
 
 
             setName("");
             setCallbackUrl("");
+            setDescription("");
+            setBaseUrl("");
+            setAppOwnerEmail("");
 
             setTimeout(() => {
                 onOAuthApplicationCreated();
@@ -94,13 +102,30 @@ const CreateOAuthModal = ({
                                 onChange={(e) => setName(e.target.value)}
                                 required
                             />
-                            <textarea
+                            <input
                                 placeholder={t.translations.CALLBACK_URL} // Placeholder for project description
-                                className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
-                                value={callback_url}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={callbackUrl}
                                 onChange={(e) => setCallbackUrl(e.target.value)}
                             />
-
+                            <textarea
+                                placeholder={t.translations.DESCRIPTION} // Placeholder for project description
+                                className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
+                            <input
+                                placeholder={t.translations.BASE_URL} // Placeholder for project description
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={baseUrl}
+                                onChange={(e) => setBaseUrl(e.target.value)}
+                            />
+                            <input
+                                placeholder={t.translations.APP_OWNER_EMAIL} // Placeholder for project description
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={appOwnerEmail}
+                                onChange={(e) => setAppOwnerEmail(e.target.value)}
+                            />
                             {/* Modal Actions */}
                             <div className="modal-action mt-6">
                                 <button

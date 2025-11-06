@@ -236,7 +236,10 @@ export const translations = {
             EDIT_ORGANIZATION: "Edit Organization",
             OAUTH_APPLICATION: "OAuth Application",
             CALLBACK_URL: "Callback URL",
-            CREATE_OAUTH_APPLICATION: "Create OAuth Application"
+            CREATE_OAUTH_APPLICATION: "Create OAuth Application",
+            BASE_URL: "Base URL",
+            APP_OWNER_EMAIL: "App Owner Email",
+            EDIT_OAUTH_APP: "Edit OAuth Application"
         }
     },
     es: {
@@ -486,7 +489,10 @@ export const translations = {
             EDIT_ORGANIZATION: "Editar organización",
             OAUTH_APPLICATION: "OAuth Application",
             CALLBACK_URL: "Callback URL",
-            CREATE_OAUTH_APPLICATION: "Create OAuth Application"
+            CREATE_OAUTH_APPLICATION: "Create OAuth Application",
+            BASE_URL: "Base URL",
+            APP_OWNER_EMAIL: "App Owner Email",
+            EDIT_OAUTH_APP: "Edit OAuth Application"
 
         }
     }

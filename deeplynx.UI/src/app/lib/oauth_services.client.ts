@@ -54,6 +54,7 @@ export async function createOauthApplication(dto: CreateOauthApplicationRequestD
 //Update an OAuth Application
 export const updateOauthApplication = async (applicationId: number, dto: UpdateOauthApplicationRequestDto): Promise<OauthApplicationResponseDto> => {
     try {
+        console.log("made it", dto)
         const res = await api.put<OauthApplicationResponseDto>(
             `/oauth-applications/UpdateOauthApplication/${applicationId}`,
             dto

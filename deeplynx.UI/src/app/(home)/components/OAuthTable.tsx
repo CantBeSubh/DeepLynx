@@ -20,6 +20,9 @@ const OAuthManagement = ({ applications }: Props) => {
     const [selectedOAuthApplicationId, setSelectedOAuthApplicationId] = useState<number | null>(null);
     const [selectedOAuthApplicationName, setSelectedOAuthApplicationName] = useState<string>("");
     const [selectedOAuthApplicationDescription, setSelectedOAuthApplicationDescription] = useState<string>("");
+    const [selectedOAuthApplicationCallBackURL, setSelectedOAuthApplicationCallBackURL] = useState<string>("");
+    const [selectedOAuthApplicationBaseURL, setSelectedOAuthApplicationBaseURL] = useState<string>("");
+    const [selectedOAuthApplicationAppOwnerEmail, setSelectedOAuthApplicationAppOwnerEmail] = useState<string>("");
     const [selectedOAuthApplications, setSelectedOAuthApplications] = useState<boolean[]>([]);
     const [selectAll, setSelectAll] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -78,10 +81,13 @@ const OAuthManagement = ({ applications }: Props) => {
 
     const multipleSelected = () => selectedOAuthApplications.filter(Boolean).length > 1;
 
-    const openEditModal = (organizationId: number, organizationName: string, organizationDescription: string) => {
-        setSelectedOAuthApplicationId(organizationId);
-        setSelectedOAuthApplicationName(organizationName);
-        setSelectedOAuthApplicationDescription(organizationDescription)
+    const openEditModal = (id: number, name: string, description: string, callbackUrl: string, baseUrl: string, appOwnerEmail: string) => {
+        setSelectedOAuthApplicationId(id);
+        setSelectedOAuthApplicationName(name);
+        setSelectedOAuthApplicationDescription(description)
+        setSelectedOAuthApplicationCallBackURL(callbackUrl)
+        setSelectedOAuthApplicationBaseURL(baseUrl)
+        setSelectedOAuthApplicationAppOwnerEmail(appOwnerEmail)
         setEditOAuthApplicationModal(true);
     };
 
@@ -114,10 +120,22 @@ const OAuthManagement = ({ applications }: Props) => {
             data: "description" as keyof OauthApplicationResponseDto,
         },
         {
+            header: t.translations.CALLBACK_URL,
+            data: "callbackUrl" as keyof OauthApplicationResponseDto,
+        },
+        {
+            header: t.translations.BASE_URL,
+            data: "baseUrl" as keyof OauthApplicationResponseDto,
+        },
+        {
+            header: t.translations.APP_OWNER_EMAIL,
+            data: "appOwnerEmail" as keyof OauthApplicationResponseDto,
+        },
+        {
             header: "",
             cell: (row) => (
                 <div className="flex">
-                    <button onClick={() => openEditModal(row.id as number, row.name, row.description as string)}>
+                    <button onClick={() => openEditModal(row.id as number, row.name, row.description as string, row.callbackUrl, row.baseUrl as string, row.appOwnerEmail as string)}>
                         <PencilIcon className="size-6 text-secondary" />
                     </button>
                 </div>
@@ -174,7 +192,10 @@ const OAuthManagement = ({ applications }: Props) => {
                     onClose={() => setEditOAuthApplicationModal(false)}
                     oAuthApplicationId={selectedOAuthApplicationId}
                     oAuthApplicationName={selectedOAuthApplicationName}
-                    oAuthApplicationCallbackURL={selectedOAuthApplicationDescription}
+                    oAuthApplicationCallbackURL={selectedOAuthApplicationCallBackURL}
+                    oAuthApplicationDescription={selectedOAuthApplicationDescription}
+                    oAuthApplicationBaseURL={selectedOAuthApplicationBaseURL}
+                    oAuthApplicationAppOwnerEmail={selectedOAuthApplicationAppOwnerEmail}
                     onOAuthApplicationUpdated={refreshOAuthApplications}
                 />
             )}
