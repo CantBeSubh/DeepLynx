@@ -225,9 +225,16 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
   };
 
   const handleTagSelectionChange = async (selected: string[]) => {
-    if (JSON.stringify(selected) === JSON.stringify(selectedIds)) return;
-
     const newTags = tags.filter((tag) => selected.includes(tag.id.toString()));
+
+    // Only return early if both IDs and the actual tag objects are the same
+    if (
+      JSON.stringify(selected) === JSON.stringify(selectedIds) &&
+      JSON.stringify(newTags) === JSON.stringify(selectedTags)
+    ) {
+      return;
+    }
+
     setSelectedTags(newTags);
     setSelectedIds(selected);
     setRecord((prev) =>
@@ -507,6 +514,8 @@ export default function RecordViewClient({ projectId, recordId }: Props) {
                     recordId={recordId}
                     selectedIds={selectedIds}
                     setSelectedIds={setSelectedIds}
+                    setTags={setTags}
+                    setSelectedTags={setSelectedTags}
                   />
                   {!isEditing ? (
                     <PencilIcon
