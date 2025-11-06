@@ -1,4 +1,5 @@
 using deeplynx.business;
+using deeplynx.datalayer.Models;
 using deeplynx.models;
 
 namespace deeplynx.tests
@@ -6,6 +7,8 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class MemoryCacheBusinessTests : IntegrationTestBase
     {
+        private long organizationId;
+        
         public MemoryCacheBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
         }
@@ -35,8 +38,8 @@ namespace deeplynx.tests
             var key = "projects";
             var value = new List<ProjectResponseDto>
             {
-                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false },
-                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
+                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false, OrganizationId = organizationId },
+                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true, OrganizationId = organizationId }
             };
 
             // Act
@@ -54,8 +57,8 @@ namespace deeplynx.tests
             var key = "projects";
             var value = new List<ProjectResponseDto>
             {
-                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false },
-                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
+                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false, OrganizationId = organizationId },
+                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true, OrganizationId = organizationId }
             };
 
             await _cacheBusiness.SetAsync(key, value, (TimeSpan?)null);
@@ -76,8 +79,8 @@ namespace deeplynx.tests
             var key2 = "projects-key2";
             var value = new List<ProjectResponseDto>
             {
-                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false },
-                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true }
+                new ProjectResponseDto { Id = 1, Name = "Project 1", IsArchived = false, OrganizationId = organizationId },
+                new ProjectResponseDto { Id = 2, Name = "Project 2", IsArchived = true, OrganizationId = organizationId }
             };
 
             await _cacheBusiness.SetAsync(key1, value, (TimeSpan?)null);
@@ -91,6 +94,15 @@ namespace deeplynx.tests
             // Assert
             Assert.Null(cachedValue1);
             Assert.Null(cachedValue2);
+        }
+
+        protected override async Task SeedTestDataAsync()
+        {
+            await base.SeedTestDataAsync();
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
         }
     }
 }

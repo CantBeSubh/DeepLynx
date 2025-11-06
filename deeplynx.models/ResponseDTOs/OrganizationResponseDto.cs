@@ -8,4 +8,5 @@ public class OrganizationResponseDto
     public DateTime LastUpdatedAt { get; set; }
     public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
+    public bool DefaultOrg { get; set; } = false;
 }

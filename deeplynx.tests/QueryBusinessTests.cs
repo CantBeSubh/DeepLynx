@@ -20,6 +20,7 @@ namespace deeplynx.tests
         private long rid; // record ID
         private long did;
         private long cid;
+        private long organizationId;
 
         public QueryBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -976,11 +977,17 @@ namespace deeplynx.tests
         {
             await base.SeedTestDataAsync();
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             // Project 1: Anakin
             var project = new Project
             {
                 Name = "Anakin",
-                Description = "You turned her against me"
+                Description = "You turned her against me",
+                OrganizationId = organizationId
             };
             await Context.Projects.AddAsync(project);
             await Context.SaveChangesAsync();
@@ -1018,7 +1025,8 @@ namespace deeplynx.tests
             var rebellionProject = new Project
             {
                 Name = "The Rebellion",
-                Description = "Hope is like the sun"
+                Description = "Hope is like the sun",
+                OrganizationId = organizationId
             };
             await Context.Projects.AddAsync(rebellionProject);
             await Context.SaveChangesAsync();
@@ -1054,7 +1062,8 @@ namespace deeplynx.tests
             var empireProject = new Project
             {
                 Name = "The Galactic Empire",
-                Description = "Peace through power"
+                Description = "Peace through power",
+                OrganizationId = organizationId
             };
             await Context.Projects.AddAsync(empireProject);
             await Context.SaveChangesAsync();
@@ -1090,7 +1099,8 @@ namespace deeplynx.tests
             var mandoProject = new Project
             {
                 Name = "Mandalorians",
-                Description = "This is the Way"
+                Description = "This is the Way",
+                OrganizationId = organizationId
             };
             await Context.Projects.AddAsync(mandoProject);
             await Context.SaveChangesAsync();

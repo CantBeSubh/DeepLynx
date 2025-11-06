@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using deeplynx.datalayer.Models;
@@ -11,9 +12,11 @@ using deeplynx.datalayer.Models;
 namespace deeplynx.datalayer.Migrations
 {
     [DbContext(typeof(DeeplynxContext))]
-    partial class DeeplynxContextModelSnapshot : ModelSnapshot
+    [Migration("20251106175220_CreateDefaultOrg")]
+    partial class CreateDefaultOrg
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -772,7 +775,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "Id" }, "idx_oauth_applications_id");
 
-                    b.ToTable("oauth_applications", "deeplynx");
+                    b.ToTable("oauth_applications");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.OauthToken", b =>
@@ -828,7 +831,7 @@ namespace deeplynx.datalayer.Migrations
 
                     b.HasIndex(new[] { "UserId" }, "idx_oauth_tokens_user_id");
 
-                    b.ToTable("oauth_tokens", "deeplynx");
+                    b.ToTable("oauth_tokens");
                 });
 
             modelBuilder.Entity("deeplynx.datalayer.Models.ObjectStorage", b =>
