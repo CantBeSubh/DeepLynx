@@ -6,7 +6,7 @@ public interface IOrganizationBusiness
 {
     Task<IEnumerable<OrganizationResponseDto>> GetAllOrganizations(bool hideArchived = true);
     Task<OrganizationResponseDto> GetOrganization(long organizationId, bool hideArchived = true);
-    Task<OrganizationResponseDto> CreateOrganization(CreateOrganizationRequestDto dto, bool isDefault);
+    Task<OrganizationResponseDto> CreateOrganization(CreateOrganizationRequestDto dto, bool isDefault = false);
     Task<OrganizationResponseDto> UpdateOrganization(long organizationId, UpdateOrganizationRequestDto dto);
     Task<bool> ArchiveOrganization(long organizationId);
     Task<bool> UnarchiveOrganization(long organizationId);
