@@ -80,7 +80,7 @@ namespace deeplynx.api.Controllers
         {
             try
             {
-                var organization = await _organizationBusiness.CreateOrganization(dto);
+                var organization = await _organizationBusiness.CreateOrganization(dto, false);
                 return Ok(organization);
             }
             catch (Exception exc)
