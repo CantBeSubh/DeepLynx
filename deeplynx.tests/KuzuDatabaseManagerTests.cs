@@ -13,6 +13,7 @@ using DotNetEnv;
 using System.Diagnostics;
 using Renci.SshNet; 
 using Testcontainers.PostgreSql;
+using deeplynx.helpers;
 
 namespace deeplynx.tests {
     [Collection("Test Suite Collection")]
@@ -26,6 +27,7 @@ namespace deeplynx.tests {
         private const int ProjectId = 1;
         private bool _isConnected = false;
         private static readonly SemaphoreSlim _connectionSemaphore = new SemaphoreSlim(1, 1);
+        private Config _config;
 
 
         public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
@@ -58,7 +60,7 @@ namespace deeplynx.tests {
         public override async Task InitializeAsync()
         {
             // await _container.StartAsync();
-
+            _config = new Config();
             var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
             var kuzuDbFilePath = Path.Combine(projectRoot, "deeplynx.tests/bin/Debug/deeplynx.graph");
@@ -66,7 +68,7 @@ namespace deeplynx.tests {
             if (System.IO.Directory.Exists(kuzuDbFilePath))
                 System.IO.Directory.Delete(kuzuDbFilePath, true);
 
-            _ = bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu);
+            _ = bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu);
 
             if (enableKuzu)
             {
@@ -157,7 +159,7 @@ namespace deeplynx.tests {
             
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
 
                 Log.Information("Starting InitalSeedDatabaseAsync test...");
 
@@ -195,7 +197,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting SeedDatabaseAsync test...");
 
@@ -235,7 +237,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ConnectAsync test...");
 
@@ -274,7 +276,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ExportDataAsync test...");
 
@@ -318,7 +320,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting GetNodesWithin test...");
 
@@ -373,7 +375,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ExecuteQuery test...");
 
@@ -426,7 +428,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(Environment.GetEnvironmentVariable("ENABLE_KUZU"), out var enableKuzu));
+                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting CloseAsync test...");
 

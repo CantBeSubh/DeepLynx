@@ -11,14 +11,17 @@ public class UserBusiness : IUserBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly ICacheBusiness _cacheBusiness;
+    private readonly Config _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="UserBusiness"/> class.
     /// </summary>
+    /// <param name="config">The accessor for env variables.</param>
     /// <param name="context">The database context used for the user operations.</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
-    public UserBusiness(DeeplynxContext context, ICacheBusiness cacheBusiness)
+    public UserBusiness(Config config, DeeplynxContext context, ICacheBusiness cacheBusiness)
     {
+        _config = config;
         _context = context;
         _cacheBusiness = cacheBusiness;
     }
@@ -98,8 +101,8 @@ public class UserBusiness : IUserBusiness
     /// <exception cref="KeyNotFoundException">Returned if user not found</exception>
     public async Task<UserResponseDto> GetLocalDevUser()
     {
-        var auth_disabled = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
-        if (auth_disabled != "true")
+        if (string.IsNullOrEmpty(_config.DISABLE_BACKEND_AUTHENTICATION) || 
+            _config.DISABLE_BACKEND_AUTHENTICATION.ToLower() != "true")
         {
             throw new InvalidOperationException("Local Dev User cannot be used unless backend authentication is disabled");
         }

@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
@@ -15,6 +16,7 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class ClassBusinessTests : IntegrationTestBase
     {
+        private Config _config;
         private ClassBusiness _classBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
         private EventBusiness _eventBusiness = null!;
@@ -37,14 +39,15 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            _config = new Config();
             _recordBusiness = new Mock<IRecordBusiness>();
             _relationshipBusiness = new Mock<IRelationshipBusiness>();
             _dataSourceBusiness = new Mock<IDataSourceBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
-            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+            _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(_config, Context, _cacheBusiness, _notificationBusiness);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _roleBusiness = new Mock<IRoleBusiness>();
 
@@ -53,7 +56,7 @@ namespace deeplynx.tests
                 _relationshipBusiness.Object, _eventBusiness);
             
             _projectBusiness = new ProjectBusiness(
-                Context, _cacheBusiness, _mockLogger.Object, 
+                _config, Context, _cacheBusiness, _mockLogger.Object, 
                 _classBusiness, _roleBusiness.Object, _dataSourceBusiness.Object, 
                 _objectStorageBusiness.Object, _eventBusiness);
         }

@@ -1,5 +1,6 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using Microsoft.AspNetCore.SignalR;
@@ -23,13 +24,14 @@ namespace deeplynx.tests
         private User _user1 = null!;
         private User _user2 = null!;
         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        private Config _config;
 
         public NotificationBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            
+            _config = new Config();
             // Setup mocks
             _mockLogger = new Mock<ILogger<NotificationBusiness>>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
@@ -43,6 +45,7 @@ namespace deeplynx.tests
             _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
             
             _notificationBusiness = new NotificationBusiness(
+                _config,
                 Context, 
                 _mockLogger.Object, 
                 _mockHubContext.Object

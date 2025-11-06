@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Mail;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.interfaces;
 using Microsoft.Extensions.Logging;
 using deeplynx.helpers.Hubs;
@@ -16,6 +17,7 @@ public class NotificationBusiness : INotificationBusiness
     private readonly DeeplynxContext _context;
     private readonly ILogger<NotificationBusiness> _logger;
     private readonly IHubContext<EventNotificationHub> _hubContext;
+    private readonly Config _config;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationBusiness"/> class.
@@ -24,11 +26,13 @@ public class NotificationBusiness : INotificationBusiness
     /// <param name="logger">Logging</param>
     /// <param name="hubContext">SignalR hub context for sending notifications</param>
     public NotificationBusiness(
+        Config config,
         DeeplynxContext context, 
         ILogger<NotificationBusiness> logger,
         IHubContext<EventNotificationHub> hubContext
     )
     {
+        _config = config;
         _logger = logger;
         _context = context;
         _hubContext = hubContext;
@@ -279,29 +283,29 @@ public class NotificationBusiness : INotificationBusiness
     {
        try
        {
-        var smtpServer = Environment.GetEnvironmentVariable("SMTP_SERVER")
+        var smtpServer = _config.SMTP_SERVER
             ?? throw new InvalidOperationException("SMTP_SERVER environment variable is not set");
 
-        var smtpPortStr = Environment.GetEnvironmentVariable("SMTP_PORT") ?? "587";
+        var smtpPortStr = _config.SMTP_PORT;
         if (!int.TryParse(smtpPortStr, out int smtpPort))
         {
             smtpPort = 587; //default
         }
 
-        var fromEmail = Environment.GetEnvironmentVariable("FROM_EMAIL")
+        var fromEmail = _config.FROM_EMAIL
             ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
 
-        var support = Environment.GetEnvironmentVariable("SUPPORT_EMAIL")
+        var support = _config.SUPPORT_EMAIL
                         ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
 
         var emailPassword = "";
 
-        var fromName = Environment.GetEnvironmentVariable("FROM_NAME") ?? "DeepLynx Nexus Notification";
+        var fromName = _config.FROM_NAME;
 
-        var url = Environment.GetEnvironmentVariable("INVITE_URL")
+        var url = _config.INVITE_URL
             ?? throw new InvalidOperationException("Invite URL environment variable is not set");;
 
-        var enableSslStr = Environment.GetEnvironmentVariable("SMTP_ENABLE_SSL") ?? "true";
+        var enableSslStr = _config.SMTP_ENABLE_SSL;
         bool.TryParse(enableSslStr, out bool enableSsl);
 
         string templateContent = @"<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">

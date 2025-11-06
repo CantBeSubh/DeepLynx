@@ -1,5 +1,6 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
 using deeplynx.models;
 using Microsoft.EntityFrameworkCore;
 using Record = deeplynx.datalayer.Models.Record;
@@ -9,6 +10,7 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class UserBusinessTests : IntegrationTestBase
     {
+        private Config _config;
         private UserBusiness _userBusiness;
 
         public long uid1;       // user IDs
@@ -47,7 +49,8 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _userBusiness = new UserBusiness(Context, _cacheBusiness);
+            _config = new Config();
+            _userBusiness = new UserBusiness(_config, Context, _cacheBusiness);
         }
         
         #region CreateUser Tests
@@ -281,11 +284,12 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
-            
+            var config = new Config();
+            var userBusiness = new UserBusiness(config, Context, _cacheBusiness);
             try
             {
                 // Act
-                var result = await _userBusiness.GetLocalDevUser();
+                var result = await userBusiness.GetLocalDevUser();
                 
                 // Assert
                 Assert.NotNull(result);
@@ -304,23 +308,30 @@ namespace deeplynx.tests
         [Fact]
         public async Task GetLocalDevUser_Fails_IfEnvNullOrFalse()
         {
-            // Arrange - Ensure environment variable is not set
+            // Arrange - Test with null environment variable
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
-            
+            var configWithNull = new Config();
+            var userBusinessWithNull = new UserBusiness(configWithNull, Context, _cacheBusiness);
+    
             // Act & Assert
             var nullException = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _userBusiness.GetLocalDevUser());
+                () => userBusinessWithNull.GetLocalDevUser());
 
             Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", nullException.Message);
-            
-            // Arrange - Ensure environment variable is set to false
+    
+            // Arrange - Test with false environment variable
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
-            
+            var configWithFalse = new Config();
+            var userBusinessWithFalse = new UserBusiness(configWithFalse, Context, _cacheBusiness);
+    
             // Act & Assert
             var falseException = await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _userBusiness.GetLocalDevUser());
-            
+                () => userBusinessWithFalse.GetLocalDevUser());
+    
             Assert.Contains("Local Dev User cannot be used unless backend authentication is disabled", falseException.Message);
+    
+            // Cleanup
+            Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
         }
 
         [Fact]
@@ -328,13 +339,15 @@ namespace deeplynx.tests
         {
             // Arrange - Set environment variable but don't create the user
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
-            
+            var config = new Config();
+            var userBusiness = new UserBusiness(config, Context, _cacheBusiness);
+    
             try
             {
                 // Act & Assert
                 var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
-                    () => _userBusiness.GetLocalDevUser());
-                
+                    () => userBusiness.GetLocalDevUser());
+        
                 Assert.Contains("Local Dev User not found", exception.Message);
             }
             finally

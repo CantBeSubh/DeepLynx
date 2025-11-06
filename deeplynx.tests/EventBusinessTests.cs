@@ -4,16 +4,19 @@ using deeplynx.helpers.Context;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
+using Docker.DotNet.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Microsoft.EntityFrameworkCore;
+using deeplynx.helpers;
 
 namespace deeplynx.tests
 {
     [Collection("Test Suite Collection")]
     public class EventBusinessTests : IntegrationTestBase
     {
+        private helpers.Config _config;
         private EventBusiness _eventBusiness = null!;
         private INotificationBusiness _notificationBusiness = null!;
         private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
@@ -35,11 +38,12 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
+            _config = new helpers.Config();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness =
-                new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
+                new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(_config, Context, _cacheBusiness, _notificationBusiness);
         }
 
         #region GetAllEvents (Simplified - No Pagination)
