@@ -162,7 +162,22 @@ public class ProjectBusiness : IProjectBusiness
     {
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
+<<<<<<< Updated upstream
         
+=======
+
+        int orgId != null;
+        
+        if (dto.OrganizationId.HasValue)
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
+        }
+        else
+        {
+            var defaultOrg = await _context.Organizations.FirstOrDefaultAsync(o => o.DefaultOrg);
+        }
+
+>>>>>>> Stashed changes
         var project = new Project
         {
             Name = dto.Name,

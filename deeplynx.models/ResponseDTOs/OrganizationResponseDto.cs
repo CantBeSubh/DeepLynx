@@ -8,4 +8,8 @@ public class OrganizationResponseDto
     public DateTime LastUpdatedAt { get; set; }
     public long? LastUpdatedBy { get; set; }
     public bool IsArchived { get; set; }
+<<<<<<< Updated upstream
+=======
+    public bool? DefaultOrg { get; set; }
+>>>>>>> Stashed changes
 }
