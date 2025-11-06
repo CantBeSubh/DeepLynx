@@ -312,9 +312,6 @@ export default function DataCatalogClient({
         ) : (
           records && (
             <div className="w-2/3">
-              <h2 className="text-center font-bold mb-8">
-                {t.translations.NO_RECENT_RECORDS}
-              </h2>
               <RecentRecordsCard selectedProjects={selectedProjects} />
             </div>
           )
