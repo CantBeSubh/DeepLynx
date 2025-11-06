@@ -1,6 +1,7 @@
 // src/app/lib/user_services.server.ts
 import "server-only";
 import { UserResponseDto } from "../(home)/types/responseDTOs";
+import apiServer from "./api.server"
 
 const BASE = process.env.BACKEND_BASE_URL!;
 const SERVICE_TOKEN = process.env.SERVICE_TOKEN || "";
@@ -17,16 +18,15 @@ async function asJson<T>(res: Response): Promise<T> {
 
 /** ---- Server-safe calls (no browser cookies; safe in prerender/SSR) ---- */
 
-export async function getAllUsersServer<T = UserResponseDto[]>(
-  projectId: number
-): Promise<T> {
-  const qs = new URLSearchParams({ projectId: String(projectId) });
-  const res = await fetch(`${BASE}/users/GetAllUsers?${qs.toString()}`, {
-    headers: authHeaders(),
-    cache: "no-store",
-  });
-  return asJson<T>(res);
+export async function getAllUsersServer(projectId?: number): Promise<UserResponseDto[]> {
+  const params: Record<string, string> = {};
+  if (projectId !== undefined) {
+    params.projectId = String(projectId);
+  }
+  const qs = new URLSearchParams(params);
+  return apiServer.get<UserResponseDto[]>(`users/GetAllUsers?${qs.toString()}`);
 }
+
 
 export async function getDataOverviewServer<T = unknown>(
   userId: string

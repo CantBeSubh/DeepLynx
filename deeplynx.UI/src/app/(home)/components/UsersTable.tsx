@@ -7,10 +7,12 @@ import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.cli
 import EditSysUser from "./MemberSettingsTable/MemberModals/EditSysUser";
 import MemberManagementUserSkeleton from "./skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
-
-const UsersTable = () => {
+interface Props {
+  members: UserResponseDto[];
+}
+const UsersTable = ({ members }: Props) => {
   const { t } = useLanguage();
-  const [data, setData] = useState<UserResponseDto[]>([]);
+  const [data, setData] = useState<UserResponseDto[]>(members);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMembers, setSelectedMembers] = useState<boolean[]>([]);

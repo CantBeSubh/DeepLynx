@@ -25,11 +25,10 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
         }
     }, [isOpen, organizationName, organizationDescription]);
 
-    const handleUpdate = async (e: React.FormEvent) => {
+    const handleUpdate = async () => {
         try {
             await updateOrganization(organizationId, { name, description });
             onOrganizationUpdated();
-            alert("Organization updated successfully!");
         } catch (error) {
             console.error("Error updating organization:", error);
             alert("An error occurred while updating the organization.");
@@ -46,7 +45,10 @@ const EditOrganization = ({ isOpen, onClose, organizationId, organizationName, o
                         <h3 className="font-bold text-lg mb-4 text-neutral">
                             {t.translations.EDIT_ORGANIZATION}
                         </h3>
-                        <form className="flex flex-col gap-4" onSubmit={handleUpdate}>
+                        <form className="flex flex-col gap-4" onSubmit={(e) => {
+                            e.preventDefault();
+                            handleUpdate();
+                        }}>
                             <label className="font-semibold text-sm text-neutral">
                                 {t.translations.NAME}
                             </label>

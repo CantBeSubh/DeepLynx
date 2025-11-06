@@ -35,7 +35,7 @@ const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplic
         }
     }, [isOpen, oAuthApplicationName, oAuthApplicationDescription, oAuthApplicationCallbackURL, oAuthApplicationBaseURL, oAuthApplicationAppOwnerEmail]);
 
-    const handleUpdate = async (e: React.FormEvent) => {
+    const handleUpdate = async () => {
         try {
             await updateOauthApplication(oAuthApplicationId, { name, description, callbackUrl, baseUrl, appOwnerEmail });
             onOAuthApplicationUpdated();
@@ -55,7 +55,10 @@ const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplic
                         <h3 className="font-bold text-lg mb-4 text-neutral">
                             {t.translations.EDIT_OAUTH_APP}
                         </h3>
-                        <form className="flex flex-col gap-4" onSubmit={handleUpdate}>
+                        <form className="flex flex-col gap-4" onSubmit={(e) => {
+                            e.preventDefault();
+                            handleUpdate();
+                        }}>
                             <label className="font-semibold text-sm text-neutral">
                                 {t.translations.NAME}
                             </label>

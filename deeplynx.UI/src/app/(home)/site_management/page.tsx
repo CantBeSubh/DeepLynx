@@ -12,11 +12,12 @@ type Props = {
 export default async function SysAdminPage({ params }: Props) {
   const OrganizationResponseDtos = (await getAllOrganizationsServer()) as OrganizationResponseDto[];
   const oAuthApplications = (await getAllOauthApplicationsServer()) as OauthApplicationResponseDto[];
-  const Members = (await getAllUsersServer()) as UserResponseDto[];
+  const members = (await getAllUsersServer()) as UserResponseDto[];
   return (
     <SysAdminClient
       organizations={OrganizationResponseDtos}
       applications={oAuthApplications}
+      members={members}
     />
   );
 };
