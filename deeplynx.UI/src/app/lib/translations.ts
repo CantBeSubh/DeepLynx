@@ -12,7 +12,7 @@ export const translations = {
             OR: "OR",
             PIV_CAC_CARD_SIGN_IN: "Sign in with PIV/CAC Card",
             TROUBLE_LOGGING_IN: "Trouble Logging in?",
-            WELECOME: "Welcome Back ",
+            WELECOME: "Welcome Back",
             CUSTOMIZE: "Customize",
             WIDGET: "Widget",
             YOUR_PROJECTS: "Your Projects",
@@ -119,7 +119,7 @@ export const translations = {
             START_UPLOAD_BY_CHOOSING_TYPE: "Start an Upload by Choosing Upload Type and Destination:",
             UPLOAD_MULTIPLE_FILES: "Upload Multiple Files",
             MULTI_FILES_ONLY_AVAILABLE: "Multiple uploads are only available for New File",
-            UPLOADING: "Uploading",
+            UPLOADING: "Uploading ...",
             CHOOSE_A_TYPE: "Choose a Type",
             NEW_VERSION_OF: "New Version of",
             PROPERTIES_FOR: "Properties for",
@@ -232,6 +232,8 @@ export const translations = {
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Storage Destination",
+            CREATED_AND_ATTACHED: "created and attached",
+            CREATED_BUT_FAILED_TO_ATTACH: "created but failed to attach"
         }
     },
     es: {
@@ -358,7 +360,7 @@ export const translations = {
             UPLOAD_MULTIPLE_FILES: "Subir múltiples archivos",
             MULTI_FILES_ONLY_AVAILABLE:
                 "Las cargas múltiples solo están disponibles para Archivo nuevo",
-            UPLOADING: "Cargando",
+            UPLOADING: "Cargando ...",
             CHOOSE_A_TYPE: "Elige un tipo",
             NEW_VERSION_OF: "Nueva versión de",
             PROPERTIES_FOR: "Propiedades para",
@@ -476,7 +478,9 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            STORAGE_DESTINATION: "Destino de almacenamiento"
+            STORAGE_DESTINATION: "Destino de almacenamiento",
+            CREATED_AND_ATTACHED: "creado y adjuntado",
+            CREATED_BUT_FAILED_TO_ATTACH: "creado pero no se pudo adjuntar"
         }
     }
 }

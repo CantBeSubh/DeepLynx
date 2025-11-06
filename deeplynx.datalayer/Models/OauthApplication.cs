@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace deeplynx.datalayer.Models;
 
-[Table("oauth_applications")]
+[Table("oauth_applications", Schema = "deeplynx")]
 [Index("Id", Name = "idx_oauth_applications_id")]
 [Index("ClientId", Name = "idx_oauth_applications_client_id")]
 public partial class OauthApplication
