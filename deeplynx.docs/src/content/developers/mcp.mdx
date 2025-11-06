@@ -86,7 +86,7 @@ Ollama model. Keep in mind, these are free, lightweight services so they are not
 ollama pull llama3.1:8b   
 ```
 
-6. Make sure the Model is set to Llamma3.1 8B and click "Connect"
+6. Make sure the Model is set to Autodetect and click "Connect"
 
 <Image
     src="/docs/images/ollama-complete.png"
@@ -95,7 +95,16 @@ ollama pull llama3.1:8b
     height={250}
 />
 
-4. Click on the tool icon above the chat window
+7. In the model dropdown on the bottom left of the chat window, click the auto-detected llama model
+
+<Image
+    src="/docs/images/ollama-select.png"
+    alt="Create Project UI"
+    width={500}
+    height={250}
+/>
+
+8. Click on the tool icon above the chat window
 
 <Image
     src="/docs/images/tool-icon.png"
@@ -104,7 +113,7 @@ ollama pull llama3.1:8b
     height={600}
 />
 
-5. Click the + icon to the right of MCP Servers
+9. Click the + icon to the right of MCP Servers
 
 <Image
     src="/docs/images/add-mcp-server.png"
@@ -113,7 +122,7 @@ ollama pull llama3.1:8b
     height={600}
 />
 
-6. Add this into the yaml file that is created. Insert the URL that your mcp server is hosted on.
+10. Add this into the yaml file that is created. Insert the URL that your mcp server is hosted on.
 
 ```yaml copy
 name: Nexus
@@ -126,10 +135,12 @@ mcpServers:
 ```
 
 Now you should be able to ask the agent questions like: 
-"get all of my projects and read the names and LastUpdatedAt values back to me"
+
+"get all of my projects in organization 1 and read the names and LastUpdatedAt values back to me"
+
 "Get all of my records in project 2"
 
-Keep in mind, we can not control how the model/agent serializes the request to your mcp server based on your response, so
-it may hallucinate and add random values or may send the string "true" instead of a boolean true or visa-versa. This is not
+Keep in mind, we do not have direct control over how the model/agent serializes the request to send to your mcp server based on your response. 
+So, it may hallucinate and add random values or may send the string "true" instead of a boolean true or visa-versa. This is not
 the best agent-model pair that is available, but it is free. Feel free to use other services if you come across another that
 works better for you. That is the beauty of MCP servers, they can be used with any! 
