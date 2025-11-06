@@ -45,7 +45,7 @@ export type UpdateOrganizationRequestDto = {
 export type CreateOauthApplicationRequestDto = {
   name: string;
   description?: string;
-  callbackUrl: string;
+  callback_url: string;
   baseUrl?: string;
   appOwnerEmail?: string;
 }

@@ -18,7 +18,7 @@ const CreateOAuthModal = ({
 }: CreateOAuthModalProps) => {
     const { t } = useLanguage();
     const [name, setName] = useState("");
-    const [callbackUrl, setCallbackUrl] = useState("");
+    const [callback_url, setCallbackUrl] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     // TODO: Use the react hot toast ... it uses a lot less code
     const [toastMessage, setToastMessage] = useState("");
@@ -31,10 +31,10 @@ const CreateOAuthModal = ({
         if (isLoading) return;
         setIsLoading(true);
         try {
-            console.log(name, callbackUrl)
+            console.log(name, callback_url)
             data = await createOauthApplication({
                 name,
-                callbackUrl,
+                callback_url,
             });
 
 
@@ -97,7 +97,7 @@ const CreateOAuthModal = ({
                             <textarea
                                 placeholder={t.translations.CALLBACK_URL} // Placeholder for project description
                                 className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
-                                value={callbackUrl}
+                                value={callback_url}
                                 onChange={(e) => setCallbackUrl(e.target.value)}
                             />
 
