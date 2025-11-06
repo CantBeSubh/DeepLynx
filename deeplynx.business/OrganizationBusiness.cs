@@ -281,16 +281,16 @@ public class OrganizationBusiness : IOrganizationBusiness
             .FirstOrDefaultAsync(ou => ou.OrganizationId == organizationId && ou.UserId == userId);
         if (existingOrgUser != null)
             return false; // org user already exists
-        
+
         // TODO: determine if user account discovery/creation is required
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null || user.IsArchived)
             throw new KeyNotFoundException($"User with id {userId} not found");
-        
+
         var organization = await _context.Organizations.FirstOrDefaultAsync(o => o.Id == organizationId);
         if (organization == null || organization.IsArchived)
             throw new KeyNotFoundException($"Organization with id {organizationId} not found");
-        
+
         // add user to org and assign admin privileges
         var orgUser = new OrganizationUser
         {

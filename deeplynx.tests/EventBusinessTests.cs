@@ -1216,10 +1216,18 @@ namespace deeplynx.tests
             mockUser3Id = users[2].Id;
             mockUser4Id = users[3].Id;
             
+            var organization = new Organization
+            {
+                Name = "Organization1",
+            };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            mockOrganizationId = organization.Id;
+            
             var projects = new List<Project>
             {
-                new Project { Name = "Project 1", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)},
-                new Project { Name = "Project 2", LastUpdatedBy = mockUserId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) },
+                new Project { Name = "Project 1", LastUpdatedBy = mockUserId, OrganizationId = mockOrganizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)},
+                new Project { Name = "Project 2", LastUpdatedBy = mockUserId, OrganizationId = mockOrganizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) },
             };
             Context.Projects.AddRange(projects);
             await Context.SaveChangesAsync();
@@ -1259,14 +1267,6 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             mockDataSourceId = dataSources[0].Id;
             mockDataSource2Id = dataSources[1].Id;
-
-            var organization = new Organization
-            {
-                Name = "Organization1",
-            };
-            Context.Organizations.Add(organization);
-            await Context.SaveChangesAsync();
-            mockOrganizationId = organization.Id;
 
             var organizationUser = new OrganizationUser
             {

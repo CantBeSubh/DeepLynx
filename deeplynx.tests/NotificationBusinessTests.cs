@@ -23,6 +23,7 @@ namespace deeplynx.tests
         private User _user1 = null!;
         private User _user2 = null!;
         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+        private long organizationId;
 
         public NotificationBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -625,7 +626,7 @@ namespace deeplynx.tests
         {
             // Arrange
             var otherProjectId = _projectId + 1;
-            var otherProject = new Project { Name = "Other Project" };
+            var otherProject = new Project { Name = "Other Project", OrganizationId = organizationId };
             Context.Projects.Add(otherProject);
             await Context.SaveChangesAsync();
 
@@ -773,6 +774,11 @@ namespace deeplynx.tests
                 Password = "test_password",
                 IsArchived = false
             };
+            
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
 
             Context.Users.AddRange(_user1, _user2);
             await Context.SaveChangesAsync();
@@ -781,7 +787,8 @@ namespace deeplynx.tests
             { 
                 Name = "Test Project",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = _user1.Id
+                LastUpdatedBy = _user1.Id,
+                OrganizationId = organizationId
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
