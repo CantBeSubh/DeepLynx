@@ -232,6 +232,8 @@ export const translations = {
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Storage Destination",
+            CREATED_AND_ATTACHED: "created and attached",
+            CREATED_BUT_FAILED_TO_ATTACH: "created but failed to attach"
         }
     },
     es: {
@@ -476,7 +478,9 @@ export const translations = {
             _MARKED_FOR_REMOVAL: " marked for removal",
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
-            STORAGE_DESTINATION: "Destino de almacenamiento"
+            STORAGE_DESTINATION: "Destino de almacenamiento",
+            CREATED_AND_ATTACHED: "created and attached",
+            CREATED_BUT_FAILED_TO_ATTACH: "created but failed to attach"
         }
     }
 }
