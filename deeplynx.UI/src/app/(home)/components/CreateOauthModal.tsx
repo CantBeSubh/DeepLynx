@@ -1,8 +1,6 @@
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { createOauthApplication } from "@/app/lib/oauth_services.client";
-import { createOrganization } from "@/app/lib/organization_services.client";
-import { createProject } from "@/app/lib/projects_services.client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -27,20 +25,18 @@ const CreateOAuthModal = ({
     const [toastType, setToastType] = useState<
         "success" | "error" | "info" | null
     >(null);
-    const router = useRouter();
 
     const handleSubmit = async () => {
         let data;
         if (isLoading) return;
         setIsLoading(true);
         try {
+            console.log(name, callbackUrl)
             data = await createOauthApplication({
                 name,
                 callbackUrl,
             });
 
-            setToastType("success");
-            setToastMessage("Project Created Successfully");
 
             setName("");
             setCallbackUrl("");
@@ -52,9 +48,9 @@ const CreateOAuthModal = ({
                 onClose();
             }, 1000);
         } catch (error) {
-            console.error("Failed to create organization", error);
+            console.error("Failed to create OAuth Application", error);
             setToastType("error");
-            setToastMessage("Failed to create organization");
+            setToastMessage("Failed to create OAuth Application");
 
             setTimeout(() => {
                 setToastMessage("");
