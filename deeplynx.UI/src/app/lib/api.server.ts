@@ -1,5 +1,4 @@
 // lib/api.server.ts
-import "server-only";
 import { auth } from "../../../auth";
 
 /** ----- Strict env handling (lazy) ----- */
@@ -17,32 +16,41 @@ function getBase(): string {
     return _BASE;
 }
 
+
+// Optional: use a machine/service token in SSR when the user token isn't available
 const SERVICE_TOKEN = process.env.BACKEND_SERVICE_TOKEN ?? process.env.SERVICE_TOKEN ?? "";
+
 
 /** ----- Session helpers ----- */
 type SessionShapeA = { tokens?: { access_token?: unknown } };
 type SessionShapeB = { accessToken?: unknown };
+type MaybeSession = SessionShapeA & SessionShapeB;
 
+/** Safely pull an access token from unknown session shapes */
 function extractAccessToken(x: unknown): string | null {
     if (typeof x !== "object" || x === null) return null;
 
+    // tokens.access_token path
     const maybeTokens = (x as SessionShapeA).tokens;
     if (typeof maybeTokens === "object" && maybeTokens !== null) {
         const at = (maybeTokens as { access_token?: unknown }).access_token;
         if (typeof at === "string") return at;
     }
 
+    // accessToken path
     const at2 = (x as SessionShapeB).accessToken;
     if (typeof at2 === "string") return at2;
 
     return null;
 }
 
+/** Get a JWT: prefer user token; fall back to service token for SSR */
 async function getBearer(): Promise<string | null> {
     const session: unknown = await auth().catch(() => null);
     const userToken = extractAccessToken(session);
     return userToken ?? (SERVICE_TOKEN || null);
 }
+
 
 async function authHeaders(): Promise<HeadersInit> {
     const token = await getBearer();
@@ -53,6 +61,7 @@ async function authHeaders(): Promise<HeadersInit> {
     };
 }
 
+/** Small fetch wrapper with detailed error logging */
 async function apiFetch(path: string, init: RequestInit = {}) {
     const url = `${getBase()}${path.startsWith("/") ? "" : "/"}${path}`;
     const headers = {
@@ -80,6 +89,7 @@ async function apiFetch(path: string, init: RequestInit = {}) {
     }
     return res;
 }
+
 
 async function asJson<T>(res: Response): Promise<T> {
     return (await res.json()) as T;
