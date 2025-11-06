@@ -12,7 +12,7 @@ export const translations = {
             OR: "OR",
             PIV_CAC_CARD_SIGN_IN: "Sign in with PIV/CAC Card",
             TROUBLE_LOGGING_IN: "Trouble Logging in?",
-            WELECOME: "Welcome Back ",
+            WELECOME: "Welcome Back",
             CUSTOMIZE: "Customize",
             WIDGET: "Widget",
             YOUR_PROJECTS: "Your Projects",
@@ -479,8 +479,8 @@ export const translations = {
             RECORD_: "Record ",
             RECORD_INFORMATION: "Record Information",
             STORAGE_DESTINATION: "Destino de almacenamiento",
-            CREATED_AND_ATTACHED: "created and attached",
-            CREATED_BUT_FAILED_TO_ATTACH: "created but failed to attach"
+            CREATED_AND_ATTACHED: "creado y adjuntado",
+            CREATED_BUT_FAILED_TO_ATTACH: "creado pero no se pudo adjuntar"
         }
     }
 }
