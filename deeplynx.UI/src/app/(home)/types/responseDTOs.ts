@@ -205,3 +205,30 @@ export type GraphResponseDto = {
     edgeId: number;
   }>;
 }
+
+export type PaginatedEventsResponseDto =
+    {
+        items: EventResponseDto[] | [];
+        pageNumber: number;
+        pageSize: number;
+        maxPageSize: number;
+        totalCount: number;
+    };
+
+export type EventResponseDto =
+    {
+        id: number;
+        operation: string;
+        entityType: string;
+        entityId?: number | null;
+        entityName: string;
+        projectId?: number;
+        projectName?: string;
+        organizationId?: number | null;
+        dataSourceId?: number | null;
+        dataSourceName?: string | null;
+        properties?: JSON | string | null;
+        lastUpdatedAt?: string | null;
+        lastUpdatedBy?: string | null;
+        lastUpdatedByUserName?: string | null;
+    };
