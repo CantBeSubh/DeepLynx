@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { updateUser } from "@/app/lib/user_services.client";
 import { updateOauthApplication } from "@/app/lib/oauth_services.client";
 
 interface EditOAuthApplicationProps {
@@ -81,7 +80,7 @@ const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplic
                             {t.translations.DESCRIPTION}
                         </label>
                         <textarea
-                            placeholder={t.translations.DESCRIPTION} // Placeholder for project description
+                            placeholder={t.translations.DESCRIPTION}
                             className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -90,7 +89,7 @@ const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplic
                             {t.translations.BASE_URL}
                         </label>
                         <input
-                            placeholder={t.translations.BASE_URL} // Placeholder for project description
+                            placeholder={t.translations.BASE_URL}
                             className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
                             value={baseUrl}
                             onChange={(e) => setBaseUrl(e.target.value)}
@@ -99,7 +98,7 @@ const EditOAuthApplication = ({ isOpen, onClose, oAuthApplicationId, oAuthApplic
                             {t.translations.APP_OWNER_EMAIL}
                         </label>
                         <input
-                            placeholder={t.translations.APP_OWNER_EMAIL} // Placeholder for project description
+                            placeholder={t.translations.APP_OWNER_EMAIL}
                             className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
                             value={appOwnerEmail}
                             onChange={(e) => setAppOwnerEmail(e.target.value)}

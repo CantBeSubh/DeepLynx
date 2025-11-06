@@ -1,16 +1,14 @@
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { createOauthApplication } from "@/app/lib/oauth_services.client";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface CreateOAuthModalProps {
-    isOpen: boolean; // Indicates whether the modal is open
-    onClose: () => void; // Function to call when closing the modal
+    isOpen: boolean;
+    onClose: () => void;
     onOAuthApplicationCreated: () => void;
 }
 
-// Main CreateProject component
 const CreateOAuthModal = ({
     isOpen,
     onClose,
@@ -23,25 +21,22 @@ const CreateOAuthModal = ({
     const [baseUrl, setBaseUrl] = useState("");
     const [appOwnerEmail, setAppOwnerEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    // TODO: Use the react hot toast ... it uses a lot less code
     const [toastMessage, setToastMessage] = useState("");
     const [toastType, setToastType] = useState<
         "success" | "error" | "info" | null
     >(null);
 
     const handleSubmit = async () => {
-        let data;
         if (isLoading) return;
         setIsLoading(true);
         try {
-            data = await createOauthApplication({
+            await createOauthApplication({
                 name,
                 callbackUrl,
                 description,
                 baseUrl,
                 appOwnerEmail
             });
-
 
             setName("");
             setCallbackUrl("");
@@ -79,46 +74,48 @@ const CreateOAuthModal = ({
                     </div>
                 </div>
             )}
-            {/* Render the modal dialog if isOpen is true */}
             {isOpen && (
                 <dialog className="modal modal-open">
                     <div className="modal-box max-w-lg">
                         <h3 className="font-bold text-lg mb-4 text-base-content">
                             {t.translations.CREATE_OAUTH_APPLICATION}
                         </h3>
-                        <input
-                            type="text"
-                            placeholder={t.translations.NAME}
-                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
-                        <input
-                            placeholder={t.translations.CALLBACK_URL} // Placeholder for project description
-                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                            value={callbackUrl}
-                            onChange={(e) => setCallbackUrl(e.target.value)}
-                        />
-                        <textarea
-                            placeholder={t.translations.DESCRIPTION} // Placeholder for project description
-                            className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        />
-                        <input
-                            placeholder={t.translations.BASE_URL} // Placeholder for project description
-                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                            value={baseUrl}
-                            onChange={(e) => setBaseUrl(e.target.value)}
-                        />
-                        <input
-                            placeholder={t.translations.APP_OWNER_EMAIL} // Placeholder for project description
-                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                            value={appOwnerEmail}
-                            onChange={(e) => setAppOwnerEmail(e.target.value)}
-                        />
-                        {/* Modal Actions */}
+
+                        <div className="flex flex-col gap-4">
+                            <input
+                                type="text"
+                                placeholder={t.translations.NAME}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                            />
+                            <input
+                                placeholder={t.translations.CALLBACK_URL}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={callbackUrl}
+                                onChange={(e) => setCallbackUrl(e.target.value)}
+                            />
+                            <textarea
+                                placeholder={t.translations.DESCRIPTION}
+                                className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                            />
+                            <input
+                                placeholder={t.translations.BASE_URL}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={baseUrl}
+                                onChange={(e) => setBaseUrl(e.target.value)}
+                            />
+                            <input
+                                placeholder={t.translations.APP_OWNER_EMAIL}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={appOwnerEmail}
+                                onChange={(e) => setAppOwnerEmail(e.target.value)}
+                            />
+                        </div>
+
                         <div className="modal-action mt-6">
                             <button
                                 type="button"
@@ -127,12 +124,18 @@ const CreateOAuthModal = ({
                             >
                                 {t.translations.CANCEL}
                             </button>
-                            <button type="submit" disabled={isLoading} aria-busy={isLoading} className="btn btn-primary" onClick={handleSubmit}>
+                            <button
+                                type="button"
+                                disabled={isLoading}
+                                aria-busy={isLoading}
+                                className="btn btn-primary"
+                                onClick={handleSubmit}
+                            >
                                 {isLoading ? (
-                                    <>
-                                        <span className="spinner" aria-hidden="true" />
-                                    </>
-                                ) : (t.translations.CREATE)}
+                                    <span className="spinner" aria-hidden="true" />
+                                ) : (
+                                    t.translations.CREATE
+                                )}
                             </button>
                         </div>
                     </div>

@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import Tabs from "../components/Tabs";
 import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
 import OrganizationManagement from "../components/SiteManagementPortal/OrgTable";
-
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
   applications: OauthApplicationResponseDto[];
@@ -15,9 +13,7 @@ interface SysAdminProps {
 }
 
 const SysAdminClient = ({ organizations, applications, members }: SysAdminProps) => {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const activeTab = searchParams.get("tab") || "Organization Management";
+  const [activeTab, setActiveTab] = useState("");
 
   const tabData = [
     {
@@ -25,7 +21,7 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
       content: <OrganizationManagement initialOrganizations={organizations} />,
     },
     {
-      label: "OAuth Application",
+      label: "Oauth Application",
       content: <OAuthManagement applications={applications} />,
     },
     {
@@ -35,10 +31,8 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
   ];
 
   const handleTabChange = (label: string) => {
-    console.log("Changing tab to:", label);
-    const params = new URLSearchParams(searchParams);
-    params.set("tab", label);
-    router.push(`?${params.toString()}`, { scroll: false });
+    console.log(label)
+    setActiveTab(label);
   };
 
   return (
@@ -57,5 +51,6 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
     </div>
   );
 };
+
 
 export default SysAdminClient;

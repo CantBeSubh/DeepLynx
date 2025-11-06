@@ -2,11 +2,12 @@ import React, { useEffect, useState } from "react";
 import GenericTable from "../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
 import { Column } from "../../types/types";
-import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { TrashIcon, PencilIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
 import EditSysUser from "./EditSysUser";
 import MemberManagementUserSkeleton from "../skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
+import AddSysUser from "./AddSysUser";
 interface Props {
   members: UserResponseDto[];
 }
@@ -20,6 +21,8 @@ const UsersTable = ({ members }: Props) => {
   const [editSysUserModal, setEditSysUserModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [selectedUserName, setSelectedUserName] = useState<string>("");
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false); // ← Fixed naming
+
 
   const fetchUsers = async () => {
     try {
@@ -146,7 +149,21 @@ const UsersTable = ({ members }: Props) => {
 
   return (
     <div>
+      <div className="flex justify-end p-4 mr-4">
+        <button
+          className="btn btn-secondary btn-sm flex-1 sm:flex-initial"
+          data-tour="create-user"
+          onClick={() => setIsAddUserModalOpen(true)}
+        >
+          <PlusIcon className="size-5" />
+          <span>{t.translations.MEMBER}</span>
+        </button>
+      </div>
       <GenericTable columns={columns} data={data} enablePagination />
+      <AddSysUser
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+      />
       {selectedUserId !== null && (
         <EditSysUser
           isOpen={editSysUserModal}

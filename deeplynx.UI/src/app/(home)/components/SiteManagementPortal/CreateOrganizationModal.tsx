@@ -1,7 +1,6 @@
 "use client";
 import { useLanguage } from "@/app/contexts/Language";
 import { createOrganization } from "@/app/lib/organization_services.client";
-import { createProject } from "@/app/lib/projects_services.client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -11,7 +10,6 @@ interface CreateOrganizationModalProps {
     onOrganizationCreated: () => void;
 }
 
-// Main CreateProject component
 const CreateOrganization = ({
     isOpen,
     onClose,
@@ -21,7 +19,6 @@ const CreateOrganization = ({
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    // TODO: Use the react hot toast ... it uses a lot less code
     const [toastMessage, setToastMessage] = useState("");
     const [toastType, setToastType] = useState<
         "success" | "error" | "info" | null
@@ -81,16 +78,18 @@ const CreateOrganization = ({
                         <h3 className="font-bold text-lg mb-4 text-base-content">
                             {t.translations.CREATE_ORGANIZATION}
                         </h3>
-                        <input
-                            type="text"
-                            placeholder={t.translations.NAME}
-                            className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
-                        />
+                        <div className="mb-2">
+                            <input
+                                type="text"
+                                placeholder={t.translations.NAME}
+                                className="input input-bordered input-primary bg-base-100 text-base-content placeholder:text-base-content/40 w-full"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                required
+                            />
+                        </div>
                         <textarea
-                            placeholder={t.translations.DESCRIPTION} // Placeholder for project description
+                            placeholder={t.translations.DESCRIPTION}
                             className="textarea textarea-bordered textarea-primary bg-base-100 text-base-content placeholder:text-base-content/40 min-h-[100px] w-full"
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}

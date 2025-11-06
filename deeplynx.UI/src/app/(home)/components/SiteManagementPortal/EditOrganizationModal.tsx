@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useLanguage } from "@/app/contexts/Language";
-import { updateUser } from "@/app/lib/user_services.client";
 import { updateOrganization } from "@/app/lib/organization_services.client";
 
 interface EditOrganizationProps {
