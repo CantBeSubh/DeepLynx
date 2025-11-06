@@ -25,7 +25,7 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
       content: <OrganizationManagement initialOrganizations={organizations} />,
     },
     {
-      label: "Oauth Application",
+      label: "OAuth Application",
       content: <OAuthManagement applications={applications} />,
     },
     {
