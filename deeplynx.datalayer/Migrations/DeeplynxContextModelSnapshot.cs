@@ -901,6 +901,10 @@ namespace deeplynx.datalayer.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<bool>("DefaultOrg")
+                        .HasColumnType("boolean")
+                        .HasColumnName("default_org");
+
                     b.Property<string>("Description")
                         .HasColumnType("text")
                         .HasColumnName("description");

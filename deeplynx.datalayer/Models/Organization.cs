@@ -30,6 +30,9 @@ public partial class Organization
     [Column("is_archived")]
     public bool IsArchived { get; set; }
 
+    [Column("default_org")]
+    public bool DefaultOrg { get; set; } = false;
+
     [InverseProperty("Organization")]
     public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 
