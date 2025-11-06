@@ -18,6 +18,7 @@ import {
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
   TagIcon,
+  BellIcon
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -85,6 +86,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/upload_center",
       "/data_catalog",
       "/member_management",
+      "/event_management",
       "/tag_management",
     ];
     const isExactMatch = selectedItem === targetPath;
@@ -156,6 +158,21 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
+
+          <li className="mt-2">
+          <div className="flex items-center">
+            <Link 
+              href="#"
+              onClick={(e) => handleItemClick("/event_management", e)}
+              className={getItemClass("/event_management")}>
+              
+              <BellIcon className="size-6" />
+              {!isCollapsed && (
+                  <p className="ml-2">Event Management</p>
+              )}
+            </Link>
+          </div>
+        </li>
         </ul>
 
         <div className="divider divider-secondary" />
