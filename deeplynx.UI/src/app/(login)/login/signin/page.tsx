@@ -9,20 +9,22 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession, signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Signin() {
   const [isChecked, setChecked] = useState(true);
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const returnUrl = searchParams.get('returnUrl');
   const { t } = useLanguage();
 
   useEffect(() => {
-    // If user is already authenticated, redirect to home
+    // If user is already authenticated, redirect to home or returnUrl
     if (status === "authenticated") {
-      router.push("/");
+      router.push(returnUrl || "/");
     }
-  }, [status, router]);
+  }, [status, router, returnUrl]);
 
   // Show loading while checking authentication status
   if (status === "loading") {
@@ -51,7 +53,7 @@ export default function Signin() {
   }
 
   const handleOktaSignIn = () => {
-    signIn("okta", { callbackUrl: "/" });
+    signIn("okta", { callbackUrl: returnUrl || "/" });
   };
 
   return (
