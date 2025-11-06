@@ -9,7 +9,12 @@ import { getAllOrganizationsServer } from "@/app/lib/organization_services.serve
 import { getAllOauthApplicationsServer } from "@/app/lib/oauth_services.server";
 import { getAllUsersServer } from "@/app/lib/user_services.server";
 
-const SysAdminPage = async () => {
+const SysAdminPage = async ({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) => {
+  await searchParams;
   const OrganizationResponseDtos =
     (await getAllOrganizationsServer()) as OrganizationResponseDto[];
   const oAuthApplications =
