@@ -164,15 +164,25 @@ public class ProjectBusiness : IProjectBusiness
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
 
-        int orgId != null;
+        long orgId;
 
         if (dto.OrganizationId.HasValue)
         {
             await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
+
+            orgId = dto.OrganizationId.Value;
         }
         else
         {
-            var defaultOrg = await _context.Organizations.FirstOrDefaultAsync(o => o.DefaultOrg);
+            var defaultOrgId = await _context.Organizations
+                .Where(o => o.DefaultOrg && !o.IsArchived)
+                .Select(o => o.Id)
+                .FirstOrDefaultAsync();
+
+            if (defaultOrgId is null)
+                throw new InvalidOperationException("No default organization is configured.");
+
+            orgId = defaultOrgId.Value;
         }
 
         var project = new Project
