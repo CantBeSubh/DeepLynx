@@ -78,7 +78,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           onClick={() => router.push("/")}
         />
         <div className="dropdown dropdown-end">
-          <div className="flex">
+          <div className="flex items-center">
             <RoleGate role="sysAdmin">
               <Link href={"/site_management"} prefetch={false}>
                 <Cog6ToothIcon className="size-10" />
