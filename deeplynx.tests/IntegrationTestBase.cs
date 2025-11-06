@@ -1,5 +1,7 @@
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.helpers;
+using deeplynx.interfaces;
 using deeplynx.tests;
 using DotNetEnv;
 using Testcontainers.PostgreSql;
@@ -25,18 +27,18 @@ public class TestSuiteFixture : IAsyncLifetime
             .WithImage("redis:7-alpine")
             .Build();
     }
-    
+
     // Runs at the beginning of every test suite
     public async Task InitializeAsync()
     {
         // Start containers
         await _postgresContainer.StartAsync();
         await _redisContainer.StartAsync();
-        
+
         // Set up configuration for redis cache tests
         RedisConnectionString = _redisContainer.GetConnectionString();
         Environment.SetEnvironmentVariable("REDIS_CONNECTION_STRING", RedisConnectionString);
-        
+
         PostgresConnectionString = _postgresContainer.GetConnectionString();
 
         var options = new DbContextOptionsBuilder<DeeplynxContext>()
@@ -44,10 +46,10 @@ public class TestSuiteFixture : IAsyncLifetime
             .Options;
 
         Context = new DeeplynxContext(options);
-        
+
         // Apply migrations only once
         await Context.Database.MigrateAsync();
-        
+
         // Apply env variables without exposing values in tests
         var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
         var envFilePath = Path.Combine(projectRoot, ".env");
@@ -55,7 +57,7 @@ public class TestSuiteFixture : IAsyncLifetime
         // ensure the notification service is tested
         Environment.SetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE", "true");
     }
-    
+
     // Runs at the end of every test suite
     public async Task DisposeAsync()
     {
@@ -81,7 +83,7 @@ public class IntegrationTestBase : IAsyncLifetime
 {
     protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
-    protected CacheBusiness _cacheBusiness;
+    protected ICacheBusiness _cacheBusiness;
 
     protected IntegrationTestBase(TestSuiteFixture fixture)
     {
@@ -89,7 +91,10 @@ public class IntegrationTestBase : IAsyncLifetime
         Context = new DeeplynxContext(new DbContextOptionsBuilder<DeeplynxContext>()
             .UseNpgsql(_fixture.PostgresConnectionString)
             .Options);
-        _cacheBusiness = CacheBusiness.Instance;
+
+        // Create initial cache business
+        var config = new Config();
+        _cacheBusiness = CacheFactory.CreateCache(config);
     }
 
     // Runs before every test in the test suite
@@ -104,6 +109,16 @@ public class IntegrationTestBase : IAsyncLifetime
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
         await Context.DisposeAsync();
         await _cacheBusiness.FlushAsync();
+    }
+
+    /// <summary>
+    /// Switch cache type for testing - just create a new instance
+    /// </summary>
+    protected void SwitchCacheType(string cacheType)
+    {
+        Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
+        var config = new Config(); // Re-read config with new env var
+        _cacheBusiness = CacheFactory.CreateCache(config); // Create new instance
     }
 
     /// <summary>
@@ -152,7 +167,7 @@ public class IntegrationTestBase : IAsyncLifetime
         await Context.SaveChangesAsync();
         await _cacheBusiness.FlushAsync();
     }
-    
+
     protected virtual async Task SeedTestDataAsync()
     {
         await CleanDatabaseAsync();

@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using Newtonsoft.Json;
 using deeplynx.interfaces;
 using Microsoft.Extensions.Caching.Memory;
+using deeplynx.helpers;
 
 namespace deeplynx.business
 {
@@ -9,14 +10,16 @@ namespace deeplynx.business
     {
         private readonly IMemoryCache _cache;
         private readonly ConcurrentDictionary<string, bool> _keys;
+        private readonly Config _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCacheBusiness"/> class.
         /// </summary>
-        public MemoryCacheBusiness()
+        public MemoryCacheBusiness(Config config)
         {
             _cache = new MemoryCache(new MemoryCacheOptions());
             _keys = new ConcurrentDictionary<string, bool>();
+            _config = config;
         }
         
         /// <summary>

@@ -1,31 +1,21 @@
 using deeplynx.datalayer.Models;
 using deeplynx.interfaces;
+using deeplynx.helpers;
 
 namespace deeplynx.business
 {
-    public class CacheBusiness: ICacheBusiness
+    public class CacheBusiness : ICacheBusiness
     {
-        // Create singleton instance when the class is loaded
-        private static readonly CacheBusiness _instance = new CacheBusiness();
         private ICacheBusiness Cache;
-        
-        /// <summary>
-        /// Private constructor to prevent instantiation from outside class.
-        /// </summary>
-        private CacheBusiness()
+        private Config _config;
+    
+        public CacheBusiness(Config config)
         {
-            Cache = CacheFactory.CreateCache();
+            _config = config;
+            Cache = CacheFactory.CreateCache(_config);
         }
-        
-        /// <summary>
-        /// Static property that will return the cache type in use (overridden in the two cache types).
-        /// </summary>
+    
         public string CacheType => Cache.CacheType;
-        
-        /// <summary>
-        /// Static property to provide access to the singleton instance.
-        /// </summary>
-        public static CacheBusiness Instance => _instance;
 
         /// <summary>
         /// Used only for testing to set the CacheService to a mocked version
@@ -35,23 +25,23 @@ namespace deeplynx.business
         {
             Cache = cacheService;
         }
-        
+
         /// <summary>
         /// Reset the cache instance by recreating it from the factory.
         /// Useful for testing when environment variables change.
         /// </summary>
         public void ResetCacheInstance()
         {
-            Cache = CacheFactory.CreateCache();
+            Cache = CacheFactory.CreateCache(_config);
         }
-        
+
         /// <summary>
         /// Wrapper method to expose Get cache operations
         /// </summary>
         /// <param name="key">The Key name of the cached data to be retrieved</param>
         /// <returns>Cached data object</returns>
         public Task<T> GetAsync<T>(string key) => Cache.GetAsync<T>(key);
-        
+
         /// <summary>
         /// Wrapper method to expose Set cache operations
         /// </summary>
@@ -60,7 +50,7 @@ namespace deeplynx.business
         /// <param name="ttl">Time To Live(ttl)- The duration of time the data will be cached</param>
         /// <returns>bool based on set success</returns>
         public Task<bool> SetAsync(string key, object value, TimeSpan? ttl = null) => Cache.SetAsync(key, value, ttl);
-        
+
         /// <summary>
         /// Wrapper method to expose Set cache operations
         /// </summary>
@@ -69,14 +59,14 @@ namespace deeplynx.business
         /// <param name="ttl">Time To Live(ttl)- The duration of time the data will be cached</param>
         /// <returns>bool based on set success</returns>
         public Task<bool> SetAsync(string key, object value, int? ttl = null) => Cache.SetAsync(key, value, ttl);
-        
+
         /// <summary>
         /// Wrapper method to expose Delete cache operations
         /// </summary>
         /// <param name="key">The Key name of the data to be cached</param>
         /// <returns>bool based on delete success</returns>
         public Task<bool> DeleteAsync(string key) => Cache.DeleteAsync(key);
-        
+
         /// <summary>
         /// Wrapper method to expose Flush cache operations
         /// </summary>

@@ -1,10 +1,9 @@
 using System.Text.Json;
 using StackExchange.Redis;
 using System.Text.Json.Serialization;
-using deeplynx.datalayer.Models;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 using deeplynx.interfaces;
-using Microsoft.EntityFrameworkCore;
+using deeplynx.helpers;
 
 namespace deeplynx.business
 {
@@ -13,14 +12,16 @@ namespace deeplynx.business
         private readonly ConnectionMultiplexer _redis;
         private readonly IDatabase _db;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly Config _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RedisCacheBusiness"/> class.
         /// </summary>
-        public RedisCacheBusiness(ConnectionMultiplexer connectionMultiplexer)
+        public RedisCacheBusiness(ConnectionMultiplexer connectionMultiplexer, Config config)
         {
             _redis = connectionMultiplexer;
             _db = _redis.GetDatabase();
+            _config = config;
 
             _jsonOptions = new JsonSerializerOptions
             {

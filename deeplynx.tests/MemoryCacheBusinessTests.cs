@@ -12,11 +12,8 @@ namespace deeplynx.tests
         
         public override async Task InitializeAsync()
         {
-            Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", "memory");
-            
-            // Reset the cache instance to pick up the new environment variable
-            _cacheBusiness.ResetCacheInstance();
-            
+            // Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", "memory");
+            SwitchCacheType("memory");
             await base.InitializeAsync();
         }
         
