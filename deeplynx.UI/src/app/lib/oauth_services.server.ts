@@ -1,5 +1,5 @@
 import { OauthApplicationResponseDto } from "../(home)/types/responseDTOs";
-
+import "server-only";
 import { auth } from "../../../auth";
 
 /** ----- Strict env handling (lazy) ----- */

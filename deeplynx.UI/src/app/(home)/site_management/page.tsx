@@ -8,7 +8,6 @@ import {
 import { getAllOrganizationsServer } from "@/app/lib/organization_services.server";
 import { getAllOauthApplicationsServer } from "@/app/lib/oauth_services.server";
 import { getAllUsersServer } from "@/app/lib/user_services.server";
-export const dynamic = "force-dynamic";
 
 const SysAdminPage = async () => {
   const OrganizationResponseDtos =

@@ -2,27 +2,18 @@
 import "server-only";
 import { auth } from "../../../auth";
 
+/** ----- Strict env handling (lazy) ----- */
 let _BASE: string | null = null;
 
 function getBase(): string {
   if (_BASE) return _BASE;
 
   const v = process.env.BACKEND_BASE_URL;
-  
-  // Allow build-time to proceed without the URL
-  if (!v) {
-    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE === 'phase-production-build') {
-      console.warn('[ENV] BACKEND_BASE_URL not set during build - using placeholder');
-      _BASE = 'http://placeholder-for-build';
-      return _BASE;
-    }
-    throw new Error("[ENV] BACKEND_BASE_URL is not set");
-  }
-  
+  if (!v) throw new Error("[ENV] BACKEND_BASE_URL is not set");
   if (!/^https?:\/\//.test(v)) {
     throw new Error(`[ENV] BACKEND_BASE_URL must start with http(s):// (got "${v}")`);
   }
-  _BASE = v.replace(/\/+$/, "");
+  _BASE = v.replace(/\/+$/, ""); // strip trailing slash
   return _BASE;
 }
 
