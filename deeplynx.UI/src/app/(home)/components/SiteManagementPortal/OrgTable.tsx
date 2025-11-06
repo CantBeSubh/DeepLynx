@@ -1,10 +1,10 @@
 import { useLanguage } from "@/app/contexts/Language";
-import { OrganizationResponseDto } from "../types/responseDTOs";
+import { OrganizationResponseDto } from "../../types/responseDTOs";
 import { useEffect, useState } from "react";
 import { archiveOrganization, getAllOrganizations } from "@/app/lib/organization_services.client";
-import { Column } from "../types/types";
+import { Column } from "../../types/types";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import GenericTable from "./GenericTable";
+import GenericTable from "../GenericTable";
 import CreateOrganization from "./CreateOrganizationModal";
 import EditOrganization from "./EditOrganizationModal";
 

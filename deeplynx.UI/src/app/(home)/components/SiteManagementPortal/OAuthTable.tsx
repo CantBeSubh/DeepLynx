@@ -1,10 +1,10 @@
 import { useLanguage } from "@/app/contexts/Language";
-import { OauthApplicationResponseDto } from "../types/responseDTOs";
+import { OauthApplicationResponseDto } from "../../types/responseDTOs";
 import { useEffect, useState } from "react";
 import { archiveOauthApplication, getAllOauthApplications } from "@/app/lib/oauth_services.client";
-import { Column } from "../types/types";
+import { Column } from "../../types/types";
 import { PencilIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import GenericTable from "./GenericTable";
+import GenericTable from "../GenericTable";
 import CreateOAuthModal from "./CreateOauthModal";
 import EditOAuthApplication from "./EditOAuthApplicationModal";
 

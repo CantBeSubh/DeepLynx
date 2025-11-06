@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import GenericTable from "./GenericTable";
+import GenericTable from "../GenericTable";
 import { useLanguage } from "@/app/contexts/Language";
-import { Column } from "../types/types";
+import { Column } from "../../types/types";
 import { TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
 import { getAllUsers, updateUser, deleteUser } from "@/app/lib/user_services.client";
-import EditSysUser from "./MemberSettingsTable/MemberModals/EditSysUser";
-import MemberManagementUserSkeleton from "./skeletons/membermanagementuserskeleton";
+import EditSysUser from "./EditSysUser";
+import MemberManagementUserSkeleton from "../skeletons/membermanagementuserskeleton";
 import { UserResponseDto } from "@/app/(home)/types/responseDTOs";
 interface Props {
   members: UserResponseDto[];

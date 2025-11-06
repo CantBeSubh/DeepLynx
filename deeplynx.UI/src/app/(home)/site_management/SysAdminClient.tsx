@@ -4,9 +4,9 @@ import React, { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Tabs from "../components/Tabs";
 import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
-import UsersTable from "../components/UsersTable";
-import OAuthManagement from "../components/OAuthTable";
-import OrganizationManagement from "../components/OrgTable";
+import UsersTable from "../components/SiteManagementPortal/UsersTable";
+import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
+import OrganizationManagement from "../components/SiteManagementPortal/OrgTable";
 
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
