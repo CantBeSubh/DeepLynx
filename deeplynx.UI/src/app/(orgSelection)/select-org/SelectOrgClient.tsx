@@ -5,6 +5,7 @@ import AvatarCell from "@/app/(home)/components/Avatar";
 import { RoleGate } from "@/app/(home)/rbac/RBACComponents";
 import { CreateOrganizationRequestDto } from "@/app/(home)/types/requestDTOs";
 import { OrganizationResponseDto } from "@/app/(home)/types/responseDTOs";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
 import { createOrganization } from "@/app/lib/organization_services.client";
 import { getAllProjects } from "@/app/lib/projects_services.client";
@@ -16,6 +17,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { Session } from "next-auth";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 interface OrgWithCounts extends OrganizationResponseDto {
@@ -28,6 +30,8 @@ interface Props {
 }
 
 const SelectOrgClient = ({ session }: Props) => {
+  const router = useRouter();
+  const { setOrganization } = useOrganizationSession();
   const [organizations, setOrganizations] = useState<OrgWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +110,16 @@ const SelectOrgClient = ({ session }: Props) => {
     } finally {
       setIsCreating(false);
     }
+  };
+
+  const handleLaunchOrganization = (org: OrgWithCounts) => {
+    // Set the organization in the session provider
+    setOrganization({
+      organizationId: org.id,
+      organizationName: org.name,
+    });
+
+    router.push("/");
   };
 
   const formatUserName = (fullName?: string | null): string => {
@@ -205,7 +219,10 @@ const SelectOrgClient = ({ session }: Props) => {
                           <Cog6ToothIcon className="size-6" />
                         </button>
                       </RoleGate>
-                      <button className="btn btn-primary btn-sm">
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleLaunchOrganization(org)}
+                      >
                         Launch
                         <ArrowRightIcon className="size-5" />
                       </button>
