@@ -108,6 +108,15 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     setCanCustomize(false);
   };
 
+  const formatUserName = (fullName?: string | null): string => {
+    if (!fullName) return "";
+
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0] ?? "";
+    const lastName = parts[parts.length - 1] ?? "";
+    return [firstName, lastName].filter(Boolean).join(" ");
+  };
+
   return (
     <div className="min-h-screen bg-base-100">
       {/* Header Section */}
@@ -115,7 +124,9 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-base-content">
-              {t.translations.WELECOME}
+              {`${t.translations.WELECOME}, ${formatUserName(
+                session?.user.name
+              )}`}
             </h1>
             <button
               onClick={startTour}
@@ -137,7 +148,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
       {/* Main Content */}
       <div className="p-6">
         <div className="w-4/5 mx-auto">
-          <div className="card card-border shadow-md shadow-dynamic-shadow p-4" data-tour="projects-section">
+          <div
+            className="card card-border shadow-md shadow-dynamic-shadow p-4"
+            data-tour="projects-section"
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-info-content text-lg font-semibold">
                 {t.translations.YOUR_PROJECTS}

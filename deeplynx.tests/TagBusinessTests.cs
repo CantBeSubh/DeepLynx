@@ -817,9 +817,14 @@ namespace deeplynx.tests
              await Context.SaveChangesAsync();
              uid = testUser.Id;
              
-             var project = new Project { Name = "Project 1", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-             var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-             var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var organization = new Organization { Name = "Test Organization" };
+             Context.Organizations.Add(organization);
+             await Context.SaveChangesAsync();
+             var organizationId = organization.Id;
+             
+             var project = new Project { Name = "Project 1", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
              Context.Projects.Add(project);
              Context.Projects.Add(project2);
              Context.Projects.Add(project3);

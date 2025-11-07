@@ -37,6 +37,7 @@ public class RecordBusinessTests : IntegrationTestBase
     public string ruri;
     public string rfiletype;
     public long uid;
+    private long organizationId;
 
     public RecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -1488,20 +1489,27 @@ public class RecordBusinessTests : IntegrationTestBase
         await Context.SaveChangesAsync();
         uid = user.Id;
         
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
         // Add projects
         var project = new Project
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid 
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
         };
         var project2 = new Project
         {
             Name = "Test Project 2",
             Description = "Test project 2 for unit tests",
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-            LastUpdatedBy = uid 
+            LastUpdatedBy = uid,
+            OrganizationId = organizationId
         };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);

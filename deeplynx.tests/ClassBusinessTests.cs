@@ -33,6 +33,7 @@ namespace deeplynx.tests
         public long did;
         public long os1;
         public long uid;
+        public long oid;
 
         public ClassBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -52,12 +53,12 @@ namespace deeplynx.tests
             _roleBusiness = new Mock<IRoleBusiness>();
 
             _classBusiness = new ClassBusiness(
-                Context, _cacheBusiness, _recordBusiness.Object, 
+                Context, _cacheBusiness, _recordBusiness.Object,
                 _relationshipBusiness.Object, _eventBusiness);
-            
+
             _projectBusiness = new ProjectBusiness(
-                _config, Context, _cacheBusiness, _mockLogger.Object, 
-                _classBusiness, _roleBusiness.Object, _dataSourceBusiness.Object, 
+                _config, Context, _cacheBusiness, _mockLogger.Object,
+                _classBusiness, _roleBusiness.Object, _dataSourceBusiness.Object,
                 _objectStorageBusiness.Object, _eventBusiness);
         }
 
@@ -77,20 +78,20 @@ namespace deeplynx.tests
 
             // Act
             var result = await _classBusiness.CreateClass(pid, dto);
-            
+
             // Assert
             Assert.True(result.Id > 0);
             Assert.True(result.LastUpdatedAt >= now);
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
             Assert.Equal(pid, result.ProjectId);
-            
+
             // Ensure the create event is logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -118,26 +119,26 @@ namespace deeplynx.tests
                     Uuid = $"test-uuid-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}"
                 }
             };
-        
+
             // Act
             var result = await _classBusiness.BulkCreateClasses(pid, bulkDto);
-            
+
             // Assert
             Assert.Equal(2, result.Count);
             Assert.Equal("Test Class 1", result.First().Name);
             Assert.Equal("Test Class 2", result.Last().Name);
-            
+
             // Ensure the create event is logged for each class create
             var eventList = await Context.Events.ToListAsync();
             Assert.Equal(2, eventList.Count);
             var firstEvent = eventList[0];
             var secondEvent = eventList[1];
-            
+
             Assert.Equal(pid, firstEvent.ProjectId);
             Assert.Equal("create", firstEvent.Operation);
             Assert.Equal("class", firstEvent.EntityType);
             Assert.Equal(result[0].Id, firstEvent.EntityId);
-            
+
             Assert.Equal(pid, secondEvent.ProjectId);
             Assert.Equal("create", secondEvent.Operation);
             Assert.Equal("class", secondEvent.EntityType);
@@ -149,10 +150,10 @@ namespace deeplynx.tests
         {
             // Arrange
             var dto = new CreateClassRequestDto { Name = null, Description = "Test Description" };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(() => _classBusiness.CreateClass(pid, dto));
-            
+
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -163,10 +164,10 @@ namespace deeplynx.tests
         {
             // Arrange
             var dto = new CreateClassRequestDto { Name = "", Description = "Test Description" };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(() => _classBusiness.CreateClass(pid, dto));
-            
+
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -177,10 +178,10 @@ namespace deeplynx.tests
         {
             // Arrange
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.CreateClass(pid + 99, dto));
-            
+
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -195,10 +196,10 @@ namespace deeplynx.tests
             Context.Projects.Update(project);
             await Context.SaveChangesAsync();
             var dto = new CreateClassRequestDto { Name = "Test Class", Description = "Test Description" };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.CreateClass(pid, dto));
-            
+
             // Ensure that no events were created on failed class creation
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
@@ -214,33 +215,33 @@ namespace deeplynx.tests
 
             // Act & Assert
             await Assert.ThrowsAsync<DbUpdateException>(() => _classBusiness.CreateClass(pid, dto));
-            
+
             // Ensure that only one event was logged (not the duplicate)
             var eventList = await Context.Events.ToListAsync();
             var firstAndOnlyEvent = eventList[0];
             Assert.Single(eventList);
             Assert.Equal("create", firstAndOnlyEvent.Operation);
         }
-        
+
         #endregion
-        
+
         #region GetAllClasses Tests
 
         [Fact]
         public async Task GetAllClasses_ReturnsOnlyForProjects()
         {
-            
+
             // Arrange
-            var p2 = new Project { Name = "ExtraProj" };
+            var p2 = new Project { Name = "ExtraProj", OrganizationId = oid };
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
             await _classBusiness.CreateClass(pid, new CreateClassRequestDto { Name = $"Class1-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
             await _classBusiness.CreateClass(p2.Id, new CreateClassRequestDto { Name = $"Class2-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Test" });
-            
+
             // Act
-            var list = await _classBusiness.GetAllClasses(pid,true);
-            
+            var list = await _classBusiness.GetAllClasses(pid, true);
+
             // Assert
             Assert.Single(list);
             Assert.All(list, c => Assert.Equal(pid, c.ProjectId));
@@ -270,15 +271,15 @@ namespace deeplynx.tests
             Context.Classes.Add(activeClass);
             Context.Classes.Add(archivedClass);
             await Context.SaveChangesAsync();
-            
+
             // Act
-            var list = await _classBusiness.GetAllClasses(pid,true);
-            
+            var list = await _classBusiness.GetAllClasses(pid, true);
+
             // Assert
             Assert.DoesNotContain(list, c => c.Id == archivedClass.Id);
         }
         #endregion
-        
+
         #region GetClass Tests
 
         [Fact]
@@ -295,10 +296,10 @@ namespace deeplynx.tests
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-            
+
             // Act
-            var result = await _classBusiness.GetClass(pid, testClass.Id,true);
-            
+            var result = await _classBusiness.GetClass(pid, testClass.Id, true);
+
             // Assert
             Assert.Equal(testClass.Id, result.Id);
         }
@@ -315,7 +316,7 @@ namespace deeplynx.tests
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClass(pid + 999, testClass.Id, true));
         }
@@ -339,7 +340,7 @@ namespace deeplynx.tests
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.GetClass(pid, testClass.Id, true));
         }
         #endregion
-        
+
         #region UpdateClass Tests
 
         [Fact]
@@ -360,21 +361,21 @@ namespace deeplynx.tests
             await Task.Delay(50);
 
             var dto = new UpdateClassRequestDto { Name = $"Updated Class {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}", Description = "Updated Description" };
-            
+
             // Act
             var updatedResult = await _classBusiness.UpdateClass(pid, testClass.Id, dto);
-            
-            
+
+
             // Assert
             Assert.NotEqual(DateTime.MinValue, updatedResult.LastUpdatedAt);
             Assert.Equal("Updated Description", updatedResult.Description);
-            
+
             // Ensure that an event was logged for the update
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("update", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -425,12 +426,12 @@ namespace deeplynx.tests
             Assert.Equal("Updated Description", getResult.Description);
             Assert.Equal(testClass.Name, getResult.Name);
             Assert.NotEqual(DateTime.MinValue, getResult.LastUpdatedAt);
-            
+
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("update", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -444,13 +445,13 @@ namespace deeplynx.tests
             var dto = new UpdateClassRequestDto { Name = "Updated Class", Description = "Updated Description" };
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UpdateClass(pid, 99, dto));
-            
+
             // Ensure No Event was logged if update fails
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
         #endregion
-        
+
         #region ArchiveClass Tests
 
         [Fact]
@@ -470,7 +471,7 @@ namespace deeplynx.tests
 
             // Act
             var archivedResult = await _classBusiness.ArchiveClass(pid, testClass.Id);
-            
+
             // Assert
             Assert.True(archivedResult);
 
@@ -482,13 +483,13 @@ namespace deeplynx.tests
             Assert.NotNull(archivedClass);
             Assert.True(archivedClass.IsArchived);
             Assert.True(archivedClass.LastUpdatedAt >= beforeArchive);
-            
+
             // Ensure that class soft delete event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal(pid, actualEvent.ProjectId);
             Assert.Equal("archive", actualEvent.Operation);
             Assert.Equal("class", actualEvent.EntityType);
@@ -501,7 +502,7 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.ArchiveClass(pid, 99));
         }
-        
+
         [Fact]
         public async Task ClassArchived_WhenProjectArchived()
         {
@@ -519,12 +520,12 @@ namespace deeplynx.tests
             // Act
             var deletedResult = await _projectBusiness.ArchiveProject(pid);
             Assert.True(deletedResult);
-            
+
             //Makes sure the db is refreshed 
             Context.ChangeTracker.Clear();
 
             var archivedClass = await Context.Classes.FindAsync(testClass.Id);
-            
+
             // Assert
             Assert.NotNull(archivedClass);
             Assert.True(archivedClass.IsArchived);
@@ -532,7 +533,7 @@ namespace deeplynx.tests
 
         }
         #endregion
-        
+
         #region DeleteClass Tests
 
         [Fact]
@@ -550,18 +551,18 @@ namespace deeplynx.tests
 
             // Act
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-            
+
             // Assert
             Assert.True(deletedResult);
 
             var deletedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.Null(deletedClass);
-            
+
             // Ensure that class soft delete event was NOT logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task ForceDeleteClass_RemovesFromDatabase()
         {
@@ -574,13 +575,13 @@ namespace deeplynx.tests
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-            
+
             var existingClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(existingClass);
-            
+
             // Act
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
-            
+
             // Assert
             Assert.True(deletedResult);
 
@@ -592,7 +593,7 @@ namespace deeplynx.tests
         [Fact]
         public async Task DeleteClass_DeletesRelationshipsWithANullClass()
         {
-            
+
             // Arrange
             var testClass = new Class
             {
@@ -602,7 +603,7 @@ namespace deeplynx.tests
             };
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
-            
+
             var relationship1 = new Relationship
             {
                 Name = "Test Relationship 1",
@@ -612,7 +613,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // Create relationship where testClass is Destination and orig is null
             var relationship2 = new Relationship
             {
@@ -623,7 +624,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // Create relationship where orig and dest are null
             var relationship3 = new Relationship
             {
@@ -634,28 +635,28 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             Context.Relationships.Add(relationship1);
             Context.Relationships.Add(relationship2);
             Context.Relationships.Add(relationship3);
             await Context.SaveChangesAsync();
-            
+
             // Act
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
             Assert.True(deletedResult);
-            
-            var  deletedClass = await Context.Classes.FindAsync(testClass.Id);
-            var  deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
-            var  deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
-            var  intactRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
-            
+
+            var deletedClass = await Context.Classes.FindAsync(testClass.Id);
+            var deletedRelationship1 = await Context.Relationships.FindAsync(relationship1.Id);
+            var deletedRelationship2 = await Context.Relationships.FindAsync(relationship2.Id);
+            var intactRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
+
             // Assert
             Assert.Null(deletedClass);
             Assert.Null(deletedRelationship1);
             Assert.Null(deletedRelationship2);
             Assert.NotNull(intactRelationship3);
         }
-    
+
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRelationships()
         {
@@ -700,7 +701,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // Create relationship where testClass is Origin and dest is null
             var relationship3 = new Relationship
             {
@@ -722,7 +723,7 @@ namespace deeplynx.tests
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null
             };
-            
+
             // Create relationship where orig and dest are null
             var relationship5 = new Relationship
             {
@@ -750,7 +751,7 @@ namespace deeplynx.tests
             var deletedRelationship3 = await Context.Relationships.FindAsync(relationship3.Id);
             var deletedRelationship4 = await Context.Relationships.FindAsync(relationship4.Id);
             var intactRelationship5 = await Context.Relationships.FindAsync(relationship5.Id);
-            
+
             // Assert
             Assert.Null(deletedRelationship1);
             Assert.Null(deletedRelationship2);
@@ -758,7 +759,7 @@ namespace deeplynx.tests
             Assert.Null(deletedRelationship4);
             Assert.NotNull(intactRelationship5);
         }
-        
+
         [Fact]
         public async Task DeleteClass_DeletesDownstreamRecords()
         {
@@ -803,7 +804,7 @@ namespace deeplynx.tests
                 .Where(r => r.ClassId == testClass.Id)
                 .ToList();
             Assert.Equal(2, existingRecords.Count);
-    
+
             // Act
             var deletedResult = await _classBusiness.DeleteClass(pid, testClass.Id);
 
@@ -811,13 +812,13 @@ namespace deeplynx.tests
             var remainingRecords = Context.Records
                 .Where(r => r.ClassId == testClass.Id)
                 .ToList();
-            
+
             // Assert
             Assert.True(deletedResult);
             Assert.Empty(remainingRecords);
         }
         #endregion
-        
+
         #region UnarchiveClass Tests
         [Fact]
         public async Task UnarchiveClass_SuccessfullyUnarchivesClassAndReturnsTrue()
@@ -836,10 +837,10 @@ namespace deeplynx.tests
 
             // Act
             var result = await _classBusiness.UnarchiveClass(pid, testClass.Id);
-            
+
             //this forces EF to sync to db on next query
             Context.ChangeTracker.Clear();
-            
+
             var updated = await Context.Classes.FindAsync(testClass.Id);
             // Assert
             Assert.True(result);
@@ -857,7 +858,7 @@ namespace deeplynx.tests
         public async Task UnarchiveClass_Throws_IfClassProjectMismatch()
         {
             // Arrange
-            var otherProject = new Project { Name = "Other Project" };
+            var otherProject = new Project { Name = "Other Project", OrganizationId = oid };
             Context.Projects.Add(otherProject);
             await Context.SaveChangesAsync();
 
@@ -890,9 +891,9 @@ namespace deeplynx.tests
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => _classBusiness.UnarchiveClass(pid, testClass.Id));
         }
-        
-        # endregion
-        
+
+        #endregion
+
         #region GetClassesByName Tests
 
         [Fact]
@@ -959,7 +960,7 @@ namespace deeplynx.tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _classBusiness.GetClassesByName(pid, classNames));
-            
+
             Assert.Contains("ArchivedClass", exception.Message);
         }
 
@@ -990,7 +991,7 @@ namespace deeplynx.tests
                 LastUpdatedBy = uid,
                 IsArchived = false
             };
-            
+
             // Act
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -1014,7 +1015,7 @@ namespace deeplynx.tests
                 LastUpdatedBy = uid,
                 IsArchived = false
             };
-            
+
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
 
@@ -1022,7 +1023,7 @@ namespace deeplynx.tests
             var classWithUser = await Context.Classes
                 .Include(c => c.LastUpdatedByUser)
                 .FirstAsync(c => c.Id == testClass.Id);
-            
+
             // Assert
             Assert.NotNull(classWithUser.LastUpdatedByUser);
             Assert.Equal("Test User", classWithUser.LastUpdatedByUser.Name);
@@ -1043,7 +1044,7 @@ namespace deeplynx.tests
                 LastUpdatedBy = null,
                 IsArchived = false
             };
-            
+
             // Act
             Context.Classes.Add(testClass);
             await Context.SaveChangesAsync();
@@ -1052,11 +1053,11 @@ namespace deeplynx.tests
             var savedClass = await Context.Classes.FindAsync(testClass.Id);
             Assert.NotNull(savedClass);
             Assert.Null(savedClass.LastUpdatedBy);
-            
+
             var classWithUser = await Context.Classes
                 .Include(c => c.LastUpdatedByUser)
                 .FirstAsync(c => c.Id == testClass.Id);
-            
+
             Assert.Null(classWithUser.LastUpdatedByUser);
         }
 
@@ -1079,7 +1080,7 @@ namespace deeplynx.tests
             testClass.LastUpdatedBy = uid;
             testClass.Description = "Updated Description";
             testClass.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
+
             Context.Classes.Update(testClass);
             await Context.SaveChangesAsync();
 
@@ -1087,7 +1088,7 @@ namespace deeplynx.tests
             var updatedClass = await Context.Classes
                 .Include(c => c.LastUpdatedByUser)
                 .FirstAsync(c => c.Id == testClass.Id);
-            
+
             Assert.Equal(uid, updatedClass.LastUpdatedBy);
             Assert.NotNull(updatedClass.LastUpdatedByUser);
             Assert.Equal("Test User", updatedClass.LastUpdatedByUser.Name);
@@ -1097,10 +1098,17 @@ namespace deeplynx.tests
         protected override async Task SeedTestDataAsync()
         {
             await base.SeedTestDataAsync();
-            var project = new Project { Name = "Project 1" };
+
+            var org = new Organization { Name = "Test Org" };
+            Context.Organizations.Add(org);
+            await Context.SaveChangesAsync();
+            oid = org.Id;
+
+            var project = new Project { Name = "Project 1", OrganizationId = oid };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
+
             var dataSource = new DataSource()
             {
                 Name = "Test Datasource",

@@ -38,6 +38,7 @@ namespace deeplynx.tests
         public long did;
         public long cid; // origin class ID
         public long cid2; // destination class ID
+        private long organizationId;
 
         public MetadataBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -1484,13 +1485,19 @@ namespace deeplynx.tests
         {
             await base.SeedTestDataAsync();
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             // Create test project
             var project = new Project 
             { 
                 Name = "Project 1", 
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = organizationId,
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

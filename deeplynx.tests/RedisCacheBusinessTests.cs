@@ -8,6 +8,8 @@ namespace deeplynx.tests;
 [Collection("Test Suite Collection")]
 public class RedisCacheBusinessTests : IntegrationTestBase
 {
+
+    private long organizationId;
     public RedisCacheBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
     
     public override async Task InitializeAsync()
@@ -116,19 +118,26 @@ public class RedisCacheBusinessTests : IntegrationTestBase
     protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
+        
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
 
         // Add projects
         var project = new Project
         {
             Name = "Test Project",
             Description = "Test project for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         var project2 = new Project
         {
             Name = "Test Project 2",
             Description = "Test project 2 for unit tests",
-            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+            LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+            OrganizationId = organizationId
         };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);

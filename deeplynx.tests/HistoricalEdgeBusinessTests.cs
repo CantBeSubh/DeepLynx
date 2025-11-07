@@ -37,6 +37,7 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public long relationshipId;
     public long relationshipId2;
     public long uid;
+    private long organizationId;
     public HistoricalEdgeBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
     
     public override async Task InitializeAsync()
@@ -524,8 +525,14 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         Context.Users.Add(testUser);
         await Context.SaveChangesAsync();
         uid = testUser.Id;
-        var project = new Project() { Name = "Project 1" };
-        var project2 = new Project() { Name = "Project 2" };
+        
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
+        var project = new Project() { Name = "Project 1", OrganizationId = organizationId };
+        var project2 = new Project() { Name = "Project 2", OrganizationId = organizationId };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);
         await Context.SaveChangesAsync();

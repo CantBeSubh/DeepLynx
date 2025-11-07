@@ -43,6 +43,7 @@ namespace deeplynx.tests
         public long arcrid;     // archived record
         public long gid1;       // group IDs
         public long gid2;
+        private long organizationId;
         
         public UserBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -935,34 +936,43 @@ namespace deeplynx.tests
             Context.Organizations.Remove(org2);
             await Context.SaveChangesAsync();
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             // create test projects
             var project1 = new Project 
             { 
                 Name = "Test Project 1",
                 Description = "First test project",
                 Abbreviation = "TST1",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                OrganizationId = organizationId,
             };
             var project2 = new Project 
             { 
                 Name = "Test Project 2",
                 Description = "Second test project",
                 Abbreviation = "TST2",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                OrganizationId = organizationId,
             };
             var project3 = new Project 
             { 
                 Name = "Test Project 3",
                 Description = "User not a part of this",
                 Abbreviation = "TST3",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                OrganizationId = organizationId,
             };
             var project4 = new Project 
             { 
                 Name = "Test Project 4",
                 Description = "User not a part of this",
                 Abbreviation = "TST4",
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                OrganizationId = organizationId,
             };
             Context.Projects.AddRange(project1, project2, project3, project4);
             await Context.SaveChangesAsync();

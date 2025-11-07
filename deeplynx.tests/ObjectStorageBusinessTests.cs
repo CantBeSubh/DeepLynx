@@ -33,6 +33,7 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public long os4;
     public long archivedOs;
     public long uid;
+    private long organizationId;
     
     public ObjectStorageBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -646,8 +647,13 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
         await Context.SaveChangesAsync();
         uid = user.Id;
         
-        var project = new Project() { Name = "Test Project 1" };
-        var project2 = new Project() { Name = "Test Project 2" };
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
+        var project = new Project() { Name = "Test Project 1", OrganizationId = organizationId };
+        var project2 = new Project() { Name = "Test Project 2", OrganizationId = organizationId };
         Context.Projects.Add(project);
         Context.Projects.Add(project2);
         await Context.SaveChangesAsync();

@@ -36,6 +36,7 @@ namespace deeplynx.tests
         public long rid;    // existing record ID
         public long rid2;   // archived record ID
         public long uid;    // user ID
+        private long organizationId;
 
         public RelationshipBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
@@ -384,7 +385,7 @@ namespace deeplynx.tests
         public async Task GetAllRelationships_ReturnsOnlyForProject()
         {
             // Arrange
-            var p2 = new Project { Name = "ExtraProj" };
+            var p2 = new Project { Name = "ExtraProj", OrganizationId = organizationId };
             Context.Projects.Add(p2);
             await Context.SaveChangesAsync();
 
@@ -990,12 +991,18 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             uid = testUser.Id;
             
+            var organization = new Organization { Name = "Test Organization" };
+            Context.Organizations.Add(organization);
+            await Context.SaveChangesAsync();
+            organizationId = organization.Id;
+            
             // Add project
             var project = new Project
             {
                 Name = "Project 1",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
+                OrganizationId = organizationId,
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();

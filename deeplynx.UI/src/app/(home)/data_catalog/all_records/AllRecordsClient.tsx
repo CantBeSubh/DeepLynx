@@ -42,7 +42,10 @@ type ColumnDef<Row> = {
   cell?: (row: Row) => React.ReactNode;
 };
 
-function useClickOutside(ref: React.RefObject<HTMLElement | null>, onAway: () => void) {
+function useClickOutside(
+  ref: React.RefObject<HTMLElement | null>,
+  onAway: () => void
+) {
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (!ref.current) return;
@@ -240,7 +243,7 @@ export default function DataCatalogClient({
         header: t.translations.RECORD_NAME,
         cell: (row) => (
           <Link
-            href={`/data_catalog/record?recordId=${row.id}&projectId=${row.projectId}`}
+            href={`/record?recordId=${row.id}&projectId=${row.projectId}`}
             className="text-info-content font-bold hover:underline"
           >
             {row.name}
@@ -251,7 +254,9 @@ export default function DataCatalogClient({
         key: "class",
         header: t.translations.CLASS,
         cell: (row) =>
-          row.className ? <span className="badge text-sm">{row.className}</span> : null,
+          row.className ? (
+            <span className="badge text-sm">{row.className}</span>
+          ) : null,
       },
       {
         key: "tags",
@@ -279,8 +284,7 @@ export default function DataCatalogClient({
 
   // Strip "key" before passing to GridView if it doesn’t expect it
   const gridColumns = useMemo(
-    () =>
-      filteredColumns.map(({ key, ...rest }) => rest),
+    () => filteredColumns.map(({ key, ...rest }) => rest),
     [filteredColumns]
   );
 
@@ -301,7 +305,9 @@ export default function DataCatalogClient({
 
   const handleToggleAll = () =>
     setVisibleCols((prev) =>
-      prev.length === ALL_COLUMNS.length ? [ALL_COLUMNS[0].key] : ALL_COLUMNS.map((c) => c.key)
+      prev.length === ALL_COLUMNS.length
+        ? [ALL_COLUMNS[0].key]
+        : ALL_COLUMNS.map((c) => c.key)
     );
 
   /* --------------------------------- Search -------------------------------- */
@@ -329,7 +335,9 @@ export default function DataCatalogClient({
             projects={projects}
             onSelectionChange={setSelectedProjects}
             defaultSelected={
-              initialSelectedProjects.length ? initialSelectedProjects : undefined
+              initialSelectedProjects.length
+                ? initialSelectedProjects
+                : undefined
             }
           />
         </div>
@@ -376,7 +384,9 @@ export default function DataCatalogClient({
             </div>
 
             <button
-              className={`btn btn-sm ${viewMode === "list" ? "btn-primary" : "btn-ghost"}`}
+              className={`btn btn-sm ${
+                viewMode === "list" ? "btn-primary" : "btn-ghost"
+              }`}
               onClick={() => setViewMode("list")}
               title="List view"
             >
@@ -384,7 +394,9 @@ export default function DataCatalogClient({
             </button>
 
             <button
-              className={`btn btn-sm ${viewMode === "table" ? "btn-primary" : "btn-ghost"}`}
+              className={`btn btn-sm ${
+                viewMode === "table" ? "btn-primary" : "btn-ghost"
+              }`}
               onClick={() => setViewMode("table")}
               title="Table view"
             >
@@ -392,68 +404,68 @@ export default function DataCatalogClient({
             </button>
 
             {/* Column visibility dropdown */}
-            {viewMode.includes("table")&&(
-            <div className="relative" ref={ddRef}>
-              <button
-                type="button"
-                onClick={() => setOpen((o) => !o)}
-                className="btn btn-sm btn-outline btn-primary inline-flex items-center gap-2"
-                aria-haspopup="menu"
-                aria-expanded={open}
-              >
-                <EyeIcon className="h-5 w-5" />
-                <span>Column Visibility</span>
-                <span className="hidden md:inline-block text-xs bg-base-200 px-2 py-0.5 rounded">
-                  {visibleCols.length-1}/{ALL_COLUMNS.length-1}
-                </span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {open && (
-                <div
-                  role="menu"
-                  className="absolute right-0 z-50 mt-2 w-60 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+            {viewMode.includes("table") && (
+              <div className="relative" ref={ddRef}>
+                <button
+                  type="button"
+                  onClick={() => setOpen((o) => !o)}
+                  className="btn btn-sm btn-outline btn-primary inline-flex items-center gap-2"
+                  aria-haspopup="menu"
+                  aria-expanded={open}
                 >
-                  <label className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50 cursor-pointer">
-                    {/* Indeterminate via ref callback */}
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={allSelected}
-                      ref={(el) => {
-                        if (el) el.indeterminate = someSelected;
-                      }}
-                      onChange={handleToggleAll}
-                    />
-                    <span className="text-sm text-gray-900">
-                       Select all
-                    </span>
-                  </label>
+                  <EyeIcon className="h-5 w-5" />
+                  <span>Column Visibility</span>
+                  <span className="hidden md:inline-block text-xs bg-base-200 px-2 py-0.5 rounded">
+                    {visibleCols.length - 1}/{ALL_COLUMNS.length - 1}
+                  </span>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 transition-transform ${
+                      open ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
 
-                  <div className="my-1 h-px bg-gray-200" />
-                  
-                  {ALL_COLUMNS.filter(c=>c.key!=="id").map((c) => (
-                    
-                    <label
-                      key={c.key}
-                      className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50 cursor-pointer"
-                    >
+                {open && (
+                  <div
+                    role="menu"
+                    className="absolute right-0 z-50 mt-2 w-60 rounded-lg border border-gray-200 bg-white p-2 shadow-lg"
+                  >
+                    <label className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50 cursor-pointer">
+                      {/* Indeterminate via ref callback */}
                       <input
                         type="checkbox"
                         className="h-4 w-4"
-                        checked={visibleCols.includes(c.key)}
-                        onChange={() => handleToggleOne(c.key)}
+                        checked={allSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = someSelected;
+                        }}
+                        onChange={handleToggleAll}
                       />
-                      <span className="text-sm text-gray-900">{c.header}</span>
+                      <span className="text-sm text-gray-900">Select all</span>
                     </label>
-                  ))}
-                </div>
-              )}
-            </div>
-            )}
 
+                    <div className="my-1 h-px bg-gray-200" />
+
+                    {ALL_COLUMNS.filter((c) => c.key !== "id").map((c) => (
+                      <label
+                        key={c.key}
+                        className="flex items-center gap-2 rounded px-2 py-1.5 hover:bg-gray-50 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4"
+                          checked={visibleCols.includes(c.key)}
+                          onChange={() => handleToggleOne(c.key)}
+                        />
+                        <span className="text-sm text-gray-900">
+                          {c.header}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
