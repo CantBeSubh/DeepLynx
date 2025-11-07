@@ -22,7 +22,6 @@ namespace deeplynx.tests
         private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
         private Mock<ILogger<OauthApplicationBusiness>> _mockOauthLogger = null!;
         private OauthApplicationBusiness _oauthApplicationBusiness;
-        private Config _config;
 
         public long uid;        // user ID
         public long appid1;     // oauth application IDs
@@ -34,7 +33,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _mockOauthLogger = new Mock<ILogger<OauthApplicationBusiness>>();

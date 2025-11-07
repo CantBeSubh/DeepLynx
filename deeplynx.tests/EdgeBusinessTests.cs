@@ -16,7 +16,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class EdgeBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private EdgeBusiness _edgeBusiness = null!;
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
@@ -47,7 +46,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();

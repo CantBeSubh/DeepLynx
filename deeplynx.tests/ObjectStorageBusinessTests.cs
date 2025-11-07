@@ -15,7 +15,6 @@ namespace deeplynx.tests;
 [Collection("Test Suite Collection")]
 public class ObjectStorageBusinessTests: IntegrationTestBase
 {
-    private Config _config;
     private ObjectStorageBusiness _objectStorageBusiness;
     private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
     private Mock<IClassBusiness> _mockClassBusiness = null!;
@@ -40,7 +39,6 @@ public class ObjectStorageBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _config = new Config();
         _objectStorageBusiness = new ObjectStorageBusiness(Context, _cacheBusiness);
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();

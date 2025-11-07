@@ -25,14 +25,12 @@ namespace deeplynx.tests
         private User _user2 = null!;
         private readonly DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
         private long organizationId;
-        private Config _config;
 
         public NotificationBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             // Setup mocks
             _mockLogger = new Mock<ILogger<NotificationBusiness>>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();

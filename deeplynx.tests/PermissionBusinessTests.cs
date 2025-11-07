@@ -16,7 +16,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class PermissionBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private EventBusiness _eventBusiness;
         private INotificationBusiness _notificationBusiness = null!;
         private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
@@ -43,7 +42,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);

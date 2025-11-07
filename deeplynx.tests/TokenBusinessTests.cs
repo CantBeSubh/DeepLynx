@@ -13,7 +13,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class TokenBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private TokenBusiness _tokenBusiness;
 
         public TokenBusinessTests(TestSuiteFixture fixture) : base(fixture)
@@ -23,7 +22,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             _tokenBusiness = new TokenBusiness(_config, Context);
         }
 

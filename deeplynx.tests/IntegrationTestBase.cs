@@ -81,6 +81,7 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 [Collection("Test Suite Collection")]
 public class IntegrationTestBase : IAsyncLifetime
 {
+    protected Config _config;
     protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
     protected ICacheBusiness _cacheBusiness;
@@ -93,8 +94,8 @@ public class IntegrationTestBase : IAsyncLifetime
             .Options);
 
         // Create initial cache business
-        var config = new Config();
-        _cacheBusiness = CacheFactory.CreateCache(config);
+        _config = new Config();
+        _cacheBusiness = CacheFactory.CreateCache(_config);
     }
 
     // Runs before every test in the test suite

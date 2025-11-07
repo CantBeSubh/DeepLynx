@@ -19,7 +19,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class MetadataBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private MetadataBusiness _metadataBusiness = null!;
         private ClassBusiness _classBusiness = null!;
         private RelationshipBusiness _relationshipBusiness = null!;
@@ -45,8 +44,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            
-            _config = new Config();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();

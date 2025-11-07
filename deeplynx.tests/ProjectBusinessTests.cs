@@ -18,7 +18,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class ProjectBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private ProjectBusiness _projectBusiness = null!;
         private DataSourceBusiness _dataSourceBusiness = null!;
         private ClassBusiness _classBusiness = null!;

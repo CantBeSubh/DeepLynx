@@ -14,7 +14,6 @@ namespace deeplynx.tests
 {
     public class DataSourceBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private DataSourceBusiness _dataSourceBusiness;
         private Mock<IEdgeBusiness> _mockEdgeBusiness;
         private Mock<IRecordBusiness> _mockRecordBusiness;
@@ -32,7 +31,6 @@ namespace deeplynx.tests
 
         public DataSourceBusinessTests(TestSuiteFixture fixture) : base(fixture)
         {
-            _config = new Config();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();

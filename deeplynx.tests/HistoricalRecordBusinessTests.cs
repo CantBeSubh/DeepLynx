@@ -32,14 +32,12 @@ public class HistoricalRecordBusinessTests: IntegrationTestBase
     private INotificationBusiness _notificationBusiness = null!;
     private Mock<ILogger<NotificationBusiness>> _mockNotificationLogger = null!;
     private Mock<IHubContext<EventNotificationHub>> _mockHubContext = null!;
-    private Config _config;
     
     public HistoricalRecordBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _config = new Config();
         _historicalRecordBusiness = new HistoricalRecordBusiness(Context);
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();

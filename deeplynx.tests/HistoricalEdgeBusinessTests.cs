@@ -15,7 +15,6 @@ namespace deeplynx.tests;
 [Collection("Test Suite Collection")]
 public class HistoricalEdgeBusinessTests: IntegrationTestBase
 {
-    private Config _config;
     public HistoricalEdgeBusiness _historicalEdgeBusiness = null!;
     public EdgeBusiness _edgeBusiness = null!;
     public EventBusiness _eventBusiness = null!;
@@ -43,7 +42,6 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
     public override async Task InitializeAsync()
     {
         await base.InitializeAsync();
-        _config = new Config();
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
         _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);

@@ -27,8 +27,6 @@ namespace deeplynx.tests {
         private const int ProjectId = 1;
         private bool _isConnected = false;
         private static readonly SemaphoreSlim _connectionSemaphore = new SemaphoreSlim(1, 1);
-        private Config _config;
-
 
         public KuzuDatabaseManagerTests(TestSuiteFixture fixture) : base(fixture)
         {
@@ -54,7 +52,6 @@ namespace deeplynx.tests {
         public override async Task InitializeAsync()
         {
             // await _container.StartAsync();
-            _config = new Config();
             var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
 
             var kuzuDbFilePath = Path.Combine(projectRoot, "deeplynx.tests/bin/Debug/deeplynx.graph");

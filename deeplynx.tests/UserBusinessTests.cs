@@ -10,7 +10,6 @@ namespace deeplynx.tests
     [Collection("Test Suite Collection")]
     public class UserBusinessTests : IntegrationTestBase
     {
-        private Config _config;
         private UserBusiness _userBusiness;
 
         public long uid1;       // user IDs
@@ -50,7 +49,6 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _config = new Config();
             _userBusiness = new UserBusiness(_config, Context, _cacheBusiness);
         }
         
