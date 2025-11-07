@@ -5,11 +5,19 @@ import api from "./api";
 
 /** ---- Browser calls (with session cookies) ---- */
 
-export async function getAllUsers(projectId?: number) {
+export async function getAllUsers(organizationId?: number | string, projectId?: number | string) {
   try {
-    const res = await api.get(`/users/GetAllUsers`, {
-      params: { projectId },
-    });
+    const params: Record<string, any> = {};
+    
+    if (organizationId !== undefined) {
+      params.organizationId = organizationId;
+    }
+    
+    if (projectId !== undefined) {
+      params.projectId = projectId;
+    }
+    
+    const res = await api.get(`/users/GetAllUsers`, { params });
     return res.data;
   } catch (error) {
     console.error("API call failed error getting all users:", error);
