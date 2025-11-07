@@ -44,8 +44,8 @@ public class HistoricalEdgeBusinessTests: IntegrationTestBase
         await base.InitializeAsync();
         _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
         _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
-        _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-        _eventBusiness = new EventBusiness(_config, Context, _cacheBusiness, _notificationBusiness);
+        _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+        _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
         _historicalEdgeBusiness = new HistoricalEdgeBusiness(Context);
         _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
     }

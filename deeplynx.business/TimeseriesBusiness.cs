@@ -18,7 +18,6 @@ using Microsoft.Extensions.Logging;
 namespace deeplynx.business;
 
 public class TimeseriesBusiness(
-    Config config,
     DeeplynxContext context,
     ICacheBusiness cacheBusiness,
     IRecordBusiness recordBusiness,
@@ -32,7 +31,7 @@ public class TimeseriesBusiness(
     private readonly IClassBusiness _classBusiness = classBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
     
-    private readonly string _duckDbBasePath = config.DUCKDB_BASE_PATH;
+    private readonly string _duckDbBasePath = Config.Instance.DUCKDB_BASE_PATH;
     private static class Status
     {
         public static string Failed { get; } = "failed";

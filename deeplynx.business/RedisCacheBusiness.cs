@@ -12,16 +12,14 @@ namespace deeplynx.business
         private readonly ConnectionMultiplexer _redis;
         private readonly IDatabase _db;
         private readonly JsonSerializerOptions _jsonOptions;
-        private readonly Config _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RedisCacheBusiness"/> class.
         /// </summary>
-        public RedisCacheBusiness(ConnectionMultiplexer connectionMultiplexer, Config config)
+        public RedisCacheBusiness(ConnectionMultiplexer connectionMultiplexer)
         {
             _redis = connectionMultiplexer;
             _db = _redis.GetDatabase();
-            _config = config;
 
             _jsonOptions = new JsonSerializerOptions
             {

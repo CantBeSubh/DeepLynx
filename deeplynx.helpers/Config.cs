@@ -1,7 +1,16 @@
 namespace deeplynx.helpers;
 
-public class Config
+public sealed class Config
 {
+    private static Lazy<Config> _instance = new Lazy<Config>(() => new Config());
+
+    public static void ResetConfig()
+    {
+        _instance = new Lazy<Config>(() => new Config());
+    }
+    
+    public static Config Instance => _instance.Value;
+
     // DATABASE CONFIGURATION
     public string POSTGRES_USER { get; }
     public string POSTGRES_PASSWORD { get; }
@@ -51,7 +60,7 @@ public class Config
     public string DISABLE_BACKEND_AUTHENTICATION { get; }
     public string ENABLE_NOTIFICATION_SERVICE { get; }
 
-    public Config()
+    private Config()
     {
         // DATABASE CONFIGURATION
         POSTGRES_USER = Environment.GetEnvironmentVariable("POSTGRES_USER") ?? "postgres";

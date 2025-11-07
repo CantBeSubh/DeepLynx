@@ -11,7 +11,6 @@ public class EventBusiness : IEventBusiness
     private readonly ICacheBusiness _cacheBusiness;
     private readonly DeeplynxContext _context;
     private readonly INotificationBusiness _notificationBusiness;
-    private Config _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EventBusiness" /> class.
@@ -19,13 +18,11 @@ public class EventBusiness : IEventBusiness
     /// <param name="context">The database context to be used for class operations</param>
     /// <param name="cacheBusiness">Used to access cache operations</param>
     public EventBusiness(
-        Config config,
         DeeplynxContext context,
         ICacheBusiness cacheBusiness,
         INotificationBusiness notificationBusiness
     )
     {
-        _config = config;
         _context = context;
         _cacheBusiness = cacheBusiness;
         _notificationBusiness = notificationBusiness;
@@ -431,7 +428,7 @@ public class EventBusiness : IEventBusiness
             DataSourceName = dataSource?.Name
         };
 
-        if (_config.ENABLE_NOTIFICATION_SERVICE == "true")
+        if (Config.Instance.ENABLE_NOTIFICATION_SERVICE == "true")
             await _notificationBusiness.SendEventNotification(response);
 
         return response;
@@ -494,7 +491,7 @@ public class EventBusiness : IEventBusiness
             DataSourceName = dataSource?.Name
         }).ToList();
 
-        if (_config.ENABLE_NOTIFICATION_SERVICE == "true")
+        if (Config.Instance.ENABLE_NOTIFICATION_SERVICE == "true")
             await _notificationBusiness.SendBulkEventNotifications(response);
 
         return response;

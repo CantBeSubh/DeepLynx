@@ -22,7 +22,7 @@ namespace deeplynx.tests {
         private readonly PostgreSqlContainer _container;
         private readonly TestSuiteFixture _fixture;
         private KuzuDatabaseManager? _kuzuDatabaseManager;
-        private readonly IConfiguration _configuration;
+        private readonly IConfiguration uration;
         public string ConnectionString { get; private set; }
         private const int ProjectId = 1;
         private bool _isConnected = false;
@@ -46,7 +46,7 @@ namespace deeplynx.tests {
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json");
 
-            _configuration = builder.Build();
+            uration = builder.Build();
         }
 
         public override async Task InitializeAsync()
@@ -59,11 +59,11 @@ namespace deeplynx.tests {
             if (System.IO.Directory.Exists(kuzuDbFilePath))
                 System.IO.Directory.Delete(kuzuDbFilePath, true);
 
-            _ = bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu);
+            _ = bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu);
 
             if (enableKuzu)
             {
-                _kuzuDatabaseManager = new KuzuDatabaseManager(_configuration, ConnectionString ?? "NULL", "g72g72");
+                _kuzuDatabaseManager = new KuzuDatabaseManager(uration, ConnectionString ?? "NULL", "g72g72");
             }
 
             if (enableKuzu && _kuzuDatabaseManager != null)
@@ -150,7 +150,7 @@ namespace deeplynx.tests {
             
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu) || !enableKuzu, "Kuzu tests are disabled until the random crash bug is fixed. Please refer to the README.md local setup instructions to setup Kuzu.");
 
                 Log.Information("Starting InitalSeedDatabaseAsync test...");
 
@@ -188,7 +188,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting SeedDatabaseAsync test...");
 
@@ -228,7 +228,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ConnectAsync test...");
 
@@ -267,7 +267,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ExportDataAsync test...");
 
@@ -311,7 +311,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting GetNodesWithin test...");
 
@@ -366,7 +366,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting ExecuteQuery test...");
 
@@ -419,7 +419,7 @@ namespace deeplynx.tests {
         {
             try
             {
-                Skip.If(!bool.TryParse(_config.ENABLE_KUZU, out var enableKuzu));
+                Skip.If(!bool.TryParse(Config.Instance.ENABLE_KUZU, out var enableKuzu));
 
                 Log.Information("Starting CloseAsync test...");
 

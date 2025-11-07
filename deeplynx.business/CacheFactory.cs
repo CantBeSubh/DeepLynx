@@ -11,26 +11,26 @@ namespace deeplynx.business
         /// </summary>
         /// <returns>The Cache Business Object</returns>
         /// <exception cref="Exception">Returned if CACHE_PROVIDER_TYPE = redis but no REDIS_CONNECTION_STRING is provided</exception>
-        public static ICacheBusiness CreateCache(Config config)
+        public static ICacheBusiness CreateCache()
         {
-            switch (config.CACHE_PROVIDER_TYPE)
+            switch (Config.Instance.CACHE_PROVIDER_TYPE)
             {
                 case "memory":
-                    return new MemoryCacheBusiness(config);
+                    return new MemoryCacheBusiness();
                 case "redis":
-                    if (!string.IsNullOrEmpty(config.REDIS_CONNECTION_STRING))
+                    if (!string.IsNullOrEmpty(Config.Instance.REDIS_CONNECTION_STRING))
                     {
-                        var options = ConfigurationOptions.Parse(config.REDIS_CONNECTION_STRING);
+                        var options = ConfigurationOptions.Parse(Config.Instance.REDIS_CONNECTION_STRING);
                         options.AllowAdmin = true;
                         var connectionMultiplexer = ConnectionMultiplexer.Connect(options);
-                        return new RedisCacheBusiness(connectionMultiplexer, config);
+                        return new RedisCacheBusiness(connectionMultiplexer);
                     }
                     else
                     {
                         throw new Exception("Redis connection string not found in environment variables.");
                     }
                 default:
-                    return new MemoryCacheBusiness(config);
+                    return new MemoryCacheBusiness();
             }
         }
     }

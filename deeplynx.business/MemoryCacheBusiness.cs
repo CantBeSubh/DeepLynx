@@ -10,16 +10,14 @@ namespace deeplynx.business
     {
         private readonly IMemoryCache _cache;
         private readonly ConcurrentDictionary<string, bool> _keys;
-        private readonly Config _config;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCacheBusiness"/> class.
         /// </summary>
-        public MemoryCacheBusiness(Config config)
+        public MemoryCacheBusiness()
         {
             _cache = new MemoryCache(new MemoryCacheOptions());
             _keys = new ConcurrentDictionary<string, bool>();
-            _config = config;
         }
         
         /// <summary>

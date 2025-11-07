@@ -49,7 +49,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _userBusiness = new UserBusiness(_config, Context, _cacheBusiness);
+            _userBusiness = new UserBusiness(Context, _cacheBusiness);
         }
         
         #region CreateUser Tests
@@ -283,8 +283,8 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
             
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
-            var config = new Config();
-            var userBusiness = new UserBusiness(config, Context, _cacheBusiness);
+            Config.ResetConfig();
+            var userBusiness = new UserBusiness(Context, _cacheBusiness);
             try
             {
                 // Act
@@ -309,8 +309,8 @@ namespace deeplynx.tests
         {
             // Arrange - Test with null environment variable
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
-            var configWithNull = new Config();
-            var userBusinessWithNull = new UserBusiness(configWithNull, Context, _cacheBusiness);
+            Config.ResetConfig();
+            var userBusinessWithNull = new UserBusiness(Context, _cacheBusiness);
     
             // Act & Assert
             var nullException = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -320,8 +320,8 @@ namespace deeplynx.tests
     
             // Arrange - Test with false environment variable
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "false");
-            var configWithFalse = new Config();
-            var userBusinessWithFalse = new UserBusiness(configWithFalse, Context, _cacheBusiness);
+            Config.ResetConfig();
+            var userBusinessWithFalse = new UserBusiness(Context, _cacheBusiness);
     
             // Act & Assert
             var falseException = await Assert.ThrowsAsync<InvalidOperationException>(
@@ -331,6 +331,7 @@ namespace deeplynx.tests
     
             // Cleanup
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", null);
+            Config.ResetConfig();
         }
 
         [Fact]
@@ -338,8 +339,8 @@ namespace deeplynx.tests
         {
             // Arrange - Set environment variable but don't create the user
             Environment.SetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION", "true");
-            var config = new Config();
-            var userBusiness = new UserBusiness(config, Context, _cacheBusiness);
+            Config.ResetConfig();
+            var userBusiness = new UserBusiness(Context, _cacheBusiness);
     
             try
             {

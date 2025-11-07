@@ -53,8 +53,8 @@ namespace deeplynx.tests
             _mockRoleBusiness = new Mock<IRoleBusiness>();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
-            _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-            _eventBusiness = new EventBusiness(_config, Context, _cacheBusiness, _notificationBusiness);
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
 
             _edgeBusiness = new EdgeBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(Context, _cacheBusiness, _edgeBusiness, _mockRecordBusiness.Object, _eventBusiness);
@@ -63,7 +63,7 @@ namespace deeplynx.tests
                 _mockRelationshipBusiness.Object, _eventBusiness);
 
             _projectBusiness = new ProjectBusiness(
-                _config, Context, _cacheBusiness, _mockLogger.Object, _classBusiness,
+                Context, _cacheBusiness, _mockLogger.Object, _classBusiness,
                 _mockRoleBusiness.Object, _dataSourceBusiness,
                 _mockObjectStorageBusiness.Object, _eventBusiness);
         }

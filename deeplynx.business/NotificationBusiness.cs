@@ -17,7 +17,6 @@ public class NotificationBusiness : INotificationBusiness
     private readonly DeeplynxContext _context;
     private readonly ILogger<NotificationBusiness> _logger;
     private readonly IHubContext<EventNotificationHub> _hubContext;
-    private readonly Config _config;
     
     /// <summary>
     /// Initializes a new instance of the <see cref="NotificationBusiness"/> class.
@@ -26,13 +25,11 @@ public class NotificationBusiness : INotificationBusiness
     /// <param name="logger">Logging</param>
     /// <param name="hubContext">SignalR hub context for sending notifications</param>
     public NotificationBusiness(
-        Config config,
         DeeplynxContext context, 
         ILogger<NotificationBusiness> logger,
         IHubContext<EventNotificationHub> hubContext
     )
     {
-        _config = config;
         _logger = logger;
         _context = context;
         _hubContext = hubContext;
@@ -283,29 +280,29 @@ public class NotificationBusiness : INotificationBusiness
     {
        try
        {
-        var smtpServer = _config.SMTP_SERVER
+        var smtpServer = Config.Instance.SMTP_SERVER
             ?? throw new InvalidOperationException("SMTP_SERVER environment variable is not set");
 
-        var smtpPortStr = _config.SMTP_PORT;
+        var smtpPortStr = Config.Instance.SMTP_PORT;
         if (!int.TryParse(smtpPortStr, out int smtpPort))
         {
             smtpPort = 587; //default
         }
 
-        var fromEmail = _config.FROM_EMAIL
+        var fromEmail = Config.Instance.FROM_EMAIL
             ?? throw new InvalidOperationException("FROM_EMAIL environment variable is not set");
 
-        var support = _config.SUPPORT_EMAIL
+        var support = Config.Instance.SUPPORT_EMAIL
                         ?? throw new InvalidOperationException("SUPPORT_EMAIL environment variable is not set");
 
         var emailPassword = "";
 
-        var fromName = _config.FROM_NAME;
+        var fromName = Config.Instance.FROM_NAME;
 
-        var url = _config.INVITE_URL
+        var url = Config.Instance.INVITE_URL
             ?? throw new InvalidOperationException("Invite URL environment variable is not set");;
 
-        var enableSslStr = _config.SMTP_ENABLE_SSL;
+        var enableSslStr = Config.Instance.SMTP_ENABLE_SSL;
         bool.TryParse(enableSslStr, out bool enableSsl);
 
         string templateContent = @"<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">

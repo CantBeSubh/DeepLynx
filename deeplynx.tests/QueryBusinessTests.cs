@@ -1,6 +1,7 @@
 using System.Text.Json;
 using deeplynx.business;
 using deeplynx.datalayer.Models;
+using deeplynx.interfaces;
 using deeplynx.models;
 using Record = deeplynx.datalayer.Models.Record;
 
@@ -10,7 +11,7 @@ namespace deeplynx.tests
     public class QueryBusinessTests : IntegrationTestBase
     {
         private QueryBusiness _queryBusiness = null!;
-        private CacheBusiness _cacheBusiness = null!;
+        private ICacheBusiness _cacheBusiness = null!;
         
         private long pid; // project ID
         private long pid2;

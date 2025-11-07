@@ -139,15 +139,13 @@ try
         ServiceLifetime.Transient
     );
     
-    builder.Services.AddSingleton<Config>(); // Used for env variable access
-    
     builder.Services.AddSignalR(); // Used for event system pub/sub and notifications
 
     // Register Cache Service as a singleton
     builder.Services.AddSingleton<ICacheBusiness>(provider =>
     {
         var config = provider.GetRequiredService<Config>();
-        return CacheFactory.CreateCache(config);
+        return CacheFactory.CreateCache();
     });
 
     builder.Services.AddTransient<IRecordBusiness, RecordBusiness>();

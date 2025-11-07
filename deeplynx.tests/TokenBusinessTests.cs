@@ -22,7 +22,7 @@ namespace deeplynx.tests
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
-            _tokenBusiness = new TokenBusiness(_config, Context);
+            _tokenBusiness = new TokenBusiness(Context);
         }
 
         #region CreateToken Tests

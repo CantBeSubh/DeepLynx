@@ -29,7 +29,6 @@ public class ProjectBusiness : IProjectBusiness
     private readonly ICacheBusiness _cacheBusiness;
     private readonly string ProjectsCacheKey = "projects";
     private readonly TimeSpan cacheTTL = TimeSpan.FromHours(1);
-    private readonly Config _config;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ProjectBusiness"/> class.
@@ -44,11 +43,10 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="logger">Used for uniformity in logging</param>
     /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
-        Config config, DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,
+        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,
         IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness,
         IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
     {
-        _config = config;
         _context = context;
         _logger = logger;
         _classBusiness = classBusiness;
@@ -818,26 +816,26 @@ public class ProjectBusiness : IProjectBusiness
         // ===============================
         // TODO: project config should determine whether to do this (true by default)
         Env.Load("../.env");
-        var defaultObjectStorageMethod = _config.FILE_STORAGE_METHOD;
+        var defaultObjectStorageMethod = Config.Instance.FILE_STORAGE_METHOD;
 
         var config = new JsonObject();
         if (defaultObjectStorageMethod == "filesystem")
         {
             var mountPath =
-               _config.STORAGE_DIRECTORY ??
+               Config.Instance.STORAGE_DIRECTORY ??
                 throw new NullReferenceException($"Storage file path not set");
             config["mountPath"] = mountPath;
         }
         else if (defaultObjectStorageMethod == "azure_object")
         {
             var azureConnectionString =
-                _config.AZURE_OBJECT_CONNECTION_STRING ??
+                Config.Instance.AZURE_OBJECT_CONNECTION_STRING ??
                 throw new NullReferenceException($"Azure connection string not set");
             config["azureConnectionString"] = azureConnectionString;
         }
         else if (defaultObjectStorageMethod == "aws_s3")
         {
-            var awsConnectionString = _config.AWS_S3_CONNECTION_STRING ??
+            var awsConnectionString = Config.Instance.AWS_S3_CONNECTION_STRING ??
                                       throw new NullReferenceException($"AWS connection string not set");
             config["awsConnectionString"] = awsConnectionString;
         }
@@ -863,7 +861,7 @@ public class ProjectBusiness : IProjectBusiness
             Name = "Timeseries Default",
             Config = new JsonObject
             {
-                ["mountPath"] = _config.DUCKDB_BASE_PATH ?? "/data/duckdb"
+                ["mountPath"] = Config.Instance.DUCKDB_BASE_PATH ?? "/data/duckdb"
             }
 
         };

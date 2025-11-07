@@ -81,7 +81,6 @@ public class TestSuiteCollection : ICollectionFixture<TestSuiteFixture>
 [Collection("Test Suite Collection")]
 public class IntegrationTestBase : IAsyncLifetime
 {
-    protected Config _config;
     protected DeeplynxContext Context { get; private set; }
     private readonly TestSuiteFixture _fixture;
     protected ICacheBusiness _cacheBusiness;
@@ -94,8 +93,7 @@ public class IntegrationTestBase : IAsyncLifetime
             .Options);
 
         // Create initial cache business
-        _config = new Config();
-        _cacheBusiness = CacheFactory.CreateCache(_config);
+        _cacheBusiness = CacheFactory.CreateCache();
     }
 
     // Runs before every test in the test suite
@@ -108,6 +106,7 @@ public class IntegrationTestBase : IAsyncLifetime
     public async Task DisposeAsync()
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", null);
+        Config.ResetConfig();
         await Context.DisposeAsync();
         await _cacheBusiness.FlushAsync();
     }
@@ -118,8 +117,8 @@ public class IntegrationTestBase : IAsyncLifetime
     protected void SwitchCacheType(string cacheType)
     {
         Environment.SetEnvironmentVariable("CACHE_PROVIDER_TYPE", cacheType);
-        var config = new Config(); // Re-read config with new env var
-        _cacheBusiness = CacheFactory.CreateCache(config); // Create new instance
+        Config.ResetConfig();
+        _cacheBusiness = CacheFactory.CreateCache(); // Create new instance
     }
 
     /// <summary>

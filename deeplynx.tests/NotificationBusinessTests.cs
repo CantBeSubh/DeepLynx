@@ -44,7 +44,6 @@ namespace deeplynx.tests
             _mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockClientProxy.Object);
             
             _notificationBusiness = new NotificationBusiness(
-                _config,
                 Context, 
                 _mockLogger.Object, 
                 _mockHubContext.Object

@@ -57,11 +57,10 @@ namespace deeplynx.tests
             Environment.SetEnvironmentVariable("STORAGE_DIRECTORY", "./storage/");
             Environment.SetEnvironmentVariable("AZURE_OBJECT_CONNECTION_STRING", "azure-example-connection-string");
             Environment.SetEnvironmentVariable("AWS_S3_CONNECTION_STRING", "aws-example-connection-string");
-            _config = new Config();
             _mockHubContext = new Mock<IHubContext<EventNotificationHub>>();
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
-            _notificationBusiness = new NotificationBusiness(_config, Context, _mockNotificationLogger.Object, _mockHubContext.Object);
-            _eventBusiness = new EventBusiness(_config, Context, _cacheBusiness, _notificationBusiness);
+            _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
+            _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
             _objectStorageBusiness = new Mock<IObjectStorageBusiness>();
             _mockRecordBusiness = new Mock<IRecordBusiness>();
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
@@ -76,7 +75,7 @@ namespace deeplynx.tests
                 Context, _cacheBusiness, _mockRecordBusiness.Object,
                 _mockRelationshipBusiness.Object, _eventBusiness);
             _projectBusiness = new ProjectBusiness(
-                _config, Context, _cacheBusiness, _mockLogger.Object,
+                Context, _cacheBusiness, _mockLogger.Object,
                 _classBusiness, _roleBusiness, _dataSourceBusiness,
                 _objectStorageBusiness.Object, _eventBusiness);
         }
