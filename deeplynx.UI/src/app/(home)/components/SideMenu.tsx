@@ -18,7 +18,8 @@ import {
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
   TagIcon,
-  BellIcon
+  BellIcon,
+  HomeIcon,
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -84,7 +85,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
       "/contact",
       "/fileBug",
       "/upload_center",
-      "/data_catalog",
+      "project_homepage",
       "/member_management",
       "/event_management",
       "/tag_management",
@@ -105,27 +106,24 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   };
 
   return (
-    <div className="fixed top-18 bottom-0 flex z-50">
+    <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
         className={`h-full shadow-xl ${
           isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        } bg-base-300 brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
-          <li>
+          <li className="mt-20">
             <Link
-              href="/data_catalog"
-              onClick={(e) => handleItemClick("/data_catalog", e)}
-              className={getItemClass("/data_catalog")}
+              href={`/project/${project?.projectId}`}
+              className={getItemClass("project_homepage")}
             >
-              <FolderIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.DATA_CATALOG}</p>
-              )}
+              <HomeIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Project Dashboard</p>}
             </Link>
           </li>
-          <li className="mt-2">
+          <li>
             <Link
               href={"/upload_center"}
               className={getItemClass("/upload_center")}
@@ -160,19 +158,17 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
 
           <li className="mt-2">
-          <div className="flex items-center">
-            <Link 
-              href="#"
-              onClick={(e) => handleItemClick("/event_management", e)}
-              className={getItemClass("/event_management")}>
-              
-              <BellIcon className="size-6" />
-              {!isCollapsed && (
-                  <p className="ml-2">Event Management</p>
-              )}
-            </Link>
-          </div>
-        </li>
+            <div className="flex items-center">
+              <Link
+                href="#"
+                onClick={(e) => handleItemClick("/event_management", e)}
+                className={getItemClass("/event_management")}
+              >
+                <BellIcon className="size-6" />
+                {!isCollapsed && <p className="ml-2">Event Management</p>}
+              </Link>
+            </div>
+          </li>
         </ul>
 
         <div className="divider divider-secondary" />
@@ -193,31 +189,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-
-          {/* <li className="mt-2">
-            <Link
-              href="#saved-searches"
-              onClick={(e) => handleItemClick("#saved-searches", e)}
-              className={getItemClass("#saved-searches")}
-            >
-              <BookmarkSquareIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.SAVED_SEARCHES}</p>
-              )}
-            </Link>
-          </li>
-          <li className="mt-2">
-            <Link
-              href="#timeseries-viewer"
-              onClick={(e) => handleItemClick("#timeseries-viewer", e)}
-              className={getItemClass("#timeseries-viewer")}
-            >
-              <PresentationChartLineIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.TIMESERIES_VIEWER}</p>
-              )}
-            </Link>
-          </li> */}
           <li className="mt-2">
             <Link
               href="/project/${project?.projectId}/project_settings"
@@ -261,46 +232,12 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                 </a>
               </button>
             </li>
-            {/* <li className="mt-2">
-              <Link
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/contact", e)}
-                className={getItemClass("/contact")}
-              >
-                <ChatBubbleLeftRightIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.CONTACT}</p>
-                )}
-              </Link>
-            </li>
-            <li className="mt-2">
-              <Link
-                href="#"
-                prefetch={false}
-                onClick={(e) => {
-                  e.preventDefault();
-                  // open modal / external
-                }}
-                // onClick={(e) => handleItemClick("/fileBug", e)}
-                className={getItemClass("/fileBug")}
-              >
-                <BugAntIcon className="size-6" />
-                {!isCollapsed && (
-                  <p className="ml-2">{t.translations.FILE_A_BUG}</p>
-                )}
-              </Link>
-            </li> */}
           </ul>
         </div>
       </aside>
       {/* Toggle tab (sticking out to the right) */}
       <div
-        className="h-8 w-4 bg-secondary text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
+        className="h-8 w-4 bg-base-300 brightness-120 text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
         onClick={toggleMenu}
       >
         {isCollapsed ? (
