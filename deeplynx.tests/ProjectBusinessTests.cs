@@ -276,7 +276,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateProject_IfOrgIdSupplied()
+        public async Task CreateProject_Success_IfOrgIdSupplied()
         {
             // Arrange
             var dto = new CreateProjectRequestDto
@@ -309,7 +309,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateProject_NoOrgId_UsesExistingDefaultOrg()
+        public async Task CreateProject_Success_IfNoOrgId()
         {
             // Arrange: seed a default org in the DB
             var defaultOrg = new Organization { Name = "Default Org", DefaultOrg = true, IsArchived = false };
@@ -341,7 +341,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateProject_NoOrgId_NoDefaultOrg_CreatesDefaultOrg_AndUsesIt()
+        public async Task CreateProject_Success_IfNoOrgIdNoDefaultOrg()
         {
             // Arrange: ensure no default org exists
             foreach (var o in Context.Organizations.Where(o => o.DefaultOrg)) o.DefaultOrg = false;

@@ -205,7 +205,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateOrganization_WithIsDefaultTrue_SetsDefaultOnCreatedOrg()
+        public async Task CreateOrganization_Success_OnSetsDefault()
         {
             // Arrange
             var dto = new CreateOrganizationRequestDto
@@ -226,7 +226,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateOrganization_WithIsDefaultFalse_DoesNotSetDefaultOnCreatedOrg()
+        public async Task CreateOrganization_Success_NoDefaultOnCreatedOrg()
         {
             // Arrange
             var dto = new CreateOrganizationRequestDto
@@ -247,7 +247,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task CreateOrganization_WithIsDefaultTrue_MakesAllOtherDefaultsFalse()
+        public async Task CreateOrganization_Success_ClearsOtherDefaultOrgs()
         {
             // Arrange
             // Ensure there is at least one existing default org
@@ -390,7 +390,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task UpdateOrganization_WithDefaultOrgTrue_SetsOrgAsDefault()
+        public async Task UpdateOrganization_Success_SetsOrgAsDefault()
         {
             // Arrange: ensure current org starts non-default
             var org = await Context.Organizations.FindAsync(oid);
@@ -417,7 +417,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task UpdateOrganization_WithDefaultOrgFalse_SetsOrgAsNonDefault()
+        public async Task UpdateOrganization_Success_SetsOrgAsNonDefault()
         {
             // Arrange: make target org currently default
             var org = await Context.Organizations.FindAsync(oid);
@@ -444,7 +444,7 @@ namespace deeplynx.tests
         }
 
         [Fact]
-        public async Task UpdateOrganization_WithDefaultOrgTrue_ClearsOtherDefaultOrgs()
+        public async Task UpdateOrganization_Success_ClearsOtherDefaultOrgs()
         {
             // Arrange: seed another active org that is currently default
             var otherOrg = new Organization
