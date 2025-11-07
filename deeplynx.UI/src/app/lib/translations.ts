@@ -241,7 +241,8 @@ export const translations = {
             CREATE_OAUTH_APPLICATION: "Create OAuth Application",
             BASE_URL: "Base URL",
             APP_OWNER_EMAIL: "App Owner Email",
-            EDIT_OAUTH_APP: "Edit OAuth Application"
+            EDIT_OAUTH_APP: "Edit OAuth Application",
+            ORGANIZATION_MANAGEMENT: "Organization Management"
         }
     },
     es: {
@@ -495,7 +496,8 @@ export const translations = {
             CREATE_OAUTH_APPLICATION: "Crear aplicación OAuth",
             BASE_URL: "URL base",
             APP_OWNER_EMAIL: "Correo del propietario de la aplicación",
-            EDIT_OAUTH_APP: "Editar aplicación OAuth"
+            EDIT_OAUTH_APP: "Editar aplicación OAuth",
+            ORGANIZATION_MANAGEMENT: "Organization Management"
         }
     }
 }

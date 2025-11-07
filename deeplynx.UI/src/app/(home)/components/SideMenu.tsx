@@ -107,9 +107,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   return (
     <div className="fixed top-18 bottom-0 flex z-50">
       <aside
-        className={`h-full shadow-xl ${
-          isCollapsed ? "w-22" : "w-64"
-        } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        className={`h-full shadow-xl ${isCollapsed ? "w-22" : "w-64"
+          } bg-secondary text-primary-content p-4 transition-all duration-300 flex flex-col`}
       >
         {/* Home */}
         <ul className="">
@@ -148,31 +147,31 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
           <li className="mt-2">
             <Link
-              href={"/member_management"}
-              onClick={(e) => handleItemClick("/member_management", e)}
-              className={getItemClass("/member_management")}
+              href={"/orgaization_management"}
+              onClick={(e) => handleItemClick("/organization_management", e)}
+              className={getItemClass("/organization_management")}
             >
               <AdjustmentsHorizontalIcon className="size-6" />
               {!isCollapsed && (
-                <p className="ml-2">{t.translations.MEMBER_MANAGEMENT}</p>
+                <p className="ml-2">{t.translations.ORGANIZATION_MANAGEMENT}</p>
               )}
             </Link>
           </li>
 
           <li className="mt-2">
-          <div className="flex items-center">
-            <Link 
-              href="#"
-              onClick={(e) => handleItemClick("/event_management", e)}
-              className={getItemClass("/event_management")}>
-              
-              <BellIcon className="size-6" />
-              {!isCollapsed && (
+            <div className="flex items-center">
+              <Link
+                href="#"
+                onClick={(e) => handleItemClick("/event_management", e)}
+                className={getItemClass("/event_management")}>
+
+                <BellIcon className="size-6" />
+                {!isCollapsed && (
                   <p className="ml-2">Event Management</p>
-              )}
-            </Link>
-          </div>
-        </li>
+                )}
+              </Link>
+            </div>
+          </li>
         </ul>
 
         <div className="divider divider-secondary" />
