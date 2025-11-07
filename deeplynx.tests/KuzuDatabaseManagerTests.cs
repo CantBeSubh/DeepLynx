@@ -37,13 +37,7 @@ namespace deeplynx.tests {
             _container = new PostgreSqlBuilder().WithImage("postgres:15-alpine").Build();
 
             ConnectionString = _fixture.PostgresConnectionString;
-
-            var projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", ".."));
-
-            var envFilePath = Path.Combine(projectRoot, ".env");
-
-            _ = Env.Load(envFilePath);
-
+            
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
                 .WriteTo.Console()

@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 namespace deeplynx.business;
 
 public class TimeseriesBusiness(
+    Config config,
     DeeplynxContext context,
     ICacheBusiness cacheBusiness,
     IRecordBusiness recordBusiness,
@@ -31,7 +32,7 @@ public class TimeseriesBusiness(
     private readonly IClassBusiness _classBusiness = classBusiness;
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
     
-    private static readonly string _duckDbBasePath = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
+    private readonly string _duckDbBasePath = config.DUCKDB_BASE_PATH;
     private static class Status
     {
         public static string Failed { get; } = "failed";
@@ -39,7 +40,7 @@ public class TimeseriesBusiness(
         public static string InProgress { get; } = "in progress";
     }
 
-    private static async Task<DuckDBConnection> GetDuckDbConnection(long projectId, long dataSourceId)
+    private async Task<DuckDBConnection> GetDuckDbConnection(long projectId, long dataSourceId)
     {
         var projectDir = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString());
         var dataSourceDir = Path.Combine(projectDir, "datasource_" + dataSourceId.ToString());
@@ -54,7 +55,7 @@ public class TimeseriesBusiness(
         return connection;
     }
 
-    private static async Task<DuckDBConnection> GetReadOnlyDuckDbConnection(long projectId, long dataSourceId)
+    private async Task<DuckDBConnection> GetReadOnlyDuckDbConnection(long projectId, long dataSourceId)
     {
         var projectDir = Path.Combine(_duckDbBasePath, "project_" + projectId.ToString());
         var dataSourceDir = Path.Combine(projectDir, "datasource_" + dataSourceId.ToString());
@@ -639,7 +640,7 @@ public class TimeseriesBusiness(
     /// <param name="dataSourceId">The data source ID</param>
     /// <param name="tableName">Timeseries table name</param>
     /// <returns>JSON array of columns</returns>
-    private static async Task<JsonArray> GetColumnsFromDb(long projectId, long dataSourceId, string tableName)
+    private async Task<JsonArray> GetColumnsFromDb(long projectId, long dataSourceId, string tableName)
     {
         var columns = new JsonArray();
         using var duckDbConnection = await GetDuckDbConnection(projectId, dataSourceId);

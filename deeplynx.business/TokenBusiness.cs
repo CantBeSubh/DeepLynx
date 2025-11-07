@@ -14,10 +14,12 @@ namespace deeplynx.business;
 
 public class TokenBusiness : ITokenBusiness
 {
+    private readonly Config _config;
     private readonly DeeplynxContext _context;
 
-    public TokenBusiness(DeeplynxContext context)
+    public TokenBusiness(Config config, DeeplynxContext context)
     {
+        _config = config;
         _context = context;
     }
 
@@ -42,7 +44,7 @@ public class TokenBusiness : ITokenBusiness
             throw new UnauthorizedAccessException("Invalid API credentials");
 
         // 4. Use the JWT signing secret
-        var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+        var jwtSigningSecret = _config.JWT_SECRET_KEY;
 
         if (string.IsNullOrEmpty(jwtSigningSecret))
             throw new InvalidOperationException("JWT signing secret not configured");

@@ -20,17 +20,20 @@ namespace deeplynx.helpers;
 
 public class NexusAuthenticationMiddleware : JwtBearerHandler
 {
+    private readonly Config _config;
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private static IConfigurationManager<OpenIdConnectConfiguration>? _configManager;
     private static readonly object _configManagerLock = new();
 
     public NexusAuthenticationMiddleware(
+        Config config,
         IOptionsMonitor<JwtBearerOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
         IServiceScopeFactory serviceScopeFactory)
         : base(options, logger, encoder)
     {
+        _config = config;
         _serviceScopeFactory = serviceScopeFactory;
     }
 
@@ -38,10 +41,10 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         // Extract token
         var token = ExtractToken(Request);
-        var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
+        var disableAuth = _config.DISABLE_BACKEND_AUTHENTICATION.ToLower();
 
         // If local bypass is enabled, try to use the token but fall back to superuser on any issues
-        if (disableAuth)
+        if (disableAuth == "true")
         {
             // No token provided - use superuser
             if (string.IsNullOrEmpty(token))
@@ -163,7 +166,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             }
 
             // Use JWT_SECRET_KEY for signature validation
-            var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+            var jwtSigningSecret = _config.JWT_SECRET_KEY;
 
             if (string.IsNullOrEmpty(jwtSigningSecret))
             {
@@ -213,8 +216,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
-            var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
-            var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+            var issuer = _config.JWT_ISSUER;
+            var audience = _config.JWT_AUDIENCE;
 
             if (string.IsNullOrWhiteSpace(issuer) || string.IsNullOrWhiteSpace(audience))
             {
@@ -360,7 +363,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
             var isDefaultSuperUser =
-                email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
+                email.ToLower() == _config.SUPERUSER_EMAIL.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)

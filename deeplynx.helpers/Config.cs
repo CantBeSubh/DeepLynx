@@ -71,7 +71,7 @@ public class Config
         ENABLE_KUZU = Environment.GetEnvironmentVariable("ENABLE_KUZU") ?? "false";
 
         // DUCKDB CONFIGURATION
-        DUCKDB_BASE_PATH = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "../duckdb/";
+        DUCKDB_BASE_PATH = Environment.GetEnvironmentVariable("DUCKDB_BASE_PATH") ?? "/data/duckdb";
 
         // FILE STORAGE CONFIGURATION
         // Available options: filesystem, azure_object, aws_s3
