@@ -115,7 +115,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         {
             await MakePreviousDefaultsFalse(organization.Id);
         }
-        
+
         await _context.SaveChangesAsync();
 
         // Log create Organization event

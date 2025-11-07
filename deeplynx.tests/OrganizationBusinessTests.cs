@@ -24,8 +24,8 @@ namespace deeplynx.tests
         public long oid;    // organization ID
         public long oid2;   // second organization ID
         public long uid;    // user IDs
-        public long uid2;   
-        
+        public long uid2;
+
         public OrganizationBusinessTests(TestSuiteFixture fixture) : base(fixture) { }
 
         public override async Task InitializeAsync()
@@ -37,51 +37,51 @@ namespace deeplynx.tests
             _mockNotificationLogger = new Mock<ILogger<NotificationBusiness>>();
             _notificationBusiness = new NotificationBusiness(Context, _mockNotificationLogger.Object, _mockHubContext.Object);
             _eventBusiness = new EventBusiness(Context, _cacheBusiness, _notificationBusiness);
-            
+
             // org business and dependencies
             _mockLoggerOrg = new Mock<ILogger<OrganizationBusiness>>();
             _organizationBusiness = new OrganizationBusiness(
                 Context, _eventBusiness, _mockLoggerOrg.Object);
         }
-        
+
         #region GetAllOrganizations Tests
-        
+
         [Fact]
         public async Task GetAllOrganizations_ExcludesArchived()
         {
             // Act
             var result = await _organizationBusiness.GetAllOrganizations(true);
             var organizations = result.ToList();
-            
+
             // Assert
             Assert.All(organizations, o => Assert.False(o.IsArchived));
             Assert.Contains(organizations, o => o.Id == oid);
             Assert.DoesNotContain(organizations, o => o.Id == oid2); // archived organization
         }
-        
+
         [Fact]
         public async Task GetAllOrganizations_WithHideArchivedFalse_IncludesArchived()
         {
             // Act
             var result = await _organizationBusiness.GetAllOrganizations(false);
             var organizations = result.ToList();
-            
+
             // Assert
             Assert.Contains(organizations, o => o.IsArchived);
             Assert.Contains(organizations, o => o.Id == oid);
             Assert.Contains(organizations, o => o.Id == oid2); // archived organization
         }
-        
+
         #endregion
-        
+
         #region GetOrganization Tests
-        
+
         [Fact]
         public async Task GetOrganization_Succeeds_WhenExists()
         {
             // Act
             var result = await _organizationBusiness.GetOrganization(oid);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal(oid, result.Id);
@@ -89,31 +89,31 @@ namespace deeplynx.tests
             Assert.Equal("Test org for unit tests", result.Description);
             Assert.False(result.IsArchived);
         }
-        
+
         [Fact]
         public async Task GetOrganization_Fails_IfNotFound()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.GetOrganization(99999));
-            
+
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
         }
-        
+
         [Fact]
         public async Task GetOrganization_Fails_IfArchivedOrg()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.GetOrganization(oid2)); // archived organization
-            
+
             Assert.Contains($"Organization with id {oid2} is archived", exception.Message);
         }
-        
+
         #endregion
-        
+
         #region CreateOrganization Tests
-        
+
         [Fact]
         public async Task CreateOrganization_Success_ReturnsOrganization()
         {
@@ -123,16 +123,16 @@ namespace deeplynx.tests
                 Name = "New Test Organization",
                 Description = "New Test Organization Description",
             };
-            
+
             // Act
             var result = await _organizationBusiness.CreateOrganization(dto);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal(dto.Name, result.Name);
             Assert.Equal(dto.Description, result.Description);
             Assert.False(result.IsArchived);
-            
+
             // verify org was actually created in database
             var createdOrg = await Context.Organizations.FindAsync(result.Id);
             Assert.NotNull(createdOrg);
@@ -148,25 +148,25 @@ namespace deeplynx.tests
                 Name = "Event Test Organization",
                 Description = "A test organization for event logging",
             };
-            
+
             // Act
             var result = await _organizationBusiness.CreateOrganization(dto);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Event Test Organization", result.Name);
-            
+
             // Ensure that the Organization create event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal("create", actualEvent.Operation);
             Assert.Equal("organization", actualEvent.EntityType);
             Assert.Equal(result.Id, actualEvent.EntityId);
         }
-        
+
         [Fact]
         public async Task CreateOrganization_Fails_IfNoName()
         {
@@ -175,16 +175,16 @@ namespace deeplynx.tests
             {
                 Description = "Organization without name"
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
                 () => _organizationBusiness.CreateOrganization(dto));
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task CreateOrganization_Fails_IfEmptyName()
         {
@@ -194,20 +194,98 @@ namespace deeplynx.tests
                 Name = "",
                 Description = "Organization with empty name"
             };
-            
+
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
                 () => _organizationBusiness.CreateOrganization(dto));
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
+        [Fact]
+        public async Task CreateOrganization_WithIsDefaultTrue_SetsDefaultOnCreatedOrg()
+        {
+            // Arrange
+            var dto = new CreateOrganizationRequestDto
+            {
+                Name = "Default Org A",
+                Description = "Should be default"
+            };
+
+            // Act
+            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: true);
+
+            // Assert
+            Assert.NotNull(result);
+
+            var created = await Context.Organizations.FindAsync(result.Id);
+            Assert.NotNull(created);
+            Assert.True(created!.DefaultOrg); // ensure the new org is default
+        }
+
+        [Fact]
+        public async Task CreateOrganization_WithIsDefaultFalse_DoesNotSetDefaultOnCreatedOrg()
+        {
+            // Arrange
+            var dto = new CreateOrganizationRequestDto
+            {
+                Name = "Non-Default Org",
+                Description = "Should NOT be default"
+            };
+
+            // Act
+            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: false);
+
+            // Assert
+            Assert.NotNull(result);
+
+            var created = await Context.Organizations.FindAsync(result.Id);
+            Assert.NotNull(created);
+            Assert.False(created!.DefaultOrg); // ensure the new org is not default
+        }
+
+        [Fact]
+        public async Task CreateOrganization_WithIsDefaultTrue_MakesAllOtherDefaultsFalse()
+        {
+            // Arrange
+            // Ensure there is at least one existing default org
+            var existingDefault = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(existingDefault);
+            existingDefault!.DefaultOrg = true;
+            Context.Organizations.Update(existingDefault);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateOrganizationRequestDto
+            {
+                Name = "Default Org B",
+                Description = "Becomes the new default"
+            };
+
+            // Act
+            var result = await _organizationBusiness.CreateOrganization(dto, isDefault: true);
+
+            // Assert
+            Assert.NotNull(result);
+
+            var allOrgs = await Context.Organizations.ToListAsync();
+
+            // New org is default
+            var created = allOrgs.Single(o => o.Id == result.Id);
+            Assert.True(created.DefaultOrg);
+
+            // All *other* orgs are no longer default
+            foreach (var org in allOrgs.Where(o => o.Id != result.Id))
+            {
+                Assert.False(org.DefaultOrg);
+            }
+        }
+
         #endregion
-        
+
         #region UpdateOrganization Tests
-        
+
         [Fact]
         public async Task UpdateOrganization_Success_ReturnsOrganization()
         {
@@ -217,33 +295,33 @@ namespace deeplynx.tests
                 Name = "Updated Organization",
                 Description = "Updated description"
             };
-            
+
             // Act
             var result = await _organizationBusiness.UpdateOrganization(oid, dto);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal(oid, result.Id);
             Assert.Equal("Updated Organization", result.Name);
             Assert.Equal("Updated description", result.Description);
-            
+
             // Verify it was actually saved to DB
             var savedOrg = await Context.Organizations.FindAsync(oid);
             Assert.NotNull(savedOrg);
             Assert.Equal("Updated Organization", savedOrg.Name);
             Assert.Equal("Updated description", savedOrg.Description);
-            
+
             // Ensure that the Organization update event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal("update", actualEvent.Operation);
             Assert.Equal("organization", actualEvent.EntityType);
             Assert.Equal(result.Id, actualEvent.EntityId);
         }
-        
+
         [Fact]
         public async Task UpdateOrganization_Success_CreatesEvent()
         {
@@ -252,25 +330,25 @@ namespace deeplynx.tests
             {
                 Name = "Event Updated Organization"
             };
-            
+
             // Act
             var result = await _organizationBusiness.UpdateOrganization(oid, dto);
-            
+
             // Assert
             Assert.NotNull(result);
             Assert.Equal("Event Updated Organization", result.Name);
-            
+
             // Ensure that the Organization update event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal("update", actualEvent.Operation);
             Assert.Equal("organization", actualEvent.EntityType);
             Assert.Equal(result.Id, actualEvent.EntityId);
         }
-        
+
         [Fact]
         public async Task UpdateOrganization_Fails_IfNotFound()
         {
@@ -279,18 +357,18 @@ namespace deeplynx.tests
             {
                 Name = "Updated Organization"
             };
-            
+
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.UpdateOrganization(99999, dto));
-            
+
             Assert.Contains("Organization with id 99999 does not exist", exception.Message);
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task UpdateOrganization_Fails_IfArchived()
         {
@@ -299,111 +377,214 @@ namespace deeplynx.tests
             {
                 Name = "Updated Archived Organization"
             };
-            
+
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.UpdateOrganization(oid2, dto)); // archived organization
-            
+
             Assert.Contains($"Organization with id {oid2} does not exist", exception.Message);
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
+        [Fact]
+        public async Task UpdateOrganization_WithDefaultOrgTrue_SetsOrgAsDefault()
+        {
+            // Arrange: ensure current org starts non-default
+            var org = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(org);
+            org!.DefaultOrg = false;
+            Context.Organizations.Update(org);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateOrganizationRequestDto
+            {
+                Name = "Becomes Default",
+                Description = "Set DefaultOrg = true",
+                DefaultOrg = true
+            };
+
+            // Act
+            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+
+            // Assert
+            Assert.NotNull(result);
+            var saved = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(saved);
+            Assert.True(saved!.DefaultOrg);
+        }
+
+        [Fact]
+        public async Task UpdateOrganization_WithDefaultOrgFalse_SetsOrgAsNonDefault()
+        {
+            // Arrange: make target org currently default
+            var org = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(org);
+            org!.DefaultOrg = true;
+            Context.Organizations.Update(org);
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateOrganizationRequestDto
+            {
+                Name = "No Longer Default",
+                Description = "Set DefaultOrg = false",
+                DefaultOrg = false
+            };
+
+            // Act
+            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+
+            // Assert
+            Assert.NotNull(result);
+            var saved = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(saved);
+            Assert.False(saved!.DefaultOrg);
+        }
+
+        [Fact]
+        public async Task UpdateOrganization_WithDefaultOrgTrue_ClearsOtherDefaultOrgs()
+        {
+            // Arrange: seed another active org that is currently default
+            var otherOrg = new Organization
+            {
+                Name = "Existing Default Org",
+                Description = "Pre-existing default",
+                DefaultOrg = true,
+                IsArchived = false,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            Context.Organizations.Add(otherOrg);
+
+            // Ensure target org is explicitly non-default before update
+            var targetOrg = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(targetOrg);
+            targetOrg!.DefaultOrg = false;
+
+            await Context.SaveChangesAsync();
+
+            var dto = new UpdateOrganizationRequestDto
+            {
+                Name = "Promoted To Default",
+                Description = "Will become the sole default",
+                DefaultOrg = true
+            };
+
+            // Act
+            var result = await _organizationBusiness.UpdateOrganization(oid, dto);
+
+            // Assert
+            Assert.NotNull(result);
+
+            var all = await Context.Organizations.ToListAsync();
+
+            // Updated org should now be default
+            var updated = await Context.Organizations.FindAsync(oid);
+            Assert.NotNull(updated);
+            Assert.True(updated!.DefaultOrg);
+
+            // All other orgs should be non-default
+            foreach (var o in all.Where(o => o.Id != oid))
+            {
+                Assert.False(o.DefaultOrg);
+            }
+        }
+
         #endregion
-        
+
         #region ArchiveOrganization Tests
-        
+
         [Fact]
         public async Task ArchiveOrganization_Succeeds_IfNotArchived()
         {
             // Act
             var result = await _organizationBusiness.ArchiveOrganization(oid);
-            
+
             // Assert
             Assert.True(result);
-            
+
             // Verify it was actually saved to DB
             var savedOrg = await Context.Organizations.FindAsync(oid);
             Assert.NotNull(savedOrg);
             Assert.True(savedOrg.IsArchived);
-            
+
             // Ensure that the Organization archive event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal("archive", actualEvent.Operation);
             Assert.Equal("organization", actualEvent.EntityType);
             Assert.Equal(oid, actualEvent.EntityId);
         }
-        
+
         [Fact]
         public async Task ArchiveOrganization_Fails_IfArchived()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.ArchiveOrganization(oid2)); // already archived
-            
+
             Assert.Contains($"Organization with id {oid2} not found", exception.Message);
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         [Fact]
         public async Task ArchiveOrganization_Fails_IfNotFound()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.ArchiveOrganization(99999));
-            
+
             Assert.Contains("Organization with id 99999 not found", exception.Message);
-            
+
             // Ensure that no event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
         }
-        
+
         #endregion
-        
+
         #region UnarchiveOrganization Tests
-        
+
         [Fact]
         public async Task UnarchiveOrganization_Succeeds_IfArchived()
         {
             // Act
             var result = await _organizationBusiness.UnarchiveOrganization(oid2);
-            
+
             // Assert
             Assert.True(result);
-            
+
             // Verify it was actually saved to DB
             var savedOrg = await Context.Organizations.FindAsync(oid2);
             Assert.NotNull(savedOrg);
             Assert.False(savedOrg.IsArchived);
-            
+
             // Ensure that the Organization unarchive event was logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Single(eventList);
-            
+
             var actualEvent = eventList[0];
-            
+
             Assert.Equal("unarchive", actualEvent.Operation);
             Assert.Equal("organization", actualEvent.EntityType);
             Assert.Equal(oid2, actualEvent.EntityId);
         }
-        
+
         [Fact]
         public async Task UnarchiveOrganization_Fails_IfNotArchived()
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
                 () => _organizationBusiness.UnarchiveOrganization(oid)); // not archived
-            
+
             Assert.Contains($"Organization with id {oid} not found", exception.Message);
             
             // Ensure that no event was logged
