@@ -8,7 +8,7 @@ import { WidgetType } from "./types/types";
 import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
@@ -18,12 +18,15 @@ import { useSession } from "next-auth/react";
 import AddRecordModal from "./components/AddRecordModal";
 import { useDashboardTour } from "./tours/useDashboardTour";
 import { ProjectResponseDto } from "./types/responseDTOs";
+import { useOrganizationSession } from "../contexts/OrganizationSessionProvider";
+
 type Props = { initialProjects: ProjectResponseDto[] };
 
 export default function HomeDashboardClient({ initialProjects }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
+  const { organization, hasLoaded } = useOrganizationSession();
 
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -37,6 +40,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     "DataOverview",
     "Graph",
   ]);
+
+  // Redirect if no organization selected
+  useEffect(() => {
+    if (hasLoaded && !organization) {
+      router.push("/select-org");
+    }
+  }, [hasLoaded, organization, router]);
 
   const filteredProjects = projects
     .filter((project) => {
@@ -59,8 +69,10 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   });
 
   const refreshProjects = async () => {
+    if (!organization) return;
+
     try {
-      const data = await getAllProjects();
+      const data = await getAllProjects(organization.organizationId, true);
       setProjects(data);
     } catch (err) {
       console.error("Failed to refresh projects:", err);
@@ -104,10 +116,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     setCanCustomize(false);
   };
 
-  const handleCancel = () => {
-    setCanCustomize(false);
-  };
-
   const formatUserName = (fullName?: string | null): string => {
     if (!fullName) return "";
 
@@ -116,6 +124,15 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     const lastName = parts[parts.length - 1] ?? "";
     return [firstName, lastName].filter(Boolean).join(" ");
   };
+
+  // Show loading while checking organization
+  if (!hasLoaded || !organization) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-base-100">
+        <span className="loading loading-spinner loading-lg"></span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -188,20 +205,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
             />
           </div>
         </div>
-
-        {/* Commented out widgets section
-        <div className="w-full md:w-2/5 px-4">
-            <WidgetCard
-              widgets={homeWidgets}
-              onSave={handleSave}
-              onCustomizeChange={setCanCustomize}
-            />
-            {session?.user && (
-              <div className="bg-green-100 p-4 m-4 rounded">
-                <p>Welcome back, {session.user.name}!</p>
-              </div>
-            )}
-          </div> */}
       </div>
 
       {/* Modals */}

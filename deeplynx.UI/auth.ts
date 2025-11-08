@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import { JWT, JWTEncodeParams, JWTDecodeParams } from "next-auth/jwt";
 import Okta from "next-auth/providers/okta";
 import jsonWebToken from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export const runtime = "nodejs";
 
@@ -180,10 +181,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         },
 
         async redirect({ url, baseUrl }) {
+            // If redirecting to a specific URL within the app, allow it
             if (url.startsWith(baseUrl)) {
                 return url;
             }
-            return `${baseUrl}/select-org`
+            
+            // After login, check if user has an organization selected
+            try {
+                const cookieStore = await cookies();
+                const orgSessionCookie = cookieStore.get("organizationSession");
+                
+                if (orgSessionCookie) {
+                    // User has an org selected, redirect to dashboard
+                    return `${baseUrl}`;
+                }
+            } catch (e) {
+                console.error("Failed to check organization cookie:", e);
+            }
+            
+            // No org selected, redirect to selection page
+            return `${baseUrl}/select-org`;
         }
     },
     pages: {

@@ -4,8 +4,19 @@ import { ProjectResponseDto, ProjectStatResponseDto } from "../(home)/types/resp
 import type { FileViewerTableRow } from "@/app/(home)/types/types";
 import { apiFetch, asJson } from "./api.server";
 
-export async function getAllProjectsServer(): Promise<ProjectResponseDto[]> {
-  const res = await apiFetch("/projects/GetAllProjects");
+export async function getAllProjectsServer(
+  organizationId?: number | string,
+  hideArchived: boolean = true
+): Promise<ProjectResponseDto[]> {
+  const params = new URLSearchParams();
+  
+  params.append('hideArchived', String(hideArchived));
+  
+  if (organizationId !== undefined) {
+    params.append('organizationId', String(organizationId));
+  }
+  
+  const res = await apiFetch(`/projects/GetAllProjects?${params.toString()}`);
   return asJson<ProjectResponseDto[]>(res);
 }
 

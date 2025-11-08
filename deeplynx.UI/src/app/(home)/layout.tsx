@@ -7,6 +7,7 @@ import { UserSessionProvider } from "../contexts/UserSessionProvider";
 import { ProjectSessionProvider } from "../contexts/ProjectSessionProvider";
 import AuthGuard from "./components/AuthGuard";
 import { RBACProvider } from "./rbac/RBACContext";
+import { OrganizationSessionProvider } from "../contexts/OrganizationSessionProvider";
 
 export default function HomeLayout({
   children,
@@ -16,9 +17,11 @@ export default function HomeLayout({
   return (
     <AuthGuard>
       <RBACProvider>
-        <ProjectSessionProvider>
-          <LayoutShell>{children}</LayoutShell>
-        </ProjectSessionProvider>
+        <OrganizationSessionProvider>
+          <ProjectSessionProvider>
+            <LayoutShell>{children}</LayoutShell>
+          </ProjectSessionProvider>
+        </OrganizationSessionProvider>
       </RBACProvider>
     </AuthGuard>
   );

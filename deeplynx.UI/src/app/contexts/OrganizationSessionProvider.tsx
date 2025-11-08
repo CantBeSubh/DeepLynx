@@ -1,3 +1,4 @@
+// src/app/contexts/OrganizationSessionProvider.tsx
 "use client";
 
 import React, {
@@ -8,29 +9,23 @@ import React, {
   useCallback,
 } from "react";
 import type { ReactNode, Context } from "react";
-import { OrganizationResponseDto } from "../(home)/types/responseDTOs";
 
-// Define shape of an organization session (simplified from the full DTO)
 export interface OrganizationSession {
   organizationId: string | number;
   organizationName: string;
 }
 
-// Define context value shape
 interface OrganizationSessionContextType {
   organization: OrganizationSession | null;
-  setOrganization: (
-    organization: OrganizationSession | OrganizationResponseDto
-  ) => void;
+  setOrganization: (organization: OrganizationSession) => void;
+  clearOrganization: () => void;
   hasLoaded: boolean;
 }
 
-// Create context with explicit typing
 const OrganizationSessionContext: Context<
   OrganizationSessionContextType | undefined
 > = createContext<OrganizationSessionContextType | undefined>(undefined);
 
-// Custom hook for accessing the session
 export const useOrganizationSession = (): OrganizationSessionContextType => {
   const context = useContext(OrganizationSessionContext);
   if (!context) {
@@ -41,23 +36,6 @@ export const useOrganizationSession = (): OrganizationSessionContextType => {
   return context;
 };
 
-// Helper function to convert DTO to session
-const toOrganizationSession = (
-  org: OrganizationSession | OrganizationResponseDto
-): OrganizationSession => {
-  // If it's already in session format, return as-is
-  if ("organizationId" in org && "organizationName" in org) {
-    return org;
-  }
-
-  // Convert from DTO format
-  return {
-    organizationId: org.id,
-    organizationName: org.name,
-  };
-};
-
-// Provider component
 export const OrganizationSessionProvider = ({
   children,
 }: {
@@ -67,9 +45,17 @@ export const OrganizationSessionProvider = ({
     useState<OrganizationSession | null>(null);
   const [hasLoaded, setHasLoaded] = useState(false);
 
-  // On mount, restore from localStorage
+  // On mount, restore from localStorage OR cookies
   useEffect(() => {
-    const stored = localStorage.getItem("organizationSession");
+    const storedLocal = localStorage.getItem("organizationSession");
+    const storedCookie = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("organizationSession="))
+      ?.split("=")[1];
+
+    const stored =
+      storedLocal || (storedCookie ? decodeURIComponent(storedCookie) : null);
+
     if (stored) {
       try {
         const parsed: OrganizationSession = JSON.parse(stored);
@@ -81,19 +67,30 @@ export const OrganizationSessionProvider = ({
     setHasLoaded(true);
   }, []);
 
-  // On organization update, persist to localStorage
-  const setOrganization = useCallback(
-    (org: OrganizationSession | OrganizationResponseDto) => {
-      const session = toOrganizationSession(org);
-      setOrganizationState(session);
-      localStorage.setItem("organizationSession", JSON.stringify(session));
-    },
-    []
-  );
+  // Save to BOTH localStorage and cookies
+  const setOrganization = useCallback((org: OrganizationSession) => {
+    setOrganizationState(org);
+    const serialized = JSON.stringify(org);
+
+    // Save to localStorage
+    localStorage.setItem("organizationSession", serialized);
+
+    // Save to cookie (expires in 30 days, accessible by server)
+    const maxAge = 30 * 24 * 60 * 60; // 30 days in seconds
+    document.cookie = `organizationSession=${encodeURIComponent(
+      serialized
+    )}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }, []);
+
+  const clearOrganization = useCallback(() => {
+    setOrganizationState(null);
+    localStorage.removeItem("organizationSession");
+    document.cookie = "organizationSession=; path=/; max-age=0";
+  }, []);
 
   return (
     <OrganizationSessionContext.Provider
-      value={{ organization, setOrganization, hasLoaded }}
+      value={{ organization, setOrganization, clearOrganization, hasLoaded }}
     >
       {children}
     </OrganizationSessionContext.Provider>
