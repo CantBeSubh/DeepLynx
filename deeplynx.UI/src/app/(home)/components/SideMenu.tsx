@@ -141,7 +141,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
 
   // Check if a project is currently active
   const isProjectActive = (projectId: string | number) => {
-    return pathname.includes(`/project/${projectId}`);
+    // Check if we're on the project page
+    const isOnProjectPage = pathname.includes(`/project/${projectId}`);
+
+    // Check if this is the current session project (for data catalog, etc.)
+    const isSessionProject = project?.projectId === projectId.toString();
+
+    return isOnProjectPage || isSessionProject;
   };
 
   return (

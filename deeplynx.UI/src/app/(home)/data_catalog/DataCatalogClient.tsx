@@ -1,3 +1,4 @@
+// src/app/(home)/data_catalog/DataCatalogClient.tsx
 "use client";
 
 import Link from "next/link";
@@ -160,13 +161,22 @@ export default function DataCatalogClient({
     await performFullTextSearch(searchTerm, selectedProjects);
   };
 
-  // Update project session when selectedProjects change
   useEffect(() => {
     if (!hasLoaded) return;
-    if (selectedProjects.length > 0) {
+
+    // Determine which project to set - prioritize current selection, fall back to initial
+    const projectToSet =
+      selectedProjects.length > 0
+        ? selectedProjects[0]
+        : initialSelectedProjects.length > 0
+        ? initialSelectedProjects[0]
+        : null;
+
+    if (projectToSet && projectToSet !== "ALL") {
       const selectedProject = projects.find(
-        (project) => project.id === selectedProjects[0]
+        (project) => project.id === projectToSet
       );
+
       if (selectedProject) {
         setProjectSession({
           projectId: selectedProject.id,
@@ -174,7 +184,7 @@ export default function DataCatalogClient({
         });
       }
     }
-  }, [selectedProjects, hasLoaded, projects, setProjectSession]);
+  }, [hasLoaded, selectedProjects, projects, setProjectSession]);
 
   // Handle initial search term
   useEffect(() => {
@@ -215,7 +225,7 @@ export default function DataCatalogClient({
   if (!hasLoaded) return null;
 
   return (
-    <div>
+    <div className="mt-3">
       {/* Header */}
       <div className="flex justify-between items-center bg-base-200/40 pl-12 py-2">
         <div>
