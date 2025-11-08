@@ -173,14 +173,16 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                         onClick={() => handleOrganizationSwitch(org)}
                         className={`flex items-center justify-between ${
                           organization?.organizationId === org.id
-                            ? "active bg-primary text-primary-content"
+                            ? "active bg-info/60 text-primary-content"
                             : ""
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <AvatarCell name={org.name} size={8} />
                           <div className="flex flex-col items-start">
-                            <span className="font-semibold">{org.name}</span>
+                            <span className="font-semibold text-base-content">
+                              {org.name}
+                            </span>
                             {org.description && (
                               <span className="text-xs opacity-70 truncate max-w-[200px]">
                                 {org.description}
@@ -198,7 +200,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   <li>
                     <Link
                       href="/select-org"
-                      className="text-primary hover:bg-base-200"
+                      className=" hover:bg-base-200"
                       onClick={() => setIsOrgDropdownOpen(false)}
                     >
                       <UserGroupIcon className="size-5" />

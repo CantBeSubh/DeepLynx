@@ -38,7 +38,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   // State variables
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-  const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(true);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(false);
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
@@ -197,7 +197,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
                       onClick={() => handleProjectClick(proj)}
                       className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${
                         isProjectActive(proj.id)
-                          ? "bg-primary text-primary-content font-semibold"
+                          ? "bg-info/30 text-primary-content font-semibold"
                           : "hover:bg-info/20 text-primary-content"
                       }`}
                     >
@@ -276,7 +276,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
         </ul>
 
-        <div className="divider divider-secondary" />
+        <div className="divider" />
 
         <ul className="flex-grow">
           <li className="mt-2">
@@ -300,7 +300,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
         </ul>
 
-        <div className="divider divider-secondary" />
+        <div className="divider" />
 
         {/* Last Menu Items */}
         <div className="mt-auto">
