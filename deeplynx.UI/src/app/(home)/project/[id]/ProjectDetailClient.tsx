@@ -10,32 +10,30 @@ import SearchBar from "@/app/(home)/components/SearchBar";
 import WidgetCard from "@/app/(home)/components/Widgets";
 import { WidgetType } from "../../types/types";
 import RecentRecordsCard from "../../components/RecentRecordsCard";
-import ProjectDropdownSingleSelect from "../../components/ProjectDropdownSingleSelect";
 import { ProjectResponseDto } from "@/app/(home)/types/responseDTOs";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 
 type Props = {
-  projects: ProjectResponseDto[];
   initialProject: ProjectResponseDto | null;
   projectId: string;
 };
 
 export default function ProjectDetailClient({
-  projects,
   initialProject,
   projectId,
 }: Props) {
   const { t } = useLanguage();
   const router = useRouter();
-  const { setProject: setProjectSession, hasLoaded } = useProjectSession();
+  const {
+    project: sessionProject,
+    setProject: setProjectSession,
+    hasLoaded,
+  } = useProjectSession();
 
-  // State - ensure IDs are always strings
+  // State
   const [project, setProject] = useState<ProjectResponseDto | null>(
     initialProject
-  );
-  const [selectedProjectId, setSelectedProjectId] = useState<string>(
-    initialProject?.id?.toString() || projectId || ""
   );
   const [canCustomize, setCanCustomize] = useState(false);
   const [projectWidgets, setProjectWidgets] = useState<WidgetType[]>([
@@ -44,37 +42,30 @@ export default function ProjectDetailClient({
     "TeamMembers",
   ]);
 
-  // Sync project session with selected project
+  // Sync project session with initial project on mount
   useEffect(() => {
-    if (!selectedProjectId) return;
-
-    const selectedProject = projects.find(
-      (proj) => proj.id.toString() === selectedProjectId
-    );
-
-    if (selectedProject) {
-      setProject(selectedProject);
+    if (initialProject) {
+      setProject(initialProject);
       setProjectSession({
-        projectId: selectedProject.id.toString(),
-        projectName: selectedProject.name,
+        projectId: initialProject.id.toString(),
+        projectName: initialProject.name,
       });
     }
-  }, [selectedProjectId, projects, setProjectSession]);
+  }, [initialProject?.id]);
 
   // Save widget configuration to localStorage
   const handleSave = (newWidgets: WidgetType[]) => {
     setProjectWidgets(newWidgets);
     localStorage.setItem(
-      `projectWidgets-${selectedProjectId || ""}`,
+      `projectWidgets-${projectId}`,
       JSON.stringify(newWidgets)
     );
   };
 
   // Navigate to data catalog with search term
   const handleSearchEnter = (searchTerm: string) => {
-    const projectIdToUse = selectedProjectId || projectId || "";
     const query = new URLSearchParams({
-      fromProject: selectedProjectId ? selectedProjectId.toString() : "",
+      fromProject: projectId,
       search: searchTerm,
     }).toString();
 
@@ -86,7 +77,7 @@ export default function ProjectDetailClient({
   if (!project) return <p className="p-4">{t.translations.NO_PROJECT_FOUND}</p>;
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 mt-3">
       {/* Project Header */}
       <div className="bg-base-200/50 border-b border-base-300/30 py-4 px-6 lg:px-12">
         <h1 className="text-2xl font-bold text-base-content">{project.name}</h1>
@@ -96,11 +87,6 @@ export default function ProjectDetailClient({
           {project.lastUpdatedAt &&
             format(new Date(project.lastUpdatedAt), "MM/dd/yyyy")}
         </p>
-        <ProjectDropdownSingleSelect
-          projects={projects}
-          onSelectionChange={(id) => setSelectedProjectId(id.toString())}
-          defaultSelectedId={initialProject?.id?.toString() || projectId || ""}
-        />
       </div>
 
       {/* Main Content */}
@@ -128,7 +114,7 @@ export default function ProjectDetailClient({
                   href={{
                     pathname: "/data_catalog",
                     query: {
-                      fromProject: selectedProjectId || projectId || "",
+                      fromProject: projectId,
                     },
                   }}
                 >
@@ -137,7 +123,7 @@ export default function ProjectDetailClient({
               </div>
 
               <RecentRecordsCard
-                selectedProjects={[selectedProjectId || projectId || ""]}
+                selectedProjects={[projectId]}
                 border={false}
               />
             </div>

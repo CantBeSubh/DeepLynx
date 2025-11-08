@@ -1,3 +1,4 @@
+// src/app/(home)/components/SideMenu.tsx
 "use client";
 
 import Link from "next/link";
@@ -5,21 +6,22 @@ import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllProjects } from "@/app/lib/projects_services.client";
+import { ProjectResponseDto } from "../types/responseDTOs";
 import {
   AdjustmentsHorizontalIcon,
   ArrowUpTrayIcon,
-  BookmarkSquareIcon,
-  BugAntIcon,
-  ChatBubbleLeftRightIcon,
+  BellIcon,
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
   FolderIcon,
-  PresentationChartLineIcon,
+  HomeIcon,
   QuestionMarkCircleIcon,
   RectangleGroupIcon,
   TagIcon,
-  BellIcon,
-  HomeIcon,
 } from "@heroicons/react/24/outline";
 
 interface SideMenuProps {
@@ -30,11 +32,34 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
-  const { project } = useProjectSession();
+  const { project, setProject } = useProjectSession();
+  const { organization } = useOrganizationSession();
 
-  // State variables for selected item and menu collapse state
+  // State variables
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isProjectsExpanded, setIsProjectsExpanded] = useState<boolean>(true);
+  const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+
+  // Fetch projects when organization changes
+  useEffect(() => {
+    const fetchProjects = async () => {
+      if (!organization) return;
+
+      try {
+        setLoadingProjects(true);
+        const data = await getAllProjects(organization.organizationId, true);
+        setProjects(data);
+      } catch (error) {
+        console.error("Failed to fetch projects:", error);
+      } finally {
+        setLoadingProjects(false);
+      }
+    };
+
+    fetchProjects();
+  }, [organization?.organizationId]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {
@@ -63,14 +88,23 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     onToggle(newState);
   };
 
+  // Function to handle project selection
+  const handleProjectClick = (selectedProject: ProjectResponseDto) => {
+    setProject({
+      projectId: selectedProject.id.toString(),
+      projectName: selectedProject.name,
+    });
+    router.push(`/project/${selectedProject.id}`);
+  };
+
   // Function to handle item click events
   const handleItemClick = (
     item: string,
     event: React.MouseEvent<HTMLElement>
   ) => {
     event.preventDefault();
-    setSelectedItem(item); // Set the clicked item as selected
-    router.push(item); // Navigate to the clicked item's path
+    setSelectedItem(item);
+    router.push(item);
   };
 
   // Function to check if an item is disabled
@@ -105,25 +139,92 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
     ].join(" ");
   };
 
+  // Check if a project is currently active
+  const isProjectActive = (projectId: string | number) => {
+    return pathname.includes(`/project/${projectId}`);
+  };
+
   return (
     <div className="fixed top-18 bottom-0 left-18 flex z-30">
       <aside
         className={`h-full shadow-xl ${
           isCollapsed ? "w-22" : "w-64"
-        } bg-base-300 brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col`}
+        } bg-base-300 brightness-120 text-primary-content p-4 transition-all duration-300 flex flex-col overflow-y-auto`}
       >
+        {/* Projects Section */}
+        <div className="mt-5">
+          <div
+            className="flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-info/20 rounded transition"
+            onClick={() => setIsProjectsExpanded(!isProjectsExpanded)}
+          >
+            <div className="flex items-center">
+              <FolderIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2 font-semibold">Projects</p>}
+            </div>
+            {!isCollapsed && (
+              <button className="btn btn-ghost btn-xs btn-circle">
+                {isProjectsExpanded ? (
+                  <ChevronUpIcon className="size-4" />
+                ) : (
+                  <ChevronDownIcon className="size-4" />
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* Projects List */}
+          {!isCollapsed && isProjectsExpanded && (
+            <ul className="ml-4 mt-2 space-y-1 max-h-64 overflow-y-auto">
+              {loadingProjects ? (
+                <li className="py-2 px-4 text-sm text-primary-content/70">
+                  <span className="loading loading-spinner loading-sm"></span>
+                  <span className="ml-2">Loading...</span>
+                </li>
+              ) : projects.length === 0 ? (
+                <li className="py-2 px-4 text-sm text-base-content/70">
+                  No projects found
+                </li>
+              ) : (
+                projects.map((proj) => (
+                  <li key={proj.id}>
+                    <button
+                      onClick={() => handleProjectClick(proj)}
+                      className={`w-full text-left py-2 px-4 rounded transition text-sm flex items-center ${
+                        isProjectActive(proj.id)
+                          ? "bg-primary text-primary-content font-semibold"
+                          : "hover:bg-info/20 text-primary-content"
+                      }`}
+                    >
+                      <span className="truncate">{proj.name}</span>
+                      {isProjectActive(proj.id) && (
+                        <span className="ml-auto badge badge-xs">Active</span>
+                      )}
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          )}
+        </div>
+
+        <div className="divider" />
+
         {/* Home */}
-        <ul className="">
-          <li className="mt-20">
+        <ul>
+          <li>
             <Link
               href={`/project/${project?.projectId}`}
-              className={getItemClass("project_homepage")}
+              prefetch={false}
+              onClick={(e) =>
+                handleItemClick(`/project/${project?.projectId}`, e)
+              }
+              className={getItemClass(`/project/${project?.projectId}`)}
             >
-              <HomeIcon className="size-6" />
+              <RectangleGroupIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Project Dashboard</p>}
             </Link>
           </li>
-          <li>
+          <li className="mt-2">
             <Link
               href={"/upload_center"}
               className={getItemClass("/upload_center")}
@@ -158,48 +259,31 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
 
           <li className="mt-2">
-            <div className="flex items-center">
-              <Link
-                href="#"
-                onClick={(e) => handleItemClick("/event_management", e)}
-                className={getItemClass("/event_management")}
-              >
-                <BellIcon className="size-6" />
-                {!isCollapsed && <p className="ml-2">Event Management</p>}
-              </Link>
-            </div>
+            <Link
+              href="#"
+              onClick={(e) => handleItemClick("/event_management", e)}
+              className={getItemClass("/event_management")}
+            >
+              <BellIcon className="size-6" />
+              {!isCollapsed && <p className="ml-2">Event Management</p>}
+            </Link>
           </li>
         </ul>
 
         <div className="divider divider-secondary" />
 
         <ul className="flex-grow">
-          <li>
-            <Link
-              href={`/project/${project?.projectId}`}
-              prefetch={false}
-              onClick={(e) =>
-                handleItemClick(`/project/${project?.projectId}`, e)
-              }
-              className={getItemClass(`/project/${project?.projectId}`)}
-            >
-              <RectangleGroupIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.PROJECT_MANAGEMENT}</p>
-              )}
-            </Link>
-          </li>
           <li className="mt-2">
             <Link
-              href="/project/${project?.projectId}/project_settings"
+              href={`/project/${project?.projectId || ""}/project_settings`}
               onClick={(e) =>
                 handleItemClick(
-                  `/project/${project?.projectId}/project_settings`,
+                  `/project/${project?.projectId || ""}/project_settings`,
                   e
                 )
               }
               className={getItemClass(
-                `/project/${project?.projectId}/project_settings`
+                `/project/${project?.projectId || ""}/project_settings`
               )}
             >
               <AdjustmentsHorizontalIcon className="size-6" />
@@ -211,8 +295,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </ul>
 
         <div className="divider divider-secondary" />
-        {/* Last 4 Menu Items */}
-        {/* BUG ISSUE: When ever a project is not selected all middle menu items should be disabled. But the bug is, when the last 4 menu items are clicked it activates the middle menu items. */}
+
+        {/* Last Menu Items */}
         <div className="mt-auto">
           <ul>
             <li className="mt-2">
@@ -235,7 +319,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </ul>
         </div>
       </aside>
-      {/* Toggle tab (sticking out to the right) */}
+
+      {/* Toggle tab */}
       <div
         className="h-8 w-4 bg-base-300 brightness-120 text-primary-content flex items-center justify-center cursor-pointer rounded-r-md mt-16"
         onClick={toggleMenu}
