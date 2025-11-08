@@ -87,8 +87,8 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // Close dropdown
     setIsOrgDropdownOpen(false);
 
-    // Refresh the page to reload data with new org context
-    router.refresh();
+    // Navigate to home page - this will trigger a full server-side re-render
+    router.push("/");
   };
 
   const formatUserName = (fullName?: string | null): string => {

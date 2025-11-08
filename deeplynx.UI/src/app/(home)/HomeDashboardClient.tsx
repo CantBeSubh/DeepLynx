@@ -48,6 +48,13 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     }
   }, [hasLoaded, organization, router]);
 
+  // NEW: Refresh projects when organization changes
+  useEffect(() => {
+    if (organization && hasLoaded) {
+      refreshProjects();
+    }
+  }, [organization?.organizationId]); // Trigger when org ID changes
+
   const filteredProjects = projects
     .filter((project) => {
       const term = searchTerm.toLowerCase();
@@ -135,9 +142,9 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100 mt-3">
       {/* Header Section */}
-      <header className="bg-base-200/50 border-b border-base-300/30 sticky top-0 z-10 backdrop-blur-sm">
+      <header className="bg-base-200/50 border-b border-base-300/30 sticky z-10 backdrop-blur-sm">
         <div className="flex justify-between items-center px-4 sm:px-6 lg:px-12 py-4">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-base-content">
