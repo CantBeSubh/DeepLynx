@@ -215,8 +215,8 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
     })();
   }, [projectId]);
 
-  // Fetch projects filtered by organization
-  useEffect(() => {
+  // Memoize the fetch projects function
+  const fetchProjects = useCallback(async () => {
     if (!organization) {
       setProjects([]);
       setProjectId("");
@@ -226,21 +226,24 @@ export default function UploadCenterClient({ initialAvailableFiles }: Props) {
 
     setIsLoadingProjects(true);
 
-    (async () => {
-      try {
-        const data = await getAllProjects(organization.organizationId, true);
-        setProjects(data);
-        if (data.length === 1) {
-          setProjectId(String(data[0].id));
-        }
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-        setProjects([]);
-      } finally {
-        setIsLoadingProjects(false);
+    try {
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+      if (data.length === 1) {
+        setProjectId(String(data[0].id));
       }
-    })();
-  }, [organization?.organizationId]);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+      setProjects([]);
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  }, [organization]);
+
+  // Fetch projects filtered by organization
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
 
   return (
     <div className="mt-3">

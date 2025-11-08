@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLanguage } from "@/app/contexts/Language";
 import { useProjectSession } from "@/app/contexts/ProjectSessionProvider";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
@@ -42,24 +42,25 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
   const [projects, setProjects] = useState<ProjectResponseDto[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(false);
 
+  // Memoize fetchProjects to prevent it from changing on every render
+  const fetchProjects = useCallback(async () => {
+    if (!organization) return;
+
+    try {
+      setLoadingProjects(true);
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+    } catch (error) {
+      console.error("Failed to fetch projects:", error);
+    } finally {
+      setLoadingProjects(false);
+    }
+  }, [organization]);
+
   // Fetch projects when organization changes
   useEffect(() => {
-    const fetchProjects = async () => {
-      if (!organization) return;
-
-      try {
-        setLoadingProjects(true);
-        const data = await getAllProjects(organization.organizationId, true);
-        setProjects(data);
-      } catch (error) {
-        console.error("Failed to fetch projects:", error);
-      } finally {
-        setLoadingProjects(false);
-      }
-    };
-
     fetchProjects();
-  }, [organization?.organizationId]);
+  }, [fetchProjects]);
 
   // Effect to set the selected item based on the current pathname
   useEffect(() => {

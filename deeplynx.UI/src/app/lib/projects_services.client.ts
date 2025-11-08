@@ -10,7 +10,7 @@ export async function getAllProjects(
   organizationId?: number | string,
   hideArchived: boolean = true
 ) {
-  const params: Record<string, any> = { hideArchived };
+  const params: Record<string, string | number | boolean> = { hideArchived };
   
   if (organizationId !== undefined) {
     params.organizationId = organizationId;

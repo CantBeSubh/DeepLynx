@@ -8,7 +8,7 @@ import { WidgetType } from "./types/types";
 import { PlusIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useLanguage } from "../contexts/Language";
 import { getAllProjects } from "../lib/projects_services.client";
 import CreateProject from "./components/CreateProjectsModal";
@@ -41,6 +41,18 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     "Graph",
   ]);
 
+  // Memoize refreshProjects to prevent it from changing on every render
+  const refreshProjects = useCallback(async () => {
+    if (!organization) return;
+
+    try {
+      const data = await getAllProjects(organization.organizationId, true);
+      setProjects(data);
+    } catch (err) {
+      console.error("Failed to refresh projects:", err);
+    }
+  }, [organization]);
+
   // Redirect if no organization selected
   useEffect(() => {
     if (hasLoaded && !organization) {
@@ -48,12 +60,12 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     }
   }, [hasLoaded, organization, router]);
 
-  // NEW: Refresh projects when organization changes
+  // Refresh projects when organization changes
   useEffect(() => {
     if (organization && hasLoaded) {
       refreshProjects();
     }
-  }, [organization?.organizationId]); // Trigger when org ID changes
+  }, [organization, hasLoaded, refreshProjects]);
 
   const filteredProjects = projects
     .filter((project) => {
@@ -74,17 +86,6 @@ export default function HomeDashboardClient({ initialProjects }: Props) {
     filteredProjects,
     initialProjects,
   });
-
-  const refreshProjects = async () => {
-    if (!organization) return;
-
-    try {
-      const data = await getAllProjects(organization.organizationId, true);
-      setProjects(data);
-    } catch (err) {
-      console.error("Failed to refresh projects:", err);
-    }
-  };
 
   const onExplore = (row: ProjectResponseDto) => {
     router.push(`/project/${row.id}`);

@@ -7,7 +7,7 @@ import api from "./api";
 
 export async function getAllUsers(organizationId?: number | string, projectId?: number | string) {
   try {
-    const params: Record<string, any> = {};
+    const params: Record<string, string | number | boolean> = {};
     
     if (organizationId !== undefined) {
       params.organizationId = organizationId;

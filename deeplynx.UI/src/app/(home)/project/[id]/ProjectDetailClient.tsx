@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { format } from "date-fns";
 
 import SearchBar from "@/app/(home)/components/SearchBar";
@@ -42,8 +42,8 @@ export default function ProjectDetailClient({
     "TeamMembers",
   ]);
 
-  // Sync project session with initial project on mount
-  useEffect(() => {
+  // Memoize the sync function to prevent it from changing on every render
+  const syncProjectSession = useCallback(() => {
     if (initialProject) {
       setProject(initialProject);
       setProjectSession({
@@ -51,7 +51,12 @@ export default function ProjectDetailClient({
         projectName: initialProject.name,
       });
     }
-  }, [initialProject?.id]);
+  }, [initialProject, setProjectSession]);
+
+  // Sync project session with initial project on mount
+  useEffect(() => {
+    syncProjectSession();
+  }, [syncProjectSession]);
 
   // Save widget configuration to localStorage
   const handleSave = (newWidgets: WidgetType[]) => {
