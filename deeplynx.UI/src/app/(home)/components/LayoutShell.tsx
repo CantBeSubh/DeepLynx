@@ -214,7 +214,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         <Image
-          src="/images/nexusWhite.png"
+          src="/assets/nexusWhite.png"
           alt="Logo"
           height={20}
           width={150}
