@@ -124,7 +124,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-base-300 text-primary-content flex justify-between items-center px-6 py-3 z-50 fixed w-full">
+      <header className="bg-[var(--base-400)] text-primary-content flex justify-between items-center px-6 py-3 z-50 fixed w-full">
         {/* Organization Switcher */}
         <div className="dropdown">
           <div className="flex items-center">
@@ -279,7 +279,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="fixed top-18 bottom-0 flex">
           <aside
             className={
-              "h-full shadow-xl w-18 bg-base-300 text-primary-content p-4 transition-all duration-300 flex flex-col"
+              "h-full shadow-xl w-18 login text-primary-content p-4 transition-all duration-300 flex flex-col"
             }
           >
             <ul className="mt-20">

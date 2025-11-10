@@ -43,6 +43,9 @@
   --noise: 0;
   --skeleton-base: oklch(86% 0.022 252.894);
   --skeleton-highlight: oklch(0.9213 0.022 252.894);
+  --base-400: oklch(28% 0.02 256);
+  --base-500: oklch(23% 0.018 258);
+  --base-600: oklch(18% 0.015 260);
 }
 
 @plugin "daisyui/theme" {
@@ -82,6 +85,9 @@
   --noise: 0;
   --skeleton-base: oklch(28% 0.02 256);
   --skeleton-highlight: oklch(23% 0.018 258);
+  --base-400: oklch(28% 0.02 256);
+  --base-500: oklch(23% 0.018 258);
+  --base-600: oklch(18% 0.015 260);
 }
 
 /* :root {
@@ -113,11 +119,11 @@ body {
 } */
 
 .login {
-  background: #39526c;
+  background: #152230;
   background: linear-gradient(
     180deg,
-    rgba(57, 82, 108, 1) 0%,
-    rgba(21, 34, 48, 1) 100%
+    rgba(34, 41, 51, 1) 0%,
+    rgba(57, 82, 108, 1) 100%
   );
 }
 
@@ -135,7 +141,8 @@ body {
 }
 
 .shadow-dynamic {
-  box-shadow: 0 4px 6px -1px var(--color-dynamic-shadow), 0 2px 4px -2px var(--color-dynamic-shadow);
+  box-shadow: 0 4px 6px -1px var(--color-dynamic-shadow),
+    0 2px 4px -2px var(--color-dynamic-shadow);
 }
 
 /* Custom styles for the table */
@@ -155,11 +162,11 @@ body {
   background-color: #f2f2f2; /* Background color for header */
   font-weight: bold; /* Bold for header */
 }
-.btn btn-primary[disabled]{
-  opacity:0.6;
-  cursor:not-allowed;
+.btn btn-primary[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
-.spinner{
+.spinner {
   display: inline-block;
   width: 1rem;
   height: 1rem;
@@ -167,10 +174,12 @@ body {
   border: 2px solid currentColor;
   border-right-color: transparent;
   border-radius: 50%;
-  animation: spin .6s linear infinite;
+  animation: spin 0.6s linear infinite;
   vertical-align: -0.2rem;
 }
 
-@keyframes spin{
-  to{transform:rotate(360deg);}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
