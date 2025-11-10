@@ -240,7 +240,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               )}
             </Link>
           </li>
-          <li className="mt-2">
+          {/* <li className="mt-2">
             <Link
               href="/tag_management"
               prefetch={false}
@@ -249,19 +249,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               <TagIcon className="size-6" />
               {!isCollapsed && <p className="ml-2">Tag Management</p>}
             </Link>
-          </li>
-          <li className="mt-2">
-            <Link
-              href={"/orgaization_management"}
-              onClick={(e) => handleItemClick("/organization_management", e)}
-              className={getItemClass("/organization_management")}
-            >
-              <AdjustmentsHorizontalIcon className="size-6" />
-              {!isCollapsed && (
-                <p className="ml-2">{t.translations.ORGANIZATION_MANAGEMENT}</p>
-              )}
-            </Link>
-          </li>
+          </li> */}
 
           <li className="mt-2">
             <Link
@@ -274,8 +262,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
             </Link>
           </li>
         </ul>
-
-        <div className="divider" />
 
         <ul className="flex-grow">
           <li className="mt-2">
@@ -300,29 +286,6 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
         </ul>
 
         <div className="divider" />
-
-        {/* Last Menu Items */}
-        <div className="mt-auto">
-          <ul>
-            <li className="mt-2">
-              <button className={getItemClass("/help")}>
-                <a
-                  href={
-                    process.env.NEXT_PUBLIC_DOCS_PATH
-                      ? `${process.env.NEXT_PUBLIC_DOCS_PATH}`
-                      : "/docs"
-                  }
-                  className="flex items-center"
-                >
-                  <QuestionMarkCircleIcon className="size-6" />
-                  {!isCollapsed && (
-                    <div className="ml-2">{t.translations.HELP}</div>
-                  )}
-                </a>
-              </button>
-            </li>
-          </ul>
-        </div>
       </aside>
 
       {/* Toggle tab */}
