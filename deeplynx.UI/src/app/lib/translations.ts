@@ -242,7 +242,9 @@ export const translations = {
             BASE_URL: "Base URL",
             APP_OWNER_EMAIL: "App Owner Email",
             EDIT_OAUTH_APP: "Edit OAuth Application",
-            ORGANIZATION_MANAGEMENT: "Organization Management"
+            ORGANIZATION_MANAGEMENT: "Organization Management",
+            CREATE_OBJECT_STORAGE: "Create Object Storage",
+            CONNECTION_STRING: "Connection String"
         }
     },
     es: {
@@ -497,7 +499,9 @@ export const translations = {
             BASE_URL: "URL base",
             APP_OWNER_EMAIL: "Correo del propietario de la aplicación",
             EDIT_OAUTH_APP: "Editar aplicación OAuth",
-            ORGANIZATION_MANAGEMENT: "Organization Management"
+            ORGANIZATION_MANAGEMENT: "Organization Management",
+            CREATE_OBJECT_STORAGE: "Create Object Storage",
+            CONNECTION_STRING: "Connection String"
         }
     }
 }

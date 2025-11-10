@@ -9,6 +9,7 @@ import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTa
 import TagManagementPage from "../tag_management/page";
 import OrganizationSettings from "../components/OrganizationManagementPortal/OrganizationSettings";
 import { useLanguage } from "@/app/contexts/Language";
+import ObjectStorageTable from "../components/OrganizationManagementPortal/ObjectStorageTable";
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
   applications: OauthApplicationResponseDto[];
@@ -38,8 +39,13 @@ const OrganizationManagementClient = ({ organizations, applications, members }: 
       content: "content here",
     },
     {
+      label: "Object Storage",
+      content: <ObjectStorageTable initialOrganizations={organizations} />
+    },
+    {
       label: "Settings",
-      content: <OrganizationSettings />,
+      content: <OrganizationSettings
+        organizationName="name" />,
     }
   ];
 

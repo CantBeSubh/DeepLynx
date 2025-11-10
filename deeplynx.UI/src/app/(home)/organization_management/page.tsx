@@ -13,12 +13,11 @@ import { getAllUsersServer } from "@/app/lib/user_services.server";
 export const dynamic = "force-dynamic";
 
 const OrganizationManagementPage = async ({ }) => {
-  const OrganizationResponseDtos =
-    (await getAllOrganizationsServer()) as OrganizationResponseDto[];
-  const oAuthApplications =
-    (await getAllOauthApplicationsServer()) as OauthApplicationResponseDto[];
+  const OrganizationResponseDtos = (await getAllOrganizationsServer()) as OrganizationResponseDto[];
+  const oAuthApplications = (await getAllOauthApplicationsServer()) as OauthApplicationResponseDto[];
   const members = (await getAllUsersServer()) as UserResponseDto[];
   //TODO: get current organization and pass name to settings page 
+
   return (
     <OrganizationManagmentClient
       organizations={OrganizationResponseDtos}

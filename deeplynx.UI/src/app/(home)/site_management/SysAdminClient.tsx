@@ -5,7 +5,8 @@ import Tabs from "../components/Tabs";
 import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
-import OrganizationManagement from "../components/SiteManagementPortal/OrgTable";
+import SiteOrganizationManagement from "../components/SiteManagementPortal/OrgTable";
+
 interface SysAdminProps {
   organizations: OrganizationResponseDto[];
   applications: OauthApplicationResponseDto[];
@@ -18,7 +19,7 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
   const tabData = [
     {
       label: "Organization Management",
-      content: <OrganizationManagement initialOrganizations={organizations} />,
+      content: <SiteOrganizationManagement initialOrganizations={organizations} />,
     },
     {
       label: "Oauth Application",
