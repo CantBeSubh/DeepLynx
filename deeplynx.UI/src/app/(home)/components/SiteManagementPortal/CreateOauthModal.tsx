@@ -2,6 +2,8 @@
 import { useLanguage } from "@/app/contexts/Language";
 import { createOauthApplication } from "@/app/lib/oauth_services.client";
 import { useState } from "react";
+import toast from "react-hot-toast";
+import ToastInfoModal from "../ToastInfoModal";
 
 interface CreateOAuthModalProps {
     isOpen: boolean;
@@ -30,14 +32,32 @@ const CreateOAuthModal = ({
         if (isLoading) return;
         setIsLoading(true);
         try {
-            await createOauthApplication({
+            const response = await createOauthApplication({
                 name,
                 callbackUrl,
                 description,
                 baseUrl,
                 appOwnerEmail
             });
-
+            const clientid = 'Client Id: ' + response.clientId;
+            const clientsecret = 'Client Secret: ' + response.clientSecretRaw;
+            toast.success(
+                (t) => (
+                    <ToastInfoModal
+                        title={
+                            "OAuth Application created successfully! Keep these somewhere safe:"
+                        }
+                        toastId={t.id}
+                        infoDisplay={[clientid, clientsecret]}
+                    />
+                ),
+                {
+                    duration: Infinity,
+                    style: {
+                        maxWidth: "none",
+                    },
+                }
+            );
             setName("");
             setCallbackUrl("");
             setDescription("");
