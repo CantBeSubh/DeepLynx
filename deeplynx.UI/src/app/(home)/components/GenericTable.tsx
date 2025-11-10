@@ -44,29 +44,28 @@ type GenericTableProps<T extends object> = {
   onPageSizeChange?: (pageSize: number) => void;
 };
 
-const GenericTable = <T extends object>(
-  {
-    columns,
-    data,
-    title,
-    filterPlaceholder,
-    isAnyRowSelected,
-    deleteSelectedRows,
-    rowsPerPage = 10,
-    pageLengthOptions = [10, 25, 50, 100, 500],
-    enablePageLengthChange = false,
-    enablePagination = false,
-    bordered = false,
-    searchBar = false,
-    actionButtons = false,
-    rowClassName,
-    tableClassName,
-    gridView = false,
-    backendPagination = false,
-    paginationMetadata,
-    onPageChange,
-    onPageSizeChange,
-  }: GenericTableProps<T>) => {
+const GenericTable = <T extends object>({
+  columns,
+  data,
+  title,
+  filterPlaceholder,
+  isAnyRowSelected,
+  deleteSelectedRows,
+  rowsPerPage = 10,
+  pageLengthOptions = [10, 25, 50, 100, 500],
+  enablePageLengthChange = false,
+  enablePagination = false,
+  bordered = false,
+  searchBar = false,
+  actionButtons = false,
+  rowClassName,
+  tableClassName,
+  gridView = false,
+  backendPagination = false,
+  paginationMetadata,
+  onPageChange,
+  onPageSizeChange,
+}: GenericTableProps<T>) => {
   const { t } = useLanguage();
   const [filterText, setFilterText] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,14 +80,16 @@ const GenericTable = <T extends object>(
 
   // Filter data based on the search input
   const filteredData = React.useMemo(() => {
-    return data?.filter((row) =>
-      columns.some((column) =>
-        row[column.data as keyof T]
-          ?.toString()
-          .toLowerCase()
-          .includes(filterText.toLowerCase())
-      )
-    ) || [];
+    return (
+      data?.filter((row) =>
+        columns.some((column) =>
+          row[column.data as keyof T]
+            ?.toString()
+            .toLowerCase()
+            .includes(filterText.toLowerCase())
+        )
+      ) || []
+    );
   }, [data, columns, filterText]);
 
   // State and logic for column sorting
@@ -122,12 +123,14 @@ const GenericTable = <T extends object>(
 
       return 0;
     });
-  }, [filteredData, sortConfig, backendPagination]);
+  }, [filteredData, sortConfig]);
 
   // Calculate total pages for pagination
-  const totalPages = backendPagination && paginationMetadata
-    ? paginationMetadata.totalPages || Math.ceil(paginationMetadata.totalCount / paginationMetadata.pageSize)
-    : enablePagination
+  const totalPages =
+    backendPagination && paginationMetadata
+      ? paginationMetadata.totalPages ||
+        Math.ceil(paginationMetadata.totalCount / paginationMetadata.pageSize)
+      : enablePagination
       ? Math.ceil(filteredData.length / rowsPerPage)
       : 1;
 
@@ -135,11 +138,11 @@ const GenericTable = <T extends object>(
   const currentData = backendPagination
     ? sortedData // Now includes filtered data from current page
     : enablePagination
-      ? sortedData.slice(
+    ? sortedData.slice(
         (currentPage - 1) * rowsPerPage,
         currentPage * rowsPerPage
       )
-      : sortedData;
+    : sortedData;
 
   // Handle page click for pagination
   const handlePageClick = (pageNumber: number) => {
@@ -158,8 +161,9 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -183,8 +187,9 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -224,8 +229,9 @@ const GenericTable = <T extends object>(
         pagination.push(
           <button
             key={i}
-            className={`join-item btn ${currentPage === i ? "bg-dynamic-blue text-white" : ""
-              }`}
+            className={`join-item btn ${
+              currentPage === i ? "bg-dynamic-blue text-white" : ""
+            }`}
             onClick={() => handlePageClick(i)}
           >
             {i}
@@ -264,8 +270,11 @@ const GenericTable = <T extends object>(
       rowOptions.push(
         <button
           key={i}
-          className={`join-item btn ${currentDisplayedRows === pageLengthOptions[i] ? "bg-dynamic-blue text-white" : ""
-            }`}
+          className={`join-item btn ${
+            currentDisplayedRows === pageLengthOptions[i]
+              ? "bg-dynamic-blue text-white"
+              : ""
+          }`}
           onClick={() => handleRowLengthClick(pageLengthOptions[i])}
         >
           {pageLengthOptions[i]}
@@ -278,21 +287,23 @@ const GenericTable = <T extends object>(
 
   // Determine if pagination should be shown
   // Show pagination controls if enabled and there's data
-  const showPagination = enablePagination && (
-    backendPagination
+  const showPagination =
+    enablePagination &&
+    (backendPagination
       ? paginationMetadata && paginationMetadata.totalCount > 0
-      : filteredData.length > 0
-  );
+      : filteredData.length > 0);
 
   // Show page navigation only if there are multiple pages
   const showPageNavigation = backendPagination
-    ? paginationMetadata && paginationMetadata.totalCount > paginationMetadata.pageSize
+    ? paginationMetadata &&
+      paginationMetadata.totalCount > paginationMetadata.pageSize
     : filteredData.length > currentDisplayedRows;
 
   return (
     <div
-      className={`overflow-x-auto ${bordered ? "rounded-box border border-base-300" : ""
-        } p-4`}
+      className={`overflow-x-auto ${
+        bordered ? "rounded-box border border-base-300" : ""
+      } p-4`}
     >
       {title && (
         <h2 className="text-xl font-bold text-base-content">{title}</h2>
@@ -306,7 +317,6 @@ const GenericTable = <T extends object>(
               onChange={(e) => setFilterText(e.target.value)}
             />
           </div>
-
         )}
         {actionButtons && (
           <div className="p-2">
@@ -318,10 +328,11 @@ const GenericTable = <T extends object>(
             </button>
             <button
               onClick={deleteSelectedRows}
-              className={`transition-colors ${!isAnyRowSelected
-                ? "text-base-300 cursor-not-allowed"
-                : "text-error hover:text-error-focus cursor-pointer"
-                }`}
+              className={`transition-colors ${
+                !isAnyRowSelected
+                  ? "text-base-300 cursor-not-allowed"
+                  : "text-error hover:text-error-focus cursor-pointer"
+              }`}
               disabled={!isAnyRowSelected}
             >
               <TrashIcon className="size-6" />
@@ -330,25 +341,33 @@ const GenericTable = <T extends object>(
         )}
       </div>
       <table
-        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${tableClassName ?? ""
-          }`}
+        className={`table table-pin-cols ${bordered ? "table-bordered" : ""} ${
+          tableClassName ?? ""
+        }`}
       >
         <thead>
-          <tr className={`text-base-content bg-base-300 ${gridView ? "border" : ""}`}>
+          <tr
+            className={`text-base-content bg-base-300 ${
+              gridView ? "border" : ""
+            }`}
+          >
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`${gridView ? "border border-base-300 bg-base-200" : ""
-                  } ${column.sortable !== false
+                className={`${
+                  gridView ? "border border-base-300 bg-base-200" : ""
+                } ${
+                  column.sortable !== false
                     ? "cursor-pointer select-none hover:bg-base-300 transition-colors"
                     : ""
-                  } ${column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
-                  }`}
+                } ${
+                  column.data === "id" ? "sticky left-0 z-10 bg-base-300" : ""
+                }`}
                 onClick={() => {
                   if (column.sortable == false || !column.data) return;
                   const direction =
                     sortConfig?.key === column.data &&
-                      sortConfig?.direction === "asc"
+                    sortConfig?.direction === "asc"
                       ? "desc"
                       : "asc";
                   setSortConfig({ key: column.data as keyof T, direction });
@@ -382,21 +401,24 @@ const GenericTable = <T extends object>(
             return (
               <tr
                 key={rowIndex}
-                className={`${typeof rowClassName === "function"
-                  ? rowClassName(row, rowIndex)
-                  : rowClassName || ""
-                  } ${isPrivate
+                className={`${
+                  typeof rowClassName === "function"
+                    ? rowClassName(row, rowIndex)
+                    : rowClassName || ""
+                } ${
+                  isPrivate
                     ? "opacity-60 cursor-not-allowed"
                     : "hover:bg-base-200 transition-colors"
-                  }`}
+                }`}
               >
                 {columns.map((column, colIndex) => (
                   <td
                     key={colIndex}
-                    className={`text-base-content ${column.data === "id"
-                      ? "sticky left-0 z-10 bg-base-100"
-                      : ""
-                      } ${gridView ? "border border-base-200" : ""}`}
+                    className={`text-base-content ${
+                      column.data === "id"
+                        ? "sticky left-0 z-10 bg-base-100"
+                        : ""
+                    } ${gridView ? "border border-base-200" : ""}`}
                   >
                     {column.cell
                       ? column.cell(row, rowIndex)
@@ -420,21 +442,14 @@ const GenericTable = <T extends object>(
       <div className="flex justify-between">
         {showPagination && enablePageLengthChange && (
           <div className="flex justify-start items-center p-2">
-            <p className="text-sm mr-2">
-                Rows per page:
-              </p>
-            <div className="flex join">
-              {rowNumberSelect()}
-            </div>
+            <p className="text-sm mr-2">Rows per page:</p>
+            <div className="flex join">{rowNumberSelect()}</div>
           </div>
         )}
         {showPageNavigation && (
           <div className="flex justify-end p-2 items-center">
-            <p className="text-sm mr-2">
-              Page:
-            </p>
-            <div className="flex join">
-            {createPagination()}</div>
+            <p className="text-sm mr-2">Page:</p>
+            <div className="flex join">{createPagination()}</div>
           </div>
         )}
       </div>

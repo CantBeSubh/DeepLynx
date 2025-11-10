@@ -4,24 +4,40 @@
 import { useLanguage } from "@/app/contexts/Language";
 import {
   ArrowRightStartOnRectangleIcon,
+  BookOpenIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
   Cog6ToothIcon,
+  GlobeAmericasIcon,
   UserCircleIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
 import { useSession, signOut } from "next-auth/react";
 import { RoleGate } from "../rbac/RBACComponents";
 import { useRBAC } from "../rbac/useRBAC";
+import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
+import { getAllOrganizations } from "@/app/lib/organization_services.client";
+import { OrganizationResponseDto } from "../types/responseDTOs";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
   const { data: session } = useSession();
   const { user } = useRBAC();
+  const { organization, setOrganization } = useOrganizationSession();
+
+  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [organizations, setOrganizations] = useState<OrganizationResponseDto[]>(
+    []
+  );
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [isOrgDropdownOpen, setIsOrgDropdownOpen] = useState(false);
 
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
@@ -29,6 +45,23 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Check if auth is disabled
   const isAuthDisabled =
     process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
+  // Fetch organizations for the switcher
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      try {
+        setLoadingOrgs(true);
+        const orgs = await getAllOrganizations(true);
+        setOrganizations(orgs);
+      } catch (error) {
+        console.error("Failed to fetch organizations:", error);
+      } finally {
+        setLoadingOrgs(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, []);
 
   const handleMenuToggle = (isCollapsed: boolean) => {
     setIsMenuCollapsed(isCollapsed);
@@ -43,6 +76,19 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     } catch (error) {
       console.error("Logout error:", error);
     }
+  };
+
+  const handleOrganizationSwitch = (org: OrganizationResponseDto) => {
+    setOrganization({
+      organizationId: org.id,
+      organizationName: org.name,
+    });
+
+    // Close dropdown
+    setIsOrgDropdownOpen(false);
+
+    // Navigate to home page - this will trigger a full server-side re-render
+    router.push("/");
   };
 
   const formatUserName = (fullName?: string | null): string => {
@@ -65,12 +111,110 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const displayImage = session?.user?.image;
 
+  // Function to handle item click events
+  const handleItemClick = (
+    item: string,
+    event: React.MouseEvent<HTMLElement>
+  ) => {
+    event.preventDefault();
+    setSelectedItem(item);
+    router.push(item);
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-base-100 text-base-content">
       {/* Banner/Header */}
-      <header className="bg-primary text-primary-content flex justify-between items-center px-6 py-1 z-50 fixed w-full shadow-xl">
+      <header className="bg-base-300 text-primary-content flex justify-between items-center px-6 py-3 z-50 fixed w-full">
+        {/* Organization Switcher */}
+        <div className="dropdown">
+          <div className="flex items-center">
+            <div className="flex items-center px-3 py-2">
+              <UserGroupIcon className="size-8 mr-3" />
+              <div className="flex flex-col">
+                <span className="text-xs opacity-70">Organization</span>
+                <h1 className="text-lg font-bold">
+                  {organization?.organizationName || "No Organization"}
+                </h1>
+              </div>
+            </div>
+            <button
+              tabIndex={0}
+              onClick={() => setIsOrgDropdownOpen(!isOrgDropdownOpen)}
+              className="btn btn-ghost btn-sm btn-circle"
+            >
+              {isOrgDropdownOpen ? (
+                <ChevronUpIcon className="size-5" />
+              ) : (
+                <ChevronDownIcon className="size-5" />
+              )}
+            </button>
+          </div>
+          {isOrgDropdownOpen && (
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu bg-base-100 text-base-content rounded-box z-[100] w-72 p-2 shadow-xl border border-base-300 mt-2"
+            >
+              {loadingOrgs ? (
+                <li>
+                  <div className="flex justify-center p-4">
+                    <span className="loading loading-spinner loading-sm"></span>
+                  </div>
+                </li>
+              ) : (
+                <>
+                  <li className="menu-title">
+                    <span className="text-base-content/70">
+                      Switch Organization
+                    </span>
+                  </li>
+                  {organizations.map((org) => (
+                    <li key={org.id}>
+                      <button
+                        onClick={() => handleOrganizationSwitch(org)}
+                        className={`flex items-center justify-between ${
+                          organization?.organizationId === org.id
+                            ? "active bg-info/60 text-primary-content"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <AvatarCell name={org.name} size={8} />
+                          <div className="flex flex-col items-start">
+                            <span className="font-semibold text-base-content">
+                              {org.name}
+                            </span>
+                            {org.description && (
+                              <span className="text-xs opacity-70 truncate max-w-[200px]">
+                                {org.description}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {organization?.organizationId === org.id && (
+                          <span className="badge badge-sm">Current</span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                  <div className="divider my-1"></div>
+                  <li>
+                    <Link
+                      href="/select-org"
+                      className=" hover:bg-base-200"
+                      onClick={() => setIsOrgDropdownOpen(false)}
+                    >
+                      <UserGroupIcon className="size-5" />
+                      View All Organizations
+                    </Link>
+                  </li>
+                </>
+              )}
+            </ul>
+          )}
+        </div>
+
         <Image
-          src="/images/lynx-white.png"
+          src="/assets/nexusWhite.png"
           alt="Logo"
           height={20}
           width={150}
@@ -132,10 +276,39 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Page Content */}
       <div className="flex h-full z-0">
         {/* Side Menu */}
+        <div className="fixed top-18 bottom-0 flex">
+          <aside
+            className={
+              "h-full shadow-xl w-18 bg-base-300 text-primary-content p-4 transition-all duration-300 flex flex-col"
+            }
+          >
+            <ul className="mt-20">
+              <li>
+                <Link href={"#"}>
+                  <GlobeAmericasIcon className="size-10" />
+                </Link>
+              </li>
+              <li className="mt-5">
+                <Link href={"#"}>
+                  <Cog6ToothIcon className="size-10" />
+                </Link>
+              </li>
+              <li className="mt-5">
+                <Link
+                  href="/data_catalog"
+                  onClick={(e) => handleItemClick("/data_catalog", e)}
+                >
+                  <BookOpenIcon className="size-10" />
+                </Link>
+              </li>
+            </ul>
+          </aside>
+        </div>
         <SideMenu onToggle={handleMenuToggle} />
         <main
-          className={`transition-all duration-300 w-full mt-18 ${isMenuCollapsed ? "ml-20" : "ml-64"
-            }`}
+          className={`transition-all duration-300 w-full mt-18 ${
+            isMenuCollapsed ? "ml-40" : "ml-82"
+          }`}
         >
           {children}
         </main>
