@@ -107,6 +107,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         async jwt({ token, account, profile }): Promise<JWT> {
             // Initial sign in
             if (account && profile) {
+
+            // Read organization from cookie during sign in
+            const cookieStore = await cookies();
+            const orgSessionCookie = cookieStore.get("organizationSession");
+            let organizationId: number | undefined;
+            
+            if (orgSessionCookie) {
+                try {
+                    const orgSession = JSON.parse(orgSessionCookie.value);
+                    organizationId = orgSession.organizationId;
+                } catch (e) {
+                    console.error("Failed to parse org cookie:", e);
+                }
+            }
+            
+
                 return {
                     ...token,
                     access_token: account.access_token,
@@ -119,6 +135,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                     name: profile.name || undefined,
                     email: profile.email || undefined,
                     sub: profile.sub || undefined,
+                    organizationId: organizationId,
                 };
             }
 
@@ -168,6 +185,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.oktaId = (token.oktaId || undefined) as string | undefined;
                 session.user.username = (token.username || undefined) as string | undefined;
                 session.user.groups = token.groups as string[] | undefined;
+                session.user.organizationId = token.organizationId as number | undefined;
             }
 
             // Add tokens to session
