@@ -17,6 +17,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import type { Session } from "next-auth";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -150,89 +151,115 @@ const SelectOrgClient = ({ session }: Props) => {
 
   return (
     <>
-      <div className="login min-h-screen flex items-center justify-center p-4">
-        <div className="card bg-base-100 shadow-xl max-w-4xl w-full">
-          {/* Header */}
-          <div className="card-body p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-semibold">
-                  Welcome back, {formatUserName(session.user.name)}
-                </h2>
-              </div>
-              <RoleGate role="sysAdmin">
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  Add An Organization
-                  <PlusIcon className="size-5" />
-                </button>
-              </RoleGate>
-            </div>
-
-            <div className="divider my-0"></div>
-
-            {/* Organization List */}
-            <div className="space-y-3 mt-4">
-              {organizations.length === 0 ? (
-                <div className="text-center py-8 text-base-content/70">
-                  <p>No organizations found.</p>
-                  <p className="text-sm mt-2">
-                    Create your first organization to get started.
-                  </p>
+      <div className="login min-h-screen flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-4 max-w-4xl w-full flex-1 justify-center">
+          <Image
+            src="/assets/nexusWhite.png"
+            alt="DeepLynx logo"
+            width={365.8}
+            height={213.9}
+            priority
+          />
+          <div className="card bg-base-100 shadow-xl w-full mt-6">
+            {/* Header */}
+            <div className="card-body p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xl font-semibold">
+                    Welcome back, {formatUserName(session.user.name)}
+                  </h2>
                 </div>
-              ) : (
-                organizations.map((org) => (
-                  <div
-                    key={org.id}
-                    className="flex items-center justify-between p-4 hover:bg-base-200 rounded-lg transition-colors"
+                <RoleGate role="sysAdmin">
+                  <button
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setIsModalOpen(true)}
                   >
-                    {/* Left side - Logo and info */}
-                    <div className="flex items-center gap-4">
-                      <AvatarCell name={org.name} />
-                      <div>
-                        <h3 className="font-semibold text-lg">{org.name}</h3>
-                        {org.description && (
-                          <p className="text-xs text-base-content/50 mt-1">
-                            {org.description}
+                    Add An Organization
+                    <PlusIcon className="size-5" />
+                  </button>
+                </RoleGate>
+              </div>
+
+              <div className="divider my-0"></div>
+
+              {/* Organization List */}
+              <div className="space-y-3 mt-4">
+                {organizations.length === 0 ? (
+                  <div className="text-center py-8 text-base-content/70">
+                    <p>No organizations found.</p>
+                    <p className="text-sm mt-2">
+                      Create your first organization to get started.
+                    </p>
+                  </div>
+                ) : (
+                  organizations.map((org) => (
+                    <div
+                      key={org.id}
+                      className="flex items-center justify-between p-4 hover:bg-base-200 rounded-lg transition-colors"
+                    >
+                      {/* Left side - Logo and info */}
+                      <div className="flex items-center gap-4">
+                        <AvatarCell name={org.name} />
+                        <div>
+                          <h3 className="font-semibold text-lg">{org.name}</h3>
+                          {org.description && (
+                            <p className="text-xs text-base-content/50 mt-1">
+                              {org.description}
+                            </p>
+                          )}
+                          <p className="text-sm text-base-content/70 mt-1">
+                            <span className="font-semibold">
+                              {org.projectCount}
+                            </span>{" "}
+                            {org.projectCount === 1 ? "Project" : "Projects"}
+                            {" • "}
+                            <span className="font-semibold">
+                              {org.userCount}
+                            </span>{" "}
+                            {org.userCount === 1 ? "Member" : "Members"}
                           </p>
-                        )}
-                        <p className="text-sm text-base-content/70 mt-1">
-                          <span className="font-semibold">
-                            {org.projectCount}
-                          </span>{" "}
-                          {org.projectCount === 1 ? "Project" : "Projects"}
-                          {" • "}
-                          <span className="font-semibold">
-                            {org.userCount}
-                          </span>{" "}
-                          {org.userCount === 1 ? "Member" : "Members"}
-                        </p>
+                        </div>
+                      </div>
+
+                      {/* Right side - Actions */}
+                      <div className="flex items-center gap-2">
+                        <RoleGate role="sysAdmin">
+                          <button className="btn btn-ghost btn-sm btn-circle">
+                            <Cog6ToothIcon className="size-6" />
+                          </button>
+                        </RoleGate>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={() => handleLaunchOrganization(org)}
+                        >
+                          Launch
+                          <ArrowRightIcon className="size-5" />
+                        </button>
                       </div>
                     </div>
-
-                    {/* Right side - Actions */}
-                    <div className="flex items-center gap-2">
-                      <RoleGate role="sysAdmin">
-                        <button className="btn btn-ghost btn-sm btn-circle">
-                          <Cog6ToothIcon className="size-6" />
-                        </button>
-                      </RoleGate>
-                      <button
-                        className="btn btn-primary btn-sm"
-                        onClick={() => handleLaunchOrganization(org)}
-                      >
-                        Launch
-                        <ArrowRightIcon className="size-5" />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Footer links at bottom */}
+        {/* TODO: Show this when we have things to attach. */}
+        {/* <div className="flex gap-30 pb-15">
+          <div className="text-primary-content text-xl flex items-center">
+            ABOUT
+            <ArrowRightIcon className="size-8 ml-4" />
+          </div>
+          <div className="text-primary-content text-xl flex items-center">
+            DOCS
+            <ArrowRightIcon className="size-8 ml-4" />
+          </div>
+          <div className="text-primary-content text-xl flex items-center">
+            CONTACT US
+            <ArrowRightIcon className="size-8 ml-4" />
+          </div>
+        </div> */}
       </div>
 
       {/* Create Organization Modal */}
