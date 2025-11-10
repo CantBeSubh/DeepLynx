@@ -25,7 +25,6 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     private static readonly object _configManagerLock = new();
 
     public NexusAuthenticationMiddleware(
-        Config config,
         IOptionsMonitor<JwtBearerOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
