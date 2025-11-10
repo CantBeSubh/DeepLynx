@@ -22,7 +22,7 @@ namespace deeplynx.tests {
         private readonly PostgreSqlContainer _container;
         private readonly TestSuiteFixture _fixture;
         private KuzuDatabaseManager? _kuzuDatabaseManager;
-        private readonly IConfiguration uration;
+        private readonly IConfiguration configuration;
         public string ConnectionString { get; private set; }
         private const int ProjectId = 1;
         private bool _isConnected = false;
@@ -46,7 +46,7 @@ namespace deeplynx.tests {
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json");
 
-            uration = builder.Build();
+            configuration = builder.Build();
         }
 
         public override async Task InitializeAsync()
@@ -63,7 +63,7 @@ namespace deeplynx.tests {
 
             if (enableKuzu)
             {
-                _kuzuDatabaseManager = new KuzuDatabaseManager(uration, ConnectionString ?? "NULL", "g72g72");
+                _kuzuDatabaseManager = new KuzuDatabaseManager(configuration, ConnectionString ?? "NULL", "g72g72");
             }
 
             if (enableKuzu && _kuzuDatabaseManager != null)
