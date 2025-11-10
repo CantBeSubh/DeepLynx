@@ -212,10 +212,9 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           )}
         </div>
 
-        <div className="divider" />
 
         {/* Home */}
-        <ul>
+        <ul className="mt-8">
           <li>
             <Link
               href={`/project/${project?.projectId}`}
@@ -261,9 +260,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
               {!isCollapsed && <p className="ml-2">Event Management</p>}
             </Link>
           </li>
-        </ul>
 
-        <ul className="flex-grow">
           <li className="mt-2">
             <Link
               href={`/project/${project?.projectId || ""}/project_settings`}
@@ -285,7 +282,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ onToggle }) => {
           </li>
         </ul>
 
-        <div className="divider" />
+
+
       </aside>
 
       {/* Toggle tab */}
