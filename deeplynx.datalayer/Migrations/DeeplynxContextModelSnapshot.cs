@@ -1055,7 +1055,10 @@ namespace deeplynx.datalayer.Migrations
                     b.HasIndex(new[] { "ProjectId", "OrganizationId", "LabelId", "Action" }, "permissions_unique_label_action")
                         .IsUnique();
 
-                    b.HasIndex(new[] { "OrganizationId", "ProjectId", "Resource", "Action" }, "permissions_unique_org_project_resource_action")
+                    b.HasIndex(new[] { "OrganizationId", "Resource", "Action" }, "permissions_unique_org_resource_action")
+                        .IsUnique();
+
+                    b.HasIndex(new[] { "ProjectId", "Resource", "Action" }, "permissions_unique_project_resource_action")
                         .IsUnique();
 
                     b.ToTable("permissions", "deeplynx");
