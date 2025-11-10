@@ -13,7 +13,7 @@ namespace deeplynx.datalayer.Models;
 [Index("OrganizationId", Name = "idx_permissions_organization_id")]
 [Index("IsDefault", Name = "idx_permissions_is_default")]
 [Index("ProjectId", "OrganizationId", "LabelId", "Action", Name = "permissions_unique_label_action", IsUnique = true)]
-[Index("Resource", "Action", Name = "permissions_unique_resource_action", IsUnique = true)]
+[Index("OrganizationId", "ProjectId", "Resource", "Action", Name = "permissions_unique_org_project_resource_action", IsUnique = true)]
 public partial class Permission
 {
     [Key]

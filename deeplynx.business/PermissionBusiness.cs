@@ -116,6 +116,7 @@ public class PermissionBusiness : IPermissionBusiness
     /// <param name="dto">The permission to be created</param>
     /// <param name="projectId">ID of the project to which the permission belongs</param>
     /// <param name="organizationId">ID of the organization to which the permission belongs</param>
+    /// <param name="isDefault">Indicates whether to make a default permission or not</param>
     /// <returns>The newly created permission</returns>
     /// <exception cref="ArgumentException">Returned if project/org both supplied or no project/org supplied</exception>
     public async Task<PermissionResponseDto> CreatePermission(
@@ -142,6 +143,7 @@ public class PermissionBusiness : IPermissionBusiness
             Name = dto.Name,
             Description = dto.Description,
             Action = dto.Action,
+            Resource = dto.Resource,
             LabelId = dto.LabelId,
             IsDefault = false,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),

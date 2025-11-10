@@ -10,6 +10,7 @@ using Moq;
 using Record = deeplynx.datalayer.Models.Record;
 using System.Text.Json.Nodes;
 using deeplynx.helpers.Hubs;
+using deeplynx.models.Configuration;
 using Microsoft.AspNetCore.SignalR;
 
 namespace deeplynx.tests
@@ -93,10 +94,10 @@ namespace deeplynx.tests
                 Abbreviation = "TST",
                 OrganizationId = oid
             };
-
+            
             // Act
             var result = await _projectBusiness.CreateProject(uid, dto);
-
+           
             // Assert
             Assert.True(result.Id > 0);
             Assert.True(result.LastUpdatedAt >= now);
@@ -113,6 +114,28 @@ namespace deeplynx.tests
                 e.EntityType == "project" &&
                 e.EntityId == result.Id
             );
+        }
+        
+        [Fact]
+        public async Task CreateProject_Creates_DefaultPermissions()
+        {
+            // Arrange
+            var now = DateTime.UtcNow;
+            var dto = new CreateProjectRequestDto
+            {
+                Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                Description = "Test Description",
+                Abbreviation = "TST",
+                OrganizationId = oid
+            };
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+           
+            Assert.Equal("TST", result.Abbreviation);
+            
+            var defaultProjectPermissions = await Context.Permissions.Where(p => p.ProjectId == result.Id).ToListAsync();
+            Assert.True(defaultProjectPermissions.All(dp => dp.IsDefault));
+            Assert.Equal(DefaultPermissions.AllDefaultPermissions.Count, defaultProjectPermissions.Count);
         }
 
         [Fact]
@@ -1518,17 +1541,6 @@ namespace deeplynx.tests
                 },
             };
             Context.ProjectMembers.AddRange(projectMembers);
-            await Context.SaveChangesAsync();
-
-            // Add minimum default permissions - could target all RolePerms, but we only simulate a few
-            var defaultPermissions = new List<Permission>()
-            {
-                new Permission
-                    { Resource = "permission", Action = "write", IsDefault = false, Name = "Write Permissions" },
-                new Permission
-                    { Resource = "project", Action = "read", IsDefault = false, Name = "Read Projects" }
-            };
-            Context.Permissions.AddRange(defaultPermissions);
             await Context.SaveChangesAsync();
         }
     }

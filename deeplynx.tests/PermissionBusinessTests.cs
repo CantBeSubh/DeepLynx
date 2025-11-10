@@ -403,25 +403,6 @@ namespace deeplynx.tests
             Assert.Empty(eventList);
         }
 
-        [Fact]
-        public async Task CreatePermission_Fails_IfNoLabelId()
-        {
-            // Arrange
-            var dto = new CreatePermissionRequestDto
-            {
-                Name = "No Label Permission",
-                Action = "test"
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ValidationException>(
-                () => _permissionBusiness.CreatePermission(dto, pid, null));
-
-            // Ensure that no event was logged
-            var eventList = await Context.Events.ToListAsync();
-            Assert.Empty(eventList);
-        }
-
         #endregion
 
         #region UpdatePermission Tests
