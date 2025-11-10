@@ -17,7 +17,6 @@ namespace deeplynx.tests.Middleware
     [Collection("Test Suite Collection")]
     public class NexusAuthenticationMiddlewareTests : IntegrationTestBase
     {
-        private Config _config;
         private Mock<IOptionsMonitor<JwtBearerOptions>> _optionsMock;
         private Mock<ILoggerFactory> _loggerFactoryMock;
         private UrlEncoder _urlEncoder;
@@ -1306,7 +1305,6 @@ namespace deeplynx.tests.Middleware
         private NexusAuthenticationMiddleware CreateMiddleware()
         {
             return new NexusAuthenticationMiddleware(
-                _config,
                 _optionsMock.Object,
                 _loggerFactoryMock.Object,
                 _urlEncoder,
