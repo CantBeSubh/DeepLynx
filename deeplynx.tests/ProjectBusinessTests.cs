@@ -30,6 +30,7 @@ namespace deeplynx.tests
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
+        private Mock<IOrganizationBusiness> _organizationBusiness = null!;
 
         private long pid; // project ID
         private long pid2;
@@ -65,6 +66,7 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _organizationBusiness =  new Mock<IOrganizationBusiness>();
 
             _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(
@@ -76,7 +78,7 @@ namespace deeplynx.tests
             _projectBusiness = new ProjectBusiness(
                 Context, _cacheBusiness, _mockLogger.Object,
                 _classBusiness, _roleBusiness, _dataSourceBusiness,
-                _objectStorageBusiness.Object, _eventBusiness);
+                _objectStorageBusiness.Object, _eventBusiness, _organizationBusiness.Object);
         }
 
         #region CreateProject Tests
@@ -271,6 +273,96 @@ namespace deeplynx.tests
             // Ensure that no project create event is logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfOrgIdSupplied()
+        {
+            // Arrange
+            var dto = new CreateProjectRequestDto
+            {
+                Name = "Idaho Test",
+                Description = "Test Description",
+                OrganizationId = oid
+            };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            result.Id.Should().BeGreaterThan(0);
+            result.Name.Should().Be(dto.Name);
+            result.Description.Should().Be(dto.Description);
+            result.OrganizationId.Should().Be(oid);
+            var persisted = await Context.Projects.FindAsync(result.Id);
+            persisted.Should().NotBeNull();
+            persisted!.OrganizationId.Should().Be(oid);
+
+            //Ensure
+            _organizationBusiness.Verify(x => x.GetAllOrganizations(It.IsAny<bool>()), Times.Never);
+            _organizationBusiness.Verify(
+                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                Times.Never);
+            _organizationBusiness.Verify(
+                x => x.AddUserToOrganization(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfNoOrgId()
+        {
+            // Arrange: seed a default org in the DB
+            var defaultOrg = new Organization { Name = "Default Org", DefaultOrg = true, IsArchived = false };
+            Context.Organizations.Add(defaultOrg);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateProjectRequestDto
+            {
+                Name = "Project Without OrgId",
+                Description = "Should use existing default org",
+                OrganizationId = null
+            };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            Assert.True(result.Id > 0);
+            Assert.Equal(defaultOrg.Id, result.OrganizationId);
+
+            var persisted = await Context.Projects.FindAsync(result.Id);
+            Assert.NotNull(persisted);
+            Assert.Equal(defaultOrg.Id, persisted!.OrganizationId);
+
+            // Ensure we did NOT create a new org since a default already existed
+            _organizationBusiness.Verify(
+                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfNoOrgIdNoDefaultOrg()
+        {
+            // Arrange: ensure no default org exists
+            foreach (var o in Context.Organizations.Where(o => o.DefaultOrg)) o.DefaultOrg = false;
+            await Context.SaveChangesAsync();
+
+            // Replace the mock with the real OrganizationBusiness just for this test
+            var realOrgBiz = new OrganizationBusiness(Context, _eventBusiness, new Mock<ILogger<OrganizationBusiness>>().Object);
+            _projectBusiness = new ProjectBusiness(
+                Context, _cacheBusiness, _mockLogger.Object,
+                _classBusiness, _roleBusiness, _dataSourceBusiness,
+                _objectStorageBusiness.Object, _eventBusiness, realOrgBiz);
+
+            var dto = new CreateProjectRequestDto { Name = "No OrgId", Description = "auto default", OrganizationId = null };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            Assert.True(result.Id > 0);
+            var createdDefault = await Context.Organizations.FirstAsync(o => o.DefaultOrg && !o.IsArchived);
+            Assert.Equal(createdDefault.Id, result.OrganizationId);
         }
 
         #endregion
