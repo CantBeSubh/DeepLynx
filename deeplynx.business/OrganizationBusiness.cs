@@ -112,6 +112,7 @@ public class OrganizationBusiness : IOrganizationBusiness
         };
 
         _context.Organizations.Add(organization);
+        
         if (isDefault)
         {
             await MakePreviousDefaultsFalse(organization.Id);
