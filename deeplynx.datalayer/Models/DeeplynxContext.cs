@@ -93,6 +93,11 @@ public partial class DeeplynxContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.ApiKeys)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("api_keys_user_id_fkey");
+
+            entity.HasOne(d => d.OauthApplication).WithMany(p => p.ApiKeys)
+                .HasForeignKey(d => d.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("api_keys_application_id_fkey");
         });
 
         modelBuilder.Entity<Class>(entity =>
@@ -270,7 +275,6 @@ public partial class DeeplynxContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("oauth_tokens_pkey");
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.LastUsedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             entity.Property(e => e.Revoked).HasDefaultValue(false);
             
             entity.HasOne(d => d.OauthApplication).WithMany(p => p.OauthTokens)
