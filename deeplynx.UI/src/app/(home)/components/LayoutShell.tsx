@@ -236,7 +236,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           >
             <ul className="mt-20 flex-grow">
               <li>
-                <Link href={"#"}>
+                <Link href={"/"}>
                   <GlobeAmericasIcon className="size-10" />
                 </Link>
               </li>

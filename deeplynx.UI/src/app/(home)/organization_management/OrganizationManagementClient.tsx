@@ -56,7 +56,7 @@ const OrganizationManagementClient = ({ organizations, applications, members }: 
 
   return (
     <div>
-      <div className="bg-base-200/40 pl-12 p-4">
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">{t.translations.ORGANIZATION_MANAGEMENT}</h1>
       </div>
       <div className="p-2">

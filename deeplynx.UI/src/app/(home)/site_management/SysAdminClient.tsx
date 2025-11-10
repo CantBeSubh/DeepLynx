@@ -38,7 +38,7 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
 
   return (
     <div>
-      <div className="bg-base-200/40 pl-12 p-4">
+      <div className="bg-base-200/40 pl-12 p-6">
         <h1 className="text-2xl font-bold text-base-content">Site Management</h1>
       </div>
       <div className="p-2">
