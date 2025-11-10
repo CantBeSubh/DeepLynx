@@ -2,14 +2,16 @@
 import HomeDashboardClient from "./HomeDashboardClient";
 import { getAllProjectsServer } from "../lib/projects_services.server";
 import { ProjectResponseDto } from "./types/responseDTOs";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic"; // if behind auth
+export const dynamic = "force-dynamic";
 
 function mapToProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
   return {
     id: String(p.id),
     name: p.name ?? "",
-    description: p.description ?? "", // fallback to empty string
+    description: p.description ?? "",
     abbreviation: p.abbreviation ?? "",
     lastUpdatedAt: p.lastUpdatedAt,
     lastUpdatedBy: p.lastUpdatedBy ?? "",
@@ -19,23 +21,32 @@ function mapToProjectResponseDtos(p: ProjectResponseDto): ProjectResponseDto {
 }
 
 export default async function Page() {
+  // Get organization from cookies
+  const cookieStore = await cookies();
+  const orgSessionCookie = cookieStore.get("organizationSession");
+
+  // If no org selected, redirect to selection page
+  if (!orgSessionCookie) {
+    redirect("/select-org");
+  }
+
+  let organizationId: string | number | undefined;
+  try {
+    const orgSession = JSON.parse(orgSessionCookie.value);
+    organizationId = orgSession.organizationId;
+  } catch (e) {
+    console.error("Failed to parse organization session:", e);
+    redirect("/select-org");
+  }
+
+  // Fetch projects filtered by organization
   let projects: ProjectResponseDto[] = [];
   try {
-    const apiProjects = await getAllProjectsServer();
+    const apiProjects = await getAllProjectsServer(organizationId, true);
     projects = apiProjects.map(mapToProjectResponseDtos);
   } catch (e) {
     console.error("getAllProjectsServer failed:", e);
   }
 
-  // Local development bypass
-  const disableAuth = process.env.NEXTAUTH_PUBLIC_NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
-
-  if (disableAuth) {
-    return <HomeDashboardClient initialProjects={projects} />;
-  } else
-    return (
-      // <AuthGuard>
-      <HomeDashboardClient initialProjects={projects} />
-      // </AuthGuard>
-    );
+  return <HomeDashboardClient initialProjects={projects} />;
 }

@@ -1,13 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import GenericTable from "@/app/(home)/components/GenericTable";
 import { Column } from "@/app/(home)/types/types";
 import {
   getAllEventsPaginated,
   EventFilterParams,
 } from "@/app/lib/event_services.client";
-import { EventResponseDto, PaginatedEventsResponseDto } from "../types/responseDTOs";
+import {
+  EventResponseDto,
+  PaginatedEventsResponseDto,
+} from "../types/responseDTOs";
 
 const EventsHistoryClient = () => {
   const [data, setData] = useState<EventResponseDto[]>([]);
@@ -19,39 +22,42 @@ const EventsHistoryClient = () => {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState<EventFilterParams>({});
 
-  // Fetch events from backend
-  const fetchEvents = async (pageNumber: number, pageSize: number) => {
-    setLoading(true);
-    try {
-      const result: PaginatedEventsResponseDto = await getAllEventsPaginated({
-        pageNumber,
-        pageSize,
-        ...filters,
-      });
+  // Fetch events from backend - memoized with useCallback
+  const fetchEvents = useCallback(
+    async (pageNumber: number, pageSize: number) => {
+      setLoading(true);
+      try {
+        const result: PaginatedEventsResponseDto = await getAllEventsPaginated({
+          pageNumber,
+          pageSize,
+          ...filters,
+        });
 
-      setData(result.items);
-      setPagination({
-        pageNumber: result.pageNumber,
-        pageSize: result.pageSize,
-        totalCount: result.totalCount,
-      });
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-      setData([]);
-      setPagination({
-        pageNumber: 1,
-        pageSize: 500,
-        totalCount: 0,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+        setData(result.items);
+        setPagination({
+          pageNumber: result.pageNumber,
+          pageSize: result.pageSize,
+          totalCount: result.totalCount,
+        });
+      } catch (error) {
+        console.error("Failed to fetch events:", error);
+        setData([]);
+        setPagination({
+          pageNumber: 1,
+          pageSize: 500,
+          totalCount: 0,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [filters]
+  );
 
   // Initial fetch
   useEffect(() => {
     fetchEvents(1, 500);
-  }, []);
+  }, [fetchEvents]);
 
   // Handle page changes
   const handlePageChange = (pageNumber: number) => {
@@ -103,7 +109,7 @@ const EventsHistoryClient = () => {
       header: "Data Source",
       data: "dataSourceName",
       sortable: false,
-    }
+    },
   ];
 
   return (
@@ -118,7 +124,6 @@ const EventsHistoryClient = () => {
         </div>
       )} */}
       <div className="flex">
-
         <div className="flex-1">
           <GenericTable
             columns={columns}

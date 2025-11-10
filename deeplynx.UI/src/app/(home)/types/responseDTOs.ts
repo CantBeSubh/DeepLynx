@@ -112,6 +112,7 @@ export type OrganizationResponseDto = {
   lastUpdatedAt?: Date;
   lastUpdatedBy?: string | null;
   isArchived: boolean;
+  defaultOrg?: boolean;
 }
 
 export type PermissionResponseDto = {
