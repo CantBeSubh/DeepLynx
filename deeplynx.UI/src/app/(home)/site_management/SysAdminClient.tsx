@@ -32,7 +32,6 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
   ];
 
   const handleTabChange = (label: string) => {
-    console.log(label)
     setActiveTab(label);
   };
 
