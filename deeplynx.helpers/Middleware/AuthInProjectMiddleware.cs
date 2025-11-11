@@ -1,6 +1,4 @@
-using System.Security.Claims;
 using deeplynx.helpers.Context;
-using deeplynx.interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
@@ -21,16 +19,16 @@ public class AuthInProjectAttribute : Attribute
     public string Resource { get; set; } 
 }
 
-public class RoleBasedAuthorizationMiddleware
+public class AuthInProjectMiddleware
 {
     private readonly RequestDelegate _next;
 
-    public RoleBasedAuthorizationMiddleware(RequestDelegate next)
+    public AuthInProjectMiddleware(RequestDelegate next)
     {
         _next = next;
     }
 
-    public async Task InvokeAsync(HttpContext context, IRolePermissionService rolePermissionService)
+    public async Task InvokeAsync(HttpContext context, IProjectRolePermissionService rolePermissionService)
     {
         var endpoint = context.GetEndpoint();
         if (endpoint == null)
@@ -86,7 +84,7 @@ public class RoleBasedAuthorizationMiddleware
         foreach (var authAttr in authAttributes)
         {
             // Check if user's roles in this project have the required permission
-            var hasPermission = await rolePermissionService.UserHasPermissionInProjectAsync(
+            var hasPermission = await rolePermissionService.PermissionInProject(
                 userId,
                 projectId,
                 authAttr.Action,

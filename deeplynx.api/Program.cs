@@ -81,11 +81,14 @@ try
     // Authentication
     // ----------------------------------
     var issuer = Environment.GetEnvironmentVariable("JWT_ISSUER");
+    var secret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
     var audience = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
     var localDevelopment = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION");
 
     if (string.IsNullOrWhiteSpace(issuer))
         throw new InvalidOperationException("JWT_ISSUER not configured");
+    if (string.IsNullOrWhiteSpace(secret))
+        throw new InvalidOperationException("JWT_SECRET_KEY not configured");
     if (string.IsNullOrWhiteSpace(audience))
         throw new InvalidOperationException("JWT_AUDIENCE not configured");
 
@@ -202,7 +205,8 @@ try
     builder.Services.AddTransient<IRoleBusiness, RoleBusiness>();
     builder.Services.AddTransient<ISensitivityLabelBusiness, SensitivityLabelBusiness>();
     builder.Services.AddTransient<IPermissionBusiness, PermissionBusiness>();
-    builder.Services.AddTransient<IRolePermissionService, RolePermissionService>();
+    builder.Services.AddTransient<IProjectRolePermissionService, ProjectRolePermissionService>();
+    builder.Services.AddTransient<IOrgRolePermissionService, OrgRolePermissionService>();
     
     builder.Services.AddOpenApi(options =>
     {
@@ -384,7 +388,8 @@ try
     app.UseAuthorization();
     app.MapControllers();
     app.UseMiddleware<UserContextMiddleware>();
-    app.UseMiddleware<RoleBasedAuthorizationMiddleware>(); //RBAC
+    app.UseMiddleware<AuthInProjectMiddleware>(); //Project level RBAC
+    app.UseMiddleware<AuthInOrgMiddleware>(); //Project level RBAC
     
     // Check if the notification service is enabled (defaults to false if not set)
     if (Environment.GetEnvironmentVariable("ENABLE_NOTIFICATION_SERVICE") == "true")

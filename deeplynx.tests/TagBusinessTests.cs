@@ -4,7 +4,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -777,70 +776,77 @@ namespace deeplynx.tests
         }
 
         #endregion
-        protected override async Task SeedTestDataAsync()
-        {
-            await base.SeedTestDataAsync();
-            
-            // Add user
-            var testUser = new User
-            {
-                Name = "Test User",
-                Email = "test.user@test.com",
-                Password = "test_password",
-                IsArchived = false
-            };
-            Context.Users.Add(testUser);
-            await Context.SaveChangesAsync();
-            uid = testUser.Id;
-
-            // Add projects
-            var project = new Project { Name = "Project 1", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-            var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-            var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
-            Context.Projects.Add(project);
-            Context.Projects.Add(project2);
-            Context.Projects.Add(project3);
-
-            await Context.SaveChangesAsync();
-            pid = project.Id;
-            pid2 = project2.Id;
-            pid3 = project3.Id;
-
-            // Add tags
-            var tag = new Tag
-            {
-                Name = "Analytics", ProjectId = pid, LastUpdatedBy = uid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), 
-                IsArchived = false
-            };
-
-            var tag2 = new Tag
-            {
-                Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = uid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                IsArchived = false
-            };
-            var tag3 = new Tag
-            {
-                Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = uid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                IsArchived = true
-            };
-            var tag4 = new Tag
-            {
-                Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = uid,
-                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
-                IsArchived = false
-            };
-            await Context.Tags.AddAsync(tag);
-            await Context.Tags.AddAsync(tag2);
-            await Context.Tags.AddAsync(tag3);
-            await Context.Tags.AddAsync(tag4);
-            await Context.SaveChangesAsync();
-            tid =  tag.Id;
-            tid2 = tag2.Id;
-            tid3 = tag3.Id;
-            tid4 = tag4.Id;
-        }
+        
+         protected override async Task SeedTestDataAsync()
+         {
+             await base.SeedTestDataAsync();
+             
+             // Add user
+             var testUser = new User
+             {
+                 Name = "Test User",
+                 Email = "test.user@test.com",
+                 Password = "test_password",
+                 IsArchived = false
+             };
+             Context.Users.Add(testUser);
+             await Context.SaveChangesAsync();
+             uid = testUser.Id;
+             
+             // Add organization 
+             var organization = new Organization { Name = "Test Organization" };
+             Context.Organizations.Add(organization);
+             await Context.SaveChangesAsync();
+             var organizationId = organization.Id;
+             
+             // Add projects
+             var project = new Project { Name = "Project 1", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project2 = new Project { Name = "Project2", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             var project3 = new Project { Name = "Project 3", LastUpdatedBy = uid, OrganizationId = organizationId, LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified) };
+             Context.Projects.Add(project);
+             Context.Projects.Add(project2);
+             Context.Projects.Add(project3);
+        
+             await Context.SaveChangesAsync();
+             pid = project.Id;
+             pid2 = project2.Id;
+             pid3 = project3.Id;
+             
+             // Add tags
+             var tag = new Tag
+             {
+                 Name = "Analytics", ProjectId = pid, LastUpdatedBy = uid,
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12), 
+                 IsArchived = false
+             };
+             
+             var tag2 = new Tag
+             {
+                 Name = "Analytics 2", ProjectId = pid, LastUpdatedBy = uid,
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = false
+             };
+             var tag3 = new Tag
+             {
+                 Name = "Analytics 3", ProjectId = pid, LastUpdatedBy = uid,
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = true
+             };
+             var tag4 = new Tag
+             {
+                 Name = "Analytics 4", ProjectId = pid2, LastUpdatedBy = uid,
+                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified).AddMonths(-12),
+                 IsArchived = false
+             };
+             await Context.Tags.AddAsync(tag);
+             await Context.Tags.AddAsync(tag2);
+             await Context.Tags.AddAsync(tag3);
+             await Context.Tags.AddAsync(tag4);
+             await Context.SaveChangesAsync();
+             tid =  tag.Id;
+             tid2 = tag2.Id;
+             tid3 = tag3.Id;
+             tid4 = tag4.Id;
+         }
     }
 }

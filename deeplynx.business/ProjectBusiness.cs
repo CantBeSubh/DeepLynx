@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace deeplynx.business;
+
 using DotNetEnv;
 using System.Linq;
 
@@ -20,6 +21,7 @@ public class ProjectBusiness : IProjectBusiness
 {
     private readonly DeeplynxContext _context;
     private readonly IEventBusiness _eventBusiness;
+    private readonly IOrganizationBusiness _organizationBusiness;
     private readonly ILogger<ProjectBusiness> _logger;
     private readonly IClassBusiness _classBusiness;
     private readonly IRoleBusiness _roleBusiness;
@@ -41,9 +43,9 @@ public class ProjectBusiness : IProjectBusiness
     /// <param name="logger">Used for uniformity in logging</param>
     /// <param name="objectStorageBusiness">Used to create a default object storage upon project creation.</param>
     public ProjectBusiness(
-        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger, 
-        IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness, 
-        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness)
+        DeeplynxContext context, ICacheBusiness cacheBusiness, ILogger<ProjectBusiness> logger,
+        IClassBusiness classBusiness, IRoleBusiness roleBusiness, IDataSourceBusiness dataSourceBusiness,
+        IObjectStorageBusiness objectStorageBusiness, IEventBusiness eventBusiness, IOrganizationBusiness organizationBusiness)
     {
         _context = context;
         _logger = logger;
@@ -53,6 +55,7 @@ public class ProjectBusiness : IProjectBusiness
         _objectStorageBusiness = objectStorageBusiness;
         _eventBusiness = eventBusiness;
         _cacheBusiness = cacheBusiness;
+        _organizationBusiness = organizationBusiness;
     }
 
     /// <summary>
@@ -75,7 +78,7 @@ public class ProjectBusiness : IProjectBusiness
         }
 
         var projectQuery = _context.Projects.AsQueryable();
-        
+
         if (hideArchived)
         {
             projectQuery = projectQuery.Where(p => !p.IsArchived);
@@ -88,14 +91,14 @@ public class ProjectBusiness : IProjectBusiness
 
         if (!user.IsSysAdmin)
         {
-            projectQuery = projectQuery.Where(p => 
-                p.ProjectMembers.Any(pm => 
+            projectQuery = projectQuery.Where(p =>
+                p.ProjectMembers.Any(pm =>
                     pm.UserId == userId ||
                     (pm.GroupId.HasValue && pm.Group != null && pm.Group.Users.Any(u => u.Id == userId))
                 )
             );
         }
-        
+
         var projects = await projectQuery.ToListAsync();
         return projects
             .Select(p => new ProjectResponseDto()
@@ -121,19 +124,19 @@ public class ProjectBusiness : IProjectBusiness
     public async Task<ProjectResponseDto> GetProject(long projectId, bool hideArchived = true)
     {
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-    
+
         // If no projects are cached update the Cache
         if (cachedProjectList == null || !cachedProjectList.Any())
         {
             await RefreshProjectsCache();
             cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
-        
+
             if (cachedProjectList == null)
             {
                 cachedProjectList = new List<ProjectResponseDto>();
             }
         }
-        
+
         var cachedProject = cachedProjectList.FirstOrDefault(p => p.Id == projectId);
 
         if (hideArchived && cachedProject != null)
@@ -143,7 +146,7 @@ public class ProjectBusiness : IProjectBusiness
                 cachedProject = null;
             }
         }
-        
+
         if (cachedProject == null)
         {
             throw new KeyNotFoundException($"Project with id {projectId} not found");
@@ -162,13 +165,43 @@ public class ProjectBusiness : IProjectBusiness
     {
         await ExistenceHelper.EnsureUserExistsAsync(_context, userId);
         ValidationHelper.ValidateModel(dto);
-        
+
+        long orgId;
+
+        if (dto.OrganizationId.HasValue)
+        {
+            await ExistenceHelper.EnsureOrganizationExistsAsync(_context, dto.OrganizationId.Value);
+
+            orgId = dto.OrganizationId.Value;
+        }
+        else
+        {
+            var defaultOrg = await _context.Organizations
+                .Where(o => o.DefaultOrg && !o.IsArchived).FirstOrDefaultAsync();
+
+            if (defaultOrg != null)
+            {
+                orgId = defaultOrg.Id;
+            }
+            else
+            {
+                var orgRequestDto = new CreateOrganizationRequestDto()
+                {
+                    Name = "INL",
+                    Description = "Default Organization",
+                };
+                
+                var newDefaultOrg = await _organizationBusiness.CreateOrganization(orgRequestDto, true);
+                orgId = newDefaultOrg.Id;
+            }
+        }
+
         var project = new Project
         {
             Name = dto.Name,
             Description = dto.Description,
             Abbreviation = dto.Abbreviation,
-            OrganizationId = dto.OrganizationId,
+            OrganizationId = orgId,
             LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
             LastUpdatedBy = null, // TODO: Implement user ID here when JWT tokens are ready
         };
@@ -176,7 +209,7 @@ public class ProjectBusiness : IProjectBusiness
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         var projectId = project.Id;
-        
+
         var projectResponseDto = new ProjectResponseDto
         {
             Id = projectId,
@@ -195,11 +228,11 @@ public class ProjectBusiness : IProjectBusiness
         {
             cachedProjectList = new List<ProjectResponseDto>();
         }
-        
+
         // add the new project to the project list and set the cache
         cachedProjectList.Add(projectResponseDto);
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
-        
+
         // If project cache count differs from the database refresh it to match the database and return
         if (cachedProjectList.Count != _context.Projects.Count())
         {
@@ -236,7 +269,7 @@ public class ProjectBusiness : IProjectBusiness
         var project = await _context.Projects.FindAsync(projectId);
 
         if (project == null || project.IsArchived)
-        { 
+        {
             throw new KeyNotFoundException("Project not found.");
         }
 
@@ -248,7 +281,7 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
-    
+
         // Log update Project event
         await _eventBusiness.CreateEvent(new CreateEventRequestDto
         {
@@ -258,7 +291,7 @@ public class ProjectBusiness : IProjectBusiness
             EntityId = project.Id,
             EntityName = project.Name,
             DataSourceId = null,
-            Properties = JsonSerializer.Serialize(new {project.Name}),
+            Properties = JsonSerializer.Serialize(new { project.Name }),
         });
 
         var updatedProject = new ProjectResponseDto
@@ -311,7 +344,7 @@ public class ProjectBusiness : IProjectBusiness
 
         _context.Projects.Remove(project);
         await _context.SaveChangesAsync();
-        
+
         // Update the Project Cache List
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
 
@@ -321,15 +354,15 @@ public class ProjectBusiness : IProjectBusiness
             await RefreshProjectsCache();
             return true;
         }
-        
+
         var projectIndex = cachedProjectList.FindIndex(p => p.Id == projectId);
         if (projectIndex != -1)
         {
             cachedProjectList.RemoveAt(projectIndex);
         }
-        
+
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
-        
+
         return true;
     }
 
@@ -367,7 +400,7 @@ public class ProjectBusiness : IProjectBusiness
                     throw new DependencyDeletionException(
                         $"unable to archive project {projectId} or its downstream dependents.");
                 }
-                
+
                 await transaction.CommitAsync();
             }
             catch (Exception exc)
@@ -399,7 +432,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = project.LastUpdatedBy,
             IsArchived = project.IsArchived,
         };
-        
+
         // Update the Project Cache List
         var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
 
@@ -419,10 +452,10 @@ public class ProjectBusiness : IProjectBusiness
 
         // Set the updated list back to the cache
         await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
-        
+
         return true;
     }
-    
+
     /// <summary>
     /// Unarchive a project by id. This also unarchives downstream dependents.
     /// </summary>
@@ -457,9 +490,9 @@ public class ProjectBusiness : IProjectBusiness
                     throw new DependencyDeletionException(
                         $"unable to unarchive project {projectId} or its downstream dependents.");
                 }
-                
+
                 await transaction.CommitAsync();
-                
+
                 var projectResponse = new ProjectResponseDto
                 {
                     Id = project.Id,
@@ -470,7 +503,7 @@ public class ProjectBusiness : IProjectBusiness
                     LastUpdatedBy = project.LastUpdatedBy,
                     IsArchived = project.IsArchived,
                 };
-                
+
                 // Update the Project Cache List
                 var cachedProjectList = await _cacheBusiness.GetAsync<List<ProjectResponseDto>>(ProjectsCacheKey);
 
@@ -490,7 +523,7 @@ public class ProjectBusiness : IProjectBusiness
 
                 // Set the updated list back to the cache
                 await _cacheBusiness.SetAsync(ProjectsCacheKey, cachedProjectList, cacheTTL);
-                
+
                 // Log the event
                 await _eventBusiness.CreateEvent(new CreateEventRequestDto
                 {
@@ -502,7 +535,7 @@ public class ProjectBusiness : IProjectBusiness
                     DataSourceId = null,
                     Properties = JsonSerializer.Serialize(new { project.Name }),
                 });
-                
+
                 return true;
             }
             catch (Exception exc)
@@ -522,21 +555,21 @@ public class ProjectBusiness : IProjectBusiness
     {
         //classes": number, “dataRecords”: number, “connections”: number 
         var classes = _context.Classes
-            .Where(p =>  !p.IsArchived  && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         var records = _context.Records
-            .Where(p => !p.IsArchived  && p.ProjectId == projectId).Count();
+            .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
         var datasources = _context.DataSources
             .Where(p => !p.IsArchived && p.ProjectId == projectId).Count();
-        
+
         var response = new ProjectStatResponseDto()
-            {
-               classes = classes,
-               records = records,
-               datasources =  datasources
-            };
+        {
+            classes = classes,
+            records = records,
+            datasources = datasources
+        };
         return response;
     }
-    
+
     /// <summary>
     /// Retrieves all records for multiple projects.
     /// </summary>
@@ -553,7 +586,7 @@ public class ProjectBusiness : IProjectBusiness
         {
             recordQuery = recordQuery.Where(r => !r.IsArchived);
         }
-        
+
         var records = await recordQuery
             .GroupBy(e => e.RecordId)
             .Select(g => g.OrderByDescending(r => r.LastUpdatedAt).FirstOrDefault())
@@ -598,7 +631,7 @@ public class ProjectBusiness : IProjectBusiness
                 Role = pm.Role.Name,
                 RoleId = pm.Role.Id,
             });
-        
+
         var groups = _context.ProjectMembers
             .Where(pm => pm.ProjectId == projectId && pm.GroupId != null)
             .Select(pm => new ProjectMemberResponseDto
@@ -609,7 +642,7 @@ public class ProjectBusiness : IProjectBusiness
                 Role = pm.Role.Name,
                 RoleId = pm.Role.Id
             });
-        
+
         return await users.Union(groups).ToListAsync();
     }
 
@@ -631,32 +664,32 @@ public class ProjectBusiness : IProjectBusiness
             throw new ArgumentException("One of User ID or Group ID must be provided");
         if (userId.HasValue && groupId.HasValue)
             throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
-        
+
         // check if the group or user is already in the project
         var existingProjectMember = await _context.ProjectMembers
             .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && (
-                (userId != null && pm.UserId == userId) || 
+                (userId != null && pm.UserId == userId) ||
                 (groupId != null && pm.GroupId == groupId)));
         if (existingProjectMember != null)
             return false; // group or user is already present in the project
-        
+
         // TODO: determine if user account discovery/creation is required
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         if (userId.HasValue && (user == null || user.IsArchived))
             throw new KeyNotFoundException($"User with id {userId} not found");
-        
+
         var group = await _context.Groups.FirstOrDefaultAsync(g => g.Id == groupId);
         if (groupId.HasValue && (group == null || group.IsArchived))
             throw new KeyNotFoundException($"Group with id {groupId} not found");
-        
+
         var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
         if (roleId.HasValue && (role == null || role.IsArchived))
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         var project = await _context.Projects.FirstOrDefaultAsync(p => p.Id == projectId);
         if (project == null || project.IsArchived)
             throw new KeyNotFoundException($"Project with id {projectId} not found");
-        
+
         // add member to project and assign role
         var projMember = new ProjectMember
         {
@@ -665,10 +698,10 @@ public class ProjectBusiness : IProjectBusiness
             UserId = userId,
             GroupId = groupId,
         };
-        
+
         _context.ProjectMembers.Add(projMember);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
 
@@ -689,16 +722,16 @@ public class ProjectBusiness : IProjectBusiness
             throw new ArgumentException("One of User ID or Group ID must be provided");
         if (userId.HasValue && groupId.HasValue)
             throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
-        
+
         // ensure role exists
         var role = await _context.Roles.FirstOrDefaultAsync(r => r.Id == roleId);
         if (role == null || role.IsArchived)
             throw new KeyNotFoundException($"Role with id {roleId} not found");
-        
+
         // Find the existing project member to update
         var existingProjectMember = await _context.ProjectMembers
-            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && 
-                                       ((userId.HasValue && pm.UserId == userId) || 
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId &&
+                                       ((userId.HasValue && pm.UserId == userId) ||
                                         (groupId.HasValue && pm.GroupId == groupId)));
         if (existingProjectMember == null)
         {
@@ -706,15 +739,15 @@ public class ProjectBusiness : IProjectBusiness
             var memberId = userId ?? groupId;
             throw new KeyNotFoundException($"{memberType} with id {memberId} is not a member of project {projectId}");
         }
-    
+
         // Update the role
         existingProjectMember.RoleId = roleId;
         _context.ProjectMembers.Update(existingProjectMember);
         await _context.SaveChangesAsync();
-    
+
         return true;
     }
-    
+
     /// <summary>
     /// Remove a user or group from a project
     /// </summary>
@@ -731,33 +764,33 @@ public class ProjectBusiness : IProjectBusiness
             throw new ArgumentException("One of either User ID or Group ID must be provided");
         if (userId.HasValue && groupId.HasValue)
             throw new ArgumentException("Please provide only one of User ID or Group ID, not both");
-        
+
         // Find the existing project member to update
         var existingProjectMember = await _context.ProjectMembers
-            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && 
-                                       ((userId.HasValue && pm.UserId == userId) || 
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId &&
+                                       ((userId.HasValue && pm.UserId == userId) ||
                                         (groupId.HasValue && pm.GroupId == groupId)));
-    
+
         if (existingProjectMember == null)
         {
             var memberType = userId.HasValue ? "User" : "Group";
             var memberId = userId ?? groupId;
             throw new KeyNotFoundException($"{memberType} with id {memberId} is not a member of project {projectId}");
         }
-        
+
         // remove project member
         _context.ProjectMembers.Remove(existingProjectMember);
         await _context.SaveChangesAsync();
-        
+
         return true;
     }
-    
+
     private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
     };
-    
+
     private async Task<bool> RefreshProjectsCache()
     {
         var dbProjects = await _context.Projects.ToListAsync();
@@ -765,7 +798,7 @@ public class ProjectBusiness : IProjectBusiness
         await _cacheBusiness.SetAsync(ProjectsCacheKey, projectResponseDtoList, cacheTTL);
         return true;
     }
-    
+
     private List<ProjectResponseDto> MapProjectsToResponseDto(List<Project> projects)
     {
         return projects.Select(p => new ProjectResponseDto
@@ -777,7 +810,7 @@ public class ProjectBusiness : IProjectBusiness
             LastUpdatedBy = p.LastUpdatedBy,
             LastUpdatedAt = p.LastUpdatedAt,
             IsArchived = p.IsArchived,
-            OrganizationId =  p.OrganizationId
+            OrganizationId = p.OrganizationId
         }).ToList();
     }
 
@@ -805,7 +838,7 @@ public class ProjectBusiness : IProjectBusiness
             Description = "This data source was created alongside the project for ease of use."
         };
         await _dataSourceBusiness.CreateDataSource(projectId, defaultDataSource, true);
-        
+
         // ===============================
         // CREATE DEFAULT OBJECT STORAGE
         // ===============================
@@ -846,7 +879,7 @@ public class ProjectBusiness : IProjectBusiness
             Config = config
         };
         await _objectStorageBusiness.CreateObjectStorage(projectId, objectStorageRequestDto, true);
-        
+
         // ===============================
         // CREATE DEFAULT TIMESERIES MOUNT
         // ===============================
@@ -861,7 +894,7 @@ public class ProjectBusiness : IProjectBusiness
 
         };
         var obj = await _objectStorageBusiness.CreateObjectStorage(projectId, timeseriesObjectStorageMethod);
-        
+
         // ===============================
         // CREATE DEFAULT PROJECT ROLES
         // ===============================
@@ -874,11 +907,11 @@ public class ProjectBusiness : IProjectBusiness
         var roles = await _roleBusiness.BulkCreateRoles(projectId, defaultRoles);
         var adminRoleId = roles.Single(r => r.Name == "Admin").Id;
         var userRoleId = roles.Single(r => r.Name == "User").Id;
-        
+
         // set role permissions for admin and user
         await _roleBusiness.SetPermissionsByPattern(adminRoleId, DefaultRolePermissions.Admin.AllowedPermissions);
         await _roleBusiness.SetPermissionsByPattern(userRoleId, DefaultRolePermissions.User.AllowedPermissions);
-        
+
         await AddMemberToProject(projectId, adminRoleId, userId, null);
     }
 }

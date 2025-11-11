@@ -20,6 +20,7 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
     public long pid;
     public long os1;
     public long os2;
+    private long organizationId;
     
     public FileFileSystemBusinessTests(TestSuiteFixture fixture) : base(fixture) {}
 
@@ -200,7 +201,13 @@ public class FileFileSystemBusinessTests: IntegrationTestBase
      protected override async Task SeedTestDataAsync()
     {
         await base.SeedTestDataAsync();
-        var project = new Project() { Name = "Test Project 1" };
+        
+        var organization = new Organization { Name = "Test Organization" };
+        Context.Organizations.Add(organization);
+        await Context.SaveChangesAsync();
+        organizationId = organization.Id;
+        
+        var project = new Project() { Name = "Test Project 1", OrganizationId = organizationId };
         Context.Projects.Add(project);
         await Context.SaveChangesAsync();
         pid = project.Id;

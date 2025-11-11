@@ -39,7 +39,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
         // Extract token
         var token = ExtractToken(Request);
         var disableAuth = Environment.GetEnvironmentVariable("DISABLE_BACKEND_AUTHENTICATION")?.ToLower() == "true";
-        
+
         // If local bypass is enabled, try to use the token but fall back to superuser on any issues
         if (disableAuth)
         {
@@ -68,7 +68,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "Local bypass enabled but token validation threw exception - using local development superuser");
+                Log.Warning(ex,
+                    "Local bypass enabled but token validation threw exception - using local development superuser");
                 return await HandleLocalDevelopmentBypass();
             }
         }
@@ -139,6 +140,7 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
+            // Extract username with fallback priority: name -> preferred_username -> sub -> email
             var username = jwtToken.Claims.FirstOrDefault(c => c.Type == "name")?.Value
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "preferred_username")?.Value
                            ?? jwtToken.Claims.FirstOrDefault(c => c.Type == "sub")?.Value
@@ -148,18 +150,30 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
 
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(apiKey))
             {
-                Log.Warning("Token missing required claims (username or apiKey)");
+                Log.Warning("Token missing required claims");
                 return AuthenticateResult.Fail("Token missing required claims");
             }
 
-            var secret = await GetSecretForUserAsync(username, apiKey);
-            if (string.IsNullOrWhiteSpace(secret))
+            // Verify the API key still exists and is valid
+            var apiKeySecret = await GetSecretForUserAsync(username, apiKey);
+            if (string.IsNullOrWhiteSpace(apiKeySecret))
             {
-                Log.Warning($"ApiKey is not valid - Username: {username}");
+                Log.Warning($"API key not found or revoked - Username: {username}");
                 return AuthenticateResult.Fail("Invalid API key");
             }
 
-            var secretKey = secret.Length < 32 ? secret.PadRight(32, '0') : secret;
+            // Use JWT_SECRET_KEY for signature validation
+            var jwtSigningSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+
+            if (string.IsNullOrEmpty(jwtSigningSecret))
+            {
+                Log.Error("JWT_SECRET_KEY not configured");
+                return AuthenticateResult.Fail("Server configuration error");
+            }
+
+            var secretKey = jwtSigningSecret.Length < 32
+                ? jwtSigningSecret.PadRight(32, '0')
+                : jwtSigningSecret;
 
             if (!ValidateJwtSignature(token, secretKey))
             {
@@ -323,7 +337,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
     {
         try
         {
-            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value
+            var email = principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")
+                            ?.Value
                         ?? principal.FindFirst(ClaimTypes.Email)?.Value
                         ?? principal.FindFirst("email")?.Value
                         ?? principal.FindFirst("sub")?.Value
@@ -344,13 +359,14 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
             using var scope = _serviceScopeFactory.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<DeeplynxContext>();
 
-            var isDefaultSuperUser = email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
+            var isDefaultSuperUser =
+                email.ToLower() == Environment.GetEnvironmentVariable("SUPERUSER_EMAIL")?.ToLower();
             var existingUser = await dbContext.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
 
             if (existingUser != null)
             {
                 // update if admin needs to be set or if SSO ID is improperly configured
-                if ((isDefaultSuperUser && !existingUser.IsSysAdmin) 
+                if ((isDefaultSuperUser && !existingUser.IsSysAdmin)
                     || existingUser.SsoId != principal.FindFirst("uid")?.Value)
                 {
                     existingUser.SsoId = ssoId;
@@ -422,7 +438,8 @@ public class NexusAuthenticationMiddleware : JwtBearerHandler
                 await dbContext.SaveChangesAsync();
                 Log.Information($"Existing user {email} promoted to sys admin for local development");
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             Log.Error(ex, "Error during local dev user provisioning");
         }

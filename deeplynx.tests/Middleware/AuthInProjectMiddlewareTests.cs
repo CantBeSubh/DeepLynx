@@ -13,10 +13,10 @@ using Moq;
 namespace deeplynx.tests.Middleware
 {
     [Collection("Test Suite Collection")]
-    public class RoleBasedAuthorizationMiddlewareTests : IntegrationTestBase
+    public class AuthInProjectMiddlewareTests : IntegrationTestBase
     {
-        private Mock<IRolePermissionService> _rolePermissionServiceMock;
-        private Mock<ILogger<RolePermissionService>> _loggerMock;
+        private Mock<IProjectRolePermissionService> _rolePermissionServiceMock;
+        private Mock<ILogger<ProjectRolePermissionService>> _loggerMock;
 
         public long userId1;
         public long userId2;
@@ -29,15 +29,17 @@ namespace deeplynx.tests.Middleware
         public long groupId1;
         public long organizationId1;
 
-        public RoleBasedAuthorizationMiddlewareTests(TestSuiteFixture fixture) : base(fixture) { }
+        public AuthInProjectMiddlewareTests(TestSuiteFixture fixture) : base(fixture)
+        {
+        }
 
         public override async Task InitializeAsync()
         {
             await base.InitializeAsync();
 
-            _rolePermissionServiceMock = new Mock<IRolePermissionService>();
-            _loggerMock = new Mock<ILogger<RolePermissionService>>();
-            
+            _rolePermissionServiceMock = new Mock<IProjectRolePermissionService>();
+            _loggerMock = new Mock<ILogger<ProjectRolePermissionService>>();
+
             // Reset UserContextStorage before each test
             UserContextStorage.UserId = 0;
         }
@@ -50,7 +52,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var nextCalled = false;
             RequestDelegate next = (ctx) =>
             {
@@ -58,7 +60,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -73,7 +75,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(),
@@ -87,7 +89,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -108,7 +110,7 @@ namespace deeplynx.tests.Middleware
             // Don't set any authentication - UserContextStorage.UserId remains 0
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -125,7 +127,7 @@ namespace deeplynx.tests.Middleware
 
             var context = CreateHttpContextWithAuth("read", "project");
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -142,7 +144,7 @@ namespace deeplynx.tests.Middleware
 
             var context = CreateHttpContextWithAuth("read", "project");
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -161,7 +163,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(new AuthInProjectAttribute("read", "project")),
@@ -170,7 +172,7 @@ namespace deeplynx.tests.Middleware
             // No route values or query parameters
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -188,7 +190,7 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = "not-a-number";
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -206,7 +208,7 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = "";
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -228,7 +230,7 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
 
             var nextCalled = false;
@@ -238,7 +240,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -246,7 +248,7 @@ namespace deeplynx.tests.Middleware
             // Assert
             Assert.True(nextCalled);
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"),
+                x => x.PermissionInProject(userId1, projectId1, "read", "project"),
                 Times.Once);
         }
 
@@ -259,7 +261,7 @@ namespace deeplynx.tests.Middleware
             context.Request.QueryString = new QueryString($"?projectId={projectId1}");
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
 
             var nextCalled = false;
@@ -269,7 +271,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -277,7 +279,7 @@ namespace deeplynx.tests.Middleware
             // Assert
             Assert.True(nextCalled);
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"),
+                x => x.PermissionInProject(userId1, projectId1, "read", "project"),
                 Times.Once);
         }
 
@@ -291,7 +293,7 @@ namespace deeplynx.tests.Middleware
             context.Request.QueryString = new QueryString($"?projectId={projectId2}");
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
 
             var nextCalled = false;
@@ -301,7 +303,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -310,7 +312,7 @@ namespace deeplynx.tests.Middleware
             Assert.True(nextCalled);
             // Should use route value (projectId1), not query parameter (projectId2)
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"),
+                x => x.PermissionInProject(userId1, projectId1, "read", "project"),
                 Times.Once);
         }
 
@@ -327,11 +329,11 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "write", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "write", "project"))
                 .ReturnsAsync(false);
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -349,7 +351,7 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
 
             var nextCalled = false;
@@ -359,7 +361,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -374,7 +376,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -385,10 +387,10 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "write", "data"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "write", "data"))
                 .ReturnsAsync(true);
 
             var nextCalled = false;
@@ -398,7 +400,7 @@ namespace deeplynx.tests.Middleware
                 return Task.CompletedTask;
             };
 
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -406,10 +408,10 @@ namespace deeplynx.tests.Middleware
             // Assert
             Assert.True(nextCalled);
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"),
+                x => x.PermissionInProject(userId1, projectId1, "read", "project"),
                 Times.Once);
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "write", "data"),
+                x => x.PermissionInProject(userId1, projectId1, "write", "data"),
                 Times.Once);
         }
 
@@ -419,7 +421,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -430,14 +432,14 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "read", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "read", "project"))
                 .ReturnsAsync(true);
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "delete", "data"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "delete", "data"))
                 .ReturnsAsync(false);
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -452,7 +454,7 @@ namespace deeplynx.tests.Middleware
             // Arrange
             var context = new DefaultHttpContext();
             SetAuthenticatedUser(context, userId1);
-            
+
             var endpoint = new Endpoint(
                 requestDelegate: (ctx) => Task.CompletedTask,
                 metadata: new EndpointMetadataCollection(
@@ -463,11 +465,11 @@ namespace deeplynx.tests.Middleware
             context.Request.RouteValues["projectId"] = projectId1.ToString();
 
             _rolePermissionServiceMock
-                .Setup(x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "delete", "project"))
+                .Setup(x => x.PermissionInProject(userId1, projectId1, "delete", "project"))
                 .ReturnsAsync(false);
 
             RequestDelegate next = (ctx) => Task.CompletedTask;
-            var middleware = new RoleBasedAuthorizationMiddleware(next);
+            var middleware = new AuthInProjectMiddleware(next);
 
             // Act
             await middleware.InvokeAsync(context, _rolePermissionServiceMock.Object);
@@ -476,7 +478,7 @@ namespace deeplynx.tests.Middleware
             Assert.Equal(StatusCodes.Status403Forbidden, context.Response.StatusCode);
             // Second permission check should not be called
             _rolePermissionServiceMock.Verify(
-                x => x.UserHasPermissionInProjectAsync(userId1, projectId1, "write", "data"),
+                x => x.PermissionInProject(userId1, projectId1, "write", "data"),
                 Times.Never);
         }
 
@@ -485,13 +487,13 @@ namespace deeplynx.tests.Middleware
         #region RolePermissionService Tests - Direct Permissions
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsTrue_WhenUserHasDirectPermission()
+        public async Task PermissionInProject_ReturnsTrue_WhenUserHasDirectPermission()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "read", "project");
 
             // Assert
@@ -499,13 +501,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenUserLacksPermission()
+        public async Task PermissionInProject_ReturnsFalse_WhenUserLacksPermission()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - user1 doesn't have "delete" permission
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "delete", "project");
 
             // Assert
@@ -513,13 +515,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenUserNotInProject()
+        public async Task PermissionInProject_ReturnsFalse_WhenUserNotInProject()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - userId2 is not a member of projectId1
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId2, projectId1, "read", "project");
 
             // Assert
@@ -527,13 +529,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenProjectDoesNotExist()
+        public async Task PermissionInProject_ReturnsFalse_WhenProjectDoesNotExist()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, 99999, "read", "project");
 
             // Assert
@@ -541,13 +543,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenUserDoesNotExist()
+        public async Task PermissionInProject_ReturnsFalse_WhenUserDoesNotExist()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 99999, projectId1, "read", "project");
 
             // Assert
@@ -555,7 +557,7 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenRoleIsArchived()
+        public async Task PermissionInProject_ReturnsFalse_WhenRoleIsArchived()
         {
             // Arrange
             var archivedRole = new Role
@@ -589,10 +591,10 @@ namespace deeplynx.tests.Middleware
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
 
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId2, projectId2, "archived-action", "archived-resource");
 
             // Assert
@@ -600,7 +602,7 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenPermissionIsArchived()
+        public async Task PermissionInProject_ReturnsFalse_WhenPermissionIsArchived()
         {
             // Arrange
             var activeRole = new Role
@@ -634,10 +636,10 @@ namespace deeplynx.tests.Middleware
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
 
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId2, projectId2, "read", "archived-data");
 
             // Assert
@@ -645,7 +647,7 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenRoleIdIsNull()
+        public async Task PermissionInProject_ReturnsFalse_WhenRoleIdIsNull()
         {
             // Arrange
             var projectMember = new ProjectMember
@@ -657,10 +659,10 @@ namespace deeplynx.tests.Middleware
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
 
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId2, projectId2, "read", "project");
 
             // Assert
@@ -672,15 +674,15 @@ namespace deeplynx.tests.Middleware
         #region RolePermissionService Tests - Group Permissions
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsTrue_WhenUserHasGroupPermission()
+        public async Task PermissionInProject_ReturnsTrue_WhenUserHasGroupPermission()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // userId1 is in groupId1, which has write permission in projectId1
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "write", "data");
 
             // Assert
@@ -688,13 +690,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenGroupLacksPermission()
+        public async Task PermissionInProject_ReturnsFalse_WhenGroupLacksPermission()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - group doesn't have delete permission
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "delete", "data");
 
             // Assert
@@ -702,19 +704,19 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsTrue_WhenUserHasDirectOrGroupPermission()
+        public async Task PermissionInProject_ReturnsTrue_WhenUserHasDirectOrGroupPermission()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // userId1 has direct "read" permission and group "write" permission
 
             // Act - check direct permission
-            var directResult = await service.UserHasPermissionInProjectAsync(
+            var directResult = await service.PermissionInProject(
                 userId1, projectId1, "read", "project");
 
             // Act - check group permission
-            var groupResult = await service.UserHasPermissionInProjectAsync(
+            var groupResult = await service.PermissionInProject(
                 userId1, projectId1, "write", "data");
 
             // Assert
@@ -723,15 +725,15 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsFalse_WhenNotInAnyGroup()
+        public async Task PermissionInProject_ReturnsFalse_WhenNotInAnyGroup()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // userId2 is not in any groups
 
             // Act
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId2, projectId1, "write", "data");
 
             // Assert
@@ -743,7 +745,7 @@ namespace deeplynx.tests.Middleware
         #region RolePermissionService Tests - Multiple Roles
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsTrue_WhenUserHasMultipleRoles()
+        public async Task PermissionInProject_ReturnsTrue_WhenUserHasMultipleRoles()
         {
             // Arrange
             // Add second role membership for user1
@@ -756,10 +758,10 @@ namespace deeplynx.tests.Middleware
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
 
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - check permission from second role
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "write", "project");
 
             // Assert
@@ -767,7 +769,7 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_ReturnsTrue_WhenAnyRoleHasPermission()
+        public async Task PermissionInProject_ReturnsTrue_WhenAnyRoleHasPermission()
         {
             // Arrange
             // Add a third role with different permission
@@ -798,12 +800,12 @@ namespace deeplynx.tests.Middleware
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
 
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - user1 now has read (role1), write (role2), and delete (deleteRole)
-            var readResult = await service.UserHasPermissionInProjectAsync(
+            var readResult = await service.PermissionInProject(
                 userId1, projectId1, "read", "project");
-            var deleteResult = await service.UserHasPermissionInProjectAsync(
+            var deleteResult = await service.PermissionInProject(
                 userId1, projectId1, "delete", "project");
 
             // Assert
@@ -816,13 +818,13 @@ namespace deeplynx.tests.Middleware
         #region RolePermissionService Tests - Case Sensitivity
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_IsCaseSensitive_ForAction()
+        public async Task PermissionInProject_IsCaseSensitive_ForAction()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - "Read" vs "read"
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "Read", "project");
 
             // Assert - should be case sensitive
@@ -830,13 +832,13 @@ namespace deeplynx.tests.Middleware
         }
 
         [Fact]
-        public async Task UserHasPermissionInProjectAsync_IsCaseSensitive_ForResource()
+        public async Task PermissionInProject_IsCaseSensitive_ForResource()
         {
             // Arrange
-            var service = new RolePermissionService(Context, _loggerMock.Object);
+            var service = new ProjectRolePermissionService(Context, _loggerMock.Object);
 
             // Act - "Project" vs "project"
-            var result = await service.UserHasPermissionInProjectAsync(
+            var result = await service.PermissionInProject(
                 userId1, projectId1, "read", "Project");
 
             // Assert - should be case sensitive
@@ -878,10 +880,10 @@ namespace deeplynx.tests.Middleware
         {
             await base.SeedTestDataAsync();
 
-            // Create organization first (required for groups)
+            // Create organization first (required for projects AND groups)
             var organization1 = new Organization
             {
-                Name = "Test Organization",
+                Name = $"Test Organization {Guid.NewGuid()}", // Make unique to avoid conflicts
                 Description = "Test Organization Description"
             };
             Context.Organizations.Add(organization1);
@@ -913,18 +915,22 @@ namespace deeplynx.tests.Middleware
             userId1 = user1.Id;
             userId2 = user2.Id;
 
-            // Create projects
+            // Create projects - NOW WITH ORGANIZATION ID
             var project1 = new Project
             {
                 Name = "Test Project 1",
-                Description = "Test Description 1"
+                Description = "Test Description 1",
+                OrganizationId = organizationId1, // ← FIX: Add the foreign key
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Projects.Add(project1);
 
             var project2 = new Project
             {
                 Name = "Test Project 2",
-                Description = "Test Description 2"
+                Description = "Test Description 2",
+                OrganizationId = organizationId1, // ← FIX: Add the foreign key
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified)
             };
             Context.Projects.Add(project2);
 

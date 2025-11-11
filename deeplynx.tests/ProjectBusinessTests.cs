@@ -30,6 +30,7 @@ namespace deeplynx.tests
         private Mock<IRelationshipBusiness> _mockRelationshipBusiness = null!;
         private Mock<ILogger<ProjectBusiness>> _mockLogger = null!;
         private Mock<IObjectStorageBusiness> _objectStorageBusiness = null!;
+        private Mock<IOrganizationBusiness> _organizationBusiness = null!;
 
         private long pid; // project ID
         private long pid2;
@@ -65,6 +66,7 @@ namespace deeplynx.tests
             _mockRelationshipBusiness = new Mock<IRelationshipBusiness>();
             _mockEdgeBusiness = new Mock<IEdgeBusiness>();
             _mockLogger = new Mock<ILogger<ProjectBusiness>>();
+            _organizationBusiness =  new Mock<IOrganizationBusiness>();
 
             _roleBusiness = new RoleBusiness(Context, _cacheBusiness, _eventBusiness);
             _dataSourceBusiness = new DataSourceBusiness(
@@ -76,7 +78,7 @@ namespace deeplynx.tests
             _projectBusiness = new ProjectBusiness(
                 Context, _cacheBusiness, _mockLogger.Object,
                 _classBusiness, _roleBusiness, _dataSourceBusiness,
-                _objectStorageBusiness.Object, _eventBusiness);
+                _objectStorageBusiness.Object, _eventBusiness, _organizationBusiness.Object);
         }
 
         #region CreateProject Tests
@@ -90,7 +92,8 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST"
+                Abbreviation = "TST",
+                OrganizationId = oid
             };
 
             // Act
@@ -122,7 +125,8 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST"
+                Abbreviation = "TST",
+                OrganizationId = oid
             };
 
             // Act
@@ -156,7 +160,8 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST"
+                Abbreviation = "TST",
+                OrganizationId = oid
             };
 
             // Act
@@ -188,7 +193,8 @@ namespace deeplynx.tests
             {
                 Name = $"Test Project {DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
                 Description = "Test Description",
-                Abbreviation = "TST"
+                Abbreviation = "TST",
+                OrganizationId = oid
             };
 
             // Act
@@ -230,7 +236,7 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfNoName()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description", OrganizationId = oid };
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
@@ -245,7 +251,7 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfNoUser()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description" };
+            var dto = new CreateProjectRequestDto { Name = null!, Description = "Test Description", OrganizationId = oid };
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<KeyNotFoundException>(
@@ -258,7 +264,7 @@ namespace deeplynx.tests
         public async Task CreateProject_Fails_IfEmptyName()
         {
             // Arrange
-            var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description" };
+            var dto = new CreateProjectRequestDto { Name = "", Description = "Test Description", OrganizationId = oid };
 
             // Act & Assert
             await Assert.ThrowsAsync<ValidationException>(
@@ -267,6 +273,96 @@ namespace deeplynx.tests
             // Ensure that no project create event is logged
             var eventList = await Context.Events.ToListAsync();
             Assert.Empty(eventList);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfOrgIdSupplied()
+        {
+            // Arrange
+            var dto = new CreateProjectRequestDto
+            {
+                Name = "Idaho Test",
+                Description = "Test Description",
+                OrganizationId = oid
+            };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            result.Id.Should().BeGreaterThan(0);
+            result.Name.Should().Be(dto.Name);
+            result.Description.Should().Be(dto.Description);
+            result.OrganizationId.Should().Be(oid);
+            var persisted = await Context.Projects.FindAsync(result.Id);
+            persisted.Should().NotBeNull();
+            persisted!.OrganizationId.Should().Be(oid);
+
+            //Ensure
+            _organizationBusiness.Verify(x => x.GetAllOrganizations(It.IsAny<bool>()), Times.Never);
+            _organizationBusiness.Verify(
+                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                Times.Never);
+            _organizationBusiness.Verify(
+                x => x.AddUserToOrganization(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfNoOrgId()
+        {
+            // Arrange: seed a default org in the DB
+            var defaultOrg = new Organization { Name = "Default Org", DefaultOrg = true, IsArchived = false };
+            Context.Organizations.Add(defaultOrg);
+            await Context.SaveChangesAsync();
+
+            var dto = new CreateProjectRequestDto
+            {
+                Name = "Project Without OrgId",
+                Description = "Should use existing default org",
+                OrganizationId = null
+            };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            Assert.True(result.Id > 0);
+            Assert.Equal(defaultOrg.Id, result.OrganizationId);
+
+            var persisted = await Context.Projects.FindAsync(result.Id);
+            Assert.NotNull(persisted);
+            Assert.Equal(defaultOrg.Id, persisted!.OrganizationId);
+
+            // Ensure we did NOT create a new org since a default already existed
+            _organizationBusiness.Verify(
+                x => x.CreateOrganization(It.IsAny<CreateOrganizationRequestDto>(), It.IsAny<bool>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task CreateProject_Success_IfNoOrgIdNoDefaultOrg()
+        {
+            // Arrange: ensure no default org exists
+            foreach (var o in Context.Organizations.Where(o => o.DefaultOrg)) o.DefaultOrg = false;
+            await Context.SaveChangesAsync();
+
+            // Replace the mock with the real OrganizationBusiness just for this test
+            var realOrgBiz = new OrganizationBusiness(Context, _eventBusiness, new Mock<ILogger<OrganizationBusiness>>().Object);
+            _projectBusiness = new ProjectBusiness(
+                Context, _cacheBusiness, _mockLogger.Object,
+                _classBusiness, _roleBusiness, _dataSourceBusiness,
+                _objectStorageBusiness.Object, _eventBusiness, realOrgBiz);
+
+            var dto = new CreateProjectRequestDto { Name = "No OrgId", Description = "auto default", OrganizationId = null };
+
+            // Act
+            var result = await _projectBusiness.CreateProject(uid, dto);
+
+            // Assert
+            Assert.True(result.Id > 0);
+            var createdDefault = await Context.Organizations.FirstAsync(o => o.DefaultOrg && !o.IsArchived);
+            Assert.Equal(createdDefault.Id, result.OrganizationId);
         }
 
         #endregion
@@ -381,7 +477,7 @@ namespace deeplynx.tests
             // Assert
             Assert.NotNull(projectsForOrganization);
             Assert.NotEmpty(projectsForOrganization);
-            Assert.Equal(3, projectsForOrganization.Count);
+            Assert.Equal(4, projectsForOrganization.Count);
             Assert.All(projectsForOrganization, p => Assert.Equal(oid, p.OrganizationId));
         }
 
@@ -738,13 +834,15 @@ namespace deeplynx.tests
             {
                 Name = "Test Project",
                 Description = "Test Description",
-                Abbreviation = "TST"
+                Abbreviation = "TST",
+                OrganizationId = oid
             };
 
             // Assert
             Assert.Equal("Test Project", dto.Name);
             Assert.Equal("Test Description", dto.Description);
             Assert.Equal("TST", dto.Abbreviation);
+            Assert.Equal(oid, dto.OrganizationId);
         }
 
         [Fact]
@@ -753,7 +851,7 @@ namespace deeplynx.tests
             // Arrange
             var now = DateTime.UtcNow;
 
-           // Act
+            // Act
             var dto = new ProjectResponseDto
             {
                 Id = 1,
@@ -1196,7 +1294,7 @@ namespace deeplynx.tests
         }
 
         #endregion
-        
+
         #region LastUpdatedBy Tests
 
         [Fact]
@@ -1210,9 +1308,10 @@ namespace deeplynx.tests
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
-            
+
             // Act
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -1234,9 +1333,10 @@ namespace deeplynx.tests
                 Abbreviation = "NAV",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
-            
+
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
 
@@ -1244,7 +1344,7 @@ namespace deeplynx.tests
             var projectWithUser = await Context.Projects
                 .Include(p => p.LastUpdatedByUser)
                 .FirstAsync(p => p.Id == testProject.Id);
-            
+
             // Assert
             Assert.NotNull(projectWithUser.LastUpdatedByUser);
             Assert.Equal("Test User", projectWithUser.LastUpdatedByUser.Name);
@@ -1263,9 +1363,10 @@ namespace deeplynx.tests
                 Abbreviation = "NUL",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = null,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
-            
+
             // Act
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -1274,11 +1375,11 @@ namespace deeplynx.tests
             var savedProject = await Context.Projects.FindAsync(testProject.Id);
             Assert.NotNull(savedProject);
             Assert.Null(savedProject.LastUpdatedBy);
-            
+
             var projectWithUser = await Context.Projects
                 .Include(p => p.LastUpdatedByUser)
                 .FirstAsync(p => p.Id == testProject.Id);
-            
+
             Assert.Null(projectWithUser.LastUpdatedByUser);
         }
 
@@ -1292,7 +1393,8 @@ namespace deeplynx.tests
                 Description = "Original Description",
                 Abbreviation = "ORI",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = null
+                LastUpdatedBy = null,
+                OrganizationId = oid
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
@@ -1301,7 +1403,7 @@ namespace deeplynx.tests
             testProject.LastUpdatedBy = uid;
             testProject.Description = "Updated Description";
             testProject.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-            
+
             Context.Projects.Update(testProject);
             await Context.SaveChangesAsync();
 
@@ -1309,7 +1411,7 @@ namespace deeplynx.tests
             var updatedProject = await Context.Projects
                 .Include(p => p.LastUpdatedByUser)
                 .FirstAsync(p => p.Id == testProject.Id);
-            
+
             Assert.Equal(uid, updatedProject.LastUpdatedBy);
             Assert.NotNull(updatedProject.LastUpdatedByUser);
             Assert.Equal("Test User", updatedProject.LastUpdatedByUser.Name);
@@ -1323,7 +1425,7 @@ namespace deeplynx.tests
             await base.SeedTestDataAsync();
 
             // Add org
-            var testOrg = new Organization{Name = "Test Org"};
+            var testOrg = new Organization { Name = "Test Org" };
             Context.Organizations.Add(testOrg);
             await Context.SaveChangesAsync();
             oid = testOrg.Id;
@@ -1335,7 +1437,8 @@ namespace deeplynx.tests
                 Description = "Test project for unit tests",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             var testProj2 = new Project
             {
@@ -1361,7 +1464,8 @@ namespace deeplynx.tests
                 Description = "Archived project for unit tests",
                 Abbreviation = "TST",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                IsArchived = true
+                IsArchived = true,
+                OrganizationId = oid
             };
             var groupProj = new Project
             {
@@ -1448,7 +1552,7 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add test roles
-            var testRole = new Role {Name = "Test Role"};
+            var testRole = new Role { Name = "Test Role" };
             var missingRole = new Role { Name = "Missing Role" };
             Context.Roles.AddRange(testRole, missingRole);
             await Context.SaveChangesAsync();
@@ -1458,8 +1562,8 @@ namespace deeplynx.tests
             await Context.SaveChangesAsync();
 
             // Add groups
-            var testGroup = new Group {Name = "Test Group", OrganizationId = oid};
-            var missingGroup = new Group { Name = "Missing Group", OrganizationId = oid};
+            var testGroup = new Group { Name = "Test Group", OrganizationId = oid };
+            var missingGroup = new Group { Name = "Missing Group", OrganizationId = oid };
             Context.Groups.AddRange(testGroup, missingGroup);
             await Context.SaveChangesAsync();
             gid = testGroup.Id;

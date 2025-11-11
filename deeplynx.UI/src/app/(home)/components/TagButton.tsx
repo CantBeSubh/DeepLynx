@@ -1,9 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { PlusIcon } from "@heroicons/react/24/outline";
-import { attachTagToRecord, unAttachTagFromRecord } from "@/app/lib/record_services.client";
+import {
+  attachTagToRecord,
+  unAttachTagFromRecord,
+} from "@/app/lib/record_services.client";
 import { TagResponseDto } from "../types/responseDTOs";
 import AddTagModal from "./AddTagModal";
 import { useLanguage } from "@/app/contexts/Language";
+import toast from "react-hot-toast";
 
 interface TagButtonProps {
   tags: TagResponseDto[];
@@ -12,6 +16,8 @@ interface TagButtonProps {
   recordId: number;
   selectedIds: string[];
   setSelectedIds: (ids: string[]) => void;
+  setTags: React.Dispatch<React.SetStateAction<TagResponseDto[]>>;
+  setSelectedTags: React.Dispatch<React.SetStateAction<TagResponseDto[]>>;
 }
 
 const TagButton: React.FC<TagButtonProps> = ({
@@ -20,6 +26,8 @@ const TagButton: React.FC<TagButtonProps> = ({
   projectId,
   recordId,
   selectedIds,
+  setTags,
+  setSelectedTags,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -75,6 +83,35 @@ const TagButton: React.FC<TagButtonProps> = ({
 
     if (onSelectionChange) {
       onSelectionChange(newSelectionIds);
+    }
+  };
+
+  const handleTagCreated = async (newTag: TagResponseDto) => {
+    // Add the new tag to the tags list
+    setTags((prevTags) => [...prevTags, newTag]);
+
+    // Automatically attach it to the record
+    try {
+      await attachTagToRecord(projectId, recordId, Number(newTag.id));
+
+      // Update selection state
+      const newSelectionIds = [
+        ...tempSelectedIds.map(String),
+        newTag.id.toString(),
+      ];
+      setTempSelectedIds(newSelectionIds);
+
+      // Directly update selectedTags in parent
+      setSelectedTags((prevSelectedTags) => [...prevSelectedTags, newTag]);
+
+      toast.success(
+        `${t.translations.TAG_} "${newTag.name}" ${t.translations.CREATED_AND_ATTACHED}`
+      );
+    } catch (error) {
+      console.error("Error attaching new tag:", error);
+      toast.error(
+        `${t.translations.TAG_} ${t.translations.CREATED_BUT_FAILED_TO_ATTACH}`
+      );
     }
   };
 
@@ -144,6 +181,7 @@ const TagButton: React.FC<TagButtonProps> = ({
         onClose={() => {
           setIsTagModalOpen(false);
         }}
+        onTagCreated={handleTagCreated}
       />
     </div>
   );

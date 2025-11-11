@@ -4,7 +4,6 @@ using deeplynx.datalayer.Models;
 using deeplynx.helpers.Hubs;
 using deeplynx.interfaces;
 using deeplynx.models;
-using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -71,6 +70,17 @@ namespace deeplynx.tests
             var savedRole = await Context.Roles.FindAsync(result.Id);
             Assert.NotNull(savedRole);
             Assert.Equal("Project Role", savedRole.Name);
+            
+            // Ensure that the Role create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -95,6 +105,16 @@ namespace deeplynx.tests
             var savedRole = await Context.Roles.FindAsync(result.Id);
             Assert.NotNull(savedRole);
             Assert.Equal("Org Role", savedRole.Name);
+            
+            // Ensure that the Role create event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
 
         [Fact]
@@ -114,15 +134,15 @@ namespace deeplynx.tests
             Assert.Equal("Event Role", result.Name);
             
             // Ensure that the Role create event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "role",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal(pid, actualEvent.ProjectId);
+            Assert.Equal("create", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -139,8 +159,8 @@ namespace deeplynx.tests
                 () => _roleBusiness.CreateRole(dto, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -151,8 +171,8 @@ namespace deeplynx.tests
                 () => _roleBusiness.CreateRole(null, pid, null));
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -165,12 +185,14 @@ namespace deeplynx.tests
             };
             
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => _roleBusiness.CreateRole(dto, pid, oid));
+
+            Assert.Contains("Please provide only one of Project ID or Organization ID, not both", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         [Fact]
@@ -183,31 +205,32 @@ namespace deeplynx.tests
             };
             
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(
+            var exception = await Assert.ThrowsAsync<ArgumentException>(
                 () => _roleBusiness.CreateRole(dto, null, null));
+
+            Assert.Contains("One of Project ID or Organization ID must be provided", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
         
-        # region BulkCreateRoles Tests
+        #region BulkCreateRoles Tests
         
         [Fact]
         public async Task CreateRoles_Success_OnBulkCreate()
         {
             // Arrange
-            var now = DateTime.UtcNow;
             var bulkDto = new List<CreateRoleRequestDto>
             {
-                new CreateRoleRequestDto
+                new()
                 {
                     Name = $"Test Role 1",
                     Description = "Test Description 1"
                 },
-                new CreateRoleRequestDto
+                new()
                 {
                     Name = $"Test Role 2",
                     Description = "Test Description 2"
@@ -218,29 +241,27 @@ namespace deeplynx.tests
             var result = await _roleBusiness.BulkCreateRoles(pid, bulkDto);
     
             // Assert
-            result.Should().HaveCount(2);
-            result.First().Name.Should().Be("Test Role 1");
-            result.First().Description.Should().Be("Test Description 1");
-            result.Last().Name.Should().Be("Test Role 2");
-            result.Last().Description.Should().Be("Test Description 2");
-    
+            Assert.Equal(2, result.Count);
+            Assert.Equal("Test Role 1", result.First().Name);
+            Assert.Equal("Test Description 1", result.First().Description);
+            Assert.Equal("Test Role 2", result.Last().Name);
+            Assert.Equal("Test Description 2", result.Last().Description);
+
             // Ensure the create event is logged for each role create
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(2);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "role",
-                EntityId = result[0].Id,
-            });
-            eventList[1].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "role",
-                EntityId = result[1].Id,
-            });
+            Assert.Equal(2, eventList.Count);
+
+            var firstEvent = eventList[0];
+            Assert.Equal(pid, firstEvent.ProjectId);
+            Assert.Equal("create", firstEvent.Operation);
+            Assert.Equal("role", firstEvent.EntityType);
+            Assert.Equal(result[0].Id, firstEvent.EntityId);
+
+            var secondEvent = eventList[1];
+            Assert.Equal(pid, secondEvent.ProjectId);
+            Assert.Equal("create", secondEvent.Operation);
+            Assert.Equal("role", secondEvent.EntityType);
+            Assert.Equal(result[1].Id, secondEvent.EntityId);
         }
         
         [Fact]
@@ -253,100 +274,94 @@ namespace deeplynx.tests
                 Description = "Original Description"
             };
     
-            var created = await _roleBusiness.BulkCreateRoles(pid, new List<CreateRoleRequestDto> { existingRole });
+            var created = await _roleBusiness.BulkCreateRoles(pid, [existingRole]);
             var existingRoleId = created.First().Id;
     
-            // Clear events from initial creation
-            Context.Events.RemoveRange(Context.Events);
-            await Context.SaveChangesAsync();
-    
-            var bulkDto = new List<CreateRoleRequestDto>
+            var bulkDto = new CreateRoleRequestDto
             {
-                new CreateRoleRequestDto
-                {
-                    Name = "Existing Role",
-                    Description = "Updated Description"
-                }
+                Name = "Existing Role",
+                Description = "Updated Description"
+                
             };
 
             // Act
-            var result = await _roleBusiness.BulkCreateRoles(pid, bulkDto);
+            var result = await _roleBusiness.BulkCreateRoles(pid, [bulkDto]);
     
-            // Assert
-            result.Should().HaveCount(1);
-            result.First().Id.Should().Be(existingRoleId); // Same ID as existing role
-            result.First().Name.Should().Be("Existing Role");
-            result.First().Description.Should().Be("Updated Description");
-    
-            // Ensure the create event is logged even for upsert
+            Assert.Single(result);
+            Assert.Equal(existingRoleId, result.First().Id); // Same ID as existing role
+            Assert.Equal("Existing Role", result.First().Name);
+            Assert.Equal("Updated Description", result.First().Description);
+
+            // Ensure the both create events are logged
             var eventList = await Context.Events.ToListAsync();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                ProjectId = pid,
-                Operation = "create",
-                EntityType = "role",
-                EntityId = existingRoleId,
-            });
+            Assert.Equal(2, eventList.Count);
+            
+            var firstEvent = eventList[0];
+            
+            Assert.Equal(pid, firstEvent.ProjectId);
+            Assert.Equal("create", firstEvent.Operation);
+            Assert.Equal("role", firstEvent.EntityType);
+            Assert.Equal(existingRoleId, firstEvent.EntityId);
+            
+            var secondEvent = eventList[0];
+            
+            Assert.Equal(pid, secondEvent.ProjectId);
+            Assert.Equal("create", secondEvent.Operation);
+            Assert.Equal("role", secondEvent.EntityType);
+            Assert.Equal(existingRoleId, secondEvent.EntityId);
         }
         
-        # endregion
+        #endregion
         
         #region GetAllRole Tests
         
         [Fact]
         public async Task GetAllRoles_ExcludesArchived()
         {
-            // Arrange: reset test data to avoid race conditions
-            await CleanupTestData();
-            await SeedTestDataAsync();
-            
             // Act
-            var result = await _roleBusiness.GetAllRoles(null, null);
-            var roles = result.ToList();
-            
-            // Assert
-            Assert.Equal(3, roles.Count);
-            Assert.All(roles, r => Assert.Equal(false, r.IsArchived));
-            Assert.Contains(roles, r => r.Id == rid1);
-            Assert.DoesNotContain(roles, r => r.Id == rid2);
-            Assert.DoesNotContain(roles, r => r.Id == rid3);
-            Assert.Contains(roles, r => r.Id == rid4);
-            Assert.Contains(roles, r => r.Id == rid5);
+            var result = (await _roleBusiness.GetAllRoles(null, null)).ToList();
+    
+            // Assert - Check that our test roles are present/absent as expected
+            Assert.Contains(result, r => r.Id == rid1);
+            Assert.DoesNotContain(result, r => r.Id == rid2); // archived
+            Assert.DoesNotContain(result, r => r.Id == rid3); // deleted
+            Assert.Contains(result, r => r.Id == rid4);
+            Assert.Contains(result, r => r.Id == rid5);
+    
+            // Verify all returned roles are not archived
+            Assert.All(result, r => Assert.False(r.IsArchived));
         }
         
         [Fact]
         public async Task GetAllRoles_FiltersByProject()
         {
             // Act
-            var result = await _roleBusiness.GetAllRoles(pid, null);
-            var roles = result.ToList();
+            var result = (await _roleBusiness.GetAllRoles(pid, null)).ToList();
             
             // Assert
-            Assert.Equal(1, roles.Count);
-            Assert.All(roles, r => Assert.Equal(false, r.IsArchived));
-            Assert.DoesNotContain(roles, r => r.Id == rid1);
-            Assert.DoesNotContain(roles, r => r.Id == rid2);
-            Assert.DoesNotContain(roles, r => r.Id == rid3);
-            Assert.Contains(roles, r => r.Id == rid4);
-            Assert.DoesNotContain(roles, r => r.Id == rid5);
+            Assert.Single(result);
+            Assert.All(result, r => Assert.Equal(false, r.IsArchived));
+            Assert.DoesNotContain(result, r => r.Id == rid1);
+            Assert.DoesNotContain(result, r => r.Id == rid2);
+            Assert.DoesNotContain(result, r => r.Id == rid3);
+            Assert.Contains(result, r => r.Id == rid4);
+            Assert.DoesNotContain(result, r => r.Id == rid5);
         }
         
         [Fact]
         public async Task GetAllRoles_FiltersByOrganization()
         {
             // Act
-            var result = await _roleBusiness.GetAllRoles(null, oid);
-            var roles = result.ToList();
+            var result = (await _roleBusiness.GetAllRoles(null, oid)).ToList();
             
             // Assert
-            Assert.Equal(1, roles.Count);
-            Assert.All(roles, r => Assert.Equal(false, r.IsArchived));
-            Assert.DoesNotContain(roles, r => r.Id == rid1);
-            Assert.DoesNotContain(roles, r => r.Id == rid2);
-            Assert.DoesNotContain(roles, r => r.Id == rid3);
-            Assert.DoesNotContain(roles, r => r.Id == rid4);
-            Assert.Contains(roles, r => r.Id == rid5);
+            Assert.Single(result);
+            Assert.All(result, r => Assert.Equal(false, r.IsArchived));
+            Assert.DoesNotContain(result, r => r.Id == rid1);
+            Assert.DoesNotContain(result, r => r.Id == rid2);
+            Assert.DoesNotContain(result, r => r.Id == rid3);
+            Assert.DoesNotContain(result, r => r.Id == rid4);
+            Assert.Contains(result, r => r.Id == rid5);
         }
         
         #endregion
@@ -429,6 +444,16 @@ namespace deeplynx.tests
             Assert.NotNull(savedRole);
             Assert.Equal("Updated Role", savedRole.Name);
             Assert.Equal("Now with a description", savedRole.Description);
+            
+            // Ensure that the Role update event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -449,14 +474,14 @@ namespace deeplynx.tests
             Assert.Equal("Updated Role", result.Name);
             
             // Ensure that the Role update event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "update",
-                EntityType = "role",
-                EntityId = result.Id,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("update", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(result.Id, actualEvent.EntityId);
         }
         
         [Fact]
@@ -477,8 +502,8 @@ namespace deeplynx.tests
             Assert.Contains($"Role with id {rid3} not found", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -503,14 +528,14 @@ namespace deeplynx.tests
             Assert.True(savedRole.IsArchived);
             
             // Ensure that the Role archive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "archive",
-                EntityType = "role",
-                EntityId = rid1,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(rid1, actualEvent.EntityId);
         }
 
         [Fact] 
@@ -539,6 +564,16 @@ namespace deeplynx.tests
             Assert.Equal(uid, updatedMember.UserId);
             Assert.NotEqual(rid4, updatedMember.RoleId);
             Assert.Null(updatedMember.RoleId);
+            
+            // Ensure that the Role archive event was logged
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("archive", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(rid4, actualEvent.EntityId);
         }
         
         [Fact]
@@ -552,8 +587,8 @@ namespace deeplynx.tests
             Assert.Contains($"Role with id {rid2} not found or is archived", exception.Message);
             
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -575,14 +610,14 @@ namespace deeplynx.tests
             Assert.False(savedRole.IsArchived);
     
             // Ensure that the Role unarchive event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "unarchive",
-                EntityType = "role",
-                EntityId = rid2,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("unarchive", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(rid2, actualEvent.EntityId);
         }
 
         [Fact]
@@ -596,8 +631,8 @@ namespace deeplynx.tests
             Assert.Contains($"Role with id {rid1} not found or is not archived", exception.Message);
     
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -618,14 +653,14 @@ namespace deeplynx.tests
             Assert.Null(deletedRole);
     
             // Ensure that the Role delete event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(1);
-            eventList[0].Should().BeEquivalentTo(new
-            {
-                Operation = "delete",
-                EntityType = "role",
-                EntityId = rid1,
-            });
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Single(eventList);
+            
+            var actualEvent = eventList[0];
+            
+            Assert.Equal("delete", actualEvent.Operation);
+            Assert.Equal("role", actualEvent.EntityType);
+            Assert.Equal(rid1, actualEvent.EntityId);
         }
 
         [Fact]
@@ -639,8 +674,8 @@ namespace deeplynx.tests
             Assert.Contains($"Role with id {rid3} not found or is archived", exception.Message);
     
             // Ensure that no event was logged
-            var eventList = Context.Events.ToList();
-            eventList.Count.Should().Be(0);
+            var eventList = await Context.Events.ToListAsync();
+            Assert.Empty(eventList);
         }
         
         #endregion
@@ -651,27 +686,25 @@ namespace deeplynx.tests
         public async Task GetPermissionsByRole_Lists_AllPermissionsForRole()
         {
             // Act
-            var result = await _roleBusiness.GetPermissionsByRole(rid1);
-            var permissions = result.ToList();
+            var result = (await _roleBusiness.GetPermissionsByRole(rid1)).ToList();
             
             // Assert
-            Assert.Equal(2, permissions.Count);
-            Assert.Contains(permissions, p => p.Id == permid1);
-            Assert.Contains(permissions, p => p.Id == permid2);
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, p => p.Id == permid1);
+            Assert.Contains(result, p => p.Id == permid2);
         }
 
         [Fact]
         public async Task GetPermissionsByRole_DoesNotList_PermissionsNotForRole()
         {
             // Act
-            var result = await _roleBusiness.GetPermissionsByRole(rid1);
-            var permissions = result.ToList();
+            var result = (await _roleBusiness.GetPermissionsByRole(rid1)).ToList();
             
             // Assert
-            Assert.Equal(2, permissions.Count);
-            Assert.Contains(permissions, p => p.Id == permid1);
-            Assert.Contains(permissions, p => p.Id == permid2);
-            Assert.DoesNotContain(permissions, p => p.Id == permid3);
+            Assert.Equal(2, result.Count);
+            Assert.Contains(result, p => p.Id == permid1);
+            Assert.Contains(result, p => p.Id == permid2);
+            Assert.DoesNotContain(result, p => p.Id == permid3);
         }
 
         [Fact]
@@ -690,10 +723,9 @@ namespace deeplynx.tests
         {
             // Act
             var result = await _roleBusiness.GetPermissionsByRole(rid4);
-            var permissions = result.ToList();
             
             // Assert
-            Assert.Empty(permissions);
+            Assert.Empty(result);
         }
         
         #endregion
@@ -881,7 +913,7 @@ namespace deeplynx.tests
         
         #endregion
         
-        # region SetPermissionsByPattern Tests
+        #region SetPermissionsByPattern Tests
         
         [Fact]
         public async Task SetPermissionsByPattern_Success_SetsPermissions()
@@ -918,8 +950,8 @@ namespace deeplynx.tests
                             permissionPatterns[p.Resource].Contains(p.Action))
                 .ToList();
 
-            role.Permissions.Count.Should().Be(expectedPermissions.Count);
-
+            Assert.Equal(expectedPermissions.Count, role.Permissions.Count);
+            
             foreach (var expectedPerm in expectedPermissions)
             {
                 Assert.Contains(role.Permissions, p => p.Id == expectedPerm.Id);
@@ -942,130 +974,128 @@ namespace deeplynx.tests
             Assert.Contains($"Role with id {rid3} not found", exception.Message);
         }
         
-        # endregion
+        #endregion
+        
         #region LastUpdatedBy Tests
 
-            [Fact]
-            public async Task CreateRole_Success_StoresLastUpdatedByUserId()
+        [Fact]
+        public async Task CreateRole_Success_StoresLastUpdatedByUserId()
+        {
+            // Arrange
+            var testRole = new Role
             {
-                // Arrange
-                var testRole = new Role
-                {
-                    Name = "Test Role LastUpdatedBy",
-                    Description = "Test description",
-                    ProjectId = pid,
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    LastUpdatedBy = uid
-                };
-                
-                // Act
-                Context.Roles.Add(testRole);
-                await Context.SaveChangesAsync();
+                Name = "Test Role LastUpdatedBy",
+                Description = "Test description",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            // Act
+            Context.Roles.Add(testRole);
+            await Context.SaveChangesAsync();
 
-                // Assert
-                var savedRole = await Context.Roles.FindAsync(testRole.Id);
-                Assert.NotNull(savedRole);
-                Assert.Equal(uid, savedRole.LastUpdatedBy);
-            }
+            // Assert
+            var savedRole = await Context.Roles.FindAsync(testRole.Id);
+            Assert.NotNull(savedRole);
+            Assert.Equal(uid, savedRole.LastUpdatedBy);
+        }
 
-            [Fact]
-            public async Task CreateRole_Success_NavigationPropertyLoadsUser()
+        [Fact]
+        public async Task CreateRole_Success_NavigationPropertyLoadsUser()
+        {
+            // Arrange
+            var testRole = new Role
             {
-                // Arrange
-                var testRole = new Role
-                {
-                    Name = "Test Role Navigation",
-                    Description = "Test description 2",
-                    ProjectId = pid,
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    LastUpdatedBy = uid
-                };
-                
-                Context.Roles.Add(testRole);
-                await Context.SaveChangesAsync();
+                Name = "Test Role Navigation",
+                Description = "Test description 2",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = uid
+            };
+            
+            Context.Roles.Add(testRole);
+            await Context.SaveChangesAsync();
 
-                // Act
-                var roleWithUser = await Context.Roles
-                    .Include(r => r.LastUpdatedByUser)
-                    .FirstAsync(r => r.Id == testRole.Id);
-                
-                // Assert
-                Assert.NotNull(roleWithUser.LastUpdatedByUser);
-                Assert.Equal("Test User", roleWithUser.LastUpdatedByUser.Name);
-                Assert.Equal("test@test.com", roleWithUser.LastUpdatedByUser.Email);
-                Assert.Equal(uid, roleWithUser.LastUpdatedBy);
-            }
+            // Act
+            var roleWithUser = await Context.Roles
+                .Include(r => r.LastUpdatedByUser)
+                .FirstAsync(r => r.Id == testRole.Id);
+            
+            // Assert
+            Assert.NotNull(roleWithUser.LastUpdatedByUser);
+            Assert.Equal("Test User", roleWithUser.LastUpdatedByUser.Name);
+            Assert.Equal("test@test.com", roleWithUser.LastUpdatedByUser.Email);
+            Assert.Equal(uid, roleWithUser.LastUpdatedBy);
+        }
 
-            [Fact]
-            public async Task CreateRole_Success_WithNullLastUpdatedBy()
+        [Fact]
+        public async Task CreateRole_Success_WithNullLastUpdatedBy()
+        {
+            // Arrange
+            var testRole = new Role
             {
-                // Arrange
-                var testRole = new Role
-                {
-                    Name = "Test Role Null",
-                    Description = "Test description 3",
-                    ProjectId = pid,
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    LastUpdatedBy = null
-                };
-                
-                // Act
-                Context.Roles.Add(testRole);
-                await Context.SaveChangesAsync();
+                Name = "Test Role Null",
+                Description = "Test description 3",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            
+            // Act
+            Context.Roles.Add(testRole);
+            await Context.SaveChangesAsync();
 
-                // Assert
-                var savedRole = await Context.Roles.FindAsync(testRole.Id);
-                Assert.NotNull(savedRole);
-                Assert.Null(savedRole.LastUpdatedBy);
-                
-                var roleWithUser = await Context.Roles
-                    .Include(r => r.LastUpdatedByUser)
-                    .FirstAsync(r => r.Id == testRole.Id);
-                
-                Assert.Null(roleWithUser.LastUpdatedByUser);
-            }
+            // Assert
+            var savedRole = await Context.Roles.FindAsync(testRole.Id);
+            Assert.NotNull(savedRole);
+            Assert.Null(savedRole.LastUpdatedBy);
+            
+            var roleWithUser = await Context.Roles
+                .Include(r => r.LastUpdatedByUser)
+                .FirstAsync(r => r.Id == testRole.Id);
+            
+            Assert.Null(roleWithUser.LastUpdatedByUser);
+        }
 
-            [Fact]
-            public async Task UpdateRole_Success_UpdatesLastUpdatedByUserId()
+        [Fact]
+        public async Task UpdateRole_Success_UpdatesLastUpdatedByUserId()
+        {
+            // Arrange
+            var testRole = new Role
             {
-                // Arrange
-                var testRole = new Role
-                {
-                    Name = "Test Role Update",
-                    Description = "Test description 4",
-                    ProjectId = pid,
-                    LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                    LastUpdatedBy = null
-                };
-                Context.Roles.Add(testRole);
-                await Context.SaveChangesAsync();
+                Name = "Test Role Update",
+                Description = "Test description 4",
+                ProjectId = pid,
+                LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
+                LastUpdatedBy = null
+            };
+            Context.Roles.Add(testRole);
+            await Context.SaveChangesAsync();
 
-                // Act
-                testRole.LastUpdatedBy = uid;
-                testRole.Name = "Updated Role Name";
-                testRole.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
-                
-                Context.Roles.Update(testRole);
-                await Context.SaveChangesAsync();
+            // Act
+            testRole.LastUpdatedBy = uid;
+            testRole.Name = "Updated Role Name";
+            testRole.LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified);
+            
+            Context.Roles.Update(testRole);
+            await Context.SaveChangesAsync();
 
-                // Assert
-                var updatedRole = await Context.Roles
-                    .Include(r => r.LastUpdatedByUser)
-                    .FirstAsync(r => r.Id == testRole.Id);
-                
-                Assert.Equal(uid, updatedRole.LastUpdatedBy);
-                Assert.NotNull(updatedRole.LastUpdatedByUser);
-                Assert.Equal("Test User", updatedRole.LastUpdatedByUser.Name);
-                Assert.Equal("Updated Role Name", updatedRole.Name);
-            }
+            // Assert
+            var updatedRole = await Context.Roles
+                .Include(r => r.LastUpdatedByUser)
+                .FirstAsync(r => r.Id == testRole.Id);
+            
+            Assert.Equal(uid, updatedRole.LastUpdatedBy);
+            Assert.NotNull(updatedRole.LastUpdatedByUser);
+            Assert.Equal("Test User", updatedRole.LastUpdatedByUser.Name);
+            Assert.Equal("Updated Role Name", updatedRole.Name);
+        }
 
-            #endregion
-
-
+        #endregion
+        
         protected override async Task SeedTestDataAsync()
         {
-            await CleanupTestData();
-            
             await base.SeedTestDataAsync();
             
             // create user
@@ -1090,21 +1120,22 @@ namespace deeplynx.tests
             Context.Organizations.Add(organization);
             await Context.SaveChangesAsync();
             oid = organization.Id;
-            
+
             // create test project
             var project = new Project 
             { 
                 Name = "Test",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
-                LastUpdatedBy = uid
+                LastUpdatedBy = uid,
+                OrganizationId = organization.Id
             };
             Context.Projects.Add(project);
             await Context.SaveChangesAsync();
             pid = project.Id;
             
-            // create test roles
+            // Create roles
             var role1 = new Role { Name = "Role 1" };
-            var role2 = new Role { Name = "Role 2", IsArchived = true }; // archive role 2
+            var role2 = new Role { Name = "Role 2", IsArchived = true }; // Archive role2
             var role3 = new Role { Name = "Role 3" };
             var role4 = new Role { Name = "Role 4", ProjectId = pid };
             var role5 = new Role { Name = "Role 5", OrganizationId = oid };
@@ -1116,17 +1147,17 @@ namespace deeplynx.tests
             rid4 = role4.Id;
             rid5 = role5.Id;
             
-            // delete role 3
+            // Delete role 3
             Context.Roles.Remove(role3);
             await Context.SaveChangesAsync();
             
-            // add user as project member
+            // Add user as project member
             var projectMember = new ProjectMember { ProjectId = pid, UserId = uid, RoleId = rid4 };
             Context.ProjectMembers.Add(projectMember);
             await Context.SaveChangesAsync();
             mid = projectMember.Id;
             
-            // create permissions
+            // Create permissions
             var permission1 = new Permission { Name = "Permission 1", Action = "read", Resource = "test" };
             var permission2 = new Permission { Name = "Permission 2", Action = "write", Resource = "test" };
             var permission3 = new Permission { Name = "Permission 3", Action = "execute", Resource = "test2" };
@@ -1138,34 +1169,16 @@ namespace deeplynx.tests
             permid3 = permission3.Id;
             permid4 = permission4.Id;
             
-            // delete permission 4
+            // Delete permission 4
             Context.Permissions.Remove(permission4);
             await Context.SaveChangesAsync();
             
-            // add permissions 1 and 2 to role 1
+            // Add permissions 1 and 2 to role 1
             var role1perms = await Context.Roles
                 .Include(r => r.Permissions)
                 .FirstAsync(r => r.Id == rid1);
             role1perms.Permissions.Add(permission1);
             role1perms.Permissions.Add(permission2);
-            await Context.SaveChangesAsync();
-        }
-        
-        private async Task CleanupTestData()
-        {
-            // Remove all project members (or just test-specific ones)
-            var existingProjectMembers = await Context.ProjectMembers.ToListAsync();
-            Context.ProjectMembers.RemoveRange(existingProjectMembers);
-            await Context.SaveChangesAsync();
-            
-            // Remove all permissions (or just test-specific ones)
-            var existingPerms = await Context.Permissions.ToListAsync();
-            Context.Permissions.RemoveRange(existingPerms);
-            await Context.SaveChangesAsync();
-            
-            // Remove all roles (or just test-specific ones)
-            var existingRoles = await Context.Roles.ToListAsync();
-            Context.Roles.RemoveRange(existingRoles);
             await Context.SaveChangesAsync();
         }
     }

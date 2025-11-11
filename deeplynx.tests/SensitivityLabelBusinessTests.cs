@@ -758,7 +758,8 @@ namespace deeplynx.tests
                 Description = "Test project for unit tests",
                 LastUpdatedAt = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Unspecified),
                 LastUpdatedBy = uid,
-                IsArchived = false
+                IsArchived = false,
+                OrganizationId = oid
             };
             Context.Projects.Add(testProject);
             await Context.SaveChangesAsync();
