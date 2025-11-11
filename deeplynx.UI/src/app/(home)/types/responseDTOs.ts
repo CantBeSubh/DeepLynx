@@ -190,6 +190,7 @@ export type UserResponseDto =
     isSysAdmin: boolean;
     isArchived: boolean;
     isActive: boolean;
+    role?: string;
   }
 
 export type GraphResponseDto = {

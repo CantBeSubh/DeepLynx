@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 import Tabs from "../components/Tabs";
-import { OauthApplicationResponseDto, OrganizationResponseDto, UserResponseDto } from "../types/responseDTOs";
+import {
+  OauthApplicationResponseDto,
+  OrganizationResponseDto,
+  UserResponseDto,
+} from "../types/responseDTOs";
 import UsersTable from "../components/SiteManagementPortal/UsersTable";
 import OAuthManagement from "../components/SiteManagementPortal/OAuthTable";
 import OrganizationManagement from "../components/SiteManagementPortal/OrgTable";
@@ -12,7 +16,11 @@ interface SysAdminProps {
   members: UserResponseDto[];
 }
 
-const SysAdminClient = ({ organizations, applications, members }: SysAdminProps) => {
+const SysAdminClient = ({
+  organizations,
+  applications,
+  members,
+}: SysAdminProps) => {
   const [activeTab, setActiveTab] = useState("");
 
   const tabData = [
@@ -27,18 +35,19 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
     {
       label: "Member Management",
       content: <UsersTable members={members} />,
-    }
+    },
   ];
 
   const handleTabChange = (label: string) => {
-    console.log(label)
     setActiveTab(label);
   };
 
   return (
     <div>
       <div className="bg-base-200/40 pl-12 p-4">
-        <h1 className="text-2xl font-bold text-base-content">Site Management</h1>
+        <h1 className="text-2xl font-bold text-base-content">
+          Site Management
+        </h1>
       </div>
       <div className="p-2">
         <Tabs
@@ -51,6 +60,5 @@ const SysAdminClient = ({ organizations, applications, members }: SysAdminProps)
     </div>
   );
 };
-
 
 export default SysAdminClient;

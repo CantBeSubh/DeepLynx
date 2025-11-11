@@ -18,17 +18,22 @@ import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import SideMenu from "./SideMenu";
 import AvatarCell from "./Avatar";
-import { useSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { RoleGate } from "../rbac/RBACComponents";
 import { useRBAC } from "../rbac/useRBAC";
 import { useOrganizationSession } from "@/app/contexts/OrganizationSessionProvider";
 import { getAllOrganizations } from "@/app/lib/organization_services.client";
 import { OrganizationResponseDto } from "../types/responseDTOs";
+import { useSafeSession } from "@/app/hooks/useSafeSession";
 
 const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useLanguage();
   const router = useRouter();
-  const { data: session } = useSession();
+
+  const isAuthDisabled =
+    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
+
+  const { data: session } = useSafeSession();
   const { user } = useRBAC();
   const { organization, setOrganization } = useOrganizationSession();
 
@@ -41,10 +46,6 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Handle menu toggle
   const [isMenuCollapsed, setIsMenuCollapsed] = React.useState(false);
-
-  // Check if auth is disabled
-  const isAuthDisabled =
-    process.env.NEXT_PUBLIC_DISABLE_FRONTEND_AUTHENTICATION === "true";
 
   // Fetch organizations for the switcher
   useEffect(() => {
@@ -69,6 +70,12 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   const handleLogout = async () => {
     try {
+      if (isAuthDisabled) {
+        // If auth is disabled, just redirect to home
+        router.push("/");
+        return;
+      }
+
       await signOut({
         callbackUrl: "/login/signin",
         redirect: true,
