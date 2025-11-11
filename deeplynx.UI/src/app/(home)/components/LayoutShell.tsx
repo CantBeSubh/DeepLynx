@@ -276,7 +276,7 @@ const LayoutShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       {/* Page Content */}
       <div className="flex h-full z-0">
         {/* Side Menu */}
-        <div className="fixed top-18 bottom-0 flex">
+        <div className="fixed top-18 bottom-0 flex z-30">
           <aside
             className={
               "h-full shadow-xl w-18 bg-base-300 text-primary-content p-4 transition-all duration-300 flex flex-col"

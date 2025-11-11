@@ -20,7 +20,32 @@ const EventsHistoryClient = () => {
     totalCount: 0,
   });
   const [loading, setLoading] = useState(false);
+ // Use your EventFilterParams type instead of Record<string, string>
   const [filters, setFilters] = useState<EventFilterParams>({});
+
+  // Define your filter configuration to match EventFilterParams
+  const filterConfig = [
+    { key: 'projectName', label: 'Project Name', placeholder: 'Filter by project name...' },
+    { key: 'lastUpdatedBy', label: 'Last Updated By', placeholder: 'Filter by user...' },
+    { key: 'operation', label: 'Operation', placeholder: 'Filter by operation...' },
+    { key: 'entityType', label: 'Entity Type', placeholder: 'Filter by entity type...' },
+    { key: 'entityName', label: 'Entity Name', placeholder: 'Filter by entity name...' },
+    { key: 'dataSourceName', label: 'Data Source', placeholder: 'Filter by data source...' },
+    { key: 'startDate', label: 'Start Date', placeholder: 'YYYY-MM-DD' },
+    { key: 'endDate', label: 'End Date', placeholder: 'YYYY-MM-DD' }
+  ];
+
+  // Handler for when filters change
+  const handleFilterChange = (newFilters: EventFilterParams) => {
+    console.log('Filters applied:', newFilters);
+    setFilters(newFilters);
+    // Make your API call with the filters
+    // fetchEvents({ 
+    //   pageNumber: 1, 
+    //   pageSize: pagination.pageSize, 
+    //   ...newFilters 
+    // });
+  };
 
   // Fetch events from backend - memoized with useCallback
   const fetchEvents = useCallback(
@@ -124,22 +149,25 @@ const EventsHistoryClient = () => {
         </div>
       )} */}
       <div className="flex">
-        <div className="flex-1">
-          <GenericTable
-            columns={columns}
-            gridView={true}
-            data={data}
-            enablePageLengthChange={true}
-            enablePagination={true}
-            backendPagination={true}
-            paginationMetadata={pagination}
-            onPageChange={handlePageChange}
-            onPageSizeChange={handlePageSizeChange}
-            bordered={false}
-            searchBar={true}
-            rowsPerPage={500}
-          />
-        </div>
+          <div className="flex-1">
+            <GenericTable
+              columns={columns}
+              gridView={true}
+              data={data}
+              enablePageLengthChange={true}
+              enablePagination={true}
+              backendPagination={true}
+              paginationMetadata={pagination}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              bordered={false}
+              searchBar={true}
+              rowsPerPage={500}
+              filters={filterConfig}
+              filterValues={filters}
+              onFilterChange={handleFilterChange}
+            />
+          </div>
       </div>
     </div>
   );
