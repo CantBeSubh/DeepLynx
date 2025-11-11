@@ -85,7 +85,6 @@ namespace deeplynx.api.Controllers
         /// <param name="projectId">The ID of the project to which the object storages belong</param>
         /// <returns></returns>
         [HttpGet("GetDefaultObjectStorage", Name = "api_get_default_object_storage")]
-        [AuthInProject("read", "object_storage")]
         public async Task<ActionResult<ObjectStorageResponseDto>> GetDefaultObjectStorage(long? organizationId, long? projectId)
         {
             try
