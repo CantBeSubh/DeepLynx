@@ -61,13 +61,13 @@ public class AuthInOrgMiddleware
         
         // 1. First try route values
         int orgId = 0;
-        var routeOrgId = context.GetRouteValue("orgId")?.ToString();
+        var routeOrgId = context.GetRouteValue("organizationId")?.ToString();
         if (!string.IsNullOrEmpty(routeOrgId) && int.TryParse(routeOrgId, out orgId))
         {
             // Found in route
         }
         // 2. Then try query parameters
-        else if (context.Request.Query.TryGetValue("orgId", out var queryOrgId) 
+        else if (context.Request.Query.TryGetValue("organizationId", out var queryOrgId) 
                  && int.TryParse(queryOrgId.FirstOrDefault(), out orgId))
         {
             // Found in query

@@ -162,7 +162,11 @@ public class IntegrationTestBase : IAsyncLifetime
         var roles = await Context.Roles.ToListAsync();
         Context.Roles.RemoveRange(roles);
         await Context.SaveChangesAsync();
-
+        
+        var objectStorages = await Context.ObjectStorages.ToListAsync();
+        Context.ObjectStorages.RemoveRange(objectStorages);
+        await Context.SaveChangesAsync();
+        
         var projects = await Context.Projects.ToListAsync();
         Context.Projects.RemoveRange(projects);
         await Context.SaveChangesAsync();
